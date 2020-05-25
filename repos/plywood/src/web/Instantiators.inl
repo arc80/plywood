@@ -31,6 +31,8 @@ void inst_webDocumentation(TargetInstantiatorArgs* args) {
 // ply instantiate web-cook-docs
 void inst_webCookDocs(TargetInstantiatorArgs* args) {
     args->addIncludeDir(Visibility::Public, "cook-docs");
+    args->addIncludeDir(Visibility::Public, NativePath::join(args->projInst->env->buildFolderPath,
+                                                             "codegen/web-cook-docs"));
     args->addSourceFiles("cook-docs/ply-web-cook-docs");
     args->addTarget(Visibility::Public, "reflect");
     args->addTarget(Visibility::Private, "web-common");
@@ -41,6 +43,10 @@ void inst_webCookDocs(TargetInstantiatorArgs* args) {
     args->addTarget(Visibility::Private, "plytool-client");
     args->addTarget(Visibility::Private, "web-documentation");
     args->addTarget(Visibility::Public, "cpp");
+    StringView configFile = "#define WEBCOOKDOCS_LINK_TO_GITHUB 0\n";
+    FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+        NativePath::join(args->projInst->env->buildFolderPath, "codegen/web-cook-docs/ply-web-cook-docs/Config.h"),
+        configFile, TextFormat::platformPreference());
 }
 
 // ply instantiate web-serve-docs
@@ -74,7 +80,7 @@ ExternResult extern_libsass_macports(ExternCommand cmd, ExternProviderArgs* args
             return er;
         }
         return {pkgMan->installPackage("libsass") ? ExternResult::Installed
-                                                   : ExternResult::InstallFailed,
+                                                  : ExternResult::InstallFailed,
                 ""};
     } else if (cmd == ExternCommand::Instantiate) {
         if (er.code != ExternResult::Installed) {
@@ -109,7 +115,7 @@ ExternResult extern_libsass_apt(ExternCommand cmd, ExternProviderArgs* args) {
             return er;
         }
         return {pkgMan->installPackage("libsass-dev") ? ExternResult::Installed
-                                                   : ExternResult::InstallFailed,
+                                                      : ExternResult::InstallFailed,
                 ""};
     } else if (cmd == ExternCommand::Instantiate) {
         if (er.code != ExternResult::Installed) {

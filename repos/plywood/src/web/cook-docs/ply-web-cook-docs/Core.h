@@ -5,3 +5,4 @@
 #pragma once
 #include <ply-runtime/Base.h>
 #include <ply-reflect/TypeDescriptor.h>
+#include <ply-web-cook-docs/Config.h>

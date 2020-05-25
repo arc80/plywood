@@ -238,9 +238,16 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
             PLY_ASSERT(title.srcPath.startsWith(NativePath::normalize(PLY_WORKSPACE_FOLDER)));
             String srcPath = PosixPath::from<NativePath>(
                 NativePath::makeRelative(PLY_WORKSPACE_FOLDER, title.srcPath));
-            String srcLocation = String::format(" <a class=\"headerlink\" href=\"/file/{}#L{}\" "
-                                                "title=\"Go to source code\">[code]</a>",
-                                                fmt::XMLEscape{srcPath}, title.lineNumber);
+#if WEBCOOKDOCS_LINK_TO_GITHUB
+            // FIXME: Link to a specific commit
+            StringView srcLinkPrefix = "https://github.com/arc80/plywood/tree/master/";
+#else
+            StringView srcLinkPrefix = "/file/";
+#endif
+            String srcLocation =
+                String::format(" <a class=\"headerlink\" href=\"{}{}#L{}\" "
+                               "title=\"Go to source code\">[code]</a>",
+                               srcLinkPrefix, fmt::XMLEscape{srcPath}, title.lineNumber);
             htmlWriter.format("{}{}</div>\n", permalink, srcLocation);
         }
         htmlWriter << "</dt>\n";
