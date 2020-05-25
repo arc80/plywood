@@ -1,0 +1,6 @@
+struct Foo {
+    int x;
+    Foo() : x{0};
+};
+-----
+(3, 17): error: expected function body after member initializer list

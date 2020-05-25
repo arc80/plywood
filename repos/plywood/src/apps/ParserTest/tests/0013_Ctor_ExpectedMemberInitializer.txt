@@ -1,0 +1,6 @@
+struct Foo {
+    Foo() : {
+    }
+};
+-----
+(2, 13): error: expected class member or base class name before '{'

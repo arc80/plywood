@@ -1,0 +1,3 @@
+enum Foo { A B };
+-----
+(1, 14): error: missing ',' between enumerators

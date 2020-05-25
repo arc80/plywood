@@ -1,0 +1,3 @@
+void foo(%);
+-----
+(1, 10): error: expected parameter type before '%'

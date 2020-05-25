@@ -1,0 +1,3 @@
+using Foo = int
+-----
+(1, 16): error: expected ';' before 'end-of-file'

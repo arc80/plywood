@@ -1,0 +1,3 @@
+alignas int x;
+-----
+(1, 9): error: expected '(' before 'int'

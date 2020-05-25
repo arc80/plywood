@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <Type Name="ply::PoolPtr&lt;*&gt;">
+      <DisplayString>{ptr}</DisplayString>
+        <Expand>
+            <ExpandedItem>ptr</ExpandedItem>
+        </Expand>
+    </Type>
+  
+    <Type Name="ply::Atomic&lt;*&gt;">
+      <DisplayString>{($T1) m_value.nonatomic}</DisplayString>
+        <Expand>
+            <Item Name="value">($T1) m_value.nonatomic</Item>
+        </Expand>
+    </Type>
+  
+    <Type Name="ply::Array&lt;*&gt;">
+        <DisplayString Condition="m_numItems == 0">numItems=0</DisplayString>
+        <DisplayString Condition="m_numItems == 1">numItems=1 {{{*($T1*) m_items}}}</DisplayString>
+        <DisplayString Condition="m_numItems &gt; 1">numItems={m_numItems} {{{*($T1*) m_items}}} ...</DisplayString>
+        <Expand>
+            <ArrayItems>
+                <Size>m_numItems</Size>
+                <ValuePointer>($T1*) m_items</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::ArrayView&lt;*&gt;">
+        <DisplayString Condition="numItems == 0">numItems=0</DisplayString>
+        <DisplayString Condition="numItems == 1">numItems=1 {{{items[0]}}}</DisplayString>
+        <DisplayString Condition="numItems &gt; 1">numItems={numItems} {{{items[0]} ...}}</DisplayString>
+        <Expand>
+            <ArrayItems>
+                <Size>numItems</Size>
+                <ValuePointer>items</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::FixedArray&lt;*,*&gt;">
+        <DisplayString Condition="$T2 == 1">{items[0]}</DisplayString>
+        <DisplayString Condition="$T2 > 1">{items[0]} ...</DisplayString>
+        <Expand>
+            <ExpandedItem>items</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::Pool&lt;*&gt;">
+        <DisplayString Condition="m_size == 0">size=0</DisplayString>
+        <DisplayString Condition="m_size == 1">size=1 {{{*($T1*) m_items}}} freeListSize={m_freeListSize}</DisplayString>
+        <DisplayString Condition="m_size &gt; 1">size={m_size} {{{*($T1*) m_items} ...}}} freeListSize={m_freeListSize}.</DisplayString>
+        <Expand>
+            <ArrayItems>
+                <Size>m_size</Size>
+                <ValuePointer>($T1*) m_items</ValuePointer>
+            </ArrayItems>
+            <Item Name="freeListSize">m_freeListSize</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::HashMap&lt;*&gt;">
+        <DisplayString>size={m_population}</DisplayString>
+        <Expand>
+          <CustomListItems MaxItemsPerView="1000">
+            <Variable Name="i" InitialValue="0" />
+            <Size>m_population</Size>
+            <Loop>
+              <Break Condition="i &gt; m_sizeMask"/>
+              <If Condition="m_cellGroups[i &gt;&gt; 2].nextDelta[i &amp; 3] != 255">
+                <Item>m_cellGroups[i &gt;&gt; 2].items[i &amp; 3]</Item>
+              </If>
+              <Exec>i += 1</Exec>
+            </Loop>
+          </CustomListItems>
+        </Expand>
+    </Type>
+    
+    <Type Name="ply::String">
+        <DisplayString>{bytes,[numBytes]s}</DisplayString>
+        <StringView>bytes,[numBytes]s</StringView>
+    </Type>
+
+    <Type Name="ply::StringView">
+        <DisplayString>{bytes,[numBytes]s}</DisplayString>
+        <StringView>bytes,[numBytes]s</StringView>
+    </Type>
+
+    <Type Name="ply::HybridString&lt;*&gt;">
+        <DisplayString>{bytes,[numBytes]s}</DisplayString>
+        <StringView>bytes,[numBytes]s</StringView>
+    </Type>
+
+    <Type Name="ply::Switch&lt;*&gt;">
+        <Expand>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T1&gt;">($T1*) buf</Item>  
+        </Expand>
+    </Type>
+  
+    <Type Name="ply::Switch&lt;*,*&gt;">
+        <Expand>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T1&gt;">($T1*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T2&gt;">($T2*) buf</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::Switch&lt;*,*,*&gt;">
+        <Expand>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T1&gt;">($T1*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T2&gt;">($T2*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T3&gt;">($T3*) buf</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::Switch&lt;*,*,*,*&gt;">
+        <Expand>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T1&gt;">($T1*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T2&gt;">($T2*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T3&gt;">($T3*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T4&gt;">($T4*) buf</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::Switch&lt;*,*,*,*,*&gt;">
+        <Expand>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T1&gt;">($T1*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T2&gt;">($T2*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T3&gt;">($T3*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T4&gt;">($T4*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T5&gt;">($T5*) buf</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::Switch&lt;*,*,*,*,*,*&gt;">
+        <Expand>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T1&gt;">($T1*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T2&gt;">($T2*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T3&gt;">($T3*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T4&gt;">($T4*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T5&gt;">($T5*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T6&gt;">($T6*) buf</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::Switch&lt;*,*,*,*,*,*,*&gt;">
+        <Expand>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T1&gt;">($T1*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T2&gt;">($T2*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T3&gt;">($T3*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T4&gt;">($T4*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T5&gt;">($T5*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T6&gt;">($T6*) buf</Item>
+          <Item Name="[value]" Condition="int(type->getter) + *(int*)(int(type->getter) + 1) + 5 == ply::SwitchType::get&lt;$T7&gt;">($T7*) buf</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::SwitchWrapper&lt;*,*&gt;">
+        <DisplayString Condition="ctr.id != $T2::id">id={$T2::id} ***invalid***</DisplayString>
+        <DisplayString Condition="ctr.id == $T2::id">id={$T2::id} {($T2*) ctr.buf}</DisplayString>
+        <Expand>
+            <ExpandedItem Condition="ctr.id == $T2::id">($T2*) ctr.buf</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::TypedPtr">
+        <DisplayString>{{ptr={ptr} type={*type}}}</DisplayString>
+    </Type>
+
+    <Type Name="ply::TypeDescriptor">
+        <DisplayString Condition="typeKey == &amp;ply::TypeKey_Struct">[TypeDescriptor_Struct] {((ply::TypeDescriptor_Struct*) this)->name}</DisplayString>
+        <DisplayString Condition="typeKey != &amp;ply::TypeKey_Struct">{(void*) typeKey}</DisplayString>
+        <Expand>
+            <ExpandedItem Condition="typeKey == &amp;ply::TypeKey_Struct">(ply::TypeDescriptor_Struct*) this,!</ExpandedItem>
+            <ExpandedItem Condition="typeKey != &amp;ply::TypeKey_Struct">this</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::BTree&lt;*&gt;::Node">
+        <DisplayString>size={size} isLeaf={isLeaf}</DisplayString>
+        <Expand>
+            <ArrayItems Condition="isLeaf">
+                <Size>size</Size>
+                <ValuePointer>($T1::Item*) (this + 1)</ValuePointer>
+            </ArrayItems>
+            <ArrayItems Condition="!isLeaf">
+                <Size>size</Size>
+                <ValuePointer>(ply::BTree&lt;$T1&gt;::Link*) (this + 1)</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::BTree&lt;*&gt;::Iterator">
+        <DisplayString Condition="leafPos != 0">{(($T1::Item*) (((Node*) (leafPos &amp; ~PosMask)) + 1))[leafPos &amp; PosMask]}</DisplayString>
+        <DisplayString Condition="leafPos == 0">null</DisplayString>
+      <Expand>
+        <ExpandedItem Condition="leafPos != 0">(($T1::Item*) (((Node*) (leafPos &amp; ~PosMask)) + 1))[leafPos &amp; PosMask]</ExpandedItem>
+      </Expand>
+    </Type>
+
+    <Type Name="ply::EnumIndexedArray&lt;*,*&gt;">
+        <DisplayString Condition="sizeof(m_items) / sizeof(m_items[0]) == 1">{($T2) 0}={m_items[0]}</DisplayString>
+        <DisplayString Condition="sizeof(m_items) / sizeof(m_items[0]) == 2">{($T2) 0}={m_items[0]} {($T2) 1}={m_items[1]}</DisplayString>
+        <DisplayString Condition="sizeof(m_items) / sizeof(m_items[0]) > 2">{($T2) 0}={m_items[0]} {($T2) 1}={m_items[1]} ...</DisplayString>
+        <Expand>
+            <CustomListItems>
+              <Variable Name="i" InitialValue="0"/>
+              <Loop Condition="i &lt; sizeof(m_items) / sizeof(m_items[0])">
+                <Item Name="{($T2) i}">m_items[i]</Item>
+                <Exec>++i</Exec>
+              </Loop>
+            </CustomListItems>              
+        </Expand>
+    </Type>
+
+    <Type Name="session::SessionDescriptor">
+        <DisplayString>{name,s}</DisplayString>
+    </Type>
+
+    <Type Name="session::Session">
+        <DisplayString>{{ptr={ptr} desc={*desc}}}</DisplayString>
+    </Type>
+
+    <Type Name="ply::Reference&lt;*&gt;">
+        <DisplayString>{m_ptr}</DisplayString>
+        <Expand>
+            <ExpandedItem>m_ptr</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::Float2">
+        <DisplayString>{{{x,g}, {y,g}}}</DisplayString>
+    </Type>
+
+    <Type Name="ply::Float3">
+        <DisplayString>{{{x,g}, {y,g}, {z,g}}}</DisplayString>
+    </Type>
+
+    <Type Name="ply::Float4">
+        <DisplayString>{{{x,f}, {y,f}, {z,f}, {w,f}}}</DisplayString>
+    </Type>
+
+    <Type Name="ply::Quaternion">
+        <DisplayString>{{{x,g}, {y,g}, {z,g}, {w,g}}}</DisplayString>
+    </Type>
+
+    <Type Name="ply::Int2&lt;*&gt;">
+        <DisplayString>{{{x}, {y}}}</DisplayString>
+    </Type>
+    
+    <Type Name="ply::Float3x3">
+        <DisplayString>col[2]={col[2]}</DisplayString>
+        <Expand>
+            <ExpandedItem>col</ExpandedItem>
+        </Expand>
+    </Type>
+    
+    <Type Name="ply::Float3x4">
+        <DisplayString>col[3]={col[3]}</DisplayString>
+        <Expand>
+            <ExpandedItem>col</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::Float4x4">
+        <DisplayString>col[3]={col[3]}</DisplayString>
+        <Expand>
+            <ExpandedItem>col</ExpandedItem>
+        </Expand>
+    </Type>
+    
+    <Type Name="alton::Node">
+        <DisplayString Condition="type.id == alton::Node::Type::ID::Object">Object [{((alton::Node::Type::Object*) type.buf)->map.m_population,d} items]</DisplayString>
+        <DisplayString Condition="type.id == alton::Node::Type::ID::Text">Text {((alton::Node::Type::Text*) type.buf)->str}</DisplayString>
+        <DisplayString Condition="type.id == alton::Node::Type::ID::Array">Array [{((alton::Node::Type::Array*) type.buf)->arr.m_numItems,d} items]</DisplayString>
+        <Expand>
+            <ExpandedItem Condition="type.id == alton::Node::Type::ID::Object">((alton::Node::Type::Object*) type.buf)->map</ExpandedItem>
+            <ExpandedItem Condition="type.id == alton::Node::Type::ID::Array">((alton::Node::Type::Array*) type.buf)->arr</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="ply::DependencyKey">
+        <DisplayString>{repo->repoName} {depType,en} {name} {dllBeh}</DisplayString>
+    </Type>
+  
+    <Type Name="ply::Dependency">
+        <DisplayString>{key}</DisplayString>
+    </Type>
+</AutoVisualizer>

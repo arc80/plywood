@@ -1,0 +1,5 @@
+struct Foo {
+    ~();
+};
+-----
+(2, 6): error: expected destructor name before '('

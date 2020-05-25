@@ -1,0 +1,5 @@
+struct Foo {
+    public
+};
+-----
+(3, 1): error: expected ':' before '}'

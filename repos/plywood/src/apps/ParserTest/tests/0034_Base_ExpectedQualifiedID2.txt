@@ -1,0 +1,6 @@
+struct Base {
+};
+struct Foo : Base:: {
+};
+-----
+(3, 21): error: expected qualified-id before '{'

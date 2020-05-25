@@ -1,0 +1,3 @@
+using Foo = *;
+-----
+(1, 13): error: expected type specifier before '*'

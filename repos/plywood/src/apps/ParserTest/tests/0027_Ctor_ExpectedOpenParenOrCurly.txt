@@ -1,0 +1,7 @@
+struct Foo {
+    int x;
+    Foo() : x % {
+    }
+};
+-----
+(3, 15): error: expected '{' or '(' before '%'

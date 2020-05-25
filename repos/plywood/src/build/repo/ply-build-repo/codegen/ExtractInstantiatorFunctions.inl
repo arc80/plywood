@@ -1,0 +1,22 @@
+PLY_STRUCT_BEGIN(ply::build::RepoRegError)
+PLY_STRUCT_MEMBER(type)
+PLY_STRUCT_MEMBER(linearLoc)
+PLY_STRUCT_MEMBER(otherLoc)
+PLY_STRUCT_END()
+
+PLY_ENUM_BEGIN(ply::build::, RepoRegError::Type)
+PLY_ENUM_IDENTIFIER(Unknown)
+PLY_ENUM_IDENTIFIER(AlreadyInsideCommand)
+PLY_ENUM_IDENTIFIER(ExpectedTargetName)
+PLY_ENUM_IDENTIFIER(MustBeAtFileScope)
+PLY_ENUM_IDENTIFIER(ExpectedExternName)
+PLY_ENUM_IDENTIFIER(ExpectedProviderName)
+PLY_ENUM_IDENTIFIER(UnrecognizedCommand)
+PLY_ENUM_IDENTIFIER(CouldNotApplyCommand)
+PLY_ENUM_END()
+
+SWITCH_TABLE_BEGIN(ply::build::InstantiatorHooks::Command::Type)
+SWITCH_TABLE_STATE(ply::build::InstantiatorHooks::Command::Type, Target)
+SWITCH_TABLE_STATE(ply::build::InstantiatorHooks::Command::Type, External)
+SWITCH_TABLE_END(ply::build::InstantiatorHooks::Command::Type)
+

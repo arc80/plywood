@@ -1,0 +1,3 @@
+int (x;
+-----
+(1, 7): error: expected ')' before ';'

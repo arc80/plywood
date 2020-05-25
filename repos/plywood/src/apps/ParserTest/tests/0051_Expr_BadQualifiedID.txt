@@ -1,0 +1,3 @@
+int x = Foo::;
+-----
+(1, 14): error: expected identifier before ';'

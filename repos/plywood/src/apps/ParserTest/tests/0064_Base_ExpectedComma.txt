@@ -1,0 +1,4 @@
+struct Foo : Bar % {
+};
+-----
+(1, 18): error: expected ',' or '{' before '%'

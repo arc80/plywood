@@ -1,0 +1,3 @@
+int Foo::(x);
+-----
+(1, 10): error: '(' cannot have a nested name prefix

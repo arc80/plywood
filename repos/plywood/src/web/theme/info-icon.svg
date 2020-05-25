@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" height="27" width="27" version="1.1" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" viewBox="0 0 26.999999 26.999998">
+ <g transform="translate(0 -1025.4)">
+  <circle cx="13.5" cy="1038.9" r="11.187" fill="#9cc0d8"/>
+  <g fill="#fff" transform="matrix(1.0704 0 0 1.0704 -7.2549 -70.586)">
+   <path d="m20.988 1034.6v8.9807h-3.1873v-8.9807h3.1873zm-1.5979-5.2295q.46997 0 .89722.2478.41016.2307.64087.6408.24780.4273.24780.8973 0 .4699-.24780.8972-.24780.4187-.64087.6409-.42725.2478-.89722.2478-.46143 0-.88867-.2478-.40161-.2137-.64941-.6495-.24780-.4443-.24780-.8886 0-.4444.24780-.8973.23071-.4101.64941-.6408.42725-.2478.88867-.2478z"/>
+  </g>
+ </g>
+</svg>

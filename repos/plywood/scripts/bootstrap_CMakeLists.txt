@@ -1,0 +1,600 @@
+cmake_minimum_required(VERSION 3.8)
+set(CMAKE_CONFIGURATION_TYPES "Debug;RelWithAsserts;RelWithDebInfo" CACHE INTERNAL "Build configs")
+project(plytool)
+set(WORKSPACE_FOLDER "<<<WORKSPACE_FOLDER>>>")
+set(SRC_FOLDER "<<<SRC_FOLDER>>>")
+set(BUILD_FOLDER "<<<BUILD_FOLDER>>>")
+include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
+
+# plytool
+SetSourceFolders(PLYTOOL_SOURCES "${SRC_FOLDER}apps/plytool/plytool"
+    "Command_Bootstrap.cpp"
+    "Command_Cleanup.cpp"
+    "Command_CodeGen.cpp"
+    "Command_Extern.cpp"
+    "Command_Folder.cpp"
+    "Command_Generate.cpp"
+    "Command_Module.cpp"
+    "Command_RPC.cpp"
+    "Command_Target.cpp"
+    "ConsoleUtils.cpp"
+    "ConsoleUtils.h"
+    "Core.h"
+    "Main.cpp"
+    "ReflectionHooks.cpp"
+    "ReflectionHooks.h"
+    "WorkspaceSettings.cpp"
+    "WorkspaceSettings.h"
+)
+add_executable(plytool
+    ${PLYTOOL_SOURCES}
+    $<TARGET_OBJECTS:build-folder>
+    $<TARGET_OBJECTS:build-repo>
+    $<TARGET_OBJECTS:build-provider>
+    $<TARGET_OBJECTS:build-target>
+    $<TARGET_OBJECTS:reflect>
+    $<TARGET_OBJECTS:runtime>
+)
+set_property(TARGET plytool PROPERTY ENABLE_EXPORTS TRUE)
+EnableCppExceptions(plytool FALSE)
+target_include_directories(plytool PRIVATE
+    "${SRC_FOLDER}apps/plytool/plytool-client"
+    "${SRC_FOLDER}pylon/pylon"
+    "${SRC_FOLDER}pylon/reflect"
+    "${SRC_FOLDER}cpp"
+    "${SRC_FOLDER}build/provider"
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+    "${SRC_FOLDER}build/common"
+    "${SRC_FOLDER}build/target"
+    "${SRC_FOLDER}build/repo"
+    "${SRC_FOLDER}build/folder"
+    "${SRC_FOLDER}apps/plytool/plytool"
+)
+target_compile_definitions(plytool PRIVATE
+    "PLY_BUILD_EXPORTING=1"
+    "PLY_DLL_EXPORTING=1"
+)
+target_link_libraries(plytool PRIVATE
+    "plytool-client"
+    "cpp"
+    "pylon-reflect"
+    "pylon"
+    ${PLY_RUNTIME_DEPENDENCIES}
+)
+add_custom_command(TARGET plytool POST_BUILD COMMAND
+   ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:plytool> "${WORKSPACE_FOLDER}")
+
+# build-folder
+SetSourceFolders(BUILD-FOLDER_SOURCES "${SRC_FOLDER}build/folder/ply-build-folder"
+    "BuildFolder.cpp"
+    "BuildFolder.h"
+)
+add_library(build-folder OBJECT
+    ${BUILD-FOLDER_SOURCES}
+)
+EnableCppExceptions(build-folder FALSE)
+target_include_directories(build-folder PRIVATE
+    "${SRC_FOLDER}pylon/pylon"
+    "${SRC_FOLDER}pylon/reflect"
+    "${SRC_FOLDER}build/provider"
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+    "${SRC_FOLDER}build/common"
+    "${SRC_FOLDER}build/target"
+    "${SRC_FOLDER}build/repo"
+    "${SRC_FOLDER}build/folder"
+)
+target_compile_definitions(build-folder PRIVATE
+    "PLY_BUILD_EXPORTING=1"
+    "PLY_DLL_EXPORTING=1"
+)
+
+# build-repo
+SetSourceFolders(BUILD-REPO_SOURCES "${SRC_FOLDER}build/repo/ply-build-repo"
+    "BuildInstantiatorDLLs.cpp"
+    "BuildInstantiatorDLLs.h"
+    "DependencySource.cpp"
+    "DependencySource.h"
+    "ErrorHandler.cpp"
+    "ErrorHandler.h"
+    "ExternProvider.cpp"
+    "ExternProvider.h"
+    "ExtractInstantiatorFunctions.cpp"
+    "ExtractInstantiatorFunctions.h"
+    "ProjectInstantiationEnv.h"
+    "ProjectInstantiator.cpp"
+    "ProjectInstantiator.h"
+    "Repo.cpp"
+    "Repo.h"
+    "RepoRegistry.cpp"
+    "RepoRegistry.h"
+    "TargetInstantiator.h"
+    "TargetInstantiatorArgs.cpp"
+    "TargetInstantiatorArgs.h"
+)
+add_library(build-repo OBJECT
+    ${BUILD-REPO_SOURCES}
+)
+EnableCppExceptions(build-repo FALSE)
+target_include_directories(build-repo PRIVATE
+    "${SRC_FOLDER}cpp"
+    "${SRC_FOLDER}pylon/pylon"
+    "${SRC_FOLDER}pylon/reflect"
+    "${SRC_FOLDER}build/provider"
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+    "${SRC_FOLDER}build/common"
+    "${SRC_FOLDER}build/target"
+    "${SRC_FOLDER}build/repo"
+)
+target_compile_definitions(build-repo PRIVATE
+    "PLY_BUILD_EXPORTING=1"
+    "PLY_DLL_EXPORTING=1"
+)
+
+# build-target
+SetSourceFolders(BUILD-TARGET_SOURCES "${SRC_FOLDER}build/target/ply-build-target"
+    "BuildTarget.cpp"
+    "BuildTarget.h"
+    "CMakeLists.cpp"
+    "CMakeLists.h"
+    "Dependency.cpp"
+    "Dependency.h"
+    "TargetError.cpp"
+    "TargetError.h"
+)
+add_library(build-target OBJECT
+    ${BUILD-TARGET_SOURCES}
+)
+EnableCppExceptions(build-target FALSE)
+target_include_directories(build-target PRIVATE
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+    "${SRC_FOLDER}build/common"
+    "${SRC_FOLDER}build/target"
+)
+target_compile_definitions(build-target PRIVATE
+    "PLY_BUILD_EXPORTING=1"
+    "PLY_DLL_EXPORTING=1"
+)
+
+# build-common
+SetSourceFolders(BUILD-COMMON_SOURCES "${SRC_FOLDER}build/common/ply-build-common"
+    "Core.h"
+)
+add_custom_target(build-common SOURCES
+    ${BUILD-COMMON_SOURCES}
+)
+
+# reflect
+SetSourceFolders(REFLECT_SOURCES "${SRC_FOLDER}reflect/ply-reflect"
+    "Asset.cpp"
+    "Asset.h"
+    "Base.h"
+    "Core.h"
+    "FormatDescriptor.cpp"
+    "FormatDescriptor.h"
+    "OwnTypedPtr.cpp"
+    "PersistRead.h"
+    "PersistReadObject.cpp"
+    "PersistReadSchema.cpp"
+    "PersistWrite.h"
+    "PersistWriteObject.cpp"
+    "PersistWriteSchema.cpp"
+    "Precomp.cpp"
+    "SavedTypedPtr.cpp"
+    "SavedTypedPtr.h"
+    "StaticPtr.cpp"
+    "StaticPtr.h"
+    "SynthTypeDeduplicator.cpp"
+    "SynthTypeDeduplicator.h"
+    "TypeConverter.cpp"
+    "TypeConverter.h"
+    "TypeDescriptor.cpp"
+    "TypeDescriptor.h"
+    "TypeDescriptorOwner.cpp"
+    "TypeDescriptorOwner.h"
+    "TypeDescriptor_Buffer.cpp"
+    "TypeKey.cpp"
+    "TypeKey.h"
+    "TypeSynthesizer.cpp"
+    "TypeSynthesizer.h"
+    "TypedArray.cpp"
+    "TypedArray.h"
+    "TypedPtr.h"
+)
+add_library(reflect OBJECT
+    ${REFLECT_SOURCES}
+)
+SetPrecompiledHeader(reflect REFLECT_SOURCES
+    "${SRC_FOLDER}reflect/ply-reflect/Precomp.cpp"
+    "ply-reflect/Core.h"
+    "reflect.$<CONFIG>.pch"
+)
+EnableCppExceptions(reflect FALSE)
+target_include_directories(reflect PRIVATE
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+)
+target_compile_definitions(reflect PRIVATE
+    "PLY_DLL_EXPORTING=1"
+)
+
+# runtime
+SetSourceFolders(RUNTIME_SOURCES "${SRC_FOLDER}runtime/ply-runtime"
+    "Base.h"
+    "Core.h"
+    "Precomp.cpp"
+    "Precomp.h"
+    "algorithm/Filter.h"
+    "algorithm/Find.h"
+    "algorithm/Random.cpp"
+    "algorithm/Random.h"
+    "algorithm/Range.h"
+    "algorithm/Sort.h"
+    "container/Any.h"
+    "container/Array.h"
+    "container/ArrayView.h"
+    "container/BTree.h"
+    "container/BinaryBuffer.h"
+    "container/Boxed.cpp"
+    "container/Boxed.h"
+    "container/Buffer.cpp"
+    "container/Buffer.h"
+    "container/BufferView.cpp"
+    "container/BufferView.h"
+    "container/ChunkList.cpp"
+    "container/ChunkList.h"
+    "container/EnumIndexedArray.h"
+    "container/FixedArray.h"
+    "container/Functor.h"
+    "container/Hash.cpp"
+    "container/Hash.h"
+    "container/HashMap.cpp"
+    "container/HashMap.h"
+    "container/HiddenArgFunctor.h"
+    "container/LambdaView.h"
+    "container/Numeric.h"
+    "container/Owned.h"
+    "container/Pool.cpp"
+    "container/Pool.h"
+    "container/Reference.h"
+    "container/SetInScope.h"
+    "container/Subst.h"
+    "container/Switch.h"
+    "container/Tuple.h"
+    "container/TypedBuffer.h"
+    "container/WeakRef.h"
+    "container/details/BaseArray.cpp"
+    "container/details/BaseArray.h"
+    "filesystem/Bundle.h"
+    "filesystem/DirectoryWatcher.h"
+    "filesystem/FileSystem.cpp"
+    "filesystem/FileSystem.h"
+    "filesystem/Path.cpp"
+    "filesystem/Path.h"
+    "filesystem/impl/DirectoryWatcher_Mac.cpp"
+    "filesystem/impl/DirectoryWatcher_Mac.h"
+    "filesystem/impl/DirectoryWatcher_Null.h"
+    "filesystem/impl/DirectoryWatcher_Win32.cpp"
+    "filesystem/impl/DirectoryWatcher_Win32.h"
+    "filesystem/impl/FileSystem_POSIX.cpp"
+    "filesystem/impl/FileSystem_POSIX.h"
+    "filesystem/impl/FileSystem_Virtual.cpp"
+    "filesystem/impl/FileSystem_Win32.cpp"
+    "filesystem/impl/FileSystem_Win32.h"
+    "io/InStream.cpp"
+    "io/InStream.h"
+    "io/OutStream.cpp"
+    "io/OutStream.h"
+    "io/Pipe.cpp"
+    "io/Pipe.h"
+    "io/StdIO.cpp"
+    "io/StdIO.h"
+    "io/impl/Pipe_FD.cpp"
+    "io/impl/Pipe_FD.h"
+    "io/impl/Pipe_Win32.cpp"
+    "io/impl/Pipe_Win32.h"
+    "io/impl/Pipe_Winsock.cpp"
+    "io/impl/Pipe_Winsock.h"
+    "io/impl/StdPipes_FD.cpp"
+    "io/impl/StdPipes_FD.h"
+    "io/impl/StdPipes_Win32.cpp"
+    "io/impl/StdPipes_Win32.h"
+    "io/text/LiquidTags.cpp"
+    "io/text/LiquidTags.h"
+    "io/text/NewLineFilter.cpp"
+    "io/text/NewLineFilter.h"
+    "io/text/StringReader.cpp"
+    "io/text/StringReader.h"
+    "io/text/StringWriter.cpp"
+    "io/text/StringWriter.h"
+    "io/text/TextConverter.cpp"
+    "io/text/TextConverter.h"
+    "io/text/TextFormat.cpp"
+    "io/text/TextFormat.h"
+    "log/Log.cpp"
+    "log/Log.h"
+    "log/Logger.h"
+    "log/impl/Logger_Stdout.h"
+    "log/impl/Logger_Win32.h"
+    "memory/Heap.cpp"
+    "memory/Heap.h"
+    "memory/MemPage.h"
+    "memory/impl/Heap_CRT.h"
+    "memory/impl/Heap_DL.cpp"
+    "memory/impl/Heap_DL.h"
+    "memory/impl/MemPage_POSIX.h"
+    "memory/impl/MemPage_Win32.h"
+    "network/IPAddress.cpp"
+    "network/IPAddress.h"
+    "network/Socket.h"
+    "network/impl/Socket_POSIX.cpp"
+    "network/impl/Socket_POSIX.h"
+    "network/impl/Socket_Winsock.cpp"
+    "network/impl/Socket_Winsock.h"
+    "process/Subprocess.cpp"
+    "process/Subprocess.h"
+    "process/impl/Subprocess_POSIX.cpp"
+    "process/impl/Subprocess_Win32.cpp"
+    "string/String.cpp"
+    "string/String.h"
+    "string/StringMixin.h"
+    "string/StringView.cpp"
+    "string/StringView.h"
+    "string/TextEncoding.cpp"
+    "string/TextEncoding.h"
+    "string/WString.cpp"
+    "string/WString.h"
+    "thread/Affinity.h"
+    "thread/Atomic.h"
+    "thread/Base.h"
+    "thread/ConditionVariable.h"
+    "thread/ManualResetEvent.h"
+    "thread/Mutex.h"
+    "thread/RWLock.h"
+    "thread/RaceDetector.h"
+    "thread/Semaphore.h"
+    "thread/TID.h"
+    "thread/Thread.h"
+    "thread/ThreadLocal.h"
+    "thread/Trace.h"
+    "thread/impl/Affinity_FreeBSD.cpp"
+    "thread/impl/Affinity_FreeBSD.h"
+    "thread/impl/Affinity_Linux.cpp"
+    "thread/impl/Affinity_Linux.h"
+    "thread/impl/Affinity_Mach.h"
+    "thread/impl/Affinity_Null.h"
+    "thread/impl/Affinity_Win32.cpp"
+    "thread/impl/Affinity_Win32.h"
+    "thread/impl/Atomic_CPP11.h"
+    "thread/impl/ConditionVariable_CPP11.h"
+    "thread/impl/ConditionVariable_POSIX.h"
+    "thread/impl/ConditionVariable_Win32.h"
+    "thread/impl/ManualResetEvent_CondVar.h"
+    "thread/impl/ManualResetEvent_Win32.h"
+    "thread/impl/Mutex_CPP11.h"
+    "thread/impl/Mutex_LazyInit.h"
+    "thread/impl/Mutex_POSIX.h"
+    "thread/impl/Mutex_SpinLock.h"
+    "thread/impl/Mutex_Win32.h"
+    "thread/impl/RWLock_CPP14.h"
+    "thread/impl/RWLock_POSIX.h"
+    "thread/impl/RWLock_Win32.h"
+    "thread/impl/Semaphore_Mach.h"
+    "thread/impl/Semaphore_POSIX.h"
+    "thread/impl/Semaphore_Win32.h"
+    "thread/impl/TID_Mach.h"
+    "thread/impl/TID_POSIX.h"
+    "thread/impl/TID_Win32.h"
+    "thread/impl/ThreadLocal_POSIX.h"
+    "thread/impl/ThreadLocal_Win32.h"
+    "thread/impl/Thread_CPP11.h"
+    "thread/impl/Thread_POSIX.cpp"
+    "thread/impl/Thread_POSIX.h"
+    "thread/impl/Thread_Win32.h"
+    "thread/impl/Trace_Counters.cpp"
+    "thread/impl/Trace_Counters.h"
+    "thread/impl/Trace_MemLog.cpp"
+    "thread/impl/Trace_MemLog.h"
+    "thread/impl/Trace_Null.cpp"
+    "thread/impl/Trace_Null.h"
+    "time/CPUTimer.h"
+    "time/UTCTime.cpp"
+    "time/UTCTime.h"
+    "time/impl/CPUTimer_CPP11.h"
+    "time/impl/CPUTimer_GCC.h"
+    "time/impl/CPUTimer_Mach.h"
+    "time/impl/CPUTimer_POSIX.h"
+    "time/impl/CPUTimer_Win32.h"
+)
+add_library(runtime OBJECT
+    ${RUNTIME_SOURCES}
+)
+SetPrecompiledHeader(runtime RUNTIME_SOURCES
+    "${SRC_FOLDER}runtime/ply-runtime/Precomp.cpp"
+    "ply-runtime/Precomp.h"
+    "runtime.$<CONFIG>.pch"
+)
+EnableCppExceptions(runtime FALSE)
+target_include_directories(runtime PRIVATE
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+)
+target_compile_definitions(runtime PRIVATE
+    "PLY_DLL_EXPORTING=1"
+)
+
+# platform
+SetSourceFolders(PLATFORM_SOURCES "${SRC_FOLDER}platform/ply-platform"
+    "Core.h"
+    "PlatformDetect.h"
+    "Util.h"
+    "impl/Compiler_GCC.h"
+    "impl/Compiler_MSVC.h"
+)
+add_custom_target(platform SOURCES
+    ${PLATFORM_SOURCES}
+)
+
+# build-provider
+SetSourceFolders(BUILD-PROVIDER_SOURCES "${SRC_FOLDER}build/provider/ply-build-provider"
+    "ExternFolderRegistry.cpp"
+    "ExternFolderRegistry.h"
+    "ExternHelpers.cpp"
+    "ExternHelpers.h"
+    "HostTools.cpp"
+    "HostTools.h"
+    "PackageManager.h"
+    "ToolchainInfo.h"
+    "impl/PackageManager_Apt.cpp"
+    "impl/PackageManager_Conan.cpp"
+    "impl/PackageManager_MacPorts.cpp"
+)
+add_library(build-provider OBJECT
+    ${BUILD-PROVIDER_SOURCES}
+)
+EnableCppExceptions(build-provider FALSE)
+target_include_directories(build-provider PRIVATE
+    "${SRC_FOLDER}pylon/pylon"
+    "${SRC_FOLDER}pylon/reflect"
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+    "${SRC_FOLDER}build/common"
+    "${SRC_FOLDER}build/provider"
+)
+target_compile_definitions(build-provider PRIVATE
+    "PLY_BUILD_EXPORTING=1"
+    "PLY_DLL_EXPORTING=1"
+)
+
+# pylon-reflect
+SetSourceFolders(PYLON-REFLECT_SOURCES "${SRC_FOLDER}pylon/reflect/pylon-reflect"
+    "Core.h"
+    "Export.cpp"
+    "Export.h"
+    "Import.cpp"
+    "Import.h"
+)
+add_library(pylon-reflect
+    ${PYLON-REFLECT_SOURCES}
+)
+EnableCppExceptions(pylon-reflect FALSE)
+target_include_directories(pylon-reflect PRIVATE
+    "${SRC_FOLDER}reflect"
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}pylon/pylon"
+    "${SRC_FOLDER}pylon/reflect"
+)
+target_compile_definitions(pylon-reflect PRIVATE
+    "PLY_DLL_EXPORTING=1"
+)
+
+# pylon
+SetSourceFolders(PYLON_SOURCES "${SRC_FOLDER}pylon/pylon/pylon"
+    "Core.h"
+    "Node.cpp"
+    "Node.h"
+    "Parse.cpp"
+    "Parse.h"
+    "Write.cpp"
+    "Write.h"
+)
+add_library(pylon
+    ${PYLON_SOURCES}
+)
+EnableCppExceptions(pylon FALSE)
+target_include_directories(pylon PRIVATE
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}pylon/pylon"
+)
+target_compile_definitions(pylon PRIVATE
+    "PLY_DLL_EXPORTING=1"
+)
+
+# cpp
+SetSourceFolders(CPP_SOURCES "${SRC_FOLDER}cpp/ply-cpp"
+    "Core.h"
+    "DumpParseTree.cpp"
+    "Error.h"
+    "ErrorFormatting.cpp"
+    "ErrorFormatting.h"
+    "FileLocationMap.cpp"
+    "FileLocationMap.h"
+    "Grammar.cpp"
+    "Grammar.h"
+    "LinearLocation.h"
+    "PPVisitedFiles.h"
+    "ParseAPI.cpp"
+    "ParseAPI.h"
+    "ParseDeclarations.cpp"
+    "ParseDeclarations.h"
+    "ParseExpressions.cpp"
+    "ParseMisc.cpp"
+    "ParseParameterList.cpp"
+    "ParsePlywoodSrcFile.cpp"
+    "ParseQualifiedID.cpp"
+    "ParseSpecifiersAndDeclarators.cpp"
+    "Parser.cpp"
+    "Parser.h"
+    "Preprocessor.cpp"
+    "Preprocessor.h"
+    "RestorePoint.h"
+    "Token.cpp"
+    "Token.h"
+)
+add_library(cpp
+    ${CPP_SOURCES}
+)
+EnableCppExceptions(cpp FALSE)
+target_include_directories(cpp PRIVATE
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+    "${SRC_FOLDER}cpp"
+)
+target_compile_definitions(cpp PRIVATE
+    "PLY_DLL_EXPORTING=1"
+)
+
+# plytool-client
+SetSourceFolders(PLYTOOL-CLIENT_SOURCES "${SRC_FOLDER}apps/plytool/plytool-client/plytool-client"
+    "Command.cpp"
+    "Command.h"
+    "Core.h"
+    "PlyToolClient.cpp"
+    "PlyToolClient.h"
+)
+add_library(plytool-client
+    ${PLYTOOL-CLIENT_SOURCES}
+)
+EnableCppExceptions(plytool-client FALSE)
+target_include_directories(plytool-client PRIVATE
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+    "${SRC_FOLDER}apps/plytool/plytool-client"
+)
+target_compile_definitions(plytool-client PRIVATE
+    "PLY_DLL_EXPORTING=1"
+)

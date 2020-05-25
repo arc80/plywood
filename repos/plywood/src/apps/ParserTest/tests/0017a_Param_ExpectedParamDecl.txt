@@ -1,0 +1,3 @@
+void foo(int,*);
+-----
+(1, 14): error: expected parameter type before '*'

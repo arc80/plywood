@@ -1,0 +1,5 @@
+struct Foo {
+    operator int;
+};
+-----
+(2, 17): error: expected '(' before ';'

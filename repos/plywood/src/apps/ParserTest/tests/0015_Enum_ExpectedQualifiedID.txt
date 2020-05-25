@@ -1,0 +1,4 @@
+enum Foo : {
+};
+-----
+(1, 12): error: expected qualified-id before '{'

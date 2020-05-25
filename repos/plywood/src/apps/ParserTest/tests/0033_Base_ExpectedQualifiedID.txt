@@ -1,0 +1,4 @@
+struct Foo : {
+};
+-----
+(1, 14): error: expected qualified-id before '{'

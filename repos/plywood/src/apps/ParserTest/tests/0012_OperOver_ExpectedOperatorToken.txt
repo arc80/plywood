@@ -1,0 +1,6 @@
+struct Foo {
+    void operator int();
+};
+-----
+(2, 19): error: expected operator token before 'int'
+(2, 19): error: declaration does not declare anything

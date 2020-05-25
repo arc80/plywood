@@ -1,0 +1,3 @@
+void foo(Foo Foo::& x);
+-----
+(1, 19): error: '&' cannot have a nested name prefix

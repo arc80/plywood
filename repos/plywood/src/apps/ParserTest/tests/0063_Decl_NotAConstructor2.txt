@@ -1,0 +1,4 @@
+struct Foo {
+    Foo((Baz()));       // A function "Baz" returning Foo
+};
+-----

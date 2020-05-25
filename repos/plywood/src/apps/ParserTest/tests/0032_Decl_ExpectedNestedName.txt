@@ -1,0 +1,3 @@
+typename int x;
+-----
+(1, 10): error: expected nested name prefix before 'int'

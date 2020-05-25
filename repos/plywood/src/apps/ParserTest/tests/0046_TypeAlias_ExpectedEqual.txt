@@ -1,0 +1,3 @@
+using Foo;
+-----
+(1, 10): error: expected '=' before ';'

@@ -1,0 +1,5 @@
+int x;
+template <typename decltype(x)>
+struct Foo;
+-----
+(2, 20): error: expected identifier before 'decltype'

@@ -1,0 +1,5 @@
+struct Foo {
+    int operator[(int);
+};
+-----
+(2, 18): error: expected ']' before '('

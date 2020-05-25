@@ -1,0 +1,4 @@
+struct Foo {
+    Foo* x;     // Parser will try to parse a constructor when it sees 'Foo'
+};
+-----

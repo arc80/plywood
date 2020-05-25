@@ -1,0 +1,4 @@
+alignas(int int x;
+-----
+(1, 13): error: type-id cannot have a name
+(1, 17): error: expected ')' before 'x'

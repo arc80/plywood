@@ -1,0 +1,7 @@
+template <typename A>
+struct Foo {
+    template <typename... A::B>
+    void bar();
+};
+-----
+(3, 23): error: expected qualified-id before '...'

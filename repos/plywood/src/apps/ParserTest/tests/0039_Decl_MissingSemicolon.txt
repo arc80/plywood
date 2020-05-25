@@ -1,0 +1,4 @@
+int x
+int y;
+-----
+(2, 1): error: expected ';' before 'int'

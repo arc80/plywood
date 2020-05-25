@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" height="30" width="30" version="1.1" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" viewBox="0 0 30 30">
+ <g transform="translate(0 -1022.4)">
+  <g fill-rule="evenodd" transform="translate(-1950 4.3182)">
+   <rect rx="6.364" ry="6.364" height="30" width="30" y="1018" x="1950" fill="#f86754"/>
+   <g transform="matrix(.97724 0 0 .97726 1846.3 967.39)">
+    <path fill="#fff" d="m124.54 57.974c-3.8132 0-6.9154 3.1019-6.9154 6.9148 0 3.8014 3.1023 6.8941 6.9154 6.8941 3.8014 0 6.894-3.0927 6.894-6.8941 0-3.8129-3.0926-6.9148-6.894-6.9148"/>
+    <polygon transform="matrix(.19209 0 0 .19209 112.23 57.955)" points=".012 .1 .012 95.988 17.59 95.988 17.59 .1" fill="#002c49"/>
+   </g>
+  </g>
+ </g>
+</svg>

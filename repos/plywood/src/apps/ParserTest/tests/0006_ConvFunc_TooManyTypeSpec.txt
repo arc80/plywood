@@ -1,0 +1,5 @@
+struct Foo {
+    operator int int();
+};
+-----
+(2, 18): error: too many type specifiers

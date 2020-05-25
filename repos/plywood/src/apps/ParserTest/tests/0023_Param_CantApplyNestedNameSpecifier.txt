@@ -1,0 +1,5 @@
+struct Foo;
+template <typename... T>
+void foo(T Foo::... x);
+-----
+(3, 17): error: '...' cannot have a nested name prefix

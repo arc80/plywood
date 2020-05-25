@@ -1,0 +1,6 @@
+int foo() {
+    return 0;
+}, x;
+-----
+(3, 2): error: expected declaration before ','
+(3, 4): error: declaration does not declare anything

@@ -1,0 +1,5 @@
+struct Foo {
+    void operator(();
+};
+-----
+(2, 19): error: expected ')' before '('

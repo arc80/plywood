@@ -1,0 +1,3 @@
+template <%> struct Foo;
+-----
+(1, 11): error: expected template parameter before '%'

@@ -1,0 +1,4 @@
+void foo() {
+-----
+(1, 13): error: expected '}'
+(1, 12): note: to match this '{'

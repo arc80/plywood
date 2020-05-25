@@ -1,0 +1,5 @@
+int x, foo() {
+    return 0;
+}
+-----
+(1, 11): error: can't mix function definitions with other declarations

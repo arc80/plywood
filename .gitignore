@@ -1,0 +1,12 @@
+/*
+!/Setup.cmake
+!/LICENSE
+!/*.md
+!/repos
+/repos/*
+!/repos/plywood
+codegen/
+*~
+.*
+!.clang-format
+!.gitignore

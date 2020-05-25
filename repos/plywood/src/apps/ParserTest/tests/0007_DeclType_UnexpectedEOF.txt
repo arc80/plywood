@@ -1,0 +1,4 @@
+using Foo = decltype(
+-----
+(1, 22): error: expected ')'
+(1, 21): note: to match this '('

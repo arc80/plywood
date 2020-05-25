@@ -1,0 +1,5 @@
+struct Foo {
+    operator int & const();
+};
+-----
+(2, 20): error: 'const' qualifier not allowed here

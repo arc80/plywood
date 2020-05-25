@@ -1,0 +1,202 @@
+/*------------------------------------
+  ///\  Plywood C++ Framework
+  \\\/  https://plywood.arc80.com/
+------------------------------------*/
+#include <ply-reflect/Base.h>
+#include <ply-runtime/Base.h>
+#include <pylon/Parse.h>
+#include <pylon/Write.h>
+#include <pylon-reflect/Import.h>
+#include <pylon-reflect/Export.h>
+#include <ply-runtime/process/Subprocess.h>
+#include <ply-runtime/io/text/LiquidTags.h>
+#include <web-sass/Sass.h>
+#include <ply-cook/CookJob.h>
+#include <ply-web-cook-docs/SemaEntity.h>
+#include <ply-web-cook-docs/WebCookerIndex.h>
+#include <ply-web-cook-docs/CookResult_ExtractPageMeta.h>
+#include <ply-runtime/algorithm/Find.h>
+#include <web-documentation/Contents.h>
+
+namespace ply {
+namespace docs {
+extern cook::CookJobType CookJobType_CopyStatic;
+extern cook::CookJobType CookJobType_ExtractAPI;
+extern cook::CookJobType CookJobType_ExtractPageMeta;
+extern cook::CookJobType CookJobType_Page;
+extern cook::CookJobType CookJobType_StyleSheetID;
+void initCookJobTypes();
+} // namespace docs
+} // namespace ply
+
+using namespace ply;
+
+Array<Reference<cook::CookJob>> copyStaticFiles(cook::CookContext* ctx, StringView srcRoot) {
+    Array<Reference<cook::CookJob>> copyJobs;
+    for (WalkTriple& triple : FileSystem::native()->walk(srcRoot)) {
+        for (const WalkTriple::FileInfo& file : triple.files) {
+            String relativeDir = NativePath::makeRelative(srcRoot, triple.dirPath);
+            copyJobs.append(ctx->cook(
+                {&ply::docs::CookJobType_CopyStatic, NativePath::join(relativeDir, file.name)}));
+        }
+    }
+    return copyJobs;
+}
+
+Array<String> getSourceFileKeys(StringView srcRoot) {
+    Array<String> srcKeys;
+    for (WalkTriple& triple : FileSystem::native()->walk(srcRoot)) {
+        for (const WalkTriple::FileInfo& file : triple.files) {
+            if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
+                // FIXME: Eliminate exclusions
+                for (StringView exclude : {
+                         "Sort.h",
+                         "Functor.h",
+                         "DirectoryWatcher_Mac.h",
+                         "DirectoryWatcher_Win32.h",
+                         "Heap.cpp",
+                         "HiddenArgFunctor.h",
+                         "LambdaView.h",
+                         "Pool.h",
+                     }) {
+                    if (file.name == exclude)
+                        goto skipIt;
+                }
+                {
+                    String relativeDir =
+                        NativePath::makeRelative(PLY_WORKSPACE_FOLDER, triple.dirPath);
+                    srcKeys.append(NativePath::join(relativeDir, file.name));
+                }
+            skipIt:;
+            }
+        }
+        for (StringView exclude : {"Shell_iOS", "opengl-support"}) {
+            s32 i = findItem(triple.dirNames.view(), exclude);
+            if (i >= 0) {
+                triple.dirNames.erase(i);
+            }
+        }
+    }
+    return srcKeys;
+}
+
+Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, StringView relPath) {
+    PLY_ASSERT(relPath.startsWith("/"));
+    Reference<cook::CookJob> pageMetaJob = ctx->depTracker->getOrCreateCookJob(
+        {&docs::CookJobType_ExtractPageMeta, PosixPath::join(relPath, "index")});
+    Array<Reference<cook::CookJob>> childJobs;
+    String absPath =
+        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/docs", relPath.subStr(1));
+    for (const DirectoryEntry& entry : FileSystem::native()->listDir(absPath)) {
+        if (entry.isDir) {
+            childJobs.append(extractPageMetasFromFolder(ctx, PosixPath::join(relPath, entry.name)));
+        } else if (entry.name.endsWith(".md") && entry.name != "index.md") {
+            StringView baseName = entry.name.shortenedBy(3);
+            childJobs.append(ctx->cook(
+                {&docs::CookJobType_ExtractPageMeta, PosixPath::join(relPath, baseName)}));
+        }
+    }
+    ctx->ensureCooked(pageMetaJob, TypedPtr::bind(&childJobs));
+    return pageMetaJob;
+}
+
+void visitPageMetas(const cook::CookJob* pageMetaJob,
+                    const LambdaView<void(const docs::CookResult_ExtractPageMeta*)>& visitor) {
+    const docs::CookResult_ExtractPageMeta* pageMetaResult =
+        pageMetaJob->castResult<docs::CookResult_ExtractPageMeta>();
+    PLY_ASSERT(pageMetaResult);
+    visitor(pageMetaResult);
+    for (const cook::CookJob* childJob : pageMetaResult->childPages) {
+        visitPageMetas(childJob, visitor);
+    }
+}
+
+web::Contents convertContents(const cook::CookJob* pageMetaJob) {
+    web::Contents dstNode;
+    const docs::CookResult_ExtractPageMeta* pageMetaResult =
+        pageMetaJob->castResult<docs::CookResult_ExtractPageMeta>();
+    PLY_ASSERT(pageMetaResult);
+
+    // Set title
+    dstNode.title = pageMetaResult->title;
+    dstNode.linkDestination = pageMetaResult->getLinkDestination();
+    for (const cook::CookJob* childMetaJob : pageMetaResult->childPages) {
+        dstNode.children.append(convertContents(childMetaJob));
+    }
+    return dstNode;
+}
+
+int main(int argc, char* argv[]) {
+    ply::docs::initCookJobTypes();
+
+    cook::DependencyTracker db;
+    docs::WebCookerIndex* wci = new docs::WebCookerIndex;
+    wci->globalScope = new docs::SemaEntity;
+    db.userData = OwnTypedPtr::bind(wci);
+    // String dbPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/docsite-cache/depTracker.db");
+
+    cook::CookContext ctx;
+    ctx.depTracker = &db;
+    ctx.beginCook();
+
+    // Copy static files
+    Array<Reference<cook::CookJob>> copyJobs = copyStaticFiles(
+        &ctx, NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/web/theme"));
+
+    // Extract API documentation from the source code
+    Array<Reference<cook::CookJob>> rootRefs;
+    Array<String> srcKeys = getSourceFileKeys(
+        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/io"));
+    srcKeys.extend(
+        getSourceFileKeys(NativePath::join(PLY_WORKSPACE_FOLDER,
+                                           "repos/plywood/src/runtime/ply-runtime/container"))
+            .view());
+    srcKeys.extend(
+        getSourceFileKeys(
+            NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/string"))
+            .view());
+    srcKeys.extend(
+        getSourceFileKeys(NativePath::join(PLY_WORKSPACE_FOLDER,
+                                           "repos/plywood/src/runtime/ply-runtime/filesystem"))
+            .view());
+    for (StringView srcKey : srcKeys) {
+        rootRefs.append(ctx.cook({&ply::docs::CookJobType_ExtractAPI, srcKey}));
+    }
+
+    // Extract page metas
+    Reference<cook::CookJob> contentsRoot = extractPageMetasFromFolder(&ctx, "/");
+
+    // Cook all pages
+    visitPageMetas(contentsRoot, [&](const docs::CookResult_ExtractPageMeta* pageMetaResult) {
+        rootRefs.append(ctx.cook({&ply::docs::CookJobType_Page, pageMetaResult->job->id.desc}));
+    });
+
+    ctx.cookDeferred();
+
+    // Save contents (FIXME: Skip this step if dependencies haven't changed)
+    Array<web::Contents> contents;
+    {
+        web::Contents converted = convertContents(contentsRoot);
+        web::Contents& home = contents.append();
+        home.title = "Home";
+        home.linkDestination = "/";
+        contents.moveExtend(converted.children.view());
+    }
+    {
+        auto aRoot = pylon::exportObj(TypedPtr::bind(&contents));
+        MemOutStream mout;
+        pylon::write(&mout, aRoot);
+        FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+            NativePath::join(PLY_WORKSPACE_FOLDER, "data/docsite/contents.pylon"),
+            mout.moveToString(), TextFormat::unixUTF8());
+    }
+
+    // Cook stylesheet
+    rootRefs.append(ctx.cook({&ply::docs::CookJobType_StyleSheetID, {}}));
+
+    db.setRootReferences(std::move(rootRefs));
+    contentsRoot.clear();
+    copyJobs.clear();
+    ctx.endCook();
+    return 0;
+}

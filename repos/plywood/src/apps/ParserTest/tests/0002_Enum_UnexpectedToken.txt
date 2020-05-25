@@ -1,0 +1,3 @@
+enum Foo { % };
+-----
+(1, 12): error: expected enumerator or '}' before '%'

@@ -1,0 +1,3 @@
+struct Foo {} struct Bar {};
+-----
+(1, 15): error: too many type specifiers
