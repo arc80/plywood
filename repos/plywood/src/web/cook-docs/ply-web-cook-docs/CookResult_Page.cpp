@@ -332,7 +332,6 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
     CookResult_ExtractPageMeta* extractMetaResult = static_cast<CookResult_ExtractPageMeta*>(
         ctx->getAlreadyCookedResult({&CookJobType_ExtractPageMeta, pageResult->job->id.desc}));
 
-    StringView siteRoot = "";
     String pageSrcPath = extractMetaResult->getMarkdownPath();
     Owned<InStream> ins = pageResult->openFileAsDependency(pageSrcPath);
     if (!ins) {

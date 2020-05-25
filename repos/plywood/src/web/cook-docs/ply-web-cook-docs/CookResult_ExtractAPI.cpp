@@ -252,8 +252,8 @@ struct APIExtractor : cpp::ParseSupervisor {
             }
             curStackEntry = templateParams;
             return;
-        } else if (auto* simple = node.safeCast<cpp::grammar::Declaration::Simple>()) {
-            // Will be handled in onGotDeclaration
+        } else if (node.is<cpp::grammar::Declaration::Simple>()) {
+            // Will be handled in onGotDeclaration            
             checkDocState = false;
             return;
         }
