@@ -116,6 +116,6 @@ void runTestSuite() {
     }
 }
 
-int main(int argc, char* argv[]) {
+int main() {
     runTestSuite();
 }

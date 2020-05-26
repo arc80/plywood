@@ -201,7 +201,7 @@ Array<Event> events = {
     // clang-format on
 };
 
-int main(int, char*[]) {
+int main() {
     Owned<OutPipe> out = FileSystem::native()->openPipeForWrite("music-sample.mp3");
     AudioOptions audioOpts;
     Owned<Muxer> muxer = createMuxer(out, nullptr, &audioOpts, "mp3");

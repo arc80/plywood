@@ -126,7 +126,7 @@ web::Contents convertContents(const cook::CookJob* pageMetaJob) {
     return dstNode;
 }
 
-int main(int argc, char* argv[]) {
+int main() {
     ply::docs::initCookJobTypes();
 
     cook::DependencyTracker db;
