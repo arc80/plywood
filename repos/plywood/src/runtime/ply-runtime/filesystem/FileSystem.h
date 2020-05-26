@@ -295,7 +295,8 @@ struct FileSystem {
             double modificationTime;
         };
 
-    The special directory entries `"."` and `".."` are not enumerated.
+    The entries are returned in an arbitrary order, and the special directory entries `"."` and
+    `".."` are not enumerated.
 
     The `flags` argument accepts a bitwise-or of zero or more of the following values:
 
