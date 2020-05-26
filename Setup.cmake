@@ -135,8 +135,8 @@ if (NOT resultCode EQUAL "0")
 endif()
 
 # Write default workspace-settings.pylon
-if(DEFINED CMAKE_GENERATOR AND NOT EXISTS "${workspaceFolder}workspace-settings.pylon")
-    file(WRITE "${workspaceFolder}workspace-settings.pylon"
+# This overwrites the settings each time Setup.cmake is run
+file(WRITE "${workspaceFolder}workspace-settings.pylon"
 "{
     cmakeOptions: {
         generator: \"${CMAKE_GENERATOR}\",
@@ -146,8 +146,7 @@ if(DEFINED CMAKE_GENERATOR AND NOT EXISTS "${workspaceFolder}workspace-settings.
     }
 }
 ")
-endif()
-            
+
 # Build PlyTool
 message("Building PlyTool...")
 set(args --build .)
