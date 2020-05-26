@@ -13,7 +13,7 @@ To build and view the documentation, you must perform two steps:
 
 The WebCooker is an application written using Plywood. You must build and run it using the `plytool` (or `plytool.exe` on Windows) executable located in your workspace root.
 
-First, create a [build folder]() named `WebCooker` by running the following command:
+First, create a [build folder](KeyConcepts#build-folders) named `WebCooker` by running the following command:
 
     $ plytool folder create WebCooker
 
@@ -31,7 +31,7 @@ Next, run `plytool generate` to attempt to generate a build system in that folde
     1 compatible provider is available:
         libsass.prebuilt (not installed)
 
-The command failed because we haven't told PlyTool where to get [LibSass](https://sass-lang.com/libsass). Run the `plytool extern select --install` command using the name of the [provider]() suggested in the output. On Windows, it will be `libsass.prebuilt`; on Debian/Ubuntu Linux, it will be `libsass.apt`; and on macOS, where [MacPorts](https://www.macports.org/) is currently needed, it'll be `libsass.macports`. New providers can be added in the future to support additional package managers or installation methods.
+The command failed because we haven't told PlyTool where to get [LibSass](https://sass-lang.com/libsass). Run the `plytool extern select --install` command using the name of the [provider](KeyConcepts#extern-providers) suggested in the output. On Windows, it will be `libsass.prebuilt`; on Debian/Ubuntu Linux, it will be `libsass.apt`; and on macOS, where [MacPorts](https://www.macports.org/) is currently needed, it'll be `libsass.macports`. New providers can be added in the future to support additional package managers or installation methods.
 
     $ plytool extern select --install libsass.prebuilt
 

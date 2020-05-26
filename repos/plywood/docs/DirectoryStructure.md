@@ -117,11 +117,11 @@ In theory, you could delete the entire `data` directory at any time and get it b
 
 <% member build %>
 
-The `data/build` directory is reserved for Plywood build folders. Each build folder contains a special file, `info.pylon`, that contains information about the build folder. Each time you create a build folder, add a [root target]() or select an [extern providers]() using PlyTool, it modifies one of these `info.pylon` files.
+The `data/build` directory is reserved for Plywood build folders. Each build folder contains a special file, `info.pylon`, that contains information about the build folder. Each time you create a build folder, add a [root target](KeyConcepts#targets) or select an [extern provider](KeyConcepts#extern-providers) using PlyTool, it modifies one of these `info.pylon` files.
 
 <% member extern %>
 
-The `data/extern` directory is reserved for temporary storage by [extern providers](). Each extern folder contains a special file, `info.pylon`, that contains information about that extern folder. This is where certain extern providers download and extract pre-built libraries.
+The `data/extern` directory is reserved for temporary storage by [extern providers](KeyConcepts#extern-providers). Each extern folder contains a special file, `info.pylon`, that contains information about that extern folder. This is where certain extern providers download and extract pre-built libraries.
 
 Some examples of extern providers that create extern folders are `libsass.prebuilt`, `libavcodec.prebuilt` and `cairo.prebuilt`, all of which download pre-built libraries for Windows.
 
@@ -133,7 +133,7 @@ Other applications are free to create their own subdirectories in `data`. For ex
 
 ## The `repos` Directory
 
-The `repos` directory, located immediately below the workspace root, is where Plywood [modules]() are stored. Plywood modules are organized into [repos](), where each sudirectory immediately below the `repos` directory is considered a Plywood repo.
+The `repos` directory, located immediately below the workspace root, is where Plywood [modules](KeyConcepts#modules) are stored. Plywood modules are organized into [repos](KeyConcepts#modules), where each sudirectory immediately below the `repos` directory is considered a Plywood repo.
 
 <% member plywood %>
 

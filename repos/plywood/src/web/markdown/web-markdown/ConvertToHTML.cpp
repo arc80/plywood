@@ -66,7 +66,11 @@ void convertToHTML(StringWriter* sw, const Node* node) {
             break;
         }
         case Node::Heading: {
-            sw->format("<h{}>", node->indentOrLevel);
+            sw->format("<h{}", node->indentOrLevel);
+            if (node->id) {
+                sw->format(" id=\"{}\"", fmt::XMLEscape{node->id});
+            }
+            *sw << '>';
             PLY_ASSERT(node->rawLines.isEmpty());
             for (const Node* child : node->children) {
                 convertToHTML(sw, child);

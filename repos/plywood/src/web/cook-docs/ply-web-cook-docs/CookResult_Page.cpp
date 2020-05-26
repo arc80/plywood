@@ -88,9 +88,16 @@ Owned<markdown::Node> parseMarkdown(StringView markdown, SemaEntity* fromSema) {
         if (node->type == Node::Link) {
             // Fixup link destinations
             if (!node->text.startsWith("/") && node->text.findByte(':') < 0) {
-                auto iter = wci->linkIDMap.findFirstGreaterOrEqualTo(node->text);
-                if (iter.isValid() && iter.getItem()->linkID == node->text) {
-                    node->text = iter.getItem()->getLinkDestination();
+                s32 anchorPos = node->text.findByte('#');
+                if (anchorPos < 0) {
+                    anchorPos = node->text.numBytes;
+                }
+                StringView linkID = node->text.left(anchorPos);
+                if (linkID) {
+                    auto iter = wci->linkIDMap.findFirstGreaterOrEqualTo(linkID);
+                    if (iter.isValid() && iter.getItem()->linkID == linkID) {
+                        node->text = iter.getItem()->getLinkDestination() + node->text.subStr(anchorPos);
+                    }
                 }
             }
             return false;
@@ -110,6 +117,16 @@ Owned<markdown::Node> parseMarkdown(StringView markdown, SemaEntity* fromSema) {
             parent->children[i] = std::move(link);
             node->parent = link;
             return false;
+        } else if (node->type == Node::Heading) {
+            if (node->children.numItems() == 1) {
+                Node* linkNode = node->children[0];
+                if (linkNode->type == Node::Link && linkNode->text.startsWith("#")) {
+                    // Convert this to an anchor
+                    node->id = linkNode->text.subStr(1);
+                    Array<Owned<Node>> promoteChildren = std::move(linkNode->children);
+                    node->children = std::move(promoteChildren);
+                }
+            }
         }
         return true;
     });

@@ -40,6 +40,7 @@ struct Node {
     Node* parent = nullptr;
     Array<String> rawLines; // only for Leaf nodes (Heading, Paragraph, CodeBlock)
     String text;            // only for Text, CodeSpan or Link (for the destination)
+    String id;              // sets the id attribute for Headings
 
     PLY_INLINE Node(Node* parent, Type type) : type{type}, parent{parent} {
         if (parent) {
