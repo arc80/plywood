@@ -17,6 +17,7 @@
 #include <ply-web-cook-docs/CookResult_ExtractPageMeta.h>
 #include <ply-runtime/algorithm/Find.h>
 #include <web-documentation/Contents.h>
+#include <ply-runtime/algorithm/Sort.h>
 
 namespace ply {
 namespace docs {
@@ -87,7 +88,18 @@ Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, Stri
     Array<Reference<cook::CookJob>> childJobs;
     String absPath =
         NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/docs", relPath.subStr(1));
+
+    // By default, sort child pages by filename
+    // The order can be overridden for each page using the <% childOrder %> tag
+    Array<DirectoryEntry> allEntries;
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(absPath)) {
+        allEntries.append(entry);
+    }
+    sort(allEntries.view(),
+         [](const DirectoryEntry& a, const DirectoryEntry& b) { return a.name < b.name; });
+
+    // Add child entries
+    for (const DirectoryEntry& entry : allEntries) {
         if (entry.isDir) {
             childJobs.append(extractPageMetasFromFolder(ctx, PosixPath::join(relPath, entry.name)));
         } else if (entry.name.endsWith(".md") && entry.name != "index.md") {
@@ -96,6 +108,7 @@ Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, Stri
                 {&docs::CookJobType_ExtractPageMeta, PosixPath::join(relPath, baseName)}));
         }
     }
+
     ctx->ensureCooked(pageMetaJob, TypedPtr::bind(&childJobs));
     return pageMetaJob;
 }

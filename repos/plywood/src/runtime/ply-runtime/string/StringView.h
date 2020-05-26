@@ -182,16 +182,6 @@ struct StringView {
     }
 
     /*!
-    Returns:
-    * `-1` if `str0` precedes `str1` in sorted order
-    * `0` if the strings are equal
-    * `1` if `str0` follows `str1` in sorted order
-    Strings are sorted by comparing the unsigned value of each byte. If one of the strings contains
-    the other as a prefix, the shorter string comes first in sorted order.
-    */
-    PLY_DLL_ENTRY friend s32 compare(StringView str0, StringView str1);
-
-    /*!
     Parse the given string directly as `Type`. Whitepsace is trimmed from the beginning and end of
     the string before parsing occurs. If the string cannot be parsed, or if the string is not
     completely consumed by the parse operation, `defaultValue` is returned.
@@ -270,6 +260,16 @@ struct StringView {
         PLY_ASSERT(numBytes <= this->numBytes);
         return {this->bytes + this->numBytes - numBytes, numBytes};
     }
+
+    /*!
+    Returns:
+    * `-1` if `str0` precedes `str1` in sorted order
+    * `0` if the strings are equal
+    * `1` if `str0` follows `str1` in sorted order
+    Strings are sorted by comparing the unsigned value of each byte. If one of the strings contains
+    the other as a prefix, the shorter string comes first in sorted order.
+    */
+    PLY_DLL_ENTRY friend s32 compare(StringView str0, StringView str1);
 
     /*!
     Returns `true` if the string precedes `other` in sorted order. Equivalent to `compare(*this,
