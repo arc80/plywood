@@ -368,6 +368,9 @@ PLY_NO_INLINE FileStatus FileSystem_Win32::getFileStatus(FileSystem*, StringView
     status.result = FileSystem::lastResult_.load();
     if (handle != INVALID_HANDLE_VALUE) {
         getFileStatus(handle, status);
+        BOOL rc = CloseHandle(handle);
+        PLY_ASSERT(rc != 0);
+        PLY_UNUSED(rc);
     }
     return status;
 }
