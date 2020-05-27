@@ -18,8 +18,7 @@ struct AllParams {
     SourceCode sourceCode;
 };
 
-void myRequestHandler(const AllParams* params, StringView requestPath,
-                      ResponseIface* responseIface) {
+void myRequestHandler(AllParams* params, StringView requestPath, ResponseIface* responseIface) {
     if (requestPath.startsWith("/static/")) {
         FetchFromFileSystem::serve(&params->fileSys, requestPath, responseIface);
     } else if (requestPath.startsWith("/file/")) {

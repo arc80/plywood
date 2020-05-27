@@ -27,23 +27,51 @@ void dumpContents(StringWriter* sw, ArrayView<const Contents> children) {
 
 void DocServer::init(StringView dataRoot) {
     FileSystem* fs = FileSystem::native();
-    this->dataRoot = dataRoot;
 
-    // Load Contents
-    String contentsPylon =
-        fs->loadText(NativePath::join(dataRoot, "contents.pylon"), TextFormat::unixUTF8());
-    if (fs->lastResult() != FSResult::OK)
+    this->dataRoot = dataRoot;
+    this->contentsPath = NativePath::join(dataRoot, "contents.pylon");
+    FileStatus contentsStatus = fs->getFileStatus(this->contentsPath);
+    if (contentsStatus.result == FSResult::OK) {
+        this->reloadContents();
+        this->contentsModTime = contentsStatus.modificationTime;
+    }
+}
+
+void DocServer::reloadContents() {
+    FileSystem* fs = FileSystem::native();
+
+    String contentsPylon = fs->loadText(this->contentsPath, TextFormat::unixUTF8());
+    if (fs->lastResult() != FSResult::OK) {
+        // FIXME: Log an error here
         return;
+    }
 
     auto aRoot = pylon::Parser{}.parse(contentsPylon);
-    if (!aRoot.isValid())
+    if (!aRoot.isValid()) {
+        // FIXME: Log an error here
         return;
+    }
 
     pylon::importInto(TypedPtr::bind(&this->contents), aRoot);
 }
 
-void DocServer::serve(StringView requestPath, ResponseIface* responseIface) const {
+void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
     FileSystem* fs = FileSystem::native();
+
+    // Check if contents.pylon has been updated:
+    double latestModTime = 0;
+    FileStatus contentsStatus = fs->getFileStatus(this->contentsPath);
+    if (contentsStatus.result == FSResult::OK) {
+        if (contentsStatus.modificationTime != this->contentsModTime.load(MemoryOrder::Acquire)) {
+            ply::LockGuard<ply::Mutex> guard{this->contentsMutex};
+            if (contentsStatus.modificationTime !=
+                this->contentsModTime.load(MemoryOrder::Relaxed)) {
+                this->reloadContents();
+            }
+            this->contentsModTime = contentsStatus.modificationTime;
+        }
+    }
+
     if (!this->contents) {
         responseIface->respondGeneric(ResponseCode::InternalError);
         return;
