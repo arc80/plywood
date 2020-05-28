@@ -302,7 +302,7 @@ String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolde
         return {};
     }
 
-    // FIXME: The follow logic assumes we're always using a native toolchain. In order to make it
+    // FIXME: The following logic assumes we're always using a native toolchain. In order to make it
     // work with cross-compilers, we'll need to pass in more information about the target platform,
     // perhaps using ToolchainInfo. (In that case, the real question will be, in general, how to
     // initialize that ToolchainInfo.)
