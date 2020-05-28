@@ -160,6 +160,7 @@ target_include_directories(build-target PRIVATE
     "${SRC_FOLDER}runtime"
     "${SRC_FOLDER}reflect"
     "${SRC_FOLDER}build/common"
+    "${BUILD_FOLDER}codegen/ply-build-target"
     "${SRC_FOLDER}build/target"
 )
 target_compile_definitions(build-target PRIVATE

@@ -26,6 +26,10 @@ PLY_NO_INLINE bool WorkspaceSettings::load() {
 
 PLY_NO_INLINE bool WorkspaceSettings::save() const {
     auto aRoot = pylon::exportObj(TypedPtr::bind(this));
+    // Only write defaultCMakeOptions if it's valid
+    if (this->defaultCMakeOptions.isValid()) {
+        aRoot["defaultCMakeOptions"] = pylon::exportObj(TypedPtr::bind(&this->defaultCMakeOptions));
+    }
     String strContents = pylon::toString(aRoot);
     // FIXME: makeDirsAndSaveTextIfDifferent should write to temp file with atomic rename
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(

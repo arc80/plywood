@@ -13,8 +13,8 @@
 namespace ply {
 namespace build {
 
-Array<InstantiatedDLL> buildInstantiatorDLLs(const CMakeGeneratorOptions& cmakeOptions) {
-    PLY_ASSERT(cmakeOptions.isValid());
+Array<InstantiatedDLL> buildInstantiatorDLLs() {
+    PLY_ASSERT(NativeToolchain.isValid());
 
     ErrorHandler::log(ErrorHandler::Info, "Initializing repo registry...\n");
     String repoRootFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/");
@@ -55,6 +55,7 @@ Array<InstantiatedDLL> buildInstantiatorDLLs(const CMakeGeneratorOptions& cmakeO
         StringWriter sw;
         sw << "#include <ply-runtime/algorithm/Find.h>\n";
         sw << "#include <ply-build-target/BuildTarget.h>\n";
+        sw << "#include <ply-build-target/CMakeLists.h>\n";
         sw << "#include <ply-build-repo/TargetInstantiatorArgs.h>\n";
         sw << "#include <ply-build-repo/ProjectInstantiator.h>\n";
         sw << "#include <ply-build-repo/ProjectInstantiationEnv.h>\n";
@@ -141,7 +142,7 @@ Array<InstantiatedDLL> buildInstantiatorDLLs(const CMakeGeneratorOptions& cmakeO
     }
 
     Tuple<s32, String> cmakeResult =
-        generateCMakeProject(dllBuildFolder, cmakeOptions, [&](StringView errMsg) {
+        generateCMakeProject(dllBuildFolder, NativeToolchain, [&](StringView errMsg) {
             ErrorHandler::log(ErrorHandler::Error, errMsg);
         });
     if (cmakeResult.first != 0) {
@@ -151,7 +152,7 @@ Array<InstantiatedDLL> buildInstantiatorDLLs(const CMakeGeneratorOptions& cmakeO
         return {};
     }
 
-    cmakeResult = buildCMakeProject(dllBuildFolder, cmakeOptions);
+    cmakeResult = buildCMakeProject(dllBuildFolder, NativeToolchain, {});
     if (cmakeResult.first != 0) {
         ErrorHandler::log(ErrorHandler::Error,
                           StringView{"Failed to build instantiator DLLs:\n"} + cmakeResult.second);
@@ -159,19 +160,11 @@ Array<InstantiatedDLL> buildInstantiatorDLLs(const CMakeGeneratorOptions& cmakeO
     }
 
     Array<InstantiatedDLL> idlls;
-    for (StringView repoName : repoNames) {
+    for (u32 i = 0; i < repoNames.numItems(); i++) {
+        StringView repoName = repoNames[i];
         InstantiatedDLL& idll = idlls.append();
         idll.repoName = repoName;
-#if PLY_TARGET_WIN32
-        idll.dllPath = NativePath::join(dllBuildFolder, "build", cmakeOptions.buildType,
-                                        repoName + "_Instantiators.dll");
-#elif PLY_TARGET_APPLE
-        idll.dllPath = NativePath::join(dllBuildFolder, "build", cmakeOptions.buildType,
-                                        StringView{"lib"} + repoName + "_Instantiators.dylib");
-#else
-        idll.dllPath = NativePath::join(dllBuildFolder, "build",
-                                        StringView{"lib"} + repoName + "_Instantiators.so");
-#endif
+        idll.dllPath = getTargetOutputPath(ownedTargets[i], dllBuildFolder, NativeToolchain);
     }
     return idlls;
 }

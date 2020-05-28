@@ -84,7 +84,8 @@ int main(int argc, char* argv[]) {
         }
         ensureTerminated(env.cl);
         env.cl->finalize();
-        env.currentBuildFolder->build(false);
+        // FIXME: Support --config option
+        env.currentBuildFolder->build({}, false);
     } else if (prefixMatch(category, "codegen")) {
         command_codegen(&env);
     } else if (prefixMatch(category, "bootstrap")) {

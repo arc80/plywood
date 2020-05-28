@@ -109,6 +109,17 @@ string(REPLACE "<<<BUILD_FOLDER>>>" "${buildFolder}" configContents "${configCon
 string(REPLACE "<<<CMAKE_PATH>>>" "${CMAKE_COMMAND}" configContents "${configContents}")
 file(WRITE "${buildFolder}codegen/ply-platform/ply-platform/Config.h" "${configContents}")
 
+# Generate codegen/ply-build-target/ply-build-target/NativeToolchain.inl in the build folder
+set(nativeToolchainContents
+"CMakeGeneratorOptions NativeToolchain = {
+    \"${CMAKE_GENERATOR}\",
+    \"${CMAKE_GENERATOR_PLATFORM}\",
+    \"${CMAKE_GENERATOR_TOOLSET}\",
+    \"${CMAKE_BUILD_TYPE}\",
+};
+")
+file(WRITE "${buildFolder}codegen/ply-build-target/ply-build-target/NativeToolchain.inl" "${nativeToolchainContents}")
+
 # Copy Helper.cmake to the build folder
 file(COPY "${workspaceFolder}repos/plywood/scripts/Helper.cmake"
      DESTINATION "${buildFolder}")
@@ -135,17 +146,12 @@ if (NOT resultCode EQUAL "0")
 endif()
 
 # Write default workspace-settings.pylon
-# This overwrites the settings each time Setup.cmake is run
-file(WRITE "${workspaceFolder}workspace-settings.pylon"
+if(NOT EXISTS "${workspaceFolder}workspace-settings.pylon")
+    file(WRITE "${workspaceFolder}workspace-settings.pylon"
 "{
-    cmakeOptions: {
-        generator: \"${CMAKE_GENERATOR}\",
-        platform: \"${CMAKE_GENERATOR_PLATFORM}\",
-        toolset: \"${CMAKE_GENERATOR_TOOLSET}\",
-        buildType: \"${CMAKE_BUILD_TYPE}\"
-    }
 }
 ")
+endif()
 
 # Build PlyTool
 message("Building PlyTool...")

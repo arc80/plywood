@@ -140,6 +140,7 @@ ToolchainInfo toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cmakeOp
 
 Owned<ProjectInstantiationEnv> BuildFolder::createEnvironment() const {
     Owned<ProjectInstantiationEnv> env = new ProjectInstantiationEnv;
+    env->cmakeOptions = &this->cmakeOptions;
     env->toolchain = toolchainInfoFromCMakeOptions(this->cmakeOptions);
     env->buildFolderPath = BuildFolderName::getFullPath(this->buildFolderName);
     for (StringView selName : this->externSelectors) {
@@ -242,12 +243,12 @@ PLY_NO_INLINE bool BuildFolder::generate(const ProjectInstantiationResult* instR
     return true;
 }
 
-PLY_NO_INLINE bool BuildFolder::build(bool captureOutput) const {
+PLY_NO_INLINE bool BuildFolder::build(StringView buildType, bool captureOutput) const {
     ErrorHandler::log(ErrorHandler::Info, String::format("Building '{}'...\n", this->solutionName));
 
     String cmakeListsFolder = BuildFolderName::getFullPath(this->buildFolderName);
     Tuple<s32, String> result =
-        buildCMakeProject(cmakeListsFolder, this->cmakeOptions, captureOutput);
+        buildCMakeProject(cmakeListsFolder, this->cmakeOptions, buildType, captureOutput);
     if (result.first != 0) {
         ErrorHandler::log(ErrorHandler::Error,
                           String::format("Failed to build '{}':\n", this->solutionName) +

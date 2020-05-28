@@ -79,8 +79,7 @@ void command_extern(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        PLY_SET_IN_SCOPE(RepoRegistry::instance_,
-                         RepoRegistry::create(env->workspace->cmakeOptions));
+        PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
 
         for (const Repo* repo : RepoRegistry::get()->repos) {
             StringWriter sw = StdOut::createStringWriter();
@@ -99,8 +98,7 @@ void command_extern(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        PLY_SET_IN_SCOPE(RepoRegistry::instance_,
-                         RepoRegistry::create(env->workspace->cmakeOptions));
+        PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
         PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
         PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
 
@@ -162,8 +160,7 @@ void command_extern(PlyToolCommandEnv* env) {
         bool shouldInstall = env->cl->checkForSkippedOpt("--install");
         env->cl->finalize();
 
-        PLY_SET_IN_SCOPE(RepoRegistry::instance_,
-                         RepoRegistry::create(env->workspace->cmakeOptions));
+        PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
         const ExternProvider* provider = RepoRegistry::get()->getExternProvider(qualifiedName);
         if (!provider) {
             fatalError("Provider not found");
@@ -208,8 +205,7 @@ void command_extern(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        PLY_SET_IN_SCOPE(RepoRegistry::instance_,
-                         RepoRegistry::create(env->workspace->cmakeOptions));
+        PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
         const ExternProvider* provider = RepoRegistry::get()->getExternProvider(qualifiedName);
         if (!provider) {
             fatalError("Provider not found");

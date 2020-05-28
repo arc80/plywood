@@ -24,7 +24,7 @@ struct RepoRegistry {
     HashMap<RepoMapTraits> repos;
 
     static Owned<RepoRegistry> instance_;
-    static Owned<RepoRegistry> create(const CMakeGeneratorOptions& cmakeOptions);
+    static Owned<RepoRegistry> create();
     static PLY_INLINE const RepoRegistry* get() {
         PLY_ASSERT(instance_);
         return instance_;

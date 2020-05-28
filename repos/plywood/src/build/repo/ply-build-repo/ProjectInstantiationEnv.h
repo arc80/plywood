@@ -10,7 +10,10 @@
 namespace ply {
 namespace build {
 
+struct CMakeGeneratorOptions;
+
 struct ProjectInstantiationEnv {
+    const CMakeGeneratorOptions* cmakeOptions = nullptr; // Used by the build-target module
     ToolchainInfo toolchain;
     Array<const ExternProvider*> externSelectors;
     String buildFolderPath;

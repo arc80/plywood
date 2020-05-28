@@ -15,7 +15,7 @@ namespace ply {
 void command_module(PlyToolCommandEnv* env) {
     using namespace build;
 
-    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create(env->workspace->cmakeOptions));
+    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
 
     StringView cmd = env->cl->readToken();
     if (cmd.isEmpty()) {

@@ -40,7 +40,7 @@ struct BuildFolder {
     ProjectInstantiationResult instantiateAllTargets() const;
     DependencyTree buildDepTree() const;
     bool generate(const ProjectInstantiationResult* instResult) const;
-    bool build(bool captureOutput = true) const;
+    bool build(StringView buildType, bool captureOutput = true) const;
 
     static Array<Owned<BuildFolder>> getList();
 };

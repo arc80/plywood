@@ -132,13 +132,13 @@ struct RepoInstantiator {
     }
 };
 
-PLY_NO_INLINE Owned<RepoRegistry> RepoRegistry::create(const CMakeGeneratorOptions& cmakeOptions) {
+PLY_NO_INLINE Owned<RepoRegistry> RepoRegistry::create() {
     PLY_ASSERT(!instance_);
     Owned<RepoRegistry> repoReg = new RepoRegistry;
 
     RepoInstantiator inst;
     inst.repoReg = repoReg;
-    inst.idlls = buildInstantiatorDLLs(cmakeOptions);
+    inst.idlls = buildInstantiatorDLLs();
     for (const InstantiatedDLL& idll : inst.idlls) {
         inst.instantiate(idll);
     }

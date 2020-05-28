@@ -22,7 +22,7 @@ bool command_generate(PlyToolCommandEnv* env) {
     ensureTerminated(env->cl);
     env->cl->finalize();
 
-    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create(env->workspace->cmakeOptions));
+    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
     PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
     PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
 

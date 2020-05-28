@@ -14,7 +14,7 @@ struct InstantiatedDLL {
     String dllPath;
 };
 
-Array<InstantiatedDLL> buildInstantiatorDLLs(const CMakeGeneratorOptions& cmakeOptions);
+Array<InstantiatedDLL> buildInstantiatorDLLs();
 
 } // namespace build
 } // namespace ply

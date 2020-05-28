@@ -11,8 +11,8 @@ namespace ply {
 struct WorkspaceSettings {
     PLY_REFLECT()
     String currentBuildFolder;
-    build::CMakeGeneratorOptions cmakeOptions;
     // ply reflect off
+    build::CMakeGeneratorOptions defaultCMakeOptions;
 
     static String getPath() {
         return NativePath::join(PLY_WORKSPACE_FOLDER, "workspace-settings.pylon");

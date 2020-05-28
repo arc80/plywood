@@ -42,7 +42,10 @@ void command_folder(PlyToolCommandEnv* env) {
         }
 
         Owned<BuildFolder> info = BuildFolder::create(name, name);
-        info->cmakeOptions = env->workspace->cmakeOptions;
+        info->cmakeOptions = NativeToolchain;
+        if (env->workspace->defaultCMakeOptions.isValid()) {
+            info->cmakeOptions = env->workspace->defaultCMakeOptions;
+        }
         info->save();
         StdOut::createStringWriter().format("Created build folder '{}' at: {}\n",
                                             info->buildFolderName, info->getAbsPath());

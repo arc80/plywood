@@ -10,6 +10,8 @@
 namespace ply {
 namespace build {
 
+#include "ply-build-target/NativeToolchain.inl"
+
 void writeCMakeLists(StringWriter* sw, CMakeBuildFolder* cbf) {
     PLY_ASSERT(NativePath::isNormalized(cbf->absPath));
     PLY_ASSERT(NativePath::endsWithSep(cbf->absPath));
@@ -263,14 +265,16 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
 
 PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
                                                    const CMakeGeneratorOptions& generatorOpts,
-                                                   bool captureOutput) {
+                                                   StringView buildType, bool captureOutput) {
     PLY_ASSERT(generatorOpts.isValid());
     String buildFolder = NativePath::join(cmakeListsFolder, "build");
     Subprocess::Output outputType =
         captureOutput ? Subprocess::Output::openMerged() : Subprocess::Output::inherit();
-    Owned<Subprocess> sub =
-        Subprocess::exec(PLY_CMAKE_PATH, {"--build", ".", "--config", generatorOpts.buildType},
-                         buildFolder, outputType);
+    if (!buildType) {
+        buildType = generatorOpts.buildType;
+    }
+    Owned<Subprocess> sub = Subprocess::exec(
+        PLY_CMAKE_PATH, {"--build", ".", "--config", buildType}, buildFolder, outputType);
     String output;
     if (captureOutput) {
         output = TextFormat::platformPreference()
@@ -278,6 +282,68 @@ PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
                      ->readRemainingContents();
     }
     return {sub->join(), std::move(output)};
+}
+
+String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolder,
+                           const CMakeGeneratorOptions& cmakeOptions, StringView buildType) {
+    // Note: We may eventually want to build projects without using CMake at all, but for now,
+    // CMakeGeneratorOptions is a good way to get the info we need.
+    bool isMultiConfig = false;
+    if (cmakeOptions.generator.startsWith("Visual Studio")) {
+        isMultiConfig = true;
+    } else if (cmakeOptions.generator == "Xcode") {
+        isMultiConfig = true;
+    } else if (cmakeOptions.generator == "Unix Makefiles") {
+        PLY_ASSERT(!buildType || buildType == cmakeOptions.buildType);
+    } else {
+        // FIXME: Make this a not-fatal warning instead, perhaps logging to some kind of
+        // thread-local variable that can be set in the caller's scope.
+        PLY_ASSERT(0); // Unrecognized generator
+        return {};
+    }
+
+    // FIXME: The follow logic assumes we're always using a native toolchain. In order to make it
+    // work with cross-compilers, we'll need to pass in more information about the target platform,
+    // perhaps using ToolchainInfo. (In that case, the real question will be, in general, how to
+    // initialize that ToolchainInfo.)
+    StringView filePrefix;
+    StringView fileExtension;
+    if (buildTarget->targetType == BuildTargetType::EXE) {
+#if PLY_TARGET_WIN32
+        fileExtension = ".exe";
+#endif
+    } else if (buildTarget->targetType == BuildTargetType::DLL) {
+#if PLY_TARGET_WIN32
+        fileExtension = ".dll";
+#elif PLY_TARGET_APPLE
+        filePrefix = "lib";
+        fileExtension = ".dylib";
+#else
+        filePrefix = "lib";
+        fileExtension = ".so";
+#endif
+    } else if (buildTarget->targetType == BuildTargetType::DLL) {
+#if PLY_TARGET_WIN32
+        fileExtension = ".lib";
+#else
+        filePrefix = "lib";
+        fileExtension = ".a";
+#endif
+    } else {
+        PLY_ASSERT(0); // Not supported
+    }
+
+    // Compose full path to the target output:
+    Array<StringView> pathComponents = {buildFolder, "build"};
+    if (isMultiConfig) {
+        if (!buildType) {
+            buildType = cmakeOptions.buildType;
+        }
+        pathComponents.append(buildType);
+    }
+    String fullName = filePrefix + buildTarget->name + fileExtension;
+    pathComponents.append(fullName);
+    return NativePath::format().joinAndNormalize(Array<StringView>{pathComponents.view()}.view());
 }
 
 } // namespace build

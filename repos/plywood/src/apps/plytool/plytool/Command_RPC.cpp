@@ -25,7 +25,7 @@ PLY_NO_INLINE void buildAndRun(const tool::Command::Type::Run& runCmd) {
         //                          WorkspaceSettings::getPath()));
     }
 
-    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create(workspace.cmakeOptions));
+    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
     const Repo* plyRepo = RepoRegistry::get()->repos.find("ply")->get();
     PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
     TargetInstantiator targetInst;
@@ -59,7 +59,7 @@ PLY_NO_INLINE void buildAndRun(const tool::Command::Type::Run& runCmd) {
     // FIXME: Notify parent process of unselected/uninstalled providers:
     if (instResult.unselectedExterns.isEmpty() && instResult.uninstalledProviders.isEmpty()) {
         info->generate(&instResult);
-        info->build();
+        info->build({});
     }
 }
 
