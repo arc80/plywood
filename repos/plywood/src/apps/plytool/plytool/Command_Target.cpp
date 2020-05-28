@@ -69,9 +69,7 @@ void command_target(PlyToolCommandEnv* env) {
             fatalError("Expected target name");
         }
 
-        // FIXME: Implement proper handling of non-positional flags like -s
-        StringView sharedText = env->cl->readToken();
-        bool makeShared = (sharedText == "-s");
+        bool makeShared = env->cl->checkForSkippedOpt("--shared");
         ensureTerminated(env->cl);
         env->cl->finalize();
 
