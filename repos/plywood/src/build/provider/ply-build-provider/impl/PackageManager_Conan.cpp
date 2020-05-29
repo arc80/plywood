@@ -13,6 +13,10 @@ struct PackageManager_Conan : PackageManager {
     virtual bool isPackageInstalled(StringView packageName) override {
         return false;
     }
+    virtual String getInstallPrefix(StringView packageName) override {
+        PLY_ASSERT(0); // Not supported yet
+        return {};
+    }
     virtual bool installPackage(StringView packageName) override {
         return false;
     }
@@ -20,7 +24,7 @@ struct PackageManager_Conan : PackageManager {
 
 PLY_NO_INLINE PackageManager* HostTools::getConan() const {
     Owned<Subprocess> sub =
-        Subprocess::exec("conan", {"--version"}, "", Subprocess::Output::openMerged());
+        Subprocess::exec("conan", {"--version"}, "", Subprocess::Output::ignore());
     s32 rc = sub->join();
     PLY_UNUSED(rc);
     return nullptr;

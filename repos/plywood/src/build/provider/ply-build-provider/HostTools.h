@@ -14,6 +14,7 @@ struct HostTools {
     PLY_BUILD_ENTRY PackageManager* getApt() const;
     PLY_BUILD_ENTRY PackageManager* getConan() const;
     PLY_BUILD_ENTRY PackageManager* getMacPorts() const;
+    PLY_BUILD_ENTRY PackageManager* getHomebrew() const;
 
     PLY_BUILD_ENTRY static Owned<HostTools> instance_;
 

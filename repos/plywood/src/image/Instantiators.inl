@@ -61,8 +61,9 @@ ExternResult extern_cairo_macports(ExternCommand cmd, ExternProviderArgs* args) 
         if (er.code != ExternResult::Installed) {
             return er;
         }
-        args->dep->includeDirs.append("/opt/local/include/cairo");
-        args->dep->libs.append("/opt/local/lib/libcairo.dylib");
+        String prefix = pkgMan->getInstallPrefix("cairo");
+        args->dep->includeDirs.append(NativePath::join(prefix, "include/cairo"));
+        args->dep->libs.append(NativePath::join(prefix, "lib/libcairo.dylib"));
         return {ExternResult::Instantiated, ""};
     }
     PLY_ASSERT(0);

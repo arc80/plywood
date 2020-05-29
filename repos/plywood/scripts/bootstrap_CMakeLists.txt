@@ -462,6 +462,7 @@ SetSourceFolders(BUILD-PROVIDER_SOURCES "${SRC_FOLDER}build/provider/ply-build-p
     "ToolchainInfo.h"
     "impl/PackageManager_Apt.cpp"
     "impl/PackageManager_Conan.cpp"
+    "impl/PackageManager_Homebrew.cpp"
     "impl/PackageManager_MacPorts.cpp"
 )
 add_library(build-provider OBJECT

@@ -15,6 +15,12 @@ struct PackageManager_Apt : PackageManager {
             Subprocess::exec("dpkg", {"-s", packageName}, {}, Subprocess::Output::ignore());
         return (sub && sub->join() == 0);
     }
+
+    virtual String getInstallPrefix(StringView packageName) override {
+        PLY_ASSERT(0); // Not supported yet
+        return {};
+    }
+    
     virtual bool installPackage(StringView packageName) override {
         StdOut::createStringWriter().format(
             R"(Warning: Superuser privileges are required to install '{}'.

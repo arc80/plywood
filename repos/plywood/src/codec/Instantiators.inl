@@ -35,12 +35,14 @@ ExternResult extern_libavcodec_macports(ExternCommand cmd, ExternProviderArgs* a
         if (er.code != ExternResult::Installed) {
             return er;
         }
-        args->dep->includeDirs.append("/opt/local/include");
-        args->dep->libs.append("/opt/local/lib/libavcodec.dylib");
-        args->dep->libs.append("/opt/local/lib/libavutil.dylib");
-        args->dep->libs.append("/opt/local/lib/libswresample.dylib");
-        args->dep->libs.append("/opt/local/lib/libswscale.dylib");
-        args->dep->libs.append("/opt/local/lib/libavformat.dylib");
+
+        String prefix = pkgMan->getInstallPrefix("ffmpeg");
+        args->dep->includeDirs.append(NativePath::join(prefix, "include"));
+        args->dep->libs.append(NativePath::join(prefix, "lib/libavcodec.dylib"));
+        args->dep->libs.append(NativePath::join(prefix, "lib/libavutil.dylib"));
+        args->dep->libs.append(NativePath::join(prefix, "lib/libswresample.dylib"));
+        args->dep->libs.append(NativePath::join(prefix, "lib/libswscale.dylib"));
+        args->dep->libs.append(NativePath::join(prefix, "lib/libavformat.dylib"));
         return {ExternResult::Instantiated, ""};
     }
     PLY_ASSERT(0);

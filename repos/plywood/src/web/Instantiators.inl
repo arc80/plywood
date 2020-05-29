@@ -86,8 +86,45 @@ ExternResult extern_libsass_macports(ExternCommand cmd, ExternProviderArgs* args
         if (er.code != ExternResult::Installed) {
             return er;
         }
-        args->dep->includeDirs.append("/opt/local/include");
-        args->dep->libs.append("/opt/local/lib/libsass.a");
+        String prefix = pkgMan->getInstallPrefix("libsass");
+        args->dep->includeDirs.append(NativePath::join(prefix, "include"));
+        args->dep->libs.append(NativePath::join(prefix, "lib/libsass.a"));
+        return {ExternResult::Instantiated, ""};
+    }
+    PLY_ASSERT(0);
+    return {ExternResult::Unknown, ""};
+}
+
+// ply extern plywood.libsass.homebrew
+ExternResult extern_libsass_homebrew(ExternCommand cmd, ExternProviderArgs* args) {
+    if (args->providerArgs) {
+        return {ExternResult::BadArgs, ""};
+    }
+    PackageManager* pkgMan = HostTools::get()->getHomebrew();
+    if (!pkgMan) {
+        return {ExternResult::MissingPackageManager, {}};
+    }
+
+    ExternResult er = {pkgMan->isPackageInstalled("libsass")
+                           ? ExternResult::Installed
+                           : ExternResult::SupportedButNotInstalled,
+                       ""};
+    if (cmd == ExternCommand::Status) {
+        return er;
+    } else if (cmd == ExternCommand::Install) {
+        if (er.code == ExternResult::Installed) {
+            return er;
+        }
+        return {pkgMan->installPackage("libsass") ? ExternResult::Installed
+                                                  : ExternResult::InstallFailed,
+                ""};
+    } else if (cmd == ExternCommand::Instantiate) {
+        if (er.code != ExternResult::Installed) {
+            return er;
+        }
+        String prefix = pkgMan->getInstallPrefix("libsass");
+        args->dep->includeDirs.append(NativePath::join(prefix, "include"));
+        args->dep->libs.append(NativePath::join(prefix, "lib/libsass.a"));
         return {ExternResult::Instantiated, ""};
     }
     PLY_ASSERT(0);

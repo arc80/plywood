@@ -25,6 +25,12 @@ struct PackageManager_MacPorts : PackageManager {
         }
         return (found && sub->join() == 0);
     }
+
+    virtual String getInstallPrefix(StringView packageName) override {
+        // FIXME: Support MacPorts installations that install to a different prefix
+        return "/opt/local";
+    }
+
     virtual bool installPackage(StringView packageName) override {
         StdOut::createStringWriter().format(
             R"(Warning: Superuser privileges are required to install '{}'.
