@@ -8,6 +8,7 @@ A heartfelt thanks goes out to these generous [supporters on Patreon](https://ww
 
 ### Backers
 
+* Seth Brown
 * Liu Xiang
 * Steven Hepting
 * samarkamat
