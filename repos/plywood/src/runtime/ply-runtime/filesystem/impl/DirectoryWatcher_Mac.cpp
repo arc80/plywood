@@ -58,6 +58,7 @@ PLY_NO_INLINE void DirectoryWatcher_Mac::runWatcher() {
     FSEventStreamScheduleWithRunLoop(stream, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
     Boolean rc = FSEventStreamStart(stream);
     PLY_ASSERT(rc == TRUE);
+    PLY_UNUSED(rc);
 
     CFRunLoopRun();
 
