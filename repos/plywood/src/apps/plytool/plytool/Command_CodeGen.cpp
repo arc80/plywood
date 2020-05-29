@@ -209,6 +209,12 @@ void command_codegen(PlyToolCommandEnv* env) {
     u32 fileNum = 0;
     for (WalkTriple& triple :
          FileSystem::native()->walk(NativePath::join(PLY_WORKSPACE_FOLDER, "repos"))) {
+        // Sort child directories and filenames so that files are visited in a deterministic order:
+        sort(triple.dirNames.view());
+        sort(triple.files.view(), [](const WalkTriple::FileInfo& a, const WalkTriple::FileInfo& b) {
+            return a.name < b.name;
+        });
+
         for (const WalkTriple::FileInfo& file : triple.files) {
             if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
                 // FIXME: Eliminate exclusions
