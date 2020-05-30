@@ -4,6 +4,7 @@ A heartfelt thanks goes out to these generous [supporters on Patreon](https://ww
 
 ### Insiders
 
+* Deepankar Sharma
 * Guy Davidson
 
 ### Backers
