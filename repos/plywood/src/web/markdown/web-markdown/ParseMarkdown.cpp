@@ -96,13 +96,13 @@ struct Parser {
     // Returns true if there is more text on the current line.
     PLY_NO_INLINE bool matchExistingIndentation(StringView line, LineConsumer& lc) {
         u32 keepStackDepth = 1;
-        do {
+        for (;;) {
             while (lc.consumeSpaceOrTab()) {
             }
             if (keepStackDepth >= this->blockNodes.numItems())
                 break;
-            Node* Node = this->blockNodes[keepStackDepth];
-            if (Node->type == Node::BlockQuote) {
+            Node* node = this->blockNodes[keepStackDepth];
+            if (node->type == Node::BlockQuote) {
                 if (lc.svr.numBytesAvailable() > 0 && *lc.svr.curByte == '>' &&
                     lc.innerIndent() <= 3) {
                     // Continue the current blockquote
@@ -116,18 +116,19 @@ struct Parser {
                     }
                     continue;
                 }
-            } else if (Node->type == Node::ListItem) {
-                if (lc.innerIndent() >= Node->indentOrLevel) {
+            } else if (node->type == Node::ListItem) {
+                if (lc.innerIndent() >= node->indentOrLevel) {
                     // Continue the current list item
                     keepStackDepth++;
-                    lc.outerIndent += Node->indentOrLevel;
+                    lc.outerIndent += node->indentOrLevel;
                     continue;
                 }
             } else {
                 // blockNodes indices >= 1 should only hold BlockQuote and ListItem
                 PLY_ASSERT(0);
             }
-        } while (0);
+            break;
+        }
 
         // Is remainder of line blank?
         if (lc.trimmedRemainder().isEmpty()) {

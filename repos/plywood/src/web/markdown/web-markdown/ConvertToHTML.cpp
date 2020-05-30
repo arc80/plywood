@@ -38,23 +38,22 @@ void convertToHTML(StringWriter* sw, const Node* node) {
             break;
         }
         case Node::ListItem: {
-            if (!node->parent->isLoose && node->children.numItems() == 1 &&
-                node->children[0]->type == Node::Paragraph) {
-                // It's a paragraph in a tight list. Omit the <p> tags:
-                Node* para = node->children[0];
-                *sw << "<li>";
-                PLY_ASSERT(para->rawLines.isEmpty());
-                for (const Node* child : para->children) {
-                    convertToHTML(sw, child);
-                }
-                *sw << "</li>\n";
+            *sw << "<li>";
+            if (!node->parent->isLoose && node->children[0]->type == Node::Paragraph) {
+                // Don't output a newline before the paragraph in a tight list.
             } else {
-                *sw << "<li>\n";
-                for (const Node* child : node->children) {
-                    convertToHTML(sw, child);
-                }
-                *sw << "</li>\n";
+                *sw << "\n";
             }
+            for (u32 i = 0; i < node->children.numItems(); i++) {
+                convertToHTML(sw, node->children[i]);
+                if (!node->parent->isLoose && node->children[i]->type == Node::Paragraph &&
+                    i + 1 < node->children.numItems()) {
+                    // This paragraph had no <p> tag and didn't end in a newline, but there are more
+                    // children following it, so add a newline here.
+                    *sw << "\n";
+                }
+            }
+            *sw << "</li>\n";
             break;
         }
         case Node::BlockQuote: {
@@ -79,12 +78,18 @@ void convertToHTML(StringWriter* sw, const Node* node) {
             break;
         }
         case Node::Paragraph: {
-            *sw << "<p>";
+            bool isInsideTight =
+                (node->parent->type == Node::ListItem && !node->parent->parent->isLoose);
+            if (!isInsideTight) {
+                *sw << "<p>";
+            }
             PLY_ASSERT(node->rawLines.isEmpty());
             for (const Node* child : node->children) {
                 convertToHTML(sw, child);
             }
-            *sw << "</p>\n";
+            if (!isInsideTight) {
+                *sw << "</p>\n";
+            }
             break;
         }
         case Node::CodeBlock: {
