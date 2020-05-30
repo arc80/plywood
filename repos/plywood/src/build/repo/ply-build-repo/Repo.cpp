@@ -146,8 +146,12 @@ const DependencySource* Repo::findOrCreateExtern(ArrayView<StringView>& comps, b
         }
         // Create the extern below
     } else {
+        childRepo = this;
         externName = comps[0];
         comps.offsetHead(1);
+        // FIXME: Should warn here in ambiguous cases, such as when an unqualified extern name is
+        // used but the same extern name is defined in multiple repos. Just need to decide which
+        // cases are considered ambiguous and which cases are not...
         const DependencySource* depSrc = this->findExternRecursive(externName);
         if (depSrc)
             return depSrc;
