@@ -59,7 +59,6 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
     FileSystem* fs = FileSystem::native();
 
     // Check if contents.pylon has been updated:
-    double latestModTime = 0;
     FileStatus contentsStatus = fs->getFileStatus(this->contentsPath);
     if (contentsStatus.result == FSResult::OK) {
         if (contentsStatus.modificationTime != this->contentsModTime.load(MemoryOrder::Acquire)) {
