@@ -13,6 +13,8 @@ To build and view the documentation, you must perform two steps:
 
 The WebCooker is an application written using Plywood. You must build and run it using the `plytool` (or `plytool.exe` on Windows) executable located in your workspace root.
 
+The following commands assume that the current directory is the workspace root. If you're running on Linux or macOS, replace `plytool` with `./plytool` instead. (It doesn't really matter what the current directory is as long as your command shell finds the `plytool` executable.)
+
 First, create a [build folder](KeyConcepts#build-folders) named `WebCooker` by running the following command:
 
     $ plytool folder create WebCooker

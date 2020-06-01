@@ -4,6 +4,7 @@ QuickStart
 KeyConcepts
 DirectoryStructure
 modules
+Developing
 PlyTool
 %>
 
@@ -20,5 +21,7 @@ Plywood consists of three main components:
 To get started using Plywood, follow the instructions on the [Quick Start](QuickStart) page, then try [Building the Documentation](BuildDocs).
 
 This documentation is still a work in progress. Some of Plywood's built-in modules have been documentated and some have not. For now, you can browse what's available using the table of contents on the left.
+
+See also the [introductory blog post](https://preshing.com/20200526/a-new-cross-platform-open-source-cpp-framework).
 
 For any questions or feedback, join the discussion on [the Plywood Discord server](https://discord.gg/WnQhuVF)!
