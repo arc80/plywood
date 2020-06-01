@@ -9,6 +9,7 @@ A heartfelt thanks goes out to these generous [supporters on Patreon](https://ww
 
 ### Backers
 
+* Peterson Onyeukwu
 * Seth Brown
 * Liu Xiang
 * Steven Hepting
