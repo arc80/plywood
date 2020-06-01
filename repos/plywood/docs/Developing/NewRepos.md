@@ -144,7 +144,7 @@ Because the `plywood.runtime` module was listed as a dependency of the the `Prim
 
 ## Building the `PrimeSieve` Application
 
-To build `PrimeSieve` in its own build folder, execute the following commands in the workspace root, where the `plytool` executable is located. If you're running on Linux or macOS, replace `plytool` with `./plytool` instead:
+To build `PrimeSieve` in its own build folder, execute the following commands in the workspace root, where the `plytool` executable is located. (This executable was created when you [set up the Plywood workspace](QuickStart).) If you're running on Linux or macOS, replace `plytool` with `./plytool` instead:
 
     $ plytool folder create PrimeSieve
     $ plytool target add PrimeSieve
@@ -163,3 +163,4 @@ The `plytool generate` command creates a new build system in the build folder. T
         `-- runtime
             `-- platform
 
+The build system for `PrimeSieve` should now located in the `data/build/PrimeSieve/build` directory relative to the workspace root. Open the project files in your IDE (such as Visual Studio or Xcode), then build and it yourself.
