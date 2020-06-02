@@ -12,17 +12,17 @@ struct HiddenArgFunctor;
 
 template <typename Return, typename... Args>
 struct HiddenArgFunctor<Return(Args...)> {
-    template <typename T>
-    using FnType = Return(T*, Args...);
     void* arg0 = nullptr;
-    FnType<void>* fn = nullptr;
+    Return (*fn)(void*, Args...) = nullptr;
 
     PLY_INLINE HiddenArgFunctor() = default;
     template <typename T>
-    PLY_INLINE HiddenArgFunctor(T* arg0, FnType<T>* fn) : arg0{arg0}, fn{(FnType<void>*) fn} {
+    PLY_INLINE HiddenArgFunctor(T* arg0, Return (*fn)(T*, Args...))
+        : arg0{arg0}, fn{(Return(*)(void*, Args...)) fn} {
     }
     template <typename T>
-    PLY_INLINE HiddenArgFunctor(T* arg0, FnType<const T>* fn) : arg0{arg0}, fn{(FnType<void>*) fn} {
+    PLY_INLINE HiddenArgFunctor(T* arg0, Return (*fn)(const T*, Args...))
+        : arg0{arg0}, fn{(Return(*)(void*, Args...)) fn} {
     }
     PLY_INLINE explicit operator bool() const {
         return this->fn != nullptr;

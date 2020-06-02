@@ -13,9 +13,6 @@
 namespace ply {
 
 namespace fmt {
-template <typename T>
-using TypeFormat = decltype(TypeParser<T>::defaultFormat());
-
 extern const u8 DigitTable[256];
 extern const u32 WhitespaceMask[8];
 PLY_DLL_ENTRY void scanUsingMask(InStream* ins, const u32* mask, bool invert);
@@ -112,8 +109,8 @@ public:
     For more information, see [Parsing Text](ParsingText).
     */
     template <typename Type>
-    PLY_INLINE Type
-    parse(const fmt::TypeFormat<Type>& format = fmt::TypeParser<Type>::defaultFormat()) {
+    PLY_INLINE Type parse(const decltype(fmt::TypeParser<Type>::defaultFormat())& format =
+                              fmt::TypeParser<Type>::defaultFormat()) {
         return fmt::TypeParser<Type>::parse(this, format);
     }
 
@@ -161,8 +158,8 @@ public:
         String str = String::fromChunks(std::move(startCursor), strReader.getCursor());
     */
     template <typename Type>
-    PLY_INLINE String
-    readString(const fmt::TypeFormat<Type>& format = fmt::TypeParser<Type>::defaultFormat()) {
+    PLY_INLINE String readString(const decltype(fmt::TypeParser<Type>::defaultFormat())& format =
+                                     fmt::TypeParser<Type>::defaultFormat()) {
         ChunkCursor startCursor = this->getCursor();
         fmt::TypeParser<Type>::parse(this, format); // ignore return value
         return String::fromChunks(std::move(startCursor), this->getCursor());
@@ -261,8 +258,8 @@ struct StringViewReader : StringReader {
         StringView line = strViewReader.readView<fmt::Line>();
     */
     template <typename Type>
-    PLY_INLINE StringView
-    readView(const fmt::TypeFormat<Type>& format = fmt::TypeParser<Type>::defaultFormat()) {
+    PLY_INLINE StringView readView(const decltype(fmt::TypeParser<Type>::defaultFormat())& format =
+                                       fmt::TypeParser<Type>::defaultFormat()) {
         PLY_ASSERT(this->isView()); // prevent bad casts
         const char* startByte = (const char*) this->curByte;
         fmt::TypeParser<Type>::parse(this, format); // ignore return value
