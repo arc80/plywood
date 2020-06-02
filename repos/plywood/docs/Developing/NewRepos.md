@@ -163,4 +163,4 @@ The `plytool generate` command creates a new build system in the build folder. T
         `-- runtime
             `-- platform
 
-The build system for `PrimeSieve` should now located in the `data/build/PrimeSieve/build` directory relative to the workspace root. Open the project files in your IDE (such as Visual Studio or Xcode), then build and it yourself.
+The build system for `PrimeSieve` should now be located in the `data/build/PrimeSieve/build` directory relative to the workspace root. Open the project files in your IDE (such as Visual Studio or Xcode), then build and it yourself.

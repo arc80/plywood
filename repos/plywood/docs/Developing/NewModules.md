@@ -62,17 +62,17 @@ You can add a dependency on another target by calling `addTarget`. When you add 
 
     args->addTarget(Visibility::Private, "runtime");
 
-If the first argument is `Visibility::Private`, all include directories inherited from the dependency will also be inherited by every target that depends on this one. If it's `Visibility::Private`, none of the include directories inherited from the dependency will be inherited by other targets.
+If the first argument is `Visibility::Public`, all include directories inherited from the dependency will also be inherited by every target that depends on this one. If it's `Visibility::Private`, none of the include directories inherited from the dependency will be inherited by other targets.
 
 The second argument specifies the name of the module from which the dependency will be instantiated. This module is found by searching the current repo along with every repo that the current repo depends on. All other repos in the workspace excluded from the search. If the module name is ambiguous, you must specify the module's fully qualified name, such as as `"plywood.runtime"` instead of just `"runtime"`.
 
 ### [Adding dependencies on externs](#adding-dependencies-on-externs)
 
-You can add a dependency on an [extern] by calling `addExtern`. When you add a dependency on an extern, no additional source will be compiled by the generated build system, but the extern's public include directories will be inherited by the current target, and the extern's libraries will be linked into the executable along with the libraries of all of its dependencies:
+You can add a dependency on an [extern](KeyConcepts#externs) by calling `addExtern`. When you add a dependency on an extern, no additional source will be compiled by the generated build system, but the extern's public include directories will be inherited by the current target, and the extern's libraries will be linked into the executable along with the libraries of all of its dependencies:
 
     args->addExtern(Visibility::Public, "libsass");
 
-If the first argument is `Visibility::Private`, all include directories inherited from the extern will also be inherited by every target that depends on this one. If it's `Visibility::Private`, none of the include directories inherited from the extern will be inherited by other targets.
+If the first argument is `Visibility::Public`, all include directories inherited from the extern will also be inherited by every target that depends on this one. If it's `Visibility::Private`, none of the include directories inherited from the extern will be inherited by other targets.
 
 The second argument specifies the name of the extern. An extern name is only valid if there is at least one [extern provider](KeyConcepts#extern-providers) using that name defined in the current repo or in any repo that the current repo depends on.
 
@@ -80,9 +80,11 @@ Note that, any time a target depends on an extern, and that target is added to a
 
 ### [Other operations](#other-operations)
 
-It's possible to do other work inside an instantiator function. For example, the [`platform` target instantiator](https://github.com/arc80/plywood/blob/master/repos/plywood/src/platform/Instantiators.inl) in the `plywood` repo generates a configuration header file and writes it to the build folder whenever a build system is generated using this module. A public include directory is also added to the target so that the header file can be found:
+It's possible to do other work inside an instantiator function. For example, the [`platform` target instantiator](https://github.com/arc80/plywood/blob/master/repos/plywood/src/platform/Instantiators.inl) in the `plywood` repo generates a configuration header file and writes it to the build folder whenever a build system is generated using this module:
 
     FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         NativePath::join(args->projInst->env->buildFolderPath,
                          "codegen/ply-platform/ply-platform/Config.h"),
         configFile, TextFormat::platformPreference());
+
+Earlier in the same function, a public include directory is also added to the target so that the header file can be found.
