@@ -114,6 +114,10 @@ Array<Stringifier::Component> Stringifier::toStringComps(const QualifiedID& qid,
                 result.moveExtend(this->toStringComps(arg.type).view());
             }
             result.append({Component::Other, ">::", nullptr});
+        } else if (auto declType = nestedComp.declType()) {
+            result.append({Component::KeywordOrIdentifier, "decltype", nullptr});
+            result.append(
+                {Component::Other, StringView{"("} + declType->expression + ")::", nullptr});
         } else {
             PLY_ASSERT(0);
         }
@@ -146,6 +150,9 @@ Array<Stringifier::Component> Stringifier::toStringComps(const QualifiedID& qid,
             result.moveExtend(this->toStringComps(arg.type).view());
         }
         result.append({Component::Other, ">", nullptr});
+    } else if (auto declType = qid.unqual.declType()) {
+        result.append({Component::KeywordOrIdentifier, "decltype", nullptr});
+        result.append({Component::Other, StringView{"("} + declType->expression + ")", nullptr});
     } else if (auto destructor = qid.unqual.destructor()) {
         result.append({Component::Other, "~", nullptr});
         result.append({Component::KeywordOrIdentifier, destructor->name, nullptr});

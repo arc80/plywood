@@ -96,7 +96,7 @@ public:
     `s32`, `s64`, `u8`, `u16`, `u32`, `u64`, `float` and `double`. You can extend it to support
     additional types by specializing the `fmt::TypeParser` class template.
 
-        u32 a = strReader.parse<u32>();         // parse a integer such as "123"
+        u32 a = strReader.parse<u32>();         // parse an integer such as "123"
         double b = strReader.parse<double>();   // parse a floating-point number such as "-123.456"
 
     This function accepts an optional argument `format` whose type depends on the data type being

@@ -55,6 +55,11 @@ struct NestedNameComponent {
         Array<TemplateArg> args;
         // ply reflect off
     };
+    struct DeclType {
+        PLY_REFLECT()
+        String expression;
+        // ply reflect off
+    };
 #include "codegen/switch-ply-cpp-sema-NestedNameComponent.inl" //@@ply
 };
 
@@ -73,6 +78,11 @@ struct UnqualifiedID {
         PLY_REFLECT()
         String name;
         Array<TemplateArg> args;
+        // ply reflect off
+    };
+    struct DeclType {
+        PLY_REFLECT()
+        String expression;
         // ply reflect off
     };
     struct Destructor {

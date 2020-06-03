@@ -70,6 +70,12 @@ struct SemaConverter {
                     auto sIdentifier = sQID.nestedName.append().identifier().switchTo();
                     sIdentifier->name = gIdentOrTempl->name.identifier;
                 }
+            } else if (auto gDeclType = gNestedComp.type.declType()) {
+                auto sDeclType = sQID.nestedName.append().declType().switchTo();
+                sDeclType->expression = tempExtractInitializer(
+                    this->visitedFiles,
+                    gDeclType->openParen.linearLoc + gDeclType->openParen.identifier.numBytes,
+                    gDeclType->closeParen.linearLoc);
             } else {
                 this->anyError = true;
             }
@@ -83,6 +89,12 @@ struct SemaConverter {
             for (const grammar::TemplateArgumentWithComma& gArg : gTemplateID->args) {
                 sTemplateID->args.append(this->toSema(gArg));
             }
+        } else if (auto gDeclType = gQID.unqual.declType()) {
+            auto sDeclType = sQID.unqual.declType().switchTo();
+            sDeclType->expression = tempExtractInitializer(
+                this->visitedFiles,
+                gDeclType->openParen.linearLoc + gDeclType->openParen.identifier.numBytes,
+                gDeclType->closeParen.linearLoc);
         } else if (auto gDestructor = gQID.unqual.destructor()) {
             auto sDestructor = sQID.unqual.destructor().switchTo();
             sDestructor->name = gDestructor->name.identifier;
@@ -133,8 +145,7 @@ struct SemaConverter {
                     gExpression->end.linearLoc + gExpression->end.identifier.numBytes);
             } else if (auto gTypeID = gAssignment->type.typeID()) {
                 auto sTypeID = sAssignment->type.typeID().switchTo();
-                sTypeID->declSpecifierSeq =
-                    this->toSema(gTypeID->declSpecifierSeq.view());
+                sTypeID->declSpecifierSeq = this->toSema(gTypeID->declSpecifierSeq.view());
                 sTypeID->abstractDcor = this->toSema(gTypeID->abstractDcor);
             } else {
                 this->anyError = true;
