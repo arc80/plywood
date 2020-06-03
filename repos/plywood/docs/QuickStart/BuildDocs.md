@@ -41,7 +41,7 @@ Now run `plytool generate` again. This time, it should succeed:
 
     $ plytool generate
 
-The build system is now located in the `data/build/WebCooker/build` directory relative to the workspace root. Open the project files in your IDE (such as Visual Studio or Xcode), then build and it yourself.
+The build system is now located in the `data/build/WebCooker/build` directory relative to the workspace root. Open the project files in your IDE (such as Visual Studio or Xcode), then build and run it yourself.
 
 Once the WebCooker finishes running, there will be a bunch of data files in the `data/docsite` directory relative to your workspace root. These are the data files required by the WebServer.
 
