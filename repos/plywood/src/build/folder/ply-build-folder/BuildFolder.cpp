@@ -158,8 +158,9 @@ Owned<ProjectInstantiationEnv> BuildFolder::createEnvironment() const {
     return env;
 }
 
-PLY_NO_INLINE ProjectInstantiationResult BuildFolder::instantiateAllTargets() const {
+PLY_NO_INLINE ProjectInstantiationResult BuildFolder::instantiateAllTargets(bool isGenerating) const {
     Owned<ProjectInstantiationEnv> env = this->createEnvironment();
+    env->isGenerating = isGenerating;
     ProjectInstantiationResult instResult;
     ProjectInstantiator projInst;
     projInst.env = env;

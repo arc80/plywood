@@ -27,7 +27,7 @@ bool command_generate(PlyToolCommandEnv* env) {
     PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
 
     for (;;) {
-        ProjectInstantiationResult instResult = env->currentBuildFolder->instantiateAllTargets();
+        ProjectInstantiationResult instResult = env->currentBuildFolder->instantiateAllTargets(false);
         if (!instResult.isValid) {
             return false;
         }
@@ -82,6 +82,8 @@ bool command_generate(PlyToolCommandEnv* env) {
             }
         }
         if (canGenerate) {
+            // Reinstantiate, but this time pass isGenerating = true:
+            instResult = env->currentBuildFolder->instantiateAllTargets(true);
             if (env->currentBuildFolder->generate(&instResult)) {
                 StdOut::createStringWriter().format(
                     "Successfully generated build system in folder '{}'.\n",

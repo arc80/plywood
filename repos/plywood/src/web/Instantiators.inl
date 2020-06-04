@@ -43,10 +43,14 @@ void inst_webCookDocs(TargetInstantiatorArgs* args) {
     args->addTarget(Visibility::Private, "plytool-client");
     args->addTarget(Visibility::Private, "web-documentation");
     args->addTarget(Visibility::Public, "cpp");
-    StringView configFile = "#define WEBCOOKDOCS_LINK_TO_GITHUB 0\n";
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-        NativePath::join(args->projInst->env->buildFolderPath, "codegen/web-cook-docs/ply-web-cook-docs/Config.h"),
-        configFile, TextFormat::platformPreference());
+
+    if (args->projInst->env->isGenerating) {
+        StringView configFile = "#define WEBCOOKDOCS_LINK_TO_GITHUB 0\n";
+        FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+            NativePath::join(args->projInst->env->buildFolderPath,
+                             "codegen/web-cook-docs/ply-web-cook-docs/Config.h"),
+            configFile, TextFormat::platformPreference());
+    }
 }
 
 // ply instantiate web-serve-docs

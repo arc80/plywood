@@ -17,6 +17,7 @@ struct ProjectInstantiationEnv {
     ToolchainInfo toolchain;
     Array<const ExternProvider*> externSelectors;
     String buildFolderPath;
+    bool isGenerating = false;
     bool isValid = true;
 };
 

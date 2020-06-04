@@ -13,24 +13,26 @@ void inst_ply_build_target(TargetInstantiatorArgs* args) {
                                                               "codegen/ply-build-target"));
     args->addTarget(Visibility::Public, "build-common");
 
-    // Write codegen/ply-build-target/ply-build-target/NativeToolchain.inl
-    // Note: If we ever cross-compile this module, the NativeToolchain will have to be different
-    const CMakeGeneratorOptions* cmakeOptions = args->projInst->env->cmakeOptions;
-    PLY_ASSERT(cmakeOptions);
-    String nativeToolchainFile = String::format(
-        R"(CMakeGeneratorOptions NativeToolchain = {{
+    if (args->projInst->env->isGenerating) {
+        // Write codegen/ply-build-target/ply-build-target/NativeToolchain.inl
+        // Note: If we ever cross-compile this module, the NativeToolchain will have to be different
+        const CMakeGeneratorOptions* cmakeOptions = args->projInst->env->cmakeOptions;
+        PLY_ASSERT(cmakeOptions);
+        String nativeToolchainFile = String::format(
+            R"(CMakeGeneratorOptions NativeToolchain = {{
     "{}",
     "{}",
     "{}",
     "{}",
 }};
 )",
-        cmakeOptions->generator, cmakeOptions->platform, cmakeOptions->toolset,
-        cmakeOptions->buildType);
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-        NativePath::join(args->projInst->env->buildFolderPath,
-                         "codegen/ply-build-target/ply-build-target/NativeToolchain.inl"),
-        nativeToolchainFile, TextFormat::platformPreference());
+            cmakeOptions->generator, cmakeOptions->platform, cmakeOptions->toolset,
+            cmakeOptions->buildType);
+        FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+            NativePath::join(args->projInst->env->buildFolderPath,
+                             "codegen/ply-build-target/ply-build-target/NativeToolchain.inl"),
+            nativeToolchainFile, TextFormat::platformPreference());
+    }
 }
 
 // ply instantiate build-provider PLY_BUILD

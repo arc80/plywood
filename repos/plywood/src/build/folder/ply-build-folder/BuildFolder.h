@@ -37,7 +37,7 @@ struct BuildFolder {
 
     // Operations
     Owned<ProjectInstantiationEnv> createEnvironment() const;
-    ProjectInstantiationResult instantiateAllTargets() const;
+    ProjectInstantiationResult instantiateAllTargets(bool isGenerating) const;
     DependencyTree buildDepTree() const;
     bool generate(const ProjectInstantiationResult* instResult) const;
     bool build(StringView buildType, bool captureOutput = true) const;

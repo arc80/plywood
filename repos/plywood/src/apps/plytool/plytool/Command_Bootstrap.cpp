@@ -29,7 +29,7 @@ void command_bootstrap(PlyToolCommandEnv* env) {
     Owned<BuildFolder> buildFolder = BuildFolder::create({}, "plytool");
     buildFolder->rootTargets.append("plywood.plytool");
     buildFolder->makeShared.append("plywood.plytool");
-    ProjectInstantiationResult instResult = buildFolder->instantiateAllTargets();
+    ProjectInstantiationResult instResult = buildFolder->instantiateAllTargets(true);
     if (!instResult.isValid) {
         return;
     }

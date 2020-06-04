@@ -3,10 +3,12 @@ void inst_plyPlatform(TargetInstantiatorArgs* args) {
     args->buildTarget->targetType = BuildTargetType::HeaderOnly;
     args->addSourceFiles("ply-platform");
     args->addIncludeDir(Visibility::Public, ".");
-    args->addIncludeDir(Visibility::Public,
-                        NativePath::join(args->projInst->env->buildFolderPath, "codegen/ply-platform"));
-    String configFile = String::format(
-        R"(#define PLY_PREFER_CPP11 0
+    args->addIncludeDir(Visibility::Public, NativePath::join(args->projInst->env->buildFolderPath,
+                                                             "codegen/ply-platform"));
+
+    if (args->projInst->env->isGenerating) {
+        String configFile = String::format(
+            R"(#define PLY_PREFER_CPP11 0
 #define PLY_WITH_EXCEPTIONS 0
 #define PLY_REPLACE_OPERATOR_NEW 1
 #define PLY_USE_DLMALLOC 1
@@ -23,12 +25,13 @@ void inst_plyPlatform(TargetInstantiatorArgs* args) {
 #define PLY_BUILD_FOLDER "{}"
 #define PLY_CMAKE_PATH "{}"
 #define WITH_AUDIO 1
-)",
-        fmt::EscapedString{PLY_WORKSPACE_FOLDER},
-        fmt::EscapedString{args->projInst->env->buildFolderPath},
-        fmt::EscapedString{PLY_CMAKE_PATH});
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-        NativePath::join(args->projInst->env->buildFolderPath,
-                         "codegen/ply-platform/ply-platform/Config.h"),
-        configFile, TextFormat::platformPreference());
+    )",
+            fmt::EscapedString{PLY_WORKSPACE_FOLDER},
+            fmt::EscapedString{args->projInst->env->buildFolderPath},
+            fmt::EscapedString{PLY_CMAKE_PATH});
+        FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+            NativePath::join(args->projInst->env->buildFolderPath,
+                             "codegen/ply-platform/ply-platform/Config.h"),
+            configFile, TextFormat::platformPreference());
+    }
 }
