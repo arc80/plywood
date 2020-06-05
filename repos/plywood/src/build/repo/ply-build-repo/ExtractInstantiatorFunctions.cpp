@@ -106,7 +106,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
     };
 
     Owned<Command> cmd;
-    InstantiatorInlFile* inlFile = nullptr;
+    ModuleDefinitionFile* modDefFile = nullptr;
     bool anyError = false;
 
     static PLY_INLINE cpp::LinearLocation getLinearLocation(const cpp::Token& token,
@@ -190,17 +190,17 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         simple->initDeclarators[0];
                     if (initDcor.dcor.isFunction()) {
                         if (auto targetCmd = this->cmd->type.target()) {
-                            InstantiatorInlFile::TargetFunc& targetFunc =
-                                this->inlFile->targetFuncs.append();
+                            ModuleDefinitionFile::TargetFunc& targetFunc =
+                                this->modDefFile->targetFuncs.append();
                             targetFunc.funcName = initDcor.dcor.qid.toString();
                             targetFunc.targetName = targetCmd->targetName;
                             targetFunc.dynamicLinkPrefix = targetCmd->dynamicLinkPrefix;
                             this->cmd = nullptr;
                         } else if (auto externCmd = this->cmd->type.external()) {
-                            InstantiatorInlFile::ExternFunc& externFunc =
-                                this->inlFile->externFuncs.append();
-                            externFunc.providerName = externCmd->providerName;
-                            externFunc.externFunc = initDcor.dcor.qid.toString();
+                            ModuleDefinitionFile::ExternProviderFunc& externProviderFunc =
+                                this->modDefFile->externProviderFuncs.append();
+                            externProviderFunc.providerName = externCmd->providerName;
+                            externProviderFunc.funcName = initDcor.dcor.qid.toString();
                             this->cmd = nullptr;
                         } else {
                             PLY_ASSERT(0);
@@ -226,12 +226,12 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
     }
 };
 
-bool extractInstantiatorFunctions(InstantiatorInlFile* inlFile) {
+bool extractInstantiatorFunctions(ModuleDefinitionFile* modDefFile) {
     InstantiatorHooks visor;
-    visor.inlFile = inlFile;
+    visor.modDefFile = modDefFile;
 
     cpp::PPVisitedFiles visitedFiles;
-    parsePlywoodSrcFile(inlFile->absPath, &visitedFiles, &visor);
+    parsePlywoodSrcFile(modDefFile->absPath, &visitedFiles, &visor);
 
     return !visor.anyError;
 }

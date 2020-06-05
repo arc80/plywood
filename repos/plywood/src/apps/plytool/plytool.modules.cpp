@@ -1,3 +1,8 @@
+#include <ply-build-repo/Module.h>
+
+using namespace ply;
+using namespace ply::build;
+
 // ply instantiate plytool
 void inst_plytool(TargetInstantiatorArgs* args) {
     args->buildTarget->targetType = BuildTargetType::EXE;

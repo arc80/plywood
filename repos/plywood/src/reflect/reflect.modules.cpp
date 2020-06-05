@@ -1,3 +1,8 @@
+#include <ply-build-repo/Module.h>
+
+using namespace ply;
+using namespace ply::build;
+
 // ply instantiate reflect PLY_DLL
 void inst_plyReflect(TargetInstantiatorArgs* args) {
     args->addSourceFiles("ply-reflect");

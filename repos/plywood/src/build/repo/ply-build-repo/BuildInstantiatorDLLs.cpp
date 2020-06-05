@@ -13,126 +13,159 @@
 namespace ply {
 namespace build {
 
+struct GenerateDLLContext {
+    String repoRootFolder;
+    String dllBuildFolder;
+    String backedUpSrcFolder;
+};
+
+struct ExtractedRepo {
+    String repoName;
+    Array<ModuleDefinitionFile> modDefFiles;
+};
+
+Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const ExtractedRepo& exRepo) {
+    // Generate .cpp file to include all the .inls
+    StringWriter sw;
+    sw << "#include <ply-build-repo/Repo.h>\n";
+    sw << "\n";
+    sw << "using namespace ply::build;\n";
+    sw << "\n";
+
+    for (const ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
+        for (const ModuleDefinitionFile::TargetFunc& targetFunc : modDefFile.targetFuncs) {
+            sw.format("void {}(TargetInstantiatorArgs* args);\n", targetFunc.funcName);
+        }
+        for (const ModuleDefinitionFile::ExternProviderFunc& externProviderFunc :
+             modDefFile.externProviderFuncs) {
+            sw.format("ExternResult {}(ExternCommand cmd, ExternProviderArgs* args);\n",
+                      externProviderFunc.funcName);
+        }
+    }
+
+    sw << "\nextern \"C\" PLY_DLL_EXPORT void registerInstantiators(Repo* repo) "
+          "{\n";
+    for (const ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
+        for (const ModuleDefinitionFile::TargetFunc& targetFunc : modDefFile.targetFuncs) {
+            sw.format("    repo->addTargetInstantiator(new TargetInstantiator{{\"{}\", \"{}\", "
+                      "repo, {}, \"{}\"}});\n",
+                      fmt::EscapedString(targetFunc.targetName),
+                      fmt::EscapedString(NativePath::split(modDefFile.absPath).first),
+                      targetFunc.funcName, fmt::EscapedString(targetFunc.dynamicLinkPrefix));
+        }
+        for (const ModuleDefinitionFile::ExternProviderFunc& externProviderFunc :
+             modDefFile.externProviderFuncs) {
+            sw.format("    repo->addExternProvider(\"{}\", {});\n",
+                      fmt::EscapedString(externProviderFunc.providerName),
+                      externProviderFunc.funcName);
+        }
+    }
+    sw << "}\n";
+
+    String generatedCppPath =
+        NativePath::join(ctx.dllBuildFolder, "codegen", exRepo.repoName + "_Instantiators.cpp");
+    FileSystem::native()->makeDirsAndSaveTextIfDifferent(generatedCppPath, sw.moveToString(),
+                                                         TextFormat::platformPreference());
+
+    Owned<BuildTarget> target = new BuildTarget;
+    target->name = exRepo.repoName + "_Instantiators";
+    target->targetType = BuildTargetType::DLL;
+    {
+        // Add all *.modules.cpp files:
+        String repoFolder = NativePath::join(ctx.repoRootFolder, exRepo.repoName);
+        Array<String> relModDefPaths;
+        for (const ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
+            relModDefPaths.append(NativePath::makeRelative(repoFolder, modDefFile.absPath));
+        }
+        target->sourceFiles.append({repoFolder, std::move(relModDefPaths)});
+    }
+    target->sourceFiles.append({NativePath::join(ctx.dllBuildFolder, "codegen"),
+                                {exRepo.repoName + "_Instantiators.cpp"}});
+    target->sourceFiles.append(
+        {NativePath::join(ctx.backedUpSrcFolder, "runtime/ply-runtime/memory"), {"Heap.cpp"}});
+    target->addIncludeDir(Visibility::Private,
+                          NativePath::join(PLY_BUILD_FOLDER, "codegen/ply-platform"));
+    target->addIncludeDir(Visibility::Private, NativePath::join(ctx.backedUpSrcFolder, "platform"));
+    target->addIncludeDir(Visibility::Private, NativePath::join(ctx.backedUpSrcFolder, "runtime"));
+    target->addIncludeDir(Visibility::Private, NativePath::join(ctx.backedUpSrcFolder, "reflect"));
+    target->addIncludeDir(Visibility::Private,
+                          NativePath::join(ctx.backedUpSrcFolder, "build/target"));
+    target->addIncludeDir(Visibility::Private,
+                          NativePath::join(ctx.backedUpSrcFolder, "build/provider"));
+    target->addIncludeDir(Visibility::Private,
+                          NativePath::join(ctx.backedUpSrcFolder, "build/repo"));
+    target->addIncludeDir(Visibility::Private,
+                          NativePath::join(ctx.backedUpSrcFolder, "build/common"));
+    target->setPreprocessorDefinition(Visibility::Private, "PLY_BUILD_IMPORTING", "1");
+    target->setPreprocessorDefinition(Visibility::Private, "PLY_DLL_IMPORTING", "1");
+#if PLY_TARGET_WIN32
+    target->libs.append(NativePath::join(PLY_BUILD_FOLDER, "build/Debug/plytool.lib"));
+#endif
+    return target;
+}
+
 Array<InstantiatedDLL> buildInstantiatorDLLs() {
     PLY_ASSERT(NativeToolchain.isValid());
-
     ErrorHandler::log(ErrorHandler::Info, "Initializing repo registry...\n");
-    String repoRootFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/");
-    String dllBuildFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/bootstrap/DLLs/");
-    String backedUpSrcFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/");
+
+    GenerateDLLContext ctx;
+    ctx.repoRootFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/");
+    ctx.dllBuildFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/bootstrap/DLLs/");
+    ctx.backedUpSrcFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/");
 #ifdef PLY_SRC_FOLDER
-    backedUpSrcFolder = NativePath::normalize(PLY_SRC_FOLDER, "");
+    ctx.backedUpSrcFolder = NativePath::normalize(PLY_SRC_FOLDER, "");
 #endif
 
-    Array<String> repoNames;
-    for (const DirectoryEntry& entry : FileSystem::native()->listDir(repoRootFolder, 0)) {
+    // Visit all repo folders
+    Array<ExtractedRepo> exRepos;
+    for (const DirectoryEntry& entry : FileSystem::native()->listDir(ctx.repoRootFolder, 0)) {
         if (!entry.isDir)
             continue;
 
         // This is a separate repo.
-        // Make a separate instantiator DLL just for it.
-        // First, recursively find all files named Instantiators.inl:
-        String repoFolder = NativePath::join(repoRootFolder, entry.name);
-        Array<InstantiatorInlFile> inlFiles;
+        // Recursively find all files named *.modules.cpp:
+        String repoFolder = NativePath::join(ctx.repoRootFolder, entry.name);
+        Array<ModuleDefinitionFile> modDefFiles;
         for (const WalkTriple& triple : FileSystem::native()->walk(repoFolder)) {
-            if (find(triple.files.view(), [](const WalkTriple::FileInfo& file) {
-                    return file.name == "Instantiators.inl";
-                }) < 0)
-                continue;
-
-            // Found one. Scan it and find all instantiator functions.
-            InstantiatorInlFile inlFile;
-            inlFile.absPath = NativePath::join(triple.dirPath, "Instantiators.inl");
-            if (extractInstantiatorFunctions(&inlFile)) {
-                inlFiles.append(std::move(inlFile));
+            for (const WalkTriple::FileInfo& file : triple.files) {
+                if (file.name.endsWith(".modules.cpp")) {
+                    // Found one. Scan it and find all instantiator functions.
+                    ModuleDefinitionFile modDefFile;
+                    modDefFile.absPath = NativePath::join(triple.dirPath, file.name);
+                    if (extractInstantiatorFunctions(&modDefFile)) {
+                        modDefFiles.append(std::move(modDefFile));
+                    }
+                }
             }
         }
 
-        if (inlFiles.isEmpty())
-            continue;
-
-        // Generate .cpp file to include all the .inls
-        StringWriter sw;
-        sw << "#include <ply-runtime/algorithm/Find.h>\n";
-        sw << "#include <ply-build-target/BuildTarget.h>\n";
-        sw << "#include <ply-build-target/CMakeLists.h>\n";
-        sw << "#include <ply-build-repo/TargetInstantiatorArgs.h>\n";
-        sw << "#include <ply-build-repo/ProjectInstantiator.h>\n";
-        sw << "#include <ply-build-repo/ProjectInstantiationEnv.h>\n";
-        sw << "#include <ply-build-repo/Repo.h>\n";
-        sw << "#include <ply-build-provider/ExternFolderRegistry.h>\n";
-        sw << "#include <ply-build-provider/ExternHelpers.h>\n";
-        sw << "#include <ply-build-provider/HostTools.h>\n";
-        sw << "#include <ply-build-provider/PackageManager.h>\n";
-        sw << "#include <ply-build-provider/ToolchainInfo.h>\n";
-        sw << "\n";
-        sw << "using namespace ply;\n";
-        sw << "using namespace ply::build;\n";
-        sw << "\n";
-
-        for (const InstantiatorInlFile& inlFile : inlFiles) {
-            sw.format("#include \"{}\"\n", PosixPath::from<NativePath>(inlFile.absPath));
+        if (!modDefFiles.isEmpty()) {
+            ExtractedRepo& exRepo = exRepos.append();
+            exRepo.repoName = entry.name;
+            exRepo.modDefFiles = std::move(modDefFiles);
         }
-        sw << "\nextern \"C\" PLY_DLL_EXPORT void registerInstantiators(Repo* repo) "
-              "{\n";
-        for (const InstantiatorInlFile& inlFile : inlFiles) {
-            for (const InstantiatorInlFile::TargetFunc& targetFunc : inlFile.targetFuncs) {
-                sw.format("    repo->addTargetInstantiator(new TargetInstantiator{{\"{}\", \"{}\", "
-                          "repo, {}, \"{}\"}});\n",
-                          fmt::EscapedString(targetFunc.targetName),
-                          fmt::EscapedString(NativePath::split(inlFile.absPath).first),
-                          targetFunc.funcName, fmt::EscapedString(targetFunc.dynamicLinkPrefix));
-            }
-            for (const InstantiatorInlFile::ExternFunc& externFunc : inlFile.externFuncs) {
-                sw.format("    repo->addExternProvider(\"{}\", {});\n",
-                          fmt::EscapedString(externFunc.providerName), externFunc.externFunc);
-            }
-        }
-        sw << "}\n";
-
-        String generatedCppPath =
-            NativePath::join(dllBuildFolder, "codegen", entry.name + "_Instantiators.cpp");
-        FileSystem::native()->makeDirsAndSaveTextIfDifferent(generatedCppPath, sw.moveToString(),
-                                                             TextFormat::platformPreference());
-        repoNames.append(entry.name);
     }
 
+    // Create a DLL target for each repo
+    Array<InstantiatedDLL> idlls;
     CMakeBuildFolder cbf;
     cbf.solutionName = "DLLs";
-    cbf.absPath = dllBuildFolder;
+    cbf.absPath = ctx.dllBuildFolder;
     Array<Owned<BuildTarget>> ownedTargets;
-    for (StringView repoName : repoNames) {
-        BuildTarget* target = new BuildTarget;
-        target->name = repoName + "_Instantiators";
-        target->targetType = BuildTargetType::DLL;
-        target->sourceFiles.append(
-            {NativePath::join(dllBuildFolder, "codegen"), {repoName + "_Instantiators.cpp"}});
-        target->sourceFiles.append(
-            {NativePath::join(backedUpSrcFolder, "runtime/ply-runtime/memory"), {"Heap.cpp"}});
-        target->addIncludeDir(Visibility::Private,
-                              NativePath::join(PLY_BUILD_FOLDER, "codegen/ply-platform"));
-        target->addIncludeDir(Visibility::Private, NativePath::join(backedUpSrcFolder, "platform"));
-        target->addIncludeDir(Visibility::Private, NativePath::join(backedUpSrcFolder, "runtime"));
-        target->addIncludeDir(Visibility::Private, NativePath::join(backedUpSrcFolder, "reflect"));
-        target->addIncludeDir(Visibility::Private,
-                              NativePath::join(backedUpSrcFolder, "build/target"));
-        target->addIncludeDir(Visibility::Private,
-                              NativePath::join(backedUpSrcFolder, "build/provider"));
-        target->addIncludeDir(Visibility::Private,
-                              NativePath::join(backedUpSrcFolder, "build/repo"));
-        target->addIncludeDir(Visibility::Private,
-                              NativePath::join(backedUpSrcFolder, "build/common"));
-        target->setPreprocessorDefinition(Visibility::Private, "PLY_BUILD_IMPORTING", "1");
-        target->setPreprocessorDefinition(Visibility::Private, "PLY_DLL_IMPORTING", "1");
-#if PLY_TARGET_WIN32
-        target->libs.append(NativePath::join(PLY_BUILD_FOLDER, "build/Debug/plytool.lib"));
-#endif
-        ownedTargets.append(target);
+    for (const ExtractedRepo& exRepo : exRepos) {
+        BuildTarget* target = ownedTargets.append(createDLLTarget(ctx, exRepo));
         cbf.targets.append(target);
+
+        // Add to return value
+        InstantiatedDLL& idll = idlls.append();
+        idll.repoName = exRepo.repoName;
+        idll.dllPath = getTargetOutputPath(target, ctx.dllBuildFolder, NativeToolchain);
     }
+
+    // Generate build system
     StringWriter sw;
     writeCMakeLists(&sw, &cbf);
-    String cmakeListsPath = NativePath::join(dllBuildFolder, "CMakeLists.txt");
+    String cmakeListsPath = NativePath::join(ctx.dllBuildFolder, "CMakeLists.txt");
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         cmakeListsPath, sw.moveToString(), TextFormat::platformPreference());
     if (result != FSResult::OK && result != FSResult::Unchanged) {
@@ -140,9 +173,8 @@ Array<InstantiatedDLL> buildInstantiatorDLLs() {
                           String::format("Can't write '{}'\n", cmakeListsPath));
         return {};
     }
-
     Tuple<s32, String> cmakeResult =
-        generateCMakeProject(dllBuildFolder, NativeToolchain, [&](StringView errMsg) {
+        generateCMakeProject(ctx.dllBuildFolder, NativeToolchain, [&](StringView errMsg) {
             ErrorHandler::log(ErrorHandler::Error, errMsg);
         });
     if (cmakeResult.first != 0) {
@@ -152,20 +184,15 @@ Array<InstantiatedDLL> buildInstantiatorDLLs() {
         return {};
     }
 
-    cmakeResult = buildCMakeProject(dllBuildFolder, NativeToolchain, {});
+    // Build DLLs
+    cmakeResult = buildCMakeProject(ctx.dllBuildFolder, NativeToolchain, {});
     if (cmakeResult.first != 0) {
         ErrorHandler::log(ErrorHandler::Error,
                           StringView{"Failed to build instantiator DLLs:\n"} + cmakeResult.second);
         return {};
     }
 
-    Array<InstantiatedDLL> idlls;
-    for (u32 i = 0; i < repoNames.numItems(); i++) {
-        StringView repoName = repoNames[i];
-        InstantiatedDLL& idll = idlls.append();
-        idll.repoName = repoName;
-        idll.dllPath = getTargetOutputPath(ownedTargets[i], dllBuildFolder, NativeToolchain);
-    }
+    // Success!
     return idlls;
 }
 

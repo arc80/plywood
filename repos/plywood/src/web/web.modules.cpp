@@ -1,3 +1,8 @@
+#include <ply-build-repo/Module.h>
+
+using namespace ply;
+using namespace ply::build;
+
 // ply instantiate web-sass
 void inst_webSass(TargetInstantiatorArgs* args) {
     args->addIncludeDir(Visibility::Public, "sass");

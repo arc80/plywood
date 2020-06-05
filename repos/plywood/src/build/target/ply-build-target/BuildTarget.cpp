@@ -27,6 +27,8 @@ PLY_NO_INLINE void BuildTarget::addSourceFiles(StringView absSourcePath, bool re
     for (const WalkTriple& triple : FileSystem::native()->walk(absSourcePath)) {
         static Array<StringView> extensions = {".c", ".cpp", ".h"};
         for (const WalkTriple::FileInfo& file : triple.files) {
+            if (file.name.endsWith(".modules.cpp")) // Skip *.modules.cpp files
+                continue;
             String ext = NativePath::splitExt(file.name).second.lowerAsc();
             bool isSourceFile = (findItem(sourceExts.view(), ext) >= 0);
             if (isSourceFile) {

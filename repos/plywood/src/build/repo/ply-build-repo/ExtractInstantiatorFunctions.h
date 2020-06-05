@@ -8,23 +8,23 @@
 namespace ply {
 namespace build {
 
-struct InstantiatorInlFile {
+struct ModuleDefinitionFile {
     struct TargetFunc {
         String targetName;
         String funcName;
         String dynamicLinkPrefix;
     };
-    struct ExternFunc {
+    struct ExternProviderFunc {
         String providerName;
-        String externFunc;
+        String funcName;
     };
 
     String absPath;
     Array<TargetFunc> targetFuncs;
-    Array<ExternFunc> externFuncs;
+    Array<ExternProviderFunc> externProviderFuncs;
 };
 
-bool extractInstantiatorFunctions(InstantiatorInlFile* inlFile);
+bool extractInstantiatorFunctions(ModuleDefinitionFile* modDefFile);
 
 } // namespace build
 } // namespace ply

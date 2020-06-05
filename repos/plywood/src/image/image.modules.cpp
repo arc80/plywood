@@ -1,3 +1,8 @@
+#include <ply-build-repo/Module.h>
+
+using namespace ply;
+using namespace ply::build;
+
 // ply instantiate image
 void inst_image(TargetInstantiatorArgs* args) {
     args->addSourceFiles("image/image");

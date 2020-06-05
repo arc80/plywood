@@ -1,3 +1,8 @@
+#include <ply-build-repo/Module.h>
+
+using namespace ply;
+using namespace ply::build;
+
 // ply instantiate build-common PLY_BUILD
 void inst_ply_build_common(TargetInstantiatorArgs* args) {
     args->addSourceFiles("common/ply-build-common");
