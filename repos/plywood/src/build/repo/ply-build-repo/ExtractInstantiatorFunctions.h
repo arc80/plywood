@@ -12,7 +12,6 @@ struct ModuleDefinitionFile {
     struct TargetFunc {
         String targetName;
         String funcName;
-        String dynamicLinkPrefix;
     };
     struct ExternProviderFunc {
         String providerName;

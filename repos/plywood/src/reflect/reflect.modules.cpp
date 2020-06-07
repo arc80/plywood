@@ -1,16 +1,11 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate reflect PLY_DLL
+// ply instantiate reflect
 void inst_plyReflect(TargetInstantiatorArgs* args) {
+    args->buildTarget->dynamicLinkPrefix = "PLY_DLL";
     args->addSourceFiles("ply-reflect");
     args->setPrecompiledHeader("ply-reflect/Precomp.cpp", "ply-reflect/Core.h");
     args->addIncludeDir(Visibility::Public, ".");
     args->addTarget(Visibility::Public, "runtime");
 }
 
-// ply instantiate PlyDLL
-void inst_plyDLL(TargetInstantiatorArgs* args) {
-    args->buildTarget->targetType = BuildTargetType::DLL;
-    args->addTarget(Visibility::Private, "runtime");
-    args->addTarget(Visibility::Private, "reflect");
-}

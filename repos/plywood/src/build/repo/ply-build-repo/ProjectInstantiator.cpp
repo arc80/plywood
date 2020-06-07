@@ -54,15 +54,9 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
         // FIXME: Make sure the name is unique across the project.
         // There could be clashes when multiple repos are used.
         buildTarget->name = depSrc->name;
-        buildTarget->dynamicLinkPrefix = targetInst->dynamicLinkPrefix;
         this->result->dependencies.append(depSrc, buildTarget);
         if (isSharedRoot) {
-            PLY_ASSERT(!this->sharedContainer);
-            buildTarget->targetType = BuildTargetType::DLL;
             this->sharedContainer = buildTarget;
-        } else if (this->sharedContainer && !buildTarget->dynamicLinkPrefix.isEmpty()) {
-            // Libraries that export from DLL/EXE must have type ObjectLib
-            buildTarget->targetType = BuildTargetType::ObjectLib;
         }
         buildTarget->sharedContainer = this->sharedContainer;
 
@@ -72,7 +66,11 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
         args.buildTarget = buildTarget;
         targetInst->targetFunc.call(&args);
         if (isSharedRoot) {
-            this->sharedContainer = nullptr;
+            PLY_ASSERT(!this->sharedContainer);
+            buildTarget->targetType = BuildTargetType::DLL;
+        } else if (this->sharedContainer && !buildTarget->dynamicLinkPrefix.isEmpty()) {
+            // Libraries that export from DLL/EXE must have type ObjectLib
+            buildTarget->targetType = BuildTargetType::ObjectLib;
         }
 
         // Special case for targets with no source files

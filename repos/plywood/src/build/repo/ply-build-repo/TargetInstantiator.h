@@ -16,14 +16,13 @@ struct TargetInstantiator : DependencySource {
 
     String instantiatorPath;
     Functor<InitializeTargetFunc> targetFunc;
-    String dynamicLinkPrefix;
 
     PLY_INLINE TargetInstantiator() : DependencySource{DependencyType::Target} {
     }
     PLY_INLINE TargetInstantiator(StringView name, StringView instantiatorPath, const Repo* repo,
-                                  InitializeTargetFunc* targetFunc, StringView dynamicLinkPrefix)
+                                  InitializeTargetFunc* targetFunc)
         : DependencySource{DependencyType::Target, name, repo}, instantiatorPath{instantiatorPath},
-          targetFunc{targetFunc}, dynamicLinkPrefix{dynamicLinkPrefix} {
+          targetFunc{targetFunc} {
     }
 };
 

@@ -1,7 +1,8 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate runtime PLY_DLL
+// ply instantiate runtime
 void inst_plyRuntime(TargetInstantiatorArgs* args) {
+    args->buildTarget->dynamicLinkPrefix = "PLY_DLL";
     args->addIncludeDir(Visibility::Public, ".");
     args->addTarget(Visibility::Public, "platform");
     args->addSourceFilesWhenImported("ply-runtime", {"memory/Heap.cpp"});

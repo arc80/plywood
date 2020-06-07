@@ -48,10 +48,10 @@ Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const Extracte
     for (const ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
         for (const ModuleDefinitionFile::TargetFunc& targetFunc : modDefFile.targetFuncs) {
             sw.format("    repo->addTargetInstantiator(new TargetInstantiator{{\"{}\", \"{}\", "
-                      "repo, {}, \"{}\"}});\n",
+                      "repo, {}}});\n",
                       fmt::EscapedString(targetFunc.targetName),
                       fmt::EscapedString(NativePath::split(modDefFile.absPath).first),
-                      targetFunc.funcName, fmt::EscapedString(targetFunc.dynamicLinkPrefix));
+                      targetFunc.funcName);
         }
         for (const ModuleDefinitionFile::ExternProviderFunc& externProviderFunc :
              modDefFile.externProviderFuncs) {

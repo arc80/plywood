@@ -92,7 +92,6 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
             // ply make switch
             struct Target {
                 StringView targetName;
-                StringView dynamicLinkPrefix;
             };
             struct External {
                 StringView externName;
@@ -152,12 +151,10 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         return;
                     }
                     commentReader.parse<fmt::Whitespace>();
-                    StringView dynamicLinkPrefix = commentReader.readView<fmt::NonWhitespace>();
                     this->cmd = new Command;
                     this->cmd->macro = token;
                     auto targetCmd = this->cmd->type.target().switchTo();
                     targetCmd->targetName = name;
-                    targetCmd->dynamicLinkPrefix = dynamicLinkPrefix;
                 } else if (second == "extern") {
                     commentReader.parse<fmt::Whitespace>();
                     StringView providerName = commentReader.readView<fmt::NonWhitespace>();
@@ -194,7 +191,6 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                                 this->modDefFile->targetFuncs.append();
                             targetFunc.funcName = initDcor.dcor.qid.toString();
                             targetFunc.targetName = targetCmd->targetName;
-                            targetFunc.dynamicLinkPrefix = targetCmd->dynamicLinkPrefix;
                             this->cmd = nullptr;
                         } else if (auto externCmd = this->cmd->type.external()) {
                             ModuleDefinitionFile::ExternProviderFunc& externProviderFunc =
