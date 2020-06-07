@@ -1,8 +1,5 @@
 #include <ply-build-repo/Module.h>
 
-using namespace ply;
-using namespace ply::build;
-
 // ply instantiate WebServer
 void inst_WebServer(TargetInstantiatorArgs* args) {
     args->buildTarget->targetType = BuildTargetType::EXE;

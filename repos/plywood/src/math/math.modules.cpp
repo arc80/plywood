@@ -1,8 +1,5 @@
 #include <ply-build-repo/Module.h>
 
-using namespace ply;
-using namespace ply::build;
-
 // ply instantiate math
 void inst_ply_math(TargetInstantiatorArgs* args) {
     args->addSourceFiles("math/ply-math");

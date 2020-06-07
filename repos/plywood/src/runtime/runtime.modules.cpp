@@ -1,8 +1,5 @@
 #include <ply-build-repo/Module.h>
 
-using namespace ply;
-using namespace ply::build;
-
 // ply instantiate runtime PLY_DLL
 void inst_plyRuntime(TargetInstantiatorArgs* args) {
     args->addIncludeDir(Visibility::Public, ".");

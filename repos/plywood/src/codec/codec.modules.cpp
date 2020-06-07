@@ -1,8 +1,5 @@
 #include <ply-build-repo/Module.h>
 
-using namespace ply;
-using namespace ply::build;
-
 // ply instantiate codec
 void inst_ply_codec(TargetInstantiatorArgs* args) {
     args->addSourceFiles("ply-codec");

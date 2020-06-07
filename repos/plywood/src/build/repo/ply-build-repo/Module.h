@@ -19,3 +19,5 @@
 #include <ply-build-provider/PackageManager.h>
 #include <ply-build-provider/ToolchainInfo.h>
 #include <ply-runtime/algorithm/Find.h>
+using namespace ply;
+using namespace ply::build;

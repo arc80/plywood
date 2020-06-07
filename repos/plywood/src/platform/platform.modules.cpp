@@ -1,8 +1,5 @@
 #include <ply-build-repo/Module.h>
 
-using namespace ply;
-using namespace ply::build;
-
 // ply instantiate platform PLY_DLL
 void inst_plyPlatform(TargetInstantiatorArgs* args) {
     args->buildTarget->targetType = BuildTargetType::HeaderOnly;
