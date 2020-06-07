@@ -217,6 +217,8 @@ void command_codegen(PlyToolCommandEnv* env) {
 
         for (const WalkTriple::FileInfo& file : triple.files) {
             if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
+                if (file.name.endsWith(".modules.cpp"))
+                    continue;
                 // FIXME: Eliminate exclusions
                 for (StringView exclude : {
                          "Sort.h",
