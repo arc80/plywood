@@ -119,7 +119,7 @@ PLY_NO_INLINE bool closeScope(Parser* parser, Token* outCloseToken, const Token&
             return false;
         }
         // Got closing )
-        PLY_ASSERT(!parser->muteErrors);
+        parser->stopMutingErrors();
     }
     return true;
 }

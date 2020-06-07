@@ -90,6 +90,7 @@ PLY_NO_INLINE StringView getPunctuationString(Token::Type tok) {
 HybridString Token::toString() const {
     switch (this->type) {
         case Token::Identifier:
+        case Token::StringLiteral:
         case Token::NumericLiteral: {
             return this->identifier;
         }
