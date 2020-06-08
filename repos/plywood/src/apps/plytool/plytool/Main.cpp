@@ -17,6 +17,7 @@ void command_target(PlyToolCommandEnv* env);
 void command_module(PlyToolCommandEnv* env);
 void command_extern(PlyToolCommandEnv* env);
 bool command_generate(PlyToolCommandEnv* env);
+void command_build(PlyToolCommandEnv* env);
 void command_codegen(PlyToolCommandEnv* env);
 void command_bootstrap(PlyToolCommandEnv* env);
 void command_cleanup(PlyToolCommandEnv* env);
@@ -79,13 +80,7 @@ int main(int argc, char* argv[]) {
     } else if (prefixMatch(category, "generate")) {
         success = command_generate(&env);
     } else if (prefixMatch(category, "build")) {
-        if (!env.currentBuildFolder) {
-            fatalError("Current build folder not set");
-        }
-        ensureTerminated(env.cl);
-        env.cl->finalize();
-        // FIXME: Support --config option
-        env.currentBuildFolder->build({}, false);
+        command_build(&env);
     } else if (prefixMatch(category, "codegen")) {
         command_codegen(&env);
     } else if (prefixMatch(category, "bootstrap")) {
