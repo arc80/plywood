@@ -558,6 +558,9 @@ void parseInitDeclarators(Parser* parser, grammar::Declaration::Simple& simple,
                 // won't get a complete list of those comments. This could evenutally be fixed by
                 // implementing a peekToken() / consumeToken() API, so that peeking at the next
                 // token won't skip over comments at declaration scope.
+                // [Update 2020-06-07: atDeclarationScope is now a member of Parser. This opens the
+                // possibility of a new approach: Just set parser->atDeclarationScope = true while
+                // checking ahead for a comma.]
                 break; // Stop parsing declarators immediately after the function body!
             } else {
                 parseOptionalVariableInitializer(parser, initDcor.init, true);

@@ -115,8 +115,8 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
         return token.linearLoc + ((const char*) curByte - token.identifier.bytes);
     }
 
-    virtual void gotMacroOrComment(cpp::Token token, bool atDeclarationScope) override {
-        if (atDeclarationScope) {
+    virtual void gotMacroOrComment(cpp::Token token) override {
+        if (this->parser->atDeclarationScope) {
             if (token.type == cpp::Token::LineComment) {
                 StringViewReader commentReader{token.identifier};
                 PLY_ASSERT(commentReader.viewAvailable().startsWith("//"));

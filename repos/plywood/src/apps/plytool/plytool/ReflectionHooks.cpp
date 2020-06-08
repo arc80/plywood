@@ -281,10 +281,10 @@ struct ReflectionHooks : ParseSupervisor {
         state.captureMembersToken = token;
     }
 
-    virtual void gotMacroOrComment(Token token, bool atDeclarationScope) override {
+    virtual void gotMacroOrComment(Token token) override {
         if (token.type == Token::Macro) {
             if (token.identifier == "PLY_STATE_REFLECT" || token.identifier == "PLY_REFLECT") {
-                if (!atDeclarationScope) {
+                if (!this->parser->atDeclarationScope) {
                     this->parser->pp->errorHandler.call(new ReflectionHookError{
                         ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope,
                         token.linearLoc});
@@ -308,7 +308,7 @@ struct ReflectionHooks : ParseSupervisor {
                 commentReader.parse<fmt::Whitespace>();
                 StringView cmd = commentReader.readView<fmt::Identifier>();
                 if (cmd == "end") {
-                    if (atDeclarationScope) {
+                    if (this->parser->atDeclarationScope) {
                         State& state = this->stack.back();
                         if (!state.captureMembersToken.isValid()) {
                             // this->parser->error(); // Not capturing
@@ -325,7 +325,7 @@ struct ReflectionHooks : ParseSupervisor {
                                                         .view()));
                 if (fixed == "// ply make switch\n" || fixed == "// ply make reflected switch\n") {
                     // This is a switch
-                    if (!atDeclarationScope) {
+                    if (!this->parser->atDeclarationScope) {
                         this->parser->pp->errorHandler.call(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope,
                             token.linearLoc});
@@ -355,7 +355,7 @@ struct ReflectionHooks : ParseSupervisor {
                         switch_->isReflected = true;
                     }
                 } else if (fixed == "// ply reflect off\n") {
-                    if (!atDeclarationScope) {
+                    if (!this->parser->atDeclarationScope) {
                         this->parser->pp->errorHandler.call(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope,
                             token.linearLoc});

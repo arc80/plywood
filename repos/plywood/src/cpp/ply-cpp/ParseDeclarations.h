@@ -31,7 +31,7 @@ struct SpecDcorMode {
     }
 };
 
-Token readToken(Parser* parser, bool atDeclarationScope = false);
+Token readToken(Parser* parser);
 // FIXME: Change skipAnyScope to return outCloseToken (or an invalid token) instead
 bool skipAnyScope(Parser* parser, Token* outCloseToken, const Token& openToken);
 void pushBackToken(Parser* parser, const Token& token);

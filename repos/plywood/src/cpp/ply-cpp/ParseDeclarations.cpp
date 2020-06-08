@@ -119,8 +119,9 @@ PLY_NO_INLINE void parseSimpleDeclaration(Parser* parser, StringView enclosingCl
 
 // Returns false if no input was read.
 PLY_NO_INLINE bool parseDeclaration(Parser* parser, StringView enclosingClassName) {
-    Token token = readToken(parser, true);
+    Token token = readToken(parser);
 
+    PLY_SET_IN_SCOPE(parser->atDeclarationScope, false);
     if (token.type == Token::Identifier) {
         if (token.identifier == "extern") {
             // Possible linkage specification
@@ -297,9 +298,10 @@ PLY_NO_INLINE bool parseDeclaration(Parser* parser, StringView enclosingClassNam
 void parseDeclarationList(Parser* parser, Token* outCloseCurly, StringView enclosingClassName) {
     // Always handle close curly at this scope, even if it's file scope:
     SetAcceptFlagsInScope acceptScope{parser, Token::OpenCurly};
+    PLY_SET_IN_SCOPE(parser->atDeclarationScope, true);
 
     for (;;) {
-        Token token = readToken(parser, true);
+        Token token = readToken(parser);
         if (token.type == (outCloseCurly ? Token::CloseCurly : Token::EndOfFile)) {
             if (outCloseCurly) {
                 *outCloseCurly = token;
@@ -308,7 +310,7 @@ void parseDeclarationList(Parser* parser, Token* outCloseCurly, StringView enclo
         }
         pushBackToken(parser, token);
         if (!parseDeclaration(parser, enclosingClassName)) {
-            token = readToken(parser, true);
+            token = readToken(parser);
             parser->error(true, {ParseError::Expected, token, ExpectedToken::Declaration});
             if (token.type != Token::CloseCurly) { // consume close curlies after logging the error
                 if (!handleUnexpectedToken(parser, nullptr, token)) {
@@ -324,7 +326,7 @@ grammar::TranslationUnit parseTranslationUnit(Parser* parser) {
     grammar::TranslationUnit tu;
     parser->visor->doEnter(TypedPtr::bind(&tu));
     parseDeclarationList(parser, nullptr, {});
-    Token eofTok = readToken(parser, true);
+    Token eofTok = readToken(parser);
     PLY_ASSERT(eofTok.type == Token::EndOfFile); // EOF is the only possible token here
     PLY_UNUSED(eofTok);
     parser->visor->doExit(TypedPtr::bind(&tu));

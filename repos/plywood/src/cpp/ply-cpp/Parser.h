@@ -38,7 +38,7 @@ struct ParseSupervisor {
     }
     virtual void onGotEnumerator(const grammar::InitEnumeratorWithComma* initEnor) {
     }
-    virtual void gotMacroOrComment(Token token, bool atDeclarationScope) {
+    virtual void gotMacroOrComment(Token token) {
     }
     virtual void onGotInclude(StringView directive) {
     }
@@ -142,6 +142,10 @@ struct Parser {
     Array<Token> tokenQueue;
     u32 tokenQueuePos = 0;
 
+    // Status
+    u32 passNumber = 1;
+    bool atDeclarationScope = true;
+
     // Error recovery
     u32 rawErrorCount = 0;
     bool muteErrors = false;
@@ -152,8 +156,6 @@ struct Parser {
     }
 
     void error(bool beginMuting, ParseError&& err);
-
-    u32 passNumber = 1;
 };
 
 enum class ParseQualifiedMode {

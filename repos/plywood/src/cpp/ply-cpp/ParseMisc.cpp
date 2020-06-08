@@ -96,7 +96,7 @@ PLY_NO_INLINE Token readTokenInternal(Parser* parser) {
     }
 }
 
-Token readToken(Parser* parser, bool atDeclarationScope) {
+Token readToken(Parser* parser) {
     Token token;
     for (;;) {
         token = readTokenInternal(parser);
@@ -105,7 +105,7 @@ Token readToken(Parser* parser, bool atDeclarationScope) {
             case Token::LineComment:
             case Token::Directive:
             case Token::Macro: {
-                parser->visor->gotMacroOrComment(token, atDeclarationScope);
+                parser->visor->gotMacroOrComment(token);
                 break;
             }
 
