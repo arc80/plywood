@@ -44,7 +44,19 @@ void command_target(PlyToolCommandEnv* env) {
 
     StringView cmd = env->cl->readToken();
     if (cmd.isEmpty()) {
-        fatalError("Expected target command");
+        ensureTerminated(env->cl);
+        env->cl->finalize();
+
+        auto sw = StdErr::createStringWriter();
+        printUsage(&sw, "target",
+                   {
+                       {"list", "list description"},
+                       {"add", "add description"},
+                       {"remove", "remove description"},
+                       {"graph", "graph description"},
+                   });
+
+        return;
     }
 
     if (prefixMatch(cmd, "list")) {

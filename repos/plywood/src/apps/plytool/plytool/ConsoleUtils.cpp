@@ -61,4 +61,38 @@ void ensureTerminated(CommandLine* cl) {
     }
 }
 
+void printCommands(StringWriter* sw, const CommandList& commands) {
+    *sw << "Available commands :\n\n";
+
+    for (auto& d : commands) {
+        *sw << d.name;
+        for (auto i = 0; i < 20 - d.name.numBytes; ++i) {
+            *sw << ' ';
+        }
+        *sw << d.description << "\n";
+    }
+}
+
+void printUsage(StringWriter* sw, CommandList commands) {
+    *sw << "Usage: plytool <command>\n\n";
+
+    if (commands.numItems > 0) {
+        printCommands(sw, commands);
+    }
+
+    *sw << "\n";
+    sw->flush();
+}
+
+void printUsage(StringWriter* sw, StringView command, CommandList commands) {
+    *sw << "Usage: plytool " << command << " [<command>]\n";
+
+    if (commands.numItems > 0) {
+        printCommands(sw, commands);
+    }
+
+    *sw << "\n";
+    sw->flush();
+}
+
 } // namespace ply

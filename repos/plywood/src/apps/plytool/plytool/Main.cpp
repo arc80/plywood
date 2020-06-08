@@ -66,7 +66,20 @@ int main(int argc, char* argv[]) {
     StringView category = cl.readToken();
     bool success = true;
     if (category.isEmpty()) {
-        fatalError("Expected command");
+        cl.finalize();
+        auto sw = StdErr::createStringWriter();
+        const CommandList commands = {
+            {"bootstrap", "bootstrap description"},
+            {"build", "build description"},
+            {"cleanup", "cleanup description"},
+            {"codegen", "codegen description"},
+            {"extern", "extern description"},
+            {"folder", "folder description"},
+            {"generate", "generate description"},
+            {"module", "module description"},
+            {"target", "target description"},
+        };
+        printUsage(&sw, commands);
     } else if (category == "rpc") {
         command_rpc(&env);
     } else if (prefixMatch(category, "folder")) {

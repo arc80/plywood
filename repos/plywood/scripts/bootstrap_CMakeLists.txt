@@ -9,6 +9,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
 # plytool
 SetSourceFolders(PLYTOOL_SOURCES "${SRC_FOLDER}apps/plytool/plytool"
     "Command_Bootstrap.cpp"
+    "Command_Build.cpp"
     "Command_Cleanup.cpp"
     "Command_CodeGen.cpp"
     "Command_Extern.cpp"
