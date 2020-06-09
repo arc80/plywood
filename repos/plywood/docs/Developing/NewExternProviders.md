@@ -22,6 +22,6 @@ For example, one of Plywood's built-in extern providers defined in [`repos/plywo
         }
         ...
 
-The name of the function itself (in this case, `extern_libsass_prebuilt`) isn't really important, except that it must be unique across all `.modules.cpp` files in the current repo. By convention, the name of the function starts with `extern_`.
+The name of the function itself (in this case, `extern_libsass_prebuilt`) isn't really important, except that it must be unique across all `.modules.cpp` files in the current repo. By convention, the function name usually starts with `extern_`.
 
 The set of valid operations that can be performed by an extern provider is not yet documented. For the time being, you can study existing examples in the `plywood` repo.

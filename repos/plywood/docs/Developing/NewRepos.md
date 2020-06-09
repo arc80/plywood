@@ -112,9 +112,11 @@ Repos are only allowed to use modules and extern providers defined inside themse
 
 <% member src/PrimeSieve/PrimeSieve.modules.cpp %>
 
-In Plywood, files having the filename suffix `.modules.cpp` that are located anywhere within a repo are used to add [modules](KeyConcepts#modules) and [extern providers](KeyConcepts#extern-providers) to that repo.
+In Plywood, files having the filename suffix `.modules.cpp` that are located anywhere within a repo are used to add [modules](KeyConcepts#modules) and [extern providers](KeyConcepts#extern-providers) to that repo. The file must begin with the directive `#include <ply-build-repo/Module.h>`.
 
 In this case, the [`PrimeSieve.modules.cpp`](https://github.com/arc80/primesieve/blob/master/src/PrimeSieve/PrimeSieve.modules.cpp) file contains a single C++ function. The comment before the function, `// [ply module="PrimeSieve"]`, tells PlyTool that the function is a **module function** that defines a new module named `PrimeSieve`:
+
+    #include <ply-build-repo/Module.h>
 
     // [ply module="PrimeSieve"]
     void module_PrimeSieve(ModuleArgs* args) {

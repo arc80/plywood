@@ -6,6 +6,8 @@ In Plywood, a [module](KeyConcepts#modules) is defined by adding a special C++ f
 
 For example, the [`primesieve`](https://github.com/arc80/primesieve) add-on repo, which was already described in the [Creating New Repos](NewRepos) section, contains a single [`PrimeSieve.modules.cpp`](https://github.com/arc80/primesieve/blob/master/src/PrimeSieve/PrimeSieve.modules.cpp) file:
 
+    #include <ply-build-repo/Module.h>
+    
     // [ply module="PrimeSieve"]
     void module_PrimeSieve(ModuleArgs* args) {
         args->buildTarget->targetType = BuildTargetType::EXE;
@@ -13,7 +15,7 @@ For example, the [`primesieve`](https://github.com/arc80/primesieve) add-on repo
         args->addTarget(Visibility::Private, "runtime");
     }
 
-The name of the function itself (in this case, `module_PrimeSieve`) isn't really important, except that it must be unique across all `.modules.cpp` files in the current repo. By convention, the name of the function starts with `module_`.
+The name of the function itself (in this case, `module_PrimeSieve`) isn't really important, except that it must be unique across all `.modules.cpp` files in the current repo. By convention, the function name usually starts with `module_`.
 
 Each time PlyTool instantiates a [compilation target](KeyConcepts#targets), such as when running [`plytool generate`](PlyTool), it calls a module function like the one above to initialize the target.
 
