@@ -185,15 +185,19 @@ void readPreprocessorDirective(StringViewReader* strViewReader, Preprocessor* pp
 // Returns true if arguments were encountered, which means the macro can be expanded
 // Returns false if arguments were not encountered, which means the macro cannot be expanded
 // and the identifier should be returned as a token.
-bool skipPPMacroArguments(Preprocessor* pp, StringViewReader* strViewReader) {
+Array<Token> readMacroArguments(Preprocessor* pp, StringViewReader* strViewReader) {
+    Array<Token> macroArgs;
+
     // Skip whitespace
     strViewReader->parse<fmt::Whitespace>();
 
     // Look for opening parenthesis
     if (!(strViewReader->tryMakeBytesAvailable() && strViewReader->peekByte() == '('))
-        return false;
+        return macroArgs;
     LinearLocation openParenLoc = getLinearLocation(pp, strViewReader->curByte);
     strViewReader->advanceByte();
+    const char* argStart = (const char*) strViewReader->curByte;
+    LinearLocation argStartLoc = openParenLoc + 1;
 
     // Read up to closing parenthesis
     s32 nestLevel = 1;
@@ -202,7 +206,7 @@ bool skipPPMacroArguments(Preprocessor* pp, StringViewReader* strViewReader) {
             // end of file in macro arguments
             pp->error({Preprocessor::Error::EOFInMacro,
                        getLinearLocation(pp, strViewReader->curByte), openParenLoc});
-            return false;
+            return macroArgs;
         }
 
         char c = strViewReader->peekByte();
@@ -214,7 +218,7 @@ bool skipPPMacroArguments(Preprocessor* pp, StringViewReader* strViewReader) {
                     // end of file in macro arguments
                     pp->error({Preprocessor::Error::EOFInMacro,
                                getLinearLocation(pp, strViewReader->curByte), openParenLoc});
-                    return false;
+                    return macroArgs;
                 }
                 if (strViewReader->peekByte() == '/') {
                     strViewReader->advanceByte();
@@ -225,7 +229,7 @@ bool skipPPMacroArguments(Preprocessor* pp, StringViewReader* strViewReader) {
                         // EOF in comment
                         pp->error({Preprocessor::Error::EOFInComment,
                                    getLinearLocation(pp, strViewReader->curByte), openParenLoc});
-                        return false;
+                        return macroArgs;
                     }
                 }
                 break;
@@ -239,9 +243,22 @@ bool skipPPMacroArguments(Preprocessor* pp, StringViewReader* strViewReader) {
             case ')': {
                 nestLevel--;
                 if (nestLevel <= 0) {
-                    return true;
+                    macroArgs.append({argStartLoc, Token::MacroArgument,
+                                      StringView::fromRange(
+                                          argStart, (const char*) strViewReader->curByte - 1)});
+                    return macroArgs;
                 }
                 break;
+            }
+
+            case ',': {
+                if (nestLevel == 1) {
+                    macroArgs.append({argStartLoc, Token::MacroArgument,
+                                      StringView::fromRange(
+                                          argStart, (const char*) strViewReader->curByte - 1)});
+                    argStart = (const char*) strViewReader->curByte;
+                    argStartLoc = getLinearLocation(pp, strViewReader->curByte);
+                }
             }
 
             default:
@@ -769,6 +786,7 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
                 PLY_ASSERT(token.identifier);
                 auto cursor = pp->macros.find(token.identifier);
                 if (cursor.wasFound()) {
+                    token.type = Token::Macro;
                     token.identifier = item->strViewReader.getViewFrom(savePoint);
 
                     // This is a macro expansion
@@ -778,14 +796,14 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
                                                    (u8*) token.identifier.bytes);
                     PPVisitedFiles* vf = pp->visitedFiles;
 
-                    // This macro expects arguments
                     const PPVisitedFiles::MacroExpansion& exp =
                         vf->macroExpansions[cursor->expansionIdx];
+                    pp->macroArgs.clear();
                     if (exp.takesArgs) {
+                        // This macro expects arguments
                         auto savePoint = item->strViewReader.savePoint();
-                        if (skipPPMacroArguments(pp, &item->strViewReader)) {
-                            // Got arguments
-                        } else {
+                        pp->macroArgs = readMacroArguments(pp, &item->strViewReader);
+                        if (!pp->macroArgs) {
                             // No arguments were provided, so just return a plain token
                             item->strViewReader.restore(savePoint);
                             token.type = Token::Identifier;
@@ -817,7 +835,6 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
                     locMapItem.offset = 0;
                     vf->locationMap.insert(std::move(locMapItem));
 
-                    token.type = Token::Macro;
                     return token;
                 }
 

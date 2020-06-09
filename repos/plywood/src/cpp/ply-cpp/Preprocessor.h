@@ -68,6 +68,10 @@ struct Preprocessor {
     bool tokenizeCloseAnglesOnly = false;
     bool atStartOfLine = true;
 
+    // This member is only valid when a token type of Macro is returned.
+    // It'll remain valid until the next call to readToken.
+    Array<Token> macroArgs;
+
     HiddenArgFunctor<void(StringView directive)> includeCallback;
 
     PLY_INLINE void error(Error&& err) {

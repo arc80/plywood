@@ -16,6 +16,7 @@ struct Token {
         LineComment,
         CStyleComment,
         Macro,
+        MacroArgument,
         Directive,
         OpenCurly,
         CloseCurly,
