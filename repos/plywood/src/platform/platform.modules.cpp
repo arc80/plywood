@@ -1,7 +1,7 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate platform
-void inst_plyPlatform(TargetInstantiatorArgs* args) {
+// [ply module="platform"]
+void module_plyPlatform(ModuleArgs* args) {
     args->buildTarget->dynamicLinkPrefix = "PLY_DLL";
     args->buildTarget->targetType = BuildTargetType::HeaderOnly;
     args->addSourceFiles("ply-platform");

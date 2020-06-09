@@ -13,9 +13,9 @@ struct ProjectInstantiator;
 struct TargetInstantiator;
 
 //------------------------------------------------------
-// TargetInstantiatorArgs
+// ModuleArgs
 //------------------------------------------------------
-struct TargetInstantiatorArgs {
+struct ModuleArgs {
     ProjectInstantiator* projInst = nullptr;
     const TargetInstantiator* targetInst = nullptr;
     BuildTarget* buildTarget = nullptr;

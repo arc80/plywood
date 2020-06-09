@@ -1,23 +1,23 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate image
-void inst_image(TargetInstantiatorArgs* args) {
+// [ply module="image"]
+void module_image(ModuleArgs* args) {
     args->addSourceFiles("image/image");
     args->addIncludeDir(Visibility::Public, "image");
     args->addTarget(Visibility::Public, "runtime");
     args->addTarget(Visibility::Public, "math");
 }
 
-// ply instantiate image-reflect
-void inst_image_reflect(TargetInstantiatorArgs* args) {
+// [ply module="image-reflect"]
+void module_image_reflect(ModuleArgs* args) {
     args->addSourceFiles("reflect/image-reflect");
     args->addIncludeDir(Visibility::Public, "reflect");
     args->addTarget(Visibility::Public, "reflect");
     args->addTarget(Visibility::Public, "image");
 }
 
-// ply instantiate image-cairo
-void inst_image_cairo(TargetInstantiatorArgs* args) {
+// [ply module="image-cairo"]
+void module_image_cairo(ModuleArgs* args) {
     // FIXME: Automatically detect HeaderOnly based on source file extensions
     args->buildTarget->targetType = BuildTargetType::HeaderOnly;
     args->addSourceFiles("cairo/image-cairo");
@@ -26,8 +26,8 @@ void inst_image_cairo(TargetInstantiatorArgs* args) {
     args->addExtern(Visibility::Public, "cairo");
 }
 
-// ply instantiate image-png
-void inst_image_png(TargetInstantiatorArgs* args) {
+// [ply module="image-png"]
+void module_image_png(ModuleArgs* args) {
     // FIXME: Automatically detect HeaderOnly based on source file extensions
     args->addSourceFiles("png/image-png");
     args->addIncludeDir(Visibility::Public, "png");
@@ -36,7 +36,7 @@ void inst_image_png(TargetInstantiatorArgs* args) {
     args->addExtern(Visibility::Private, "libpng");
 }
 
-// ply extern plywood.cairo.macports
+// [ply extern="cairo" provider="macports"]
 ExternResult extern_cairo_macports(ExternCommand cmd, ExternProviderArgs* args) {
     if (args->providerArgs) {
         return {ExternResult::BadArgs, ""};
@@ -72,7 +72,7 @@ ExternResult extern_cairo_macports(ExternCommand cmd, ExternProviderArgs* args) 
     return {ExternResult::Unknown, ""};
 }
 
-// ply extern plywood.cairo.apt
+// [ply extern="cairo" provider="apt"]
 ExternResult extern_cairo_apt(ExternCommand cmd, ExternProviderArgs* args) {
     if (args->providerArgs) {
         return {ExternResult::BadArgs, ""};
@@ -108,7 +108,7 @@ ExternResult extern_cairo_apt(ExternCommand cmd, ExternProviderArgs* args) {
 }
 
 
-// ply extern plywood.cairo.prebuilt
+// [ply extern="cairo" provider="prebuilt"]
 ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) {
     // Toolchain filters
     if (args->toolchain->targetPlatform.name != "windows") {
@@ -161,7 +161,7 @@ ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) 
     return {ExternResult::Unknown, ""};
 }
 
-// ply extern plywood.libpng.builtFromSource
+// [ply extern="libpng" provider="builtFromSource"]
 ExternResult extern_libpng_builtFromSource(ExternCommand cmd, ExternProviderArgs* args) {
     PLY_ASSERT(0); // FIXME
     return {ExternResult::Unknown, ""};

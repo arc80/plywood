@@ -21,9 +21,9 @@ PLY_BUILD_ENTRY void Repo::addTargetInstantiator(Owned<TargetInstantiator>&& tar
     *cursor = std::move(targetInst);
 }
 
-PLY_NO_INLINE void Repo::addExternProvider(StringView providerName,
+PLY_NO_INLINE void Repo::addExternProvider(StringView externName, StringView providerName,
                                            ExternProvider::ExternFunc* externFunc) {
-    Array<StringView> ownComps = splitName(providerName, "extern provider name");
+    Array<StringView> ownComps = splitName(externName, "extern name");
     ArrayView<StringView> comps = ownComps.view();
     if (comps.isEmpty()) {
         exit(1); // fatal, message was already logged
@@ -34,23 +34,23 @@ PLY_NO_INLINE void Repo::addExternProvider(StringView providerName,
         exit(1); // fatal, message was already logged
     }
 
-    if (comps.isEmpty()) {
+    if (!comps.isEmpty()) {
         // Does not return:
         ErrorHandler::log(
             ErrorHandler::Fatal,
-            String::format("'{}' is an extern name; expected an extern provider name\n",
-                           providerName));
+            String::format("Too many components in extern name '{}'\n", externName));
     }
-    if (comps.numItems > 1) {
+
+    if (providerName.findByte('.') >= 0) {
         // Does not return:
         ErrorHandler::log(
             ErrorHandler::Fatal,
-            String::format("Too many components in extern provider name '{}'\n", providerName));
+            String::format("Too many components in provider name '{}'\n", providerName));
     }
 
     Owned<ExternProvider> provider = new ExternProvider;
     provider->extern_ = depSrc;
-    provider->providerName = comps[0];
+    provider->providerName = providerName;
     provider->repo = this;
     provider->externFunc = externFunc;
     this->externProviders.append(std::move(provider));

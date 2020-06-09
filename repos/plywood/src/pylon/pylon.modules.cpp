@@ -1,14 +1,14 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate pylon
-void inst_pylon(TargetInstantiatorArgs* args) {
+// [ply module="pylon"]
+void module_pylon(ModuleArgs* args) {
     args->addSourceFiles("pylon/pylon");
     args->addIncludeDir(Visibility::Public, "pylon");
     args->addTarget(Visibility::Public, "runtime");
 }
 
-// ply instantiate pylon-reflect
-void inst_pylonReflect(TargetInstantiatorArgs* args) {
+// [ply module="pylon-reflect"]
+void module_pylonReflect(ModuleArgs* args) {
     args->addSourceFiles("reflect/pylon-reflect");
     args->addIncludeDir(Visibility::Public, "reflect");
     args->addTarget(Visibility::Public, "pylon");

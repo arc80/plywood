@@ -29,7 +29,7 @@ Each repo folder contains a collection of **modules**. A Plywood module is a sel
 
     $ plytool module list
 
-Modules are defined by `Instantiators.inl` files scattered throughout each repo folder. Modules are allowed to depend on other modules in the same repo or in any child repo.
+Modules are defined by `*.modules.cpp` files scattered throughout each repo folder. Modules are allowed to depend on other modules in the same repo or in any child repo.
 
 Modules can be instantiated as [targets](#targets) within a [build folder](#build-folders).
 

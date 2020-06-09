@@ -574,7 +574,7 @@ struct APIExtractor : cpp::ParseSupervisor {
         }
     }
 
-    virtual void gotMacroOrComment(cpp::Token token, bool atDeclarationScope) override {
+    virtual void gotMacroOrComment(cpp::Token token) override {
         if (token.type == cpp::Token::CStyleComment && token.identifier.startsWith("/*!")) {
             this->parseDocString(token);
         }

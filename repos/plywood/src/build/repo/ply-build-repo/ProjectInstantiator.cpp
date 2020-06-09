@@ -5,7 +5,7 @@
 #include <ply-build-common/Core.h>
 #include <ply-build-repo/ProjectInstantiator.h>
 #include <ply-build-repo/ProjectInstantiationEnv.h>
-#include <ply-build-repo/TargetInstantiatorArgs.h>
+#include <ply-build-repo/ModuleArgs.h>
 #include <ply-build-repo/ExternProvider.h>
 #include <ply-build-repo/RepoRegistry.h>
 #include <ply-build-target/CMakeLists.h>
@@ -60,17 +60,18 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
         }
         buildTarget->sharedContainer = this->sharedContainer;
 
-        TargetInstantiatorArgs args;
+        ModuleArgs args;
         args.projInst = this;
         args.targetInst = targetInst;
         args.buildTarget = buildTarget;
-        targetInst->targetFunc.call(&args);
-        if (isSharedRoot) {
-            PLY_ASSERT(!this->sharedContainer);
-            buildTarget->targetType = BuildTargetType::DLL;
-        } else if (this->sharedContainer && !buildTarget->dynamicLinkPrefix.isEmpty()) {
-            // Libraries that export from DLL/EXE must have type ObjectLib
-            buildTarget->targetType = BuildTargetType::ObjectLib;
+        targetInst->moduleFunc.call(&args);
+        if (buildTarget->targetType == BuildTargetType::Lib) {
+            if (isSharedRoot) {
+                buildTarget->targetType = BuildTargetType::DLL;
+            } else if (this->sharedContainer && !buildTarget->dynamicLinkPrefix.isEmpty()) {
+                // Libraries that export from DLL/EXE must have type ObjectLib
+                buildTarget->targetType = BuildTargetType::ObjectLib;
+            }
         }
 
         // Special case for targets with no source files

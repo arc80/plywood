@@ -9,20 +9,20 @@
 namespace ply {
 namespace build {
 
-struct TargetInstantiatorArgs;
+struct ModuleArgs;
 
 struct TargetInstantiator : DependencySource {
-    typedef void InitializeTargetFunc(TargetInstantiatorArgs* args);
+    typedef void ModuleFunc(ModuleArgs* args);
 
     String instantiatorPath;
-    Functor<InitializeTargetFunc> targetFunc;
+    Functor<ModuleFunc> moduleFunc;
 
     PLY_INLINE TargetInstantiator() : DependencySource{DependencyType::Target} {
     }
     PLY_INLINE TargetInstantiator(StringView name, StringView instantiatorPath, const Repo* repo,
-                                  InitializeTargetFunc* targetFunc)
+                                  ModuleFunc* moduleFunc)
         : DependencySource{DependencyType::Target, name, repo}, instantiatorPath{instantiatorPath},
-          targetFunc{targetFunc} {
+          moduleFunc{moduleFunc} {
     }
 };
 

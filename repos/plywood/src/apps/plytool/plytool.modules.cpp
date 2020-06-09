@@ -1,7 +1,7 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate plytool
-void inst_plytool(TargetInstantiatorArgs* args) {
+// [ply module="plytool"]
+void module_plytool(ModuleArgs* args) {
     args->buildTarget->targetType = BuildTargetType::EXE;
     args->addSourceFiles("plytool");
     args->addIncludeDir(Visibility::Private, "plytool");
@@ -11,8 +11,8 @@ void inst_plytool(TargetInstantiatorArgs* args) {
     args->addTarget(Visibility::Private, "plytool-client");
 }
 
-// ply instantiate plytool-client
-void inst_plytool_client(TargetInstantiatorArgs* args) {
+// [ply module="plytool-client"]
+void module_plytool_client(ModuleArgs* args) {
     args->addSourceFiles("plytool-client/plytool-client");
     args->addIncludeDir(Visibility::Public, "plytool-client");
     args->addTarget(Visibility::Public, "reflect");

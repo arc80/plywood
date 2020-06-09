@@ -9,7 +9,7 @@
 #include <ply-build-common/Core.h>
 #include <ply-build-target/BuildTarget.h>
 #include <ply-build-target/CMakeLists.h>
-#include <ply-build-repo/TargetInstantiatorArgs.h>
+#include <ply-build-repo/ModuleArgs.h>
 #include <ply-build-repo/ProjectInstantiator.h>
 #include <ply-build-repo/ProjectInstantiationEnv.h>
 #include <ply-build-repo/Repo.h>
@@ -21,3 +21,6 @@
 #include <ply-runtime/algorithm/Find.h>
 using namespace ply;
 using namespace ply::build;
+
+#define PLY_DEFINE_MODULE(name, ...) \
+    void PLY_UNIQUE_VARIABLE(defineModule_)(__VA_ARGS__)

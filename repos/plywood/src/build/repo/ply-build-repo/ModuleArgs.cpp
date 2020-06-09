@@ -3,7 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-build-common/Core.h>
-#include <ply-build-repo/TargetInstantiatorArgs.h>
+#include <ply-build-repo/ModuleArgs.h>
 #include <ply-build-repo/ProjectInstantiator.h>
 #include <ply-build-repo/RepoRegistry.h>
 #include <ply-build-repo/ExternProvider.h>
@@ -13,25 +13,25 @@
 namespace ply {
 namespace build {
 
-PLY_NO_INLINE void TargetInstantiatorArgs::addIncludeDir(Visibility visibility,
+PLY_NO_INLINE void ModuleArgs::addIncludeDir(Visibility visibility,
                                                          StringView includeDir) {
     String absIncludeDir = NativePath::join(this->targetInst->instantiatorPath, includeDir);
     this->buildTarget->addIncludeDir(visibility, absIncludeDir);
 }
 
-PLY_NO_INLINE void TargetInstantiatorArgs::addSourceFiles(StringView sourcePath, bool recursive) {
+PLY_NO_INLINE void ModuleArgs::addSourceFiles(StringView sourcePath, bool recursive) {
     String absSourcePath = NativePath::join(this->targetInst->instantiatorPath, sourcePath);
     this->buildTarget->addSourceFiles(absSourcePath, recursive);
 }
 
 PLY_NO_INLINE void
-TargetInstantiatorArgs::addSourceFilesWhenImported(StringView sourceRoot,
+ModuleArgs::addSourceFilesWhenImported(StringView sourceRoot,
                                                    ArrayView<const StringView> relPaths) {
     String absSourceRoot = NativePath::join(this->targetInst->instantiatorPath, sourceRoot);
     this->buildTarget->addSourceFilesWhenImported(absSourceRoot, relPaths);
 }
 
-PLY_NO_INLINE void TargetInstantiatorArgs::setPrecompiledHeader(StringView generatorSource,
+PLY_NO_INLINE void ModuleArgs::setPrecompiledHeader(StringView generatorSource,
                                                                 StringView pchInclude) {
     String absGeneratorSource =
         NativePath::join(this->targetInst->instantiatorPath, generatorSource);
@@ -44,7 +44,7 @@ PLY_NO_INLINE void instantiatorError(StringView message) {
     PLY_FORCE_CRASH(); // FIXME: Decide how to report such errors
 }
 
-PLY_NO_INLINE void addDependency(TargetInstantiatorArgs* targetArgs, const DependencySource* depSrc,
+PLY_NO_INLINE void addDependency(ModuleArgs* targetArgs, const DependencySource* depSrc,
                                  Visibility visibility) {
     // Instantiate the dependency
     Dependency* dep = targetArgs->projInst->instantiate(depSrc, false);
@@ -64,7 +64,7 @@ PLY_NO_INLINE void addDependency(TargetInstantiatorArgs* targetArgs, const Depen
     targetArgs->buildTarget->dependencies.append({visibility, dep});
 }
 
-PLY_NO_INLINE void TargetInstantiatorArgs::addTarget(Visibility visibility, StringView targetName) {
+PLY_NO_INLINE void ModuleArgs::addTarget(Visibility visibility, StringView targetName) {
     Array<StringView> ownComps = splitName(targetName, "target name");
     ArrayView<StringView> comps = ownComps.view();
     if (comps.isEmpty())
@@ -101,7 +101,7 @@ PLY_NO_INLINE void TargetInstantiatorArgs::addTarget(Visibility visibility, Stri
     addDependency(this, targetInst, visibility);
 }
 
-PLY_NO_INLINE void TargetInstantiatorArgs::addExtern(Visibility visibility, StringView externName) {
+PLY_NO_INLINE void ModuleArgs::addExtern(Visibility visibility, StringView externName) {
     Array<StringView> ownComps = splitName(externName, "extern name");
     ArrayView<StringView> comps = ownComps.view();
     if (comps.isEmpty())

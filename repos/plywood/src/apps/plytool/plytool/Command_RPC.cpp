@@ -7,7 +7,7 @@
 #include <ply-reflect/Asset.h>
 #include <ply-build-repo/ProjectInstantiator.h>
 #include <ply-build-repo/ProjectInstantiationEnv.h>
-#include <ply-build-repo/TargetInstantiatorArgs.h>
+#include <ply-build-repo/ModuleArgs.h>
 #include <ply-build-folder/BuildFolder.h>
 #include <ply-build-repo/RepoRegistry.h>
 #include <ply-build-provider/ExternFolderRegistry.h>
@@ -32,7 +32,7 @@ PLY_NO_INLINE void buildAndRun(const tool::Command::Type::Run& runCmd) {
     targetInst.name = "AutoDiagramMaker"; // FIXME: generalize
     targetInst.repo = plyRepo;
     targetInst.instantiatorPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/docsite-cache");
-    targetInst.targetFunc = [&runCmd](TargetInstantiatorArgs* args) {
+    targetInst.moduleFunc = [&runCmd](ModuleArgs* args) {
         args->buildTarget->targetType = BuildTargetType::EXE;
         args->addSourceFiles(runCmd.sourceFiles[0]);
         for (const tool::Command::Dependency& dep : runCmd.dependencies) {

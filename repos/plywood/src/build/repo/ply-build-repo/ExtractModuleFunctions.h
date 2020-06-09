@@ -9,17 +9,18 @@ namespace ply {
 namespace build {
 
 struct ModuleDefinitionFile {
-    struct TargetFunc {
-        String targetName;
+    struct ModuleFunc {
+        String moduleName;
         String funcName;
     };
     struct ExternProviderFunc {
+        String externName;
         String providerName;
         String funcName;
     };
 
     String absPath;
-    Array<TargetFunc> targetFuncs;
+    Array<ModuleFunc> moduleFuncs;
     Array<ExternProviderFunc> externProviderFuncs;
 };
 

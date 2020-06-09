@@ -1,7 +1,7 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate ParserTest
-void inst_ParserTest(TargetInstantiatorArgs* args) {
+// [ply module="ParserTest"]
+void module_ParserTest(ModuleArgs* args) {
     args->buildTarget->targetType = BuildTargetType::EXE;
     args->addSourceFiles(".", false);
     args->addIncludeDir(Visibility::Private, ".");

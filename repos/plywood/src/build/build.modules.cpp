@@ -1,15 +1,15 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate build-common
-void inst_ply_build_common(TargetInstantiatorArgs* args) {
+// [ply module="build-common"]
+void module_ply_build_common(ModuleArgs* args) {
     args->buildTarget->dynamicLinkPrefix = "PLY_BUILD";
     args->addSourceFiles("common/ply-build-common");
     args->addIncludeDir(Visibility::Public, "common");
     args->addTarget(Visibility::Public, "reflect");
 }
 
-// ply instantiate build-target
-void inst_ply_build_target(TargetInstantiatorArgs* args) {
+// [ply module="build-target"]
+void module_ply_build_target(ModuleArgs* args) {
     args->buildTarget->dynamicLinkPrefix = "PLY_BUILD";
     args->addSourceFiles("target/ply-build-target");
     args->addIncludeDir(Visibility::Public, "target");
@@ -39,8 +39,8 @@ void inst_ply_build_target(TargetInstantiatorArgs* args) {
     }
 }
 
-// ply instantiate build-provider
-void inst_ply_build_provider(TargetInstantiatorArgs* args) {
+// [ply module="build-provider"]
+void module_ply_build_provider(ModuleArgs* args) {
     args->buildTarget->dynamicLinkPrefix = "PLY_BUILD";
     args->addSourceFiles("provider/ply-build-provider");
     args->addIncludeDir(Visibility::Public, "provider");
@@ -48,8 +48,8 @@ void inst_ply_build_provider(TargetInstantiatorArgs* args) {
     args->addTarget(Visibility::Private, "pylon-reflect");
 }
 
-// ply instantiate build-repo
-void inst_ply_build_repo(TargetInstantiatorArgs* args) {
+// [ply module="build-repo"]
+void module_ply_build_repo(ModuleArgs* args) {
     args->buildTarget->dynamicLinkPrefix = "PLY_BUILD";
     args->addSourceFiles("repo/ply-build-repo");
     args->addIncludeDir(Visibility::Public, "repo");
@@ -59,8 +59,8 @@ void inst_ply_build_repo(TargetInstantiatorArgs* args) {
     args->addTarget(Visibility::Private, "cpp");
 }
 
-// ply instantiate build-folder
-void inst_ply_build_folder(TargetInstantiatorArgs* args) {
+// [ply module="build-folder"]
+void module_ply_build_folder(ModuleArgs* args) {
     args->buildTarget->dynamicLinkPrefix = "PLY_BUILD";
     args->addSourceFiles("folder/ply-build-folder");
     args->addIncludeDir(Visibility::Public, "folder");

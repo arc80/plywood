@@ -1,7 +1,7 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate CairoToVideo
-void inst_CairoToVideo(TargetInstantiatorArgs* args) {
+// [ply module="CairoToVideo"]
+void module_CairoToVideo(ModuleArgs* args) {
     args->buildTarget->targetType = BuildTargetType::EXE;
     args->addSourceFiles(".", false);
     args->addIncludeDir(Visibility::Private, ".");

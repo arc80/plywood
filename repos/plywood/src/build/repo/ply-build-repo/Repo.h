@@ -26,7 +26,7 @@ struct Repo {
     Array<Repo*> childRepos;
 
     PLY_BUILD_ENTRY void addTargetInstantiator(Owned<TargetInstantiator>&& targetInst);
-    PLY_BUILD_ENTRY void addExternProvider(StringView providerName,
+    PLY_BUILD_ENTRY void addExternProvider(StringView externName, StringView providerName,
                                            ExternProvider::ExternFunc* externFunc);
 
     const Repo* findChildRepo(StringView childName) const;

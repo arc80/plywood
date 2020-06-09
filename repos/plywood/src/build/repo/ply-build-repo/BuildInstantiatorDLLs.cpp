@@ -4,7 +4,7 @@
 ------------------------------------*/
 #include <ply-build-common/Core.h>
 #include <ply-build-repo/BuildInstantiatorDLLs.h>
-#include <ply-build-repo/ExtractInstantiatorFunctions.h>
+#include <ply-build-repo/ExtractModuleFunctions.h>
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-build-target/CMakeLists.h>
 #include <ply-build-target/BuildTarget.h>
@@ -33,8 +33,8 @@ Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const Extracte
     sw << "\n";
 
     for (const ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
-        for (const ModuleDefinitionFile::TargetFunc& targetFunc : modDefFile.targetFuncs) {
-            sw.format("void {}(TargetInstantiatorArgs* args);\n", targetFunc.funcName);
+        for (const ModuleDefinitionFile::ModuleFunc& moduleFunc : modDefFile.moduleFuncs) {
+            sw.format("void {}(ModuleArgs* args);\n", moduleFunc.funcName);
         }
         for (const ModuleDefinitionFile::ExternProviderFunc& externProviderFunc :
              modDefFile.externProviderFuncs) {
@@ -46,16 +46,17 @@ Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const Extracte
     sw << "\nextern \"C\" PLY_DLL_EXPORT void registerInstantiators(Repo* repo) "
           "{\n";
     for (const ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
-        for (const ModuleDefinitionFile::TargetFunc& targetFunc : modDefFile.targetFuncs) {
+        for (const ModuleDefinitionFile::ModuleFunc& moduleFunc : modDefFile.moduleFuncs) {
             sw.format("    repo->addTargetInstantiator(new TargetInstantiator{{\"{}\", \"{}\", "
                       "repo, {}}});\n",
-                      fmt::EscapedString(targetFunc.targetName),
+                      fmt::EscapedString(moduleFunc.moduleName),
                       fmt::EscapedString(NativePath::split(modDefFile.absPath).first),
-                      targetFunc.funcName);
+                      moduleFunc.funcName);
         }
         for (const ModuleDefinitionFile::ExternProviderFunc& externProviderFunc :
              modDefFile.externProviderFuncs) {
-            sw.format("    repo->addExternProvider(\"{}\", {});\n",
+            sw.format("    repo->addExternProvider(\"{}\", \"{}\", {});\n",
+                      fmt::EscapedString(externProviderFunc.externName),
                       fmt::EscapedString(externProviderFunc.providerName),
                       externProviderFunc.funcName);
         }
@@ -128,7 +129,15 @@ Array<InstantiatedDLL> buildInstantiatorDLLs() {
         Array<ModuleDefinitionFile> modDefFiles;
         for (const WalkTriple& triple : FileSystem::native()->walk(repoFolder)) {
             for (const WalkTriple::FileInfo& file : triple.files) {
-                if (file.name.endsWith(".modules.cpp")) {
+                if (file.name == "Instantiators.inl") {
+                    // FIXME: Remove this later
+                    ErrorHandler::log(
+                        ErrorHandler::Error,
+                        String::format("Please rename '{}' to a filename that ends with "
+                                       "'.modules.cpp' (and make sure it contains the line "
+                                       "'#include <ply-build-repo/Module.h>')'\n",
+                                       NativePath::join(triple.dirPath, file.name)));
+                } else if (file.name.endsWith(".modules.cpp")) {
                     // Found one. Scan it and find all instantiator functions.
                     ModuleDefinitionFile modDefFile;
                     modDefFile.absPath = NativePath::join(triple.dirPath, file.name);

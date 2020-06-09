@@ -1,7 +1,7 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate WebCooker
-void inst_WebCooker(TargetInstantiatorArgs* args) {
+// [ply module="WebCooker"]
+void module_WebCooker(ModuleArgs* args) {
     args->buildTarget->targetType = BuildTargetType::EXE;
     args->addSourceFiles(".");
     args->addIncludeDir(Visibility::Private, ".");

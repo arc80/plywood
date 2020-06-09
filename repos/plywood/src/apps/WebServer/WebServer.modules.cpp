@@ -1,7 +1,7 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate WebServer
-void inst_WebServer(TargetInstantiatorArgs* args) {
+// [ply module="WebServer"]
+void module_WebServer(ModuleArgs* args) {
     args->buildTarget->targetType = BuildTargetType::EXE;
     args->addSourceFiles(".");
     args->addIncludeDir(Visibility::Private, ".");

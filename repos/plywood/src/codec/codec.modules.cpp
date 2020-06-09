@@ -1,7 +1,7 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate codec
-void inst_ply_codec(TargetInstantiatorArgs* args) {
+// [ply module="codec"]
+void module_ply_codec(ModuleArgs* args) {
     args->addSourceFiles("ply-codec");
     args->addIncludeDir(Visibility::Public, ".");
     args->addTarget(Visibility::Public, "runtime");
@@ -10,7 +10,7 @@ void inst_ply_codec(TargetInstantiatorArgs* args) {
     args->addExtern(Visibility::Private, "libavcodec");
 }
 
-// ply extern plywood.libavcodec.macports
+// [ply extern="libavcodec" provider="macports"]
 ExternResult extern_libavcodec_macports(ExternCommand cmd, ExternProviderArgs* args) {
     if (args->providerArgs) {
         return {ExternResult::BadArgs, ""};
@@ -51,7 +51,7 @@ ExternResult extern_libavcodec_macports(ExternCommand cmd, ExternProviderArgs* a
     return {ExternResult::Unknown, ""};
 }
 
-// ply extern plywood.libavcodec.apt
+// [ply extern="libavcodec" provider="apt"]
 ExternResult extern_libavcodec_apt(ExternCommand cmd, ExternProviderArgs* args) {
     if (args->providerArgs) {
         return {ExternResult::BadArgs, ""};
@@ -89,7 +89,7 @@ ExternResult extern_libavcodec_apt(ExternCommand cmd, ExternProviderArgs* args) 
     return {ExternResult::Unknown, ""};
 }
 
-// ply extern plywood.libavcodec.prebuilt
+// [ply extern="libavcodec" provider="prebuilt"]
 ExternResult extern_libavcodec_prebuilt(ExternCommand cmd, ExternProviderArgs* args) {
     // Toolchain filters
     if (args->toolchain->targetPlatform.name != "windows") {

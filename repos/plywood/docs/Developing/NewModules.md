@@ -1,23 +1,23 @@
 <% title "Adding New Modules" %>
 
-<% note Note that the steps needed to add a new module are still a work in progress! The plan is to add support for simplified `modules.pylon` files as an alternative to the `Instantiator.inl` files that are described here. %>
+In Plywood, a [module](KeyConcepts#modules) is defined by adding a special C++ function to a file with the suffix `.modules.cpp` somewhere in a [repo](KeyConcepts#repos)'s directory tree. This function is called an **module function** and must be preceded by a line comment of the form:
 
-In Plywood, a [module](KeyConcepts#modules) is defined by adding a special C++ function to a file named `Instantiator.inl` somewhere in a [repo](KeyConcepts#repos)'s directory tree. This function is called an **instantiator function** and must be preceded by a line comment of the form:
+    // [ply module="<module-name>"]
 
-    // ply instantiate <module-name>
+For example, the [`primesieve`](https://github.com/arc80/primesieve) add-on repo, which was already described in the [Creating New Repos](NewRepos) section, contains a single [`PrimeSieve.modules.cpp`](https://github.com/arc80/primesieve/blob/master/src/PrimeSieve/PrimeSieve.modules.cpp) file:
 
-For example, the [`primesieve`](https://github.com/arc80/primesieve) add-on repo, which was already described in the [Creating New Repos](NewRepos) section, contains a single [`Instantiator.inl`](https://github.com/arc80/primesieve/blob/master/src/PrimeSieve/Instantiators.inl) file:
-
-    // ply instantiate PrimeSieve
-    void inst_PrimeSieve(TargetInstantiatorArgs* args) {
+    // [ply module="PrimeSieve"]
+    void module_PrimeSieve(ModuleArgs* args) {
         args->buildTarget->targetType = BuildTargetType::EXE;
         args->addSourceFiles(".", false);
         args->addTarget(Visibility::Private, "runtime");
     }
 
-Each time PlyTool instantiates a [compilation target](KeyConcepts#targets), such as when running [`plytool generate`](PlyTool), it calls instantiator functions like the one above to initialize the target.
+The name of the function itself (in this case, `module_PrimeSieve`) isn't really important, except that it must be unique across all `.modules.cpp` files in the current repo. By convention, the name of the function starts with `module_`.
 
-## Operations Performed by an Instantiator Function
+Each time PlyTool instantiates a [compilation target](KeyConcepts#targets), such as when running [`plytool generate`](PlyTool), it calls a module function like the one above to initialize the target.
+
+## Operations Performed by a Module Function
 
 The following is a list of operations that can be performed when initializing a target:
 
@@ -42,7 +42,7 @@ You can add source files to a target by calling `addSourceFiles`:
 
     args->addSourceFiles(".", false);
 
-The first argument is a relative path that's interpreted relative to the directory containing the `Instantiators.inl` file itself. All `.cpp` files in this directory will be added to the target and compiled when the target is built. All `.h` files in this directory will also be added to the target so that they'll appear in IDEs such as Visual Studio and Xcode.
+The first argument is a relative path that's interpreted relative to the directory containing the `.modules.cpp` file itself. All `.cpp` files in this directory will be added to the target and compiled when the target is built. All `.h` files in this directory will also be added to the target so that they'll appear in IDEs such as Visual Studio and Xcode.
 
 If the second argument is `true`, all subdirectories will be searched recursively for additional files to add.
 
@@ -54,7 +54,7 @@ You can add include directories to a target by calling `addIncludeDir`:
 
 If the first argument is `Visibility::Public`, the include directory will be inherited by every target that depends on this one. If it's `Visibility::Private`, the include directory won't be inherited.
 
-The second argument is a relative path that's interpreted relative to the directory containing the `Instantiators.inl` file itself. Always use forward slashes `/` in the relative path even if the host machine is running Windows.
+The second argument is a relative path that's interpreted relative to the directory containing the `.modules.cpp` file itself. Always use forward slashes `/` in the relative path even if the host machine is running Windows.
 
 ### [Adding dependencies on other targets](#adding-dependencies-on-other-targets)
 
@@ -80,7 +80,7 @@ Note that, any time a target depends on an extern, and that target is added to a
 
 ### [Other operations](#other-operations)
 
-It's possible to do other work inside an instantiator function. For example, the [`platform` target instantiator](https://github.com/arc80/plywood/blob/master/repos/plywood/src/platform/Instantiators.inl) in the `plywood` repo generates a configuration header file and writes it to the build folder whenever a build system is generated using this module:
+It's possible to do other work inside a module function. For example, the [`platform` module function](https://github.com/arc80/plywood/blob/master/repos/plywood/src/platform/platform.modules.cpp) in the `plywood` repo generates a configuration header file and writes it to the build folder whenever a build system is generated using this module:
 
     FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         NativePath::join(args->projInst->env->buildFolderPath,

@@ -1,37 +1,37 @@
 #include <ply-build-repo/Module.h>
 
-// ply instantiate web-sass
-void inst_webSass(TargetInstantiatorArgs* args) {
+// [ply module="web-sass"]
+void module_webSass(ModuleArgs* args) {
     args->addIncludeDir(Visibility::Public, "sass");
     args->addSourceFiles("sass/web-sass");
     args->addTarget(Visibility::Public, "runtime");
     args->addExtern(Visibility::Public, "libsass");
 }
 
-// ply instantiate web-markdown
-void inst_webMarkdown(TargetInstantiatorArgs* args) {
+// [ply module="web-markdown"]
+void module_webMarkdown(ModuleArgs* args) {
     args->addIncludeDir(Visibility::Public, "markdown");
     args->addSourceFiles("markdown/web-markdown");
     args->addTarget(Visibility::Public, "reflect");
     args->addTarget(Visibility::Private, "web-common");
 }
 
-// ply instantiate web-common
-void inst_webCommon(TargetInstantiatorArgs* args) {
+// [ply module="web-common"]
+void module_webCommon(ModuleArgs* args) {
     args->addIncludeDir(Visibility::Public, "common");
     args->addSourceFiles("common/web-common");
     args->addTarget(Visibility::Public, "runtime");
 }
 
-// ply instantiate web-documentation
-void inst_webDocumentation(TargetInstantiatorArgs* args) {
+// [ply module="web-documentation"]
+void module_webDocumentation(ModuleArgs* args) {
     args->addIncludeDir(Visibility::Public, "documentation");
     args->addSourceFiles("documentation/web-documentation");
     args->addTarget(Visibility::Public, "reflect");
 }
 
-// ply instantiate web-cook-docs
-void inst_webCookDocs(TargetInstantiatorArgs* args) {
+// [ply module="web-cook-docs"]
+void module_webCookDocs(ModuleArgs* args) {
     args->addIncludeDir(Visibility::Public, "cook-docs");
     args->addIncludeDir(Visibility::Public, NativePath::join(args->projInst->env->buildFolderPath,
                                                              "codegen/web-cook-docs"));
@@ -55,8 +55,8 @@ void inst_webCookDocs(TargetInstantiatorArgs* args) {
     }
 }
 
-// ply instantiate web-serve-docs
-void inst_webServeDocs(TargetInstantiatorArgs* args) {
+// [ply module="web-serve-docs"]
+void module_webServeDocs(ModuleArgs* args) {
     args->addIncludeDir(Visibility::Public, "serve-docs");
     args->addSourceFiles("serve-docs/ply-web-serve-docs");
     args->addTarget(Visibility::Public, "runtime");
@@ -65,7 +65,7 @@ void inst_webServeDocs(TargetInstantiatorArgs* args) {
     args->addTarget(Visibility::Private, "web-common"); // for ResponseIface
 }
 
-// ply extern plywood.libsass.macports
+// [ply extern="libsass" provider="macports"]
 ExternResult extern_libsass_macports(ExternCommand cmd, ExternProviderArgs* args) {
     if (args->providerArgs) {
         return {ExternResult::BadArgs, ""};
@@ -101,7 +101,7 @@ ExternResult extern_libsass_macports(ExternCommand cmd, ExternProviderArgs* args
     return {ExternResult::Unknown, ""};
 }
 
-// ply extern plywood.libsass.homebrew
+// [ply extern="libsass" provider="homebrew"]
 ExternResult extern_libsass_homebrew(ExternCommand cmd, ExternProviderArgs* args) {
     if (args->providerArgs) {
         return {ExternResult::BadArgs, ""};
@@ -137,7 +137,7 @@ ExternResult extern_libsass_homebrew(ExternCommand cmd, ExternProviderArgs* args
     return {ExternResult::Unknown, ""};
 }
 
-// ply extern plywood.libsass.apt
+// [ply extern="libsass" provider="apt"]
 ExternResult extern_libsass_apt(ExternCommand cmd, ExternProviderArgs* args) {
     if (args->providerArgs) {
         return {ExternResult::BadArgs, ""};
@@ -171,7 +171,7 @@ ExternResult extern_libsass_apt(ExternCommand cmd, ExternProviderArgs* args) {
     return {ExternResult::Unknown, ""};
 }
 
-// ply extern plywood.libsass.prebuilt
+// [ply extern="libsass" provider="prebuilt"]
 ExternResult extern_libsass_prebuilt(ExternCommand cmd, ExternProviderArgs* args) {
     // Toolchain filters
     if (args->toolchain->targetPlatform.name != "windows") {

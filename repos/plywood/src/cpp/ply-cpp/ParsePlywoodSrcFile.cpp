@@ -72,7 +72,6 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
     addPPDef(&pp, "PLY_NO_INLINE", "");
     addPPDef(&pp, "PLY_DLL_ENTRY", "");
     addPPDef(&pp, "PLY_BUILD_ENTRY", "");
-    addPPDef(&pp, "PLY_INSTANTIATOR_ENTRY", "");
     addPPDef(&pp, "PLY_STATIC_ASSERT", "static_assert");
     addPPDef(&pp, "PLY_STATE_REFLECT", "", true);
     addPPDef(&pp, "PLY_REFLECT", "", true);
