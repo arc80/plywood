@@ -13,6 +13,7 @@
 #include <ply-build-repo/ProjectInstantiator.h>
 #include <ply-build-repo/ProjectInstantiationEnv.h>
 #include <ply-build-repo/Repo.h>
+#include <ply-build-repo/PackageProvider.h>
 #include <ply-build-provider/ExternFolderRegistry.h>
 #include <ply-build-provider/ExternHelpers.h>
 #include <ply-build-provider/HostTools.h>

@@ -12,81 +12,28 @@ void module_ply_codec(ModuleArgs* args) {
 
 // [ply extern="libavcodec" provider="macports"]
 ExternResult extern_libavcodec_macports(ExternCommand cmd, ExternProviderArgs* args) {
-    if (args->providerArgs) {
-        return {ExternResult::BadArgs, ""};
-    }
-    PackageManager* pkgMan = HostTools::get()->getMacPorts();
-    if (!pkgMan) {
-        return {ExternResult::MissingPackageManager, {}};
-    }
-
-    ExternResult er = {pkgMan->isPackageInstalled("ffmpeg")
-                           ? ExternResult::Installed
-                           : ExternResult::SupportedButNotInstalled,
-                       ""};
-    if (cmd == ExternCommand::Status) {
-        return er;
-    } else if (cmd == ExternCommand::Install) {
-        if (er.code == ExternResult::Installed) {
-            return er;
-        }
-        return {pkgMan->installPackage("ffmpeg") ? ExternResult::Installed
-                                                 : ExternResult::InstallFailed,
-                ""};
-    } else if (cmd == ExternCommand::Instantiate) {
-        if (er.code != ExternResult::Installed) {
-            return er;
-        }
-
-        String prefix = pkgMan->getInstallPrefix("ffmpeg");
-        args->dep->includeDirs.append(NativePath::join(prefix, "include"));
-        args->dep->libs.append(NativePath::join(prefix, "lib/libavcodec.dylib"));
-        args->dep->libs.append(NativePath::join(prefix, "lib/libavutil.dylib"));
-        args->dep->libs.append(NativePath::join(prefix, "lib/libswresample.dylib"));
-        args->dep->libs.append(NativePath::join(prefix, "lib/libswscale.dylib"));
-        args->dep->libs.append(NativePath::join(prefix, "lib/libavformat.dylib"));
-        return {ExternResult::Instantiated, ""};
-    }
-    PLY_ASSERT(0);
-    return {ExternResult::Unknown, ""};
+    PackageProvider prov{
+        PackageProvider::MacPorts, "ffmpeg", [&](StringView prefix) {
+            args->dep->includeDirs.append(NativePath::join(prefix, "include"));
+            args->dep->libs.append(NativePath::join(prefix, "lib/libavcodec.dylib"));
+            args->dep->libs.append(NativePath::join(prefix, "lib/libavutil.dylib"));
+            args->dep->libs.append(NativePath::join(prefix, "lib/libswresample.dylib"));
+            args->dep->libs.append(NativePath::join(prefix, "lib/libswscale.dylib"));
+            args->dep->libs.append(NativePath::join(prefix, "lib/libavformat.dylib"));
+        }};
+    return prov.handle(cmd, args);
 }
 
 // [ply extern="libavcodec" provider="apt"]
 ExternResult extern_libavcodec_apt(ExternCommand cmd, ExternProviderArgs* args) {
-    if (args->providerArgs) {
-        return {ExternResult::BadArgs, ""};
-    }
-    PackageManager* pkgMan = HostTools::get()->getApt();
-    if (!pkgMan) {
-        return {ExternResult::MissingPackageManager, {}};
-    }
-
-    ExternResult er = {pkgMan->isPackageInstalled("libavcodec-dev")
-                           ? ExternResult::Installed
-                           : ExternResult::SupportedButNotInstalled,
-                       ""};
-    if (cmd == ExternCommand::Status) {
-        return er;
-    } else if (cmd == ExternCommand::Install) {
-        if (er.code == ExternResult::Installed) {
-            return er;
-        }
-        return {pkgMan->installPackage("libavcodec-dev") ? ExternResult::Installed
-                                                   : ExternResult::InstallFailed,
-                ""};
-    } else if (cmd == ExternCommand::Instantiate) {
-        if (er.code != ExternResult::Installed) {
-            return er;
-        }
-        args->dep->libs.append("-lavcodec");
-        args->dep->libs.append("-lavutil");
-        args->dep->libs.append("-lavformat");
-        args->dep->libs.append("-lswresample");
-        args->dep->libs.append("-lswscale");
-        return {ExternResult::Instantiated, ""};
-    }
-    PLY_ASSERT(0);
-    return {ExternResult::Unknown, ""};
+    PackageProvider prov{PackageProvider::Apt, "libavcodec-dev", [&](StringView prefix) {
+                             args->dep->libs.append("-lavcodec");
+                             args->dep->libs.append("-lavutil");
+                             args->dep->libs.append("-lavformat");
+                             args->dep->libs.append("-lswresample");
+                             args->dep->libs.append("-lswscale");
+                         }};
+    return prov.handle(cmd, args);
 }
 
 // [ply extern="libavcodec" provider="prebuilt"]

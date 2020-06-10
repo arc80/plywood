@@ -67,108 +67,27 @@ void module_webServeDocs(ModuleArgs* args) {
 
 // [ply extern="libsass" provider="macports"]
 ExternResult extern_libsass_macports(ExternCommand cmd, ExternProviderArgs* args) {
-    if (args->providerArgs) {
-        return {ExternResult::BadArgs, ""};
-    }
-    PackageManager* pkgMan = HostTools::get()->getMacPorts();
-    if (!pkgMan) {
-        return {ExternResult::MissingPackageManager, {}};
-    }
-
-    ExternResult er = {pkgMan->isPackageInstalled("libsass")
-                           ? ExternResult::Installed
-                           : ExternResult::SupportedButNotInstalled,
-                       ""};
-    if (cmd == ExternCommand::Status) {
-        return er;
-    } else if (cmd == ExternCommand::Install) {
-        if (er.code == ExternResult::Installed) {
-            return er;
-        }
-        return {pkgMan->installPackage("libsass") ? ExternResult::Installed
-                                                  : ExternResult::InstallFailed,
-                ""};
-    } else if (cmd == ExternCommand::Instantiate) {
-        if (er.code != ExternResult::Installed) {
-            return er;
-        }
-        String prefix = pkgMan->getInstallPrefix("libsass");
-        args->dep->includeDirs.append(NativePath::join(prefix, "include"));
-        args->dep->libs.append(NativePath::join(prefix, "lib/libsass.a"));
-        return {ExternResult::Instantiated, ""};
-    }
-    PLY_ASSERT(0);
-    return {ExternResult::Unknown, ""};
+    PackageProvider prov{PackageProvider::MacPorts, "libsass", [&](StringView prefix) {
+                             args->dep->includeDirs.append(NativePath::join(prefix, "include"));
+                             args->dep->libs.append(NativePath::join(prefix, "lib/libsass.a"));
+                         }};
+    return prov.handle(cmd, args);
 }
 
 // [ply extern="libsass" provider="homebrew"]
 ExternResult extern_libsass_homebrew(ExternCommand cmd, ExternProviderArgs* args) {
-    if (args->providerArgs) {
-        return {ExternResult::BadArgs, ""};
-    }
-    PackageManager* pkgMan = HostTools::get()->getHomebrew();
-    if (!pkgMan) {
-        return {ExternResult::MissingPackageManager, {}};
-    }
-
-    ExternResult er = {pkgMan->isPackageInstalled("libsass")
-                           ? ExternResult::Installed
-                           : ExternResult::SupportedButNotInstalled,
-                       ""};
-    if (cmd == ExternCommand::Status) {
-        return er;
-    } else if (cmd == ExternCommand::Install) {
-        if (er.code == ExternResult::Installed) {
-            return er;
-        }
-        return {pkgMan->installPackage("libsass") ? ExternResult::Installed
-                                                  : ExternResult::InstallFailed,
-                ""};
-    } else if (cmd == ExternCommand::Instantiate) {
-        if (er.code != ExternResult::Installed) {
-            return er;
-        }
-        String prefix = pkgMan->getInstallPrefix("libsass");
-        args->dep->includeDirs.append(NativePath::join(prefix, "include"));
-        args->dep->libs.append(NativePath::join(prefix, "lib/libsass.a"));
-        return {ExternResult::Instantiated, ""};
-    }
-    PLY_ASSERT(0);
-    return {ExternResult::Unknown, ""};
+    PackageProvider prov{PackageProvider::Homebrew, "libsass", [&](StringView prefix) {
+                             args->dep->includeDirs.append(NativePath::join(prefix, "include"));
+                             args->dep->libs.append(NativePath::join(prefix, "lib/libsass.a"));
+                         }};
+    return prov.handle(cmd, args);
 }
 
 // [ply extern="libsass" provider="apt"]
 ExternResult extern_libsass_apt(ExternCommand cmd, ExternProviderArgs* args) {
-    if (args->providerArgs) {
-        return {ExternResult::BadArgs, ""};
-    }
-    PackageManager* pkgMan = HostTools::get()->getApt();
-    if (!pkgMan) {
-        return {ExternResult::MissingPackageManager, {}};
-    }
-
-    ExternResult er = {pkgMan->isPackageInstalled("libsass-dev")
-                           ? ExternResult::Installed
-                           : ExternResult::SupportedButNotInstalled,
-                       ""};
-    if (cmd == ExternCommand::Status) {
-        return er;
-    } else if (cmd == ExternCommand::Install) {
-        if (er.code == ExternResult::Installed) {
-            return er;
-        }
-        return {pkgMan->installPackage("libsass-dev") ? ExternResult::Installed
-                                                      : ExternResult::InstallFailed,
-                ""};
-    } else if (cmd == ExternCommand::Instantiate) {
-        if (er.code != ExternResult::Installed) {
-            return er;
-        }
-        args->dep->libs.append("-lsass");
-        return {ExternResult::Instantiated, ""};
-    }
-    PLY_ASSERT(0);
-    return {ExternResult::Unknown, ""};
+    PackageProvider prov{PackageProvider::Apt, "libsass-dev",
+                         [&](StringView) { args->dep->libs.append("-lsass"); }};
+    return prov.handle(cmd, args);
 }
 
 // [ply extern="libsass" provider="prebuilt"]

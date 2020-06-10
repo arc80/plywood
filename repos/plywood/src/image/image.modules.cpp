@@ -38,75 +38,22 @@ void module_image_png(ModuleArgs* args) {
 
 // [ply extern="cairo" provider="macports"]
 ExternResult extern_cairo_macports(ExternCommand cmd, ExternProviderArgs* args) {
-    if (args->providerArgs) {
-        return {ExternResult::BadArgs, ""};
-    }
-    PackageManager* pkgMan = HostTools::get()->getMacPorts();
-    if (!pkgMan) {
-        return {ExternResult::MissingPackageManager, {}};
-    }
-
-    ExternResult er = {pkgMan->isPackageInstalled("cairo")
-                           ? ExternResult::Installed
-                           : ExternResult::SupportedButNotInstalled,
-                       ""};
-    if (cmd == ExternCommand::Status) {
-        return er;
-    } else if (cmd == ExternCommand::Install) {
-        if (er.code == ExternResult::Installed) {
-            return er;
-        }
-        return {pkgMan->installPackage("cairo") ? ExternResult::Installed
-                                                   : ExternResult::InstallFailed,
-                ""};
-    } else if (cmd == ExternCommand::Instantiate) {
-        if (er.code != ExternResult::Installed) {
-            return er;
-        }
-        String prefix = pkgMan->getInstallPrefix("cairo");
-        args->dep->includeDirs.append(NativePath::join(prefix, "include/cairo"));
-        args->dep->libs.append(NativePath::join(prefix, "lib/libcairo.dylib"));
-        return {ExternResult::Instantiated, ""};
-    }
-    PLY_ASSERT(0);
-    return {ExternResult::Unknown, ""};
+    PackageProvider prov{PackageProvider::MacPorts, "cairo", [&](StringView prefix) {
+                             args->dep->includeDirs.append(
+                                 NativePath::join(prefix, "include/cairo"));
+                             args->dep->libs.append(NativePath::join(prefix, "lib/libcairo.dylib"));
+                         }};
+    return prov.handle(cmd, args);
 }
 
 // [ply extern="cairo" provider="apt"]
 ExternResult extern_cairo_apt(ExternCommand cmd, ExternProviderArgs* args) {
-    if (args->providerArgs) {
-        return {ExternResult::BadArgs, ""};
-    }
-    PackageManager* pkgMan = HostTools::get()->getApt();
-    if (!pkgMan) {
-        return {ExternResult::MissingPackageManager, {}};
-    }
-
-    ExternResult er = {pkgMan->isPackageInstalled("libcairo2-dev")
-                           ? ExternResult::Installed
-                           : ExternResult::SupportedButNotInstalled,
-                       ""};
-    if (cmd == ExternCommand::Status) {
-        return er;
-    } else if (cmd == ExternCommand::Install) {
-        if (er.code == ExternResult::Installed) {
-            return er;
-        }
-        return {pkgMan->installPackage("libcairo2-dev") ? ExternResult::Installed
-                                                   : ExternResult::InstallFailed,
-                ""};
-    } else if (cmd == ExternCommand::Instantiate) {
-        if (er.code != ExternResult::Installed) {
-            return er;
-        }
-        args->dep->includeDirs.append("/usr/include/cairo");
-        args->dep->libs.append("-lcairo");
-        return {ExternResult::Instantiated, ""};
-    }
-    PLY_ASSERT(0);
-    return {ExternResult::Unknown, ""};
+    PackageProvider prov{PackageProvider::Apt, "cairo", [&](StringView prefix) {
+                             args->dep->includeDirs.append("/usr/include/cairo");
+                             args->dep->libs.append("-lcairo");
+                         }};
+    return prov.handle(cmd, args);
 }
-
 
 // [ply extern="cairo" provider="prebuilt"]
 ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) {
@@ -134,7 +81,9 @@ ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) 
         }
         ExternFolder* externFolder = args->createExternFolder(args->toolchain->arch);
         String archivePath = NativePath::join(externFolder->path, archiveName + ".zip");
-        String url = String::format("https://github.com/preshing/cairo-windows/releases/download/{}/{}.zip", version, archiveName);
+        String url =
+            String::format("https://github.com/preshing/cairo-windows/releases/download/{}/{}.zip",
+                           version, archiveName);
         if (!downloadFile(archivePath, url)) {
             return {ExternResult::InstallFailed, String::format("Error downloading '{}'", url)};
         }
