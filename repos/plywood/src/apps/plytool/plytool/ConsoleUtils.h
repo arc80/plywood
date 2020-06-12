@@ -40,4 +40,14 @@ bool prefixMatch(StringView input, StringView cmd, u32 minUnits = 2);
 void fatalError(StringView msg);
 void ensureTerminated(CommandLine* cl);
 
+struct CommandDescription {
+    StringView name;
+    StringView description;
+};
+
+using CommandList = ArrayView<const CommandDescription>;
+
+void printUsage(StringWriter* sw, CommandList commands);
+void printUsage(StringWriter* sw, StringView command, CommandList commands = {});
+
 } // namespace ply

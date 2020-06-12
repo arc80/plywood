@@ -72,7 +72,19 @@ void command_extern(PlyToolCommandEnv* env) {
 
     StringView cmd = env->cl->readToken();
     if (cmd.isEmpty()) {
-        fatalError("Expected extern command");
+        ensureTerminated(env->cl);
+        env->cl->finalize();
+
+        auto sw = StdErr::createStringWriter();
+        printUsage(&sw, "extern",
+                   {
+                       {"list", "list description"},
+                       {"info", "info description"},
+                       {"select", "select description"},
+                       {"selected", "selected description"},
+                       {"install", "install description"},
+                   });
+        return;
     }
 
     if (prefixMatch(cmd, "list")) {

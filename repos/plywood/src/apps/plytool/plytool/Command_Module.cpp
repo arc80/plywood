@@ -19,7 +19,16 @@ void command_module(PlyToolCommandEnv* env) {
 
     StringView cmd = env->cl->readToken();
     if (cmd.isEmpty()) {
-        fatalError("Expected module command");
+        ensureTerminated(env->cl);
+        env->cl->finalize();
+
+        auto sw = StdErr::createStringWriter();
+        printUsage(&sw, "module",
+                   {
+                       {"list", "list description"},
+                   });
+
+        return;
     }
 
     if (prefixMatch(cmd, "list")) {

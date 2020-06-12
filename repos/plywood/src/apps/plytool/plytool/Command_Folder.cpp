@@ -14,7 +14,19 @@ void command_folder(PlyToolCommandEnv* env) {
     using namespace build;
     StringView cmd = env->cl->readToken();
     if (cmd.isEmpty()) {
-        fatalError("Expected folder command");
+        ensureTerminated(env->cl);
+        env->cl->finalize();
+
+        auto sw = StdErr::createStringWriter();
+        printUsage(&sw, "folder",
+                   {
+                       {"list", "list description"},
+                       {"create", "create description"},
+                       {"delete", "delete description"},
+                       {"set", "set description"},
+                   });
+
+        return;
     }
 
     if (prefixMatch(cmd, "list")) {

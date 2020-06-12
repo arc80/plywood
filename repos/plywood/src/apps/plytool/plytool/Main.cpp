@@ -17,6 +17,7 @@ void command_target(PlyToolCommandEnv* env);
 void command_module(PlyToolCommandEnv* env);
 void command_extern(PlyToolCommandEnv* env);
 bool command_generate(PlyToolCommandEnv* env);
+void command_build(PlyToolCommandEnv* env);
 void command_codegen(PlyToolCommandEnv* env);
 void command_bootstrap(PlyToolCommandEnv* env);
 void command_cleanup(PlyToolCommandEnv* env);
@@ -66,7 +67,20 @@ int main(int argc, char* argv[]) {
     StringView category = cl.readToken();
     bool success = true;
     if (category.isEmpty()) {
-        fatalError("Expected command");
+        cl.finalize();
+        auto sw = StdErr::createStringWriter();
+        const CommandList commands = {
+            {"bootstrap", "bootstrap description"},
+            {"build", "build description"},
+            {"cleanup", "cleanup description"},
+            {"codegen", "codegen description"},
+            {"extern", "extern description"},
+            {"folder", "folder description"},
+            {"generate", "generate description"},
+            {"module", "module description"},
+            {"target", "target description"},
+        };
+        printUsage(&sw, commands);
     } else if (category == "rpc") {
         command_rpc(&env);
     } else if (prefixMatch(category, "folder")) {
@@ -80,13 +94,7 @@ int main(int argc, char* argv[]) {
     } else if (prefixMatch(category, "generate")) {
         success = command_generate(&env);
     } else if (prefixMatch(category, "build")) {
-        if (!env.currentBuildFolder) {
-            fatalError("Current build folder not set");
-        }
-        ensureTerminated(env.cl);
-        env.cl->finalize();
-        // FIXME: Support --config option
-        env.currentBuildFolder->build({}, false);
+        command_build(&env);
     } else if (prefixMatch(category, "run")) {
         return command_run(&env);
     } else if (prefixMatch(category, "codegen")) {
