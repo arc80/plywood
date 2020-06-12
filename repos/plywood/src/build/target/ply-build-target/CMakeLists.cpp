@@ -284,7 +284,7 @@ PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
     return {sub->join(), std::move(output)};
 }
 
-String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolder,
+String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolderPath,
                            const CMakeGeneratorOptions& cmakeOptions, StringView buildType) {
     // Note: We may eventually want to build projects without using CMake at all, but for now,
     // CMakeGeneratorOptions is a good way to get the info we need.
@@ -334,7 +334,7 @@ String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolde
     }
 
     // Compose full path to the target output:
-    Array<StringView> pathComponents = {buildFolder, "build"};
+    Array<StringView> pathComponents = {buildFolderPath, "build"};
     if (isMultiConfig) {
         if (!buildType) {
             buildType = cmakeOptions.buildType;

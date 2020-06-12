@@ -83,6 +83,10 @@ Generates a build system inside the current build folder by running CMake.
 
 Runs the build system inside the current build folder. 
 
+<% member plytool run %>
+
+If an executable target has been built inside the current build folder, this command runs it.
+
 <% member plytool codegen %>
 
 Performs code generation across all repos.

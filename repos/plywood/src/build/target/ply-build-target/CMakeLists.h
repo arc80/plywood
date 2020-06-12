@@ -41,7 +41,7 @@ Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolder,
 Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
                                      const CMakeGeneratorOptions& generatorOpts,
                                      StringView buildType, bool captureOutput = true);
-String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolder,
+String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolderPath,
                            const CMakeGeneratorOptions& cmakeOptions, StringView buildType = {});
 
 } // namespace build

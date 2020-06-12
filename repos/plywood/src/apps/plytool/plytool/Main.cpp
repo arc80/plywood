@@ -20,6 +20,7 @@ bool command_generate(PlyToolCommandEnv* env);
 void command_codegen(PlyToolCommandEnv* env);
 void command_bootstrap(PlyToolCommandEnv* env);
 void command_cleanup(PlyToolCommandEnv* env);
+s32 command_run(PlyToolCommandEnv* env);
 
 } // namespace ply
 
@@ -86,6 +87,8 @@ int main(int argc, char* argv[]) {
         env.cl->finalize();
         // FIXME: Support --config option
         env.currentBuildFolder->build({}, false);
+    } else if (prefixMatch(category, "run")) {
+        return command_run(&env);
     } else if (prefixMatch(category, "codegen")) {
         command_codegen(&env);
     } else if (prefixMatch(category, "bootstrap")) {
