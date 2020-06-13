@@ -469,6 +469,7 @@ SetSourceFolders(BUILD-PROVIDER_SOURCES "${SRC_FOLDER}build/provider/ply-build-p
     "impl/PackageManager_Conan.cpp"
     "impl/PackageManager_Homebrew.cpp"
     "impl/PackageManager_MacPorts.cpp"
+    "impl/PackageManager_Vcpkg.cpp"
 )
 add_library(build-provider OBJECT
     ${BUILD-PROVIDER_SOURCES}

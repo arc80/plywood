@@ -14,6 +14,7 @@ struct PackageProvider {
         Apt,
         MacPorts,
         Homebrew,
+        Vcpkg,
     };
 
     Manager manager;
