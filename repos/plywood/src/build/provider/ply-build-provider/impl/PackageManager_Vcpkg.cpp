@@ -26,7 +26,23 @@ struct PackageManager_Vcpkg : PackageManager {
     }
 
     String getInstallPrefix(StringView) override {
-        return "$(VcpkgCurrentInstalledDir)";
+        Owned<Subprocess> sub =
+            Subprocess::exec("where", {"vcpkg"}, {}, Subprocess::Output::openStdOutOnly());
+        if (!sub)
+            return {};
+
+        Owned<StringReader> sr = TextFormat::platformPreference().createImporter(
+            Owned<InStream>::create(sub->readFromStdOut.borrow()));
+        String line = sr->readString<fmt::Line>();
+        if (sub->join() != 0) {
+            return {};
+        }
+
+        if (line.isEmpty()) {
+            return {};
+        }
+
+        return NativePath::join(NativePath::split(line).first, "installed");
     }
 
     bool installPackage(StringView packageName) override {
