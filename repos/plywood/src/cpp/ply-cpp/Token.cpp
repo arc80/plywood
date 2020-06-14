@@ -80,6 +80,22 @@ PLY_NO_INLINE StringView getPunctuationString(Token::Type tok) {
             return "!";
         case Token::Ellipsis:
             return "...";
+        case Token::LineComment:
+            return "//";
+        case Token::CStyleComment:
+            return "/*";
+        case Token::LessThanOrEqual:
+            return "<=";
+        case Token::GreaterThanOrEqual:
+            return ">=";
+        case Token::Arrow:
+            return "->";
+        case Token::StarEqual:
+            return "*=";
+        case Token::SlashEqual:
+            return "/=";
+        case Token::Caret:
+            return "^";
         default: {
             PLY_ASSERT(0);
             return "???";
