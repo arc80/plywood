@@ -23,6 +23,8 @@ PLY_NO_INLINE ExternResult PackageProvider::handle(ExternCommand cmd,
         pkgMan = HostTools::get()->getHomebrew();
     } else if (this->manager == Manager::MacPorts) {
         pkgMan = HostTools::get()->getMacPorts();
+    } else if (this->manager == Manager::Vcpkg) {
+        pkgMan = HostTools::get()->getVcpkg();
     }
 
     if (!pkgMan) {
