@@ -265,7 +265,8 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
 
 PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
                                                    const CMakeGeneratorOptions& generatorOpts,
-                                                   StringView buildType, bool captureOutput) {
+                                                   StringView buildType, StringView targetName,
+                                                   bool captureOutput) {
     PLY_ASSERT(generatorOpts.isValid());
     String buildFolder = NativePath::join(cmakeListsFolder, "build");
     Subprocess::Output outputType =
@@ -273,8 +274,11 @@ PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
     if (!buildType) {
         buildType = generatorOpts.buildType;
     }
-    Owned<Subprocess> sub = Subprocess::exec(
-        PLY_CMAKE_PATH, {"--build", ".", "--config", buildType}, buildFolder, outputType);
+    Array<StringView> args = {"--build", ".", "--config", buildType};
+    if (targetName) {
+        args.extend({"--target", targetName});
+    }
+    Owned<Subprocess> sub = Subprocess::exec(PLY_CMAKE_PATH, args.view(), buildFolder, outputType);
     String output;
     if (captureOutput) {
         output = TextFormat::platformPreference()

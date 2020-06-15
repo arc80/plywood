@@ -59,7 +59,7 @@ Array<TitleSpan> parseTitle(
         char c = svr.readByte();
         if (c == '\\') {
             if (svr.numBytesAvailable() > 0) {
-                sw << svr.readByte();
+                sw << (char) svr.readByte();
             }
         } else if (c == '[') {
             if (inSpanType != TitleSpan::Normal) {

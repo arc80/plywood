@@ -72,7 +72,12 @@ void command_target(PlyToolCommandEnv* env) {
             if (!targetInst) {
                 sw.format("    {} (not found)\n", targetName);
             } else {
-                sw.format("    {}\n", RepoRegistry::get()->getShortDepSourceName(targetInst));
+                String currentText;
+                if (targetName == env->currentBuildFolder->currentTarget) {
+                    currentText = " (current)";
+                }
+                sw.format("    {}{}\n", RepoRegistry::get()->getShortDepSourceName(targetInst),
+                          currentText);
             }
         }
     } else if (prefixMatch(cmd, "add")) {
@@ -95,9 +100,12 @@ void command_target(PlyToolCommandEnv* env) {
         if (findItem(env->currentBuildFolder->rootTargets.view(), fullTargetName) < 0) {
             env->currentBuildFolder->rootTargets.append(fullTargetName);
         }
-        if (makeShared && findItem(env->currentBuildFolder->makeShared.view(), fullTargetName) < 0) {
+        if (makeShared &&
+            findItem(env->currentBuildFolder->makeShared.view(), fullTargetName) < 0) {
             env->currentBuildFolder->makeShared.append(fullTargetName);
         }
+        // Make it the current run target:
+        env->currentBuildFolder->currentTarget = fullTargetName;
 
         env->currentBuildFolder->save();
         StdOut::createStringWriter().format("Added root target '{}' to build folder '{}'.\n",
@@ -114,7 +122,7 @@ void command_target(PlyToolCommandEnv* env) {
         const TargetInstantiator* targetInst =
             RepoRegistry::get()->findTargetInstantiator(targetName);
         if (!targetInst) {
-            fatalError(String::format("Can't find target '{}'", targetName));
+            exit(1);
         }
 
         String fullTargetName = targetInst->getFullyQualifiedName();
@@ -127,6 +135,42 @@ void command_target(PlyToolCommandEnv* env) {
         env->currentBuildFolder->rootTargets.erase(j);
         env->currentBuildFolder->save();
         StdOut::createStringWriter().format("Removed root target '{}' from build folder '{}'.\n",
+                                            RepoRegistry::get()->getShortDepSourceName(targetInst),
+                                            env->currentBuildFolder->buildFolderName);
+    } else if (prefixMatch(cmd, "set")) {
+        StringView targetName = env->cl->readToken();
+        if (targetName.isEmpty()) {
+            fatalError("Expected target name");
+        }
+        ensureTerminated(env->cl);
+        env->cl->finalize();
+
+        // FIXME: Factor this out into a common function with command_generate so that the reason
+        // for instantiation failure is logged.
+        PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
+        PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
+        ProjectInstantiationResult instResult =
+            env->currentBuildFolder->instantiateAllTargets(false);
+        if (!instResult.isValid) {
+            fatalError(String::format("Can't instantiate dependencies for folder '{}'\n",
+                                      env->currentBuildFolder->buildFolderName));
+        }
+
+        const TargetInstantiator* targetInst =
+            RepoRegistry::get()->findTargetInstantiator(targetName);
+        if (!targetInst) {
+            exit(1);
+        }
+
+        auto targetIdx = instResult.dependencyMap.find(targetInst, &instResult.dependencies);
+        if (!targetIdx.wasFound()) {
+            fatalError(String::format("Target '{}' is not instantiated in folder '{}'\n",
+                                      targetName, env->currentBuildFolder->buildFolderName));
+        }
+
+        env->currentBuildFolder->currentTarget = targetInst->getFullyQualifiedName();
+        env->currentBuildFolder->save();
+        StdOut::createStringWriter().format("Current target is now '{}' in folder '{}'.\n",
                                             RepoRegistry::get()->getShortDepSourceName(targetInst),
                                             env->currentBuildFolder->buildFolderName);
     } else if (prefixMatch(cmd, "graph")) {

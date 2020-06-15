@@ -59,7 +59,7 @@ PLY_NO_INLINE void buildAndRun(const tool::Command::Type::Run& runCmd) {
     // FIXME: Notify parent process of unselected/uninstalled providers:
     if (instResult.unselectedExterns.isEmpty() && instResult.uninstalledProviders.isEmpty()) {
         info->generate(&instResult);
-        info->build({});
+        info->build({}, {}, true);
     }
 }
 

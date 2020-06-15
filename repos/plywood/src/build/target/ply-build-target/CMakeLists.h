@@ -40,7 +40,8 @@ Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolder,
                                         Functor<void(StringView)> errorCallback = {});
 Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
                                      const CMakeGeneratorOptions& generatorOpts,
-                                     StringView buildType, bool captureOutput = true);
+                                     StringView buildType, StringView targetName,
+                                     bool captureOutput);
 String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolderPath,
                            const CMakeGeneratorOptions& cmakeOptions, StringView buildType = {});
 

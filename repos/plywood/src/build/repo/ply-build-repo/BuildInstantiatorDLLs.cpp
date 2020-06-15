@@ -194,7 +194,7 @@ Array<InstantiatedDLL> buildInstantiatorDLLs() {
     }
 
     // Build DLLs
-    cmakeResult = buildCMakeProject(ctx.dllBuildFolder, NativeToolchain, {});
+    cmakeResult = buildCMakeProject(ctx.dllBuildFolder, NativeToolchain, {}, {}, true);
     if (cmakeResult.first != 0) {
         ErrorHandler::log(ErrorHandler::Error,
                           StringView{"Failed to build instantiator DLLs:\n"} + cmakeResult.second);

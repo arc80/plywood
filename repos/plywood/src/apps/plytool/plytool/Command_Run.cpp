@@ -21,6 +21,11 @@ s32 command_run(PlyToolCommandEnv* env) {
     }
 
     ensureTerminated(env->cl);
+    StringView targetName =
+        env->cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--target="); });
+    if (targetName) {
+        targetName = targetName.subStr(9);
+    }
     env->cl->finalize();
 
     PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
@@ -33,34 +38,28 @@ s32 command_run(PlyToolCommandEnv* env) {
     if (!instResult.isValid) {
         fatalError(String::format("Can't instantiate dependencies for folder '{}'\n",
                                   env->currentBuildFolder->buildFolderName));
-        return -1;
     }
 
-    // Choose default run target
-    const TargetInstantiator* runTargetInst = nullptr;
-    const BuildTarget* runTarget = nullptr;
-    for (StringView rootTargetName : env->currentBuildFolder->rootTargets) {
-        const TargetInstantiator* rootTargetInst =
-            RepoRegistry::get()->findTargetInstantiator(rootTargetName);
-        auto rootTargetIdx =
-            instResult.dependencyMap.find(rootTargetInst, &instResult.dependencies);
-        if (!rootTargetIdx.wasFound())
-            continue;
-
-        const BuildTarget* rootTarget =
-            static_cast<BuildTarget*>(instResult.dependencies[*rootTargetIdx].dep.get());
-        PLY_ASSERT(rootTarget->type == DependencyType::Target);
-        if (rootTarget->targetType == BuildTargetType::EXE) {
-            runTargetInst = rootTargetInst;
-            runTarget = rootTarget;
-            break;
-        }
+    if (!targetName) {
+        targetName = env->currentBuildFolder->currentTarget;
     }
 
-    if (!runTarget) {
-        fatalError(String::format("Can't find an executable target in folder '{}'\n",
-                                  env->currentBuildFolder->buildFolderName));
-        return -1;
+    const TargetInstantiator* runTargetInst = RepoRegistry::get()->findTargetInstantiator(targetName);
+    if (!runTargetInst) {
+        exit(1);
+    }
+
+    auto runTargetIdx =
+        instResult.dependencyMap.find(runTargetInst, &instResult.dependencies);
+    if (!runTargetIdx.wasFound()) {
+        fatalError(String::format("Target '{}' is not instantiated in folder '{}'\n", targetName, env->currentBuildFolder->buildFolderName));
+    }
+
+    const BuildTarget* runTarget =
+        static_cast<BuildTarget*>(instResult.dependencies[*runTargetIdx].dep.get());
+    PLY_ASSERT(runTarget->type == DependencyType::Target);
+    if (runTarget->targetType != BuildTargetType::EXE) {
+        fatalError(String::format("Target '{}' is not executable\n", targetName));
     }
 
     String exePath = getTargetOutputPath(runTarget, env->currentBuildFolder->getAbsPath(),
@@ -70,7 +69,6 @@ s32 command_run(PlyToolCommandEnv* env) {
         fatalError(String::format("Executable '{}' is not built in folder '{}'\n",
                                   RepoRegistry::get()->getShortDepSourceName(runTargetInst),
                                   env->currentBuildFolder->buildFolderName));
-        return -1;
     }
 
     // FIXME: Implement --args option (should be last option on command line; rest of command line

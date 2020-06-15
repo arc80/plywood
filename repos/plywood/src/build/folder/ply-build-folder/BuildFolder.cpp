@@ -140,7 +140,8 @@ Owned<ProjectInstantiationEnv> BuildFolder::createEnvironment() const {
     return env;
 }
 
-PLY_NO_INLINE ProjectInstantiationResult BuildFolder::instantiateAllTargets(bool isGenerating) const {
+PLY_NO_INLINE ProjectInstantiationResult
+BuildFolder::instantiateAllTargets(bool isGenerating) const {
     Owned<ProjectInstantiationEnv> env = this->createEnvironment();
     env->isGenerating = isGenerating;
     ProjectInstantiationResult instResult;
@@ -226,12 +227,16 @@ PLY_NO_INLINE bool BuildFolder::generate(const ProjectInstantiationResult* instR
     return true;
 }
 
-PLY_NO_INLINE bool BuildFolder::build(StringView buildType, bool captureOutput) const {
+PLY_NO_INLINE bool BuildFolder::build(StringView buildType, StringView targetName,
+                                      bool captureOutput) const {
+    // Note: Should we check that targetName actually exists in the build folder before invoking
+    // CMake? If targetName isn't a root target, this would require us to instaniate all
+    // dependencies first.
     ErrorHandler::log(ErrorHandler::Info, String::format("Building '{}'...\n", this->solutionName));
 
     String cmakeListsFolder = BuildFolderName::getFullPath(this->buildFolderName);
-    Tuple<s32, String> result =
-        buildCMakeProject(cmakeListsFolder, this->cmakeOptions, buildType, captureOutput);
+    Tuple<s32, String> result = buildCMakeProject(cmakeListsFolder, this->cmakeOptions, buildType,
+                                                  targetName, captureOutput);
     if (result.first != 0) {
         ErrorHandler::log(ErrorHandler::Error,
                           String::format("Failed to build '{}':\n", this->solutionName) +
