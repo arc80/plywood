@@ -66,7 +66,7 @@ void printCommands(StringWriter* sw, const CommandList& commands) {
 
     for (auto& d : commands) {
         *sw << d.name;
-        for (auto i = 0; i < 20 - d.name.numBytes; ++i) {
+        for (s32 i = 0; i < 20 - (s32) d.name.numBytes; ++i) {
             *sw << ' ';
         }
         *sw << d.description << "\n";
