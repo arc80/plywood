@@ -35,24 +35,6 @@ struct BuildFolderName {
         PLY_ASSERT(!buildFolderName.isEmpty());
         return NativePath::join(getFullPath(buildFolderName), "info.pylon");
     }
-
-    static PLY_NO_INLINE String create(StringView generator, StringView shortDesc) {
-        String suffix = "";
-        u32 counter = 0;
-        for (;;) {
-            String fullName = String::format("cmake_{}_{}{}", generator, shortDesc, suffix);
-            if (FileSystem::native()->exists(getInfoPath(fullName)) == ExistsResult::NotFound) {
-                return fullName;
-            }
-            counter++;
-            if (counter < 1000) {
-                // FIXME: Add format specifiers for 0 padding
-                suffix = StringView{"."} + String::format("00{}", counter).right(3);
-            } else {
-                suffix = StringView{"."} + String::from(counter);
-            }
-        }
-    }
 };
 
 String BuildFolder::getAbsPath() const {
