@@ -53,7 +53,7 @@ Outputs a dependency graph for the current build folder.
 
 <% member plytool target set [em <targetName>] %>
 
-Sets the current target for the current build folder. This is the target that `plytool run` will run by default.
+Sets the active target for the current build folder. This is the target that `plytool run` will run by default.
 
 <% endMembers %>
 
@@ -89,7 +89,7 @@ Runs the build system inside the current build folder. By default, all targets i
 
 <% member plytool run \[--target=[em <targetName>]\] %>
 
-Runs an executable target inside the current build folder. By default, the current target is built. If the `--target` option is specified, the specified target is run instead. The current target can be set using `plytool target set`.
+Runs an executable target inside the current build folder. By default, the active target is built. If the `--target` option is specified, the specified target is run instead. The active target can be set using `plytool target set`.
 
 <% member plytool codegen %>
 

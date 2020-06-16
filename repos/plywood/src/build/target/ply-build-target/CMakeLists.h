@@ -15,14 +15,7 @@ struct CMakeGeneratorOptions {
     String generator;
     String platform;
     String toolset;
-    // For multiconfig generators (Visual Studio, Xcode), buildType is the default build type.
-    // For single-config generators (Unix Makefiles), it's the only build type
-    String buildType;
     // ply reflect off
-
-    PLY_INLINE bool isValid() const {
-        return generator && buildType;
-    }
 };
 
 struct CMakeBuildFolder {
@@ -34,16 +27,18 @@ struct CMakeBuildFolder {
 };
 
 extern CMakeGeneratorOptions NativeToolchain;
+extern String DefaultNativeConfig;
 void writeCMakeLists(StringWriter* sw, CMakeBuildFolder* cbf);
 Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolder,
                                         const CMakeGeneratorOptions& generatorOpts,
+                                        StringView config,
                                         Functor<void(StringView)> errorCallback = {});
 Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
                                      const CMakeGeneratorOptions& generatorOpts,
-                                     StringView buildType, StringView targetName,
+                                     StringView config, StringView targetName,
                                      bool captureOutput);
 String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolderPath,
-                           const CMakeGeneratorOptions& cmakeOptions, StringView buildType = {});
+                           const CMakeGeneratorOptions& cmakeOptions, StringView config);
 
 } // namespace build
 } // namespace ply

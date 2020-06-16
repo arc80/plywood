@@ -123,6 +123,7 @@ ToolchainInfo toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cmakeOp
 Owned<ProjectInstantiationEnv> BuildFolder::createEnvironment() const {
     Owned<ProjectInstantiationEnv> env = new ProjectInstantiationEnv;
     env->cmakeOptions = &this->cmakeOptions;
+    env->config = this->activeConfig.view();
     env->toolchain = toolchainInfoFromCMakeOptions(this->cmakeOptions);
     env->buildFolderPath = BuildFolderName::getFullPath(this->buildFolderName);
     for (StringView selName : this->externSelectors) {
@@ -203,20 +204,25 @@ PLY_NO_INLINE bool BuildFolder::generate(const ProjectInstantiationResult* instR
     {
         StringWriter sw;
         writeCMakeLists(&sw, this->solutionName, buildFolderPath, instResult, false);
+        String cmakeListsPath = NativePath::join(buildFolderPath, "CMakeLists.txt");
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-            NativePath::join(buildFolderPath, "CMakeLists.txt"), sw.moveToString(),
-            TextFormat::platformPreference());
+            cmakeListsPath, sw.moveToString(), TextFormat::platformPreference());
         if (result != FSResult::OK && result != FSResult::Unchanged) {
-            ErrorHandler::log(
-                ErrorHandler::Error,
-                String::format("Generating build system for '{}'...\n", this->solutionName));
+            ErrorHandler::log(ErrorHandler::Error,
+                              String::format("Can't write '{}'\n", cmakeListsPath));
         }
     }
 
-    Tuple<s32, String> result =
-        generateCMakeProject(buildFolderPath, this->cmakeOptions, [&](StringView errMsg) {
-            ErrorHandler::log(ErrorHandler::Error, errMsg);
-        });
+    if (!this->activeConfig) {
+        ErrorHandler::log(
+            ErrorHandler::Fatal,
+            String::format("Active config is not set in folder '{}'. Try recreating the folder.\n",
+                           this->buildFolderName));
+    }
+
+    Tuple<s32, String> result = generateCMakeProject(
+        buildFolderPath, this->cmakeOptions, this->activeConfig,
+        [&](StringView errMsg) { ErrorHandler::log(ErrorHandler::Error, errMsg); });
     if (result.first != 0) {
         ErrorHandler::log(
             ErrorHandler::Error,
@@ -227,16 +233,27 @@ PLY_NO_INLINE bool BuildFolder::generate(const ProjectInstantiationResult* instR
     return true;
 }
 
-PLY_NO_INLINE bool BuildFolder::build(StringView buildType, StringView targetName,
+PLY_NO_INLINE bool BuildFolder::build(StringView config, StringView targetName,
                                       bool captureOutput) const {
     // Note: Should we check that targetName actually exists in the build folder before invoking
     // CMake? If targetName isn't a root target, this would require us to instaniate all
     // dependencies first.
-    ErrorHandler::log(ErrorHandler::Info, String::format("Building '{}'...\n", this->solutionName));
+    if (!config) {
+        config = this->activeConfig;
+        if (!config) {
+            ErrorHandler::log(
+                ErrorHandler::Fatal,
+                String::format(
+                    "Active config is not set in folder '{}'. Try recreating the folder.\n",
+                    this->buildFolderName));
+        }
+    }
+    ErrorHandler::log(ErrorHandler::Info, String::format("Building {} configuration of '{}'...\n",
+                                                         config, this->solutionName));
 
     String cmakeListsFolder = BuildFolderName::getFullPath(this->buildFolderName);
-    Tuple<s32, String> result = buildCMakeProject(cmakeListsFolder, this->cmakeOptions, buildType,
-                                                  targetName, captureOutput);
+    Tuple<s32, String> result =
+        buildCMakeProject(cmakeListsFolder, this->cmakeOptions, config, targetName, captureOutput);
     if (result.first != 0) {
         ErrorHandler::log(ErrorHandler::Error,
                           String::format("Failed to build '{}':\n", this->solutionName) +

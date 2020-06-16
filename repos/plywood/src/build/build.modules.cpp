@@ -27,11 +27,11 @@ void module_ply_build_target(ModuleArgs* args) {
     "{}",
     "{}",
     "{}",
-    "{}",
 }};
+String DefaultNativeConfig = "{}";
 )",
             cmakeOptions->generator, cmakeOptions->platform, cmakeOptions->toolset,
-            cmakeOptions->buildType);
+            args->projInst->env->config);
         FileSystem::native()->makeDirsAndSaveTextIfDifferent(
             NativePath::join(args->projInst->env->buildFolderPath,
                              "codegen/ply-build-target/ply-build-target/NativeToolchain.inl"),

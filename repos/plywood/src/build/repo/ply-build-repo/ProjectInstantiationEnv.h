@@ -14,6 +14,7 @@ struct CMakeGeneratorOptions;
 
 struct ProjectInstantiationEnv {
     const CMakeGeneratorOptions* cmakeOptions = nullptr; // Used by the build-target module
+    HybridString config;
     ToolchainInfo toolchain;
     Array<const ExternProvider*> externSelectors;
     String buildFolderPath;

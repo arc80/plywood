@@ -106,7 +106,8 @@ Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const Extracte
 }
 
 Array<InstantiatedDLL> buildInstantiatorDLLs() {
-    PLY_ASSERT(NativeToolchain.isValid());
+    PLY_ASSERT(NativeToolchain.generator);
+    PLY_ASSERT(DefaultNativeConfig);
     ErrorHandler::log(ErrorHandler::Info, "Initializing repo registry...\n");
 
     GenerateDLLContext ctx;
@@ -168,7 +169,8 @@ Array<InstantiatedDLL> buildInstantiatorDLLs() {
         // Add to return value
         InstantiatedDLL& idll = idlls.append();
         idll.repoName = exRepo.repoName;
-        idll.dllPath = getTargetOutputPath(target, ctx.dllBuildFolder, NativeToolchain);
+        idll.dllPath =
+            getTargetOutputPath(target, ctx.dllBuildFolder, NativeToolchain, DefaultNativeConfig);
     }
 
     // Generate build system
@@ -182,10 +184,9 @@ Array<InstantiatedDLL> buildInstantiatorDLLs() {
                           String::format("Can't write '{}'\n", cmakeListsPath));
         return {};
     }
-    Tuple<s32, String> cmakeResult =
-        generateCMakeProject(ctx.dllBuildFolder, NativeToolchain, [&](StringView errMsg) {
-            ErrorHandler::log(ErrorHandler::Error, errMsg);
-        });
+    Tuple<s32, String> cmakeResult = generateCMakeProject(
+        ctx.dllBuildFolder, NativeToolchain, DefaultNativeConfig,
+        [&](StringView errMsg) { ErrorHandler::log(ErrorHandler::Error, errMsg); });
     if (cmakeResult.first != 0) {
         ErrorHandler::log(ErrorHandler::Error,
                           StringView{"Failed to generate build system for instantiator DLLs:\n"} +
@@ -194,7 +195,8 @@ Array<InstantiatedDLL> buildInstantiatorDLLs() {
     }
 
     // Build DLLs
-    cmakeResult = buildCMakeProject(ctx.dllBuildFolder, NativeToolchain, {}, {}, true);
+    cmakeResult =
+        buildCMakeProject(ctx.dllBuildFolder, NativeToolchain, DefaultNativeConfig, {}, true);
     if (cmakeResult.first != 0) {
         ErrorHandler::log(ErrorHandler::Error,
                           StringView{"Failed to build instantiator DLLs:\n"} + cmakeResult.second);

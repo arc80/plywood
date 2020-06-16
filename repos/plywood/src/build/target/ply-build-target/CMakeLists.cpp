@@ -226,11 +226,34 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
     }
 }
 
+bool isMultiConfigCMakeGenerator(StringView generator) {
+    if (generator.startsWith("Visual Studio")) {
+        return true;
+    } else if (generator == "Xcode") {
+        return true;
+    } else if (generator == "Unix Makefiles") {
+        return false;
+    } else {
+        // FIXME: Make this a not-fatal warning instead, perhaps logging to some kind of
+        // thread-local variable that can be set in the caller's scope.
+        PLY_ASSERT(0); // Unrecognized generator
+        return false;
+    }
+}
+
 PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolder,
                                                       const CMakeGeneratorOptions& generatorOpts,
+                                                      StringView config,
                                                       Functor<void(StringView)> errorCallback) {
-    PLY_ASSERT(generatorOpts.isValid());
+    PLY_ASSERT(generatorOpts.generator);
+    PLY_ASSERT(config);
     String buildFolder = NativePath::join(cmakeListsFolder, "build");
+    String relPathToCMakeLists = "..";
+    bool isMultiConfig = isMultiConfigCMakeGenerator(generatorOpts.generator);
+    if (!isMultiConfig) {
+        buildFolder = NativePath::join(buildFolder, config);
+        relPathToCMakeLists = "../..";
+    }
     FSResult result = FileSystem::native()->makeDirs(buildFolder);
     if (result != FSResult::OK && result != FSResult::AlreadyExists) {
         if (errorCallback) {
@@ -239,15 +262,17 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
         return {-1, ""};
     }
     PLY_ASSERT(!generatorOpts.generator.isEmpty());
-    Array<String> args = {"..", "-G", generatorOpts.generator};
+    Array<String> args = {relPathToCMakeLists, "-G", generatorOpts.generator};
     if (generatorOpts.platform) {
         args.extend({"-A", generatorOpts.platform});
     }
     if (generatorOpts.toolset) {
         args.extend({"-T", generatorOpts.toolset});
     }
-    args.extend({String::format("-DCMAKE_BUILD_TYPE={}", generatorOpts.buildType),
-                 "-DCMAKE_C_COMPILER_FORCED=1", "-DCMAKE_CXX_COMPILER_FORCED=1"});
+    if (!isMultiConfig) {
+        args.append(String::format("-DCMAKE_BUILD_TYPE={}", config));
+    }
+    args.extend({"-DCMAKE_C_COMPILER_FORCED=1", "-DCMAKE_CXX_COMPILER_FORCED=1"});
     Owned<Subprocess> sub = Subprocess::exec(PLY_CMAKE_PATH, Array<StringView>{args.view()}.view(),
                                              buildFolder, Subprocess::Output::openSeparate());
     String output = TextFormat::platformPreference()
@@ -265,16 +290,21 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
 
 PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
                                                    const CMakeGeneratorOptions& generatorOpts,
-                                                   StringView buildType, StringView targetName,
+                                                   StringView config, StringView targetName,
                                                    bool captureOutput) {
-    PLY_ASSERT(generatorOpts.isValid());
+    PLY_ASSERT(generatorOpts.generator);
+    PLY_ASSERT(config);
     String buildFolder = NativePath::join(cmakeListsFolder, "build");
+    bool isMultiConfig = isMultiConfigCMakeGenerator(generatorOpts.generator);
+    if (!isMultiConfig) {
+        buildFolder = NativePath::join(buildFolder, config);
+    }
     Subprocess::Output outputType =
         captureOutput ? Subprocess::Output::openMerged() : Subprocess::Output::inherit();
-    if (!buildType) {
-        buildType = generatorOpts.buildType;
+    Array<StringView> args = {"--build", "."};
+    if (isMultiConfig) {
+        args.extend({"--config", config});
     }
-    Array<StringView> args = {"--build", ".", "--config", buildType};
     if (targetName) {
         args.extend({"--target", targetName});
     }
@@ -289,22 +319,11 @@ PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
 }
 
 String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolderPath,
-                           const CMakeGeneratorOptions& cmakeOptions, StringView buildType) {
+                           const CMakeGeneratorOptions& cmakeOptions, StringView config) {
     // Note: We may eventually want to build projects without using CMake at all, but for now,
     // CMakeGeneratorOptions is a good way to get the info we need.
-    bool isMultiConfig = false;
-    if (cmakeOptions.generator.startsWith("Visual Studio")) {
-        isMultiConfig = true;
-    } else if (cmakeOptions.generator == "Xcode") {
-        isMultiConfig = true;
-    } else if (cmakeOptions.generator == "Unix Makefiles") {
-        PLY_ASSERT(!buildType || buildType == cmakeOptions.buildType);
-    } else {
-        // FIXME: Make this a not-fatal warning instead, perhaps logging to some kind of
-        // thread-local variable that can be set in the caller's scope.
-        PLY_ASSERT(0); // Unrecognized generator
-        return {};
-    }
+    PLY_ASSERT(cmakeOptions.generator);
+    PLY_ASSERT(config);
 
     // FIXME: The following logic assumes we're always using a native toolchain. In order to make it
     // work with cross-compilers, we'll need to pass in more information about the target platform,
@@ -338,13 +357,7 @@ String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolde
     }
 
     // Compose full path to the target output:
-    Array<StringView> pathComponents = {buildFolderPath, "build"};
-    if (isMultiConfig) {
-        if (!buildType) {
-            buildType = cmakeOptions.buildType;
-        }
-        pathComponents.append(buildType);
-    }
+    Array<StringView> pathComponents = {buildFolderPath, "build", config};
     String fullName = filePrefix + buildTarget->name + fileExtension;
     pathComponents.append(fullName);
     return NativePath::format().joinAndNormalize(Array<StringView>{pathComponents.view()}.view());

@@ -41,7 +41,7 @@ s32 command_run(PlyToolCommandEnv* env) {
     }
 
     if (!targetName) {
-        targetName = env->currentBuildFolder->currentTarget;
+        targetName = env->currentBuildFolder->activeTarget;
     }
 
     const TargetInstantiator* runTargetInst = RepoRegistry::get()->findTargetInstantiator(targetName);
@@ -64,7 +64,7 @@ s32 command_run(PlyToolCommandEnv* env) {
 
     String exePath = getTargetOutputPath(runTarget, env->currentBuildFolder->getAbsPath(),
                                          env->currentBuildFolder->cmakeOptions,
-                                         env->currentBuildFolder->cmakeOptions.buildType);
+                                         env->currentBuildFolder->activeConfig);
     if (FileSystem::native()->exists(exePath) != ExistsResult::File) {
         fatalError(String::format("Executable '{}' is not built in folder '{}'\n",
                                   RepoRegistry::get()->getShortDepSourceName(runTargetInst),

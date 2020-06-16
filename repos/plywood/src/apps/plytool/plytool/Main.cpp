@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 
     auto errorHandler = [](build::ErrorHandler::Level errorLevel, HybridString&& error) {
         StringWriter sw;
-        if (errorLevel == build::ErrorHandler::Error) {
+        if (errorLevel == build::ErrorHandler::Error || errorLevel == build::ErrorHandler::Fatal) {
             sw = StdErr::createStringWriter();
             sw << "Error: ";
         } else {
@@ -70,14 +70,10 @@ int main(int argc, char* argv[]) {
         cl.finalize();
         auto sw = StdErr::createStringWriter();
         const CommandList commands = {
-            {"bootstrap", "bootstrap description"},
-            {"build", "build description"},
-            {"cleanup", "cleanup description"},
-            {"codegen", "codegen description"},
-            {"extern", "extern description"},
-            {"folder", "folder description"},
-            {"generate", "generate description"},
-            {"module", "module description"},
+            {"bootstrap", "bootstrap description"}, {"build", "build description"},
+            {"cleanup", "cleanup description"},     {"codegen", "codegen description"},
+            {"extern", "extern description"},       {"folder", "folder description"},
+            {"generate", "generate description"},   {"module", "module description"},
             {"target", "target description"},
         };
         printUsage(&sw, commands);

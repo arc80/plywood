@@ -45,6 +45,7 @@ PLY_NO_INLINE void buildAndRun(const tool::Command::Type::Run& runCmd) {
     // FIXME: Don't require a BuildFolder object, and let the runCmd specify the output path
     Owned<BuildFolder> info = BuildFolder::create("AutoDiagramMaker", "AutoDiagramMaker");
     Owned<ProjectInstantiationEnv> instEnv = info->createEnvironment();
+    // FIXME: Set config
     // FIXME: Don't hardcode
     instEnv->externSelectors = {
         RepoRegistry::get()->getExternProvider("ply.cairo.prebuiltDLLs"),

@@ -115,8 +115,8 @@ set(nativeToolchainContents
     \"${CMAKE_GENERATOR}\",
     \"${CMAKE_GENERATOR_PLATFORM}\",
     \"${CMAKE_GENERATOR_TOOLSET}\",
-    \"${CMAKE_BUILD_TYPE}\",
 };
+String DefaultNativeConfig = \"${CMAKE_BUILD_TYPE}\";
 ")
 file(WRITE "${buildFolder}codegen/ply-build-target/ply-build-target/NativeToolchain.inl" "${nativeToolchainContents}")
 

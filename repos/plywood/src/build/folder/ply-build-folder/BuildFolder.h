@@ -26,7 +26,8 @@ struct BuildFolder {
     Array<String> rootTargets;
     Array<String> makeShared;
     Array<String> externSelectors;
-    String currentTarget; // for build & run
+    String activeConfig;
+    String activeTarget;
     // ply reflect off
 
     String getAbsPath() const;
@@ -41,7 +42,7 @@ struct BuildFolder {
     ProjectInstantiationResult instantiateAllTargets(bool isGenerating) const;
     DependencyTree buildDepTree() const;
     bool generate(const ProjectInstantiationResult* instResult) const;
-    bool build(StringView buildType, StringView targetName, bool captureOutput) const;
+    bool build(StringView config, StringView targetName, bool captureOutput) const;
 
     static Array<Owned<BuildFolder>> getList();
 };

@@ -72,12 +72,12 @@ void command_target(PlyToolCommandEnv* env) {
             if (!targetInst) {
                 sw.format("    {} (not found)\n", targetName);
             } else {
-                String currentText;
-                if (targetName == env->currentBuildFolder->currentTarget) {
-                    currentText = " (current)";
+                String activeText;
+                if (targetName == env->currentBuildFolder->activeTarget) {
+                    activeText = " (active)";
                 }
                 sw.format("    {}{}\n", RepoRegistry::get()->getShortDepSourceName(targetInst),
-                          currentText);
+                          activeText);
             }
         }
     } else if (prefixMatch(cmd, "add")) {
@@ -104,8 +104,8 @@ void command_target(PlyToolCommandEnv* env) {
             findItem(env->currentBuildFolder->makeShared.view(), fullTargetName) < 0) {
             env->currentBuildFolder->makeShared.append(fullTargetName);
         }
-        // Make it the current run target:
-        env->currentBuildFolder->currentTarget = fullTargetName;
+        // Make it the active run target:
+        env->currentBuildFolder->activeTarget = fullTargetName;
 
         env->currentBuildFolder->save();
         StdOut::createStringWriter().format("Added root target '{}' to build folder '{}'.\n",
@@ -168,9 +168,9 @@ void command_target(PlyToolCommandEnv* env) {
                                       targetName, env->currentBuildFolder->buildFolderName));
         }
 
-        env->currentBuildFolder->currentTarget = targetInst->getFullyQualifiedName();
+        env->currentBuildFolder->activeTarget = targetInst->getFullyQualifiedName();
         env->currentBuildFolder->save();
-        StdOut::createStringWriter().format("Current target is now '{}' in folder '{}'.\n",
+        StdOut::createStringWriter().format("Active target is now '{}' in folder '{}'.\n",
                                             RepoRegistry::get()->getShortDepSourceName(targetInst),
                                             env->currentBuildFolder->buildFolderName);
     } else if (prefixMatch(cmd, "graph")) {

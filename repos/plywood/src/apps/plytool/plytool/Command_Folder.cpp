@@ -37,8 +37,8 @@ void command_folder(PlyToolCommandEnv* env) {
         sw << "Build folders found:\n";
         for (const BuildFolder* bf : env->buildFolders) {
             PLY_ASSERT(!bf->buildFolderName.isEmpty());
-            bool isCurrent = (bf->buildFolderName == env->workspace->currentBuildFolder);
-            sw.format("    {}{}\n", bf->buildFolderName, (isCurrent ? " (current)" : ""));
+            bool isActive = (bf->buildFolderName == env->workspace->currentBuildFolder);
+            sw.format("    {}{}\n", bf->buildFolderName, (isActive ? " (active)" : ""));
         }
     } else if (prefixMatch(cmd, "create")) {
         StringView name = env->cl->readToken();
@@ -55,8 +55,12 @@ void command_folder(PlyToolCommandEnv* env) {
 
         Owned<BuildFolder> info = BuildFolder::create(name, name);
         info->cmakeOptions = NativeToolchain;
-        if (env->workspace->defaultCMakeOptions.isValid()) {
+        if (env->workspace->defaultCMakeOptions.generator) {
             info->cmakeOptions = env->workspace->defaultCMakeOptions;
+        }
+        info->activeConfig = DefaultNativeConfig;
+        if (env->workspace->defaultConfig) {
+            info->activeConfig = env->workspace->defaultConfig;
         }
         info->save();
         StdOut::createStringWriter().format("Created build folder '{}' at: {}\n",
