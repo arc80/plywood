@@ -79,17 +79,17 @@ Installs the specified extern provider.
 
 ## Generate Commands
 
-<% member plytool generate %>
+<% member plytool generate \[--config=[em <configName>\]%>
 
-Generates a build system inside the current build folder by running CMake.
+Generates a build system inside the current build folder by running CMake. When using a single-configuration generator, such as "Unix Makefiles", each configuration gets its own build system. For such generators, the optional `--config` argument can be used to override the active configuration for the current build folder.
 
-<% member plytool build \[--target=[em <targetName>]\] %>
+<% member plytool build \[--target=[em <targetName>]\] \[--config=[em <configName>\] %>
 
-Runs the build system inside the current build folder. This command will also generate a build system in the current build folder, but only if no existing build system is found. By default, all targets in the build folder are built. If the `--target` option is specified, only the specified target and its dependencies are built.
+Runs the build system inside the current build folder. This command will also generate a build system in the current build folder, but only if no existing build system is found. By default, all targets in the build folder are built using the build folder's active configuration. If the `--target` option is specified, only the specified target and its dependencies are built. If the `--config` option is specified, the specified configuration is built instead.
 
-<% member plytool run \[--target=[em <targetName>]\] %>
+<% member plytool run \[--target=[em <targetName>]\] \[--config=[em <configName>\] \[--nobuild\] %>
 
-Runs an executable target inside the current build folder. By default, the active target is built. If the `--target` option is specified, the specified target is run instead. The active target can be set using `plytool target set`.
+Build and runs an executable target inside the current build folder. This command will also generate a build system in the current build folder, but only if no existing build system is found. By default, the build folder's active target is run using the active configuration. If the `--target` option is specified, the specified target is built & run instead. The active target can be set using `plytool target set`.  If the `--config` option is specified, the specified configuration is built & run instead. If the `--nobuild` option is specified, the build step is skipped.
 
 <% member plytool codegen %>
 

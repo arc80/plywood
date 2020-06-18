@@ -19,14 +19,18 @@ bool command_build(PlyToolCommandEnv* env) {
     if (targetName) {
         targetName = targetName.subStr(9);
     }
+    StringView configName =
+        env->cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--config="); });
+    if (configName) {
+        configName = configName.subStr(9);
+    }
     env->cl->finalize();
 
-    // FIXME: Support --config option
-    if (!env->currentBuildFolder->isGenerated({})) {
-        if (!env->currentBuildFolder->generateLoop({}))
+    if (!env->currentBuildFolder->isGenerated(configName)) {
+        if (!env->currentBuildFolder->generateLoop(configName))
             return false;
     }
-    return env->currentBuildFolder->build({}, targetName, false);
+    return env->currentBuildFolder->build(configName, targetName, false);
 }
 
 } // namespace ply

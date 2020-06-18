@@ -26,6 +26,17 @@ s32 command_run(PlyToolCommandEnv* env) {
     if (targetName) {
         targetName = targetName.subStr(9);
     }
+    StringView configName =
+        env->cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--config="); });
+    if (configName) {
+        configName = configName.subStr(9);
+    } else {
+        configName = env->currentBuildFolder->activeConfig;
+    }
+    bool doBuild = true;
+    if (env->cl->checkForSkippedOpt("--nobuild")) {
+        doBuild = false;
+    }
     env->cl->finalize();
 
     PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
@@ -44,15 +55,16 @@ s32 command_run(PlyToolCommandEnv* env) {
         targetName = env->currentBuildFolder->activeTarget;
     }
 
-    const TargetInstantiator* runTargetInst = RepoRegistry::get()->findTargetInstantiator(targetName);
+    const TargetInstantiator* runTargetInst =
+        RepoRegistry::get()->findTargetInstantiator(targetName);
     if (!runTargetInst) {
         exit(1);
     }
 
-    auto runTargetIdx =
-        instResult.dependencyMap.find(runTargetInst, &instResult.dependencies);
+    auto runTargetIdx = instResult.dependencyMap.find(runTargetInst, &instResult.dependencies);
     if (!runTargetIdx.wasFound()) {
-        fatalError(String::format("Target '{}' is not instantiated in folder '{}'\n", targetName, env->currentBuildFolder->buildFolderName));
+        fatalError(String::format("Target '{}' is not instantiated in folder '{}'\n", targetName,
+                                  env->currentBuildFolder->buildFolderName));
     }
 
     const BuildTarget* runTarget =
@@ -62,9 +74,18 @@ s32 command_run(PlyToolCommandEnv* env) {
         fatalError(String::format("Target '{}' is not executable\n", targetName));
     }
 
+    // Generate & build
+    if (doBuild) {
+        if (!env->currentBuildFolder->isGenerated(configName)) {
+            if (!env->currentBuildFolder->generateLoop(configName))
+                return false;
+        }
+        if (!env->currentBuildFolder->build(configName, runTarget->name, false))
+            return -1;
+    }
+
     String exePath = getTargetOutputPath(runTarget, env->currentBuildFolder->getAbsPath(),
-                                         env->currentBuildFolder->cmakeOptions,
-                                         env->currentBuildFolder->activeConfig);
+                                         env->currentBuildFolder->cmakeOptions, configName);
     if (FileSystem::native()->exists(exePath) != ExistsResult::File) {
         fatalError(String::format("Executable '{}' is not built in folder '{}'\n",
                                   RepoRegistry::get()->getShortDepSourceName(runTargetInst),
