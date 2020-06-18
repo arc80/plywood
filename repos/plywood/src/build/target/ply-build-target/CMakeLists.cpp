@@ -241,6 +241,26 @@ bool isMultiConfigCMakeGenerator(StringView generator) {
     }
 }
 
+PLY_NO_INLINE bool cmakeBuildSystemExists(StringView cmakeListsFolder,
+                                          const CMakeGeneratorOptions& generatorOpts,
+                                          String solutionName, StringView config) {
+    PLY_ASSERT(generatorOpts.generator);
+    PLY_ASSERT(config);
+    if (generatorOpts.generator.startsWith("Visual Studio")) {
+        String slnPath = NativePath::join(cmakeListsFolder, "build", solutionName + ".sln");
+        return FileSystem::native()->exists(slnPath) == ExistsResult::File;
+    } else if (generatorOpts.generator == "Xcode") {
+        String projPath = NativePath::join(cmakeListsFolder, "build", solutionName + ".xcodeproj");
+        return FileSystem::native()->exists(projPath) == ExistsResult::Directory;
+    } else if (generatorOpts.generator == "Unix Makefiles") {
+        String makefilePath = NativePath::join(cmakeListsFolder, "build", config, "Makefile");
+        return FileSystem::native()->exists(makefilePath) == ExistsResult::File;
+    } else {
+        PLY_ASSERT(0); // Unrecognized generator
+        return false;
+    }
+}
+
 PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolder,
                                                       const CMakeGeneratorOptions& generatorOpts,
                                                       StringView config,

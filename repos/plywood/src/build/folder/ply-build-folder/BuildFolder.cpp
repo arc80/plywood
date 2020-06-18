@@ -16,6 +16,7 @@
 #include <ply-build-target/BuildTarget.h>
 #include <ply-build-target/CMakeLists.h>
 #include <ply-runtime/algorithm/Find.h>
+#include <ply-build-provider/ExternFolderRegistry.h>
 #include <ply-build-provider/HostTools.h>
 #include <ply-build-provider/ToolchainInfo.h>
 
@@ -196,7 +197,23 @@ PLY_NO_INLINE DependencyTree BuildFolder::buildDepTree() const {
     return depTree;
 }
 
-PLY_NO_INLINE bool BuildFolder::generate(const ProjectInstantiationResult* instResult) const {
+PLY_NO_INLINE bool BuildFolder::isGenerated(StringView config) const {
+    String cmakeListsFolder = BuildFolderName::getFullPath(this->buildFolderName);
+    if (!config) {
+        config = this->activeConfig;
+        if (!config) {
+            ErrorHandler::log(
+                ErrorHandler::Fatal,
+                String::format(
+                    "Active config is not set in folder '{}'. Try recreating the folder.\n",
+                    this->buildFolderName));
+        }
+    }
+    return cmakeBuildSystemExists(cmakeListsFolder, this->cmakeOptions, this->solutionName, config);
+}
+
+PLY_NO_INLINE bool BuildFolder::generate(StringView config,
+                                         const ProjectInstantiationResult* instResult) const {
     ErrorHandler::log(ErrorHandler::Info,
                       String::format("Generating build system for '{}'...\n", this->solutionName));
 
@@ -213,16 +230,21 @@ PLY_NO_INLINE bool BuildFolder::generate(const ProjectInstantiationResult* instR
         }
     }
 
-    if (!this->activeConfig) {
-        ErrorHandler::log(
-            ErrorHandler::Fatal,
-            String::format("Active config is not set in folder '{}'. Try recreating the folder.\n",
-                           this->buildFolderName));
+    if (!config) {
+        config = this->activeConfig;
+        if (!config) {
+            ErrorHandler::log(
+                ErrorHandler::Fatal,
+                String::format(
+                    "Active config is not set in folder '{}'. Try recreating the folder.\n",
+                    this->buildFolderName));
+        }
     }
 
-    Tuple<s32, String> result = generateCMakeProject(
-        buildFolderPath, this->cmakeOptions, this->activeConfig,
-        [&](StringView errMsg) { ErrorHandler::log(ErrorHandler::Error, errMsg); });
+    Tuple<s32, String> result =
+        generateCMakeProject(buildFolderPath, this->cmakeOptions, config, [&](StringView errMsg) {
+            ErrorHandler::log(ErrorHandler::Error, errMsg);
+        });
     if (result.first != 0) {
         ErrorHandler::log(
             ErrorHandler::Error,
@@ -231,6 +253,78 @@ PLY_NO_INLINE bool BuildFolder::generate(const ProjectInstantiationResult* instR
         return false;
     }
     return true;
+}
+
+PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) const {
+    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
+    PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
+    PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
+
+    for (;;) {
+        ProjectInstantiationResult instResult = this->instantiateAllTargets(false);
+        if (!instResult.isValid) {
+            return false;
+        }
+        bool canGenerate = true;
+        u32 numUnselected = instResult.unselectedExterns.numItems();
+        if (numUnselected > 0) {
+            canGenerate = false;
+            StringWriter sw = StdOut::createStringWriter();
+            for (const DependencySource* unselectedExtern : instResult.unselectedExterns) {
+                sw.format("Can't generate build system in folder '{}' because extern '{}' is not "
+                          "selected.\n",
+                          this->buildFolderName,
+                          RepoRegistry::get()->getShortDepSourceName(unselectedExtern));
+                Array<Tuple<const ExternProvider*, bool>> candidates;
+                for (const Repo* repo : RepoRegistry::get()->repos) {
+                    for (const ExternProvider* externProvider : repo->externProviders) {
+                        if (externProvider->extern_ != unselectedExtern)
+                            continue;
+                        ToolchainInfo toolchain = toolchainInfoFromCMakeOptions(this->cmakeOptions);
+                        ExternProviderArgs args;
+                        args.toolchain = &toolchain;
+                        args.provider = externProvider;
+                        ExternResult er = externProvider->externFunc(ExternCommand::Status, &args);
+                        if (er.isSupported()) {
+                            candidates.append({externProvider, er.code == ExternResult::Installed});
+                        }
+                    }
+                }
+                if (candidates.isEmpty()) {
+                    sw.format("No compatible providers are available for extern '{}'.\n",
+                              RepoRegistry::get()->getShortDepSourceName(unselectedExtern));
+                } else {
+                    u32 n = candidates.numItems();
+                    sw.format("{} compatible provider{} available:\n", n, n == 1 ? " is" : "s are");
+                    for (Tuple<const ExternProvider*, bool> pair : candidates) {
+                        sw.format("    {} ({})\n",
+                                  RepoRegistry::get()->getShortProviderName(pair.first),
+                                  pair.second ? "installed" : "not installed");
+                    }
+                }
+            }
+        }
+        if (instResult.uninstalledProviders.numItems() > 0) {
+            canGenerate = false;
+            StringWriter sw = StdOut::createStringWriter();
+            for (const ExternProvider* prov : instResult.uninstalledProviders) {
+                sw.format("Can't generate build system in folder '{}' because extern provider "
+                          "'{}' is selected, but not installed.\n",
+                          this->buildFolderName, RepoRegistry::get()->getShortProviderName(prov));
+            }
+        }
+        if (canGenerate) {
+            // Reinstantiate, but this time pass isGenerating = true:
+            instResult = this->instantiateAllTargets(true);
+            if (this->generate(config, &instResult)) {
+                StdOut::createStringWriter().format(
+                    "Successfully generated build system in folder '{}'.\n", this->buildFolderName);
+                return true;
+            }
+        }
+        break;
+    }
+    return false;
 }
 
 PLY_NO_INLINE bool BuildFolder::build(StringView config, StringView targetName,

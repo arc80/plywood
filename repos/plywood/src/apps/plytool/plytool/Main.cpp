@@ -17,7 +17,7 @@ void command_target(PlyToolCommandEnv* env);
 void command_module(PlyToolCommandEnv* env);
 void command_extern(PlyToolCommandEnv* env);
 bool command_generate(PlyToolCommandEnv* env);
-void command_build(PlyToolCommandEnv* env);
+bool command_build(PlyToolCommandEnv* env);
 void command_codegen(PlyToolCommandEnv* env);
 void command_bootstrap(PlyToolCommandEnv* env);
 void command_cleanup(PlyToolCommandEnv* env);
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
     } else if (prefixMatch(category, "generate")) {
         success = command_generate(&env);
     } else if (prefixMatch(category, "build")) {
-        command_build(&env);
+        success = command_build(&env);
     } else if (prefixMatch(category, "run")) {
         return command_run(&env);
     } else if (prefixMatch(category, "codegen")) {

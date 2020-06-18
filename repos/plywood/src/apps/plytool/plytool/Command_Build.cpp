@@ -8,7 +8,7 @@
 
 namespace ply {
 
-void command_build(PlyToolCommandEnv* env) {
+bool command_build(PlyToolCommandEnv* env) {
     if (!env->currentBuildFolder) {
         fatalError("Current build folder not set");
     }
@@ -22,7 +22,11 @@ void command_build(PlyToolCommandEnv* env) {
     env->cl->finalize();
 
     // FIXME: Support --config option
-    env->currentBuildFolder->build({}, targetName, false);
+    if (!env->currentBuildFolder->isGenerated({})) {
+        if (!env->currentBuildFolder->generateLoop({}))
+            return false;
+    }
+    return env->currentBuildFolder->build({}, targetName, false);
 }
 
 } // namespace ply

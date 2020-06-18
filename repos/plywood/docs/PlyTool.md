@@ -85,7 +85,7 @@ Generates a build system inside the current build folder by running CMake.
 
 <% member plytool build \[--target=[em <targetName>]\] %>
 
-Runs the build system inside the current build folder. By default, all targets in the build folder are built. If the `--target` option is specified, only the specified target and its dependencies are built.
+Runs the build system inside the current build folder. This command will also generate a build system in the current build folder, but only if no existing build system is found. By default, all targets in the build folder are built. If the `--target` option is specified, only the specified target and its dependencies are built.
 
 <% member plytool run \[--target=[em <targetName>]\] %>
 

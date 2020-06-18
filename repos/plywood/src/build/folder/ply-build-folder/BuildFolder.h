@@ -41,7 +41,9 @@ struct BuildFolder {
     Owned<ProjectInstantiationEnv> createEnvironment() const;
     ProjectInstantiationResult instantiateAllTargets(bool isGenerating) const;
     DependencyTree buildDepTree() const;
-    bool generate(const ProjectInstantiationResult* instResult) const;
+    bool isGenerated(StringView config) const;
+    bool generate(StringView config, const ProjectInstantiationResult* instResult) const;
+    bool generateLoop(StringView config) const;
     bool build(StringView config, StringView targetName, bool captureOutput) const;
 
     static Array<Owned<BuildFolder>> getList();
