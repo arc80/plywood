@@ -342,15 +342,17 @@ PLY_NO_INLINE bool BuildFolder::build(StringView config, StringView targetName,
                     this->buildFolderName));
         }
     }
-    ErrorHandler::log(ErrorHandler::Info, String::format("Building {} configuration of '{}'...\n",
-                                                         config, this->solutionName));
+    ErrorHandler::log(ErrorHandler::Info,
+                      String::format("Building {} configuration of '{}'...\n", config,
+                                     targetName ? targetName : this->solutionName.view()));
 
     String cmakeListsFolder = BuildFolderName::getFullPath(this->buildFolderName);
     Tuple<s32, String> result =
         buildCMakeProject(cmakeListsFolder, this->cmakeOptions, config, targetName, captureOutput);
     if (result.first != 0) {
         ErrorHandler::log(ErrorHandler::Error,
-                          String::format("Failed to build '{}':\n", this->solutionName) +
+                          String::format("Failed to build '{}':\n",
+                                         targetName ? targetName : this->solutionName.view()) +
                               result.second);
         return false;
     }

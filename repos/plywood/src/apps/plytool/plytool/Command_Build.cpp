@@ -13,12 +13,8 @@ bool command_build(PlyToolCommandEnv* env) {
         fatalError("Current build folder not set");
     }
 
+    StringView targetName = env->cl->readToken();
     ensureTerminated(env->cl);
-    StringView targetName =
-        env->cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--target="); });
-    if (targetName) {
-        targetName = targetName.subStr(9);
-    }
     StringView configName =
         env->cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--config="); });
     if (configName) {

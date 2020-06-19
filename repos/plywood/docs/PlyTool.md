@@ -83,13 +83,13 @@ Installs the specified extern provider.
 
 Generates a build system inside the current build folder by running CMake. When using a single-configuration generator, such as "Unix Makefiles", each configuration gets its own build system. For such generators, the optional `--config` argument can be used to override the active configuration for the current build folder.
 
-<% member plytool build \[--target=[em <targetName>]\] \[--config=[em <configName>\] %>
+<% member plytool build \[[em <targetName>]\] \[--config=[em <configName>]\] %>
 
-Runs the build system inside the current build folder. This command will also generate a build system in the current build folder, but only if no existing build system is found. By default, all targets in the build folder are built using the build folder's active configuration. If the `--target` option is specified, only the specified target and its dependencies are built. If the `--config` option is specified, the specified configuration is built instead.
+Runs the build system inside the current build folder. This command will also generate a build system in the current build folder, but only if no existing build system is found. If *targetName* is specified, only the specified target and its dependencies are built; otherwise, all targets in the build folder are built. If the `--config` option is specified, the specified configuration is built; otherwise, the folder's active configuration is built.
 
-<% member plytool run \[--target=[em <targetName>]\] \[--config=[em <configName>\] \[--nobuild\] %>
+<% member plytool run \[[em <targetName>]\] \[--config=[em <configName>]\] \[--nobuild\] %>
 
-Build and runs an executable target inside the current build folder. This command will also generate a build system in the current build folder, but only if no existing build system is found. By default, the build folder's active target is run using the active configuration. If the `--target` option is specified, the specified target is built & run instead. The active target can be set using `plytool target set`.  If the `--config` option is specified, the specified configuration is built & run instead. If the `--nobuild` option is specified, the build step is skipped.
+Build and runs an executable target inside the current build folder. By default, this command will also generate a build system in the current build folder, but only if no existing build system is found. If the `--nobuild` option is specified, the generate & build steps are skipped. If *targetName* is specified, the specified target is built & run; otherwise, the build folder's active target is built & run. If the `--config` option is specified, the specified configuration is built; otherwise, the build folder's active configuration is built.
 
 <% member plytool codegen %>
 
