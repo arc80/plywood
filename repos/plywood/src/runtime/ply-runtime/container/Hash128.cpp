@@ -15,8 +15,8 @@
 //   August 5 2012: SpookyV2: d = should be d += in short hash, and remove extra mix from long
 //   hash
 
-#include <ply-cook/Core.h>
-#include <ply-cook/Hash128.h>
+#include <ply-runtime/Precomp.h>
+#include <ply-runtime/container/Hash128.h>
 
 #define PLY_ALLOW_UNALIGNED_READS 1
 
@@ -319,18 +319,16 @@ PLY_NO_INLINE void Hash128::append(ConstBufferView view) {
     this->state.Update(view.bytes, view.numBytes);
 }
 
-PLY_NO_INLINE Hash128::Value Hash128::get() const {
-    Hash128::Value r;
-    this->state.Final(&r.a, &r.b);
+PLY_NO_INLINE u128 Hash128::get() const {
+    u128 r;
+    this->state.Final(&r.hi, &r.lo);
     return r;
 }
 
-PLY_NO_INLINE Hash128::Value Hash128::compute(ConstBufferView view) {
+PLY_NO_INLINE u128 Hash128::compute(ConstBufferView view) {
     Hash128 hasher;
     hasher.append(view);
     return hasher.get();
 }
 
 } // namespace ply
-
-#include "codegen/Hash128.inl" //%%

@@ -7,7 +7,7 @@
 #include <ply-web-cook-docs/Sema.h>
 #include <ply-web-cook-docs/SymbolTitle.h>
 #include <ply-runtime/container/BTree.h>
-#include <ply-cook/Hash128.h>
+#include <ply-runtime/container/Hash128.h>
 
 namespace ply {
 namespace docs {
@@ -68,7 +68,7 @@ struct SemaEntity : RefCounted<SemaEntity> {
     SemaEntity* parent = nullptr; // adds a reference if parent is a Namespace
     Type type = Namespace;
     String name;
-    Hash128::Value hash;                            // If Class
+    u128 hash = 0;                                  // If Class
     Reference<SemaEntity> templateParams = nullptr; // If template Class or Member
     Array<cpp::sema::QualifiedID> baseClasses;      // If Class
     Array<Reference<SemaEntity>> childSeq;          // If Class or ParamList

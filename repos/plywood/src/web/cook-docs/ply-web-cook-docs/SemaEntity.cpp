@@ -29,7 +29,7 @@ SemaEntity::~SemaEntity() {
 
 void SemaEntity::setClassHash() {
     PLY_ASSERT(this->type == SemaEntity::Class);
-    PLY_ASSERT(this->hash == Hash128::Value{});
+    PLY_ASSERT(this->hash == 0);
 
     Hash128 hasher;
     hasher.append(this->getQualifiedID().bufferView());

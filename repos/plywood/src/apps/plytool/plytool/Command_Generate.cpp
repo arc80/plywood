@@ -5,6 +5,9 @@
 #include <Core.h>
 #include <ConsoleUtils.h>
 #include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/RepoRegistry.h>
+#include <ply-build-provider/ExternFolderRegistry.h>
+#include <ply-build-provider/HostTools.h>
 
 namespace ply {
 
@@ -21,6 +24,10 @@ bool command_generate(PlyToolCommandEnv* env) {
         configName = configName.subStr(9);
     }
     env->cl->finalize();
+
+    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
+    PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
+    PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
 
     return env->currentBuildFolder->generateLoop(configName);
 }

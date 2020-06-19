@@ -256,10 +256,6 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
 }
 
 PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) const {
-    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
-    PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
-    PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
-
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);
         if (!instResult.isValid) {

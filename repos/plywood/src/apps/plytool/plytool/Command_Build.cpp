@@ -5,10 +5,14 @@
 #include <Core.h>
 #include <ConsoleUtils.h>
 #include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/RepoRegistry.h>
+#include <ply-build-provider/ExternFolderRegistry.h>
+#include <ply-build-provider/HostTools.h>
 
 namespace ply {
 
 bool command_build(PlyToolCommandEnv* env) {
+    using namespace build;
     if (!env->currentBuildFolder) {
         fatalError("Current build folder not set");
     }
@@ -23,6 +27,10 @@ bool command_build(PlyToolCommandEnv* env) {
     env->cl->finalize();
 
     if (!env->currentBuildFolder->isGenerated(configName)) {
+        PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
+        PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
+        PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
+
         if (!env->currentBuildFolder->generateLoop(configName))
             return false;
     }

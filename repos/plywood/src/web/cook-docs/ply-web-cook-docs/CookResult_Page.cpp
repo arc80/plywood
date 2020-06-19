@@ -310,7 +310,7 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
 
 //---------------------------
 
-Hash128::Value getClassHash(StringView classFQID) {
+u128 getClassHash(StringView classFQID) {
     cook::DependencyTracker* depTracker = cook::DependencyTracker::current();
     WebCookerIndex* wci = depTracker->userData.cast<WebCookerIndex>();
     SemaEntity* classEnt = wci->globalScope->lookupChain(classFQID.splitByte(':').view());
@@ -323,7 +323,7 @@ extern cook::DependencyType DependencyType_ExtractedClassAPI;
 
 struct Dependency_ExtractedClassAPI : cook::Dependency {
     String classFQID;
-    Hash128::Value classHash;
+    u128 classHash;
 
     PLY_INLINE Dependency_ExtractedClassAPI(StringView classFQID) : classFQID{classFQID} {
         this->classHash = getClassHash(classFQID);

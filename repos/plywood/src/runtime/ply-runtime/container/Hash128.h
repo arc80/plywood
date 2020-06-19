@@ -32,7 +32,9 @@
 //
 
 #pragma once
-#include <ply-cook/Core.h>
+#include <ply-runtime/Core.h>
+#include <ply-runtime/container/BufferView.h>
+#include <ply-runtime/container/Int128.h>
 
 namespace ply {
 
@@ -274,38 +276,13 @@ private:
 };
 
 struct Hash128 {
-    struct Value {
-        PLY_REFLECT()
-        u64 a = 0;
-        u64 b = 0;
-        // ply reflect off
-
-        PLY_INLINE Value() = default;
-        PLY_INLINE Value(const Value&) = default;
-
-        PLY_INLINE bool operator==(const Value& other) const {
-            return this->a == other.a && this->b == other.b;
-        }
-        PLY_INLINE bool operator!=(const Value& other) const {
-            return !(this->a == other.a && this->b == other.b);
-        }
-        PLY_INLINE void operator+=(const Value& other) {
-            this->a += other.a;
-            this->b += other.b;
-            this->a += this->b < other.b;
-        }
-        PLY_INLINE static Value zero() {
-            return {};
-        }
-    };
-
     SpookyHash state;
 
     Hash128();
     void append(ConstBufferView view);
-    Value get() const;
+    u128 get() const;
 
-    static Value compute(ConstBufferView view);
+    static u128 compute(ConstBufferView view);
 };
 
 } // namespace ply
