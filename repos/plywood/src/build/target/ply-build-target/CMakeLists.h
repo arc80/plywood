@@ -9,6 +9,7 @@ namespace ply {
 namespace build {
 
 struct BuildTarget;
+enum class BuildTargetType;
 
 struct CMakeGeneratorOptions {
     PLY_REFLECT()
@@ -38,8 +39,8 @@ Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolder,
 Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
                                      const CMakeGeneratorOptions& generatorOpts, StringView config,
                                      StringView targetName, bool captureOutput);
-String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolderPath,
-                           const CMakeGeneratorOptions& cmakeOptions, StringView config);
+String getTargetOutputPath(BuildTargetType targetType, StringView targetName,
+                           StringView buildFolderPath, StringView config);
 
 } // namespace build
 } // namespace ply

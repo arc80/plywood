@@ -338,11 +338,8 @@ PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
     return {sub->join(), std::move(output)};
 }
 
-String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolderPath,
-                           const CMakeGeneratorOptions& cmakeOptions, StringView config) {
-    // Note: We may eventually want to build projects without using CMake at all, but for now,
-    // CMakeGeneratorOptions is a good way to get the info we need.
-    PLY_ASSERT(cmakeOptions.generator);
+String getTargetOutputPath(BuildTargetType targetType, StringView targetName,
+                           StringView buildFolderPath, StringView config) {
     PLY_ASSERT(config);
 
     // FIXME: The following logic assumes we're always using a native toolchain. In order to make it
@@ -351,11 +348,11 @@ String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolde
     // initialize that ToolchainInfo.)
     StringView filePrefix;
     StringView fileExtension;
-    if (buildTarget->targetType == BuildTargetType::EXE) {
+    if (targetType == BuildTargetType::EXE) {
 #if PLY_TARGET_WIN32
         fileExtension = ".exe";
 #endif
-    } else if (buildTarget->targetType == BuildTargetType::DLL) {
+    } else if (targetType == BuildTargetType::DLL) {
 #if PLY_TARGET_WIN32
         fileExtension = ".dll";
 #elif PLY_TARGET_APPLE
@@ -365,7 +362,7 @@ String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolde
         filePrefix = "lib";
         fileExtension = ".so";
 #endif
-    } else if (buildTarget->targetType == BuildTargetType::DLL) {
+    } else if (targetType == BuildTargetType::DLL) {
 #if PLY_TARGET_WIN32
         fileExtension = ".lib";
 #else
@@ -378,7 +375,7 @@ String getTargetOutputPath(const BuildTarget* buildTarget, StringView buildFolde
 
     // Compose full path to the target output:
     Array<StringView> pathComponents = {buildFolderPath, "build", config};
-    String fullName = filePrefix + buildTarget->name + fileExtension;
+    String fullName = filePrefix + targetName + fileExtension;
     pathComponents.append(fullName);
     return NativePath::format().joinAndNormalize(Array<StringView>{pathComponents.view()}.view());
 }

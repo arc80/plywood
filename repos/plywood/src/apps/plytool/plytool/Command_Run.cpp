@@ -80,8 +80,8 @@ s32 command_run(PlyToolCommandEnv* env) {
             return -1;
     }
 
-    String exePath = getTargetOutputPath(runTarget, env->currentBuildFolder->getAbsPath(),
-                                         env->currentBuildFolder->cmakeOptions, configName);
+    String exePath = getTargetOutputPath(runTarget->targetType, runTarget->name,
+                                         env->currentBuildFolder->getAbsPath(), configName);
     if (FileSystem::native()->exists(exePath) != ExistsResult::File) {
         fatalError(String::format("Executable '{}' is not built in folder '{}'\n",
                                   RepoRegistry::get()->getShortDepSourceName(runTargetInst),

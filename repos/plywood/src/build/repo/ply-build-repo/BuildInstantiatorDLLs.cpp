@@ -140,7 +140,6 @@ Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const Extracte
 Array<InstantiatedDLL> buildInstantiatorDLLs() {
     PLY_ASSERT(NativeToolchain.generator);
     PLY_ASSERT(DefaultNativeConfig);
-    ErrorHandler::log(ErrorHandler::Info, "Initializing repo registry...\n");
 
     GenerateDLLContext ctx;
     ctx.repoRootFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/");
@@ -191,9 +190,7 @@ Array<InstantiatedDLL> buildInstantiatorDLLs() {
                     // Next, scan it and find all instantiator functions.
                     ModuleDefinitionFile modDefFile;
                     modDefFile.absPath = std::move(absPath);
-                    if (extractInstantiatorFunctions(&modDefFile)) {
-                        modDefFiles.append(std::move(modDefFile));
-                    }
+                    modDefFiles.append(std::move(modDefFile));
                 }
             }
         }
@@ -221,24 +218,33 @@ Array<InstantiatedDLL> buildInstantiatorDLLs() {
         }
     }
 
-    // Create a DLL target for each repo
     Array<InstantiatedDLL> idlls;
-    CMakeBuildFolder cbf;
-    cbf.solutionName = "DLLs";
-    cbf.absPath = ctx.dllBuildFolder;
-    Array<Owned<BuildTarget>> ownedTargets;
     for (const ExtractedRepo& exRepo : exRepos) {
-        BuildTarget* target = ownedTargets.append(createDLLTarget(ctx, exRepo));
-        cbf.targets.append(target);
-
         // Add to return value
         InstantiatedDLL& idll = idlls.append();
         idll.repoName = exRepo.repoName;
-        idll.dllPath =
-            getTargetOutputPath(target, ctx.dllBuildFolder, NativeToolchain, DefaultNativeConfig);
+        idll.dllPath = getTargetOutputPath(BuildTargetType::DLL, exRepo.repoName + "_Instantiators",
+                                           ctx.dllBuildFolder, DefaultNativeConfig);
     }
 
     if (mustBuild) {
+        ErrorHandler::log(ErrorHandler::Info, "Initializing repo registry...\n");
+
+        Array<Owned<BuildTarget>> ownedTargets;
+        CMakeBuildFolder cbf;
+        cbf.solutionName = "DLLs";
+        cbf.absPath = ctx.dllBuildFolder;
+
+        for (ExtractedRepo& exRepo : exRepos) {
+            for (ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
+                // Extract instantiators from module definition file
+                extractInstantiatorFunctions(&modDefFile);
+            }
+            // Create a DLL target for this repo
+            BuildTarget* target = ownedTargets.append(createDLLTarget(ctx, exRepo));
+            cbf.targets.append(target);
+        }
+
         // Generate build system
         StringWriter sw;
         writeCMakeLists(&sw, &cbf);
