@@ -46,6 +46,7 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::create(StringView buildFolderName,
                                                      StringView solutionName) {
     BuildFolder* bf = new BuildFolder;
     bf->buildFolderName = buildFolderName;
+    bf->buildSystemSignature = pylon::Node::createObject({});
     bf->solutionName = solutionName;
     // Don't save it yet
     return bf;

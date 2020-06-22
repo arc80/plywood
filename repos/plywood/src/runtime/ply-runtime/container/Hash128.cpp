@@ -17,6 +17,7 @@
 
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/container/Hash128.h>
+#include <string.h>
 
 #define PLY_ALLOW_UNALIGNED_READS 1
 
