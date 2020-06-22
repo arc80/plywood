@@ -14,7 +14,12 @@ struct InstantiatedDLL {
     String dllPath;
 };
 
-Array<InstantiatedDLL> buildInstantiatorDLLs(bool force);
+struct InstantiatedDLLs {
+    u128 signature;
+    Array<InstantiatedDLL> dlls;
+};
+
+InstantiatedDLLs buildInstantiatorDLLs(bool force);
 
 } // namespace build
 } // namespace ply

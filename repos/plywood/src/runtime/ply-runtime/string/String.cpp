@@ -35,4 +35,11 @@ PLY_NO_INLINE void String::resize(u32 numBytes) {
     this->numBytes = numBytes;
 }
 
+PLY_NO_INLINE HybridString::HybridString(const HybridString& other)
+    : bytes{other.bytes}, isOwner{other.isOwner}, numBytes{other.numBytes} {
+    if (isOwner) {
+        this->bytes = String{other.view()}.release();
+    }
+}
+
 } // namespace ply

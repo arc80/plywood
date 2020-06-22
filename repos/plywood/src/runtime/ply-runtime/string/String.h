@@ -371,6 +371,11 @@ struct HybridString : StringMixin<HybridString> {
         other.isOwner = 0;
         other.numBytes = 0;
     }
+    
+    /*!
+    Copy constructor.
+    */
+    PLY_NO_INLINE HybridString(const HybridString& other);
 
     /*!
     Construct a `HybridString` from a string literal. Compilers seem able to calculate its length at
@@ -394,6 +399,14 @@ struct HybridString : StringMixin<HybridString> {
     PLY_INLINE void operator=(HybridString&& other) {
         this->~HybridString();
         new (this) HybridString(std::move(other));
+    }
+
+    /*!
+    Copy assignment operator.
+    */
+    PLY_INLINE void operator=(const HybridString& other) {
+        this->~HybridString();
+        new (this) HybridString(other);
     }
 
     /*!

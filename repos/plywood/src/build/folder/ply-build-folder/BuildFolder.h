@@ -6,6 +6,7 @@
 #include <ply-build-common/Core.h>
 #include <ply-build-target/CMakeLists.h>
 #include <ply-build-provider/ToolchainInfo.h>
+#include <pylon/Node.h>
 
 namespace ply {
 namespace build {
@@ -18,7 +19,8 @@ struct ExternFolderRegistry;
 struct ExternSelector;
 
 struct BuildFolder {
-    String buildFolderName; // Not written to the .pylon file
+    String buildFolderName;           // Not saved to the .pylon file
+    pylon::Node buildSystemSignature; // (Saved) Determines whether build system needs regenerating
 
     PLY_REFLECT()
     String solutionName;
@@ -42,8 +44,8 @@ struct BuildFolder {
     ProjectInstantiationResult instantiateAllTargets(bool isGenerating) const;
     DependencyTree buildDepTree() const;
     bool isGenerated(StringView config) const;
-    bool generate(StringView config, const ProjectInstantiationResult* instResult) const;
-    bool generateLoop(StringView config) const;
+    bool generate(StringView config, const ProjectInstantiationResult* instResult);
+    bool generateLoop(StringView config);
     bool build(StringView config, StringView targetName, bool captureOutput) const;
 
     static Array<Owned<BuildFolder>> getList();

@@ -26,8 +26,8 @@ bool command_build(PlyToolCommandEnv* env) {
     }
     env->cl->finalize();
 
+    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
     if (!env->currentBuildFolder->isGenerated(configName)) {
-        PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
         PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
         PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
 

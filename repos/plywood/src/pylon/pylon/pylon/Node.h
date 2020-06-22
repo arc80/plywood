@@ -24,6 +24,12 @@ struct Node {
         HashMap<IndexTraits> index;
         Array<Item> items;
 
+        PLY_INLINE Object() = default;
+        PLY_INLINE Object(Object&& other) = default;
+        PLY_NO_INLINE Object(const Object& other);
+        PLY_INLINE void operator=(Object&& other);
+        PLY_INLINE void operator=(const Object& other);
+
         template <typename NameType>
         Item& add(NameType&& name);
         Node& find(StringView name);
@@ -197,6 +203,16 @@ struct Node::Object::Item {
     HybridString name;
     Node value;
 };
+
+PLY_INLINE void Node::Object::operator=(Object&& other) {
+    this->~Object();
+    new (this) Object{std::move(other)};
+}
+
+PLY_INLINE void Node::Object::operator=(const Object& other) {
+    this->~Object();
+    new (this) Object{other};
+}
 
 PLY_INLINE StringView Node::Object::IndexTraits::comparand(u32 item,
                                                            const Array<Object::Item>& ctx) {

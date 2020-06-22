@@ -63,11 +63,16 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::load(StringView buildFolderName) {
 
     Owned<BuildFolder> info = pylon::import<BuildFolder>(aRoot);
     info->buildFolderName = buildFolderName;
+    info->buildSystemSignature = std::move(aRoot["buildSystemSignature"]);
+    if (!info->buildSystemSignature.isValid()) {
+        info->buildSystemSignature = pylon::Node::createObject({});
+    }
     return info;
 }
 
 PLY_NO_INLINE bool BuildFolder::save() const {
     auto aRoot = pylon::exportObj(TypedPtr::bind(this));
+    aRoot.object().add("buildSystemSignature").value = this->buildSystemSignature;
     String strContents = pylon::toString(aRoot);
     String infoPath = BuildFolderName::getInfoPath(this->buildFolderName);
     FSResult rc = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
@@ -209,11 +214,21 @@ PLY_NO_INLINE bool BuildFolder::isGenerated(StringView config) const {
                     this->buildFolderName));
         }
     }
-    return cmakeBuildSystemExists(cmakeListsFolder, this->cmakeOptions, this->solutionName, config);
+
+    if (!cmakeBuildSystemExists(cmakeListsFolder, this->cmakeOptions, this->solutionName, config))
+        return false;
+
+    u128 previousSig;
+    if (isMultiConfigCMakeGenerator(this->cmakeOptions.generator)) {
+        previousSig = parseSignatureString(this->buildSystemSignature.text());
+    } else {
+        previousSig = parseSignatureString(this->buildSystemSignature[config].text());
+    }
+    return (previousSig == RepoRegistry::get()->moduleDefSignature);
 }
 
 PLY_NO_INLINE bool BuildFolder::generate(StringView config,
-                                         const ProjectInstantiationResult* instResult) const {
+                                         const ProjectInstantiationResult* instResult) {
     ErrorHandler::log(ErrorHandler::Info,
                       String::format("Generating build system for '{}'...\n", this->solutionName));
 
@@ -252,10 +267,22 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
                 result.second);
         return false;
     }
+
+    String moduleDefSigStr = signatureToString(RepoRegistry::get()->moduleDefSignature);
+    if (isMultiConfigCMakeGenerator(this->cmakeOptions.generator)) {
+        this->buildSystemSignature = pylon::Node::createText(moduleDefSigStr.view(), {});
+    } else {
+        if (!this->buildSystemSignature.isObject()) {
+            this->buildSystemSignature = pylon::Node::createObject({});
+        }
+        pylon::Node::Object::Item& item = this->buildSystemSignature.object().add(config);
+        item.value = pylon::Node::createText(moduleDefSigStr.view(), {});
+    }
+    this->save();
     return true;
 }
 
-PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) const {
+PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);
         if (!instResult.isValid) {

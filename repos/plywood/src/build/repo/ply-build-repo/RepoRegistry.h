@@ -21,6 +21,7 @@ struct RepoRegistry {
         }
     };
 
+    u128 moduleDefSignature = 0;
     HashMap<RepoMapTraits> repos;
 
     static Owned<RepoRegistry> instance_;
@@ -36,6 +37,9 @@ struct RepoRegistry {
     PLY_NO_INLINE String getShortDepSourceName(const DependencySource* depSrc) const;
     PLY_NO_INLINE String getShortProviderName(const ExternProvider* externProvider) const;
 };
+
+u128 parseSignatureString(StringView str);
+String signatureToString(u128 sig);
 
 } // namespace build
 } // namespace ply

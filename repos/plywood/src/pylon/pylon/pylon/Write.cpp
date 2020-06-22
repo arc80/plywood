@@ -57,6 +57,8 @@ struct WriteContext {
             *this->sw << ']';
         } else if (aNode.isText()) {
             this->sw->format("\"{}\"", fmt::EscapedString{aNode.text()});
+        } else {
+            PLY_ASSERT(0);  // unsupported
         }
     }
 };

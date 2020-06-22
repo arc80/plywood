@@ -85,11 +85,11 @@ Generates a build system inside the current build folder by running CMake. When 
 
 <% member plytool build \[[em <targetName>]\] \[--config=[em <configName>]\] %>
 
-Runs the build system inside the current build folder. This command will also generate a build system in the current build folder, but only if no existing build system is found. If *targetName* is specified, only the specified target and its dependencies are built; otherwise, all targets in the build folder are built. If the `--config` option is specified, the specified configuration is built; otherwise, the folder's active configuration is built.
+Runs the build system inside the current build folder. This command will also generate a build system in the current build folder, but only if a `.modules.cpp` file has changed. If *targetName* is specified, only the specified target and its dependencies are built; otherwise, all targets in the build folder are built. If the `--config` option is specified, the specified configuration is built; otherwise, the folder's active configuration is built.
 
 <% member plytool run \[[em <targetName>]\] \[--config=[em <configName>]\] \[--nobuild\] %>
 
-Build and runs an executable target inside the current build folder. By default, this command will also generate a build system in the current build folder, but only if no existing build system is found. If the `--nobuild` option is specified, the generate & build steps are skipped. If *targetName* is specified, the specified target is built & run; otherwise, the build folder's active target is built & run. If the `--config` option is specified, the specified configuration is built; otherwise, the build folder's active configuration is built.
+Build and runs an executable target inside the current build folder. By default, this command will also generate a build system in the current build folder, but only if a `.modules.cpp` file has changed. If the `--nobuild` option is specified, the generate & build steps are skipped. If *targetName* is specified, the specified target is built & run; otherwise, the build folder's active target is built & run. If the `--config` option is specified, the specified configuration is built; otherwise, the build folder's active configuration is built.
 
 <% member plytool codegen %>
 

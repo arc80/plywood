@@ -10,6 +10,7 @@
 #include <ply-build-target/CMakeLists.h>
 #include <ply-build-target/BuildTarget.h>
 #include <ply-build-repo/ErrorHandler.h>
+#include <ply-build-repo/RepoRegistry.h>
 #include <pylon/Parse.h>
 #include <pylon/Write.h>
 #include <pylon-reflect/Import.h>
@@ -137,7 +138,7 @@ Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const Extracte
     return target;
 }
 
-Array<InstantiatedDLL> buildInstantiatorDLLs(bool force) {
+InstantiatedDLLs buildInstantiatorDLLs(bool force) {
     PLY_ASSERT(NativeToolchain.generator);
     PLY_ASSERT(DefaultNativeConfig);
 
@@ -207,24 +208,16 @@ Array<InstantiatedDLL> buildInstantiatorDLLs(bool force) {
 
     // Compare signatures
     if (!mustBuild) {
-        if (dllSig.signature.numBytes != 32) {
+        if (parseSignatureString(dllSig.signature) != moduleDefSignature) {
             mustBuild = true;
-        } else {
-            u128 prevSignature = 0;
-            prevSignature.hi =
-                StringViewReader{dllSig.signature.left(16)}.parse<u64>(fmt::Radix{16});
-            prevSignature.lo =
-                StringViewReader{dllSig.signature.subStr(16)}.parse<u64>(fmt::Radix{16});
-            if (prevSignature != moduleDefSignature) {
-                mustBuild = true;
-            }
         }
     }
 
-    Array<InstantiatedDLL> idlls;
+    InstantiatedDLLs result;
+    result.signature = moduleDefSignature;
     for (const ExtractedRepo& exRepo : exRepos) {
         // Add to return value
-        InstantiatedDLL& idll = idlls.append();
+        InstantiatedDLL& idll = result.dlls.append();
         idll.repoName = exRepo.repoName;
         idll.dllPath = getTargetOutputPath(BuildTargetType::DLL, exRepo.repoName + "_Instantiators",
                                            ctx.dllBuildFolder, DefaultNativeConfig);
@@ -281,14 +274,12 @@ Array<InstantiatedDLL> buildInstantiatorDLLs(bool force) {
         }
 
         // Save signature
-        dllSig.signature =
-            (StringView{"0"} * 16 + String::from(fmt::Hex{moduleDefSignature.hi})).right(16) +
-            (StringView{"0"} * 16 + String::from(fmt::Hex{moduleDefSignature.lo})).right(16);
+        dllSig.signature = signatureToString(moduleDefSignature);
         dllSig.save(signaturePath);
     }
 
     // Success!
-    return idlls;
+    return result;
 }
 
 } // namespace build

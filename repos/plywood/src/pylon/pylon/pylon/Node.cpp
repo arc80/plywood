@@ -30,6 +30,13 @@ double Node::numeric() const {
         return 0;
 }
 
+PLY_NO_INLINE Node::Object::Object(const Node::Object& other) : items{other.items} {
+    // FIXME: Make HashMap copy operation and use that instead
+    for (u32 i = 0; i < this->items.numItems(); i++) {
+        *this->index.insertOrFind(this->items[i].name, &this->items) = i;
+    }
+}
+
 Node& Node::Object::find(StringView name) {
     auto foundCursor = this->index.find(name, &this->items);
     if (foundCursor.wasFound()) {

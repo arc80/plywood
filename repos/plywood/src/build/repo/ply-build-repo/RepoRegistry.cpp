@@ -20,8 +20,24 @@ namespace build {
 
 Owned<RepoRegistry> RepoRegistry::instance_;
 
+u128 parseSignatureString(StringView str) {
+    if (str.numBytes != 32) {
+        return 0;
+    } else {
+        u128 sig = 0;
+        sig.hi = StringViewReader{str.left(16)}.parse<u64>(fmt::Radix{16});
+        sig.lo = StringViewReader{str.subStr(16)}.parse<u64>(fmt::Radix{16});
+        return sig;
+    }
+}
+
+String signatureToString(u128 sig) {
+    return (StringView{"0"} * 16 + String::from(fmt::Hex{sig.hi})).right(16) +
+           (StringView{"0"} * 16 + String::from(fmt::Hex{sig.lo})).right(16);
+}
+
 struct RepoInstantiator {
-    Array<InstantiatedDLL> idlls;
+    InstantiatedDLLs idlls;
     RepoRegistry* repoReg;
 
     Repo* instantiate(const InstantiatedDLL& idll) {
@@ -56,7 +72,7 @@ struct RepoInstantiator {
             // importInto(TypedPtr::bind(this), aRoot);
             for (const pylon::Node& dependency : aRoot["dependsOn"]) {
                 StringView depRepoName = dependency.text();
-                s32 j = find(this->idlls.view(),
+                s32 j = find(this->idlls.dlls.view(),
                              [&](const InstantiatedDLL& d) { return d.repoName == depRepoName; });
                 if (j < 0) {
                     ErrorHandler::log(
@@ -66,7 +82,7 @@ struct RepoInstantiator {
                                        depRepoName));
                     return nullptr; // shouldn't get here
                 }
-                Repo* childRepo = this->instantiate(this->idlls[j]);
+                Repo* childRepo = this->instantiate(this->idlls.dlls[j]);
                 if (!childRepo) {
                     return nullptr;
                 }
@@ -139,10 +155,11 @@ PLY_NO_INLINE Owned<RepoRegistry> RepoRegistry::create() {
     RepoInstantiator inst;
     inst.repoReg = repoReg;
     inst.idlls = buildInstantiatorDLLs(false);
-    for (const InstantiatedDLL& idll : inst.idlls) {
+    for (const InstantiatedDLL& idll : inst.idlls.dlls) {
         inst.instantiate(idll);
     }
 
+    repoReg->moduleDefSignature = inst.idlls.signature;
     return repoReg;
 }
 
