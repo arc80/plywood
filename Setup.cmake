@@ -155,15 +155,21 @@ endif()
 
 # Build PlyTool
 message("Building PlyTool...")
-set(args --build .)
-if(DEFINED CMAKE_BUILD_TYPE)
-    set(args ${args} --config "${CMAKE_BUILD_TYPE}")
+if (CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+    execute_process(COMMAND "make" "-j" "4"
+                    WORKING_DIRECTORY "${buildFolder}build"
+                    RESULT_VARIABLE resultCode)
+else()
+    set(args --build .)
+    if(DEFINED CMAKE_BUILD_TYPE)
+        set(args ${args} --config "${CMAKE_BUILD_TYPE}")
+    endif()
+    execute_process(COMMAND "${CMAKE_COMMAND}" ${args}
+                    WORKING_DIRECTORY "${buildFolder}build"
+                    RESULT_VARIABLE resultCode)
 endif()
-execute_process(COMMAND "${CMAKE_COMMAND}" ${args}
-                WORKING_DIRECTORY "${buildFolder}build"
-                RESULT_VARIABLE resultCode)
 if (NOT resultCode EQUAL "0")
-    message(FATAL_ERROR "Error generating PlyTool: ${resultCode}")
+    message(FATAL_ERROR "Error building PlyTool: ${resultCode}")
 endif()
 
 # Check for plytool executable
