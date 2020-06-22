@@ -9,13 +9,12 @@
 #include <ply-build-repo/RepoRegistry.h>
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-runtime/algorithm/Sort.h>
+#include <ply-build-repo/BuildInstantiatorDLLs.h>
 
 namespace ply {
 
 void command_module(PlyToolCommandEnv* env) {
     using namespace build;
-
-    PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
 
     StringView cmd = env->cl->readToken();
     if (cmd.isEmpty()) {
@@ -26,6 +25,7 @@ void command_module(PlyToolCommandEnv* env) {
         printUsage(&sw, "module",
                    {
                        {"list", "list description"},
+                       {"update", "update description"},
                    });
 
         return;
@@ -34,6 +34,8 @@ void command_module(PlyToolCommandEnv* env) {
     if (prefixMatch(cmd, "list")) {
         ensureTerminated(env->cl);
         env->cl->finalize();
+
+        PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
 
         StringWriter sw = StdOut::createStringWriter();
         Array<const Repo*> repos;
@@ -57,6 +59,11 @@ void command_module(PlyToolCommandEnv* env) {
             }
             sw << "\n";
         }
+    } else if (prefixMatch(cmd, "update")) {
+        ensureTerminated(env->cl);
+        env->cl->finalize();
+
+        buildInstantiatorDLLs(true);
     } else {
         fatalError(String::format("Unrecognized module command \"{}\"", cmd));
     }

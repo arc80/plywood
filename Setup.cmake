@@ -175,6 +175,13 @@ else()
     message(FATAL_ERROR "Can't find PlyTool executable")
 endif()
 
+# Build instantiator DLLs
+execute_process(COMMAND "${PLYTOOL_PATH}" module update
+                RESULT_VARIABLE resultCode)
+if (NOT resultCode EQUAL "0")
+    message(FATAL_ERROR "Error running PlyTool: ${resultCode}")
+endif()
+
 # Do codegen
 message("Generating code using PlyTool...")
 execute_process(COMMAND "${PLYTOOL_PATH}" codegen

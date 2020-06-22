@@ -138,7 +138,7 @@ PLY_NO_INLINE Owned<RepoRegistry> RepoRegistry::create() {
 
     RepoInstantiator inst;
     inst.repoReg = repoReg;
-    inst.idlls = buildInstantiatorDLLs();
+    inst.idlls = buildInstantiatorDLLs(false);
     for (const InstantiatedDLL& idll : inst.idlls) {
         inst.instantiate(idll);
     }

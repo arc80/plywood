@@ -137,7 +137,7 @@ Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const Extracte
     return target;
 }
 
-Array<InstantiatedDLL> buildInstantiatorDLLs() {
+Array<InstantiatedDLL> buildInstantiatorDLLs(bool force) {
     PLY_ASSERT(NativeToolchain.generator);
     PLY_ASSERT(DefaultNativeConfig);
 
@@ -153,6 +153,9 @@ Array<InstantiatedDLL> buildInstantiatorDLLs() {
     // Load existing signature.pylon
     DLLSignature dllSig;
     bool mustBuild = !dllSig.load(signaturePath);
+    if (force) {
+        mustBuild = true;
+    }
 
     // Visit all repo folders
     u128 moduleDefSignature = 0;

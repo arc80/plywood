@@ -14,7 +14,7 @@ struct InstantiatedDLL {
     String dllPath;
 };
 
-Array<InstantiatedDLL> buildInstantiatorDLLs();
+Array<InstantiatedDLL> buildInstantiatorDLLs(bool force);
 
 } // namespace build
 } // namespace ply
