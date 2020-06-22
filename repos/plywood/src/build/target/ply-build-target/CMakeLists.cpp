@@ -6,6 +6,7 @@
 #include <ply-build-target/CMakeLists.h>
 #include <ply-build-target/BuildTarget.h>
 #include <ply-runtime/algorithm/Find.h>
+#include <ply-runtime/thread/Affinity.h>
 
 namespace ply {
 namespace build {
@@ -321,14 +322,28 @@ PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
     }
     Subprocess::Output outputType =
         captureOutput ? Subprocess::Output::openMerged() : Subprocess::Output::inherit();
-    Array<StringView> args = {"--build", "."};
-    if (isMultiConfig) {
-        args.extend({"--config", config});
+    Owned<Subprocess> sub;
+    if (generatorOpts.generator == "Unix Makefiles") {
+        Array<HybridString> args = {};
+        u32 hwThreads = Affinity{}.getNumHWThreads();
+        if (hwThreads > 1) {
+            args.extend({"-j", String::from(hwThreads)});
+        }
+        if (targetName) {
+            args.append(targetName);
+        }
+        sub = Subprocess::exec("make", Array<StringView>{args.view()}.view(), buildFolder,
+                               outputType);
+    } else {
+        Array<StringView> args = {"--build", "."};
+        if (isMultiConfig) {
+            args.extend({"--config", config});
+        }
+        if (targetName) {
+            args.extend({"--target", targetName});
+        }
+        sub = Subprocess::exec(PLY_CMAKE_PATH, args.view(), buildFolder, outputType);
     }
-    if (targetName) {
-        args.extend({"--target", targetName});
-    }
-    Owned<Subprocess> sub = Subprocess::exec(PLY_CMAKE_PATH, args.view(), buildFolder, outputType);
     String output;
     if (captureOutput) {
         output = TextFormat::platformPreference()
