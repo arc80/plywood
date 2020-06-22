@@ -53,6 +53,19 @@ const Node& Node::Object::find(StringView name) const {
     return Node::invalidNode;
 }
 
+PLY_NO_INLINE Node& Node::Object::insertOrFind(HybridString&& name) {
+    u32 index = this->items.numItems();
+    auto cursor = this->index.insertOrFind(name, &this->items);
+    if (cursor.wasFound()) {
+        return this->items[*cursor].value;
+    } else {
+        *cursor = index;
+        Item& objItem = this->items.append();
+        objItem.name = std::move(name);
+        return objItem.value;
+    }
+}
+
 Node& Node::operator[](StringView key) {
     if (auto object = type.object()) {
         return object->obj.find(key);

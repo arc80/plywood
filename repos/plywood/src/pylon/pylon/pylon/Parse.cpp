@@ -414,10 +414,10 @@ Node Parser::readObject(const Token& startToken) {
             Node value = readExpression(readToken(), &colon);
             if (!value.isValid())
                 return value;
-            Node::Object::Item& objItem = node.object().add(std::move(firstToken.text));
-            objItem.value = std::move(value);
-            propLocationCursor->name = objItem.name.view();
+            propLocationCursor->name = firstToken.text.view();
             propLocationCursor->location = firstToken.location;
+            Node& objItem = node.object().insertOrFind(std::move(firstToken.text));
+            objItem = std::move(value);
         }
 
         prevProperty = std::move(firstToken);

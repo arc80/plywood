@@ -30,8 +30,7 @@ struct Node {
         PLY_INLINE void operator=(Object&& other);
         PLY_INLINE void operator=(const Object& other);
 
-        template <typename NameType>
-        Item& add(NameType&& name);
+        Node& insertOrFind(HybridString&& name);
         Node& find(StringView name);
         const Node& find(StringView name) const;
     };
@@ -217,17 +216,6 @@ PLY_INLINE void Node::Object::operator=(const Object& other) {
 PLY_INLINE StringView Node::Object::IndexTraits::comparand(u32 item,
                                                            const Array<Object::Item>& ctx) {
     return ctx[item].name.view();
-}
-
-template <typename NameType>
-PLY_INLINE Node::Object::Item& Node::Object::add(NameType&& name) {
-    u32 index = this->items.numItems();
-    auto cursor = this->index.insertOrFind(name, &this->items);
-    PLY_ASSERT(!cursor.wasFound());
-    *cursor = index;
-    Item& objItem = this->items.append();
-    objItem.name = std::forward<NameType>(name);
-    return objItem;
 }
 
 } // namespace pylon

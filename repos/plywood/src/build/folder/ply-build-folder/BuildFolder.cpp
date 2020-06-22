@@ -73,7 +73,7 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::load(StringView buildFolderName) {
 
 PLY_NO_INLINE bool BuildFolder::save() const {
     auto aRoot = pylon::exportObj(TypedPtr::bind(this));
-    aRoot.object().add("buildSystemSignature").value = this->buildSystemSignature;
+    aRoot.object().insertOrFind("buildSystemSignature") = this->buildSystemSignature;
     String strContents = pylon::toString(aRoot);
     String infoPath = BuildFolderName::getInfoPath(this->buildFolderName);
     FSResult rc = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
@@ -276,8 +276,8 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
         if (!this->buildSystemSignature.isObject()) {
             this->buildSystemSignature = pylon::Node::createObject({});
         }
-        pylon::Node::Object::Item& item = this->buildSystemSignature.object().add(config);
-        item.value = pylon::Node::createText(moduleDefSigStr.view(), {});
+        pylon::Node& item = this->buildSystemSignature.object().insertOrFind(config);
+        item = pylon::Node::createText(moduleDefSigStr.view(), {});
     }
     this->save();
     return true;

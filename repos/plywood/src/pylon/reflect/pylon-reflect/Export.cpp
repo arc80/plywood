@@ -15,9 +15,8 @@ PLY_NO_INLINE void exportObjTo(Node& aNode, TypedPtr obj, const FilterFunc& filt
         const TypeDescriptor_Struct* structType = obj.type->cast<TypeDescriptor_Struct>();
         auto objNode = aNode.type.object().switchTo();
         for (const TypeDescriptor_Struct::Member& member : structType->members) {
-            Node::Object::Item& objItem = objNode->obj.add(member.name.view());
-            exportObjTo(objItem.value, {PLY_PTR_OFFSET(obj.ptr, member.offset), member.type},
-                        filter);
+            Node& objItem = objNode->obj.insertOrFind(member.name.view());
+            exportObjTo(objItem, {PLY_PTR_OFFSET(obj.ptr, member.offset), member.type}, filter);
         }
     } else if (obj.type->typeKey == &TypeKey_String) {
         auto text = aNode.type.text().switchTo();
@@ -37,10 +36,10 @@ PLY_NO_INLINE void exportObjTo(Node& aNode, TypedPtr obj, const FilterFunc& filt
         const TypeDescriptor_Switch* switchType = obj.type->cast<TypeDescriptor_Switch>();
         u16 id = *(u16*) obj.ptr;
         auto objNode = aNode.type.object().switchTo();
-        Node::Object::Item& objItem = objNode->obj.add(switchType->states[id].name.view());
+        Node& objItem = objNode->obj.insertOrFind(switchType->states[id].name.view());
         TypedPtr typedState{PLY_PTR_OFFSET(obj.ptr, switchType->storageOffset),
                             switchType->states[id].structType};
-        exportObjTo(objItem.value, typedState, filter);
+        exportObjTo(objItem, typedState, filter);
     } else if (obj.type->typeKey == &TypeKey_Bool) {
         auto text = aNode.type.text().switchTo();
         text->str = *(bool*) obj.ptr ? "true" : "false";
