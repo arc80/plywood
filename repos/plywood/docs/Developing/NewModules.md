@@ -4,7 +4,7 @@ In Plywood, a [module](KeyConcepts#modules) is defined by adding a special C++ f
 
     // [ply module="<module-name>"]
 
-For example, the [`primesieve`](https://github.com/arc80/primesieve) add-on repo, which was already described in the [Creating New Repos](NewRepos) section, contains a single [`PrimeSieve.modules.cpp`](https://github.com/arc80/primesieve/blob/master/src/PrimeSieve/PrimeSieve.modules.cpp) file:
+For example, the [`primesieve`](https://github.com/arc80/primesieve) add-on repo, which was already described in the [Creating New Repos](NewRepos) section, contains a single [`PrimeSieve.modules.cpp`](https://github.com/arc80/primesieve/blob/main/src/PrimeSieve/PrimeSieve.modules.cpp) file:
 
     #include <ply-build-repo/Module.h>
     
@@ -82,7 +82,7 @@ Note that, any time a target depends on an extern, and that target is added to a
 
 ### [Other operations](#other-operations)
 
-It's possible to do other work inside a module function. For example, the [`platform` module function](https://github.com/arc80/plywood/blob/master/repos/plywood/src/platform/platform.modules.cpp) in the `plywood` repo generates a configuration header file and writes it to the build folder whenever a build system is generated using this module:
+It's possible to do other work inside a module function. For example, the [`platform` module function](https://github.com/arc80/plywood/blob/main/repos/plywood/src/platform/platform.modules.cpp) in the `plywood` repo generates a configuration header file and writes it to the build folder whenever a build system is generated using this module:
 
     FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         NativePath::join(args->projInst->env->buildFolderPath,

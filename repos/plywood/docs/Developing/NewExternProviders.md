@@ -6,7 +6,7 @@ In Plywood, [extern providers](KeyConcepts#extern-providers) are defined by addi
 
 _<extern-name>_ can be prefixed with the name of a repo. If _<extern-name>_ refers to the current repo, a new [extern](KeyConcepts#externs) with that name is implicitly created and added to the current repo. If _<extern-name>_ was already defined by another repo that the current repo depends on, a new provider is added to the set of available providers for that extern.
 
-For example, one of Plywood's built-in extern providers defined in [`repos/plywood/src/web/web.modules.cpp`](https://github.com/arc80/plywood/blob/master/repos/plywood/src/web/web.modules.cpp) uses the extern name `"libsass"` and provider name `"prebuilt"`:
+For example, one of Plywood's built-in extern providers defined in [`repos/plywood/src/web/web.modules.cpp`](https://github.com/arc80/plywood/blob/main/repos/plywood/src/web/web.modules.cpp) uses the extern name `"libsass"` and provider name `"prebuilt"`:
 
     // [ply extern="libsass" provider="prebuilt"]
     ExternResult extern_libsass_prebuilt(ExternCommand cmd, ExternProviderArgs* args) {

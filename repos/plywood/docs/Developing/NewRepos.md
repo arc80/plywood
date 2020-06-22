@@ -102,7 +102,7 @@ Let's look at the contents of `primesieve`.
 
 <% member info.pylon %>
 
-The [`info.pylon`](https://github.com/arc80/primesieve/blob/master/info.pylon) file holds basic information about the repo. This file contains a single JSON object. The object's `dependsOn` property lists other repos are required by this repo. In this case, the `primesieve` repo depends only on the built-in `plywood` repo:
+The [`info.pylon`](https://github.com/arc80/primesieve/blob/main/info.pylon) file holds basic information about the repo. This file contains a single JSON object. The object's `dependsOn` property lists other repos are required by this repo. In this case, the `primesieve` repo depends only on the built-in `plywood` repo:
 
     {
       "dependsOn": ["plywood"]
@@ -114,7 +114,7 @@ Repos are only allowed to use modules and extern providers defined inside themse
 
 In Plywood, files having the filename suffix `.modules.cpp` that are located anywhere within a repo are used to add [modules](KeyConcepts#modules) and [extern providers](KeyConcepts#extern-providers) to that repo. The file must begin with the directive `#include <ply-build-repo/Module.h>`.
 
-In this case, the [`PrimeSieve.modules.cpp`](https://github.com/arc80/primesieve/blob/master/src/PrimeSieve/PrimeSieve.modules.cpp) file contains a single C++ function. The comment before the function, `// [ply module="PrimeSieve"]`, tells PlyTool that the function is a **module function** that defines a new module named `PrimeSieve`:
+In this case, the [`PrimeSieve.modules.cpp`](https://github.com/arc80/primesieve/blob/main/src/PrimeSieve/PrimeSieve.modules.cpp) file contains a single C++ function. The comment before the function, `// [ply module="PrimeSieve"]`, tells PlyTool that the function is a **module function** that defines a new module named `PrimeSieve`:
 
     #include <ply-build-repo/Module.h>
 
@@ -133,11 +133,11 @@ Any time a target based on `PrimeSieve` is added to a build folder (by running `
 
 <% member src/PrimeSieve/Main.cpp %>
 
-This is the only source file belonging to the `PrimeSieve` module. It contains the source code for the `PrimeSieve` application itself. [This source file](https://github.com/arc80/primesieve/blob/master/src/PrimeSieve/Main.cpp) begins with an `#include` statement:
+This is the only source file belonging to the `PrimeSieve` module. It contains the source code for the `PrimeSieve` application itself. [This source file](https://github.com/arc80/primesieve/blob/main/src/PrimeSieve/Main.cpp) begins with an `#include` statement:
 
     #include <ply-runtime/Base.h>
 
-Because the `plywood.runtime` module was listed as a dependency of the the `PrimeSieve` module, the header file will be found in [`repos/plywood/src/runtime`](https://github.com/arc80/plywood/tree/master/repos/plywood/src/runtime) relative to the workspace root.
+Because the `plywood.runtime` module was listed as a dependency of the the `PrimeSieve` module, the header file will be found in [`repos/plywood/src/runtime`](https://github.com/arc80/plywood/tree/main/repos/plywood/src/runtime) relative to the workspace root.
 
 <% endMembers %>
 

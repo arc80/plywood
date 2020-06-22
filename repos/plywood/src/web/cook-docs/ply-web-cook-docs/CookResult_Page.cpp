@@ -257,7 +257,7 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
                 NativePath::makeRelative(PLY_WORKSPACE_FOLDER, title.srcPath));
 #if WEBCOOKDOCS_LINK_TO_GITHUB
             // FIXME: Link to a specific commit
-            StringView srcLinkPrefix = "https://github.com/arc80/plywood/tree/master/";
+            StringView srcLinkPrefix = "https://github.com/arc80/plywood/tree/main/";
 #else
             StringView srcLinkPrefix = "/file/";
 #endif
