@@ -4,6 +4,7 @@
 ------------------------------------*/
 #include <Core.h>
 #include <ConsoleUtils.h>
+#include <CommandHelpers.h>
 #include <ply-build-folder/BuildFolder.h>
 #include <ply-build-repo/RepoRegistry.h>
 #include <ply-build-provider/ExternFolderRegistry.h>
@@ -17,24 +18,18 @@ bool command_build(PlyToolCommandEnv* env) {
         fatalError("Current build folder not set");
     }
 
-    StringView targetName = env->cl->readToken();
+    BuildParams buildParams;
+    buildParams.targetName = env->cl->readToken();
     ensureTerminated(env->cl);
-    StringView configName =
-        env->cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--config="); });
-    if (configName) {
-        configName = configName.subStr(9);
-    }
+    buildParams.extractOptions(env->cl, env->currentBuildFolder);
     env->cl->finalize();
 
     PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
-    if (!env->currentBuildFolder->isGenerated(configName)) {
-        PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
-        PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
+    PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
+    PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
 
-        if (!env->currentBuildFolder->generateLoop(configName))
-            return false;
-    }
-    return env->currentBuildFolder->build(configName, targetName, false);
+    BuildParams::Result buildResult;
+    return buildParams.exec(&buildResult, env->currentBuildFolder, true);
 }
 
 } // namespace ply

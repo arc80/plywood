@@ -17,6 +17,13 @@ struct CMakeGeneratorOptions {
     String platform;
     String toolset;
     // ply reflect off
+
+    template <typename Hasher>
+    void appendTo(Hasher& h) const {
+        h.append(this->generator.bufferView());
+        h.append(this->platform.bufferView());
+        h.append(this->toolset.bufferView());
+    }
 };
 
 struct CMakeBuildFolder {

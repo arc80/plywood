@@ -19,6 +19,7 @@
 #include <ply-build-provider/ExternFolderRegistry.h>
 #include <ply-build-provider/HostTools.h>
 #include <ply-build-provider/ToolchainInfo.h>
+#include <ply-runtime/container/Hash128.h>
 
 namespace ply {
 namespace build {
@@ -203,6 +204,24 @@ PLY_NO_INLINE DependencyTree BuildFolder::buildDepTree() const {
     return depTree;
 }
 
+PLY_NO_INLINE u128 BuildFolder::currentBuildSystemSignature() const {
+    Hash128 h;
+    u128 mds = RepoRegistry::get()->moduleDefSignature;
+    h.append({&mds, sizeof(mds)});
+    h.append(this->solutionName.bufferView());
+    this->cmakeOptions.appendTo(h);
+    for (StringView rt : this->rootTargets) {
+        h.append(rt.bufferView());
+    }
+    for (StringView ms : this->makeShared) {
+        h.append(ms.bufferView());
+    }
+    for (StringView es : this->externSelectors) {
+        h.append(es.bufferView());
+    }
+    return h.get();
+}
+
 PLY_NO_INLINE bool BuildFolder::isGenerated(StringView config) const {
     String cmakeListsFolder = BuildFolderName::getFullPath(this->buildFolderName);
     if (!config) {
@@ -225,7 +244,7 @@ PLY_NO_INLINE bool BuildFolder::isGenerated(StringView config) const {
     } else {
         previousSig = parseSignatureString(this->buildSystemSignature[config].text());
     }
-    return (previousSig == RepoRegistry::get()->moduleDefSignature);
+    return (previousSig == this->currentBuildSystemSignature());
 }
 
 PLY_NO_INLINE bool BuildFolder::generate(StringView config,
@@ -269,7 +288,7 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
         return false;
     }
 
-    String moduleDefSigStr = signatureToString(RepoRegistry::get()->moduleDefSignature);
+    String moduleDefSigStr = signatureToString(this->currentBuildSystemSignature());
     if (isMultiConfigCMakeGenerator(this->cmakeOptions.generator)) {
         this->buildSystemSignature = pylon::Node::createText(moduleDefSigStr.view(), {});
     } else {

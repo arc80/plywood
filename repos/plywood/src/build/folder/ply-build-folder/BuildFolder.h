@@ -43,6 +43,7 @@ struct BuildFolder {
     Owned<ProjectInstantiationEnv> createEnvironment() const;
     ProjectInstantiationResult instantiateAllTargets(bool isGenerating) const;
     DependencyTree buildDepTree() const;
+    u128 currentBuildSystemSignature() const;
     bool isGenerated(StringView config) const;
     bool generate(StringView config, const ProjectInstantiationResult* instResult);
     bool generateLoop(StringView config);

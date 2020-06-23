@@ -4,6 +4,7 @@
 ------------------------------------*/
 #include <Core.h>
 #include <ConsoleUtils.h>
+#include <CommandHelpers.h>
 #include <ply-build-folder/BuildFolder.h>
 #include <ply-build-repo/RepoRegistry.h>
 #include <ply-build-provider/ExternFolderRegistry.h>
@@ -86,8 +87,9 @@ void command_target(PlyToolCommandEnv* env) {
             fatalError("Expected target name");
         }
 
-        bool makeShared = env->cl->checkForSkippedOpt("--shared");
         ensureTerminated(env->cl);
+        AddParams addParams;
+        addParams.extractOptions(env->cl);
         env->cl->finalize();
 
         const TargetInstantiator* targetInst =
@@ -97,15 +99,7 @@ void command_target(PlyToolCommandEnv* env) {
         }
         String fullTargetName = targetInst->getFullyQualifiedName();
 
-        if (findItem(env->currentBuildFolder->rootTargets.view(), fullTargetName) < 0) {
-            env->currentBuildFolder->rootTargets.append(fullTargetName);
-        }
-        if (makeShared &&
-            findItem(env->currentBuildFolder->makeShared.view(), fullTargetName) < 0) {
-            env->currentBuildFolder->makeShared.append(fullTargetName);
-        }
-        // Make it the active run target:
-        env->currentBuildFolder->activeTarget = fullTargetName;
+        addParams.exec(env->currentBuildFolder, fullTargetName);
 
         env->currentBuildFolder->save();
         StdOut::createStringWriter().format("Added root target '{}' to build folder '{}'.\n",
