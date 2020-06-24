@@ -1,60 +1,68 @@
 <% title "Building the Documentation" %>
 
-Building Plywood's documentation on your local machine is a good way to familiarize yourself with Plywood's workflow.
-
-First, make sure you've built [PlyTool](PlyTool) using the steps described in [Quick Start](QuickStart).
-
-To build and view the documentation, you must perform two steps:
+Building Plywood's documentation is similar to building and running the [Hello World](HelloWorld) sample, except that it involves two steps:
 
 1. Build and run the WebCooker, which generates data files needed by the WebServer.
 2. Build and run the WebServer.
 
+Additionally, building the WebCooker requires choosing an [extern provider](KeyConcepts#extern-providers), which helps demonstrate how Plywood works with third-party libraries.
+
+Before you proceed, make sure you've built [PlyTool](PlyTool) using the steps described in [Quick Start](QuickStart).
+
 ## 1. Build and run the WebCooker
 
-The WebCooker is an application written using Plywood. You must build and run it using the `plytool` (or `plytool.exe` on Windows) executable located in your workspace root.
+First, open a command shell and run the following command from the [workspace root](KeyConcepts#workspaces). If you're running on Linux or macOS, replace `plytool` with `./plytool` instead. (It doesn't really matter what the current directory is as long as your command shell finds the `plytool` executable.)
 
-The following commands assume that the current directory is the workspace root. If you're running on Linux or macOS, replace `plytool` with `./plytool` instead. (It doesn't really matter what the current directory is as long as your command shell finds the `plytool` executable.)
+    $ plytool run --auto WebCooker
 
-First, create a [build folder](KeyConcepts#build-folders) named `WebCooker` by running the following command:
+You should see output similar to the following:
 
-    $ plytool folder create WebCooker
-
-The new build folder is located at `data/build/WebCooker` relative to the workspace root. This build folder becomes the current build folder, which means that subsequent PlyTool commands will act on it.
-
-Add the `WebCooker` target to that build folder:
-
-    $ plytool target add WebCooker
-
-Next, run `plytool generate` to attempt to generate a build system in that folder. You should see output similar to the following:
-
-    $ plytool generate
-    Initializing repo registry...
+    Created build folder 'WebCooker' with root target 'WebCooker' at: C:\Jeff\plywood\data\build\WebCooker\
     Can't generate build system in folder 'WebCooker' because extern 'libsass' is not selected.
     1 compatible provider is available:
         libsass.prebuilt (not installed)
 
-The command failed because we haven't told PlyTool where to get [LibSass](https://sass-lang.com/libsass). Run the `plytool extern select --install` command using the name of the [provider](KeyConcepts#extern-providers) suggested in the output. On Windows, it will be `libsass.prebuilt`; on Debian/Ubuntu Linux, it will be `libsass.apt`; and on macOS, where [MacPorts](https://www.macports.org/) is currently needed, it'll be `libsass.macports`. New providers can be added in the future to support additional package managers or installation methods.
+This command created a new [build folder](KeyConcepts#build-folders) `WebCooker` and added the [root target](KeyConcepts#targets) `WebCooker` to that folder. However, it fails after that because we haven't told PlyTool where to get [LibSass](https://sass-lang.com/libsass).
+
+To solve this problem, run the `plytool extern select --install` command using the name of the [provider](KeyConcepts#extern-providers) suggested in the previous output. On Windows, it will be `libsass.prebuilt`; on Debian/Ubuntu Linux, it will be `libsass.apt`; and on macOS, where [MacPorts](https://www.macports.org/) is currently needed, it'll be `libsass.macports`. New providers can be added in the future to support additional package managers or installation methods.
 
     $ plytool extern select --install libsass.prebuilt
 
-Now run `plytool generate` again. This time, it should succeed:
+<% note In the future, PlyTool will have a mechanism to automatically select and install appropriate extern providers for your system, so the above step will be performed automatically. %>
 
-    $ plytool generate
+Now run `plytool run --auto WebCooker` again. It will re-use the existing build folder, and this time it should successfully generate, build and run the WebCooker:
 
-The build system is now located in the `data/build/WebCooker/build` directory relative to the workspace root. Open the project files in your IDE (such as Visual Studio or Xcode), then build and run it yourself.
+    $ plytool run --auto WebCooker
+    Generating build system for 'WebCooker'...
+    Successfully generated build system in folder 'WebCooker'.
+    Building Debug configuration of 'WebCooker'...
+      ...
+      Main.cpp
+      WebCooker.vcxproj -> C:\Jeff\plywood\data\build\WebCooker\build\Debug\WebCooker.exe
+    Running 'C:\Jeff\plywood\data\build\WebCooker\build\Debug\WebCooker.exe'...    
 
 Once the WebCooker finishes running, there will be a bunch of data files in the `data/docsite` directory relative to your workspace root. These are the data files required by the WebServer.
 
 ## 2. Build and run the WebServer
 
-The WebServer is another application written using Plywood. Building and running the WebServer is similar to building and running the WebCooker, except that you'll instantiate the `WebServer` target in a build folder named `WebServer`, and no third-party libraries are required:
+Next, build and run the WebServer using the following command. Note that this time, we specify `--add` instead of `--auto`. The `--add` option makes PlyTool re-use the same build folder; `WebServer` is simply added an additional target. (We could use `--auto` here, in which case PlyTool will create a separate build folder, but `--add` is quicker because several required modules are already built in the existing folder.)
 
-    $ plytool folder create WebServer
-    $ plytool target add WebServer
-    $ plytool generate
-
-Once the above commands have completed, another build system will be located in the `data/build/WebServer/build` directory relative to the workspace root. Open the project files in your IDE (such as Visual Studio or Xcode), then build and run it yourself.
+    $ plytool run --add WebServer
+    Added target 'WebServer' to folder 'WebCooker'.
+    Generating build system for 'WebCooker'...
+    Successfully generated build system in folder 'WebCooker'.
+    Building Debug configuration of 'WebServer'...
+      ...
+      WebServer.vcxproj -> C:\Jeff\plywood\data\build\WebCooker\build\Debug\WebServer.exe
+    Running 'C:\Jeff\plywood\data\build\WebCooker\build\Debug\WebServer.exe'...
+    Serving from C:\Jeff\plywood\data\docsite on port 8080
 
 While the WebServer is still running, navigate to the following URL in your web browser: [http://127.0.0.1:8080](http://127.0.0.1:8080)
 
 If everything went well, you'll be greeted with the Plywood documentation running on your local machine!
+
+If you chose **Visual Studio** or **Xcode** as your generator in [Quick Start](QuickStart), you may now find the generated project files (such as a Visual Studio `.sln` or Xcode `.xcodeproj`) in the `data/build/WebCooker/build` (or similar) relative to the workspace root.
+
+You can also open the project files automatically in your IDE from the PlyTool command line:
+
+    $ plytool open

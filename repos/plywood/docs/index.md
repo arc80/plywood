@@ -18,7 +18,7 @@ Plywood consists of three main components:
 2. A set of **built-in modules** providing cross-platform I/O, containers, process creation and more.
 3. A runtime **reflection** and serialization system.
 
-To get started using Plywood, follow the instructions on the [Quick Start](QuickStart) page, then try [Building the Documentation](BuildDocs).
+To get started using Plywood, follow the instructions on the [Quick Start](QuickStart) page, then try running the [Hello World](HelloWorld) sample.
 
 This documentation is still a work in progress. Some of Plywood's built-in modules have been documentated and some have not. For now, you can browse what's available using the table of contents on the left.
 

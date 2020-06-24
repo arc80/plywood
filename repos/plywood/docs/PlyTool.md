@@ -77,7 +77,7 @@ Installs the specified extern provider.
 
 <% endMembers %>
 
-## Generate Commands
+## Project Commands
 
 <% member plytool generate \[--config=[em <configName>\]%>
 
@@ -98,6 +98,14 @@ Build and runs an executable target inside the current build folder. By default,
 If the `--add` option is specified, and *targetName* is specified but not found in the current build folder, the specified root target is added before building.
 
 If the `--auto` option is specified, *targetName* must also be specified. If there are no build folders that contain the specified target, PlyTool will automatically create a new build folder and add the target before building. If there's a unique build folder that already contains the specified target, that build folder will be used instead. In both cases, the chosen build folder becomes the current build folder for subsequent commands.
+
+<% member plytool open %>
+
+Opens the generated build system in the current build folder using its associated IDE.
+
+<% endMembers %>
+
+## Miscellaneous Commands
 
 <% member plytool codegen %>
 

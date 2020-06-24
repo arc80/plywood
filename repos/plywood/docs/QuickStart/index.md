@@ -1,7 +1,9 @@
 <% title "Quick Start" %>
-<% synopsis 
-How to install Plywood and build a sample application.
+<% childOrder
+HelloWorld
+BuildDocs
 %>
+
 
 To get started using Plywood, make sure you have the following software installed:
 
@@ -48,4 +50,4 @@ Re-run `Setup.cmake` using the command line that applies to your case. For Visua
 
 This command will generate a build system for PlyTool, build PlyTool, then run PlyTool to generate code used by Plywood's reflection system. The entire process should take about 30 seconds to complete. Once it's finished, there will be a new executable `plytool` (or `plytool.exe` on Windows) in the workspace root.
 
-To familiarize yourself further with Plywood, try [building the documentation](BuildDocs) next!
+To familiarize yourself further with Plywood, try building and running the [Hello World](HelloWorld) sample next!
