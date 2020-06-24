@@ -93,16 +93,20 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
                 newFolder->getAbsPath());
             result->folder = newFolder;
             env->buildFolders.append(std::move(newFolder));
-            env->workspace->currentBuildFolder = result->folder->buildFolderName;
-            env->workspace->save();
-            StdOut::createStringWriter().format("'{}' is now the current build folder.\n",
-                                                result->folder->buildFolderName);
+            if (env->workspace->currentBuildFolder != result->folder->buildFolderName) {
+                env->workspace->currentBuildFolder = result->folder->buildFolderName;
+                env->workspace->save();
+                StdOut::createStringWriter().format("'{}' is now the current build folder.\n",
+                                                    result->folder->buildFolderName);
+            }
         } else if (matches.numItems() == 1) {
             result->folder = matches[0].first;
-            env->workspace->currentBuildFolder = result->folder->buildFolderName;
-            env->workspace->save();
-            StdOut::createStringWriter().format("'{}' is now the current build folder.\n",
-                                                result->folder->buildFolderName);
+            if (env->workspace->currentBuildFolder != result->folder->buildFolderName) {
+                env->workspace->currentBuildFolder = result->folder->buildFolderName;
+                env->workspace->save();
+                StdOut::createStringWriter().format("'{}' is now the current build folder.\n",
+                                                    result->folder->buildFolderName);
+            }
         } else {
             StringWriter sw;
             sw.format("Can't use --auto because target '{}' was found in {} build folders: ",
