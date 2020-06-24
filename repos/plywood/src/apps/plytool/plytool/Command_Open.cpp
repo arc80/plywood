@@ -51,6 +51,22 @@ bool command_open(PlyToolCommandEnv* env) {
         }
         return ((sptr) ShellExecuteW(NULL, L"open", wstr, NULL, NULL, SW_SHOWNORMAL) > 32);
 #endif // PLY_TARGET_WIN32
+#if PLY_TARGET_APPLE
+    } else if (folder->cmakeOptions.generator == "Xcode") {
+        String projPath =
+            NativePath::join(folder->getAbsPath(), "build", folder->solutionName + ".xcodeproj");
+        if (FileSystem::native()->exists(projPath) != ExistsResult::Directory) {
+            fatalError(String::format("Can't find '{}'", projPath));
+        }
+
+        // Open IDE
+        Owned<Subprocess> sub = Subprocess::exec("open", Array<StringView>{projPath}.view(), {},
+                                                 Subprocess::Output::inherit());
+        if (!sub) {
+            fatalError("Unable to open IDE using 'open'");
+        }
+        return sub->join() == 0;
+#endif // PLY_TARGET_APPLE
     }
 
     fatalError(String::format("Don't know how to open IDE for generator '{}'",
