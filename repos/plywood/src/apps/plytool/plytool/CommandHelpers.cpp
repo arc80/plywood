@@ -27,6 +27,10 @@ bool AddParams::exec(build::BuildFolder* folder, StringView fullTargetName) {
         folder->makeShared.append(fullTargetName);
         anyChange = true;
     }
+    if (folder->activeTarget != fullTargetName) {
+        folder->activeTarget = fullTargetName;
+        anyChange = true;
+    }
     return anyChange;
 }
 
