@@ -83,13 +83,21 @@ Installs the specified extern provider.
 
 Generates a build system inside the current build folder by running CMake. When using a single-configuration generator, such as "Unix Makefiles", each configuration gets its own build system. For such generators, the optional `--config` argument can be used to override the active configuration for the current build folder.
 
-<% member plytool build \[--add\] \[--config=[em <configName>]\] \[[em <targetName>]\] %>
+<% member plytool build \[--add\] \[--auto\] \[--config=[em <configName>]\] \[[em <targetName>]\] %>
 
-Runs the build system inside the current build folder. This command will also generate a build system in the current build folder, but only if a `.modules.cpp` file or build folder setting has changed. If *targetName* is specified, only the specified target and its dependencies are built; otherwise, all targets in the build folder are built. If both *targetName* and the `--add` option are specified, the specified root target is added to the build folder if missing. If the `--config` option is specified, the specified configuration is built; otherwise, the folder's active configuration is built.
+Runs the build system inside the current build folder. This command will also generate a build system in the current build folder, but only if a `.modules.cpp` file or build folder setting has changed. If *targetName* is specified, only the specified target and its dependencies are built; otherwise, all targets in the build folder are built. If the `--config` option is specified, the specified configuration is built; otherwise, the folder's active configuration is built.
 
-<% member plytool run \[--add\] \[--config=[em <configName>]\] \[--nobuild\] \[[em <targetName>]\] %>
+If the `--add` option is specified, and *targetName* is specified but not found in the current build folder, the specified root target is added before building.
 
-Build and runs an executable target inside the current build folder. By default, this command will also generate a build system in the current build folder, but only if a `.modules.cpp` file or build folder setting has changed. If the `--nobuild` option is specified, the generate & build steps are skipped. If *targetName* is specified, the specified target is built & run; otherwise, the build folder's active target is built & run. If both *targetName* and the `--add` option are specified, the specified root target is added to the build folder if missing. If the `--config` option is specified, the specified configuration is built; otherwise, the build folder's active configuration is built.
+If the `--auto` option is specified, *targetName* must also be specified. If there are no build folders that contain the specified target, PlyTool will automatically create a new build folder and add the target before building. If there's a unique build folder that already contains the specified target, that build folder will be used instead. In both cases, the chosen build folder becomes the current build folder for subsequent commands.
+
+<% member plytool run \[--add\] \[--auto\] \[--config=[em <configName>]\] \[--nobuild\] \[[em <targetName>]\] %>
+
+Build and runs an executable target inside the current build folder. By default, this command will also generate a build system in the current build folder, but only if a `.modules.cpp` file or build folder setting has changed. If the `--nobuild` option is specified, the generate & build steps are skipped. If *targetName* is specified, the specified target is built & run; otherwise, the build folder's active target is built & run. If the `--config` option is specified, the specified configuration is built; otherwise, the build folder's active configuration is built.
+
+If the `--add` option is specified, and *targetName* is specified but not found in the current build folder, the specified root target is added before building.
+
+If the `--auto` option is specified, *targetName* must also be specified. If there are no build folders that contain the specified target, PlyTool will automatically create a new build folder and add the target before building. If there's a unique build folder that already contains the specified target, that build folder will be used instead. In both cases, the chosen build folder becomes the current build folder for subsequent commands.
 
 <% member plytool codegen %>
 

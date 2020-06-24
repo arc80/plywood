@@ -36,6 +36,7 @@ struct BuildFolder {
 
     // BuildFolder management
     static Owned<BuildFolder> create(StringView buildFolderName, StringView solutionName);
+    static Owned<BuildFolder> autocreate(StringView baseName);
     static Owned<BuildFolder> load(StringView buildFolderName);
     bool save() const;
 

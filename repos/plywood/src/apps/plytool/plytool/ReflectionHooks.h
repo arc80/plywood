@@ -2,6 +2,7 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
+#pragma once
 #include <Core.h>
 #include <ply-cpp/Parser.h>
 #include <ply-cpp/Preprocessor.h>

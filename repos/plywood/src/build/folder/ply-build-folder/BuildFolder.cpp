@@ -53,6 +53,22 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::create(StringView buildFolderName,
     return bf;
 }
 
+PLY_NO_INLINE Owned<BuildFolder> BuildFolder::autocreate(StringView baseName) {
+    String buildFolderName = baseName;
+    for (u32 prefix = 0; prefix < 1000; prefix++) {
+        if (FileSystem::native()->exists(NativePath::join(
+                PLY_WORKSPACE_FOLDER, "data/build", buildFolderName)) == ExistsResult::NotFound) {
+            return BuildFolder::create(buildFolderName, buildFolderName);
+        }
+        prefix++;
+        buildFolderName = baseName + (StringView{"00"} + String::from(prefix)).right(3);
+    }
+    ErrorHandler::log(
+        ErrorHandler::Fatal,
+        String::format("Unable to generate a unique build folder name for '{}'", baseName));
+    return nullptr;
+}
+
 PLY_NO_INLINE Owned<BuildFolder> BuildFolder::load(StringView buildFolderName) {
     String infoPath = BuildFolderName::getInfoPath(buildFolderName);
     String strContents = FileSystem::native()->loadTextAutodetect(infoPath).first;

@@ -14,14 +14,11 @@ namespace ply {
 
 bool command_build(PlyToolCommandEnv* env) {
     using namespace build;
-    if (!env->currentBuildFolder) {
-        fatalError("Current build folder not set");
-    }
 
     BuildParams buildParams;
     buildParams.targetName = env->cl->readToken();
     ensureTerminated(env->cl);
-    buildParams.extractOptions(env->cl, env->currentBuildFolder);
+    buildParams.extractOptions(env);
     env->cl->finalize();
 
     PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
@@ -29,7 +26,7 @@ bool command_build(PlyToolCommandEnv* env) {
     PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
 
     BuildParams::Result buildResult;
-    return buildParams.exec(&buildResult, env->currentBuildFolder, true);
+    return buildParams.exec(&buildResult, env, true);
 }
 
 } // namespace ply
