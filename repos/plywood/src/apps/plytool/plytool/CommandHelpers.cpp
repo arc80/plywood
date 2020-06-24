@@ -180,10 +180,10 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
     }
 
     // Generate & build
+    if (!this->configName) {
+        this->configName = result->folder->activeConfig;
+    }
     if (doBuild) {
-        if (!this->configName) {
-            this->configName = result->folder->activeConfig;
-        }
         if (!result->folder->isGenerated(this->configName)) {
             if (!result->folder->generateLoop(this->configName))
                 return false;
