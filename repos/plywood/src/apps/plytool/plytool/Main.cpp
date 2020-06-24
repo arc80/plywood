@@ -22,6 +22,7 @@ void command_codegen(PlyToolCommandEnv* env);
 void command_bootstrap(PlyToolCommandEnv* env);
 void command_cleanup(PlyToolCommandEnv* env);
 s32 command_run(PlyToolCommandEnv* env);
+bool command_open(PlyToolCommandEnv* env);
 
 } // namespace ply
 
@@ -93,6 +94,8 @@ int main(int argc, char* argv[]) {
         success = command_build(&env);
     } else if (prefixMatch(category, "run")) {
         return command_run(&env);
+    } else if (prefixMatch(category, "open")) {
+        success = command_open(&env);
     } else if (prefixMatch(category, "codegen")) {
         command_codegen(&env);
     } else if (prefixMatch(category, "bootstrap")) {
