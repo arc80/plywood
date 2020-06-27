@@ -58,7 +58,7 @@ PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream* ins, const TextEn
         ins->curByte += decoded.numBytes;
         numBytes += decoded.numBytes;
         stats->numPoints++;
-        if (decoded.validEncoding) {
+        if (decoded.status == DecodeResult::Status::Valid) {
             stats->numValidPoints++;
             stats->totalPointValue += decoded.point;
             if (decoded.point < 32) {

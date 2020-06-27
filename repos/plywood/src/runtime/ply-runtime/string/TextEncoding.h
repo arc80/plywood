@@ -12,8 +12,14 @@ struct String;
 struct WString;
 
 struct DecodeResult {
+    enum class Status : u8 {
+        Truncated,
+        Invalid,
+        Valid,
+    };
+
     s32 point = -1;
-    bool validEncoding = false;
+    Status status = Status::Truncated;
     u8 numBytes = 0;
 };
 
@@ -27,7 +33,7 @@ struct Enc_Bytes {
         if (view.numBytes == 0) {
             return {};
         } else {
-            return {(u8) view.bytes[0], true, 1};
+            return {(u8) view.bytes[0], DecodeResult::Status::Valid, 1};
         }
     }
 
@@ -66,7 +72,7 @@ struct UTF8 {
         if (view.numBytes > 0) {
             u8 first = view.bytes[0];
             if (first < 0x80) {
-                return {first, true, 1};
+                return {first, DecodeResult::Status::Valid, 1};
             }
         }
         return decodePointSlowPath(view);
@@ -158,14 +164,20 @@ struct UTF16 {
             return {};
         }
         u16 first = getUnit(view.bytes);
-        if (view.numBytes >= 4 && first >= 0xd800 && first < 0xdc00) {
-            u16 second = getUnit(view.bytes + 2);
-            if (second >= 0xdc00 && second < 0xe000) {
-                u32 value = 0x10000 + ((first - 0xd800) << 10) + (second - 0xdc00);
-                return {(s32) value, true, 4};
+        auto status = DecodeResult::Status::Truncated;
+        if (first >= 0xd800 && first < 0xdc00) {
+            if (view.numBytes >= 4) {
+                u16 second = getUnit(view.bytes + 2);
+                if (second >= 0xdc00 && second < 0xe000) {
+                    u32 value = 0x10000 + ((first - 0xd800) << 10) + (second - 0xdc00);
+                    return {(s32) value, DecodeResult::Status::Valid, 4};
+                }
+                status = DecodeResult::Status::Invalid;
             }
+        } else if (first >= 0xdc00 && first < 0xe000) {
+            status = DecodeResult::Status::Invalid;
         }
-        return {first, true, 2};
+        return {first, status, 2};
     }
 
     static PLY_INLINE u32 backNumBytes(ConstBufferView view) {

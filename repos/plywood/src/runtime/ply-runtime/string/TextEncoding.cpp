@@ -15,7 +15,7 @@ PLY_NO_INLINE DecodeResult UTF8::decodePointSlowPath(ConstBufferView view) {
         return {};
     }
 
-    DecodeResult result;
+    DecodeResult result; // Default status is Truncated
     u32 value = 0;
     const u8* bytes = view.bytes;
     u8 first = *bytes++;
@@ -30,6 +30,7 @@ PLY_NO_INLINE DecodeResult UTF8::decodePointSlowPath(ConstBufferView view) {
                     value = first & 0x1f;
                     goto consume1Byte;
                 }
+                result.status = DecodeResult::Status::Invalid;
             }
             break;
         }
@@ -42,6 +43,7 @@ PLY_NO_INLINE DecodeResult UTF8::decodePointSlowPath(ConstBufferView view) {
                     value = first & 0xf;
                     goto consume2Bytes;
                 }
+                result.status = DecodeResult::Status::Invalid;
             }
             break;
         }
@@ -54,6 +56,7 @@ PLY_NO_INLINE DecodeResult UTF8::decodePointSlowPath(ConstBufferView view) {
                     value = first & 0x7;
                     goto consume3Bytes;
                 }
+                result.status = DecodeResult::Status::Invalid;
             }
             break;
         }
@@ -63,8 +66,8 @@ PLY_NO_INLINE DecodeResult UTF8::decodePointSlowPath(ConstBufferView view) {
     }
 
     // Bad encoding; consume just one byte
+    // Invalid/truncated status has already been set
     result.point = first;
-    result.validEncoding = false;
     result.numBytes = 1;
     return result;
 
@@ -77,7 +80,7 @@ consume2Bytes:
 consume1Byte:
     value = (value << 6) | (*bytes & 0x3f);
     result.point = value;
-    result.validEncoding = true;
+    result.status = DecodeResult::Status::Valid;
     return result;
 }
 
