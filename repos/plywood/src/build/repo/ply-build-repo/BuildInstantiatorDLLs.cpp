@@ -40,7 +40,7 @@ struct DLLSignature {
         if (FileSystem::native()->lastResult() != FSResult::OK)
             return false;
 
-        auto aRoot = pylon::Parser{}.parse(strContents);
+        auto aRoot = pylon::Parser{}.parse(strContents).root;
         if (!aRoot.isValid())
             return false;
 

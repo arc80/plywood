@@ -6,36 +6,35 @@
 #include <pylon/Core.h>
 #include <pylon/Node.h>
 #include <ply-runtime/io/text/StringWriter.h>
+#include <ply-runtime/io/text/FileLocationMap.h>
 
 namespace pylon {
 
 struct ParseError {
     struct Scope {
         enum Type { Object, Property, Duplicate, Array };
-        Location location;
+        u32 fileOfs;
         Type type;
         StringView name;
         u32 index;
 
-        static PLY_INLINE Scope object(Location location) {
-            return {location, Object, {}, 0};
+        static PLY_INLINE Scope object(u32 fileOfs) {
+            return {fileOfs, Object, {}, 0};
         }
-        static PLY_INLINE Scope property(Location location, StringView name) {
-            return {location, Property, name, 0};
+        static PLY_INLINE Scope property(u32 fileOfs, StringView name) {
+            return {fileOfs, Property, name, 0};
         }
-        static PLY_INLINE Scope duplicate(Location location) {
-            return {location, Duplicate, {}, 0};
+        static PLY_INLINE Scope duplicate(u32 fileOfs) {
+            return {fileOfs, Duplicate, {}, 0};
         }
-        static PLY_INLINE Scope array(Location location, u32 index) {
-            return {location, Array, {}, index};
+        static PLY_INLINE Scope array(u32 fileOfs, u32 index) {
+            return {fileOfs, Array, {}, index};
         }
     };
 
-    Location location;
+    u32 fileOfs;
     HybridString message;
     const Array<Scope>& context;
-
-    void dump(StringWriter& sw) const;
 };
 
 class Parser {
@@ -57,7 +56,7 @@ private:
             EndOfFile
         };
         Type type = Invalid;
-        Location location;
+        u32 fileOfs = 0;
         HybridString text;
 
         PLY_INLINE bool isValid() const {
@@ -66,12 +65,12 @@ private:
     };
 
     Functor<void(const ParseError& err)> errorCallback;
+    FileLocationMap fileLocMap;
     bool anyError_ = false;
     ConstBufferView srcView;
     u32 readOfs = 0;
     s32 nextUnit = 0;
     u32 tabSize = 4;
-    Location location = {1, 1};
     Token pushBackToken;
     Array<ParseError::Scope> context;
 
@@ -99,10 +98,10 @@ private:
         }
     };
 
-    void error(Location location, HybridString&& message);
+    void error(u32 fileOfs, HybridString&& message);
     void advanceChar();
     Token readPlainToken(Token::Type type);
-    bool readEscapedHex(OutStream* outs, Location escapeLoc);
+    bool readEscapedHex(OutStream* outs, u32 escapeFileOfs);
     Token readQuotedString();
     Token readLiteral();
     Token readToken(bool tokenizeNewLine = false);
@@ -123,9 +122,16 @@ public:
         return this->anyError_;
     }
 
-    Node parse(ConstBufferView srcView_);
+    struct Result {
+        Node root;
+        FileLocationMap fileLocMap;
+    };
 
-    PLY_INLINE Node parse(StringView srcView_) {
+    void dumpError(const ParseError& error, StringWriter& sw) const;
+
+    Result parse(ConstBufferView srcView_);
+
+    PLY_INLINE Result parse(StringView srcView_) {
         return parse(srcView_.bufferView());
     }
 };

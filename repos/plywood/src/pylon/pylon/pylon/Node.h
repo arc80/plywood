@@ -7,11 +7,6 @@
 
 namespace pylon {
 
-struct Location {
-    u32 line;
-    u32 column;
-};
-
 struct Node {
     struct Object {
         struct Item; // Defined further below
@@ -51,7 +46,7 @@ struct Node {
 #include "codegen/switch-pylon-Node-Type.inl" //@@ply
     };
     Type type;
-    Location location = {0, 0};
+    u32 fileOfs = 0;
 
     static Object emptyObject;
     static ply::Array<Node> emptyArray;
@@ -61,25 +56,25 @@ struct Node {
         return type.id != Type::ID::Invalid;
     }
 
-    static PLY_INLINE Node createObject(const Location& location) {
+    static PLY_INLINE Node createObject(u32 fileOfs) {
         Node node;
         node.type.object().switchTo();
-        node.location = location;
+        node.fileOfs = fileOfs;
         return node;
     }
 
-    static PLY_INLINE Node createArray(const Location& location) {
+    static PLY_INLINE Node createArray(u32 fileOfs) {
         Node node;
         node.type.array().switchTo();
-        node.location = location;
+        node.fileOfs = fileOfs;
         return node;
     }
 
-    static PLY_INLINE Node createText(HybridString&& str, const Location& location) {
+    static PLY_INLINE Node createText(HybridString&& str, u32 fileOfs) {
         Node node;
         auto text = node.type.text().switchTo();
         text->str = std::move(str);
-        node.location = location;
+        node.fileOfs = fileOfs;
         return node;
     }
 

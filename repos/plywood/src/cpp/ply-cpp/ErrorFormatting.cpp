@@ -16,7 +16,7 @@ ExpandedFileLocation expandFileLocation(const PPVisitedFiles* visitedFiles,
         visitedFiles->includeChains[iter.getItem().includeChainIdx];
     PLY_ASSERT(!chain.isMacroExpansion); // FIXME handle macros
     const cpp::PPVisitedFiles::SourceFile* srcFile = &visitedFiles->sourceFiles[chain.fileOrExpIdx];
-    cpp::FileLocation fileLoc = srcFile->fileLocMap.getFileLocation(
+    FileLocation fileLoc = srcFile->fileLocMap.getFileLocation(
         safeDemote<u32>(linearLoc - iter.getItem().linearLoc + iter.getItem().offset));
     return {srcFile, fileLoc};
 }

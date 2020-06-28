@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-cpp/Core.h>
-#include <ply-cpp/FileLocationMap.h>
+#include <ply-runtime/io/text/FileLocationMap.h>
 #include <ply-runtime/container/BTree.h>
 #include <ply-cpp/LinearLocation.h>
 

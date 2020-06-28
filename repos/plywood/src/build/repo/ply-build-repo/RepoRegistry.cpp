@@ -60,25 +60,26 @@ struct RepoInstantiator {
             parser.setErrorCallback([&](const pylon::ParseError& err) {
                 StringWriter sw;
                 sw << infoPath;
-                err.dump(sw);
+                parser.dumpError(err, sw);
                 ErrorHandler::log(ErrorHandler::Error, sw.moveToString());
             });
-            pylon::Node aRoot = parser.parse(infoText);
+            pylon::Parser::Result parseResult = parser.parse(infoText);
             if (parser.anyError()) {
                 return nullptr;
             }
 
             // FIXME: Use reflection
             // importInto(TypedPtr::bind(this), aRoot);
-            for (const pylon::Node& dependency : aRoot["dependsOn"]) {
+            for (const pylon::Node& dependency : parseResult.root["dependsOn"]) {
                 StringView depRepoName = dependency.text();
                 s32 j = find(this->idlls.dlls.view(),
                              [&](const InstantiatedDLL& d) { return d.repoName == depRepoName; });
                 if (j < 0) {
+                    FileLocation loc = parseResult.fileLocMap.getFileLocation(dependency.fileOfs);
                     ErrorHandler::log(
                         ErrorHandler::Fatal,
                         String::format("{}({}, {}): error: Can't find repo named '{}'\n", infoPath,
-                                       dependency.location.line, dependency.location.column,
+                                       loc.lineNumber, loc.columnNumber,
                                        depRepoName));
                     return nullptr; // shouldn't get here
                 }
@@ -87,10 +88,11 @@ struct RepoInstantiator {
                     return nullptr;
                 }
                 if (findItem(repo->childRepos.view(), childRepo) >= 0) {
+                    FileLocation loc = parseResult.fileLocMap.getFileLocation(dependency.fileOfs);
                     ErrorHandler::log(
                         ErrorHandler::Fatal,
                         String::format("{}({}, {}): error: Duplicate child repo '{}'\n", infoPath,
-                                       dependency.location.line, dependency.location.column,
+                                       loc.lineNumber, loc.columnNumber,
                                        depRepoName));
                     return nullptr; // shouldn't get here
                 }

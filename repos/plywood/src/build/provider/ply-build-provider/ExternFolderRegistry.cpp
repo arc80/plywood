@@ -20,7 +20,7 @@ PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
     if (FileSystem::native()->lastResult() != FSResult::OK)
         return nullptr;
 
-    auto aRoot = pylon::Parser{}.parse(strContents);
+    auto aRoot = pylon::Parser{}.parse(strContents).root;
     if (!aRoot.isValid())
         return nullptr;
 

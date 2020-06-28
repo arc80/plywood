@@ -16,7 +16,7 @@ PLY_NO_INLINE bool WorkspaceSettings::load() {
     if (FileSystem::native()->lastResult() != FSResult::OK)
         return true;
 
-    auto aRoot = pylon::Parser{}.parse(strContents);
+    auto aRoot = pylon::Parser{}.parse(strContents).root;
     if (!aRoot.isValid())
         return false;
 

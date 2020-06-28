@@ -2,12 +2,11 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-cpp/Core.h>
-#include <ply-cpp/FileLocationMap.h>
+#include <ply-runtime/Precomp.h>
+#include <ply-runtime/io/text/FileLocationMap.h>
 #include <ply-runtime/string/TextEncoding.h>
 
 namespace ply {
-namespace cpp {
 
 FileLocationMap FileLocationMap::fromView(StringView src) {
     FileLocationMap result;
@@ -82,5 +81,4 @@ FileLocation FileLocationMap::getFileLocation(u32 offset) const {
     }
 }
 
-} // namespace cpp
 } // namespace ply

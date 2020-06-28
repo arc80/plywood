@@ -9,7 +9,7 @@
 #include <ply-runtime/io/text/LiquidTags.h>
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-web-cook-docs/SemaToString.h>
-#include <ply-cpp/FileLocationMap.h> // This should be moved to a different module
+#include <ply-runtime/io/text/FileLocationMap.h> // This should be moved to a different module
 
 namespace ply {
 namespace docs {
@@ -418,7 +418,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             classScopeText = svr.viewAvailable().trim(isWhite);
             classScope = resolveClassScope(classScopeText);
             if (!classScope) {
-                cpp::FileLocation srcFileLoc =
+                FileLocation srcFileLoc =
                     srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));
                 pageResult->addError(String::format("{}({}, {}): error: class '{}' not found\n",
                                                     pageSrcPath, srcFileLoc.lineNumber,
@@ -433,7 +433,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             flushMarkdown();
             String classFQID = svr.viewAvailable().trim(isWhite);
             if (classFQID != classScopeText) {
-                cpp::FileLocation srcFileLoc =
+                FileLocation srcFileLoc =
                     srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));
                 pageResult->addError(
                     String::format("{}({}, {}): error: dumpExtractedMembers tag '{}' does not "
@@ -449,7 +449,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
                 // in the liquid tag to offsets in the file that accounts for escape characters.
                 // (Although there aren't any escape chracters in liquid tags yet...) For now,
                 // we'll just use the location of the tag itself.
-                cpp::FileLocation srcFileLoc =
+                FileLocation srcFileLoc =
                     srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));
                 pageResult->addError(String::format("{}({}, {}): error: class '{}' not found\n",
                                                     pageSrcPath, srcFileLoc.lineNumber,
@@ -463,7 +463,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             flushMarkdown();
             htmlWriter << svr.viewAvailable();
         } else {
-            cpp::FileLocation srcFileLoc =
+            FileLocation srcFileLoc =
                 srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));
             pageResult->addError(String::format("{}({}, {}): error: unrecognized tag '{}'\n",
                                                 pageSrcPath, srcFileLoc.lineNumber,

@@ -42,7 +42,7 @@ bool errorExportFilter(cpp::PPVisitedFiles* visitedFiles, pylon::Node& aNode, Ty
         PLY_ASSERT(chain.fileOrExpIdx == 0);
         const cpp::PPVisitedFiles::SourceFile& srcFile =
             visitedFiles->sourceFiles[chain.fileOrExpIdx];
-        cpp::FileLocation fileLoc = srcFile.fileLocMap.getFileLocation(
+        FileLocation fileLoc = srcFile.fileLocMap.getFileLocation(
             safeDemote<u32>(token->linearLoc - iter.getItem().offset));
         objNode->obj.add("line").value =
             pylon::Node::createText(String::from(fileLoc.lineNumber), {});
