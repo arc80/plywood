@@ -114,9 +114,9 @@ Owned<pylon::Node> toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cm
 #if PLY_KERNEL_LINUX
         toolchain->set("targetPlatform", pylon::Node::createText("linux"));
 #if PLY_CPU_X64
-        toolchain.arch = "x64";
+        toolchain->set("arch", pylon::Node::createText("x64"));
 #elif PLY_CPU_X86
-        toolchain.arch = "x86";
+        toolchain->set("arch", pylon::Node::createText("x86"));
 #else
         // FIXME: Handle more gracefully
         PLY_ASSERT(0); // Unsupported target platform
