@@ -58,10 +58,11 @@ ExternResult extern_cairo_apt(ExternCommand cmd, ExternProviderArgs* args) {
 // [ply extern="cairo" provider="prebuilt"]
 ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) {
     // Toolchain filters
-    if (args->toolchain->targetPlatform.name != "windows") {
+    if (args->toolchain->get("targetPlatform")->text() != "windows") {
         return {ExternResult::UnsupportedToolchain, "Target platform must be 'windows'"};
     }
-    if (findItem(ArrayView<const StringView>{"x86", "x64"}, args->toolchain->arch) < 0) {
+    StringView arch = args->toolchain->get("arch")->text();
+    if (findItem(ArrayView<const StringView>{"x86", "x64"}, arch) < 0) {
         return {ExternResult::UnsupportedToolchain, "Target arch must be 'x86' or 'x64'"};
     }
     if (args->providerArgs) {
@@ -72,14 +73,14 @@ ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) 
     String archiveName = String::format("cairo-windows-{}", version);
 
     // Handle Command
-    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(args->toolchain->arch);
+    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(arch);
     if (cmd == ExternCommand::Status) {
         return er.first;
     } else if (cmd == ExternCommand::Install) {
         if (er.first.code != ExternResult::SupportedButNotInstalled) {
             return er.first;
         }
-        ExternFolder* externFolder = args->createExternFolder(args->toolchain->arch);
+        ExternFolder* externFolder = args->createExternFolder(arch);
         String archivePath = NativePath::join(externFolder->path, archiveName + ".zip");
         String url =
             String::format("https://github.com/preshing/cairo-windows/releases/download/{}/{}.zip",
@@ -101,7 +102,7 @@ ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) 
         }
         String installFolder = NativePath::join(er.second->path, archiveName);
         args->dep->includeDirs.append(NativePath::join(installFolder, "include"));
-        StringView platformFolder = args->toolchain->arch;
+        StringView platformFolder = arch;
         args->dep->libs.append(NativePath::join(installFolder, "lib", platformFolder, "cairo.lib"));
         args->dep->dlls.append(NativePath::join(installFolder, "lib", platformFolder, "cairo.dll"));
         return {ExternResult::Instantiated, ""};

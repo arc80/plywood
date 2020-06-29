@@ -36,6 +36,7 @@ add_executable(plytool
     $<TARGET_OBJECTS:build-folder>
     $<TARGET_OBJECTS:build-repo>
     $<TARGET_OBJECTS:build-provider>
+    $<TARGET_OBJECTS:pylon>
     $<TARGET_OBJECTS:build-target>
     $<TARGET_OBJECTS:reflect>
     $<TARGET_OBJECTS:runtime>
@@ -61,12 +62,12 @@ target_include_directories(plytool PRIVATE
 target_compile_definitions(plytool PRIVATE
     "PLY_BUILD_EXPORTING=1"
     "PLY_DLL_EXPORTING=1"
+    "PYLON_EXPORTING=1"
 )
 target_link_libraries(plytool PRIVATE
     "plytool-client"
     "cpp"
     "pylon-reflect"
-    "pylon"
     ${PLY_RUNTIME_DEPENDENCIES}
 )
 add_custom_command(TARGET plytool POST_BUILD COMMAND
@@ -97,6 +98,7 @@ target_include_directories(build-folder PRIVATE
 target_compile_definitions(build-folder PRIVATE
     "PLY_BUILD_EXPORTING=1"
     "PLY_DLL_EXPORTING=1"
+    "PYLON_EXPORTING=1"
 )
 
 # build-repo
@@ -145,6 +147,7 @@ target_include_directories(build-repo PRIVATE
 target_compile_definitions(build-repo PRIVATE
     "PLY_BUILD_EXPORTING=1"
     "PLY_DLL_EXPORTING=1"
+    "PYLON_EXPORTING=1"
 )
 
 # build-target
@@ -472,7 +475,6 @@ SetSourceFolders(BUILD-PROVIDER_SOURCES "${SRC_FOLDER}build/provider/ply-build-p
     "HostTools.cpp"
     "HostTools.h"
     "PackageManager.h"
-    "ToolchainInfo.h"
     "impl/PackageManager_Apt.cpp"
     "impl/PackageManager_Conan.cpp"
     "impl/PackageManager_Homebrew.cpp"
@@ -496,6 +498,7 @@ target_include_directories(build-provider PRIVATE
 target_compile_definitions(build-provider PRIVATE
     "PLY_BUILD_EXPORTING=1"
     "PLY_DLL_EXPORTING=1"
+    "PYLON_EXPORTING=1"
 )
 
 # pylon-reflect
@@ -519,6 +522,7 @@ target_include_directories(pylon-reflect PRIVATE
     "${SRC_FOLDER}pylon/reflect"
 )
 target_compile_definitions(pylon-reflect PRIVATE
+    "PYLON_EXPORTING=1"
     "PLY_DLL_EXPORTING=1"
 )
 
@@ -532,7 +536,7 @@ SetSourceFolders(PYLON_SOURCES "${SRC_FOLDER}pylon/pylon/pylon"
     "Write.cpp"
     "Write.h"
 )
-add_library(pylon
+add_library(pylon OBJECT
     ${PYLON_SOURCES}
 )
 EnableCppExceptions(pylon FALSE)
@@ -543,6 +547,7 @@ target_include_directories(pylon PRIVATE
     "${SRC_FOLDER}pylon/pylon"
 )
 target_compile_definitions(pylon PRIVATE
+    "PYLON_EXPORTING=1"
     "PLY_DLL_EXPORTING=1"
 )
 

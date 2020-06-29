@@ -135,11 +135,11 @@ struct Node {
         return this->type == (u64) Type::Object;
     }
 
-    PLY_NO_INLINE Borrowed<Node> get(StringView key);
+    PYLON_ENTRY Borrowed<Node> get(StringView key);
     PLY_INLINE const Node* get(StringView key) const {
         return const_cast<Node*>(this)->get(key);
     }
-    PLY_NO_INLINE void set(HybridString&& key, Owned<Node>&& value);
+    PLY_NO_INLINE Borrowed<Node> set(HybridString&& key, Owned<Node>&& value);
     PLY_NO_INLINE Owned<Node> remove(StringView key);
 
     PLY_INLINE const Object& object() const {

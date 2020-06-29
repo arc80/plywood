@@ -4,8 +4,8 @@
 ------------------------------------*/
 #pragma once
 #include <ply-build-common/Core.h>
-#include <ply-build-provider/ToolchainInfo.h>
 #include <ply-build-repo/ExternProvider.h>
+#include <pylon/Node.h>
 
 namespace ply {
 namespace build {
@@ -15,7 +15,7 @@ struct CMakeGeneratorOptions;
 struct ProjectInstantiationEnv {
     const CMakeGeneratorOptions* cmakeOptions = nullptr; // Used by the build-target module
     HybridString config;
-    ToolchainInfo toolchain;
+    Owned<pylon::Node> toolchain;
     Array<const ExternProvider*> externSelectors;
     String buildFolderPath;
     bool isGenerating = false;

@@ -8,7 +8,6 @@
 #include <ply-build-repo/RepoRegistry.h>
 #include <ply-build-repo/ProjectInstantiator.h>
 #include <ply-build-provider/HostTools.h>
-#include <ply-build-provider/ToolchainInfo.h>
 #include <ply-build-provider/ExternFolderRegistry.h>
 
 namespace ply {
@@ -21,9 +20,10 @@ void installProvider(PlyToolCommandEnv* env, const build::ExternProvider* provid
     StdOut::createStringWriter().format("Installing extern provider '{}'...\n",
                                         RepoRegistry::get()->getShortProviderName(provider));
 
-    ToolchainInfo toolchain = toolchainInfoFromCMakeOptions(env->currentBuildFolder->cmakeOptions);
+    Owned<pylon::Node> toolchain =
+        toolchainInfoFromCMakeOptions(env->currentBuildFolder->cmakeOptions);
     ExternProviderArgs args;
-    args.toolchain = &toolchain;
+    args.toolchain = toolchain;
     args.provider = provider;
     ExternResult er = provider->externFunc(ExternCommand::Install, &args);
     String errorDetails;
@@ -124,10 +124,10 @@ void command_extern(PlyToolCommandEnv* env) {
             for (const ExternProvider* externProvider : repo->externProviders) {
                 if (externProvider->extern_ != extern_)
                     continue;
-                ToolchainInfo toolchain =
+                Owned<pylon::Node> toolchain =
                     toolchainInfoFromCMakeOptions(env->currentBuildFolder->cmakeOptions);
                 ExternProviderArgs args;
-                args.toolchain = &toolchain;
+                args.toolchain = toolchain;
                 args.provider = externProvider;
                 ExternResult er = externProvider->externFunc(ExternCommand::Status, &args);
                 candidates.append({externProvider, er.code});

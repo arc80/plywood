@@ -66,8 +66,7 @@ Owned<Node> Node::copy() const {
 }
 
 PLY_NO_INLINE Owned<Node> Node::createInvalid() {
-    Owned<Node> node =
-        (Node*) PLY_HEAP.alloc(PLY_MEMBER_OFFSET(Node, text_));
+    Owned<Node> node = (Node*) PLY_HEAP.alloc(PLY_MEMBER_OFFSET(Node, text_));
     node->type = (u64) Type::Invalid;
     node->fileOfs = 0;
     return node;
@@ -115,9 +114,10 @@ PLY_NO_INLINE Borrowed<Node> Node::get(StringView key) {
     return this->object_.items[*cursor].value.borrow();
 }
 
-PLY_NO_INLINE void Node::set(HybridString&& key, Owned<Node>&& value) {
+PLY_NO_INLINE Borrowed<Node> Node::set(HybridString&& key, Owned<Node>&& value) {
+    Borrowed<Node> result = value.borrow();
     if (this->type != (u64) Type::Object)
-        return;
+        return result;
 
     auto cursor = this->object_.index.insertOrFind(key.view(), &this->object_.items);
     if (cursor.wasFound()) {
@@ -126,6 +126,7 @@ PLY_NO_INLINE void Node::set(HybridString&& key, Owned<Node>&& value) {
         *cursor = this->object_.items.numItems();
         this->object_.items.append({std::move(key), std::move(value)});
     }
+    return result;
 }
 
 PLY_NO_INLINE Owned<Node> Node::remove(StringView key) {

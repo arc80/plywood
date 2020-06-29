@@ -4,6 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-build-common/Core.h>
+#include <pylon/Node.h>
 
 namespace ply {
 namespace build {
@@ -59,7 +60,7 @@ struct ExternProvider {
 };
 
 struct ExternProviderArgs {
-    const ToolchainInfo* toolchain = nullptr;
+    const pylon::Node* toolchain = nullptr;
     const ExternProvider* provider = nullptr;
     String providerArgs;
 

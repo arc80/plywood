@@ -5,7 +5,6 @@
 #pragma once
 #include <ply-build-common/Core.h>
 #include <ply-build-target/CMakeLists.h>
-#include <ply-build-provider/ToolchainInfo.h>
 #include <pylon/Node.h>
 
 namespace ply {
@@ -53,7 +52,7 @@ struct BuildFolder {
     static Array<Owned<BuildFolder>> getList();
 };
 
-ToolchainInfo toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cmakeOpts);
+Owned<pylon::Node> toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cmakeOpts);
 
 } // namespace build
 } // namespace ply

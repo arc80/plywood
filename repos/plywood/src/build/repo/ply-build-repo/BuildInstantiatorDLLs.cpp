@@ -130,6 +130,8 @@ Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const Extracte
                           NativePath::join(ctx.backedUpSrcFolder, "build/repo"));
     target->addIncludeDir(Visibility::Private,
                           NativePath::join(ctx.backedUpSrcFolder, "build/common"));
+    target->addIncludeDir(Visibility::Private,
+                          NativePath::join(ctx.backedUpSrcFolder, "pylon/pylon"));
     target->setPreprocessorDefinition(Visibility::Private, "PLY_BUILD_IMPORTING", "1");
     target->setPreprocessorDefinition(Visibility::Private, "PLY_DLL_IMPORTING", "1");
 #if PLY_TARGET_WIN32

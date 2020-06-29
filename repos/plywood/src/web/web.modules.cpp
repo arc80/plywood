@@ -93,10 +93,11 @@ ExternResult extern_libsass_apt(ExternCommand cmd, ExternProviderArgs* args) {
 // [ply extern="libsass" provider="prebuilt"]
 ExternResult extern_libsass_prebuilt(ExternCommand cmd, ExternProviderArgs* args) {
     // Toolchain filters
-    if (args->toolchain->targetPlatform.name != "windows") {
+    if (args->toolchain->get("targetPlatform")->text() != "windows") {
         return {ExternResult::UnsupportedToolchain, "Target platform must be 'windows'"};
     }
-    if (findItem(ArrayView<const StringView>{"x86", "x64"}, args->toolchain->arch) < 0) {
+    StringView arch = args->toolchain->get("arch")->text();
+    if (findItem(ArrayView<const StringView>{"x86", "x64"}, arch) < 0) {
         return {ExternResult::UnsupportedToolchain, "Target arch must be 'x86' or 'x64'"};
     }
     if (args->providerArgs) {
@@ -104,17 +105,17 @@ ExternResult extern_libsass_prebuilt(ExternCommand cmd, ExternProviderArgs* args
     }
 
     StringView version = "3.6.3";
-    String archiveName = String::format("libsass-{}-{}", version, args->toolchain->arch);
+    String archiveName = String::format("libsass-{}-{}", version, arch);
 
     // Handle Command
-    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(args->toolchain->arch);
+    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(arch);
     if (cmd == ExternCommand::Status) {
         return er.first;
     } else if (cmd == ExternCommand::Install) {
         if (er.first.code != ExternResult::SupportedButNotInstalled) {
             return er.first;
         }
-        ExternFolder* externFolder = args->createExternFolder(args->toolchain->arch);
+        ExternFolder* externFolder = args->createExternFolder(arch);
         String archivePath = NativePath::join(externFolder->path, archiveName + ".msi");
         String url = String::format("https://github.com/sass/libsass/releases/download/{}/{}.msi",
                                     version, archiveName);

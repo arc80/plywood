@@ -2,6 +2,7 @@
 
 // [ply module="pylon"]
 void module_pylon(ModuleArgs* args) {
+    args->buildTarget->dynamicLinkPrefix = "PYLON";
     args->addSourceFiles("pylon/pylon");
     args->addIncludeDir(Visibility::Public, "pylon");
     args->addTarget(Visibility::Public, "runtime");

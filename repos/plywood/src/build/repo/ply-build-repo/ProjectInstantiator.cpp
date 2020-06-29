@@ -131,7 +131,7 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
         // Will return nullptr if not installed
         Owned<Dependency> dep = new Dependency;
         ExternProviderArgs args;
-        args.toolchain = &this->env->toolchain;
+        args.toolchain = this->env->toolchain;
         args.projInst = this;
         args.provider = externProvider;
         args.dep = dep;

@@ -18,7 +18,6 @@
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-build-provider/ExternFolderRegistry.h>
 #include <ply-build-provider/HostTools.h>
-#include <ply-build-provider/ToolchainInfo.h>
 #include <ply-runtime/container/Hash128.h>
 
 namespace ply {
@@ -98,29 +97,22 @@ PLY_NO_INLINE bool BuildFolder::save() const {
     return (rc == FSResult::OK || rc == FSResult::Unchanged);
 }
 
-ToolchainInfo toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cmakeOpts) {
-    ToolchainInfo toolchain;
+Owned<pylon::Node> toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cmakeOpts) {
+    Owned<pylon::Node> toolchain = pylon::Node::createObject();
+    toolchain->set("buildSystem", pylon::Node::createText(cmakeOpts.generator.view()));
+
     if (!cmakeOpts.generator) {
         // Generator name is allowed to be blank when generating the bootstrap
     } else if (cmakeOpts.generator.startsWith("Visual Studio")) {
-        toolchain.compiler.name = "msvc";
-        toolchain.targetPlatform.name = "windows";
-        toolchain.crt.name = "msvc";
-        toolchain.cpprt.name = "msvc";
-        toolchain.arch = (cmakeOpts.platform == "Win32" ? "x86" : "x64");
+        toolchain->set("targetPlatform", pylon::Node::createText("windows"));
+        toolchain->set("arch",
+                       pylon::Node::createText(cmakeOpts.platform == "Win32" ? "x86" : "x64"));
     } else if (cmakeOpts.generator == "Xcode") {
-        toolchain.compiler.name = "clang";
-        toolchain.targetPlatform.name = "macos";
-        toolchain.crt.name = "";
-        toolchain.cpprt.name = "";
-        toolchain.arch = "x64";
+        toolchain->set("targetPlatform", pylon::Node::createText("macos"));
+        toolchain->set("arch", pylon::Node::createText("x64"));
     } else if (cmakeOpts.generator == "Unix Makefiles") {
-        // FIXME: Detect the actual compiler that will be used
-        // FIXME: Add support for CMAKE_CXX_COMPILER and CMAKE_C_COMPILER
-        toolchain.compiler.name = "gcc";
-        // FIXME: Add support for cross-compilation
 #if PLY_KERNEL_LINUX
-        toolchain.targetPlatform.name = "linux";
+        toolchain->set("targetPlatform", pylon::Node::createText("linux"));
 #if PLY_CPU_X64
         toolchain.arch = "x64";
 #elif PLY_CPU_X86
@@ -130,13 +122,12 @@ ToolchainInfo toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cmakeOp
         PLY_ASSERT(0); // Unsupported target platform
 #endif
 #elif PLY_TARGET_APPLE
-        toolchain.targetPlatform.name = "macos";
+        toolchain->set("targetPlatform", pylon::Node::createText("macos"));
+        toolchain->set("arch", pylon::Node::createText("x64"));
 #else
         // FIXME: Handle more gracefully
         PLY_ASSERT(0); // Unsupported target system
 #endif
-        toolchain.crt.name = "glibc";
-        toolchain.cpprt.name = "libstdc++";
     } else {
         // FIXME: Handle more gracefully
         PLY_ASSERT(0); // Unsupported generator
@@ -338,9 +329,10 @@ PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
                     for (const ExternProvider* externProvider : repo->externProviders) {
                         if (externProvider->extern_ != unselectedExtern)
                             continue;
-                        ToolchainInfo toolchain = toolchainInfoFromCMakeOptions(this->cmakeOptions);
+                        Owned<pylon::Node> toolchain =
+                            toolchainInfoFromCMakeOptions(this->cmakeOptions);
                         ExternProviderArgs args;
-                        args.toolchain = &toolchain;
+                        args.toolchain = toolchain;
                         args.provider = externProvider;
                         ExternResult er = externProvider->externFunc(ExternCommand::Status, &args);
                         if (er.isSupported()) {
