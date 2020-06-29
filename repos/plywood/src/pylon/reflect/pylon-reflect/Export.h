@@ -9,8 +9,7 @@
 
 namespace pylon {
 
-using FilterFunc = HiddenArgFunctor<bool(Node&, TypedPtr)>;
-void exportObjTo(Node& aNode, TypedPtr obj, const FilterFunc& filter);
-Node exportObj(TypedPtr obj, const FilterFunc& filter = {});
+using FilterFunc = HiddenArgFunctor<Owned<Node>(TypedPtr)>;
+Owned<Node> exportObj(TypedPtr obj, const FilterFunc& filter = {});
 
 } // namespace pylon

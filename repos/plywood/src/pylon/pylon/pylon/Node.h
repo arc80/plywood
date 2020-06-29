@@ -8,160 +8,66 @@
 namespace pylon {
 
 struct Node {
+    enum class Type {
+        Invalid = 0,
+        Text,
+        Array,
+        Object,
+    };
+
+    u64 type : 4;
+    // StringView and FileLocationMap don't support files greater than 4GB yet, even though we
+    // support large file offsets here:
+    u64 fileOfs : 60;
+
     struct Object {
-        struct Item; // Defined further below
+        struct Item {
+            HybridString key;
+            Owned<Node> value;
+        };
+
         struct IndexTraits {
             using Key = StringView;
             using Item = u32;
             using Context = Array<Object::Item>;
-            static StringView comparand(u32 item, const Array<Object::Item>& ctx);
+            static PLY_INLINE StringView comparand(u32 item, const Array<Object::Item>& ctx) {
+                return ctx[item].key.view();
+            }
         };
+
         HashMap<IndexTraits> index;
         Array<Item> items;
-
-        PLY_INLINE Object() = default;
-        PLY_INLINE Object(Object&& other) = default;
-        PLY_NO_INLINE Object(const Object& other);
-        PLY_INLINE void operator=(Object&& other);
-        PLY_INLINE void operator=(const Object& other);
-
-        Node& insertOrFind(HybridString&& name);
-        Node& find(StringView name);
-        const Node& find(StringView name) const;
     };
 
-    struct Type {
-        // ply make switch
-        struct Invalid { //
-        };
-        struct Object {
-            Node::Object obj;
-        };
-        struct Array {
-            ply::Array<Node> arr;
-        };
-        struct Text {
-            HybridString str;
-        };
-#include "codegen/switch-pylon-Node-Type.inl" //@@ply
+    union {
+        HybridString text_;
+        Array<Owned<Node>> array_;
+        Object object_;
     };
-    Type type;
-    u32 fileOfs = 0;
 
-    static Object emptyObject;
-    static ply::Array<Node> emptyArray;
-    static Node invalidNode;
+    Node() = delete; // use create functions
+    PLY_NO_INLINE ~Node();
+
+    Owned<Node> copy() const;
+
+    static PLY_NO_INLINE Owned<Node> createInvalid();
+    static PLY_NO_INLINE Owned<Node> allocText();
+    static PLY_NO_INLINE Owned<Node> createArray(u64 fileOfs = 0);
+    static PLY_NO_INLINE Owned<Node> createObject(u64 fileOfs = 0);
+
+    static PLY_INLINE Owned<Node> createText(HybridString&& text, u64 fileOfs = 0) {
+        Owned<Node> node = allocText();
+        node->type = (u64) Type::Text;
+        node->fileOfs = fileOfs;
+        new (&node->text_) decltype(node->text_){std::move(text)};
+        return node;
+    }
+
+    static u64 InvalidNodeHeader;
+    static Object EmptyObject;
 
     PLY_INLINE bool isValid() const {
-        return type.id != Type::ID::Invalid;
-    }
-
-    static PLY_INLINE Node createObject(u32 fileOfs) {
-        Node node;
-        node.type.object().switchTo();
-        node.fileOfs = fileOfs;
-        return node;
-    }
-
-    static PLY_INLINE Node createArray(u32 fileOfs) {
-        Node node;
-        node.type.array().switchTo();
-        node.fileOfs = fileOfs;
-        return node;
-    }
-
-    static PLY_INLINE Node createText(HybridString&& str, u32 fileOfs) {
-        Node node;
-        auto text = node.type.text().switchTo();
-        text->str = std::move(str);
-        node.fileOfs = fileOfs;
-        return node;
-    }
-
-    //-----------------------------------------------------------
-    // Object
-    //-----------------------------------------------------------
-
-    PLY_INLINE bool isObject() const {
-        return type.id == Type::ID::Object;
-    }
-
-    PLY_INLINE const Object& object() const {
-        if (auto object = type.object()) {
-            return object->obj;
-        } else {
-            return emptyObject;
-        }
-    }
-
-    PLY_INLINE Object& object() {
-        PLY_ASSERT(type.id == Type::ID::Object);
-        return type.object()->obj;
-    }
-
-    Node& operator[](StringView key);
-    const Node& operator[](StringView key) const;
-
-    //-----------------------------------------------------------
-    // Array
-    //-----------------------------------------------------------
-
-    PLY_INLINE bool isArray() const {
-        return type.id == Type::ID::Array;
-    }
-
-    PLY_INLINE const ply::Array<Node>& array() const {
-        if (auto array = type.array()) {
-            return array->arr;
-        } else {
-            return emptyArray;
-        }
-    }
-
-    PLY_INLINE ply::Array<Node>& array() {
-        PLY_ASSERT(type.id == Type::ID::Array);
-        return type.array()->arr;
-    }
-
-    PLY_INLINE u32 numItems() const {
-        if (auto array = type.array()) {
-            return array->arr.numItems();
-        }
-        return 0;
-    }
-
-    PLY_INLINE const Node& operator[](u32 index) const {
-        if (auto array = type.array()) {
-            if (index < array->arr.numItems()) {
-                return array->arr[index];
-            }
-        }
-        return invalidNode;
-    }
-
-    PLY_INLINE Node& operator[](u32 index) {
-        if (auto array = type.array()) {
-            if (index < array->arr.numItems()) {
-                return array->arr[index];
-            }
-        }
-        return invalidNode;
-    }
-
-    PLY_INLINE const Node* begin() const {
-        return array().begin();
-    }
-
-    PLY_INLINE const Node* end() const {
-        return array().end();
-    }
-
-    PLY_INLINE Node* begin() {
-        return array().begin();
-    }
-
-    PLY_INLINE Node* end() {
-        return array().end();
+        return this->type != (u64) Type::Invalid;
     }
 
     //-----------------------------------------------------------
@@ -169,48 +75,85 @@ struct Node {
     //-----------------------------------------------------------
 
     PLY_INLINE bool isText() const {
-        return type.id == Type::ID::Text;
+        return this->type == (u64) Type::Text;
     }
 
+    PLY_NO_INLINE Tuple<bool, double> numeric() const;
+
     PLY_INLINE StringView text() const {
-        if (auto text = type.text()) {
-            return text->str.view();
+        if (this->type == (u64) Type::Text) {
+            return this->text_;
         } else {
             return {};
         }
     }
 
-    PLY_INLINE operator StringView() const {
-        return text();
+    PLY_INLINE void setText(HybridString&& text) {
+        if (this->type == (u64) Type::Text) {
+            this->text_ = std::move(text);
+        }
     }
 
-    bool isNumeric() const;
-    double numeric() const;
+    //-----------------------------------------------------------
+    // Array
+    //-----------------------------------------------------------
 
-    template <typename T>
-    PLY_INLINE T numeric() const {
-        return (T) this->numeric();
+    PLY_INLINE bool isArray() const {
+        return this->type == (u64) Type::Array;
+    }
+
+    PLY_INLINE Borrowed<Node> get(u32 i) {
+        if (this->type != (u64) Type::Array)
+            return (Node*) &InvalidNodeHeader;
+        if (i >= this->array_.numItems())
+            return (Node*) &InvalidNodeHeader;
+        return this->array_[i].borrow();
+    }
+
+    PLY_INLINE const Node* get(u32 i) const {
+        return const_cast<Node*>(this)->get(i);
+    }
+
+    PLY_INLINE ArrayView<const Node* const> arrayView() const {
+        if (this->type == (u64) Type::Array) {
+            return reinterpret_cast<const Array<const Node*>&>(this->array_).view();
+        } else {
+            return {};
+        }
+    }
+
+    PLY_INLINE Array<Owned<Node>>& array() {
+        PLY_ASSERT(this->type == (u64) Type::Array);
+        return this->array_;
+    }
+
+    //-----------------------------------------------------------
+    // Object
+    //-----------------------------------------------------------
+
+    PLY_INLINE bool isObject() const {
+        return this->type == (u64) Type::Object;
+    }
+
+    PLY_NO_INLINE Borrowed<Node> get(StringView key);
+    PLY_INLINE const Node* get(StringView key) const {
+        return const_cast<Node*>(this)->get(key);
+    }
+    PLY_NO_INLINE void set(HybridString&& key, Owned<Node>&& value);
+    PLY_NO_INLINE Owned<Node> remove(StringView key);
+
+    PLY_INLINE const Object& object() const {
+        if (this->type == (u64) Type::Object) {
+            return this->object_;
+        } else {
+            return EmptyObject;
+        }
+    }
+
+    PLY_INLINE Object& object() {
+        PLY_ASSERT(this->type == (u64) Type::Object);
+        return this->object_;
     }
 };
-
-struct Node::Object::Item {
-    HybridString name;
-    Node value;
-};
-
-PLY_INLINE void Node::Object::operator=(Object&& other) {
-    this->~Object();
-    new (this) Object{std::move(other)};
-}
-
-PLY_INLINE void Node::Object::operator=(const Object& other) {
-    this->~Object();
-    new (this) Object{other};
-}
-
-PLY_INLINE StringView Node::Object::IndexTraits::comparand(u32 item,
-                                                           const Array<Object::Item>& ctx) {
-    return ctx[item].name.view();
-}
 
 } // namespace pylon

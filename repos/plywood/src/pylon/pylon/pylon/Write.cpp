@@ -20,16 +20,16 @@ struct WriteContext {
         }
     }
 
-    PLY_NO_INLINE void write(const Node& aNode) {
-        if (aNode.isObject()) {
+    PLY_NO_INLINE void write(const Node* aNode) {
+        if (aNode->isObject()) {
             *this->sw << "{\n";
             this->depth++;
-            const Node::Object& objNode = aNode.object();
+            const Node::Object& objNode = aNode->object();
             u32 numItems = objNode.items.numItems();
             for (u32 i : range(numItems)) {
                 const Node::Object::Item& objItem = objNode.items[i];
                 indent();
-                this->sw->format("\"{}\": ", fmt::EscapedString{objItem.name});
+                this->sw->format("\"{}\": ", fmt::EscapedString{objItem.key});
                 write(objItem.value);
                 if (i + 1 < numItems) {
                     *this->sw << ',';
@@ -39,11 +39,11 @@ struct WriteContext {
             this->depth--;
             indent();
             *this->sw << '}';
-        } else if (aNode.isArray()) {
+        } else if (aNode->isArray()) {
             *this->sw << "[\n";
             this->depth++;
-            const ply::Array<Node>& arrNode = aNode.array();
-            u32 numItems = arrNode.numItems();
+            ArrayView<const Node* const> arrNode = aNode->arrayView();
+            u32 numItems = arrNode.numItems;
             for (u32 i : range(numItems)) {
                 indent();
                 write(arrNode[i]);
@@ -55,20 +55,20 @@ struct WriteContext {
             this->depth--;
             indent();
             *this->sw << ']';
-        } else if (aNode.isText()) {
-            this->sw->format("\"{}\"", fmt::EscapedString{aNode.text()});
+        } else if (aNode->isText()) {
+            this->sw->format("\"{}\"", fmt::EscapedString{aNode->text()});
         } else {
             PLY_ASSERT(0);  // unsupported
         }
     }
 };
 
-PLY_NO_INLINE void write(OutStream* outs, const Node& aNode) {
+PLY_NO_INLINE void write(OutStream* outs, const Node* aNode) {
     WriteContext ctx{outs};
     ctx.write(aNode);
 }
 
-PLY_NO_INLINE String toString(const Node& aNode) {
+PLY_NO_INLINE String toString(const Node* aNode) {
     StringWriter sw;
     write(&sw, aNode);
     return sw.moveToString();

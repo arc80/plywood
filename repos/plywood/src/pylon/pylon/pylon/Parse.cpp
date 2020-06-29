@@ -302,24 +302,24 @@ HybridString Parser::toString(const Token& token) {
     }
 }
 
-HybridString Parser::toString(const Node& node) {
-    switch (node.type.id) {
-        case Node::Type::ID::Object:
+HybridString Parser::toString(const Node* node) {
+    switch ((Node::Type) node->type) {
+        case Node::Type::Object:
             return "object";
-        case Node::Type::ID::Array:
+        case Node::Type::Array:
             return "array";
-        case Node::Type::ID::Text:
-            return String::format("text \"{}\"", fmt::EscapedString{node.text(), 20});
+        case Node::Type::Text:
+            return String::format("text \"{}\"", fmt::EscapedString{node->text(), 20});
         default:
             PLY_ASSERT(0);
             return "???";
     }
 }
 
-Node Parser::readObject(const Token& startToken) {
+Owned<Node> Parser::readObject(const Token& startToken) {
     PLY_ASSERT(startToken.type == Token::OpenCurly);
     ScopeHandler objectScope{*this, ParseError::Scope::object(startToken.fileOfs)};
-    Node node = Node::createObject(startToken.fileOfs);
+    Owned<Node> node = Node::createObject(startToken.fileOfs);
     struct PropLocationTraits {
         using Key = StringView;
         struct Item {
@@ -394,13 +394,12 @@ Node Parser::readObject(const Token& startToken) {
             // Read value of property
             ScopeHandler propertyScope{
                 *this, ParseError::Scope::property(firstToken.fileOfs, firstToken.text)};
-            Node value = readExpression(readToken(), &colon);
-            if (!value.isValid())
+            Owned<Node> value = readExpression(readToken(), &colon);
+            if (!value->isValid())
                 return value;
             propLocationCursor->name = firstToken.text.view();
             propLocationCursor->fileOfs = firstToken.fileOfs;
-            Node& objItem = node.object().insertOrFind(std::move(firstToken.text));
-            objItem = std::move(value);
+            node->set(std::move(firstToken.text), std::move(value));
         }
 
         prevProperty = std::move(firstToken);
@@ -408,10 +407,10 @@ Node Parser::readObject(const Token& startToken) {
     return {};
 }
 
-Node Parser::readArray(const Token& startToken) {
+Owned<Node> Parser::readArray(const Token& startToken) {
     PLY_ASSERT(startToken.type == Token::OpenSquare);
     ScopeHandler arrayScope{*this, ParseError::Scope::array(startToken.fileOfs, 0)};
-    Node arrayNode = Node::createArray(startToken.fileOfs);
+    Owned<Node> arrayNode = Node::createArray(startToken.fileOfs);
     Token sepTokenHolder;
     Token* sepToken = nullptr;
     for (;;) {
@@ -428,10 +427,10 @@ Node Parser::readArray(const Token& startToken) {
                 break;
 
             default: {
-                Node value = readExpression(std::move(token), sepToken);
-                if (!value.isValid())
+                Owned<Node> value = readExpression(std::move(token), sepToken);
+                if (!value->isValid())
                     return value;
-                arrayNode.array().append(std::move(value));
+                arrayNode->array().append(std::move(value));
                 arrayScope.get().index++;
                 sepToken = nullptr;
                 break;
@@ -440,7 +439,7 @@ Node Parser::readArray(const Token& startToken) {
     }
 }
 
-Node Parser::readExpression(Token&& firstToken, const Token* afterToken) {
+Owned<Node> Parser::readExpression(Token&& firstToken, const Token* afterToken) {
     switch (firstToken.type) {
         case Token::OpenCurly:
             return readObject(firstToken);
@@ -473,8 +472,8 @@ Parser::Result Parser::parse(ConstBufferView srcView_) {
     this->fileLocMap = FileLocationMap::fromView(StringView::fromBufferView(srcView_));
 
     Token rootToken = readToken();
-    Node root = readExpression(std::move(rootToken));
-    if (!root.isValid())
+    Owned<Node> root = readExpression(std::move(rootToken));
+    if (!root->isValid())
         return {};
 
     Token nextToken = readToken();

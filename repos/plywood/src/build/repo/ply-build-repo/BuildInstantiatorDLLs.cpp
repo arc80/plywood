@@ -40,8 +40,8 @@ struct DLLSignature {
         if (FileSystem::native()->lastResult() != FSResult::OK)
             return false;
 
-        auto aRoot = pylon::Parser{}.parse(strContents).root;
-        if (!aRoot.isValid())
+        Owned<pylon::Node> aRoot = pylon::Parser{}.parse(strContents).root;
+        if (!aRoot->isValid())
             return false;
 
         pylon::importInto(TypedPtr::bind(this), aRoot);

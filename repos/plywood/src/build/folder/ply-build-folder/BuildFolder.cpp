@@ -47,7 +47,7 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::create(StringView buildFolderName,
                                                      StringView solutionName) {
     BuildFolder* bf = new BuildFolder;
     bf->buildFolderName = buildFolderName;
-    bf->buildSystemSignature = pylon::Node::createObject({});
+    bf->buildSystemSignature = pylon::Node::createObject();
     bf->solutionName = solutionName;
     // Don't save it yet
     return bf;
@@ -75,22 +75,22 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::load(StringView buildFolderName) {
     if (FileSystem::native()->lastResult() != FSResult::OK)
         return nullptr;
 
-    auto aRoot = pylon::Parser{}.parse(strContents).root;
-    if (!aRoot.isValid())
+    Owned<pylon::Node> aRoot = pylon::Parser{}.parse(strContents).root;
+    if (!aRoot->isValid())
         return nullptr;
 
     Owned<BuildFolder> info = pylon::import<BuildFolder>(aRoot);
     info->buildFolderName = buildFolderName;
-    info->buildSystemSignature = std::move(aRoot["buildSystemSignature"]);
-    if (!info->buildSystemSignature.isValid()) {
-        info->buildSystemSignature = pylon::Node::createObject({});
+    info->buildSystemSignature = aRoot->remove("buildSystemSignature");
+    if (!info->buildSystemSignature) {
+        info->buildSystemSignature = pylon::Node::createObject();
     }
     return info;
 }
 
 PLY_NO_INLINE bool BuildFolder::save() const {
-    auto aRoot = pylon::exportObj(TypedPtr::bind(this));
-    aRoot.object().insertOrFind("buildSystemSignature") = this->buildSystemSignature;
+    Owned<pylon::Node> aRoot = pylon::exportObj(TypedPtr::bind(this));
+    aRoot->set("buildSystemSignature", this->buildSystemSignature->copy());
     String strContents = pylon::toString(aRoot);
     String infoPath = BuildFolderName::getInfoPath(this->buildFolderName);
     FSResult rc = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
@@ -256,9 +256,9 @@ PLY_NO_INLINE bool BuildFolder::isGenerated(StringView config) const {
 
     u128 previousSig;
     if (isMultiConfigCMakeGenerator(this->cmakeOptions.generator)) {
-        previousSig = parseSignatureString(this->buildSystemSignature.text());
+        previousSig = parseSignatureString(this->buildSystemSignature->text());
     } else {
-        previousSig = parseSignatureString(this->buildSystemSignature[config].text());
+        previousSig = parseSignatureString(this->buildSystemSignature->get(config)->text());
     }
     return (previousSig == this->currentBuildSystemSignature());
 }
@@ -306,13 +306,12 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
 
     String moduleDefSigStr = signatureToString(this->currentBuildSystemSignature());
     if (isMultiConfigCMakeGenerator(this->cmakeOptions.generator)) {
-        this->buildSystemSignature = pylon::Node::createText(moduleDefSigStr.view(), {});
+        this->buildSystemSignature = pylon::Node::createText(moduleDefSigStr.view());
     } else {
-        if (!this->buildSystemSignature.isObject()) {
-            this->buildSystemSignature = pylon::Node::createObject({});
+        if (!this->buildSystemSignature->isObject()) {
+            this->buildSystemSignature = pylon::Node::createObject();
         }
-        pylon::Node& item = this->buildSystemSignature.object().insertOrFind(config);
-        item = pylon::Node::createText(moduleDefSigStr.view(), {});
+        this->buildSystemSignature->set(config, pylon::Node::createText(moduleDefSigStr.view()));
     }
     this->save();
     return true;

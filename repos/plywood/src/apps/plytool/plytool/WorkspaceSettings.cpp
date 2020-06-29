@@ -17,7 +17,7 @@ PLY_NO_INLINE bool WorkspaceSettings::load() {
         return true;
 
     auto aRoot = pylon::Parser{}.parse(strContents).root;
-    if (!aRoot.isValid())
+    if (!aRoot->isValid())
         return false;
 
     importInto(TypedPtr::bind(this), aRoot);

@@ -70,17 +70,16 @@ struct RepoInstantiator {
 
             // FIXME: Use reflection
             // importInto(TypedPtr::bind(this), aRoot);
-            for (const pylon::Node& dependency : parseResult.root["dependsOn"]) {
-                StringView depRepoName = dependency.text();
+            for (const pylon::Node* dependency : parseResult.root->get("dependsOn")->arrayView()) {
+                StringView depRepoName = dependency->text();
                 s32 j = find(this->idlls.dlls.view(),
                              [&](const InstantiatedDLL& d) { return d.repoName == depRepoName; });
                 if (j < 0) {
-                    FileLocation loc = parseResult.fileLocMap.getFileLocation(dependency.fileOfs);
+                    FileLocation loc = parseResult.fileLocMap.getFileLocation(dependency->fileOfs);
                     ErrorHandler::log(
                         ErrorHandler::Fatal,
                         String::format("{}({}, {}): error: Can't find repo named '{}'\n", infoPath,
-                                       loc.lineNumber, loc.columnNumber,
-                                       depRepoName));
+                                       loc.lineNumber, loc.columnNumber, depRepoName));
                     return nullptr; // shouldn't get here
                 }
                 Repo* childRepo = this->instantiate(this->idlls.dlls[j]);
@@ -88,12 +87,11 @@ struct RepoInstantiator {
                     return nullptr;
                 }
                 if (findItem(repo->childRepos.view(), childRepo) >= 0) {
-                    FileLocation loc = parseResult.fileLocMap.getFileLocation(dependency.fileOfs);
+                    FileLocation loc = parseResult.fileLocMap.getFileLocation(dependency->fileOfs);
                     ErrorHandler::log(
                         ErrorHandler::Fatal,
                         String::format("{}({}, {}): error: Duplicate child repo '{}'\n", infoPath,
-                                       loc.lineNumber, loc.columnNumber,
-                                       depRepoName));
+                                       loc.lineNumber, loc.columnNumber, depRepoName));
                     return nullptr; // shouldn't get here
                 }
                 repo->childRepos.append(childRepo);

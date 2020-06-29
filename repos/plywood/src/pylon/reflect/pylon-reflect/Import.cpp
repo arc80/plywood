@@ -17,13 +17,13 @@ struct PylonTypeImporter {
     PylonTypeImporter(const Functor<TypeFromName>& typeFromName) : typeFromName{typeFromName} {
     }
 
-    PLY_NO_INLINE TypeDescriptor* convertType(const Node& aNode) {
-        if (aNode.isText()) {
+    PLY_NO_INLINE TypeDescriptor* convertType(const Node* aNode) {
+        if (aNode->isText()) {
             // It's a primitive type, represented by a string in Pylon.
             // FIXME: This could use a hash table.
             // Note: TypeKey_SavedTypedPtr/TypeArray::read could use the same hash table if we
             // ever want them to resolve built-in types.
-            StringView str = aNode;
+            StringView str = aNode->text();
             if (str == "u16") {
                 return TypeResolver<u16>::get();
             } else if (str == "u16_2") {
@@ -42,15 +42,15 @@ struct PylonTypeImporter {
                 PLY_ASSERT(typeDesc); // Unrecognized primitive type
                 return typeDesc;
             }
-        } else if (aNode.isObject()) {
+        } else if (aNode->isObject()) {
             // It's either a struct or an enum (not supported yet).
-            StringView key = aNode["key"];
+            StringView key = aNode->get("key")->text();
             if (key == "struct") {
                 PLY_ASSERT(typeOwner); // Must provide an owner for synthesized structs
                 // Synthesize a struct
-                const auto& aName = aNode["name"];
-                PLY_ASSERT(aName.isText());
-                TypeDescriptor_Struct* structType = new TypeDescriptor_Struct{0, aName};
+                const Node* aName = aNode->get("name");
+                PLY_ASSERT(aName->isText());
+                TypeDescriptor_Struct* structType = new TypeDescriptor_Struct{0, aName->text()};
                 auto appendMember = [&](StringView memberName, TypeDescriptor* memberType) {
                     structType->appendMember(memberName, memberType);
 
@@ -63,16 +63,17 @@ struct PylonTypeImporter {
                         structType->appendMember("padding", TypeResolver<u16>::get());
                     }
                 };
-                const auto& aMembers = aNode["members"];
-                if (aMembers.isObject()) {
-                    for (const auto& iter : aMembers.object().items) {
-                        appendMember(iter.name, convertType(iter.value));
+                const Node* aMembers = aNode->get("members");
+                if (aMembers->isObject()) {
+                    for (const Node::Object::Item& item : aMembers->object().items) {
+                        appendMember(item.key, convertType(item.value));
                     }
-                } else if (aMembers.isArray()) {
-                    for (const auto& aMember : aMembers.array()) {
-                        PLY_ASSERT(aMember.isArray());
-                        PLY_ASSERT(aMember.array().numItems() == 2);
-                        appendMember(aMember[0], convertType(aMember[1]));
+                } else if (aMembers->isArray()) {
+                    for (const Node* aMember : aMembers->arrayView()) {
+                        PLY_ASSERT(aMember->isArray());
+                        PLY_ASSERT(aMember->arrayView().numItems == 2);
+                        appendMember(aMember->arrayView()[0]->text(),
+                                     convertType(aMember->arrayView()[1]));
                     }
                 } else {
                     PLY_ASSERT(0);
@@ -90,7 +91,7 @@ struct PylonTypeImporter {
     }
 };
 
-PLY_NO_INLINE TypeDescriptorOwner* convertTypeFrom(const Node& aNode,
+PLY_NO_INLINE TypeDescriptorOwner* convertTypeFrom(const Node* aNode,
                                                    const Functor<TypeFromName>& typeFromName) {
     PylonTypeImporter importer{typeFromName};
     importer.typeOwner = new TypeDescriptorOwner;
@@ -98,62 +99,66 @@ PLY_NO_INLINE TypeDescriptorOwner* convertTypeFrom(const Node& aNode,
     return importer.typeOwner;
 }
 
-PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node& aNode,
+PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node* aNode,
                                const Functor<TypeFromName>& typeFromName) {
     auto error = [&] {}; // FIXME: Decide where these go
 
-    PLY_ASSERT(aNode.isValid());
+    PLY_ASSERT(aNode->isValid());
     // FIXME: Handle errors gracefully by logging a message, returning false and marking the
     // cook as failed (instead of asserting).
     if (obj.type->typeKey == &TypeKey_Struct) {
-        PLY_ASSERT(aNode.isObject());
+        PLY_ASSERT(aNode->isObject());
         auto* structDesc = obj.type->cast<TypeDescriptor_Struct>();
         for (const TypeDescriptor_Struct::Member& member : structDesc->members) {
-            const auto& aMember = aNode[member.name];
-            if (aMember.isValid()) {
+            const Node* aMember = aNode->get(member.name);
+            if (aMember->isValid()) {
                 TypedPtr m{PLY_PTR_OFFSET(obj.ptr, member.offset), member.type};
                 convertFrom(m, aMember, typeFromName);
             }
         }
     } else if (obj.type->typeKey == &TypeKey_Float) {
-        PLY_ASSERT(aNode.isNumeric());
-        *(float*) obj.ptr = aNode.numeric<float>();
+        Tuple<bool, double> pair = aNode->numeric();
+        PLY_ASSERT(pair.first);
+        *(float*) obj.ptr = (float) pair.second;
     } else if (obj.type->typeKey == &TypeKey_U8) {
-        PLY_ASSERT(aNode.isNumeric());
-        *(u8*) obj.ptr = aNode.numeric<u8>();
+        Tuple<bool, double> pair = aNode->numeric();
+        PLY_ASSERT(pair.first);
+        *(u8*) obj.ptr = (u8) pair.second;
     } else if (obj.type->typeKey == &TypeKey_U16) {
-        PLY_ASSERT(aNode.isNumeric());
-        *(u16*) obj.ptr = aNode.numeric<u16>();
+        Tuple<bool, double> pair = aNode->numeric();
+        PLY_ASSERT(pair.first);
+        *(u16*) obj.ptr = (u16) pair.second;
     } else if (obj.type->typeKey == &TypeKey_Bool) {
-        *(bool*) obj.ptr = aNode.text() == "true";
+        *(bool*) obj.ptr = aNode->text() == "true";
     } else if (obj.type->typeKey == &TypeKey_U32) {
-        PLY_ASSERT(aNode.isNumeric());
-        *(u32*) obj.ptr = aNode.numeric<u32>();
+        Tuple<bool, double> pair = aNode->numeric();
+        PLY_ASSERT(pair.first);
+        *(u32*) obj.ptr = (u32) pair.second;
     } else if (obj.type->typeKey == &TypeKey_S32) {
-        PLY_ASSERT(aNode.isNumeric());
-        *(s32*) obj.ptr = aNode.numeric<s32>();
+        Tuple<bool, double> pair = aNode->numeric();
+        PLY_ASSERT(pair.first);
+        *(s32*) obj.ptr = (s32) pair.second;
     } else if (obj.type->typeKey == &TypeKey_FixedArray) {
-        PLY_ASSERT(aNode.isArray());
-        const auto& aNodeArr = aNode.array();
+        PLY_ASSERT(aNode->isArray());
         auto* fixedArrType = obj.type->cast<TypeDescriptor_FixedArray>();
         u32 itemSize = fixedArrType->itemType->fixedSize;
         for (u32 i = 0; i < fixedArrType->numItems; i++) {
             TypedPtr elem{PLY_PTR_OFFSET(obj.ptr, itemSize * i), fixedArrType->itemType};
-            convertFrom(elem, aNodeArr[i], typeFromName);
+            convertFrom(elem, aNode->get(i), typeFromName);
         }
     } else if (obj.type->typeKey == &TypeKey_String) {
-        if (aNode.isText()) {
-            *(String*) obj.ptr = aNode.text();
+        if (aNode->isText()) {
+            *(String*) obj.ptr = aNode->text();
         } else {
             error();
         }
     } else if (obj.type->typeKey == &TypeKey_Array) {
-        PLY_ASSERT(aNode.isArray());
-        const auto& aNodeArr = aNode.array();
+        PLY_ASSERT(aNode->isArray());
+        ArrayView<const Node* const> aNodeArr = aNode->arrayView();
         auto* arrType = static_cast<TypeDescriptor_Array*>(obj.type);
         details::BaseArray* arr = (details::BaseArray*) obj.ptr;
         u32 oldArrSize = arr->m_numItems;
-        u32 newArrSize = aNodeArr.numItems();
+        u32 newArrSize = aNodeArr.numItems;
         u32 itemSize = arrType->itemType->fixedSize;
         for (u32 i = newArrSize; i < oldArrSize; i++) {
             TypedPtr{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType}.destruct();
@@ -167,11 +172,11 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node& aNode,
             convertFrom(elem, aNodeArr[i], typeFromName);
         }
     } else if (obj.type->typeKey == &TypeKey_EnumIndexedArray) {
-        PLY_ASSERT(aNode.isObject());
+        PLY_ASSERT(aNode->isObject());
         auto* arrayDesc = obj.type->cast<TypeDescriptor_EnumIndexedArray>();
         for (const TypeDescriptor_Enum::Identifier& identifier : arrayDesc->enumType->identifiers) {
-            const auto& aMember = aNode[identifier.name];
-            if (aMember.isValid()) {
+            const Node* aMember = aNode->get(identifier.name);
+            if (aMember->isValid()) {
                 TypedPtr m{
                     PLY_PTR_OFFSET(obj.ptr, arrayDesc->itemType->fixedSize * identifier.value),
                     arrayDesc->itemType};
@@ -179,11 +184,11 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node& aNode,
             }
         }
     } else if (obj.type->typeKey == &TypeKey_Enum) {
-        PLY_ASSERT(aNode.isText());
+        PLY_ASSERT(aNode->isText());
         auto* enumDesc = obj.type->cast<TypeDescriptor_Enum>();
         bool found = false;
         for (const auto& identifier : enumDesc->identifiers) {
-            if (identifier.name == aNode) {
+            if (identifier.name == aNode->text()) {
                 if (enumDesc->fixedSize == 1) {
                     PLY_ASSERT(identifier.value <= UINT8_MAX);
                     *(u8*) obj.ptr = (u8) identifier.value;
@@ -202,30 +207,30 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node& aNode,
         PLY_ASSERT(found);
         PLY_UNUSED(found);
     } else if (obj.type->typeKey == &TypeKey_SavedTypedPtr) {
-        PLY_ASSERT(aNode.isObject());
-        TypeDescriptorOwner* targetTypeOwner = convertTypeFrom(aNode["type"], typeFromName);
+        PLY_ASSERT(aNode->isObject());
+        TypeDescriptorOwner* targetTypeOwner = convertTypeFrom(aNode->get("type"), typeFromName);
         SavedTypedPtr* savedTypedPtr = (SavedTypedPtr*) obj.ptr;
         savedTypedPtr->typeOwner = targetTypeOwner;
         savedTypedPtr->owned = TypedPtr::create(targetTypeOwner->getRootType());
-        convertFrom(savedTypedPtr->owned, aNode["value"], typeFromName);
+        convertFrom(savedTypedPtr->owned, aNode->get("value"), typeFromName);
     } else if (obj.type->typeKey == &TypeKey_TypedArray) {
-        PLY_ASSERT(aNode.isObject());
-        TypeDescriptorOwner* itemTypeOwner = convertTypeFrom(aNode["type"], typeFromName);
-        const auto& aData = aNode["data"];
-        const auto& aDataArr = aData.array();
+        PLY_ASSERT(aNode->isObject());
+        TypeDescriptorOwner* itemTypeOwner = convertTypeFrom(aNode->get("type"), typeFromName);
+        const pylon::Node* aData = aNode->get("data");
+        ArrayView<const pylon::Node* const> aDataArr = aData->arrayView();
         TypedArray* arr = (TypedArray*) obj.ptr;
-        arr->create(itemTypeOwner, aDataArr.numItems());
+        arr->create(itemTypeOwner, aDataArr.numItems);
         TypedPtr item = {arr->m_array.m_items, itemTypeOwner->getRootType()};
-        for (u32 i = 0; i < aDataArr.numItems(); i++) {
+        for (u32 i = 0; i < aDataArr.numItems; i++) {
             convertFrom(item, aDataArr[i], typeFromName);
             item.ptr = PLY_PTR_OFFSET(item.ptr, itemTypeOwner->getRootType()->fixedSize);
         }
     } else if (obj.type->typeKey == &TypeKey_Switch) {
-        PLY_ASSERT(aNode.isObject());
+        PLY_ASSERT(aNode->isObject());
         auto* switchDesc = obj.type->cast<TypeDescriptor_Switch>();
-        PLY_ASSERT(aNode.object().items.numItems() == 1);
-        auto iter = aNode.object().items.begin();
-        const StringView& stateName = iter->name;
+        PLY_ASSERT(aNode->object().items.numItems() == 1);
+        auto iter = aNode->object().items.begin();
+        const StringView& stateName = iter->key;
         bool found = false;
         for (u32 i = 0; i < switchDesc->states.numItems(); i++) {
             const TypeDescriptor_Switch::State& state = switchDesc->states[i];
@@ -244,14 +249,14 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node& aNode,
     }
 }
 
-PLY_NO_INLINE OwnTypedPtr import(TypeDescriptor* typeDesc, const Node& aRoot,
+PLY_NO_INLINE OwnTypedPtr import(TypeDescriptor* typeDesc, const Node* aRoot,
                                  const Functor<TypeFromName>& typeFromName) {
     OwnTypedPtr result = TypedPtr::create(typeDesc);
     convertFrom(result, aRoot, typeFromName);
     return result;
 }
 
-PLY_NO_INLINE void importInto(TypedPtr obj, const Node& aRoot,
+PLY_NO_INLINE void importInto(TypedPtr obj, const Node* aRoot,
                               const Functor<TypeFromName>& typeFromName) {
     convertFrom(obj, aRoot, typeFromName);
 }

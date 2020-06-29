@@ -46,8 +46,8 @@ void DocServer::reloadContents() {
         return;
     }
 
-    auto aRoot = pylon::Parser{}.parse(contentsPylon).root;
-    if (!aRoot.isValid()) {
+    Owned<pylon::Node> aRoot = pylon::Parser{}.parse(contentsPylon).root;
+    if (!aRoot->isValid()) {
         // FIXME: Log an error here
         return;
     }

@@ -18,6 +18,10 @@ public:
     }
     PLY_INLINE Borrowed(const Borrowed& other) : ptr{other.ptr} {
     }
+    // Makes Borrowed<T> implicitly convertible to Borrowed<const T>:
+    PLY_INLINE operator const Borrowed<const T>&() const {
+        return reinterpret_cast<const Borrowed<const T>&>(*this);
+    }
     PLY_INLINE void operator=(const Borrowed& other) {
         this->ptr = other.ptr;
     }

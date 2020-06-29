@@ -21,7 +21,7 @@ PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
         return nullptr;
 
     auto aRoot = pylon::Parser{}.parse(strContents).root;
-    if (!aRoot.isValid())
+    if (!aRoot->isValid())
         return nullptr;
 
     Owned<ExternFolder> info = pylon::import<ExternFolder>(aRoot);

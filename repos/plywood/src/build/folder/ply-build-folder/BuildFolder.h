@@ -19,8 +19,8 @@ struct ExternFolderRegistry;
 struct ExternSelector;
 
 struct BuildFolder {
-    String buildFolderName;           // Not saved to the .pylon file
-    pylon::Node buildSystemSignature; // (Saved) Determines whether build system needs regenerating
+    String buildFolderName;                  // Not saved to the .pylon file
+    Owned<pylon::Node> buildSystemSignature; // determines whether build system needs regenerating
 
     PLY_REFLECT()
     String solutionName;

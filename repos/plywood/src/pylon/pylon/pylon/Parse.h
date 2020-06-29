@@ -106,10 +106,10 @@ private:
     Token readLiteral();
     Token readToken(bool tokenizeNewLine = false);
     static HybridString toString(const Token& token);
-    static HybridString toString(const Node& node);
-    Node readObject(const Token& startToken);
-    Node readArray(const Token& startToken);
-    Node readExpression(Token&& firstToken, const Token* afterToken = nullptr);
+    static HybridString toString(const Node* node);
+    Owned<Node> readObject(const Token& startToken);
+    Owned<Node> readArray(const Token& startToken);
+    Owned<Node> readExpression(Token&& firstToken, const Token* afterToken = nullptr);
 
 public:
     PLY_INLINE void setTabSize(int tabSize_) {
@@ -123,7 +123,7 @@ public:
     }
 
     struct Result {
-        Node root;
+        Owned<Node> root;
         FileLocationMap fileLocMap;
     };
 

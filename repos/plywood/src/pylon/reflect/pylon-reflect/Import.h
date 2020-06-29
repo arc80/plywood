@@ -12,13 +12,13 @@
 namespace pylon {
 
 typedef TypeDescriptor* TypeFromName(StringView);
-OwnTypedPtr import(TypeDescriptor* typeDesc, const pylon::Node& aRoot,
+OwnTypedPtr import(TypeDescriptor* typeDesc, const pylon::Node* aRoot,
                    const Functor<TypeFromName>& typeFromName = {});
-void importInto(TypedPtr obj, const pylon::Node& aRoot,
+void importInto(TypedPtr obj, const pylon::Node* aRoot,
                 const Functor<TypeFromName>& typeFromName = {});
 
 template <typename T>
-PLY_INLINE Owned<T> import(const pylon::Node& aRoot,
+PLY_INLINE Owned<T> import(const pylon::Node* aRoot,
                            const Functor<TypeFromName>& typeFromName = {}) {
     OwnTypedPtr result = import(TypeResolver<T>::get(), aRoot, typeFromName);
     return result.release<T>();
