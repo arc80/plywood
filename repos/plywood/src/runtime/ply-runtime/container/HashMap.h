@@ -398,16 +398,17 @@ public:
         }
         PLY_INLINE void erase() {
             u8* unusedLink = nullptr;
-            reinterpret_cast<const details::HashMap&>(m_map).erase(m_findInfo, Callbacks::instance(),
-                                                                   unusedLink);
+            reinterpret_cast<details::HashMap*>(m_map)->erase(
+                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), unusedLink);
             m_findResult = details::HashMap::FindResult::NotFound;
         }
         PLY_INLINE void eraseAndAdvance(const Context& context = {}) {
             FindInfo infoToErase = m_findInfo;
             m_findResult = reinterpret_cast<const details::HashMap&>(m_map).findNext(
                 (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &context);
-            reinterpret_cast<const details::HashMap&>(m_map).erase(
-                infoToErase, Callbacks::instance(), m_findInfo.prevLink);
+            reinterpret_cast<details::HashMap*>(m_map)->erase(
+                (details::HashMap::FindInfo*) &infoToErase, Callbacks::instance(),
+                m_findInfo.prevLink);
         }
     };
 
