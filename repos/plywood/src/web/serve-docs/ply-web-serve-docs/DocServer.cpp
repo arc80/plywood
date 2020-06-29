@@ -46,7 +46,7 @@ void DocServer::reloadContents() {
         return;
     }
 
-    auto aRoot = pylon::Parser{}.parse(contentsPylon);
+    auto aRoot = pylon::Parser{}.parse(contentsPylon).root;
     if (!aRoot.isValid()) {
         // FIXME: Log an error here
         return;

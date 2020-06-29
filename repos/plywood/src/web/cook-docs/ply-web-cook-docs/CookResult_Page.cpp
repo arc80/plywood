@@ -359,7 +359,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
         return;
     }
     String src = FileIOWrappers::loadTextAutodetect(std::move(ins)).first;
-    cpp::FileLocationMap srcFileLocMap = cpp::FileLocationMap::fromView(src);
+    FileLocationMap srcFileLocMap = FileLocationMap::fromView(src);
     StringViewReader sr{src};
 
     // Extract liquid tags
