@@ -50,7 +50,7 @@ Owned<Node> Node::copy() const {
         case Type::Object: {
             Owned<Node> dst = createObject(this->fileOfs);
             dst->object_.items.resize(this->object_.items.numItems());
-            for (u32 i = 0; i < this->array_.numItems(); i++) {
+            for (u32 i = 0; i < this->object_.items.numItems(); i++) {
                 Object::Item& dstItem = dst->object_.items[i];
                 dstItem.key = this->object_.items[i].key.view();
                 dstItem.value = this->object_.items[i].value->copy();
