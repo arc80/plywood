@@ -215,6 +215,12 @@ void command_codegen(PlyToolCommandEnv* env) {
             return a.name < b.name;
         });
 
+        if (find(triple.files.view(),
+                 [](const auto& fileInfo) { return fileInfo.name == "nocodegen"; }) >= 0) {
+            triple.dirNames.clear();
+            continue;
+        }
+
         for (const WalkTriple::FileInfo& file : triple.files) {
             if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
                 if (file.name.endsWith(".modules.cpp"))
