@@ -10,8 +10,8 @@ namespace ply {
 //------------------------------------------------------------------------------------------------
 /*!
 A `ConstBufferView` references an immutable range of memory. It consists of a pointer `bytes` and an
-integer `numBytes`. It is used to . A `ConstBufferView` does not own the memory it points to, and no
-heap memory is freed when the `ConstBufferView` is destroyed.
+integer `numBytes`. A `ConstBufferView` does not own the memory it points to, and no heap memory is
+freed when the `ConstBufferView` is destroyed.
 
 `ConstBufferView` is similar to `BufferView` except that the memory referenced by `ConstBufferView`
 is `const`, so it's illegal to modify its contents. `ConstBufferView` is used as the sole argument
@@ -158,7 +158,7 @@ struct BufferView {
     /*!
     Conversion operator. Makes `BufferView` implicitly convertible to `ConstBufferView`.
     */
-    PLY_INLINE operator const ConstBufferView&() const {
+    PLY_INLINE operator const ConstBufferView &() const {
         return reinterpret_cast<const ConstBufferView&>(*this);
     }
     /*!
