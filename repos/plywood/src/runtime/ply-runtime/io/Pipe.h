@@ -126,8 +126,8 @@ struct OutPipe {
     Attempts to write the entire contents of `buf` to the output destination. This call may block
     depending on the state of the `OutPipe`. For example, if the `OutPipe` is a network socket or a
     pipe, and the process on the other end is not reading quickly enough, `write()` may block.
-    Returns `true` if successful. Return `false` if the write fails such as when attempting to a
-    network socket that was closed prematurely.
+    Returns `true` if successful. Return `false` if the write fails such as when attempting to write
+    to a network socket that was closed prematurely.
     */
     PLY_INLINE bool write(ConstBufferView buf) {
         return this->funcs->write(this, buf);
