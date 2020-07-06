@@ -314,11 +314,42 @@ TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
 
 PLY_NO_INLINE Owned<StringWriter>
 TextFormat::createExporter(OptionallyOwned<OutStream>&& outs) const {
-    // Not every file format is supported yet:
-    PLY_ASSERT(this->encoding == TextFormat::Encoding::UTF8);
-    PLY_ASSERT(!this->bom);
+    OptionallyOwned<OutStream> exporter = std::move(outs);
+
+    switch (this->encoding) {
+        case TextFormat::Encoding::Bytes: { // FIXME: Bytes needs to be converted
+            break;
+        }
+
+        case TextFormat::Encoding::UTF8: {
+            if (this->bom) {
+                exporter->write({"\xef\xbb\xbf", 3});
+            }
+            break;
+        }
+
+        case TextFormat::Encoding::UTF16_be: {
+            if (this->bom) {
+                exporter->write({"\xfe\xff", 2});
+            }
+            exporter = Owned<OutStream>::create(Owned<OutPipe_TextConverter>::create(
+                std::move(exporter), TextEncoding::get<UTF16_BE>(), TextEncoding::get<UTF8>()));
+            break;
+        }
+
+        case TextFormat::Encoding::UTF16_le: {
+            if (this->bom) {
+                exporter->write({"\xff\xfe", 2});
+            }
+            exporter = Owned<OutStream>::create(Owned<OutPipe_TextConverter>::create(
+                std::move(exporter), TextEncoding::get<UTF16_LE>(), TextEncoding::get<UTF8>()));
+            break;
+        }
+    }
+
+    // Install newline filter
     return Owned<StringWriter>::create(
-        createOutNewLineFilter(std::move(outs), this->newLine == TextFormat::NewLine::CRLF));
+        createOutNewLineFilter(std::move(exporter), this->newLine == TextFormat::NewLine::CRLF));
 }
 
 } // namespace ply
