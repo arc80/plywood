@@ -59,7 +59,7 @@ PLY_NO_INLINE void ChunkCursor::iterateOverViews(LambdaView<void(ConstBufferView
     } else {
         PLY_ASSERT(this->chunk->viewUsedBytes().contains(this->curByte));
         callback(
-            ConstBufferView::fromRange(this->curByte, this->chunk->bytes + this->chunk->numBytes));
+            ConstBufferView::fromRange(this->curByte, this->chunk->bytes + this->chunk->writePos));
         const ChunkListNode* chunk = this->chunk->next;
         while (chunk != end.chunk) {
             callback(chunk->viewUsedBytes());
