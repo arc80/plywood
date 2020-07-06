@@ -99,17 +99,19 @@ struct StringView {
     terminator character counts towards the number of bytes in `numBytes`, making `numBytes` equal
     to 6 in this example.
 
-    The second form of this constructor exists to support C++20 compilers, where the type of UTF-8
-    string literals such as `u8"hello"` has been changed from `const char*` (before C++20) to `const
-    char8_t*` (after C++20). `StringView` simply interprets such literals as `const char*`.
+    The second form of this constructor exists in order to support C++20 compilers, where the type
+    of UTF-8 string literals such as `u8"hello"` has been changed from `const char*` (before C++20)
+    to `const char8_t*` (after C++20). `StringView` simply interprets such literals as `const
+    char*`.
     */
     PLY_INLINE StringView(const char* s)
         : bytes{s}, numBytes{(u32) std::char_traits<char>::length(s)} {
         PLY_ASSERT(s[numBytes] == 0); // Sanity check; numBytes must fit within 32-bit field
     }
 
-    template <typename U, std::enable_if_t<std::is_same<U, decltype(u8' ')>::value, bool> = false>
-    PLY_INLINE StringView(const U* s) : StringView((const char*) s) {
+    template <typename U, std::size_t N,
+              std::enable_if_t<std::is_same<U, std::decay_t<decltype(*u8"")>>::value, bool> = false>
+    PLY_INLINE StringView(const U (&s)[N]) : StringView((const char*) s) {
     }
     /*!
     \endGroup
