@@ -105,11 +105,11 @@ PLY_NO_INLINE Tuple<bool, double> Node::numeric() const {
 
 PLY_NO_INLINE Borrowed<Node> Node::get(StringView key) {
     if (this->type != (u64) Type::Object)
-        return (Node*) InvalidNodeHeader;
+        return (Node*) &InvalidNodeHeader;
 
     auto cursor = this->object_.index.find(key, &this->object_.items);
     if (!cursor.wasFound())
-        return (Node*) InvalidNodeHeader;
+        return (Node*) &InvalidNodeHeader;
 
     return this->object_.items[*cursor].value.borrow();
 }
