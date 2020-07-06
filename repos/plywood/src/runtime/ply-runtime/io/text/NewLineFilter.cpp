@@ -17,7 +17,6 @@ struct NewLineFilter {
 
     bool crlf = false; // If true, outputs \r\n instead of \n
     bool needsLF = false;
-    bool isStreamOwner = false; // Used by In/OutPipe_LineFilter
 
     void process(Params* params) {
         while (params->dstByte < params->dstEndByte) {
@@ -109,9 +108,7 @@ struct OutPipe_NewLineFilter : OutPipe {
 
 PLY_NO_INLINE void OutPipe_NewLineFilter_destroy(OutPipe* outPipe_) {
     OutPipe_NewLineFilter* outPipe = static_cast<OutPipe_NewLineFilter*>(outPipe_);
-    if (outPipe->filter.isStreamOwner) {
-        delete outPipe->outs;
-    }
+    destruct(outPipe->outs);
 }
 
 PLY_NO_INLINE bool OutPipe_NewLineFilter_write(OutPipe* outPipe_, ConstBufferView buf) {
