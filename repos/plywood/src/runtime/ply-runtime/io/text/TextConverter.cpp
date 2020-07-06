@@ -18,46 +18,108 @@ PLY_NO_INLINE TextConverter::TextConverter(const TextEncoding* dstEncoding,
 
 PLY_NO_INLINE bool TextConverter::convert(BufferView* dstBuf, ConstBufferView* srcBuf, bool flush) {
     bool didWork = false;
-    while (dstBuf->numBytes > 0) {
-        // First, try to copy any bytes that have been buffered into smallBuf.
-        u32 numBytesToCopy = this->smallBuf.numAvailableBytes();
+
+    auto flushDstSmallBuf = [&] {
+        u32 numBytesToCopy = min((u32) this->dstSmallBuf.numBytes, dstBuf->numBytes);
         if (numBytesToCopy > 0) {
-            numBytesToCopy = min(numBytesToCopy, dstBuf->numBytes);
-            if (numBytesToCopy > 0) {
-                memcpy(dstBuf->bytes, this->smallBuf.curByte(), numBytesToCopy);
-                this->smallBuf.curPos += numBytesToCopy;
-                dstBuf->offsetHead(numBytesToCopy);
-                didWork = true;
-            }
-            if (dstBuf->numBytes == 0)
-                break; // Output buf has been filled.
+            memcpy(dstBuf->bytes, this->dstSmallBuf.bytes, numBytesToCopy);
+            this->dstSmallBuf.popFront(numBytesToCopy);
+            dstBuf->offsetHead(numBytesToCopy);
+            didWork = true;
+        }
+        return numBytesToCopy;
+    };
+
+    while (this->dstSmallBuf.numBytes > 0 || this->srcSmallBuf.numBytes > 0) {
+        // First, try to copy any bytes that have been buffered into dstSmallBuf.
+        flushDstSmallBuf();
+        if (dstBuf->numBytes == 0)
+            return didWork; // dstBuf has been filled.
+
+        // If we get here, dstSmallBuf has been emptied.
+        PLY_ASSERT(this->dstSmallBuf.numBytes == 0);
+
+        // If nothing in srcSmallBuf, break here and enter main loop below.
+        if (this->srcSmallBuf.numBytes == 0)
+            break; // Nothing in srcSmallBuf
+
+        // If we get here, some truncated data was left in srcSmallBuf.
+        // Append more input to srcSmallBuf.
+        u32 smallBufInitialNumBytes = this->srcSmallBuf.numBytes;
+        u32 numBytesToAppend =
+            min((u32) PLY_STATIC_ARRAY_SIZE(this->srcSmallBuf.bytes) - this->srcSmallBuf.numBytes,
+                srcBuf->numBytes);
+        memcpy(this->srcSmallBuf.bytes + this->srcSmallBuf.numBytes, srcBuf->bytes,
+               numBytesToAppend);
+        this->srcSmallBuf.numBytes += numBytesToAppend;
+
+        // Try to decode from srcSmallBuf.
+        DecodeResult decoded = this->srcEncoding->decodePoint(this->srcSmallBuf.view());
+        PLY_ASSERT(decoded.point >= 0);
+        if (decoded.status == DecodeResult::Status::Truncated && !flush) {
+            // Not enough input units for a complete code point
+            PLY_ASSERT(this->srcSmallBuf.numBytes < 4);       // Sanity check
+            return didWork;
         }
 
-        // Don't attempt to decode unless there are at least 4 bytes (unless we're flushing the
-        // src).
-        if (srcBuf->numBytes < 4) {
-            if (srcBuf->numBytes == 0 || !flush)
-                break;
-        }
-
-        // Decode one point from the input.
-        DecodeResult decoded = this->srcEncoding->decodePoint(*srcBuf);
-        srcBuf->offsetHead(decoded.numBytes);
+        // We've got enough input bytes for a complete code point. Consume them.
+        srcBuf->offsetHead(decoded.numBytes - smallBufInitialNumBytes);
+        this->srcSmallBuf.popFront(decoded.numBytes);
         didWork = true;
 
+        // Encode this code point to dstSmallBuf
+        this->dstSmallBuf.numBytes = this->dstEncoding->encodePoint(
+            {this->dstSmallBuf.bytes, PLY_STATIC_ARRAY_SIZE(this->dstSmallBuf.bytes)},
+            decoded.point);
+        PLY_ASSERT(this->dstSmallBuf.numBytes > 0);
+
+        // Iterate again through this loop so that dstSmallBuf gets flushed.
+    }
+
+    // At this point, both dstSmallBuf and srcSmallBuf should be empty, which means that we can now
+    // operate directly on srcBuf and dstBuf.
+    PLY_ASSERT(dstBuf->numBytes > 0);
+    PLY_ASSERT(this->dstSmallBuf.numBytes == 0);
+    PLY_ASSERT(this->srcSmallBuf.numBytes == 0);
+
+    while (srcBuf->numBytes > 0) {
+        // Decode one point from the input.
+        DecodeResult decoded = this->srcEncoding->decodePoint(*srcBuf);
+        PLY_ASSERT(decoded.point >= 0);
+        didWork = true;
+
+        if (decoded.status == DecodeResult::Status::Truncated && !flush) {
+            // Not enough input units for a complete code point. Copy input to srcSmallBuf.
+            PLY_ASSERT(srcBuf->numBytes < 4);                 // Sanity check
+            memcpy(this->srcSmallBuf.bytes, srcBuf->bytes, srcBuf->numBytes);
+            this->srcSmallBuf.numBytes = srcBuf->numBytes;
+            srcBuf->offsetHead(srcBuf->numBytes);
+            return didWork;
+        }
+
+        // Consume input bytes.
+        srcBuf->offsetHead(decoded.numBytes);
+
         if (dstBuf->numBytes >= 4) {
-            // There's enough room in the output buffer for *any* encoded point.
-            // Encode it directly to the output buffer.
+            // Encode directly to the output buffer.
             u32 numBytesEncoded = this->dstEncoding->encodePoint(*dstBuf, decoded.point);
+            PLY_ASSERT(numBytesEncoded > 0);
             dstBuf->offsetHead(numBytesEncoded);
         } else {
-            // There may not be enough room in the output buffer to encode the entire
-            // point. Write it temporarily to smallBuf instead.
-            this->smallBuf.curPos = 0;
-            this->smallBuf.endPos = (u8) this->dstEncoding->encodePoint(
-                {this->smallBuf.buf, PLY_STATIC_ARRAY_SIZE(this->smallBuf.buf)}, decoded.point);
+            // Encode to dstSmallBuf.
+            this->dstSmallBuf.numBytes = this->dstEncoding->encodePoint(
+                {this->dstSmallBuf.bytes, PLY_STATIC_ARRAY_SIZE(this->dstSmallBuf.bytes)},
+                decoded.point);
+            PLY_ASSERT(this->dstSmallBuf.numBytes > 0);
+
+            // Flush dstSmallBuf.
+            flushDstSmallBuf();
+            if (dstBuf->numBytes == 0)
+                return didWork; // dstBuf has been filled.
         }
     }
+
+    // No more input.
     return didWork;
 }
 
@@ -158,6 +220,8 @@ PLY_NO_INLINE bool OutPipe_TextConverter_write(OutPipe* outPipe_, ConstBufferVie
 
 PLY_NO_INLINE bool OutPipe_TextConverter_flush(OutPipe* outPipe_, bool toDevice) {
     OutPipe_TextConverter* outPipe = static_cast<OutPipe_TextConverter*>(outPipe_);
+    ConstBufferView emptySrcBuf;
+    outPipe->converter.writeTo(outPipe->outs, &emptySrcBuf, true);
     return outPipe->outs->flush(toDevice);
 }
 

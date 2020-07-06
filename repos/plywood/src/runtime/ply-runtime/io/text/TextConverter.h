@@ -18,21 +18,23 @@ namespace ply {
 //-----------------------------------------------------------------------
 struct TextConverter {
     struct SmallBuffer {
-        u8 buf[4] = {0};
-        u8 curPos = 0;
-        u8 endPos = 0;
+        u8 bytes[4] = {0};
+        u8 numBytes = 0;
 
-        s32 numAvailableBytes() const {
-            return this->endPos - this->curPos;
+        PLY_INLINE BufferView view() {
+            return {this->bytes, this->numBytes};
         }
-        u8* curByte() {
-            return this->buf + this->curPos;
+        PLY_INLINE void popFront(u32 numBytesToPop) {
+            PLY_ASSERT(numBytesToPop <= this->numBytes);
+            memmove(this->bytes, this->bytes + numBytesToPop, this->numBytes - numBytesToPop);
+            this->numBytes -= numBytesToPop;
         }
     };
 
     const TextEncoding* dstEncoding = nullptr;
     const TextEncoding* srcEncoding = nullptr;
-    SmallBuffer smallBuf;
+    SmallBuffer srcSmallBuf;
+    SmallBuffer dstSmallBuf;
 
     PLY_DLL_ENTRY TextConverter(const TextEncoding* dstEncoding, const TextEncoding* srcEncoding);
     template <typename DstEnc, typename SrcEnc>
