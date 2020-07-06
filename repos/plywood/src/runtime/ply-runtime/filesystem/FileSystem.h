@@ -524,8 +524,7 @@ struct FileSystem {
     Returns a `StringReader` that reads raw data from the specified text file and converts it to
     UTF-8 with Unix-style newlines, or `nullptr` if the file could not be opened. The text file is
     expected to have the file format described by `textFormat`. Any byte order mark (BOM) in the
-    file is skipped. See [TextFormat](/TextFormat) for more information on supported text file
-    formats.
+    file is skipped. See `TextFormat` for more information on supported text file formats.
 
     This function updates the internal result code. Expected result codes are `OK`, `NotFound`,
     `AccessDenied` or `Locked`.
@@ -544,8 +543,8 @@ struct FileSystem {
     Returns a `Tuple`. The first tuple item is a `StringReader` that reads raw data from the
     specified text file and converts it to UTF-8 with Unix-style newlines, or `nullptr` if the file
     could not be opened. The text file format is detected automatically and returned as the second
-    tuple item. Any byte order mark (BOM) in the text file is skipped. See [TextFormat](/TextFormat)
-    for more information on supported text file formats.
+    tuple item. Any byte order mark (BOM) in the text file is skipped. See `TextFormat` for more
+    information on supported text file formats.
 
     This function updates the internal result code. Expected result codes are `OK`, `NotFound`,
     `AccessDenied` or `Locked`.
@@ -573,8 +572,7 @@ struct FileSystem {
     Returns a `String` containing the contents of the specified text file converted to UTF-8 with
     Unix-style newlines, or an empty `String` if the file could not be opened. The text file is
     expected to have the file format described by `textFormat`. Any byte order mark (BOM) in the
-    text file is skipped. See [TextFormat](/TextFormat) for more information on supported text file
-    formats.
+    text file is skipped. See `TextFormat` for more information on supported text file formats.
 
     To check if the file was opened successfuly, call `lastResult()`. Expected result codes are
     `OK`, `NotFound`, `AccessDenied` or `Locked`.
@@ -585,8 +583,8 @@ struct FileSystem {
     Returns a `Tuple`. The first tuple item is a `String` containing the contents of the specified
     text file converted to UTF-8 with Unix-style newlines, or an empty `String` if the file could
     not be opened. The text file format is detected automatically and returned as the second tuple
-    item. Any byte order mark (BOM) in the text file is skipped. See [TextFormat](/TextFormat) for
-    more information on supported text file formats.
+    item. Any byte order mark (BOM) in the text file is skipped. See `TextFormat` for more
+    information on supported text file formats.
 
     To check if the file was opened successfuly, call `lastResult()`. Expected result codes are
     `OK`, `NotFound`, `AccessDenied` or `Locked`.
@@ -597,8 +595,8 @@ struct FileSystem {
     Returns a `StringWriter` that writes text to the specified text file in the specified format, or
     `nullptr` if the file could not be opened. The `StringWriter` expects UTF-8-encoded text. The
     `StringWriter` accepts both Windows and Unix-style newlines; all newlines will be converted to
-    the format described by `textFormat`. See [TextFormat](/TextFormat) for more information on
-    supported text file formats.
+    the format described by `textFormat`. See `TextFormat` for more information on supported text
+    file formats.
 
     This function updates the internal result code. Expected result codes are `OK`, `NotFound`,
     `AccessDenied` or `Locked`.
@@ -632,8 +630,7 @@ struct FileSystem {
     function returns `Unchanged`. Otherwise, if the parent directories of `path` don't exist, it
     attempts to create them. If that succeeds, it saves the raw memory buffer to a temporary file in
     the same folder as `path`. If that succeeds, it renames the temporary file to `path`, replacing
-    any original contents. See [TextFormat](/TextFormat) for more information on supported text file
-    formats.
+    any original contents. See `TextFormat` for more information on supported text file formats.
 
     In all cases, this function updates the internal result code. The result code is also returned
     directly.
