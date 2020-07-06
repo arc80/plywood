@@ -59,7 +59,7 @@ bytes. The main reason to prefer a variable of type `StringView` over `ConstBuff
 express the intention for the memory range to contain text and/or for the convenience of having the
 `StringView` member functions available.
 
-Several `StringView` functions works directly with byte offsets, such as `subStr()`, `left()` and
+Several `StringView` functions work directly with byte offsets, such as `subStr()`, `left()` and
 `right()`. Be aware that when a string is encoded in UTF-8, byte offsets are not necessarily the
 same as the number of characters (Unicode points) encoded by the string. If the string contains
 multibyte characters, it is the caller's responsibility to pass byte offsets that begin and end at
@@ -86,6 +86,7 @@ struct StringView {
     PLY_INLINE StringView() = default;
 
     /*!
+    \beginGroup
     Constructs a `StringView` from a null-terminated string. The string memory is expected to remain
     valid for the lifetime of the `StringView`. Note that the null terminator character does not
     count towards `numBytes`. For example, `StringView{"hello"}` results in `numBytes` equal to 5.
@@ -97,11 +98,22 @@ struct StringView {
     `StringView`, use `StringView::fromBufferView("hello")` instead. In that case, the null
     terminator character counts towards the number of bytes in `numBytes`, making `numBytes` equal
     to 6 in this example.
+
+    The second form of this constructor exists to support C++20 compilers, where the type of UTF-8
+    string literals such as `u8"hello"` has been changed from `const char*` (before C++20) to `const
+    char8_t*` (after C++20). `StringView` simply interprets such literals as `const char*`.
     */
     PLY_INLINE StringView(const char* s)
         : bytes{s}, numBytes{(u32) std::char_traits<char>::length(s)} {
         PLY_ASSERT(s[numBytes] == 0); // Sanity check; numBytes must fit within 32-bit field
     }
+
+    template <typename U, std::enable_if_t<std::is_same<U, decltype(u8' ')>::value, bool> = false>
+    PLY_INLINE StringView(const U* s) : StringView((const char*) s) {
+    }
+    /*!
+    \endGroup
+    */
 
     /*!
     Constructs a `StringView` from a single byte. `c` is expected to remain valid for the lifetime
