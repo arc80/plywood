@@ -164,18 +164,19 @@ struct UTF16 {
             return {};
         }
         u16 first = getUnit(view.bytes);
-        auto status = DecodeResult::Status::Truncated;
+        auto status = DecodeResult::Status::Invalid;
         if (first >= 0xd800 && first < 0xdc00) {
-            if (view.numBytes >= 4) {
+            if (view.numBytes < 4) {
+                status = DecodeResult::Status::Truncated;
+            } else {
                 u16 second = getUnit(view.bytes + 2);
                 if (second >= 0xdc00 && second < 0xe000) {
                     u32 value = 0x10000 + ((first - 0xd800) << 10) + (second - 0xdc00);
                     return {(s32) value, DecodeResult::Status::Valid, 4};
                 }
-                status = DecodeResult::Status::Invalid;
             }
-        } else if (first >= 0xdc00 && first < 0xe000) {
-            status = DecodeResult::Status::Invalid;
+        } else if (!(first >= 0xdc00 && first < 0xe000)) {
+            status = DecodeResult::Status::Valid;
         }
         return {first, status, 2};
     }
