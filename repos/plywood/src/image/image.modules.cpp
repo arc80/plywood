@@ -1,3 +1,7 @@
+/*------------------------------------
+  ///\  Plywood C++ Framework
+  \\\/  https://plywood.arc80.com/
+------------------------------------*/
 #include <ply-build-repo/Module.h>
 
 // [ply module="image"]
