@@ -435,17 +435,25 @@ struct Float4x4 {
         return {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {arg, 1}};
     }
 
-    // FIXME: This is coordinate system-specific, maybe should re-organize:
-    static Float4x4 makeProjection(float fovY, float aspect, float zNear, float zFar) {
+    // frustum is on Z = -1 plane
+    static Float4x4 makeProjection(const Rect& frustum, float zNear, float zFar) {
         Float4x4 result = Float4x4::zero();
-        float f = 1 / tanf(fovY / 2);
-        float ooZRange = 1 / (zNear - zFar);
-        result.col[0][0] = f / aspect;
-        result.col[1][1] = f;
-        result.col[2][2] = (zNear + zFar) * ooZRange;
+        float ooXDenom = 1.f / (frustum.maxs.x - frustum.mins.x);
+        float ooYDenom = 1.f / (frustum.maxs.y - frustum.mins.y);
+        float ooZDenom = 1.f / (zNear - zFar);
+        result.col[0][0] = 2.f * ooXDenom;
+        result.col[2][0] = (frustum.mins.x + frustum.maxs.x) * ooXDenom;
+        result.col[1][1] = 2.f * ooYDenom;
+        result.col[2][1] = (frustum.mins.y + frustum.maxs.y) * ooXDenom;
+        result.col[2][2] = (zNear + zFar) * ooZDenom;
         result.col[2][3] = -1.f;
-        result.col[3][2] = (2 * zNear * zFar) * ooZRange;
+        result.col[3][2] = (2 * zNear * zFar) * ooZDenom;
         return result;
+    }
+
+    static PLY_INLINE Float4x4 makeProjection(float fovY, float aspect, float zNear, float zFar) {
+        float halfTanY = tanf(fovY / 2);
+        return makeProjection(expand(Rect{{0, 0}}, {halfTanY * aspect, halfTanY}), zNear, zFar);
     }
 
     // FIXME: This is coordinate system-specific, maybe should re-organize:
