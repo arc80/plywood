@@ -187,6 +187,14 @@ struct ArrayView {
     */
 
     /*!
+    Returns a subview with the last `numItems` items of the view omitted.
+    */
+    PLY_INLINE ArrayView shortenedBy(u32 numItems) const {
+        PLY_ASSERT(numItems <= this->numItems);
+        return {this->items, this->numItems - numItems};
+    }
+
+    /*!
     \beginGroup
     Required functions to support range-for syntax. Allows you to iterate over all the items in the
     view as follows:
