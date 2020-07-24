@@ -9,4 +9,4 @@ codegen/
 *~
 .*
 !.clang-format
-!.gitignore
+!.git*
