@@ -34,12 +34,14 @@ struct ConstBufferView {
     Constructs an empty `ConstBufferView`.
     */
     PLY_INLINE ConstBufferView() = default;
+
     /*!
     Constructs a `ConstBufferView` from an explicit pointer and number of bytes.
     */
     PLY_INLINE ConstBufferView(const void* bytes, u32 numBytes)
         : bytes{(const u8*) bytes}, numBytes{numBytes} {
     }
+
     /*!
     FIXME: Make this show up
     Constructs a `ConstBufferView` from a string literal. (?)
@@ -47,6 +49,7 @@ struct ConstBufferView {
     template <u32 N>
     PLY_INLINE ConstBufferView(const u8 (&bytes)[N]) : bytes{bytes}, numBytes{N} {
     }
+
     /*!
     Returns a `ConstBufferView` referencing a range of memory between two pointers. The number of
     bytes in the memory range is given by `endByte` - `startByte`, and `endByte` is considered a
@@ -55,6 +58,7 @@ struct ConstBufferView {
     static PLY_INLINE ConstBufferView fromRange(const u8* startByte, const u8* endByte) {
         return {startByte, safeDemote<u32>(endByte - startByte)};
     }
+
     /*!
     Subscript operator that performs runtime bounds checking.
     */
@@ -62,6 +66,7 @@ struct ConstBufferView {
         PLY_ASSERT(ofs < numBytes);
         return bytes[ofs];
     }
+
     /*!
     Advances the start of the memory range by `ofs` bytes while keeping the end of the memory range
     unchanged.
@@ -71,6 +76,7 @@ struct ConstBufferView {
         bytes += ofs;
         numBytes -= ofs;
     }
+
     /*!
     Advances the end of the memory range by `ofs` bytes while keeping the start of the memory range
     unchanged.
@@ -79,26 +85,39 @@ struct ConstBufferView {
         PLY_ASSERT((u32) -ofs <= numBytes);
         bytes += ofs;
     }
+
     /*!
+    \beginGroup
     Returns a new, smaller `ConstBufferView` that references a subrange of this `ConstBufferView`,
     with runtime bounds checking. `start` is the offset of the new `ConstBufferView` relative to the
-    start of this one, and `numBytes` is the number of bytes in the new `ConstBufferView`.
+    start of this one, and `numBytes` is the number of bytes in the new `ConstBufferView`. If
+    `numBytes` is not specified, the subview continues to the end of the `ConstBufferView`.
     */
+    PLY_INLINE ConstBufferView subView(u32 start) const {
+        PLY_ASSERT(start <= this->numBytes);
+        return {this->bytes + start, this->numBytes - start};
+    }
     PLY_INLINE ConstBufferView subView(u32 start, u32 numBytes) const {
         PLY_ASSERT(start <= this->numBytes); // FIXME: Support different end parameters
         PLY_ASSERT(start + numBytes <= this->numBytes);
         return {this->bytes + start, numBytes};
     }
     /*!
+    \endGroup
+    */
+
+    /*!
     Returns `true` if `curByte` points to a byte inside the memory range.
     */
     PLY_INLINE bool contains(const u8* curByte) const {
         return uptr(curByte - this->bytes) <= this->numBytes;
     }
+
     /*!
     Returns `true` if the contents of this `ConstBufferView` exactly match the contents of `other`.
     */
     PLY_DLL_ENTRY bool operator==(ConstBufferView other) const;
+
     /*!
     Returns `true` if the contents of this `ConstBufferView` do not exactly match the contents of
     `other`.
@@ -135,11 +154,13 @@ struct BufferView {
     Constructs an empty `BufferView`.
     */
     PLY_INLINE BufferView() = default;
+
     /*!
     Constructs a `BufferView` from an explicit pointer and number of bytes.
     */
     PLY_INLINE BufferView(void* bytes, u32 numBytes) : bytes{(u8*) bytes}, numBytes{numBytes} {
     }
+
     /*!
     FIXME: Make this show up
     Constructs a `ConstBufferView` from a string literal. (?)
@@ -147,6 +168,7 @@ struct BufferView {
     template <u32 N>
     PLY_INLINE BufferView(u8 (&bytes)[N]) : bytes{bytes}, numBytes{N} {
     }
+
     /*!
     Returns a `BufferView` referencing a mutable range of memory between two pointers. The number of
     bytes in the memory range is given by `endByte` - `startByte`, and `endByte` is considered a
@@ -155,12 +177,14 @@ struct BufferView {
     static PLY_INLINE BufferView fromRange(u8* startByte, u8* endByte) {
         return {startByte, safeDemote<u32>(endByte - startByte)};
     }
+
     /*!
     Conversion operator. Makes `BufferView` implicitly convertible to `ConstBufferView`.
     */
     PLY_INLINE operator const ConstBufferView &() const {
         return reinterpret_cast<const ConstBufferView&>(*this);
     }
+
     /*!
     Subscript operator with runtime bounds checking.
     */
@@ -168,6 +192,7 @@ struct BufferView {
         PLY_ASSERT(ofs < numBytes);
         return bytes[ofs];
     }
+
     /*!
     Advances the start of the memory range by `ofs` bytes while keeping the end of the memory range
     unchanged.
@@ -177,6 +202,7 @@ struct BufferView {
         bytes += ofs;
         numBytes -= ofs;
     }
+
     /*!
     Advances the end of the memory range by `ofs` bytes while keeping the start of the memory range
     unchanged.
@@ -185,16 +211,27 @@ struct BufferView {
         PLY_ASSERT((u32) -ofs <= numBytes);
         bytes += ofs;
     }
+
     /*!
+    \beginGroup
     Returns a new, smaller `BufferView` that references a subrange of this `BufferView`, with
     runtime bounds checking. `start` is the offset of the new `BufferView` relative to the start of
-    this one, and `numBytes` is the number of bytes in the new `BufferView`.
+    this one, and `numBytes` is the number of bytes in the new `BufferView`. If `numBytes` is not
+    specified, the subview continues to the end of the `BufferView`.
     */
+    PLY_INLINE BufferView subView(u32 start) const {
+        PLY_ASSERT(start <= this->numBytes);
+        return {this->bytes + start, this->numBytes - start};
+    }
     PLY_INLINE BufferView subView(u32 start, u32 numBytes) const {
-        PLY_ASSERT(start <= this->numBytes); // FIXME: Support different end parameters
+        PLY_ASSERT(start <= this->numBytes);
         PLY_ASSERT(start + numBytes <= this->numBytes);
         return {this->bytes + start, numBytes};
     }
+    /*!
+    \endGroup
+    */
+
     /*!
     Returns `true` if `curByte` points to a byte inside the memory range.
     */
