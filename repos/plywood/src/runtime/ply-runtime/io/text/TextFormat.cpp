@@ -62,6 +62,7 @@ PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream* ins, const TextEn
             stats->numValidPoints++;
             stats->totalPointValue += decoded.point;
             if (decoded.point < 32) {
+                stats->numPlainAscii++;
                 if (decoded.point == '\n') {
                     stats->numLines++;
                     stats->numWhitespace++;
@@ -69,7 +70,6 @@ PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream* ins, const TextEn
                         stats->numCRLF++;
                     }
                 } else if (decoded.point == '\t') {
-                    stats->numPlainAscii++;
                     stats->numWhitespace++;
                 } else if (decoded.point != '\r') {
                     stats->numControl++;
@@ -175,7 +175,7 @@ PLY_NO_INLINE TextFormat::Encoding guessFileEncoding(InStream* ins) {
     TextFormat::Encoding encoding = TextFormat::Encoding::UTF8;
     float utf8AsciiRate = float(stats->numPlainAscii) /
                           numBytesRead; // FIXME: Change numPoints to numBytes and use that here
-    u32 numHighBytes = stats->numPlainAscii + stats->numControl;
+    u32 numHighBytes = numBytesRead - stats->numPlainAscii;
     if (utf8AsciiRate > 0.8f && float(stats->numInvalidPoints()) > numHighBytes * 0.5f) {
         encoding = TextFormat::Encoding::Bytes;
         stats->numPoints = numBytesRead;
