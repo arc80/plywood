@@ -32,6 +32,7 @@ struct TextFormat {
         LF,
         CRLF,
     };
+    static constexpr u32 NumBytesForAutodetect = 4000;
 
     /*!
     Possible values are `Bytes`, `UTF8`, `UTF16_be` and `UTF16_le`.
@@ -85,6 +86,14 @@ struct TextFormat {
     while data is written.
     */
     PLY_DLL_ENTRY Owned<StringWriter> createExporter(OptionallyOwned<OutStream>&& outs) const;
+
+    /*!
+    Returns `true` if the `TextFormat`s are identical.
+    */
+    PLY_INLINE bool operator==(const TextFormat& other) const {
+        return (this->encoding == other.encoding) && (this->newLine == other.newLine) &&
+               (this->bom == other.bom);
+    }
 };
 
 } // namespace ply
