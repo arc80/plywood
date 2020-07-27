@@ -9,6 +9,8 @@
 #include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
 
+#include <ply-runtime/io/StdIO.h>
+
 namespace ply {
 
 PLY_NO_INLINE TextFormat TextFormat::platformPreference() {
@@ -20,7 +22,7 @@ PLY_NO_INLINE TextFormat TextFormat::platformPreference() {
 }
 
 struct TextFileStats {
-    u32 numPoints = 0; // FIXME: Change this to bytes
+    u32 numPoints = 0;
     u32 numValidPoints = 0;
     u32 totalPointValue = 0; // This value won't be accurate if byte encoding is detected
     u32 numLines = 0;
@@ -29,19 +31,11 @@ struct TextFileStats {
     u32 numNull = 0;
     u32 numPlainAscii = 0; // includes whitespace, excludes control characters < 32
     u32 numWhitespace = 0;
+    u32 numExtended = 0;
     float ooNumPoints = 0.f;
 
-    PLY_INLINE float getAsciiRate() const {
-        return this->numPlainAscii * this->ooNumPoints;
-    }
-    PLY_INLINE float getWhitespaceRate() const {
-        return this->numWhitespace * this->ooNumPoints;
-    }
     PLY_INLINE u32 numInvalidPoints() const {
         return this->numPoints - this->numValidPoints;
-    }
-    PLY_INLINE float getControlCodeRate() const {
-        return float(this->numControl) / this->numPoints;
     }
     PLY_INLINE TextFormat::NewLine getNewLineType() const {
         PLY_ASSERT(this->numCRLF <= this->numLines);
@@ -50,6 +44,12 @@ struct TextFileStats {
         } else {
             return TextFormat::NewLine::CRLF;
         }
+    }
+    PLY_INLINE float getScore() const {
+        return (2.5f * this->numWhitespace + this->numPlainAscii -
+                100.f * this->numInvalidPoints() - 50.f * this->numControl +
+                5.f * this->numExtended) *
+               this->ooNumPoints;
     }
 };
 
@@ -108,6 +108,8 @@ PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream* ins, const TextEn
                 if (decoded.point == ' ') {
                     stats->numWhitespace++;
                 }
+            } else if (decoded.point >= 65536) {
+                stats->numExtended++;
             }
         }
         prevWasCR = (decoded.point == '\r');
@@ -118,126 +120,60 @@ PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream* ins, const TextEn
     return numBytes;
 }
 
-struct TextFileSurvey {
-    TextFileStats utf8;
-    TextFileStats utf16_le;
-    TextFileStats utf16_be;
-};
-
 PLY_NO_INLINE TextFormat guessFileEncoding(InStream* ins) {
-    TextFileStats stats_;
-    TextFileStats* stats = &stats_;
+    TextFileStats stats8;
     ChunkCursor start = ins->getCursor();
 
     // Try UTF8 first:
     u32 numBytesRead =
-        scanTextFile(stats, ins, TextEncoding::get<UTF8>(), TextFormat::NumBytesForAutodetect);
+        scanTextFile(&stats8, ins, TextEncoding::get<UTF8>(), TextFormat::NumBytesForAutodetect);
     if (numBytesRead == 0) {
         // Empty file
         return {TextFormat::Encoding::UTF8, TextFormat::NewLine::LF, false};
     }
     ins->rewind(start);
-    if (stats->numInvalidPoints() == 0 && stats->numControl == 0) {
+    if (stats8.numInvalidPoints() == 0 && stats8.numControl == 0) {
         // No UTF-8 encoding errors, and no weird control characters/nulls. Pick UTF-8.
-        return {TextFormat::Encoding::UTF8, stats->getNewLineType(), false};
+        return {TextFormat::Encoding::UTF8, stats8.getNewLineType(), false};
+    }
+
+    // If more than 20% of the high bytes in UTF-8 are encoding errors, reinterpret UTF-8 as just bytes.
+    TextFormat::Encoding encoding8 = TextFormat::Encoding::UTF8;
+    float utf8AsciiRate = float(stats8.numPlainAscii) / numBytesRead;
+    {
+        u32 numHighBytes = numBytesRead - stats8.numPlainAscii - stats8.numControl;
+        if (stats8.numInvalidPoints() >= numHighBytes * 0.2f) {
+            // Too many UTF-8 errors. Consider it bytes.
+            encoding8 = TextFormat::Encoding::Bytes;
+            stats8.numPoints = numBytesRead;
+            stats8.numValidPoints = numBytesRead;
+        }
     }
 
     // Examine both UTF16 endianness:
-    TextFileStats utf16_le;
-    scanTextFile(&utf16_le, ins, TextEncoding::get<UTF16_LE>(), TextFormat::NumBytesForAutodetect);
+    TextFileStats stats16_le;
+    scanTextFile(&stats16_le, ins, TextEncoding::get<UTF16_LE>(), TextFormat::NumBytesForAutodetect);
     ins->rewind(start);
 
-    TextFileStats utf16_be;
-    scanTextFile(&utf16_be, ins, TextEncoding::get<UTF16_BE>(), TextFormat::NumBytesForAutodetect);
+    TextFileStats stats16_be;
+    scanTextFile(&stats16_be, ins, TextEncoding::get<UTF16_BE>(), TextFormat::NumBytesForAutodetect);
     ins->rewind(start);
 
     // Choose the better UTF16 candidate:
-    TextFileStats* utf16 = nullptr;
-    s32 validPointsDiff = utf16_le.numValidPoints - utf16_be.numValidPoints;
-    if (validPointsDiff > 0) {
-        utf16 = &utf16_le;
-    } else if (validPointsDiff < 0) {
-        utf16 = &utf16_be;
-    } else {
-        // In case of a tie, if either encoding has more than 80% ASCII characters, choose that
-        // one.
-        if (utf16_le.getAsciiRate() > 0.8f) {
-            utf16 = &utf16_le;
-        } else if (utf16_be.getAsciiRate() > 0.8f) {
-            utf16 = &utf16_be;
-        } else {
-            // Both have a significant number of non-ASCII characters.
-            // Choose the one with more whitespace characters.
-            s32 fmtDiff = utf16_le.numWhitespace - utf16_be.numWhitespace;
-            if (fmtDiff > 0) {
-                utf16 = &utf16_le;
-            } else if (fmtDiff < 0) {
-                utf16 = &utf16_be;
-            } else {
-                // In case of a tie, choose the one with fewer control codes.
-                s32 ccDiff = utf16_le.numControl - utf16_be.numControl;
-                if (ccDiff > 0) {
-                    utf16 = &utf16_le;
-                } else if (ccDiff < 0) {
-                    utf16 = &utf16_be;
-                } else {
-                    // This could be eg. a bunch of non-ASCII characters on an unbroken line.
-                    // In this case, the tie is broken by the encoding with lower average code
-                    // point. totalPointValue is a proxy for the average code point value.
-                    s32 totalDiff = utf16_le.totalPointValue;
-                    if (totalDiff > 0) {
-                        utf16 = &utf16_le;
-                    } else {
-                        utf16 = &utf16_be;
-                    }
-                }
-            }
-        }
-    }
-
-    // Decide whether to interpret UTF-8 as just bytes:
-    // If it's mostly ASCII, and more than 50% of the high bytes were encoding errors, don't
-    // consider it UTF-8. (The caller can always override this decision and just use UTF-8 when
-    // bytes is detected.)
-    TextFormat::Encoding encoding = TextFormat::Encoding::UTF8;
-    float utf8AsciiRate = float(stats->numPlainAscii) /
-                          numBytesRead; // FIXME: Change numPoints to numBytes and use that here
-    u32 numHighBytes = numBytesRead - (stats->numPlainAscii + stats->numControl);
-    if (utf8AsciiRate > 0.8f && float(stats->numInvalidPoints()) > numHighBytes * 0.5f) {
-        encoding = TextFormat::Encoding::Bytes;
-        stats->numPoints = numBytesRead;
-        stats->numValidPoints = numBytesRead;
+    TextFileStats* stats = &stats16_le;
+    TextFormat::Encoding encoding = TextFormat::Encoding::UTF16_le;
+    if (stats16_be.getScore() > stats16_le.getScore()) {
+        stats = &stats16_be;
+        encoding = TextFormat::Encoding::UTF16_be;
     }
 
     // Choose between the UTF16 and 8-bit encoding:
-    bool useUTF16 = false;
-    if (utf8AsciiRate > 0.9f) {
-        // If it's mostly ASCII, and less than 50% of non-ASCII are control codes, stick with
-        // 8-bit
-        if (stats->numControl > stats->numPlainAscii * 0.5f) {
-            useUTF16 = true;
-        }
-    } else {
-        // If it isn't mostly ASCII, and there are any control codes at all, use UTF16.
-        // This codepath will get hit when ASCII characters are encoded as UTF16.
-        if (stats->numControl > 0) {
-            useUTF16 = true;
-        } else {
-            // Choose UTF16 if it has a lower error rate.
-            if (utf16->numInvalidPoints() * 2 < stats->numInvalidPoints()) {
-                useUTF16 = true;
-            }
-        }
+    if (stats8.getScore() >= stats->getScore()) {
+        stats = &stats8;
+        encoding = encoding8;
     }
 
-    // Set return values if UTF16 was chosen:
-    if (useUTF16) {
-        *stats = *utf16;
-        encoding =
-            (utf16 == &utf16_le) ? TextFormat::Encoding::UTF16_le : TextFormat::Encoding::UTF16_be;
-    }
-
-    // Set newline type
+    // Return best guess
     return {encoding, stats->getNewLineType(), false};
 }
 
