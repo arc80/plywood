@@ -56,23 +56,35 @@ bool runTestSuite() {
         if (!entry.isDir && entry.name.endsWith(".txt")) {
             sw << entry.name << "... ";
             Tuple<bool, TextFormat> expected = extractFormatFromName(entry.name.shortenedBy(4));
-            if (expected.first) {
-                TextFormat detected =
-                    FileSystem::native()
-                        ->openTextForReadAutodetect(NativePath::join(testsFolder, entry.name))
-                        .second;
-                if (detected == expected.second) {
-                    sw << "OK\n";
-                    succeeded++;
-                } else {
-                    sw << "***failed***\n";
-                    failed++;
-                }
-            } else {
+            if (!expected.first) {
                 sw << "***can't parse filename***\n";
                 failed++;
+                sw.flush();
+                continue;
             }
+            auto contents =
+                FileSystem::native()
+                    ->loadTextAutodetect(NativePath::join(testsFolder, entry.name));
+            if (!(contents.second == expected.second)) {
+                sw << "***format detection failed***\n";
+                failed++;
+                sw.flush();
+                continue;
+            }
+
+            auto compareTo = 
+                FileSystem::native()
+                    ->loadTextAutodetect(NativePath::join(testsFolder, entry.name.splitByte('.')[0] + ".utf8.crlf.bom.txt"));
+            if (contents.first != compareTo.first) {
+                sw << "***bad contents***\n";
+                failed++;
+                sw.flush();
+                continue;
+            }
+
+            sw << "OK\n";
             sw.flush();
+            succeeded++;
         }
     }
     sw << "----\n";
