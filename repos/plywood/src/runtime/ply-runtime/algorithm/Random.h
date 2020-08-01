@@ -8,7 +8,7 @@
 namespace ply {
 
 //-------------------------------------
-//  xorshift128+ generator seeded using misc. information from the environment.
+//  xoroshiro128** 1.0 generator seeded using misc. information from the environment.
 //  Based on http://xorshift.di.unimi.it/
 //-------------------------------------
 class Random {

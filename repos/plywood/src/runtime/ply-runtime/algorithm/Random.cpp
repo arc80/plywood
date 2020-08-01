@@ -32,12 +32,20 @@ PLY_NO_INLINE Random::Random(u64 seed) {
     next64();
 }
 
+static inline u64 rotl(const u64 x, int k) {
+	return (x << k) | (x >> (64 - k));
+}
+
 PLY_NO_INLINE u64 Random::next64() {
-    u64 s1 = s[0];
-    const u64 s0 = s[1];
-    s[0] = s0;
-    s1 ^= s1 << 23;                                           // a
-    return (s[1] = (s1 ^ s0 ^ (s1 >> 17) ^ (s0 >> 26))) + s0; // b, c
+	const u64 s0 = s[0];
+	u64 s1 = s[1];
+	const u64 result = rotl(s0 * 5, 7) * 9;
+
+	s1 ^= s0;
+	s[0] = rotl(s0, 24) ^ s1 ^ (s1 << 16); // a, b
+	s[1] = rotl(s1, 37); // c
+
+    return result;
 }
 
 } // namespace ply
