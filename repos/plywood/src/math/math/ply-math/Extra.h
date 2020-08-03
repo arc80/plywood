@@ -6,6 +6,7 @@
 #include <ply-math/Core.h>
 #include <ply-math/Matrix.h>
 #include <ply-math/Complex.h>
+#include <ply-math/AxisVector.h>
 
 namespace ply {
 namespace extra {
@@ -24,13 +25,21 @@ inline Float4x4 lookAt(const Float3& direction) {
     return cameraToWorld.transposed(); // returns worldToCamera
 }
 
-inline Float3x3 makeBasis(const Float3& unitFwd) {
-    //******* UNTESTED!!! *******
-    Float3 notCollinear = (fabsf(unitFwd.z) < 0.9f) ? Float3{0, 0, 1} : Float3{1, 0, 0};
-    Float3 right = cross(unitFwd, notCollinear).normalized();
-    Float3 up = cross(right, unitFwd);
-    PLY_ASSERT(fabsf(up.length() - 1) < 0.001f); // Should have unit length
-    return Float3x3{right, up, -unitFwd};
+inline Float3x3 makeBasis(const Float3& unitFwdTo, const Float3& upTo, Axis3 fwdFrom,
+                          Axis3 upFrom) {
+    Float3 rightXPos = cross(unitFwdTo, upTo);
+    float L2 = rightXPos.length2();
+    if (L2 < 1e-6f) {
+        Float3 notCollinear =
+            (unitFwdTo.z * unitFwdTo.z < 0.9f) ? Float3{0, 0, 1} : Float3{0, -1, 0};
+        rightXPos = cross(unitFwdTo, upTo);
+        L2 = rightXPos.length2();
+    }
+    rightXPos /= sqrtf(L2);
+    Float3 fixedUpZPos = cross(rightXPos, unitFwdTo);
+    PLY_ASSERT(fabsf(fixedUpZPos.length() - 1) < 0.001f); // Should have unit length
+    return Float3x3{rightXPos, unitFwdTo, fixedUpZPos} *
+           AxisRot{cross(fwdFrom, upFrom), fwdFrom, upFrom}.inverted().toFloat3x3();
 }
 
 // FIXME: Move approach() out of extra namespace?
