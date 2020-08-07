@@ -227,6 +227,11 @@ struct AxisRot {
         return {toFloat3(cols[0]), toFloat3(cols[1]), toFloat3(cols[2])};
     }
 
+    Float4x4 toFloat4x4() const {
+        return {
+            {toFloat3(cols[0]), 0}, {toFloat3(cols[1]), 0}, {toFloat3(cols[2]), 0}, {0, 0, 0, 1}};
+    }
+
     template <typename Hasher>
     void appendTo(Hasher& hasher) const {
         PLY_ASSERT(isValid());
