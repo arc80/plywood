@@ -139,7 +139,6 @@ PLY_NO_INLINE TextFormat guessFileEncoding(InStream* ins) {
 
     // If more than 20% of the high bytes in UTF-8 are encoding errors, reinterpret UTF-8 as just bytes.
     TextFormat::Encoding encoding8 = TextFormat::Encoding::UTF8;
-    float utf8AsciiRate = float(stats8.numPlainAscii) / numBytesRead;
     {
         u32 numHighBytes = numBytesRead - stats8.numPlainAscii - stats8.numControl;
         if (stats8.numInvalidPoints() >= numHighBytes * 0.2f) {

@@ -32,7 +32,7 @@ inline Float3x3 makeBasis(const Float3& unitFwdTo, const Float3& upTo, Axis3 fwd
     if (L2 < 1e-6f) {
         Float3 notCollinear =
             (unitFwdTo.z * unitFwdTo.z < 0.9f) ? Float3{0, 0, 1} : Float3{0, -1, 0};
-        rightXPos = cross(unitFwdTo, upTo);
+        rightXPos = cross(unitFwdTo, notCollinear);
         L2 = rightXPos.length2();
     }
     rightXPos /= sqrtf(L2);
