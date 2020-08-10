@@ -73,7 +73,7 @@ ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) 
         return {ExternResult::BadArgs, ""};
     }
 
-    StringView version = "1.15.12";
+    StringView version = "1.17.2";
     String archiveName = String::format("cairo-windows-{}", version);
 
     // Handle Command
