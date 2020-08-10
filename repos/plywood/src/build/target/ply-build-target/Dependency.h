@@ -81,12 +81,12 @@ struct BuildTarget {
 
     PLY_INLINE BuildTarget(Dependency* dep) : dep{dep} {
     }
-    PLY_NO_INLINE void addIncludeDir(Visibility visibility, StringView absIncludeDir);
-    PLY_NO_INLINE void addSourceFiles(StringView absSourcePath, bool recursive = true);
-    PLY_NO_INLINE void addSourceFilesWhenImported(StringView absSourceRoot,
+    PLY_BUILD_ENTRY void addIncludeDir(Visibility visibility, StringView absIncludeDir);
+    PLY_BUILD_ENTRY void addSourceFiles(StringView absSourcePath, bool recursive = true);
+    PLY_BUILD_ENTRY void addSourceFilesWhenImported(StringView absSourceRoot,
                                                   ArrayView<const StringView> relPaths);
     // Returns false if absGeneratorSource is not a source file:
-    PLY_NO_INLINE bool setPrecompiledHeader(StringView absGeneratorSource, StringView pchInclude);
+    PLY_BUILD_ENTRY bool setPrecompiledHeader(StringView absGeneratorSource, StringView pchInclude);
     PLY_BUILD_ENTRY bool setPreprocessorDefinition(Visibility visibility, StringView key,
                                                    StringView value);
 };
