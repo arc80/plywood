@@ -296,7 +296,7 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
     }
     args.extend({"-DCMAKE_C_COMPILER_FORCED=1", "-DCMAKE_CXX_COMPILER_FORCED=1"});
     Owned<Subprocess> sub = Subprocess::exec(PLY_CMAKE_PATH, Array<StringView>{args.view()}.view(),
-                                             buildFolder, Subprocess::Output::openSeparate());
+                                             buildFolder, Subprocess::Output::openMerged());
     String output = TextFormat::platformPreference()
                         .createImporter(Owned<InStream>::create(sub->readFromStdOut.borrow()))
                         ->readRemainingContents();
