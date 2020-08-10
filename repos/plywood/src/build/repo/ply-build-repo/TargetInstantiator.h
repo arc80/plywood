@@ -17,11 +17,11 @@ struct TargetInstantiator : DependencySource {
     String instantiatorPath;
     Functor<ModuleFunc> moduleFunc;
 
-    PLY_INLINE TargetInstantiator() : DependencySource{DependencyType::Target} {
+    PLY_INLINE TargetInstantiator() : DependencySource{Target} {
     }
     PLY_INLINE TargetInstantiator(StringView name, StringView instantiatorPath, const Repo* repo,
                                   ModuleFunc* moduleFunc)
-        : DependencySource{DependencyType::Target, name, repo}, instantiatorPath{instantiatorPath},
+        : DependencySource{Target, name, repo}, instantiatorPath{instantiatorPath},
           moduleFunc{moduleFunc} {
     }
 };

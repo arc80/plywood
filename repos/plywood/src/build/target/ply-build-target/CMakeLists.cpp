@@ -4,7 +4,7 @@
 ------------------------------------*/
 #include <ply-build-common/Core.h>
 #include <ply-build-target/CMakeLists.h>
-#include <ply-build-target/BuildTarget.h>
+#include <ply-build-target/Dependency.h>
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-runtime/thread/Affinity.h>
 
@@ -58,7 +58,8 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
     }
 
     // Iterate over all targets
-    for (const BuildTarget* buildTarget : cbf->targets) {
+    for (const Dependency* dep : cbf->targets) {
+        BuildTarget* buildTarget = dep->buildTarget;
         PLY_ASSERT(buildTarget);
         /* FIXME
         if (buildTarget->key.dynLinkage == DynamicLinkage::Import &&
@@ -123,8 +124,8 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
         }
         if (targetType == BuildTargetType::DLL || targetType == BuildTargetType::EXE) {
             // Use TARGET_OBJECTS generator expression to support OBJECT libraries
-            for (s32 i = buildTarget->libs.numItems() - 1; i >= 0; i--) {
-                StringView lib = buildTarget->libs[i];
+            for (s32 i = dep->libs.numItems() - 1; i >= 0; i--) {
+                StringView lib = dep->libs[i];
                 if (lib.startsWith("$<TARGET_OBJECTS")) {
                     sw->format("    {}\n", lib);
                 }
@@ -168,7 +169,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
         if (targetType != BuildTargetType::HeaderOnly &&
             buildTarget->privateDefines.numItems() > 0) {
             sw->format("target_compile_definitions({} PRIVATE\n", uniqueTargetName);
-            for (const BuildTarget::PreprocessorDefinition& define : buildTarget->privateDefines) {
+            for (const PreprocessorDefinition& define : buildTarget->privateDefines) {
                 PLY_ASSERT(define.key.findByte('=') < 0);
                 PLY_ASSERT(define.value.findByte('=') < 0);
                 sw->format("    \"{}={}\"\n", define.key, define.value);
@@ -179,7 +180,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
         if (targetType == BuildTargetType::DLL || targetType == BuildTargetType::EXE) {
             // Define a CMake variable for each macOS framework
             Array<String> frameworkVars;
-            for (StringView fw : buildTarget->frameworks) {
+            for (StringView fw : dep->frameworks) {
                 String fwVar = fw.upperAsc() + "_FRAMEWORK";
                 frameworkVars.append(fwVar);
                 sw->format("find_library({} {})\n", fwVar, fw);
@@ -187,10 +188,10 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
 
             // Link libraries
             // List in reserve order so that dependencies follow dependents
-            if (buildTarget->libs.numItems() > 0 || frameworkVars.numItems() > 0) {
+            if (dep->libs.numItems() > 0 || frameworkVars.numItems() > 0) {
                 sw->format("target_link_libraries({} PRIVATE\n", uniqueTargetName);
-                for (s32 i = buildTarget->libs.numItems() - 1; i >= 0; i--) {
-                    StringView lib = buildTarget->libs[i];
+                for (s32 i = dep->libs.numItems() - 1; i >= 0; i--) {
+                    StringView lib = dep->libs[i];
                     if (!lib.startsWith("$<TARGET_OBJECTS")) {
                         if (lib.startsWith("${")) {
                             sw->format("    {}\n", lib);
@@ -208,10 +209,10 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
             // FIXME: SafeSEH
 
             // Copy DLLs
-            if (buildTarget->dlls.numItems() > 0) {
+            if (dep->dlls.numItems() > 0) {
                 sw->format("AddDLLCopyStep({}\n", uniqueTargetName);
-                for (s32 i = buildTarget->dlls.numItems() - 1; i >= 0; i--) {
-                    sw->format("    \"{}\"\n", PosixPath::from<NativePath>(buildTarget->dlls[i]));
+                for (s32 i = dep->dlls.numItems() - 1; i >= 0; i--) {
+                    sw->format("    \"{}\"\n", PosixPath::from<NativePath>(dep->dlls[i]));
                 }
                 *sw << ")\n";
             }

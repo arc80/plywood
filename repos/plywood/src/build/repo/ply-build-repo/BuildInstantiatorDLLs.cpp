@@ -8,7 +8,7 @@
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-runtime/container/Hash128.h>
 #include <ply-build-target/CMakeLists.h>
-#include <ply-build-target/BuildTarget.h>
+#include <ply-build-target/Dependency.h>
 #include <ply-build-repo/ErrorHandler.h>
 #include <ply-build-repo/RepoRegistry.h>
 #include <pylon/Parse.h>
@@ -57,7 +57,7 @@ struct DLLSignature {
     }
 };
 
-Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const ExtractedRepo& exRepo) {
+Owned<Dependency> createDLLTarget(const GenerateDLLContext& ctx, const ExtractedRepo& exRepo) {
     // Generate .cpp file to include all the .inls
     StringWriter sw;
     sw << "#include <ply-build-repo/Repo.h>\n";
@@ -101,7 +101,9 @@ Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const Extracte
     FileSystem::native()->makeDirsAndSaveTextIfDifferent(generatedCppPath, sw.moveToString(),
                                                          TextFormat::platformPreference());
 
-    Owned<BuildTarget> target = new BuildTarget;
+    Owned<Dependency> dep = new Dependency;
+    dep->buildTarget = new BuildTarget{dep};
+    BuildTarget* target = dep->buildTarget;
     target->name = exRepo.repoName + "_Instantiators";
     target->targetType = BuildTargetType::DLL;
     {
@@ -135,9 +137,9 @@ Owned<BuildTarget> createDLLTarget(const GenerateDLLContext& ctx, const Extracte
     target->setPreprocessorDefinition(Visibility::Private, "PLY_BUILD_IMPORTING", "1");
     target->setPreprocessorDefinition(Visibility::Private, "PLY_DLL_IMPORTING", "1");
 #if PLY_TARGET_WIN32
-    target->libs.append(NativePath::join(PLY_BUILD_FOLDER, "build/Debug/plytool.lib"));
+    dep->libs.append(NativePath::join(PLY_BUILD_FOLDER, "build/Debug/plytool.lib"));
 #endif
-    return target;
+    return dep;
 }
 
 InstantiatedDLLs buildInstantiatorDLLs(bool force) {
@@ -161,7 +163,7 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
     }
 
     // Visit all repo folders
-    u128 moduleDefSignature = 0;
+    u128 moduleDefSignature = 1; // Can increment when making a breaking change to plytool
     Array<ExtractedRepo> exRepos;
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(ctx.repoRootFolder, 0)) {
         if (!entry.isDir)
@@ -228,7 +230,7 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
     if (mustBuild) {
         ErrorHandler::log(ErrorHandler::Info, "Initializing repo registry...\n");
 
-        Array<Owned<BuildTarget>> ownedTargets;
+        Array<Owned<Dependency>> ownedTargets;
         CMakeBuildFolder cbf;
         cbf.solutionName = "DLLs";
         cbf.absPath = ctx.dllBuildFolder;
@@ -239,8 +241,8 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
                 extractInstantiatorFunctions(&modDefFile);
             }
             // Create a DLL target for this repo
-            BuildTarget* target = ownedTargets.append(createDLLTarget(ctx, exRepo));
-            cbf.targets.append(target);
+            Dependency* dep = ownedTargets.append(createDLLTarget(ctx, exRepo));
+            cbf.targets.append(dep);
         }
 
         // Generate build system

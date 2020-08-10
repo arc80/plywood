@@ -12,5 +12,5 @@ void module_plyRuntime(ModuleArgs* args) {
     args->addSourceFilesWhenImported("ply-runtime", {"memory/Heap.cpp"});
     args->addSourceFiles("ply-runtime");
     args->setPrecompiledHeader("ply-runtime/Precomp.cpp", "ply-runtime/Precomp.h");
-    args->buildTarget->libs.append("${PLY_RUNTIME_DEPENDENCIES}");
+    args->buildTarget->dep->libs.append("${PLY_RUNTIME_DEPENDENCIES}");
 }

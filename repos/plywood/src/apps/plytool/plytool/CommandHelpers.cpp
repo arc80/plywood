@@ -9,7 +9,7 @@
 #include <ply-build-folder/BuildFolder.h>
 #include <ply-build-repo/ProjectInstantiator.h>
 #include <ply-build-repo/RepoRegistry.h>
-#include <ply-build-target/BuildTarget.h>
+#include <ply-build-target/Dependency.h>
 
 namespace ply {
 
@@ -176,9 +176,8 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
         }
     }
 
-    result->runTarget =
-        static_cast<BuildTarget*>(result->instResult.dependencies[*runTargetIdx].dep.get());
-    PLY_ASSERT(result->runTarget->type == DependencyType::Target);
+    result->runTarget = result->instResult.dependencies[*runTargetIdx].dep->buildTarget;
+    PLY_ASSERT(result->runTarget);
     if (result->runTarget->targetType != BuildTargetType::EXE) {
         fatalError(String::format("Target '{}' is not executable\n", this->targetName));
     }

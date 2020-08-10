@@ -20,8 +20,8 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
         Dependency* dep = this->result->dependencies[*depCursor].dep;
         if (dep && !dep->initialized) {
             instantiatorError(
-                String::format("Loop detected for {} '{}'",
-                               depSrc->type == DependencyType::Extern ? "extern" : "target",
+                String::format("Loop detected for '{}'",
+                               depSrc->type == DependencySource::Extern ? "extern" : "target",
                                RepoRegistry::get()->getShortDepSourceName(depSrc)));
             return nullptr;
         }
@@ -47,14 +47,17 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
     PLY_ASSERT(!cursor.wasFound());
     *cursor = depIndex;
 
-    if (depSrc->type == DependencyType::Target) {
+    if (depSrc->type == DependencySource::Target) {
         // Create and instantiate the BuildTarget
         const TargetInstantiator* targetInst = static_cast<const TargetInstantiator*>(depSrc);
-        BuildTarget* buildTarget = new BuildTarget;
+        Dependency* dep = new Dependency;
+        dep->buildTarget = new BuildTarget{dep};
+        BuildTarget* buildTarget = dep->buildTarget;
+
         // FIXME: Make sure the name is unique across the project.
         // There could be clashes when multiple repos are used.
         buildTarget->name = depSrc->name;
-        this->result->dependencies.append(depSrc, buildTarget);
+        this->result->dependencies.append(depSrc, dep);
         if (isSharedRoot) {
             this->sharedContainer = buildTarget;
         }
@@ -100,11 +103,11 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
             }
         }
 
-        PLY_ASSERT(!buildTarget->initialized);
-        buildTarget->initialized = true;
-        return buildTarget;
+        PLY_ASSERT(!dep->initialized);
+        dep->initialized = true;
+        return dep;
     } else {
-        PLY_ASSERT(depSrc->type == DependencyType::Extern);
+        PLY_ASSERT(depSrc->type == DependencySource::Extern);
 
         // Default is nullptr in case no provider is selected & installed:
         this->result->dependencies.append(depSrc, nullptr);
@@ -176,8 +179,8 @@ void writeCMakeLists(StringWriter* sw, StringView solutionName, StringView build
     cbf.absPath = buildFolderPath;
     cbf.forBootstrap = forBootstrap;
     for (const auto& depEntry : instResult->dependencies) {
-        if (depEntry.dep->type == DependencyType::Target) {
-            cbf.targets.append(static_cast<BuildTarget*>(depEntry.dep.get()));
+        if (depEntry.dep->buildTarget) {
+            cbf.targets.append(depEntry.dep);
         }
     }
     writeCMakeLists(sw, &cbf);

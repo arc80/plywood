@@ -153,7 +153,6 @@ target_compile_definitions(build-repo PRIVATE
 # build-target
 SetSourceFolders(BUILD-TARGET_SOURCES "${SRC_FOLDER}build/target/ply-build-target"
     "BuildTarget.cpp"
-    "BuildTarget.h"
     "CMakeLists.cpp"
     "CMakeLists.h"
     "Dependency.cpp"

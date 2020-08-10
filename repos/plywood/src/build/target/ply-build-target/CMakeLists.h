@@ -8,7 +8,7 @@
 namespace ply {
 namespace build {
 
-struct BuildTarget;
+struct Dependency;
 enum class BuildTargetType;
 
 struct CMakeGeneratorOptions {
@@ -29,7 +29,7 @@ struct CMakeGeneratorOptions {
 struct CMakeBuildFolder {
     String solutionName;
     String absPath;
-    Array<BuildTarget*> targets;
+    Array<Dependency*> targets;
     String sourceFolderPrefix; // Mainly for generating the bootstrap CMakeLists.txt
     bool forBootstrap = false;
 };

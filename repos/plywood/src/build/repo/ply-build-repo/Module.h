@@ -7,7 +7,7 @@
 
 #pragma once
 #include <ply-build-common/Core.h>
-#include <ply-build-target/BuildTarget.h>
+#include <ply-build-target/Dependency.h>
 #include <ply-build-target/CMakeLists.h>
 #include <ply-build-repo/ModuleArgs.h>
 #include <ply-build-repo/ProjectInstantiator.h>

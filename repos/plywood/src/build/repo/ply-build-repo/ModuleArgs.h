@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-build-common/Core.h>
-#include <ply-build-target/BuildTarget.h>
+#include <ply-build-target/Dependency.h>
 
 namespace ply {
 namespace build {

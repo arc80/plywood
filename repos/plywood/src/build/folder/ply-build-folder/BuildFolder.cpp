@@ -13,7 +13,7 @@
 #include <ply-build-repo/ExternProvider.h>
 #include <ply-build-repo/ErrorHandler.h>
 #include <ply-build-repo/ProjectInstantiationEnv.h>
-#include <ply-build-target/BuildTarget.h>
+#include <ply-build-target/Dependency.h>
 #include <ply-build-target/CMakeLists.h>
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-build-provider/ExternFolderRegistry.h>

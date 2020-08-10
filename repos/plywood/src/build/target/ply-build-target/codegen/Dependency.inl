@@ -1,8 +1,3 @@
-PLY_ENUM_BEGIN(ply::build::, DependencyType)
-PLY_ENUM_IDENTIFIER(Target)
-PLY_ENUM_IDENTIFIER(Extern)
-PLY_ENUM_END()
-
 PLY_ENUM_BEGIN(ply::build::, DynamicLinkage)
 PLY_ENUM_IDENTIFIER(None)
 PLY_ENUM_IDENTIFIER(Import)

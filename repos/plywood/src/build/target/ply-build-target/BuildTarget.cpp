@@ -3,7 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-build-common/Core.h>
-#include <ply-build-target/BuildTarget.h>
+#include <ply-build-target/Dependency.h>
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-runtime/algorithm/Sort.h>
 
@@ -13,7 +13,7 @@ namespace build {
 PLY_NO_INLINE void BuildTarget::addIncludeDir(Visibility visibility, StringView absIncludeDir) {
     PLY_ASSERT(NativePath::isAbsolute(absIncludeDir) && NativePath::isNormalized(absIncludeDir));
     if (visibility == Visibility::Public) {
-        this->includeDirs.append(absIncludeDir);
+        this->dep->includeDirs.append(absIncludeDir);
     }
     this->privateIncludeDirs.append(std::move(absIncludeDir));
 }
@@ -95,12 +95,12 @@ PLY_NO_INLINE bool BuildTarget::setPreprocessorDefinition(Visibility visibility,
     }
 
     if (visibility == Visibility::Public) {
-        existingIndex = find(this->defines.view(),
+        existingIndex = find(this->dep->defines.view(),
                              [&](const PreprocessorDefinition& ppDef) { return ppDef.key == key; });
         if (existingIndex >= 0) {
-            PLY_ASSERT(this->defines[existingIndex].value == value);
+            PLY_ASSERT(this->dep->defines[existingIndex].value == value);
         } else {
-            this->defines.append({key, value});
+            this->dep->defines.append({key, value});
         }
     }
     return wasNotDefined;

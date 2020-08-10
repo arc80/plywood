@@ -13,8 +13,7 @@
 namespace ply {
 namespace build {
 
-PLY_NO_INLINE void ModuleArgs::addIncludeDir(Visibility visibility,
-                                                         StringView includeDir) {
+PLY_NO_INLINE void ModuleArgs::addIncludeDir(Visibility visibility, StringView includeDir) {
     String absIncludeDir = NativePath::join(this->targetInst->instantiatorPath, includeDir);
     this->buildTarget->addIncludeDir(visibility, absIncludeDir);
 }
@@ -24,15 +23,14 @@ PLY_NO_INLINE void ModuleArgs::addSourceFiles(StringView sourcePath, bool recurs
     this->buildTarget->addSourceFiles(absSourcePath, recursive);
 }
 
-PLY_NO_INLINE void
-ModuleArgs::addSourceFilesWhenImported(StringView sourceRoot,
-                                                   ArrayView<const StringView> relPaths) {
+PLY_NO_INLINE void ModuleArgs::addSourceFilesWhenImported(StringView sourceRoot,
+                                                          ArrayView<const StringView> relPaths) {
     String absSourceRoot = NativePath::join(this->targetInst->instantiatorPath, sourceRoot);
     this->buildTarget->addSourceFilesWhenImported(absSourceRoot, relPaths);
 }
 
 PLY_NO_INLINE void ModuleArgs::setPrecompiledHeader(StringView generatorSource,
-                                                                StringView pchInclude) {
+                                                    StringView pchInclude) {
     String absGeneratorSource =
         NativePath::join(this->targetInst->instantiatorPath, generatorSource);
     this->buildTarget->setPrecompiledHeader(absGeneratorSource, pchInclude);
@@ -52,16 +50,16 @@ PLY_NO_INLINE void addDependency(ModuleArgs* targetArgs, const DependencySource*
         return; // unselected or uninstalled extern
 
     // Check if it's already a dependency
-    if (find(targetArgs->buildTarget->dependencies.view(),
+    if (find(targetArgs->buildTarget->dep->dependencies.view(),
              [&](const auto& p) { return p.second == dep; }) >= 0) {
         instantiatorError(
             String::format("{} '{}' is already a dependency",
-                           depSrc->type == DependencyType::Extern ? "extern" : "target",
+                           depSrc->type == DependencySource::Extern ? "extern" : "target",
                            RepoRegistry::get()->getShortDepSourceName(depSrc)));
         return;
     }
 
-    targetArgs->buildTarget->dependencies.append({visibility, dep});
+    targetArgs->buildTarget->dep->dependencies.append({visibility, dep});
 }
 
 PLY_NO_INLINE void ModuleArgs::addTarget(Visibility visibility, StringView targetName) {

@@ -165,7 +165,7 @@ const DependencySource* Repo::findOrCreateExtern(ArrayView<StringView>& comps, b
     // Create a new extern
     PLY_ASSERT(allowCreate);
     PLY_ASSERT(externName);
-    DependencySource* depSrc = new DependencySource{DependencyType::Extern};
+    DependencySource* depSrc = new DependencySource{DependencySource::Extern};
     depSrc->name = externName;
     depSrc->repo = this;
     this->externs.append(depSrc);

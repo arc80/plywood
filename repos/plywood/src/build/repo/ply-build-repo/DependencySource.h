@@ -15,13 +15,18 @@ struct Repo;
 // A DependencySource can be a TargetInstantiator or an extern name.
 // (Extern names still need to be mapped to providers.)
 struct DependencySource {
-    DependencyType type = DependencyType::Extern;
+    enum Type {
+        Extern,
+        Target,
+    };
+
+    Type type = Extern;
     String name; // unqualified
     const Repo* repo = nullptr;
 
-    PLY_INLINE DependencySource(DependencyType type) : type{type} {
+    DependencySource(Type type) : type{type} {
     }
-    PLY_INLINE DependencySource(DependencyType type, StringView name, const Repo* repo)
+    PLY_INLINE DependencySource(Type type, StringView name, const Repo* repo)
         : type{type}, name{name}, repo{repo} {
     }
     PLY_NO_INLINE String getFullyQualifiedName() const;

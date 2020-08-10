@@ -3,7 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-build-common/Core.h>
-#include <ply-build-target/BuildTarget.h>
+#include <ply-build-target/Dependency.h>
 #include <ply-build-target/TargetError.h>
 #include <ply-runtime/algorithm/Find.h>
 
@@ -33,11 +33,11 @@ PLY_NO_INLINE void merge(Array<T>& dstItems, ArrayView<const T> srcItems) {
     }
 }
 
-PLY_NO_INLINE void mergeDefines(Array<Dependency::PreprocessorDefinition>& dstItems,
-                                ArrayView<const Dependency::PreprocessorDefinition> srcItems) {
+PLY_NO_INLINE void mergeDefines(Array<PreprocessorDefinition>& dstItems,
+                                ArrayView<const PreprocessorDefinition> srcItems) {
     for (const auto& srcItem : srcItems) {
         s32 foundIndex =
-            find(dstItems.view(), [&](const Dependency::PreprocessorDefinition& ppDef) {
+            find(dstItems.view(), [&](const PreprocessorDefinition& ppDef) {
                 return ppDef.key == srcItem.key;
             });
         if (foundIndex >= 0) {
@@ -54,10 +54,7 @@ PLY_NO_INLINE void propagateDependencyProperties(Dependency* dep) {
     if (dep->hasBeenPropagated)
         return;
 
-    BuildTarget* depTarget = nullptr;
-    if (dep->type == DependencyType::Target) {
-        depTarget = static_cast<BuildTarget*>(dep);
-    }
+    BuildTarget* depTarget = dep->buildTarget;
 
     Array<Dependency*> buildDeps;
     buildDeps.append(dep);
@@ -71,10 +68,7 @@ PLY_NO_INLINE void propagateDependencyProperties(Dependency* dep) {
         }
         merge<Dependency*>(buildDeps, child.second->visibleDeps.view());
 
-        BuildTarget* childTarget = nullptr;
-        if (child.second->type == DependencyType::Target) {
-            childTarget = static_cast<BuildTarget*>(child.second);
-        }
+        BuildTarget* childTarget = child.second->buildTarget;
 
         // Merge includes
         if (depTarget) {
@@ -122,8 +116,7 @@ PLY_NO_INLINE void propagateDependencyProperties(Dependency* dep) {
     // Import/Export definitions
     if (depTarget) {
         for (Dependency* buildDep : buildDeps) {
-            if (buildDep->type == DependencyType::Target) {
-                BuildTarget* bdTarget = static_cast<BuildTarget*>(buildDep);
+            if (BuildTarget* bdTarget = buildDep->buildTarget) {
                 if (bdTarget->sharedContainer) {
                     if (!bdTarget->dynamicLinkPrefix.isEmpty()) {
                         if (bdTarget->sharedContainer == depTarget->sharedContainer) {
