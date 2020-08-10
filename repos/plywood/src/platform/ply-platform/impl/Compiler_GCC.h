@@ -40,3 +40,8 @@ PLY_INLINE void ply_yieldHWThread() {
 //-------------------------------------
 #define PLY_DLL_IMPORT
 #define PLY_DLL_EXPORT
+
+//-------------------------------------
+//  nodiscard
+//-------------------------------------
+#define PLY_NO_DISCARD __attribute__((warn_unused_result))

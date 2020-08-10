@@ -90,7 +90,7 @@ struct Empty {};
 #elif PLY_COMPILER_GCC
     #include <ply-platform/impl/Compiler_GCC.h>
 #else
-    #error "Unsupported platform!"
+    #error "Unsupported compiler!"
 #endif
 
 #if defined(DEBUG) || defined(_DEBUG) || defined(__DEBUG__)

@@ -36,3 +36,12 @@ PLY_INLINE void ply_yieldHWThread() {
 //-------------------------------------
 #define PLY_DLL_IMPORT __declspec(dllimport)
 #define PLY_DLL_EXPORT __declspec(dllexport)
+
+//-------------------------------------
+//  nodiscard
+//-------------------------------------
+#if _MSC_VER >= 1700
+#define PLY_NO_DISCARD _Check_return_
+#else
+#define PLY_NO_DISCARD
+#endif
