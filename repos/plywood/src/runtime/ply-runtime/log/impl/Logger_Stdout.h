@@ -20,7 +20,7 @@ public:
 #if PLY_TARGET_WIN32
         _write(1, strWithoutNullTerm.bytes, strWithoutNullTerm.numBytes);
 #else
-        int rc = ::write(STDOUT_FILENO, strWithoutNullTerm.bytes, strWithoutNullTerm.numBytes);
+        ssize_t rc = ::write(STDOUT_FILENO, strWithoutNullTerm.bytes, strWithoutNullTerm.numBytes);
         PLY_UNUSED(rc);
 #endif
     }
