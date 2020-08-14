@@ -292,9 +292,8 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
         args.extend({"-T", generatorOpts.toolset});
     }
     if (generatorOpts.toolchainFile == "ios") {
-        args.append(String::format(
-            "-DCMAKE_TOOLCHAIN_FILE={}",
-            NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/scripts/toolchains/iOS.cmake")));
+        // FIXME: Verify that we're using CMake version 3.14 or higher
+        args.append("-DCMAKE_SYSTEM_NAME=iOS");
     }
     if (!isMultiConfig) {
         args.append(String::format("-DCMAKE_BUILD_TYPE={}", config));
