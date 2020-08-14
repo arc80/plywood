@@ -9,6 +9,7 @@
 #include <ply-runtime/process/Subprocess.h>
 #include <ply-runtime/filesystem/Path.h>
 #include <ply-runtime/io/impl/Pipe_FD.h>
+#include <ply-runtime/thread/Mutex.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>

@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 
 #define PLY_FSPOSIX_ALLOW_UNKNOWN_ERRORS 0
 

@@ -4,6 +4,7 @@
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/container/HashMap.h>
+#include <string.h>
 
 namespace ply {
 namespace details {

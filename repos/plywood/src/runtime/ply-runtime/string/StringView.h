@@ -8,6 +8,7 @@
 #include <ply-runtime/container/BufferView.h>
 #include <ply-runtime/container/Hash.h>
 #include <ply-runtime/container/Tuple.h>
+#include <string> // for char_traits
 
 namespace ply {
 
