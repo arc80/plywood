@@ -115,6 +115,7 @@ set(nativeToolchainContents
     \"${CMAKE_GENERATOR}\",
     \"${CMAKE_GENERATOR_PLATFORM}\",
     \"${CMAKE_GENERATOR_TOOLSET}\",
+    \"\",
 };
 String DefaultNativeConfig = \"${CMAKE_BUILD_TYPE}\";
 ")

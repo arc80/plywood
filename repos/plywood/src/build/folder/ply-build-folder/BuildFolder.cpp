@@ -101,7 +101,9 @@ Owned<pylon::Node> toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cm
     Owned<pylon::Node> toolchain = pylon::Node::createObject();
     toolchain->set("buildSystem", pylon::Node::createText(cmakeOpts.generator.view()));
 
-    if (!cmakeOpts.generator) {
+    if (cmakeOpts.toolchainFile == "ios") {
+        toolchain->set("targetPlatform", pylon::Node::createText("ios"));
+    } else if (!cmakeOpts.generator) {
         // Generator name is allowed to be blank when generating the bootstrap
     } else if (cmakeOpts.generator.startsWith("Visual Studio")) {
         toolchain->set("targetPlatform", pylon::Node::createText("windows"));

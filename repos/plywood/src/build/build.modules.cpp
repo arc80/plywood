@@ -31,6 +31,7 @@ void module_ply_build_target(ModuleArgs* args) {
     "{}",
     "{}",
     "{}",
+    "",
 }};
 String DefaultNativeConfig = "{}";
 )",

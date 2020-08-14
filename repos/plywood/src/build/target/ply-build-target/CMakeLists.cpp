@@ -291,6 +291,11 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
     if (generatorOpts.toolset) {
         args.extend({"-T", generatorOpts.toolset});
     }
+    if (generatorOpts.toolchainFile == "ios") {
+        args.append(String::format(
+            "-DCMAKE_TOOLCHAIN_FILE={}",
+            NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/scripts/toolchains/iOS.cmake")));
+    }
     if (!isMultiConfig) {
         args.append(String::format("-DCMAKE_BUILD_TYPE={}", config));
     }
@@ -308,7 +313,7 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
         }
     }
     return {rc, std::move(output)};
-}
+} // namespace build
 
 PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
                                                    const CMakeGeneratorOptions& generatorOpts,

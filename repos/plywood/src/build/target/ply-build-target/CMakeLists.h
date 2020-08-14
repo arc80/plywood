@@ -13,9 +13,10 @@ enum class BuildTargetType;
 
 struct CMakeGeneratorOptions {
     PLY_REFLECT()
-    String generator;
-    String platform;
-    String toolset;
+    String generator;     // passed directly to -G
+    String platform;      // passed directly to -A
+    String toolset;       // passed directly to -T
+    String toolchainFile; // currently "ios" or blank
     // ply reflect off
 
     template <typename Hasher>
@@ -23,6 +24,7 @@ struct CMakeGeneratorOptions {
         h.append(this->generator.bufferView());
         h.append(this->platform.bufferView());
         h.append(this->toolset.bufferView());
+        h.append(this->toolchainFile.bufferView());
     }
 };
 
