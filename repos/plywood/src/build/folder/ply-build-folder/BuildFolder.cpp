@@ -103,6 +103,7 @@ Owned<pylon::Node> toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cm
 
     if (cmakeOpts.toolchainFile == "ios") {
         toolchain->set("targetPlatform", pylon::Node::createText("ios"));
+        toolchain->set("apple", pylon::Node::createText("true"));
     } else if (!cmakeOpts.generator) {
         // Generator name is allowed to be blank when generating the bootstrap
     } else if (cmakeOpts.generator.startsWith("Visual Studio")) {
@@ -111,6 +112,7 @@ Owned<pylon::Node> toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cm
                        pylon::Node::createText(cmakeOpts.platform == "Win32" ? "x86" : "x64"));
     } else if (cmakeOpts.generator == "Xcode") {
         toolchain->set("targetPlatform", pylon::Node::createText("macos"));
+        toolchain->set("apple", pylon::Node::createText("true"));
         toolchain->set("arch", pylon::Node::createText("x64"));
     } else if (cmakeOpts.generator == "Unix Makefiles") {
 #if PLY_KERNEL_LINUX
@@ -125,6 +127,7 @@ Owned<pylon::Node> toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cm
 #endif
 #elif PLY_TARGET_APPLE
         toolchain->set("targetPlatform", pylon::Node::createText("macos"));
+        toolchain->set("apple", pylon::Node::createText("true"));
         toolchain->set("arch", pylon::Node::createText("x64"));
 #else
         // FIXME: Handle more gracefully

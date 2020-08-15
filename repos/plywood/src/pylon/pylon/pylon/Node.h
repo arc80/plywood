@@ -70,6 +70,10 @@ struct Node {
         return this->type != (u64) Type::Invalid;
     }
 
+    PLY_INLINE explicit operator bool() const {
+        return this->type != (u64) Type::Invalid;
+    }
+
     //-----------------------------------------------------------
     // Text
     //-----------------------------------------------------------
