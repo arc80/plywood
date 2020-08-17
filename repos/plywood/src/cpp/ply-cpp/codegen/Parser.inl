@@ -50,5 +50,6 @@ PLY_ENUM_IDENTIFIER(ExpectedFunctionBodyAfterMemberInitList)
 PLY_ENUM_IDENTIFIER(CantMixFunctionDefAndDecl)
 PLY_ENUM_IDENTIFIER(ScopedEnumRequiresName)
 PLY_ENUM_IDENTIFIER(MissingDeclaration)
+PLY_ENUM_IDENTIFIER(DuplicateVirtSpecifier)
 PLY_ENUM_END()
 

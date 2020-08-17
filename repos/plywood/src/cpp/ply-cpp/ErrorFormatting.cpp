@@ -151,6 +151,10 @@ void ParseError::writeMessage(StringWriter* sw, const PPVisitedFiles* visitedFil
             *sw << "declaration does not declare anything\n";
             break;
         }
+        case ParseError::DuplicateVirtSpecifier: {
+            sw->format("'{}' used more than once\n", this->errorToken.identifier);
+            break;
+        }
         default: {
             *sw << "error message not implemented!\n";
             break;

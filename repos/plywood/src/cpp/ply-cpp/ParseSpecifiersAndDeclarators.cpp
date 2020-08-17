@@ -733,7 +733,24 @@ void parseSpecifiersAndDeclarators(Parser* parser, grammar::Declaration::Simple&
 
                 record.qid = parseQualifiedID(parser, ParseQualifiedMode::RequireCompleteOrEmpty);
 
-                token = readToken(parser);
+                // Read optional virt-specifier sequence
+                {
+                    Token finalTok;
+                    for (;;) {
+                        token = readToken(parser);
+                        if (token.identifier == "final") {
+                            if (finalTok.isValid()) {
+                                parser->error(true, {ParseError::DuplicateVirtSpecifier, token});
+                            } else {
+                                finalTok = token;
+                                record.virtSpecifiers.append(token);
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
                 if (token.type == Token::SingleColon) {
                     record.colon = token;
                     record.baseSpecifierList = parseBaseSpecifierList(parser);

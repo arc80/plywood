@@ -106,6 +106,7 @@ struct ParseError : BaseError {
         CantMixFunctionDefAndDecl,
         ScopedEnumRequiresName,
         MissingDeclaration,
+        DuplicateVirtSpecifier,
     };
     PLY_REFLECT_ENUM(friend, Type)
 

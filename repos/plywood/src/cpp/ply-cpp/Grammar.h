@@ -250,6 +250,7 @@ struct DeclSpecifier {
         PLY_REFLECT()
         Token classKey;
         QualifiedID qid;
+        Array<Token> virtSpecifiers;
         Token colon;
         Array<BaseSpecifierWithComma> baseSpecifierList;
         Token openCurly;
