@@ -24,7 +24,7 @@ struct Complex {
     }
 
     static Float2 mul(const Float2& a, const Float2& b) {
-        return {a.x * b.x - a.y * b.y, 2 * a.x * b.y};
+        return {a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x};
     }
 };
 
