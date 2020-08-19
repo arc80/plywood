@@ -8,6 +8,7 @@ A heartfelt thanks goes out to these generous [supporters on Patreon](https://ww
 
 ### Backers
 
+* Kamen Lilov
 * Tom
 * Peterson Onyeukwu
 * Seth Brown
