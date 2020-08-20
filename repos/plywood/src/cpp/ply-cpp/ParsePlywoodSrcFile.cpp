@@ -70,6 +70,7 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
 
     addPPDef(&pp, "PLY_INLINE", "");
     addPPDef(&pp, "PLY_NO_INLINE", "");
+    addPPDef(&pp, "PLY_NO_DISCARD", "");
     addPPDef(&pp, "PLY_DLL_ENTRY", "");
     addPPDef(&pp, "PLY_BUILD_ENTRY", "");
     addPPDef(&pp, "PYLON_ENTRY", "");
