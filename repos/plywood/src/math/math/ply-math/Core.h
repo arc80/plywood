@@ -19,8 +19,8 @@
 namespace ply {
 
 // Constants
-static const float Pi = 3.14159265358979323846f;
-static const double DPi = 3.14159265358979323846;
+static constexpr float Pi = 3.14159265358979323846f;
+static constexpr double DPi = 3.14159265358979323846;
 
 // Math
 inline float square(float v) {
