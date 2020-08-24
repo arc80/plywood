@@ -196,7 +196,8 @@ Tuple<Token, Token> parseExpression(Parser* parser, bool optional = false);
 // Misc
 void parseEnumBody(Parser* parser, grammar::DeclSpecifier::Enum_* en);
 
-void dumpParseTree(StringWriter* sw, TypedPtr any, u32 indent = 0);
+void dumpParseTree(StringWriter* sw, TypedPtr any, u32 indent = 0,
+                   const PPVisitedFiles* visitedFiles = nullptr);
 bool closeScope(Parser* parser, Token* outCloseToken, const Token& openToken);
 
 } // namespace cpp

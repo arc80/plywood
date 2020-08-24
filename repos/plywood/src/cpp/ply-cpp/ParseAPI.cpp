@@ -11,11 +11,8 @@
 namespace ply {
 namespace cpp {
 
-void addPPDef(Preprocessor* pp, StringView identifier, StringView expansion,
-              bool takesArgs = false);
-
 grammar::TranslationUnit parse(String&& sourceCode, PPVisitedFiles* visitedFiles,
-                               Array<PreprocessorDefinition>&& ppDefs,
+                               ArrayView<const PreprocessorDefinition> ppDefs,
                                const HiddenArgFunctor<void(StringView directive)>& includeCallback,
                                ParseSupervisor* visor) {
     // Create preprocessor
@@ -46,6 +43,10 @@ grammar::TranslationUnit parse(String&& sourceCode, PPVisitedFiles* visitedFiles
     locMapItem.includeChainIdx = includeChainIdx;
     locMapItem.offset = 0;
     visitedFiles->locationMap.insert(std::move(locMapItem));
+
+    for (const PreprocessorDefinition& ppDef : ppDefs) {
+        addPPDef(&pp, ppDef.identifier, ppDef.value, ppDef.takesArgs);
+    }
 
     // Create parser
     Parser parser;

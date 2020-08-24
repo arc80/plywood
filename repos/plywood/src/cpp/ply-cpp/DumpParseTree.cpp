@@ -5,11 +5,12 @@
 #include <ply-cpp/Core.h>
 #include <ply-cpp/Parser.h>
 #include <ply-cpp/Grammar.h>
+#include <ply-cpp/ErrorFormatting.h>
 
 namespace ply {
 namespace cpp {
 
-void dumpParseTree(StringWriter* sw, TypedPtr any, u32 indent) {
+void dumpParseTree(StringWriter* sw, TypedPtr any, u32 indent, const PPVisitedFiles* visitedFiles) {
     auto doIndent = [&]() {
         for (u32 i = 0; i < indent; i++) {
             *sw << "  ";
@@ -21,6 +22,9 @@ void dumpParseTree(StringWriter* sw, TypedPtr any, u32 indent) {
         const TypeDescriptor_Struct* structType = any.type->cast<TypeDescriptor_Struct>();
         if (structType->name == "ply::cpp::Token") {
             const Token* token = (const Token*) any.ptr;
+            if (token->linearLoc >= 0 && visitedFiles) {
+                sw->format("{}: ", expandFileLocation(visitedFiles, token->linearLoc).toString());
+            }
             sw->format("\"{}\"\n", fmt::EscapedString{token->identifier});
         } else if (structType->name == "ply::cpp::grammar::QualifiedID") {
             sw->format("\"{}\"", ((grammar::QualifiedID*) any.ptr)->toString());
@@ -31,7 +35,7 @@ void dumpParseTree(StringWriter* sw, TypedPtr any, u32 indent) {
                 doIndent();
                 sw->format("{}: ", member.name);
                 TypedPtr anyMember{PLY_PTR_OFFSET(any.ptr, member.offset), member.type};
-                dumpParseTree(sw, anyMember, indent);
+                dumpParseTree(sw, anyMember, indent, visitedFiles);
             }
         }
     } else if (typeKey == TypeDescriptor_Enum::typeKey) {
@@ -56,22 +60,25 @@ void dumpParseTree(StringWriter* sw, TypedPtr any, u32 indent) {
         for (u32 i = 0; i < arr->m_numItems; i++) {
             doIndent();
             sw->format("[{}] ", i);
-            dumpParseTree(sw, TypedPtr{item, itemType}, indent);
+            dumpParseTree(sw, TypedPtr{item, itemType}, indent, visitedFiles);
             item = PLY_PTR_OFFSET(item, itemType->fixedSize);
         }
     } else if (typeKey == TypeDescriptor_Switch::typeKey) {
         TypeDescriptor_Switch* switchType = any.type->cast<TypeDescriptor_Switch>();
         u16 id = *(u16*) any.ptr;
         void* buf = PLY_PTR_OFFSET(any.ptr, switchType->storageOffset);
-        dumpParseTree(sw, TypedPtr{buf, switchType->states[id].structType}, indent - 1);
+        dumpParseTree(sw, TypedPtr{buf, switchType->states[id].structType}, indent - 1,
+                      visitedFiles);
     } else if (typeKey == TypeDescriptor_Owned::typeKey) {
         TypeDescriptor_Owned* ownedType = any.type->cast<TypeDescriptor_Owned>();
         TypedPtr targetPtr = TypedPtr{*(void**) any.ptr, ownedType->targetType};
         if (targetPtr.ptr) {
-            dumpParseTree(sw, targetPtr, indent - 1);
+            dumpParseTree(sw, targetPtr, indent - 1, visitedFiles);
         } else {
             *sw << "(null)\n";
         }
+    } else if (typeKey == &TypeKey_Bool) {
+        *sw << (*(bool*) any.ptr ? "true\n" : "false\n");
     } else {
         PLY_ASSERT(0);
     }

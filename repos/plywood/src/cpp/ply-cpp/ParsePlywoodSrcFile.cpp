@@ -10,20 +10,6 @@
 namespace ply {
 namespace cpp {
 
-PLY_NO_INLINE void addPPDef(Preprocessor* pp, StringView identifier, StringView expansion,
-                            bool takesArgs = false) {
-    PPVisitedFiles* vf = pp->visitedFiles;
-
-    u32 expIdx = vf->macroExpansions.numItems();
-    PPVisitedFiles::MacroExpansion& exp = vf->macroExpansions.append();
-    exp.setString(expansion);
-    exp.takesArgs = takesArgs;
-
-    auto cursor = pp->macros.insertOrFind(identifier);
-    cursor->identifier = identifier;
-    cursor->expansionIdx = expIdx;
-}
-
 PLY_NO_INLINE void onGotInclude(ParseSupervisor* visor, StringView directive) {
     visor->onGotInclude(directive);
 }

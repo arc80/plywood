@@ -9,6 +9,20 @@
 namespace ply {
 namespace cpp {
 
+PLY_NO_INLINE void addPPDef(Preprocessor* pp, StringView identifier, StringView expansion,
+                            bool takesArgs) {
+    PPVisitedFiles* vf = pp->visitedFiles;
+
+    u32 expIdx = vf->macroExpansions.numItems();
+    PPVisitedFiles::MacroExpansion& exp = vf->macroExpansions.append();
+    exp.setString(expansion);
+    exp.takesArgs = takesArgs;
+
+    auto cursor = pp->macros.insertOrFind(identifier);
+    cursor->identifier = identifier;
+    cursor->expansionIdx = expIdx;
+}
+
 PLY_INLINE LinearLocation getLinearLocation(const Preprocessor* pp, const u8* curByte) {
     const Preprocessor::StackItem& item = pp->stack.back();
     PLY_ASSERT(curByte >= item.strViewReader.getStartByte());

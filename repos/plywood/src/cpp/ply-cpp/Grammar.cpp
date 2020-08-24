@@ -72,6 +72,10 @@ String QualifiedID::toString() const {
             sw << "(conversion)";
             break;
         }
+        case ID::Empty: {
+            sw << "(empty)";
+            break;
+        }
         default: {
             PLY_ASSERT(0);
             break;

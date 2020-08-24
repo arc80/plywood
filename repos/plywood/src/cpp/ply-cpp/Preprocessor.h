@@ -81,6 +81,8 @@ struct Preprocessor {
 PLY_REFLECT_ENUM(, Preprocessor::Error::Type)
 
 Token readToken(Preprocessor* pp);
+void addPPDef(Preprocessor* pp, StringView identifier, StringView expansion,
+              bool takesArgs = false);
 
 } // namespace cpp
 } // namespace ply

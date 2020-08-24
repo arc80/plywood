@@ -18,7 +18,8 @@ struct PreprocessorDefinition {
 };
 
 grammar::TranslationUnit
-parse(String&& sourceCode, PPVisitedFiles* visitedFiles, Array<PreprocessorDefinition>&& ppDefs,
+parse(String&& sourceCode, PPVisitedFiles* visitedFiles,
+      ArrayView<const PreprocessorDefinition> ppDefs = {},
       const HiddenArgFunctor<void(StringView directive)>& includeCallback = {},
       ParseSupervisor* visor = nullptr);
 

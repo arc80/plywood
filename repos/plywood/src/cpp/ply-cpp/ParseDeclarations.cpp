@@ -63,7 +63,7 @@ PLY_NO_INLINE void parseEnumBody(Parser* parser, grammar::DeclSpecifier::Enum_* 
             } else if (token2.type == Token::CloseCurly) {
                 // Done
                 parser->stopMutingErrors();
-                en->closeCurly = token;
+                en->closeCurly = token2;
                 done = true;
             } else {
                 // expected , or } after enum member
