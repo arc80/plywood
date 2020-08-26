@@ -1,0 +1,16 @@
+FROM ubuntu
+RUN apt-get update
+RUN apt-get install -y g++
+RUN apt-get install -y clang
+RUN apt-get install -y cmake
+RUN apt-get install -y libsass-dev
+COPY plywood /home/plywood
+WORKDIR /home/plywood
+RUN cmake -DNO_BACKUP=1 -DPRESET=make -P Setup.cmake
+RUN ./plytool folder create docs
+RUN ./plytool target add WebCooker
+RUN ./plytool target add WebServer
+RUN ./plytool extern select libsass.apt
+RUN ./plytool run WebCooker
+RUN ./plytool build WebServer
+CMD ./plytool run WebServer
