@@ -1,8 +1,21 @@
-FROM ubuntu AS builder
+# Set up base image
+FROM ubuntu
 RUN apt-get update
 RUN apt-get install -y g++
-RUN apt-get install -y clang
 RUN apt-get install -y cmake
+RUN apt-get install -y curl apt-transport-https ca-certificates gnupg software-properties-common
+# Docker
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - 
+RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+RUN apt-get update
+RUN apt-get install -y docker-ce-cli
+# Google Cloud SDK
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+RUN apt-get update
+RUN apt-get install -y google-cloud-sdk
+
+# Build Plywood documentation & webserver
 RUN apt-get install -y libsass-dev
 COPY plywood /home/plywood
 WORKDIR /home/plywood
@@ -15,10 +28,9 @@ RUN ./plytool extern select libsass.apt
 RUN ./plytool run WebCooker
 RUN ./plytool build WebServer
 
-FROM ubuntu
-RUN apt-get update
-RUN apt-get install -y docker
-COPY --from=builder /home/plywood/data/build/docs/build/Debug/WebServer /
-COPY --from=builder /home/plywood/data/docsite/ /srv/www/
-ENV WEBSERVER_DOC_DIR=/srv/www
-CMD /WebServer
+# Prepare Dockerfile for webserver
+WORKDIR /home/deploy
+RUN cp /home/plywood/data/build/docs/build/Debug/WebServer .
+RUN cp -r /home/plywood/data/docsite .
+COPY Dockerfile-deploy Dockerfile
+COPY deploy.sh deploy.sh

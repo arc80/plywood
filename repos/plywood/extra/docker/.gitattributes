@@ -1,0 +1,3 @@
+# Don't let Git convert line endings of these files
+deploy.sh.src -text
+Dockerfile-deploy.src -text

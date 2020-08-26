@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+trap 'previous_command=$this_command; this_command=$BASH_COMMAND' DEBUG
+trap 'echo FAILED COMMAND: $previous_command' EXIT
+
+docker build -t gcr.io/testproject-269522/plydocs .
+gcloud auth login
+gcloud -q auth configure-docker
+docker push gcr.io/testproject-269522/plydocs
+gcloud run deploy --image gcr.io/testproject-269522/plydocs plydocs --platform managed --project testproject-269522 --region=us-central1
+
+trap - EXIT
+echo 'Success!'
