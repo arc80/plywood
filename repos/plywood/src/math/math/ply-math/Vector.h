@@ -214,6 +214,10 @@ inline Float2 quantizeNearest(const Float2& value, float spacing) {
     return {quantizeNearest(value.x, spacing), quantizeNearest(value.y, spacing)};
 }
 
+inline bool isQuantized(const Float2& value, float spacing) {
+    return quantizeNearest(value, spacing) == value;
+}
+
 inline Float2 quantizeDown(const Float2& value, float spacing) {
     return {quantizeDown(value.x, spacing), quantizeDown(value.y, spacing)};
 }
