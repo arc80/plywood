@@ -31,6 +31,10 @@ struct LambdaView<Return(Args...)> {
         thunk = thunkImpl<Callable>;
     }
 
+    PLY_INLINE bool isValid() const {
+        return this->thunk;
+    }
+
     PLY_INLINE Return operator()(Args... args) const {
         return this->thunk(this->callable, std::forward<Args>(args)...);
     }
