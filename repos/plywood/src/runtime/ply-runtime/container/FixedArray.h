@@ -34,13 +34,18 @@ struct FixedArray {
 
     PLY_INLINE FixedArray() = default;
 
+    PLY_INLINE FixedArray(const std::initializer_list<T>& args) {
+        PLY_ASSERT(Size == args.size());
+        subst::copyArray(this->items, args.begin(), Size);
+    }
+
     template <typename... Args>
     PLY_INLINE FixedArray(Args&&... args) {
         PLY_STATIC_ASSERT(Size == sizeof...(Args));
         details::InitItems<T>::init(items, std::forward<Args>(args)...);
     }
 
-    u32 numItems() const {
+    constexpr u32 numItems() const {
         return Size;
     }
 
