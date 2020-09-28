@@ -410,7 +410,7 @@ struct Float3 {
         return fabsf(1.f - length2()) < thresh;
     }
 
-    Float3 normalized() const {
+    PLY_NO_DISCARD Float3 normalized() const {
         return *this / length();
     }
 
@@ -420,6 +420,13 @@ struct Float3 {
             return false;
         *this /= L;
         return true;
+    }
+
+    PLY_NO_DISCARD Float3 safeNormalized(const Float3& fallback) const {
+        float L = length2();
+        if (L < 1e-20f)
+            return fallback;
+        return *this / sqrtf(L);
     }
 
     Float2 xz() const {
