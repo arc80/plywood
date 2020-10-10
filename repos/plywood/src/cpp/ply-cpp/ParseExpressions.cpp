@@ -256,6 +256,7 @@ Tuple<Token, Token> parseExpression(Parser* parser, bool optional) {
         case Token::Percent:
         case Token::Arrow:
         case Token::Star:
+        case Token::Dot:
         case Token::ForwardSlash: {
             endToken = parseExpression(parser).second;
             break;
