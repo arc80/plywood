@@ -84,6 +84,8 @@ PLY_NO_INLINE bool fmt::scanUpToAndIncludingSpecial(InStream* ins, StringView sp
 // Built-in fmt::TypeParsers
 //----------------------------------------------------------
 PLY_NO_INLINE u64 fmt::TypeParser<u64>::parse(InStream* ins, Radix radix) {
+    // FIXME: 32-bit platforms like WASM would benefit from dedicated u32 parse function instead of
+    // parsing a u64 then casting the result to u32.
     PLY_ASSERT(radix.base > 0 && radix.base <= 36);
     u64 result = 0;
     bool anyDigits = false;
@@ -95,12 +97,15 @@ PLY_NO_INLINE u64 fmt::TypeParser<u64>::parse(InStream* ins, Radix radix) {
         if (digit >= radix.base)
             break;
         ins->advanceByte();
-        u64 withNextDigit = result * radix.base + digit;
-        if (withNextDigit < result) {
-            // overflow error
+        // FIXME: When available, check for (multiplicative & additive) overflow using
+        // https://gcc.gnu.org/onlinedocs/gcc/Integer-Overflow-Builtins.html#Integer-Overflow-Builtins
+        // and equivalent intrinsics instead of the following.
+        // Note: 0x71c71c71c71c71b is the largest value that won't overflow for any radix <= 36. We
+        // test against this constant first to avoid the costly integer division.
+        if (result > 0x71c71c71c71c71b && result > (Limits<u64>::Max - digit) / radix.base) {
             overflow = true;
         }
-        result = withNextDigit;
+        result = result * radix.base + digit;
         anyDigits = true;
     }
     if (!anyDigits || overflow) {
