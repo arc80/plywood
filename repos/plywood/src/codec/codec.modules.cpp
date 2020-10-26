@@ -47,20 +47,19 @@ ExternResult extern_libavcodec_prebuilt(ExternCommand cmd, ExternProviderArgs* a
         return {ExternResult::UnsupportedToolchain, "Target platform must be 'windows'"};
     }
     StringView arch = args->toolchain->get("arch")->text();
-    if (findItem(ArrayView<const StringView>{"x86", "x64"}, arch) < 0) {
-        return {ExternResult::UnsupportedToolchain, "Target arch must be 'x86' or 'x64'"};
+    if (arch != "x64") {
+        return {ExternResult::UnsupportedToolchain, "Target arch must be x64'"};
     }
     if (args->providerArgs) {
         return {ExternResult::BadArgs, ""};
     }
 
-    StringView libArch = (arch == "x86" ? "win32" : "win64");
-    StringView version = "4.2.2";
-    StringView avcodecVersion = "avcodec-58";
-    StringView avutilVersion = "avutil-56";
-    StringView avformatVersion = "avformat-58";
-    StringView swresampleVersion = "swresample-3";
-    StringView swscaleVersion = "swscale-5";
+    StringView url =
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2020-10-26-12-33/"
+        "ffmpeg-n4.3.1-20-g8a2acdc6da-win64-lgpl-shared-4.3.zip";
+    String archiveName = PosixPath::split(url).second;
+    Array<StringView> libVersions = {"avcodec-58", "avutil-56", "avformat-58", "swresample-3",
+                                     "swscale-5"};
 
     // Handle Command
     Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(arch);
@@ -71,21 +70,16 @@ ExternResult extern_libavcodec_prebuilt(ExternCommand cmd, ExternProviderArgs* a
             return er.first;
         }
         ExternFolder* externFolder = args->createExternFolder(arch);
-        for (StringView archiveType : ArrayView<const StringView>{"shared", "dev"}) {
-            String archiveName =
-                String::format("ffmpeg-{}-{}-{}.zip", version, libArch, archiveType);
-            String archivePath = NativePath::join(externFolder->path, archiveName + ".zip");
-            String url = String::format("https://ffmpeg.zeranoe.com/builds/{}/{}/{}", libArch,
-                                        archiveType, archiveName);
-            if (!downloadFile(archivePath, url)) {
-                return {ExternResult::InstallFailed, String::format("Error downloading '{}'", url)};
-            }
-            if (!extractFile(archivePath)) {
-                return {ExternResult::InstallFailed,
-                        String::format("Error extracting '{}'", archivePath)};
-            }
-            FileSystem::native()->deleteFile(archivePath);
+        String archivePath = NativePath::join(externFolder->path, archiveName);
+
+        if (!downloadFile(archivePath, url)) {
+            return {ExternResult::InstallFailed, String::format("Error downloading '{}'", url)};
         }
+        if (!extractFile(archivePath)) {
+            return {ExternResult::InstallFailed,
+                    String::format("Error extracting '{}'", archivePath)};
+        }
+        FileSystem::native()->deleteFile(archivePath);
         externFolder->success = true;
         externFolder->save();
         return {ExternResult::Installed, ""};
@@ -93,35 +87,15 @@ ExternResult extern_libavcodec_prebuilt(ExternCommand cmd, ExternProviderArgs* a
         if (er.first.code != ExternResult::Installed) {
             return er.first;
         }
-        args->dep->includeDirs.append(NativePath::join(
-            er.second->path, String::format("ffmpeg-{}-{}-dev/include", version, libArch)));
-        args->dep->libs.append(NativePath::join(
-            er.second->path, String::format("ffmpeg-{}-{}-dev/lib/avcodec.lib", version, libArch)));
-        args->dep->libs.append(NativePath::join(
-            er.second->path, String::format("ffmpeg-{}-{}-dev/lib/avutil.lib", version, libArch)));
-        args->dep->libs.append(
-            NativePath::join(er.second->path, String::format("ffmpeg-{}-{}-dev/lib/swresample.lib",
-                                                             version, libArch)));
-        args->dep->libs.append(NativePath::join(
-            er.second->path, String::format("ffmpeg-{}-{}-dev/lib/swscale.lib", version, libArch)));
-        args->dep->libs.append(
-            NativePath::join(er.second->path, String::format("ffmpeg-{}-{}-dev/lib/avformat.lib",
-                                                             version, libArch)));
-        args->dep->dlls.append(
-            NativePath::join(er.second->path, String::format("ffmpeg-{}-{}-shared/bin/{}.dll",
-                                                             version, libArch, avcodecVersion)));
-        args->dep->dlls.append(
-            NativePath::join(er.second->path, String::format("ffmpeg-{}-{}-shared/bin/{}.dll",
-                                                             version, libArch, avutilVersion)));
-        args->dep->dlls.append(
-            NativePath::join(er.second->path, String::format("ffmpeg-{}-{}-shared/bin/{}.dll",
-                                                             version, libArch, avformatVersion)));
-        args->dep->dlls.append(
-            NativePath::join(er.second->path, String::format("ffmpeg-{}-{}-shared/bin/{}.dll",
-                                                             version, libArch, swresampleVersion)));
-        args->dep->dlls.append(
-            NativePath::join(er.second->path, String::format("ffmpeg-{}-{}-shared/bin/{}.dll",
-                                                             version, libArch, swscaleVersion)));
+        String installPath =
+            NativePath::join(er.second->path, PosixPath::splitExt(archiveName).first);
+
+        args->dep->includeDirs.append(NativePath::join(installPath, "include"));
+        for (StringView libVersion : libVersions) {
+            args->dep->libs.append(
+                NativePath::join(installPath, "lib", libVersion.splitByte('-')[0] + ".lib"));
+            args->dep->dlls.append(NativePath::join(installPath, "bin", libVersion + ".dll"));
+        }
         return {ExternResult::Instantiated, ""};
     }
     PLY_ASSERT(0);
