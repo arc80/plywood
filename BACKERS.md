@@ -6,6 +6,10 @@ A heartfelt thanks goes out to these generous [supporters on Patreon](https://ww
 
 * Guy Davidson
 
+### Power Backers
+
+* lorqq
+
 ### Backers
 
 * cm chang
