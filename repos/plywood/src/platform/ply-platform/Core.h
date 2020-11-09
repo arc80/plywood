@@ -29,6 +29,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <float.h>
+#include <limits.h>
 
 namespace ply {
 using s8 = int8_t;
@@ -60,14 +61,18 @@ template <> struct Limits<type> { \
     static constexpr type Min = lo; \
     static constexpr type Max = hi; \
 };
-PLY_MAKE_LIMITS(s8, INT8_MIN, INT8_MAX)
-PLY_MAKE_LIMITS(s16, INT16_MIN, INT16_MAX)
-PLY_MAKE_LIMITS(s32, INT32_MIN, INT32_MAX)
-PLY_MAKE_LIMITS(s64, INT64_MIN, INT64_MAX)
-PLY_MAKE_LIMITS(u8, 0, UINT8_MAX)
-PLY_MAKE_LIMITS(u16, 0, UINT16_MAX)
-PLY_MAKE_LIMITS(u32, 0, UINT32_MAX)
-PLY_MAKE_LIMITS(u64, 0, UINT64_MAX)
+PLY_MAKE_LIMITS(char, SCHAR_MIN, SCHAR_MAX)
+PLY_MAKE_LIMITS(short, SHRT_MIN, SHRT_MAX)
+PLY_MAKE_LIMITS(int, INT_MIN, INT_MAX)
+PLY_MAKE_LIMITS(long, LONG_MIN, LONG_MAX)
+PLY_MAKE_LIMITS(unsigned char, 0, UCHAR_MAX)
+PLY_MAKE_LIMITS(unsigned short, 0, USHRT_MAX)
+PLY_MAKE_LIMITS(unsigned int, 0, UINT_MAX)
+PLY_MAKE_LIMITS(unsigned long, 0, ULONG_MAX)
+#if defined(LLONG_MAX)
+PLY_MAKE_LIMITS(long long, LLONG_MIN, LLONG_MAX)
+PLY_MAKE_LIMITS(unsigned long long, 0, ULLONG_MAX)
+#endif
 PLY_MAKE_LIMITS(float, -FLT_MAX, FLT_MAX)
 PLY_MAKE_LIMITS(double, -DBL_MAX, DBL_MAX)
 
