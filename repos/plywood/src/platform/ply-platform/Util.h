@@ -20,41 +20,27 @@ struct SizedInt<8> {
     using Signed = s64;
 };
 
-inline bool isPowerOf2(ureg v) {
+template <typename I>
+PLY_INLINE std::enable_if_t<std::is_integral<I>::value, bool> isPowerOf2(I v) {
     return (v & (v - 1)) == 0;
 }
 
-inline u32 alignPowerOf2(u32 v, u32 a) {
+template <typename I0, typename I1>
+PLY_INLINE std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, I0>
+alignPowerOf2(I0 v, I1 a) {
     PLY_ASSERT(isPowerOf2(a));
     return (v + a - 1) & ~(a - 1);
 }
 
-inline u64 alignPowerOf2(u64 v, u64 a) {
-    PLY_ASSERT(isPowerOf2(a));
-    return (v + a - 1) & ~(a - 1);
-}
-
-inline bool isAlignedPowerOf2(ureg v, ureg a) {
+template <typename I0, typename I1>
+PLY_INLINE std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, bool>
+isAlignedPowerOf2(I0 v, I1 a) {
     PLY_ASSERT(isPowerOf2(a));
     return (v & (a - 1)) == 0;
 }
 
-inline u32 roundUpPowerOf2(u32 v) {
-    v--;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v++;
-    return v;
-}
-
-inline s32 roundUpPowerOf2(s32 v) {
-    return (s32) roundUpPowerOf2((u32) v);
-}
-
-inline u64 roundUpPowerOf2(u64 v) {
+template <typename I>
+PLY_INLINE std::enable_if_t<std::is_integral<I>::value && sizeof(I) == 8, I> roundUpPowerOf2(I v) {
     v--;
     v |= v >> 1;
     v |= v >> 2;
@@ -66,12 +52,21 @@ inline u64 roundUpPowerOf2(u64 v) {
     return v;
 }
 
-inline s64 roundUpPowerOf2(s64 v) {
-    return (s64) roundUpPowerOf2((u64) v);
+template <typename I>
+PLY_INLINE std::enable_if_t<std::is_integral<I>::value && sizeof(I) <= 4, I> roundUpPowerOf2(I v_) {
+    u32 v = (u32) v_ - 1;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return (I) v;
 }
 
-inline ureg countSetBits(u64 mask) {
-    ureg count = 0;
+template <typename I>
+PLY_INLINE std::enable_if_t<std::is_integral<I>::value, u32> countSetBits(I mask) {
+    u32 count = 0;
     while (mask) {
         count += (mask & 1);
         mask >>= 1;
