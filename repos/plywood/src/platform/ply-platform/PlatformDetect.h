@@ -50,6 +50,9 @@
     #if defined(__linux__)
         #define PLY_TARGET_POSIX 1
         #define PLY_KERNEL_LINUX 1
+        #if defined(__ANDROID__)
+            #define PLY_TARGET_ANDROID 1
+        #endif
     #endif
     #if defined(__MACH__)
         // Mach kernel, eg. Apple MacOS/iOS
@@ -86,16 +89,10 @@
             // Thumb instruction set mode
             #define PLY_CPU_ARM_THUMB 1
         #endif
-    #elif defined(__arm64__)
+    #elif defined(__arm64__) || defined(__aarch64__)
         // ARM64
         #define PLY_CPU_ARM64 1
         #define PLY_PTR_SIZE 8
-        #if defined(__ARM64_ARCH_8__)
-            // ARMv8
-            #define PLY_CPU_ARM_VERSION 8
-        #else
-            #error "Unrecognized ARM64 CPU architecture version!"
-        #endif
     #elif defined(__powerpc__) || defined(__POWERPC__) || defined(__PPC__)
         #define PLY_CPU_POWERPC 1
         #if defined(__powerpc64__)

@@ -52,7 +52,7 @@ bool Affinity_Linux::setAffinity(ureg core, ureg hwThread) {
     cpu_set_t cpuSet;
     CPU_ZERO(&cpuSet);
     CPU_SET(logicalProcessor, &cpuSet);
-    int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpuSet), &cpuSet);
+    int rc = sched_setaffinity(0, sizeof(cpuSet), &cpuSet); // Note: untested!
     return (rc == 0);
 }
 
