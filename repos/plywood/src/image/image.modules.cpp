@@ -117,20 +117,40 @@ ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) 
 
 // [ply extern="libpng" provider="builtFromSource"]
 ExternResult extern_libpng_builtFromSource(ExternCommand cmd, ExternProviderArgs* args) {
-    PLY_ASSERT(0); // FIXME
-    return {ExternResult::Unknown, ""};
-    /*
-    if (cmd == ExternCommand::Instantiate) {
+    if (args->toolchain->get("targetPlatform")->text() != "windows") {
+        return {ExternResult::UnsupportedToolchain, "Target platform must be 'windows'"};
+    }
+    StringView arch = args->toolchain->get("arch")->text();
+    if (findItem(ArrayView<const StringView>{"x86"}, arch) < 0) {
+        return {ExternResult::UnsupportedToolchain, "Target arch must be 'x86'"};
+    }
+    if (args->providerArgs) {
+        return {ExternResult::BadArgs, ""};
+    }
+
+    // Handle Command
+    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder({});
+    if (cmd == ExternCommand::Status) {
+        return er.first;
+    } else if (cmd == ExternCommand::Install) {
+        if (er.first.code != ExternResult::SupportedButNotInstalled) {
+            return er.first;
+        }
+        ExternFolder* externFolder = args->createExternFolder({});
+        externFolder->success = true;
+        externFolder->save();
+        return {ExternResult::Installed, ""};
+    } else if (cmd == ExternCommand::Instantiate) {
         // FIXME: Detect build configuration (compiler, target platform) and adapt settings
-        String installFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "data/extern");
+        String installFolder = er.second->path;
         args->dep->includeDirs.append(NativePath::join(installFolder, "libpng"));
         args->dep->includeDirs.append(NativePath::join(installFolder, "zlib"));
         args->dep->libs.append(NativePath::join(
             installFolder, "libpng/projects/vstudio/Release Library/libpng16.lib"));
         args->dep->libs.append(
             NativePath::join(installFolder, "libpng/projects/vstudio/Release Library/zlib.lib"));
-        return true;
+        return {ExternResult::Instantiated, ""};
     }
-    return false;
-    */
+    PLY_ASSERT(0);
+    return {ExternResult::Unknown, ""};
 }
