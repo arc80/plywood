@@ -1,4 +1,4 @@
-<% title "Welcome to Plywood!" %>
+<% title "Plywood C++ Framework" %>
 <% childOrder
 QuickStart
 KeyConcepts
