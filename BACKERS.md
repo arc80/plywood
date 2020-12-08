@@ -8,6 +8,7 @@ A heartfelt thanks goes out to these generous [supporters on Patreon](https://ww
 
 ### Power Backers
 
+* Peterson Onyeukwu
 * lorqq
 
 ### Backers
@@ -15,7 +16,6 @@ A heartfelt thanks goes out to these generous [supporters on Patreon](https://ww
 * cm chang
 * Kamen Lilov
 * Tom
-* Peterson Onyeukwu
 * Seth Brown
 * Liu Xiang
 * Steven Hepting
