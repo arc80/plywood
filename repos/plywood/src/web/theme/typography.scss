@@ -1,0 +1,278 @@
+//-------------------------------------------------------
+// Fonts
+
+@font-face {
+    font-family: 'LiberationSans';
+    src: url('/static/LiberationSans-Regular-webfont.eot');
+    src: url('/static/LiberationSans-Regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/static/LiberationSans-Regular-webfont.woff') format('woff'),
+         url('/static/LiberationSans-Regular-webfont.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'LiberationSans';
+    src: url('/static/LiberationSans-Bold-webfont.eot');
+    src: url('/static/LiberationSans-Bold-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/static/LiberationSans-Bold-webfont.woff') format('woff'),
+         url('/static/LiberationSans-Bold-webfont.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'LiberationSans';
+    src: url('/static/LiberationSans-Italic-webfont.eot');
+    src: url('/static/LiberationSans-Italic-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/static/LiberationSans-Italic-webfont.woff') format('woff'),
+         url('/static/LiberationSans-Italic-webfont.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'LiberationSans';
+    src: url('/static/LiberationSans-BoldItalic-webfont.eot');
+    src: url('/static/LiberationSans-BoldItalic-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/static/LiberationSans-BoldItalic-webfont.woff') format('woff'),
+         url('/static/LiberationSans-BoldItalic-webfont.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'DejaVuSansMono';
+    src: url('/static/DejaVuSansMono-webfont.eot');
+    src: url('/static/DejaVuSansMono-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/static/DejaVuSansMono-webfont.woff') format('woff'),
+         url('/static/DejaVuSansMono-webfont.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'DejaVuSansMono';
+    src: url('/static/DejaVuSansMono-Bold-webfont.eot');
+    src: url('/static/DejaVuSansMono-Bold-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/static/DejaVuSansMono-Bold-webfont.woff') format('woff'),
+         url('/static/DejaVuSansMono-Bold-webfont.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Asap';
+    src: url('/static/asap-regular-webfont.eot');
+    src: url('/static/asap-regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/static/asap-regular-webfont.woff') format('woff'),
+         url('/static/asap-regular-webfont.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Asap';
+    src: url('/static/asap-italic-webfont.eot');
+    src: url('/static/asap-italic-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/static/asap-italic-webfont.woff') format('woff'),
+         url('/static/asap-italic-webfont.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+body {
+    // Default page font
+    font-family: "LiberationSans", "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    color: #222222;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "LiberationSans", "Helvetica Neue", Arial, sans-serif;    
+    margin-top: .2em;
+    margin-bottom: 1em;
+}
+  
+h1 {
+    font-size: 2.1em;
+    margin-bottom: 0.7em;
+}
+
+h2 {
+    padding-top: .4em;
+    padding-bottom: .1em;
+    font-size: 1.6em;
+    border-bottom: 1px solid #ccc;
+}
+
+h3 {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+h4 {
+    font-size: 1em;
+    font-weight: bold;
+}
+
+h5, h6 {
+    font-size: .8em;
+    font-weight: bold;
+}
+  
+code, tt {
+    // Code font
+    font-family: "DejaVuSansMono", monospace, sans-serif;
+    color: #7676a2;
+    font-size: .9em;
+    padding: 0 .1em;
+}
+
+code.template {
+    font-size: .72em;
+    color: #bbbbbb;
+}
+
+p code, li code {
+    background: #f4f4f4;
+}
+
+pre {
+    font-family: "DejaVuSansMono", monospace, sans-serif;
+    background: #f4f4f4;
+    font-size: .9em;
+    padding: 0.4em 0.6em;
+    overflow: auto;
+}
+
+a, a code, a tt {
+    text-decoration: none;
+    color: #1585e8;
+}
+
+a:hover, a:hover code, a:hover tt {
+    text-decoration: underline;
+    color: #ff6557;
+}
+
+// Set paragraph spacing
+p, pre, ul, ol, dd, dt, div.error, div.note {
+    line-height: 1.32em;
+    margin-bottom: 1.2em;
+}
+
+// Bring back strong and em since they were reset:
+strong {
+    font-weight: bold;
+}
+
+svg {
+    display: block;
+    margin-bottom: 1.2em;
+}
+
+img {
+    display: block;
+    margin-bottom: 1.2em;
+}
+
+.center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+em {
+    font-style: italic;
+}
+
+// Definition list styles
+dt {
+//    font-size: 0.95em;
+    margin-bottom: 0.3em;
+    margin-top: 1.4em;
+    code {
+        color: #666;
+        strong {
+            color: #222;
+            font-size: 1.1em;
+        }
+        em {
+            font-family: serif;
+            font-size: 1.1em;
+            color: #709bb9;
+        }
+    }
+    
+    a.headerlink {
+        visibility: hidden;
+        font-size: 80%;
+    }
+}
+
+dd {
+    margin-left: 30px;
+}
+
+// Set bullet styles
+ul {
+    list-style-type: disc;
+    ul {
+        list-style-type: circle;
+        margin-bottom: 0;           // Eliminate margin in the middle of nested lists
+        ul {
+            list-style-type: square;
+        }
+    }
+}
+ol {
+    list-style-type: decimal;
+    ol {
+        list-style-type: lower-alpha;
+        margin-bottom: 0;           // Eliminate margin in the middle of nested lists
+        ol {
+            list-style-type: lower-roman;
+        }
+    }
+}
+ul, ol {
+    margin-left: 2.3em;
+}
+
+div.error {
+    background: #ffd5d5;
+    padding: 6px 12px;
+    border: 1px solid #d6a5a5;
+    color: #c16464;
+    font-size: 92%;
+    margin-left: 25px;
+    margin-right: 25px;
+
+    :last-child {
+        margin-bottom: 0px;
+    }
+}
+
+div.note {
+    position: relative;
+    font-size: 92%;
+    padding: 6px 12px 6px 47px;
+    background: #dde8f1;
+    color: #6d92a7;
+    margin-left: 25px;
+    margin-right: 25px;
+
+    img.icon {
+       position: absolute;
+       left: 9px;
+       top: 9px; 
+    }
+
+    :last-child {
+        margin-bottom: 0px;
+    }
+
+    code, tt {
+        background: #cbdeea;
+    }
+}

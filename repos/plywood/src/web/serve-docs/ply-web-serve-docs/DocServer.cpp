@@ -142,27 +142,25 @@ window.onhashchange = function() {
 </script>
 </head>
 <body>
-<div class="container">
-<div id="siteTitle">
-<a href="/"><img src="/static/logo.svg" id="logo"/></a>
-<a href="https://www.patreon.com/preshing"><img src="/static/patron-button.svg" id="patron"></a>
-<a href="https://github.com/arc80/plywood"><img src="/static/github-button.svg" id="github"></a>
-</div>
-<div class="sidebar">
-<div class="inner">
+  <div class="siteTitle">
+    <a href="/"><img src="/static/logo.svg" id="logo"/></a>
+    <a href="https://www.patreon.com/preshing"><img src="/static/patron-button.svg" id="patron"></a>
+    <a href="https://github.com/arc80/plywood"><img src="/static/github-button.svg" id="github"></a>
+  </div>
+  <div class="sidebar">
+      <div class="inner">
 )#";
     dumpContents(sw, this->contents.view());
     sw->format(R"(
-</div></div>
-<div class="content">
-<article>
+      </div>
+  </div>
+  <article class="content">
 <h1>{}</h1>
 )",
                pageTitle);
     *sw << svr.viewAvailable();
-    *sw << R"(</article>
-</div>
-</div>
+    *sw << R"(
+  </article>
 </body>
 </html>
 )";

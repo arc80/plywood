@@ -1,0 +1,107 @@
+@mixin border-radius($radius) {
+    -webkit-border-radius: $radius;
+    -moz-border-radius: $radius;
+    -ms-border-radius: $radius;
+    -o-border-radius: $radius;
+    border-radius: $radius;
+}
+
+@mixin box-shadow($props) {
+    -webkit-box-shadow: $props;
+    -moz-box-shadow: $props;
+    box-shadow: $props;
+}
+
+html {
+    background: #ffffff;
+}
+
+body {
+    max-width: 1100px;
+}
+
+.content {
+    margin-top: 40px;
+    margin-left: 280px;
+    min-width: 340px;
+    padding: 15px 35px;
+}
+
+//-------------------------------------------------
+// Header
+//-------------------------------------------------
+
+.siteTitle {
+    position: fixed;
+    left: 0px;
+    right: 0px;
+    top: 0px;
+    height: 24px;
+    padding: 8px;
+    z-index: 2;
+    background: #afc2d2;
+    color: #444;
+}
+
+#logo {
+    position: absolute;
+    top: 3px;
+}
+
+#patron {
+    float: right;
+    position: relative;
+    top: -3px;
+}
+
+#github {
+    float: right;
+    position: relative;
+    top: -3px;
+    margin-right: 12px;
+}
+
+//-------------------------------------------------
+// Sidebar
+//-------------------------------------------------
+
+.sidebar {
+    position: fixed;
+    width: 280px;
+    top: 40px;
+    bottom: 0px;
+    z-index: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: #f8f8f8;
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+    border-right: 1px solid #e6e6e6;
+    font-size: 82%;
+}
+
+.sidebar::-webkit-scrollbar, scrollbar {
+    width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-thumb, scrollbar-thumb {
+    background: #80868b42;
+    border-radius: 4px;
+}
+
+.sidebar {
+    ul, ol {
+        margin-left: 0;
+        list-style-type: none;
+        ul, ol {
+            margin-left: 1.5em;
+        }
+    }
+
+    a {
+        color: #5d758a;
+    }
+}
+
+.sidebar .inner {
+    margin: 0.5em 1em;
+}
