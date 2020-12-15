@@ -48,15 +48,42 @@ function navigateTo(path, forward, pageYOffset) {
     xhttp.send();            
 }
 
+function onEndTransition(evt) {
+    this.removeEventListener('transitionend', onEndTransition);
+    this.style.removeProperty("display");
+    this.style.removeProperty("transition");
+    this.style.removeProperty("height");
+}
+
 window.onload = function() { 
     highlight(location.hash.substr(1));
 
     var list = document.getElementsByClassName("caret");
     for (var i = 0; i < list.length; i++) {
         list[i].addEventListener("click", function() {
-            this.classList.toggle("caret-down");
             var childList = this.nextElementSibling || this.parentElement.nextElementSibling;
-            childList.classList.toggle("active");
+            if (this.classList.contains("caret-down")) {
+                // Collapse
+                this.classList.remove("caret-down")
+                childList.style.display = "block";
+                childList.style.height = childList.scrollHeight + "px";
+                childList.classList.remove("active");
+                requestAnimationFrame(function() {
+                    childList.style.transition = "height 0.15s ease-out";
+                    requestAnimationFrame(function() {
+                        childList.style.height = "0px";
+                        childList.addEventListener('transitionend', onEndTransition);
+                    });
+                });
+            } else {
+                // Expand
+                this.classList.add("caret-down");
+                childList.style.display = "block";
+                childList.style.transition = "height 0.15s ease-out";
+                childList.style.height = childList.scrollHeight + "px";
+                childList.classList.add("active");
+                childList.addEventListener('transitionend', onEndTransition);
+            }
         });
     }
 

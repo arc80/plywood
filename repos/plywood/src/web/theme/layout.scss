@@ -102,7 +102,7 @@ li.caret {
     }
 }
 
-li.caret-down::before {
+li.caret-down span::before {
     -ms-transform: rotate(90deg);
     -webkit-transform: rotate(90deg);
     transform: rotate(90deg);  
@@ -114,10 +114,12 @@ li.selected {
 
 .nested {
     display: none;
+    height: 0px;
 }
   
 .active {
     display: block;
+    height: auto;
 }
 
 .sidebar {
@@ -125,6 +127,7 @@ li.selected {
     
     ul {
         line-height: 1.55em;
+        overflow: hidden;
     }
     li.caret span::before {
         content: "\203A";
