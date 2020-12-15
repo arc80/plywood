@@ -12,28 +12,34 @@ function highlight(elementID) {
 
 window.onload = function() { 
     highlight(location.hash.substr(1));
-    var defTitles = document.getElementsByClassName("defTitle");
-    for (var i = 0; i < defTitles.length; i++) {
-        defTitles[i].onmouseenter = function(e) {
-            var linkElems = e.target.getElementsByClassName("headerlink");
-            for (var j = 0; j < linkElems.length; j++) {
-                linkElems[j].style.visibility = "visible";
-            }
-        }
-        defTitles[i].onmouseleave = function(e) {
-            var linkElems = e.target.getElementsByClassName("headerlink");
-            for (var j = 0; j < linkElems.length; j++) {
-                linkElems[j].style.visibility = "hidden";
-            }
-        }
+
+    var list = document.getElementsByClassName("caret");
+    for (var i = 0; i < list.length; i++) {
+      list[i].addEventListener("click", function() {
+        this.classList.toggle("caret-down");
+        var childList = this.nextElementSibling || this.parentElement.nextElementSibling;
+        childList.classList.toggle("active");
+      });
     }
 
-    var toggler = document.getElementsByClassName("caret");
-    for (var i = 0; i < toggler.length; i++) {
-      toggler[i].addEventListener("click", function() {
-        this.classList.toggle("caret-down");
-        this.nextElementSibling.classList.toggle("active");
-      });
+    var list = document.querySelector(".sidebar").getElementsByTagName("a");
+    for (var i = 0; i < list.length; i++) {
+        list[i].onclick = function() {
+            href = this.getAttribute("href");
+            if (href.substring(0, 6) == "/docs/") {               
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        document.getElementById("article").innerHTML = this.responseText;
+                        window.scrollTo(0, 0);
+                    }
+                };
+                xhttp.open("GET", "/content?path=" + href, true);
+                xhttp.send();            
+                return false;
+            }
+            return true;
+        }
     }
 }
 

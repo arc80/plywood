@@ -97,6 +97,27 @@ void DocServer::reloadContents() {
     }
 }
 
+String getPageSource(DocServer* ds, StringView requestPath, ResponseIface* responseIface) {
+    FileSystem* fs = FileSystem::native();
+    if (NativePath::isAbsolute(requestPath)) {
+        responseIface->respondGeneric(ResponseCode::NotFound);
+        return {};
+    }
+    String absPath = NativePath::join(ds->dataRoot, "pages", requestPath);
+    ExistsResult exists = FileSystem::native()->exists(absPath);
+    if (exists == ExistsResult::Directory) {
+        absPath = NativePath::join(absPath, "index.html");
+    } else {
+        absPath += ".html";
+    }
+    String pageHtml = fs->loadText(NativePath::join(ds->dataRoot, "pages", absPath), TextFormat::unixUTF8());
+    if (!pageHtml) {
+        responseIface->respondGeneric(ResponseCode::NotFound);
+        return {};
+    }
+    return pageHtml;
+}
+
 void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
     FileSystem* fs = FileSystem::native();
 
@@ -119,25 +140,11 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
     }
 
     // Load page
-    if (NativePath::isAbsolute(requestPath)) {
-        responseIface->respondGeneric(ResponseCode::NotFound);
+    String pageHtml = getPageSource(this, requestPath, responseIface);
+    if (!pageHtml)
         return;
-    }
-    String absPath = NativePath::join(this->dataRoot, "pages", requestPath);
-    ExistsResult exists = FileSystem::native()->exists(absPath);
-    if (exists == ExistsResult::Directory) {
-        absPath = NativePath::join(absPath, "index.html");
-    } else {
-        absPath += ".html";
-    }
-    String pageHtml =
-        fs->loadText(NativePath::join(this->dataRoot, "pages", absPath), TextFormat::unixUTF8());
     StringViewReader svr{pageHtml};
     String pageTitle = svr.readView<fmt::Line>().trim(isWhite);
-    if (fs->lastResult() != FSResult::OK) {
-        responseIface->respondGeneric(ResponseCode::NotFound);
-        return;
-    }
 
     // Figure out which TOC entries to expand
     Array<const Contents*> expandTo;
@@ -182,7 +189,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
           </ul>
       </div>
   </div>
-  <article class="content">
+  <article class="content" id="article">
 <h1>{}</h1>
 )",
                pageTitle);
@@ -192,6 +199,19 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 </body>
 </html>
 )";
+}
+
+void DocServer::serveContentOnly(StringView requestPath, ResponseIface* responseIface) {
+    String pageHtml = getPageSource(this, requestPath, responseIface);
+    if (!pageHtml)
+        return;
+    OutStream* outs = responseIface->respondWithStream(ResponseCode::OK);
+    StringWriter* sw = outs->strWriter();
+    StringViewReader svr{pageHtml};
+    String pageTitle = svr.readView<fmt::Line>().trim(isWhite);
+    *sw << "Content-Type: text/html\r\n\r\n";
+    sw->format("<h1>{}</h1>\n", pageTitle);
+    *sw << svr.viewAvailable();
 }
 
 } // namespace web
