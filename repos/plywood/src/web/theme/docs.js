@@ -10,12 +10,20 @@ function highlight(elementID) {
     }
 }
 
-function navigateTo(path, forward) {
+function savePageState() {
+    stateData = {
+        path: location.pathname,
+        pageYOffset: window.pageYOffset
+    };
+    window.history.replaceState(stateData, null);
+}
+
+function navigateTo(path, forward, pageYOffset) {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             document.getElementById("article").innerHTML = this.responseText;
-            window.scrollTo(0, 0);
+            window.scrollTo(0, pageYOffset);
 
             // Select appropriate TOC entry
             var selected = document.querySelector(".sidebar").getElementsByTagName("li");
@@ -29,6 +37,7 @@ function navigateTo(path, forward) {
             // Update history
             if (forward) {
                 history.pushState(null, null, path);
+                savePageState();
             }
         }
     };
@@ -54,10 +63,11 @@ window.onload = function() {
         var path = a.getAttribute("href");
         if (path.substring(0, 6) == "/docs/") {
             a.onclick = function() {
-                navigateTo(this.getAttribute("href"), true);
+                savePageState();
+                navigateTo(this.getAttribute("href"), true, 0);
                 return false;
             }
-        }    
+        }
     }
 }
 
@@ -65,6 +75,12 @@ window.onhashchange = function() {
     highlight(location.hash.substr(1));
 }
 
-window.addEventListener("popstate", function(e) {
-    navigateTo(location.pathname, false);
+window.onscroll = function() {
+    savePageState();
+}
+
+window.addEventListener("popstate", function(evt) {
+    if (evt.state) {
+        navigateTo(evt.state.path, false, evt.state.pageYOffset);
+    }
 });
