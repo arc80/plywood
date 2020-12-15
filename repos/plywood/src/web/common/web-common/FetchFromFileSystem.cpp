@@ -19,7 +19,8 @@ PLY_NO_INLINE FetchFromFileSystem::FetchFromFileSystem() {
                              {".eot", "application/vnd.ms-fontobject"},
                              {".png", "image/png"},
                              {".css", "text/css"},
-                             {".svg", "image/svg+xml"}}) {
+                             {".svg", "image/svg+xml"},
+                             {".js", "text/javascript"}}) {
         auto cursor = this->extensionToContentType.insertOrFind(pair.key);
         cursor->mimeType = pair.value;
     }
