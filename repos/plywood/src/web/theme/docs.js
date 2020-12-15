@@ -32,6 +32,15 @@ window.onload = function() {
                     if (this.readyState == 4 && this.status == 200) {
                         document.getElementById("article").innerHTML = this.responseText;
                         window.scrollTo(0, 0);
+
+                        // Select appropriate TOC entry
+                        var selected = document.querySelector(".sidebar").getElementsByTagName("li");
+                        for (var j = 0; j < selected.length; j++) {
+                            var li = selected[j];
+                            var mustSelect = (li.parentElement.getAttribute("href") == href);
+                            li.classList.remove(mustSelect ? "unselected" : "selected");
+                            li.classList.add(mustSelect ? "selected" : "unselected");
+                        }
                     }
                 };
                 xhttp.open("GET", "/content?path=" + href, true);
