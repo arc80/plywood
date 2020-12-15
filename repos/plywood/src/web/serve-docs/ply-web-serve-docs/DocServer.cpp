@@ -170,6 +170,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 )#",
                pageTitle);
     *sw << R"#(<link href="/static/stylesheet.css" rel="stylesheet" type="text/css" />
+<link rel="icon" href="/static/favicon@32x32.png" sizes="32x32">
 <script src="/static/docs.js"></script>
 </head>
 <body>
