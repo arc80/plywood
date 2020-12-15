@@ -124,17 +124,17 @@ void visitPageMetas(const cook::CookJob* pageMetaJob,
     }
 }
 
-web::Contents convertContents(const cook::CookJob* pageMetaJob) {
-    web::Contents dstNode;
+Owned<web::Contents> convertContents(const cook::CookJob* pageMetaJob) {
+    Owned<web::Contents> dstNode = new web::Contents;
     const docs::CookResult_ExtractPageMeta* pageMetaResult =
         pageMetaJob->castResult<docs::CookResult_ExtractPageMeta>();
     PLY_ASSERT(pageMetaResult);
 
     // Set title
-    dstNode.title = pageMetaResult->title;
-    dstNode.linkDestination = pageMetaResult->getLinkDestination();
+    dstNode->title = pageMetaResult->title;
+    dstNode->linkDestination = pageMetaResult->getLinkDestination();
     for (const cook::CookJob* childMetaJob : pageMetaResult->childPages) {
-        dstNode.children.append(convertContents(childMetaJob));
+        dstNode->children.append(convertContents(childMetaJob));
     }
     return dstNode;
 }
@@ -187,13 +187,13 @@ int main() {
     ctx.cookDeferred();
 
     // Save contents (FIXME: Skip this step if dependencies haven't changed)
-    Array<web::Contents> contents;
+    Array<Owned<web::Contents>> contents;
     {
-        web::Contents converted = convertContents(contentsRoot);
-        web::Contents& home = contents.append();
-        home.title = "Home";
-        home.linkDestination = "/";
-        contents.moveExtend(converted.children.view());
+        Owned<web::Contents> converted = convertContents(contentsRoot);
+        web::Contents* home = contents.append(new web::Contents);
+        home->title = "Home";
+        home->linkDestination = "/";
+        contents.moveExtend(converted->children.view());
     }
     {
         auto aRoot = pylon::exportObj(TypedPtr::bind(&contents));

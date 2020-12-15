@@ -60,6 +60,10 @@ PLY_NO_INLINE Owned<pylon::Node> exportObj(TypedPtr obj, const FilterFunc& filte
             PLY_ASSERT(0);
         }
         return Node::createText(enumType->findValue(enumValue)->name.view());
+    } else if (obj.type->typeKey == &TypeKey_Owned) {
+        auto* ownedDesc = obj.type->cast<TypeDescriptor_Owned>();
+        TypedPtr child{*(void**) obj.ptr, ownedDesc->targetType};
+        return exportObj(child, filter);
     } else {
         PLY_ASSERT(0); // Unsupported
         return Node::createInvalid();
