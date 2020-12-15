@@ -36,29 +36,32 @@ body {
     left: 0px;
     right: 0px;
     top: 0px;
-    height: 24px;
-    padding: 8px;
+    height: 40px;
     z-index: 2;
-    background: #afc2d2;
+    background: #ffffff;
     color: #444;
+    border-bottom: 2px solid #222222;
+    @include box-shadow(0 1px 2px 0 rgba(0, 0, 0, 0.25));
 }
 
 #logo {
     position: absolute;
-    top: 3px;
+    top: 2px;
+    left: 0px;
 }
 
 #patron {
     float: right;
-    position: relative;
-    top: -3px;
+    position: absolute;
+    top: 5px;
+    right: 48px;
 }
 
 #github {
     float: right;
-    position: relative;
-    top: -3px;
-    margin-right: 12px;
+    position: absolute;
+    top: 5px;
+    right: 10px;
 }
 
 //-------------------------------------------------
@@ -106,7 +109,7 @@ li.caret-down::before {
 }
 
 li.selected {
-    background: #e6e6e6;
+    background: #e3e8f1;
 }
 
 .nested {
@@ -118,8 +121,10 @@ li.selected {
 }
 
 .sidebar {
+    color: #505050;
+    
     ul {
-        line-height: 1.5em;
+        line-height: 1.55em;
     }
     li.caret span::before {
         content: "\203A";
@@ -134,7 +139,7 @@ li.selected {
         padding-right: 0.5em;
     }
     li.unselected:hover {
-        background: #e3e8f1;
+        background: #eeeeee;
     }
     ul ul li {
         padding-left: 3em;
@@ -151,9 +156,8 @@ li.selected {
     ul ul ul ul ul ul li {
         padding-left: 9em;
     }
-
     a {
-        color: #5d758a;
+        color: inherit;
     }
 }
 
