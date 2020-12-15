@@ -22,7 +22,10 @@ function navigateTo(path, forward, pageYOffset) {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            document.getElementById("article").innerHTML = this.responseText;
+            // Extract page title
+            var n = this.responseText.indexOf("\n");
+            document.title = this.responseText.substr(0, n);
+            document.getElementById("article").innerHTML = this.responseText.substr(n + 1);
             window.scrollTo(0, pageYOffset);
 
             // Select appropriate TOC entry
@@ -61,7 +64,7 @@ window.onload = function() {
     for (var i = 0; i < list.length; i++) {
         var a = list[i];
         var path = a.getAttribute("href");
-        if (path.substring(0, 6) == "/docs/") {
+        if (path.substr(0, 6) == "/docs/") {
             a.onclick = function() {
                 savePageState();
                 navigateTo(this.getAttribute("href"), true, 0);

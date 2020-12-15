@@ -210,7 +210,7 @@ void DocServer::serveContentOnly(StringView requestPath, ResponseIface* response
     StringViewReader svr{pageHtml};
     String pageTitle = svr.readView<fmt::Line>().trim(isWhite);
     *sw << "Content-Type: text/html\r\n\r\n";
-    sw->format("<h1>{}</h1>\n", pageTitle);
+    sw->format("{}\n<h1>{}</h1>\n", pageTitle, pageTitle);
     *sw << svr.viewAvailable();
 }
 
