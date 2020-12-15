@@ -105,6 +105,10 @@ li.caret-down::before {
     transform: rotate(90deg);  
 }
 
+li.selected {
+    background: #e6e6e6;
+}
+
 .nested {
     display: none;
 }
@@ -129,7 +133,7 @@ li.caret-down::before {
         padding-left: 1.5em;
         padding-right: 0.5em;
     }
-    li:hover {
+    li.unselected:hover {
         background: #e3e8f1;
     }
     ul ul li {

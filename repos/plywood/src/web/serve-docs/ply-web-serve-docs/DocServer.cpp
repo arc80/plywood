@@ -12,9 +12,11 @@ namespace web {
 
 void dumpContents(StringWriter* sw, const Contents* node, ArrayView<const Contents*> expandTo) {
     bool isExpanded = false;
+    bool isSelected = false;
     if (expandTo && expandTo.back() == node) {
         isExpanded = true;
         expandTo = expandTo.shortenedBy(1);
+        isSelected = expandTo.isEmpty();
     } else {
         expandTo = {};
     }
@@ -22,11 +24,20 @@ void dumpContents(StringWriter* sw, const Contents* node, ArrayView<const Conten
     if (node->linkDestination) {
         sw->format("<a href=\"{}\">", node->linkDestination);
     }
+    *sw << "<li";
+    bool anyClasses = false;
+    auto addClass = [&](StringView name) {
+        *sw << (anyClasses ? StringView{" "} : StringView{" class=\""}) << name;
+        anyClasses = true;
+    };
     if (node->children) {
-        sw->format("<li class=\"caret{}\">", isExpanded ? StringView{" caret-down"} : StringView{});
-    } else {
-        *sw << "<li>";
+        addClass("caret");
+        if (isExpanded) {
+            addClass("caret-down");
+        }
     }
+    addClass(isSelected ? StringView{"selected"} : StringView{"unselected"});
+    *sw << (anyClasses ? StringView{"\">"} : StringView{">"});
     *sw << "<span>" << fmt::XMLEscape{node->title} << "</span>";
     *sw << "</li>\n";
     if (node->linkDestination) {
@@ -54,7 +65,9 @@ void DocServer::init(StringView dataRoot) {
 }
 
 void populateContentsMap(HashMap<DocServer::ContentsTraits>& pathToContents, Contents* node) {
-    pathToContents.insertOrFind(node->linkDestination)->node = node;
+    if (node->linkDestination) {
+        pathToContents.insertOrFind(node->linkDestination)->node = node;
+    }
     for (Contents* child : node->children) {
         child->parent = node;
         populateContentsMap(pathToContents, child);
@@ -129,7 +142,8 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
     // Figure out which TOC entries to expand
     Array<const Contents*> expandTo;
     {
-        auto cursor = this->pathToContents.find(StringView{"/docs/"} + requestPath);
+        auto cursor = this->pathToContents.find(
+            requestPath ? (StringView{"/docs/"} + requestPath).view() : StringView{"/"});
         if (cursor.wasFound()) {
             const Contents* node = cursor->node;
             while (node) {
