@@ -151,11 +151,6 @@ a, a code, a tt {
     color: #1585e8;
 }
 
-a:hover, a:hover code, a:hover tt {
-    text-decoration: underline;
-    color: #ff6557;
-}
-
 // Set paragraph spacing
 p, pre, ul, ol, dd, dt, div.error, div.note {
     line-height: 1.32em;
@@ -215,28 +210,39 @@ dd {
 }
 
 // Set bullet styles
-ul {
-    list-style-type: disc;
+ul ul {
+    margin-bottom: 0;           // Eliminate margin in the middle of nested lists
+}
+ol ol {
+    margin-bottom: 0;           // Eliminate margin in the middle of nested lists
+}
+article {
+    a:hover, a:hover code, a:hover tt {
+        text-decoration: underline;
+        color: #ff6557;
+    }
+    
     ul {
-        list-style-type: circle;
-        margin-bottom: 0;           // Eliminate margin in the middle of nested lists
+        list-style-type: disc;
         ul {
-            list-style-type: square;
+            list-style-type: circle;
+            ul {
+                list-style-type: square;
+            }
         }
     }
-}
-ol {
-    list-style-type: decimal;
     ol {
-        list-style-type: lower-alpha;
-        margin-bottom: 0;           // Eliminate margin in the middle of nested lists
+        list-style-type: decimal;
         ol {
-            list-style-type: lower-roman;
+            list-style-type: lower-alpha;
+            ol {
+                list-style-type: lower-roman;
+            }
         }
     }
-}
-ul, ol {
-    margin-left: 2.3em;
+    ul, ol {
+        margin-left: 2.3em;
+    }
 }
 
 div.error {

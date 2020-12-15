@@ -244,6 +244,11 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node* aNode,
         }
         PLY_ASSERT(found);
         PLY_UNUSED(found);
+    } else if (obj.type->typeKey == &TypeKey_Owned) {
+        auto* ownedDesc = obj.type->cast<TypeDescriptor_Owned>();
+        TypedPtr created = TypedPtr::create(ownedDesc->targetType);
+        *(void**) obj.ptr = created.ptr;
+        convertFrom(created, aNode, typeFromName);
     } else {
         PLY_ASSERT(0); // Unsupported member type
     }

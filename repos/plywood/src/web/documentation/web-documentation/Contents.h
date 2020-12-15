@@ -12,8 +12,10 @@ struct Contents {
     PLY_REFLECT()
     String title;
     String linkDestination;
-    Array<Contents> children;
+    Array<Owned<Contents>> children;
     // ply reflect off
+
+    Contents* parent = nullptr;
 };
 
 } // namespace web

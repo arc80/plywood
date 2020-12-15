@@ -10,16 +10,32 @@
 namespace ply {
 namespace web {
 
-void dumpContents(StringWriter* sw, ArrayView<const Contents> children) {
-    if (children.numItems > 0) {
-        *sw << "<ul>\n";
-        for (const Contents& child : children) {
-            if (child.linkDestination) {
-                sw->format("<li><a href=\"{}\">{}</a></li>\n", child.linkDestination, child.title);
-            } else {
-                sw->format("<li>{}</li>\n", child.title);
-            }
-            dumpContents(sw, child.children.view());
+void dumpContents(StringWriter* sw, const Contents* node, ArrayView<const Contents*> expandTo) {
+    bool isExpanded = false;
+    if (expandTo && expandTo.back() == node) {
+        isExpanded = true;
+        expandTo = expandTo.shortenedBy(1);
+    } else {
+        expandTo = {};
+    }
+
+    if (node->linkDestination) {
+        sw->format("<a href=\"{}\">", node->linkDestination);
+    }
+    if (node->children) {
+        sw->format("<li class=\"caret{}\">", isExpanded ? StringView{" caret-down"} : StringView{});
+    } else {
+        *sw << "<li>";
+    }
+    *sw << "<span>" << fmt::XMLEscape{node->title} << "</span>";
+    *sw << "</li>\n";
+    if (node->linkDestination) {
+        *sw << "</a>";
+    }
+    if (node->children) {
+        sw->format("<ul class=\"nested{}\">\n", isExpanded ? StringView{" active"} : StringView{});
+        for (const Contents* child : node->children) {
+            dumpContents(sw, child, expandTo);
         }
         *sw << "</ul>\n";
     }
@@ -34,6 +50,14 @@ void DocServer::init(StringView dataRoot) {
     if (contentsStatus.result == FSResult::OK) {
         this->reloadContents();
         this->contentsModTime = contentsStatus.modificationTime;
+    }
+}
+
+void populateContentsMap(HashMap<DocServer::ContentsTraits>& pathToContents, Contents* node) {
+    pathToContents.insertOrFind(node->linkDestination)->node = node;
+    for (Contents* child : node->children) {
+        child->parent = node;
+        populateContentsMap(pathToContents, child);
     }
 }
 
@@ -53,6 +77,11 @@ void DocServer::reloadContents() {
     }
 
     pylon::importInto(TypedPtr::bind(&this->contents), aRoot);
+
+    this->pathToContents = HashMap<ContentsTraits>{};
+    for (Contents* node : this->contents) {
+        populateContentsMap(this->pathToContents, node);
+    }
 }
 
 void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
@@ -97,6 +126,19 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
         return;
     }
 
+    // Figure out which TOC entries to expand
+    Array<const Contents*> expandTo;
+    {
+        auto cursor = this->pathToContents.find(StringView{"/docs/"} + requestPath);
+        if (cursor.wasFound()) {
+            const Contents* node = cursor->node;
+            while (node) {
+                expandTo.append(node);
+                node = node->parent;
+            }
+        }
+    }
+
     OutStream* outs = responseIface->respondWithStream(ResponseCode::OK);
     StringWriter* sw = outs->strWriter();
     *sw << "Content-Type: text/html\r\n\r\n";
@@ -135,6 +177,14 @@ window.onload = function() {
             }
         }
     }
+
+    var toggler = document.getElementsByClassName("caret");
+    for (var i = 0; i < toggler.length; i++) {
+      toggler[i].addEventListener("click", function() {
+        this.classList.toggle("caret-down");
+        this.nextElementSibling.classList.toggle("active");
+      });
+    }
 }
 window.onhashchange = function() { 
     highlight(location.hash.substr(1));
@@ -149,9 +199,13 @@ window.onhashchange = function() {
   </div>
   <div class="sidebar">
       <div class="inner">
+          <ul>
 )#";
-    dumpContents(sw, this->contents.view());
+    for (const Contents* node : this->contents) {
+        dumpContents(sw, node, expandTo.view());
+    }
     sw->format(R"(
+          </ul>
       </div>
   </div>
   <article class="content">
