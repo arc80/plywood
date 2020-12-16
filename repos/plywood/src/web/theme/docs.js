@@ -3,17 +3,20 @@ var selected = null;
 
 function highlight(elementID) {
     if (highlighted) {
-        highlighted.style.background = "";
+        highlighted.classList.remove("highlighted");
     }
-    highlighted = document.getElementById(elementID);
+    highlighted = document.getElementById(elementID);;
     if (highlighted) {
-        highlighted.style.background = "#ffffd0";
+        highlighted = highlighted.parentElement;
+        if (highlighted) {
+            highlighted.classList.add("highlighted");
+        }
     }
 }
 
 function savePageState() {
     stateData = {
-        path: location.pathname,
+        path: location.pathname + location.hash,
         pageYOffset: window.pageYOffset
     };
     window.history.replaceState(stateData, null);
@@ -60,15 +63,20 @@ function updateScrollers(timestamp) {
     }
 }
 
-function smoothScrollIntoView(name, container, item) {
+function smoothScrollIntoView(name, container, item, scrollToTop) {
     if (!item)
         return;
-    var amount = item.getBoundingClientRect().top - container.getBoundingClientRect().top;
-    if (amount >= 0) {
-        var containerBottom = Math.min(document.documentElement.clientHeight, container.getBoundingClientRect().bottom);
-        amount = item.getBoundingClientRect().bottom - containerBottom;
-        if (amount <= 0)
-            return; // No need to scroll
+    var amount;
+    if (scrollToTop) {        
+        amount = item.getBoundingClientRect().top - 50;  // hardcoded header size        
+    } else {
+        amount = item.getBoundingClientRect().top - container.getBoundingClientRect().top;
+        if (amount >= 0) {
+            var containerBottom = Math.min(document.documentElement.clientHeight, container.getBoundingClientRect().bottom);
+            amount = item.getBoundingClientRect().bottom - containerBottom;
+            if (amount <= 0)
+                return; // No need to scroll
+        }
     }
 
     if (amount != 0) {       
@@ -89,8 +97,10 @@ function smoothScrollIntoView(name, container, item) {
         }
         props.element = container;
         props.start = null;
-        props.scrollFrom = container.scrollTop;
-        props.scrollTo = container.scrollTop + amount;
+        var t = container.scrollTop;
+        var maxScrollTop = container.scrollHeight - container.clientHeight;
+        props.scrollTo = Math.min(t + amount, maxScrollTop);
+        props.scrollFrom = Math.min(Math.max(t, props.scrollTo - 500), props.scrollTo + 500);
     }
 }
 
@@ -113,11 +123,13 @@ function navigateTo(path, forward, pageYOffset) {
 
             // Scroll
             var anchorPos = path.indexOf("#");
+            var anchor = (anchorPos >= 0) ? path.substr(anchorPos + 1) : "";
             var pathToMatch = (anchorPos >= 0) ? path.substr(0, anchorPos) : path;
-            if (forward && anchorPos >= 0) {
-                var anchor = path.substr(anchorPos + 1);
+            if (anchor != "") {
                 highlight(anchor);
-                smoothScrollIntoView("document", document.documentElement, document.getElementById(anchor));
+            }
+            if (forward && anchor != "") {
+                smoothScrollIntoView("document", document.documentElement, document.getElementById(anchor).parentElement, true);
             } else {
                 window.scrollTo(0, pageYOffset);
             }
@@ -135,7 +147,7 @@ function navigateTo(path, forward, pageYOffset) {
                     selected = li;
                     li.classList.add("selected");
                     expandToItem(li);
-                    smoothScrollIntoView("sidebar", sidebar, li);
+                    smoothScrollIntoView("sidebar", sidebar, li, false);
                 }
             }
         }

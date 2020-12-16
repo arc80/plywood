@@ -136,7 +136,9 @@ Owned<markdown::Node> parseMarkdown(StringView markdown, SemaEntity* fromSema) {
 String convertMarkdownToHTML(StringView markdown, SemaEntity* fromSema) {
     Owned<markdown::Node> document = parseMarkdown(markdown, fromSema);
     StringWriter sw;
-    convertToHTML(&sw, document);
+    markdown::HTMLOptions options;
+    options.childAnchors = true;
+    convertToHTML(&sw, document, options);
     return sw.moveToString();
 }
 
@@ -239,15 +241,16 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
             String anchor;
             String permalink;
             if (title.member->name) {
-                anchor = String::format(" id=\"{}\"", fmt::XMLEscape{title.member->name});
+                htmlWriter.format("<div class=\"defTitle anchored\"><span class=\"anchor\" id=\"{}\">&nbsp;</span>", fmt::XMLEscape{title.member->name});
                 /*
                 permalink =
                     String::format(" <a class=\"headerlink\" href=\"#{}\" title=\"Permalink to "
                                    "this definition\">[link]</a>",
                                    fmt::XMLEscape{title.member->name});
                 */
+            } else {
+                htmlWriter.format("<div class=\"defTitle\"{}>", anchor);
             }
-            htmlWriter.format("<div class=\"defTitle\"{}>", anchor);
 
             dumpMemberTitle(title, htmlWriter);
 

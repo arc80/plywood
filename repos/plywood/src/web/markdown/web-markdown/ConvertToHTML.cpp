@@ -9,11 +9,11 @@
 namespace ply {
 namespace markdown {
 
-void convertToHTML(StringWriter* sw, const Node* node) {
+void convertToHTML(StringWriter* sw, const Node* node, const HTMLOptions& options) {
     switch (node->type) {
         case Node::Document: {
             for (const Node* child : node->children) {
-                convertToHTML(sw, child);
+                convertToHTML(sw, child, options);
             }
             break;
         }
@@ -28,7 +28,7 @@ void convertToHTML(StringWriter* sw, const Node* node) {
                 *sw << "<ul>\n";
             }
             for (const Node* child : node->children) {
-                convertToHTML(sw, child);
+                convertToHTML(sw, child, options);
             }
             if (node->isOrderedList()) {
                 *sw << "</ol>\n";
@@ -45,7 +45,7 @@ void convertToHTML(StringWriter* sw, const Node* node) {
                 *sw << "\n";
             }
             for (u32 i = 0; i < node->children.numItems(); i++) {
-                convertToHTML(sw, node->children[i]);
+                convertToHTML(sw, node->children[i], options);
                 if (!node->parent->isLoose && node->children[i]->type == Node::Paragraph &&
                     i + 1 < node->children.numItems()) {
                     // This paragraph had no <p> tag and didn't end in a newline, but there are more
@@ -59,7 +59,7 @@ void convertToHTML(StringWriter* sw, const Node* node) {
         case Node::BlockQuote: {
             *sw << "<blockquote>\n";
             for (const Node* child : node->children) {
-                convertToHTML(sw, child);
+                convertToHTML(sw, child, options);
             }
             *sw << "</blockquote>\n";
             break;
@@ -67,12 +67,18 @@ void convertToHTML(StringWriter* sw, const Node* node) {
         case Node::Heading: {
             sw->format("<h{}", node->indentOrLevel);
             if (node->id) {
-                sw->format(" id=\"{}\"", fmt::XMLEscape{node->id});
+                if (options.childAnchors) {
+                    sw->format(" class=\"anchored\"><span class=\"anchor\" id=\"{}\">&nbsp;</span>",
+                               fmt::XMLEscape{node->id});
+                } else {
+                    sw->format(" id=\"{}\">", fmt::XMLEscape{node->id});
+                }
+            } else {
+                *sw << '>';
             }
-            *sw << '>';
             PLY_ASSERT(node->rawLines.isEmpty());
             for (const Node* child : node->children) {
-                convertToHTML(sw, child);
+                convertToHTML(sw, child, options);
             }
             sw->format("</h{}>\n", node->indentOrLevel);
             break;
@@ -85,7 +91,7 @@ void convertToHTML(StringWriter* sw, const Node* node) {
             }
             PLY_ASSERT(node->rawLines.isEmpty());
             for (const Node* child : node->children) {
-                convertToHTML(sw, child);
+                convertToHTML(sw, child, options);
             }
             if (!isInsideTight) {
                 *sw << "</p>\n";
@@ -109,7 +115,7 @@ void convertToHTML(StringWriter* sw, const Node* node) {
         case Node::Link: {
             sw->format("<a href=\"{}\">", fmt::XMLEscape{node->text});
             for (const Node* child : node->children) {
-                convertToHTML(sw, child);
+                convertToHTML(sw, child, options);
             }
             *sw << "</a>";
             break;
@@ -127,7 +133,7 @@ void convertToHTML(StringWriter* sw, const Node* node) {
         case Node::Emphasis: {
             *sw << "<em>";
             for (const Node* child : node->children) {
-                convertToHTML(sw, child);
+                convertToHTML(sw, child, options);
             }
             *sw << "</em>";
             break;
@@ -135,7 +141,7 @@ void convertToHTML(StringWriter* sw, const Node* node) {
         case Node::Strong: {
             *sw << "<strong>";
             for (const Node* child : node->children) {
-                convertToHTML(sw, child);
+                convertToHTML(sw, child, options);
             }
             *sw << "</strong>";
             break;

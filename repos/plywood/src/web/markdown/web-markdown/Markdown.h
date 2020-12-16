@@ -77,7 +77,12 @@ struct Node {
 
 Owned<Node> parse(StringView src);
 void dump(StringWriter* sw, const Node* node, u32 level = 0);
-void convertToHTML(StringWriter* sw, const Node* node);
+
+struct HTMLOptions {
+    bool childAnchors = false;
+};
+
+void convertToHTML(StringWriter* sw, const Node* node, const HTMLOptions& options);
 
 } // namespace markdown
 } // namespace ply
