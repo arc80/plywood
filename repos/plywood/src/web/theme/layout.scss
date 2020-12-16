@@ -21,7 +21,7 @@ body {
 }
 
 .content {
-    margin-top: 40px;
+    margin-top: 42px;
     margin-left: 280px;
     min-width: 340px;
     padding: 15px 35px;
@@ -71,7 +71,7 @@ body {
 .sidebar {
     position: fixed;
     width: 280px;
-    top: 40px;
+    top: 42px;
     bottom: 0px;
     z-index: 1;
     overflow-x: hidden;
@@ -164,5 +164,5 @@ li.caret-down span::before {
 }
 
 .sidebar .inner {
-    margin: 0.5em 0em;
+    margin: 0.3em 0em;
 }

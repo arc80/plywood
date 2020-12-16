@@ -19,17 +19,17 @@ function savePageState() {
     window.history.replaceState(stateData, null);
 }
 
-function expandToItem(li) {
-    if (li.classList.contains("caret")) {
-        li.classList.add("caret-down");                        
+function expandToItem(targetItem) {
+    if (targetItem.classList.contains("caret")) {
+        targetItem.classList.add("caret-down");                        
     }
-    var parent = li.parentElement;
+    var parent = targetItem.parentElement;
     if (parent.tagName == "A") {
         parent = parent.parentElement;
     }
     while (parent.tagName == "UL") {
         parent.classList.add("active");
-        li = parent.previousElementSibling;
+        var li = parent.previousElementSibling;
         if (li) {
             if (li.tagName == "A") {
                 li = li.children[0];
@@ -38,6 +38,16 @@ function expandToItem(li) {
         }                        
         parent = parent.parentElement;
     }
+}
+
+function amountToScroll(container, item) {
+    var top = item.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    if (top < 0)
+        return top;
+    var bottom = item.getBoundingClientRect().bottom - container.getBoundingClientRect().bottom;
+    if (bottom > 0)
+        return bottom;
+    return 0;
 }
 
 function navigateTo(path, forward, pageYOffset) {
@@ -65,13 +75,38 @@ function navigateTo(path, forward, pageYOffset) {
                 selected.classList.remove("selected");
                 selected = null;
             }
-            var list = document.querySelector(".sidebar").getElementsByTagName("li");
+            sidebar = document.querySelector(".sidebar");
+            var list = sidebar.getElementsByTagName("li");
             for (var j = 0; j < list.length; j++) {
                 var li = list[j];
                 if (li.parentElement.getAttribute("href") == pathToMatch) {
                     selected = li;
                     li.classList.add("selected");
                     expandToItem(li);
+                    var scrollAmount = amountToScroll(sidebar, li);
+                    if (scrollAmount != 0) {
+                        if (forward) {
+                            var start = null;
+                            var scrollFrom = sidebar.scrollTop;
+                            var scrollTo = scrollFrom + scrollAmount;
+                            requestAnimationFrame(function(timestamp) {
+                                if (start === null) {
+                                    start = timestamp;
+                                } else {
+                                    var f = (timestamp - start) / 100;
+                                    if (f < 1) {
+                                        sidebar.scrollTop = scrollTo * f + scrollFrom * (1 - f);
+                                    } else {
+                                        sidebar.scrollTop = scrollTo;
+                                        return;
+                                    }
+                                }
+                                requestAnimationFrame(arguments.callee);
+                            });
+                        } else {
+                            sidebar.scrollTop = sidebar.scrollTop + scrollAmount;
+                        }
+                    }                    
                 }
             }
             
