@@ -20,9 +20,6 @@ function savePageState() {
 }
 
 function expandToItem(targetItem) {
-    if (targetItem.classList.contains("caret")) {
-        targetItem.classList.add("caret-down");                        
-    }
     var parent = targetItem.parentElement;
     if (parent.tagName == "A") {
         parent = parent.parentElement;
