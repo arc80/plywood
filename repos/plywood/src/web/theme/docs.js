@@ -25,18 +25,28 @@ function navigateTo(path, forward, pageYOffset) {
             // Extract page title
             var n = this.responseText.indexOf("\n");
             document.title = this.responseText.substr(0, n);
-            document.getElementById("article").innerHTML = this.responseText.substr(n + 1);
-            window.scrollTo(0, pageYOffset);
+            article = document.getElementById("article");
+            article.innerHTML = this.responseText.substr(n + 1);
+            replaceLinks(article);
+
+            // Scroll
+            var anchorPos = path.indexOf("#");
+            var pathToMatch = (anchorPos >= 0) ? path.substr(0, anchorPos) : path;
+            if (forward && anchorPos >= 0) {
+                location.hash = path.substr(anchorPos);
+            } else {
+                window.scrollTo(0, pageYOffset);
+            }
 
             // Select appropriate TOC entry
             var selected = document.querySelector(".sidebar").getElementsByTagName("li");
             for (var j = 0; j < selected.length; j++) {
                 var li = selected[j];
-                var mustSelect = (li.parentElement.getAttribute("href") == path);
+                var mustSelect = (li.parentElement.getAttribute("href") == pathToMatch);
                 li.classList.remove(mustSelect ? "unselected" : "selected");
                 li.classList.add(mustSelect ? "selected" : "unselected");
             }
-
+            
             // Update history
             if (forward) {
                 history.pushState(null, null, path);
@@ -46,6 +56,21 @@ function navigateTo(path, forward, pageYOffset) {
     };
     xhttp.open("GET", "/content?path=" + path, true);
     xhttp.send();            
+}
+
+function replaceLinks(root) {
+    var list = root.getElementsByTagName("a");
+    for (var i = 0; i < list.length; i++) {
+        var a = list[i];
+        var path = a.getAttribute("href");
+        if (path.substr(0, 6) == "/docs/") {
+            a.onclick = function() {
+                savePageState();
+                navigateTo(this.getAttribute("href"), true, 0);
+                return false;
+            }
+        }
+    }
 }
 
 function onEndTransition(evt) {
@@ -87,18 +112,8 @@ window.onload = function() {
         });
     }
 
-    var list = document.querySelector(".sidebar").getElementsByTagName("a");
-    for (var i = 0; i < list.length; i++) {
-        var a = list[i];
-        var path = a.getAttribute("href");
-        if (path.substr(0, 6) == "/docs/") {
-            a.onclick = function() {
-                savePageState();
-                navigateTo(this.getAttribute("href"), true, 0);
-                return false;
-            }
-        }
-    }
+    replaceLinks(document.querySelector(".sidebar"));
+    replaceLinks(document.getElementById("article"));
 }
 
 window.onhashchange = function() { 
