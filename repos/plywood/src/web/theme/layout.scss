@@ -108,10 +108,6 @@ li.caret-down span::before {
     transform: rotate(90deg);  
 }
 
-li.selected {
-    background: #e3e8f1;
-}
-
 .nested {
     display: none;
     height: 0px;
@@ -141,9 +137,6 @@ li.selected {
         padding-left: 1.7em;
         padding-right: 0.5em;
     }
-    li.unselected:hover {
-        background: #eeeeee;
-    }
     ul ul li {
         padding-left: 2.9em;
     }
@@ -158,6 +151,12 @@ li.selected {
     }
     ul ul ul ul ul ul li {
         padding-left: 7.7em;
+    }
+    li.selectable:hover {
+        background: #eeeeee;
+    }
+    li.selected, li.selected:hover {
+        background: #e3e8f1;
     }
     a {
         color: inherit;

@@ -30,13 +30,16 @@ void dumpContents(StringWriter* sw, const Contents* node, ArrayView<const Conten
         *sw << (anyClasses ? StringView{" "} : StringView{" class=\""}) << name;
         anyClasses = true;
     };
+    addClass("selectable");
     if (node->children) {
         addClass("caret");
         if (isExpanded) {
             addClass("caret-down");
         }
     }
-    addClass(isSelected ? StringView{"selected"} : StringView{"unselected"});
+    if (isSelected) {
+        addClass("selected");
+    }
     *sw << (anyClasses ? StringView{"\">"} : StringView{">"});
     *sw << "<span>" << fmt::XMLEscape{node->title} << "</span>";
     *sw << "</li>\n";

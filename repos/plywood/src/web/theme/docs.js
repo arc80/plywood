@@ -1,4 +1,5 @@
 var highlighted = null;
+var selected = null;
 
 function highlight(elementID) {
     if (highlighted) {
@@ -16,6 +17,27 @@ function savePageState() {
         pageYOffset: window.pageYOffset
     };
     window.history.replaceState(stateData, null);
+}
+
+function expandToItem(li) {
+    if (li.classList.contains("caret")) {
+        li.classList.add("caret-down");                        
+    }
+    var parent = li.parentElement;
+    if (parent.tagName == "A") {
+        parent = parent.parentElement;
+    }
+    while (parent.tagName == "UL") {
+        parent.classList.add("active");
+        li = parent.previousElementSibling;
+        if (li) {
+            if (li.tagName == "A") {
+                li = li.children[0];
+            }
+            li.classList.add("caret-down");
+        }                        
+        parent = parent.parentElement;
+    }
 }
 
 function navigateTo(path, forward, pageYOffset) {
@@ -39,12 +61,18 @@ function navigateTo(path, forward, pageYOffset) {
             }
 
             // Select appropriate TOC entry
-            var selected = document.querySelector(".sidebar").getElementsByTagName("li");
-            for (var j = 0; j < selected.length; j++) {
-                var li = selected[j];
-                var mustSelect = (li.parentElement.getAttribute("href") == pathToMatch);
-                li.classList.remove(mustSelect ? "unselected" : "selected");
-                li.classList.add(mustSelect ? "selected" : "unselected");
+            if (selected) {
+                selected.classList.remove("selected");
+                selected = null;
+            }
+            var list = document.querySelector(".sidebar").getElementsByTagName("li");
+            for (var j = 0; j < list.length; j++) {
+                var li = list[j];
+                if (li.parentElement.getAttribute("href") == pathToMatch) {
+                    selected = li;
+                    li.classList.add("selected");
+                    expandToItem(li);
+                }
             }
             
             // Update history
@@ -112,8 +140,10 @@ window.onload = function() {
         });
     }
 
-    replaceLinks(document.querySelector(".sidebar"));
+    var sidebar = document.querySelector(".sidebar");
+    replaceLinks(sidebar);
     replaceLinks(document.getElementById("article"));
+    selected = sidebar.querySelector(".selected");
 }
 
 window.onhashchange = function() { 
