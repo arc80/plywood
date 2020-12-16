@@ -37,14 +37,54 @@ function expandToItem(targetItem) {
     }
 }
 
-function amountToScroll(container, item) {
-    var top = item.getBoundingClientRect().top - container.getBoundingClientRect().top;
-    if (top < 0)
-        return top;
-    var bottom = item.getBoundingClientRect().bottom - container.getBoundingClientRect().bottom;
-    if (bottom > 0)
-        return bottom;
-    return 0;
+activeScrollers = [];
+
+function updateScrollers(timestamp) {    
+    for (var i = 0; i < activeScrollers.length; i++) {
+        props = activeScrollers[i];
+        var f = (timestamp - props.start) / 100;
+        if (f < 1) {
+            props.element.scrollTop = props.scrollTo * f + props.scrollFrom * (1 - f);
+        } else {
+            props.element.scrollTop = props.scrollTo;
+            activeScrollers.splice(i, 1);
+            i--;
+        }
+    }
+    if (activeScrollers.length > 0) {
+        requestAnimationFrame(updateScrollers);
+    }
+}
+
+function smoothScrollIntoView(name, container, item) {
+    var amount = item.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    if (amount >= 0) {
+        amount = item.getBoundingClientRect().bottom - container.getBoundingClientRect().bottom;
+        if (amount <= 0)
+            return; // No need to scroll
+    }
+
+    if (amount != 0) {       
+        if (activeScrollers.length == 0) {
+            requestAnimationFrame(updateScrollers);
+        } 
+        // Find existing item
+        var props = null;
+        for (var p in activeScrollers) {
+            if (p.element === container) {
+                props = p;
+                break;
+            }
+        }
+        if (!props) {
+            props = {};
+            activeScrollers.push(props)
+        }
+        props.element = container;
+        props.start = performance.now();
+        props.scrollFrom = container.scrollTop;
+        props.scrollTo = container.scrollTop + amount;
+    }
 }
 
 function navigateTo(path, forward, pageYOffset) {
@@ -72,7 +112,7 @@ function navigateTo(path, forward, pageYOffset) {
                 selected.classList.remove("selected");
                 selected = null;
             }
-            sidebar = document.querySelector(".sidebar");
+            var sidebar = document.querySelector(".sidebar");
             var list = sidebar.getElementsByTagName("li");
             for (var j = 0; j < list.length; j++) {
                 var li = list[j];
@@ -80,30 +120,7 @@ function navigateTo(path, forward, pageYOffset) {
                     selected = li;
                     li.classList.add("selected");
                     expandToItem(li);
-                    var scrollAmount = amountToScroll(sidebar, li);
-                    if (scrollAmount != 0) {
-                        if (forward) {
-                            var start = null;
-                            var scrollFrom = sidebar.scrollTop;
-                            var scrollTo = scrollFrom + scrollAmount;
-                            requestAnimationFrame(function(timestamp) {
-                                if (start === null) {
-                                    start = timestamp;
-                                } else {
-                                    var f = (timestamp - start) / 100;
-                                    if (f < 1) {
-                                        sidebar.scrollTop = scrollTo * f + scrollFrom * (1 - f);
-                                    } else {
-                                        sidebar.scrollTop = scrollTo;
-                                        return;
-                                    }
-                                }
-                                requestAnimationFrame(arguments.callee);
-                            });
-                        } else {
-                            sidebar.scrollTop = sidebar.scrollTop + scrollAmount;
-                        }
-                    }                    
+                    smoothScrollIntoView("sidebar", sidebar, li);
                 }
             }
             
