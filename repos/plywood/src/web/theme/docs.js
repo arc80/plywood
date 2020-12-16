@@ -7,7 +7,7 @@ function highlight(elementID) {
     }
     highlighted = document.getElementById(elementID);
     if (highlighted) {
-        highlighted.style.background = "#ffffa0";
+        highlighted.style.background = "#ffffd0";
     }
 }
 
@@ -42,13 +42,17 @@ activeScrollers = [];
 function updateScrollers(timestamp) {    
     for (var i = 0; i < activeScrollers.length; i++) {
         props = activeScrollers[i];
-        var f = (timestamp - props.start) / 100;
-        if (f < 1) {
-            props.element.scrollTop = props.scrollTo * f + props.scrollFrom * (1 - f);
+        if (props.start === null) {
+            props.start = timestamp;
         } else {
-            props.element.scrollTop = props.scrollTo;
-            activeScrollers.splice(i, 1);
-            i--;
+            var f = (timestamp - props.start) / 100;
+            if (f < 1) {
+                props.element.scrollTop = props.scrollTo * f + props.scrollFrom * (1 - f);
+            } else {
+                props.element.scrollTop = props.scrollTo;
+                activeScrollers.splice(i, 1);
+                i--;
+            }
         }
     }
     if (activeScrollers.length > 0) {
@@ -57,9 +61,12 @@ function updateScrollers(timestamp) {
 }
 
 function smoothScrollIntoView(name, container, item) {
+    if (!item)
+        return;
     var amount = item.getBoundingClientRect().top - container.getBoundingClientRect().top;
     if (amount >= 0) {
-        amount = item.getBoundingClientRect().bottom - container.getBoundingClientRect().bottom;
+        var containerBottom = Math.min(document.documentElement.clientHeight, container.getBoundingClientRect().bottom);
+        amount = item.getBoundingClientRect().bottom - containerBottom;
         if (amount <= 0)
             return; // No need to scroll
     }
@@ -81,7 +88,7 @@ function smoothScrollIntoView(name, container, item) {
             activeScrollers.push(props)
         }
         props.element = container;
-        props.start = performance.now();
+        props.start = null;
         props.scrollFrom = container.scrollTop;
         props.scrollTo = container.scrollTop + amount;
     }
@@ -98,11 +105,19 @@ function navigateTo(path, forward, pageYOffset) {
             article.innerHTML = this.responseText.substr(n + 1);
             replaceLinks(article);
 
+            // Update history
+            if (forward) {
+                history.pushState(null, null, path);
+                savePageState();
+            }
+
             // Scroll
             var anchorPos = path.indexOf("#");
             var pathToMatch = (anchorPos >= 0) ? path.substr(0, anchorPos) : path;
             if (forward && anchorPos >= 0) {
-                location.hash = path.substr(anchorPos);
+                var anchor = path.substr(anchorPos + 1);
+                highlight(anchor);
+                smoothScrollIntoView("document", document.documentElement, document.getElementById(anchor));
             } else {
                 window.scrollTo(0, pageYOffset);
             }
@@ -122,12 +137,6 @@ function navigateTo(path, forward, pageYOffset) {
                     expandToItem(li);
                     smoothScrollIntoView("sidebar", sidebar, li);
                 }
-            }
-            
-            // Update history
-            if (forward) {
-                history.pushState(null, null, path);
-                savePageState();
             }
         }
     };
