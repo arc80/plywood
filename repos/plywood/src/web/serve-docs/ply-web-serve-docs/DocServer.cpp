@@ -165,15 +165,16 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 
     OutStream* outs = responseIface->respondWithStream(ResponseCode::OK);
     StringWriter* sw = outs->strWriter();
-    *sw << "Content-Type: text/html\r\n\r\n";
+    *sw << "Content-Type: text/html; charset=utf-8\r\n\r\n";
     sw->format(R"#(<!DOCTYPE html>
 <html>
 <head>
 <title>{}</title>
+<meta charset="utf-8" />
 )#",
                pageTitle);
     *sw << R"#(<link href="/static/stylesheet.css" rel="stylesheet" type="text/css" />
-<link rel="icon" href="/static/favicon@32x32.png" sizes="32x32">
+<link rel="icon" href="/static/favicon@32x32.png" sizes="32x32" />
 <script src="/static/docs.js"></script>
 </head>
 <body>
