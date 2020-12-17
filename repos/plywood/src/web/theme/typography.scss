@@ -217,11 +217,6 @@ ol ol {
     margin-bottom: 0;           // Eliminate margin in the middle of nested lists
 }
 article {
-    a:hover, a:hover code, a:hover tt {
-        text-decoration: underline;
-        color: #ff6557;
-    }
-    
     ul {
         list-style-type: disc;
         ul {

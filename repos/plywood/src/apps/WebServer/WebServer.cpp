@@ -27,8 +27,12 @@ void myRequestHandler(AllParams* params, StringView requestPath, ResponseIface* 
         echo_serve(nullptr, requestPath, responseIface);
     } else if (requestPath.startsWith("/docs/")) {
         params->docs.serve(requestPath.subStr(6), responseIface);
+    } else if (requestPath.startsWith("/content?path=/docs/")) {
+        params->docs.serveContentOnly(requestPath.subStr(20), responseIface);
     } else if (requestPath == "/") {
         params->docs.serve("", responseIface);
+    } else if (requestPath == "/favicon.ico") {
+        FetchFromFileSystem::serve(&params->fileSys, "/static/favicon@32x32.png", responseIface);
     } else {
         responseIface->respondGeneric(ResponseCode::NotFound);
     }
