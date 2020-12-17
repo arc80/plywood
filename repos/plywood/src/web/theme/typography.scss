@@ -134,10 +134,6 @@ code.template {
     color: #bbbbbb;
 }
 
-p code, li code {
-    background: #f4f4f4;
-}
-
 pre {
     font-family: "DejaVuSansMono", monospace, sans-serif;
     background: #f4f4f4;
@@ -153,7 +149,7 @@ a, a code, a tt {
 
 // Set paragraph spacing
 p, pre, ul, ol, dd, dt, div.error, div.note {
-    line-height: 1.32em;
+    line-height: 1.4em;
     margin-bottom: 1.2em;
 }
 
