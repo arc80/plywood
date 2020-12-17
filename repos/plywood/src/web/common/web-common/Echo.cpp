@@ -11,8 +11,9 @@ namespace ply {
 namespace web {
 
 PLY_NO_INLINE void echo_serve(const void*, StringView requestPath, ResponseIface* responseIface) {
-    StringWriter* sw = responseIface->respondWithStream(ResponseCode::OK)->strWriter();
+    StringWriter* sw = responseIface->beginResponseHeader(ResponseCode::OK)->strWriter();
     *sw << "Content-type: text/html\r\n\r\n";
+    responseIface->endResponseHeader();
     *sw << R"(<html>
 <head><title>Echo</title></head>
 <body>

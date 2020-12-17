@@ -165,26 +165,30 @@ struct WithRadix {
         s64 s64_;
     };
     u32 type : 2;
-    u32 radix : 30;
+    u32 capitalize : 1;
+    u32 radix : 29;
 
     template <typename SrcType,
               typename std::enable_if_t<std::is_floating_point<SrcType>::value, int> = 0>
-    inline WithRadix(SrcType v, u32 radix) {
+    inline WithRadix(SrcType v, u32 radix, bool capitalize = false) {
         this->double_ = v;
         this->type = U64;
+        this->capitalize = capitalize ? 1 : 0;
         this->radix = radix;
     }
     template <typename SrcType,
               typename std::enable_if_t<std::is_unsigned<SrcType>::value, int> = 0>
-    inline WithRadix(SrcType v, u32 radix) {
+    inline WithRadix(SrcType v, u32 radix, bool capitalize = false) {
         this->u64_ = v;
         this->type = U64;
+        this->capitalize = capitalize ? 1 : 0;
         this->radix = radix;
     }
     template <typename SrcType, typename std::enable_if_t<std::is_signed<SrcType>::value, int> = 0>
-    inline WithRadix(SrcType v, u32 radix) {
+    inline WithRadix(SrcType v, u32 radix, bool capitalize = false) {
         this->s64_ = v;
         this->type = S64;
+        this->capitalize = capitalize ? 1 : 0;
         this->radix = radix;
     }
 };
@@ -192,7 +196,7 @@ struct WithRadix {
 struct Hex : WithRadix {
     template <typename SrcType,
               typename std::enable_if_t<std::is_arithmetic<SrcType>::value, int> = 0>
-    inline Hex(SrcType v) : WithRadix{v, 16} {
+    inline Hex(SrcType v, bool capitalize = false) : WithRadix{v, 16, capitalize} {
     }
 };
 

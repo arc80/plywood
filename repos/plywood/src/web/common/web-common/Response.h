@@ -41,7 +41,8 @@ struct ResponseIface {
 
     // The request handler must call respondWith first, then manually write any optional headers,
     // followed by a blank \r\n line, followed by the content.
-    virtual OutStream* respondWithStream(ResponseCode responseCode) = 0;
+    virtual OutStream* beginResponseHeader(ResponseCode responseCode) = 0;
+    virtual void endResponseHeader() = 0;
     void respondGeneric(ResponseCode responseCode);
 };
 

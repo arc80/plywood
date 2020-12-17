@@ -6,10 +6,12 @@
 #include <web-common/Server.h>
 #include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
+#include <web-common/OutPipe_HTTPChunked.h>
 
 namespace ply {
 namespace web {
 
+//-----------------------------------------------------------------------
 struct ThreadParams {
     Owned<TCPConnection> tcpConn;
     RequestHandler reqHandler;
@@ -30,30 +32,56 @@ PLY_NO_INLINE Tuple<StringView, StringView> getResponseDescription(ResponseCode 
 }
 
 struct ResponseIface_WebServer : ResponseIface {
+    enum State { NoResponse, BeganResponse, EndedHeader };
+
     OutStream* outs = nullptr;
-    bool gotResponse = false;
+    State state = NoResponse;
+    bool isChunked = false; // implies keep-alive
+    Owned<OutStream> outsChunked;
 
     PLY_INLINE ResponseIface_WebServer(OutStream* outs) : outs{outs} {
     }
-    virtual OutStream* respondWithStream(ResponseCode responseCode) override {
-        this->gotResponse = true;
+    virtual OutStream* beginResponseHeader(ResponseCode responseCode) override {
+        // FIXME: Handle ResponseCode::InternalError the same way we would handle a crash
+        this->state = BeganResponse;
         Tuple<StringView, StringView> responseDesc = getResponseDescription(responseCode);
         this->outs->strWriter()->format("HTTP/1.1 {} {}\r\n", responseDesc.first,
                                         responseDesc.second);
-        // FIXME: Handle ResponseCode::InternalError the same way we would handle a crash
-        return this->outs;
+        if (isChunked) {
+            *this->outs->strWriter() << "Transfer-Encoding: chunked\r\n"
+                                        "Connection: keep-alive\r\n";
+            outsChunked =
+                Owned<OutStream>::create(Owned<OutPipe_HTTPChunked>::create(borrow(this->outs)));
+            return outsChunked;
+        } else {
+            return this->outs;
+        }
     }
-    PLY_NO_INLINE void handleMissingResponse() {
-        if (!this->gotResponse) {
+    virtual void endResponseHeader() {
+        if (isChunked) {
+            outsChunked->flushMem();
+            outsChunked->outPipe->cast<OutPipe_HTTPChunked>()->setChunkMode(true);
+        }
+        this->state = EndedHeader;
+    }
+    // Returns true if response was well-formed and it's possible to send another response over the
+    // same connection:
+    PLY_NO_INLINE bool handleMissingResponse() {
+        if (this->state == NoResponse) {
             this->respondGeneric(ResponseCode::InternalError);
+            return true; // respondGeneric makes it a well-formed response
+        } else {
+            // FIXME: Log somewhere if this->state != EndedHeader
+            return this->state == EndedHeader;
         }
     }
 };
 
 void ResponseIface::respondGeneric(ResponseCode responseCode) {
-    OutStream* outs = respondWithStream(responseCode);
+    OutStream* outs = this->beginResponseHeader(responseCode);
     Tuple<StringView, StringView> responseDesc = getResponseDescription(responseCode);
     *outs->strWriter() << "Content-Type: text/html\r\n\r\n";
+    this->endResponseHeader();
     outs->strWriter()->format(R"(<html>
 <head><title>{} {}</title></head>
 <body>
@@ -70,62 +98,72 @@ void serverThreadEntry(const ThreadParams& params) {
     InStream ins = params.tcpConn->createInStream();
     OutStream outs = params.tcpConn->createOutStream();
 
-    // Create responseIface
-    ResponseIface_WebServer responseIface{&outs};
-    responseIface.request.clientAddr = params.tcpConn->remoteAddress();
-    responseIface.request.clientPort = params.tcpConn->remotePort();
-
-    // Parse HTTP headers: Read input lines up until a blank one
-    // FIXME: Limit the size of the header to something like 16KB, otherwise someone could take down
-    // the server.
-    Array<String> lines;
     for (;;) {
-        String line = ins.asStringReader()->readString<fmt::Line>();
-        if (!line && ins.atEOF()) {
+        // Create responseIface
+        ResponseIface_WebServer responseIface{&outs};
+        responseIface.request.clientAddr = params.tcpConn->remoteAddress();
+        responseIface.request.clientPort = params.tcpConn->remotePort();
+
+        // Parse HTTP headers: Read input lines up until a blank one
+        // FIXME: Limit the size of the header to something like 16KB, otherwise someone could take
+        // down the server.
+        Array<String> lines;
+        for (;;) {
+            String line = ins.asStringReader()->readString<fmt::Line>();
+            if (!line && ins.atEOF()) {
+                if (!lines.isEmpty()) {
+                    // Ill-formed request
+                    responseIface.respondGeneric(ResponseCode::BadRequest);
+                }
+                return;
+            }
+            if (line.findByte([](char u) { return !isWhite(u); }) < 0)
+                break; // Blank line
+            lines.append(line);
+        }
+        if (lines.numItems() == 0)
+            return; // Ill-formed request
+
+        // Split the start line into tokens:
+        // FIXME: Add ability to split by any whitespace instead of just splitByte
+        Array<StringView> tokens = lines[0].rtrim(isWhite).splitByte(' ');
+        if (tokens.numItems() != 3) {
             // Ill-formed request
             responseIface.respondGeneric(ResponseCode::BadRequest);
             return;
         }
-        if (line.findByte([](char u) { return !isWhite(u); }) < 0)
-            break; // Blank line
-        lines.append(line);
-    }
-    if (lines.numItems() == 0)
-        return; // Ill-formed request
+        responseIface.request.startLine = {tokens[0], tokens[1], tokens[2]};
 
-    // Split the start line into tokens:
-    // FIXME: Add ability to split by any whitespace instead of just splitByte
-    Array<StringView> tokens = lines[0].rtrim(isWhite).splitByte(' ');
-    if (tokens.numItems() != 3) {
-        // Ill-formed request
-        responseIface.respondGeneric(ResponseCode::BadRequest);
-        return;
-    }
-    responseIface.request.startLine = {tokens[0], tokens[1], tokens[2]};
-
-    // Split remaining lines into name/value pairs:
-    for (u32 i = 1; i < lines.numItems(); i++) {
-        // FIXME: Support unfolding https://tools.ietf.org/html/rfc822#section-3.1
-        if (isWhite(lines[i][0]))
-            continue;
-        s32 colonPos = lines[i].findByte(':');
-        if (colonPos < 0) {
-            // Ill-formed request
-            responseIface.respondGeneric(ResponseCode::BadRequest);
-            return;
+        // Split remaining lines into name/value pairs:
+        for (u32 i = 1; i < lines.numItems(); i++) {
+            // FIXME: Support unfolding https://tools.ietf.org/html/rfc822#section-3.1
+            if (isWhite(lines[i][0]))
+                continue;
+            s32 colonPos = lines[i].findByte(':');
+            if (colonPos < 0) {
+                // Ill-formed request
+                responseIface.respondGeneric(ResponseCode::BadRequest);
+                return;
+            }
+            responseIface.request.headerFields.append(
+                {lines[i].left(colonPos).rtrim(isWhite),
+                 lines[i].subStr(colonPos + 1).trim(isWhite)});
         }
-        responseIface.request.headerFields.append(
-            {lines[i].left(colonPos).rtrim(isWhite), lines[i].subStr(colonPos + 1).trim(isWhite)});
+
+        // FIXME: Decide isChunked/keep-alive based on HTTP request headers 
+        responseIface.isChunked = (responseIface.request.startLine.httpVersion == "HTTP/1.1");
+
+        // Note: ins is still open, so in the future, we could continue reading past the HTTP
+        // header to support POST requests and WebSockets.
+        
+        // Invoke request handler
+        params.reqHandler(tokens[1], &responseIface);
+
+        if (!responseIface.handleMissingResponse())
+            return; // Close connection if unable to distinguish between responses
+        if (!responseIface.isChunked)
+            return; // Close connection if not keep-alive
     }
-
-    // Note: ins is still open, so in the future, we could continue reading past the HTTP
-    // header to support POST requests and WebSockets.
-
-    // Invoke request handler
-    params.reqHandler(tokens[1], &responseIface);
-    responseIface.handleMissingResponse();
-
-    return;
 }
 
 bool runServer(u16 port, const RequestHandler& reqHandler) {

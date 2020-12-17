@@ -12,11 +12,12 @@ namespace ply {
 //---------------------------------------------------------------
 // Primitives for printing numeric types
 //----------------------------------------------------------------
-PLY_INLINE u8 toDigit(u32 d) {
-    return (d <= 35) ? "0123456789abcdefghijklmnopqrstuvwxyz"[d] : '?';
+PLY_INLINE u8 toDigit(u32 d, bool capitalize = false) {
+    const char* digitTable = capitalize ? "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" : "0123456789abcdefghijklmnopqrstuvwxyz";
+    return (d <= 35) ? digitTable[d] : '?';
 }
 
-PLY_NO_INLINE void printString(OutStream* outs, u64 value, u32 radix) {
+PLY_NO_INLINE void printString(OutStream* outs, u64 value, u32 radix, bool capitalize) {
     PLY_ASSERT(radix >= 2);
     u8 digitBuffer[64];
     s32 digitIndex = PLY_STATIC_ARRAY_SIZE(digitBuffer);
@@ -28,7 +29,7 @@ PLY_NO_INLINE void printString(OutStream* outs, u64 value, u32 radix) {
             u64 quotient = value / radix;
             u32 digit = u32(value - quotient * radix);
             PLY_ASSERT(digitIndex > 0);
-            digitBuffer[--digitIndex] = toDigit(digit);
+            digitBuffer[--digitIndex] = toDigit(digit, capitalize);
             value = quotient;
         }
     }
@@ -36,16 +37,16 @@ PLY_NO_INLINE void printString(OutStream* outs, u64 value, u32 radix) {
     outs->write({digitBuffer + digitIndex, (u32) PLY_STATIC_ARRAY_SIZE(digitBuffer) - digitIndex});
 }
 
-PLY_NO_INLINE void printString(OutStream* outs, s64 value, u32 radix) {
+PLY_NO_INLINE void printString(OutStream* outs, s64 value, u32 radix, bool capitalize) {
     if (value >= 0) {
-        printString(outs, (u64) value, radix);
+        printString(outs, (u64) value, radix, capitalize);
     } else {
         outs->writeByte('-');
-        printString(outs, (u64) -value, radix);
+        printString(outs, (u64) -value, radix, capitalize);
     }
 }
 
-PLY_NO_INLINE void printString(OutStream* outs, double value, u32 radix) {
+PLY_NO_INLINE void printString(OutStream* outs, double value, u32 radix, bool capitalize) {
     PLY_ASSERT(radix >= 2);
 
 #if PLY_COMPILER_GCC
@@ -68,7 +69,7 @@ PLY_NO_INLINE void printString(OutStream* outs, double value, u32 radix) {
         u32 radix6 = radix3 * radix3;
         if (value == 0.0 || (value * radix3 > radix && value < radix6)) {
             u64 fixedPoint = u64(value * radix3);
-            printString(outs, fixedPoint / radix3, radix);
+            printString(outs, fixedPoint / radix3, radix, capitalize);
             outs->writeByte('.');
             u64 fractionalPart = fixedPoint % radix3;
             {
@@ -77,7 +78,7 @@ PLY_NO_INLINE void printString(OutStream* outs, double value, u32 radix) {
                 for (s32 i = 2; i >= 0; i--) {
                     u64 quotient = fractionalPart / radix;
                     u32 digit = u32(fractionalPart - quotient * radix);
-                    digitBuffer[i] = toDigit(digit);
+                    digitBuffer[i] = toDigit(digit, capitalize);
                     fractionalPart = quotient;
                 }
                 outs->write({digitBuffer, PLY_STATIC_ARRAY_SIZE(digitBuffer)});
@@ -88,15 +89,15 @@ PLY_NO_INLINE void printString(OutStream* outs, double value, u32 radix) {
             double exponent = floor(logBase);
             double m = value / pow(radix, exponent); // mantissa (initially)
             s32 digit = clamp<s32>((s32) floor(m), 1, radix - 1);
-            outs->writeByte(toDigit(digit));
+            outs->writeByte(toDigit(digit, capitalize));
             outs->writeByte('.');
             for (u32 i = 0; i < 3; i++) {
                 m = (m - digit) * radix;
                 digit = clamp<s32>((s32) floor(m), 0, radix - 1);
-                outs->writeByte(toDigit(digit));
+                outs->writeByte(toDigit(digit, capitalize));
             }
             outs->writeByte('e');
-            printString(outs, (s64) exponent, radix);
+            printString(outs, (s64) exponent, radix, capitalize);
         }
     }
 }
@@ -156,15 +157,15 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::WithRadix>::print(StringWriter* sw,
                                                            const fmt::WithRadix& value) {
     switch (value.type) {
         case WithRadix::U64: {
-            printString(sw, value.u64_, value.radix);
+            printString(sw, value.u64_, value.radix, value.capitalize);
             break;
         }
         case WithRadix::S64: {
-            printString(sw, value.s64_, value.radix);
+            printString(sw, value.s64_, value.radix, value.capitalize);
             break;
         }
         case WithRadix::Double: {
-            printString(sw, value.double_, value.radix);
+            printString(sw, value.double_, value.radix, value.capitalize);
             break;
         }
         default: {
@@ -180,15 +181,15 @@ PLY_NO_INLINE void fmt::TypePrinter<StringView>::print(StringWriter* sw, StringV
 }
 
 PLY_NO_INLINE void fmt::TypePrinter<u64>::print(StringWriter* sw, u64 value) {
-    printString(sw, value, 10);
+    printString(sw, value, 10, false);
 }
 
 PLY_NO_INLINE void fmt::TypePrinter<s64>::print(StringWriter* sw, s64 value) {
-    printString(sw, value, 10);
+    printString(sw, value, 10, false);
 }
 
 PLY_NO_INLINE void fmt::TypePrinter<double>::print(StringWriter* sw, double value) {
-    printString(sw, value, 10);
+    printString(sw, value, 10, false);
 }
 
 PLY_NO_INLINE void fmt::TypePrinter<bool>::print(StringWriter* sw, bool value) {

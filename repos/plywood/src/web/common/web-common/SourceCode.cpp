@@ -23,9 +23,10 @@ PLY_NO_INLINE void SourceCode::serve(const SourceCode* params, StringView reques
         return;
     }
 
-    OutStream* outs = responseIface->respondWithStream(ResponseCode::OK);
+    OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
     StringWriter* sw = outs->strWriter();
     *sw << "Content-Type: text/html\r\n\r\n";
+    responseIface->endResponseHeader();
     sw->format(R"#(<!DOCTYPE html>
 <html>
 <head>

@@ -8,6 +8,7 @@
 #include <web-common/FetchFromFileSystem.h>
 #include <web-common/SourceCode.h>
 #include <web-common/Echo.h>
+#include <web-common/OutPipe_HTTPChunked.h>
 
 using namespace ply;
 using namespace web;

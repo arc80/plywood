@@ -163,9 +163,10 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
         }
     }
 
-    OutStream* outs = responseIface->respondWithStream(ResponseCode::OK);
+    OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
     StringWriter* sw = outs->strWriter();
     *sw << "Content-Type: text/html; charset=utf-8\r\n\r\n";
+    responseIface->endResponseHeader();
     sw->format(R"#(<!DOCTYPE html>
 <html>
 <head>
@@ -210,11 +211,12 @@ void DocServer::serveContentOnly(StringView requestPath, ResponseIface* response
     String pageHtml = getPageSource(this, requestPath, responseIface);
     if (!pageHtml)
         return;
-    OutStream* outs = responseIface->respondWithStream(ResponseCode::OK);
+    OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
     StringWriter* sw = outs->strWriter();
     StringViewReader svr{pageHtml};
     String pageTitle = svr.readView<fmt::Line>().trim(isWhite);
     *sw << "Content-Type: text/html\r\n\r\n";
+    responseIface->endResponseHeader();
     sw->format("{}\n<h1>{}</h1>\n", pageTitle, pageTitle);
     *sw << svr.viewAvailable();
 }
