@@ -124,9 +124,11 @@ function showTOCEntry(pathToMatch) {
 }
 
 var currentRequest = null;
+var currentLoadingTimer = null;
+var spinnerShown = false;
 
 function navigateTo(dstPath, forward, pageYOffset) {
-    if (currentRequest) {
+    if (currentRequest !== null) {
         currentRequest.abort();
         currentRequest = null;
     }
@@ -157,7 +159,8 @@ function navigateTo(dstPath, forward, pageYOffset) {
             document.title = this.responseText.substr(0, n);
 
             // Apply article
-            article = document.getElementById("article");
+            spinnerShown = false;
+            var article = document.getElementById("article");
             article.innerHTML = this.responseText.substr(n + 1);
             replaceLinks(article);
 
@@ -179,6 +182,27 @@ function navigateTo(dstPath, forward, pageYOffset) {
     };
     currentRequest.open("GET", "/content?path=" + dstPath, true);
     currentRequest.send();            
+
+    // Set timer to show loading spinner
+    if (currentLoadingTimer !== null) {
+        window.clearTimeout(currentLoadingTimer);
+    }
+    var showSpinnerForRequest = currentRequest;
+    currentLoadingTimer = window.setTimeout(function() {
+        if (spinnerShown || currentRequest !== showSpinnerForRequest)
+            return;
+        spinnerShown = true;
+        var article = document.getElementById("article");
+        article.innerHTML = 
+'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="32px" height="32px" viewBox="0 0 100 100" style="margin: 0 auto;">\
+<g>\
+  <circle cx="50" cy="50" fill="none" stroke="#dbe6e8" stroke-width="12" r="36" />\
+  <circle cx="50" cy="50" fill="none" stroke="#4aa5e0" stroke-width="12" r="36" stroke-dasharray="50 180" />\
+  <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="1s" values="0 50 50;360 50 50" \
+  keyTimes="0;1" />\
+</g>\
+</svg>'
+    }, 750);
 }
 
 function replaceLinks(root) {
