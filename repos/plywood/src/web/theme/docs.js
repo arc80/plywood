@@ -1,5 +1,6 @@
 var highlighted = null;
 var selected = null;
+var pageCache = [];
 
 function highlight(elementID) {
     if (highlighted) {
@@ -146,38 +147,58 @@ function navigateTo(dstPath, forward, pageYOffset) {
     var pathToMatch = (anchorPos >= 0) ? dstPath.substr(0, anchorPos) : dstPath;
     showTOCEntry(pathToMatch);
 
+    var applyArticle = function(responseText) {
+        // Extract title
+        var n = responseText.indexOf("\n");
+        document.title = responseText.substr(0, n);
+
+        // Apply article
+        var article = document.getElementById("article");
+        article.innerHTML = responseText.substr(n + 1);
+        replaceLinks(article);
+
+        // Scroll to desired position
+        if (anchor != "") {
+            highlight(anchor);
+        }
+        if (forward && anchor != "") {
+            smoothScrollIntoView("document", document.documentElement, document.getElementById(anchor).parentElement, true);
+        } else {
+            window.scrollTo(0, pageYOffset);
+        }
+        if (location.pathname != dstPath) {
+            // Should never happen
+            console.log("location.pathname out of sync: '" + location.pathname + "' != '" + dstPath + "'");
+        }
+        savePageState();
+    }
+    
+    // Check pageCache
+    for (var i = pageCache.length - 1; i >= 0; i--) {
+        var cached = pageCache[i];
+        if (cached.path == pathToMatch) {
+            pageCache.splice(i, 1);
+            pageCache.push(cached);
+            applyArticle(cached.responseText);
+            return;
+        }
+    }
+
+    // Not found in cache
     // Issue AJAX request for new page
     currentRequest = new XMLHttpRequest();
     currentRequest.onreadystatechange = function() {
         if (currentRequest !== this)
             return;
         if (this.readyState == 4 && this.status == 200) {
-            currentRequest = null; // Completed
-
-            // Extract page title
-            var n = this.responseText.indexOf("\n");
-            document.title = this.responseText.substr(0, n);
-
-            // Apply article
+            // Completed
+            currentRequest = null;
             spinnerShown = false;
-            var article = document.getElementById("article");
-            article.innerHTML = this.responseText.substr(n + 1);
-            replaceLinks(article);
+            applyArticle(this.responseText);
 
-            // Scroll to desired position
-            if (anchor != "") {
-                highlight(anchor);
-            }
-            if (forward && anchor != "") {
-                smoothScrollIntoView("document", document.documentElement, document.getElementById(anchor).parentElement, true);
-            } else {
-                window.scrollTo(0, pageYOffset);
-            }
-            if (location.pathname != dstPath) {
-                // Should never happen
-                console.log("location.pathname out of sync: '" + location.pathname + "' != '" + dstPath + "'");
-            }
-            savePageState();
+            // Update pageCache
+            pageCache.push({path: dstPath, responseText: this.responseText});
+            pageCache = pageCache.slice(-20); // Limit number of saved pages
         }
     };
     currentRequest.open("GET", "/content?path=" + dstPath, true);
