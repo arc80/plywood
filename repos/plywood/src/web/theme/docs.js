@@ -5,7 +5,7 @@ function highlight(elementID) {
     if (highlighted) {
         highlighted.classList.remove("highlighted");
     }
-    highlighted = document.getElementById(elementID);;
+    highlighted = document.getElementById(elementID);
     if (highlighted) {
         highlighted = highlighted.parentElement;
         if (highlighted) {
@@ -104,27 +104,64 @@ function smoothScrollIntoView(name, container, item, scrollToTop) {
     }
 }
 
-function navigateTo(path, forward, pageYOffset) {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
+function showTOCEntry(pathToMatch) {
+    // Select appropriate TOC entry
+    if (selected) {
+        selected.classList.remove("selected");
+        selected = null;
+    }
+    var sidebar = document.querySelector(".sidebar");
+    var list = sidebar.getElementsByTagName("li");
+    for (var j = 0; j < list.length; j++) {
+        var li = list[j];
+        if (li.parentElement.getAttribute("href") == pathToMatch) {
+            selected = li;
+            li.classList.add("selected");
+            expandToItem(li);
+            smoothScrollIntoView("sidebar", sidebar, li, false);
+        }
+    }
+}
+
+var currentRequest = null;
+
+function navigateTo(dstPath, forward, pageYOffset) {
+    if (currentRequest) {
+        currentRequest.abort();
+        currentRequest = null;
+    }
+
+    // Update history
+    if (forward) {
+        history.pushState(null, null, dstPath);
+    }
+
+    // Extract anchor from dstPath
+    var anchorPos = dstPath.indexOf("#");
+    var anchor = (anchorPos >= 0) ? dstPath.substr(anchorPos + 1) : "";
+
+    // Show appropriate TOC entry
+    var pathToMatch = (anchorPos >= 0) ? dstPath.substr(0, anchorPos) : dstPath;
+    showTOCEntry(pathToMatch);
+
+    // Issue AJAX request for new page
+    currentRequest = new XMLHttpRequest();
+    currentRequest.onreadystatechange = function() {
+        if (currentRequest !== this)
+            return;
         if (this.readyState == 4 && this.status == 200) {
+            currentRequest = null; // Completed
+
             // Extract page title
             var n = this.responseText.indexOf("\n");
             document.title = this.responseText.substr(0, n);
+
+            // Apply article
             article = document.getElementById("article");
             article.innerHTML = this.responseText.substr(n + 1);
             replaceLinks(article);
 
-            // Update history
-            if (forward) {
-                history.pushState(null, null, path);
-                savePageState();
-            }
-
-            // Scroll
-            var anchorPos = path.indexOf("#");
-            var anchor = (anchorPos >= 0) ? path.substr(anchorPos + 1) : "";
-            var pathToMatch = (anchorPos >= 0) ? path.substr(0, anchorPos) : path;
+            // Scroll to desired position
             if (anchor != "") {
                 highlight(anchor);
             }
@@ -133,27 +170,15 @@ function navigateTo(path, forward, pageYOffset) {
             } else {
                 window.scrollTo(0, pageYOffset);
             }
-
-            // Select appropriate TOC entry
-            if (selected) {
-                selected.classList.remove("selected");
-                selected = null;
+            if (location.pathname != dstPath) {
+                // Should never happen
+                console.log("location.pathname out of sync: '" + location.pathname + "' != '" + dstPath + "'");
             }
-            var sidebar = document.querySelector(".sidebar");
-            var list = sidebar.getElementsByTagName("li");
-            for (var j = 0; j < list.length; j++) {
-                var li = list[j];
-                if (li.parentElement.getAttribute("href") == pathToMatch) {
-                    selected = li;
-                    li.classList.add("selected");
-                    expandToItem(li);
-                    smoothScrollIntoView("sidebar", sidebar, li, false);
-                }
-            }
+            savePageState();
         }
     };
-    xhttp.open("GET", "/content?path=" + path, true);
-    xhttp.send();            
+    currentRequest.open("GET", "/content?path=" + dstPath, true);
+    currentRequest.send();            
 }
 
 function replaceLinks(root) {
@@ -179,6 +204,10 @@ function onEndTransition(evt) {
 }
 
 window.onload = function() { 
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+
     highlight(location.hash.substr(1));
 
     var list = document.getElementsByClassName("caret");
