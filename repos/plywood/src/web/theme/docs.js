@@ -1,3 +1,8 @@
+// Page elements
+var sidebar;
+var article;
+var threeLines;
+
 var highlighted = null;
 var selected = null;
 var pageCache = [];
@@ -111,7 +116,6 @@ function showTOCEntry(pathToMatch) {
         selected.classList.remove("selected");
         selected = null;
     }
-    var sidebar = document.querySelector(".sidebar");
     var list = sidebar.getElementsByTagName("li");
     for (var j = 0; j < list.length; j++) {
         var li = list[j];
@@ -153,7 +157,6 @@ function navigateTo(dstPath, forward, pageYOffset) {
         document.title = responseText.substr(0, n);
 
         // Apply article
-        var article = document.getElementById("article");
         article.innerHTML = responseText.substr(n + 1);
         replaceLinks(article);
 
@@ -213,7 +216,6 @@ function navigateTo(dstPath, forward, pageYOffset) {
         if (spinnerShown || currentRequest !== showSpinnerForRequest)
             return;
         spinnerShown = true;
-        var article = document.getElementById("article");
         article.innerHTML = 
 '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="32px" height="32px" viewBox="0 0 100 100" style="margin: 0 auto;">\
 <g>\
@@ -249,6 +251,10 @@ function onEndTransition(evt) {
 }
 
 window.onload = function() { 
+    sidebar = document.querySelector(".sidebar");
+    article = document.getElementById("article");
+    threeLines = document.getElementById("three-lines");
+
     if ('scrollRestoration' in history) {
         history.scrollRestoration = 'manual';
     }
@@ -284,13 +290,25 @@ window.onload = function() {
         });
     }
 
-    document.getElementById("three-lines").addEventListener("click", function() {
-        document.querySelector(".sidebar").classList.toggle("expanded");
+    threeLines.addEventListener("click", function() {
+        if (sidebar.classList.toggle("expanded")) {
+            showTOCEntry(location.pathname);
+        }
     });
+    threeLines.addEventListener("mouseover", function() {
+        this.classList.add("highlight");
+    });
+    threeLines.addEventListener("mouseout", function() {
+        this.classList.remove("highlight");
+    });
+    document.addEventListener("click", function(evt) {
+        if (!evt.target.closest('.sidebar') && !evt.target.closest("#three-lines")) {
+            sidebar.classList.remove("expanded");
+        }
+    });    
 
-    var sidebar = document.querySelector(".sidebar");
     replaceLinks(sidebar);
-    replaceLinks(document.getElementById("article"));
+    replaceLinks(article);
     selected = sidebar.querySelector(".selected");
 }
 
