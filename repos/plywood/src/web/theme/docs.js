@@ -228,15 +228,29 @@ function navigateTo(dstPath, forward, pageYOffset) {
     }, 750);
 }
 
+function rectContains(rect, x, y) {
+    return rect.left <= x && x < rect.right && rect.top <= y && y < rect.bottom;
+}
+
 function replaceLinks(root) {
     var list = root.getElementsByTagName("a");
     for (var i = 0; i < list.length; i++) {
         var a = list[i];
         var path = a.getAttribute("href");
         if (path.substr(0, 6) == "/docs/") {
-            a.onclick = function() {
+            a.onclick = function(evt) {
+                var caretSpan = this.querySelector(".selectable.caret span");
+                if (caretSpan) {
+                    var sr = caretSpan.getBoundingClientRect();
+                    var inflate = 8;
+                    // Hardcoding the dimensions of li.caret span::before since there's no way to retrieve them from the DOM
+                    caretRect = new DOMRect(sr.left - 19 - inflate, sr.top + 1 - inflate, 11 + inflate * 2, 11 + inflate * 2);
+                    if (rectContains(caretRect, evt.clientX, evt.clientY))
+                        return false;
+                }
                 savePageState();
                 navigateTo(this.getAttribute("href"), true, 0);
+                sidebar.classList.remove("expanded");
                 return false;
             }
         }
