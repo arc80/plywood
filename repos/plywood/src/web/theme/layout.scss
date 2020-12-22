@@ -102,15 +102,6 @@ body {
 // Sidebar
 //-------------------------------------------------
 
-.sidebar::-webkit-scrollbar, scrollbar {
-    width: 8px;
-}
-
-.sidebar::-webkit-scrollbar-thumb, scrollbar-thumb {
-    background: #80868b42;
-    border-radius: 4px;
-}
-
 .sidebar {
     display: none;
     color: #505050;
@@ -119,12 +110,12 @@ body {
     top: 42px;
     bottom: 0px;
     z-index: 1;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden;
     background: #f8f8f8;
     -ms-overflow-style: -ms-autohiding-scrollbar;
     border-right: 1px solid #e6e6e6;
     font-size: 82%;
+    transform-origin: top right;
     
     ul {
         line-height: 1.55em;
@@ -189,6 +180,20 @@ body {
     a {
         color: inherit;
     }
+    .scroller {
+        overflow-x: none;
+        overflow-y: auto;
+        width: 100%;
+        height: 100%;
+        transform-origin: top right;
+    }
+    .scroller::-webkit-scrollbar, scrollbar {
+        width: 8px;
+    }
+    .scroller::-webkit-scrollbar-thumb, scrollbar-thumb {
+        background: #80868b42;
+        border-radius: 4px;
+    }
     .inner {
         margin: 0.3em 0em;
     }
@@ -214,6 +219,7 @@ body {
     .sidebar {
         right: 0px;
         top: 35px;
+        bottom: 25px;
         max-height: 600px;
         z-index: 3;
         background: #ffffff;
@@ -221,7 +227,14 @@ body {
         @include box-shadow(0 2px 14px 0 rgba(0, 0, 0, 0.25));
     }
     .expanded {
-        bottom: 25px;
         display: block;
+        animation-name: menuAnimation;
+        animation-duration: 0.15s;
+        animation-timing-function: linear;
+    }
+    .expanded-content {
+        animation-name: menuContentsAnimation;
+        animation-duration: 0.15s;
+        animation-timing-function: linear;
     }
 }

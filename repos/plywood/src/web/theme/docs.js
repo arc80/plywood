@@ -69,7 +69,7 @@ function updateScrollers(timestamp) {
     }
 }
 
-function smoothScrollIntoView(name, container, item, scrollToTop) {
+function smoothScrollIntoView(container, item, scrollToTop) {
     if (!item)
         return;
     var amount;
@@ -123,7 +123,7 @@ function showTOCEntry(pathToMatch) {
             selected = li;
             li.classList.add("selected");
             expandToItem(li);
-            smoothScrollIntoView("sidebar", sidebar, li, false);
+            smoothScrollIntoView(sidebar.firstElementChild, li, false);
         }
     }
 }
@@ -165,7 +165,7 @@ function navigateTo(dstPath, forward, pageYOffset) {
             highlight(anchor);
         }
         if (forward && anchor != "") {
-            smoothScrollIntoView("document", document.documentElement, document.getElementById(anchor).parentElement, true);
+            smoothScrollIntoView(document.documentElement, document.getElementById(anchor).parentElement, true);
         } else {
             window.scrollTo(0, pageYOffset);
         }
@@ -244,7 +244,7 @@ function replaceLinks(root) {
                     var sr = caretSpan.getBoundingClientRect();
                     var inflate = 8;
                     // Hardcoding the dimensions of li.caret span::before since there's no way to retrieve them from the DOM
-                    caretRect = new DOMRect(sr.left - 19 - inflate, sr.top + 1 - inflate, 11 + inflate * 2, 11 + inflate * 2);
+                    caretRect = {left: sr.left - 19 - inflate, top: sr.top + 1 - inflate, right: sr.left - 8 + inflate, bottom: sr.top + 12 + inflate};
                     if (rectContains(caretRect, evt.clientX, evt.clientY))
                         return false;
                 }
@@ -264,7 +264,24 @@ function onEndTransition(evt) {
     this.style.removeProperty("height");
 }
 
+function injectKeyframeAnimation() {
+    var animation = '';
+    var inverseAnimation = ''; 
+    for (var step = 0; step <= 100; step++) {
+        var f = 1 - Math.pow(1 - step / 100.0, 4);
+        var xScale = 0.5 + 0.5 * f;
+        var yScale = 0.01 + 0.99 * f;  
+        animation += step + "% { transform: scale(" + xScale + ", " + yScale + "); }\n";
+        inverseAnimation += step + "% { transform: scale(" + (1.0 / xScale) + ", " + (1.0 / yScale) + "); }\n";
+    }
+    var style = document.createElement('style');
+    style.textContent = "@keyframes menuAnimation {\n" + animation + "}\n\n" +
+        "@keyframes menuContentsAnimation {\n" + inverseAnimation + "}\n\n";
+    document.head.appendChild(style);
+}
+
 window.onload = function() { 
+    injectKeyframeAnimation();
     sidebar = document.querySelector(".sidebar");
     article = document.getElementById("article");
     threeLines = document.getElementById("three-lines");
@@ -305,7 +322,9 @@ window.onload = function() {
     }
 
     threeLines.addEventListener("click", function() {
+        sidebar.firstElementChild.classList.remove("expanded-content");
         if (sidebar.classList.toggle("expanded")) {
+            sidebar.firstElementChild.classList.add("expanded-content");
             showTOCEntry(location.pathname);
         }
     });
@@ -316,7 +335,7 @@ window.onload = function() {
         this.classList.remove("highlight");
     });
     document.addEventListener("click", function(evt) {
-        if (!evt.target.closest('.sidebar') && !evt.target.closest("#three-lines")) {
+        if (!sidebar.contains(evt.target) && !threeLines.contains(evt.target)) {
             sidebar.classList.remove("expanded");
         }
     });    
