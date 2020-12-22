@@ -326,6 +326,10 @@ window.onload = function() {
         if (sidebar.classList.toggle("expanded")) {
             sidebar.firstElementChild.classList.add("expanded-content");
             showTOCEntry(location.pathname);
+            // Safari needs this to force .expanded animation to replay:
+            sidebar.style.animation = 'none';
+            void sidebar.offsetHeight; // triggers reflow
+            sidebar.style.animation = '';
         }
     });
     threeLines.addEventListener("mouseover", function() {
