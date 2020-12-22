@@ -35,26 +35,35 @@ body {
     color: #444;
     border-bottom: 2px solid #222222;
     @include box-shadow(0 1px 2px 0 rgba(0, 0, 0, 0.25));
-}
 
-#logo {
-    position: absolute;
-    top: 2px;
-    left: 0px;
-}
+    .right {
+        position: absolute;
+        right: 0px;
+    }
 
-#patron {
-    float: right;
-    position: absolute;
-    top: 5px;
-    right: 48px;
-}
+    #logo {
+        position: absolute;
+        top: 2px;
+        left: 0px;
+    }
 
-#github {
-    float: right;
-    position: absolute;
-    top: 5px;
-    right: 10px;
+    #patron {
+        margin-right: 8px;
+        top: 5px;
+        position: relative;
+    }
+
+    #github {
+        margin-right: 8px;
+        top: 5px;
+        position: relative;
+    }
+
+    #three-lines {
+        margin-right: 8px;
+        top: 5px;
+        position: relative;
+    }
 }
 
 //-------------------------------------------------
@@ -62,9 +71,9 @@ body {
 //-------------------------------------------------
 .content {
     margin-top: 42px;
-    margin-left: 280px;
+    margin-left: 0px;
     min-width: 340px;
-    padding: 15px 35px;
+    padding: 15px 20px;
 
     .anchored {
         position: relative;
@@ -84,7 +93,18 @@ body {
 // Sidebar
 //-------------------------------------------------
 
+.sidebar::-webkit-scrollbar, scrollbar {
+    width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-thumb, scrollbar-thumb {
+    background: #80868b42;
+    border-radius: 4px;
+}
+
 .sidebar {
+    display: none;
+    color: #505050;
     position: fixed;
     width: 280px;
     top: 42px;
@@ -96,19 +116,6 @@ body {
     -ms-overflow-style: -ms-autohiding-scrollbar;
     border-right: 1px solid #e6e6e6;
     font-size: 82%;
-}
-
-.sidebar::-webkit-scrollbar, scrollbar {
-    width: 8px;
-}
-
-.sidebar::-webkit-scrollbar-thumb, scrollbar-thumb {
-    background: #80868b42;
-    border-radius: 4px;
-}
-
-.sidebar {
-    color: #505050;
     
     ul {
         line-height: 1.55em;
@@ -178,3 +185,34 @@ body {
     }
 }
 
+@media only screen and (min-width: 700px) {
+    .sidebar {
+        display: block;
+        top: 42px;
+        bottom: 0px;
+    }
+    .content {
+        margin-left: 280px;
+        padding: 15px 35px;
+    }
+
+    .siteTitle #three-lines {
+        display: none;
+    }
+}
+
+@media only screen and (max-width: 699px) {
+    .sidebar {
+        right: 0px;
+        top: 35px;
+        max-height: 600px;
+        z-index: 3;
+        background: #ffffff;
+        border: 1px solid #999999;
+        @include box-shadow(0 2px 14px 0 rgba(0, 0, 0, 0.25));
+    }
+    .expanded {
+        bottom: 25px;
+        display: block;
+    }
+}

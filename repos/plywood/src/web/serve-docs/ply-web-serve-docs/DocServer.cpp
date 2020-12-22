@@ -172,6 +172,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 <head>
 <title>{}</title>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 )#",
                pageTitle);
     *sw << R"#(<link href="/static/stylesheet.css" rel="stylesheet" type="text/css" />
@@ -181,8 +182,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 <body>
   <div class="siteTitle">
     <a href="/"><img src="/static/logo.svg" id="logo"/></a>
-    <a href="https://www.patreon.com/preshing"><img src="/static/patron-button.svg" id="patron"></a>
-    <a href="https://github.com/arc80/plywood"><img src="/static/github-button.svg" id="github"></a>
+    <span class="right"><a href="https://www.patreon.com/preshing"><img src="/static/patron-button.svg" id="patron" /></a><a href="https://github.com/arc80/plywood"><img src="/static/github-button.svg" id="github" /></a><img src="/static/three-lines.svg" id="three-lines" /></span>
   </div>
   <div class="sidebar">
       <div class="inner">

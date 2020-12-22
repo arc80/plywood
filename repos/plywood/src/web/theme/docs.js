@@ -284,6 +284,10 @@ window.onload = function() {
         });
     }
 
+    document.getElementById("three-lines").addEventListener("click", function() {
+        document.querySelector(".sidebar").classList.toggle("expanded");
+    });
+
     var sidebar = document.querySelector(".sidebar");
     replaceLinks(sidebar);
     replaceLinks(document.getElementById("article"));
