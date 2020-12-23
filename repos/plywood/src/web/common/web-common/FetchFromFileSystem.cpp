@@ -29,6 +29,11 @@ PLY_NO_INLINE FetchFromFileSystem::FetchFromFileSystem() {
 PLY_NO_INLINE void FetchFromFileSystem::serve(const FetchFromFileSystem* params,
                                               StringView requestPath,
                                               ResponseIface* responseIface) {
+    s32 getPos = requestPath.findByte('?');
+    if (getPos >= 0) {
+        requestPath = requestPath.subStr(0, getPos);
+    }
+
     String filename = NativePath::split(requestPath).second;
     s32 dotPos = filename.findByte('.');
     if (dotPos <= 0) {
