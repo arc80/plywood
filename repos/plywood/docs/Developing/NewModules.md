@@ -1,6 +1,6 @@
 <% title "Adding New Modules" %>
 
-In Plywood, a [module](KeyConcepts#modules) is defined by adding a special C++ function to a file with the suffix `.modules.cpp` somewhere in a [repo](KeyConcepts#repos)'s directory tree. This function is called an **module function** and must be preceded by a line comment of the form:
+In Plywood, a [module](KeyConcepts#modules) is defined by adding a special C++ function to a file with the suffix `.modules.cpp` somewhere in a [repo](KeyConcepts#repos)'s directory tree. This function is called a **module function** and must be preceded by a line comment of the form:
 
     // [ply module="<module-name>"]
 
