@@ -184,6 +184,17 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
     <a href="/"><img src="/static/logo.svg" id="logo"/></a>
     <span class="right"><span id="get-involved" class="button"><span class="text">Get Involved <span class="downcaret"></span></span></span><span id="three-lines" class="button"><span></span></span></span>
   </div>
+  <div class="get-involved-popup">
+    <div class="scroller">
+      <div class="inner">
+        <ul>
+            <li>Become a Supporter</li>
+            <li>Join the Discord Server</li>
+            <li>View on GitHub</li>
+        </ul>
+      </div>
+    </div>
+  </div>
   <div class="sidebar">
     <div class="scroller">
       <div class="inner">

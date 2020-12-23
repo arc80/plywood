@@ -1,7 +1,6 @@
 // Page elements
 var sidebar;
 var article;
-var threeLines;
 
 var highlighted = null;
 var selected = null;
@@ -250,7 +249,7 @@ function replaceLinks(root) {
                 }
                 savePageState();
                 navigateTo(this.getAttribute("href"), true, 0);
-                sidebar.classList.remove("expanded");
+                cancelPopupMenu();
                 return false;
             }
         }
@@ -280,11 +279,53 @@ function injectKeyframeAnimation() {
     document.head.appendChild(style);
 }
 
+//------------------------------------
+// Popup menus
+//------------------------------------
+
+// {button, menu, callback}
+var menuShown = null;
+
+function cancelPopupMenu() {
+    if (menuShown) {
+        menuShown.menu.firstElementChild.classList.remove("expanded-content");
+        menuShown.menu.classList.remove("expanded");
+        document.removeEventListener("click", menuShown.callback);
+        menuShown = null;
+    }
+}
+
+function togglePopupMenu(button, menu) {
+    var mustShow = !menuShown || (menuShown.menu != menu);
+    cancelPopupMenu();
+    if (mustShow) {
+        menu.classList.add("expanded");
+        menu.firstElementChild.classList.add("expanded-content");
+        // Safari needs this to force .expanded animation to replay:
+        menu.style.animation = 'none';
+        void menu.offsetHeight; // triggers reflow
+        menu.style.animation = '';
+        // Register close hook
+        menuShown = {
+            button: button,
+            menu: menu,
+            callback: function(evt) {
+                if (menuShown && menuShown.menu == menu) {
+                    if (!menuShown.button.contains(evt.target) && !menuShown.menu.contains(evt.target)) {
+                        cancelPopupMenu();
+                    }
+                }
+            }
+        };
+        document.addEventListener("click", menuShown.callback);
+    }
+    return mustShow;
+}
+
 window.onload = function() { 
     injectKeyframeAnimation();
     sidebar = document.querySelector(".sidebar");
     article = document.getElementById("article");
-    threeLines = document.getElementById("three-lines");
 
     if ('scrollRestoration' in history) {
         history.scrollRestoration = 'manual';
@@ -321,15 +362,16 @@ window.onload = function() {
         });
     }
 
+    var getInvolvedButton = document.getElementById("get-involved");
+    getInvolvedButton.addEventListener("click", function() {
+        var getInvolvedMenu = document.querySelector(".get-involved-popup");
+        togglePopupMenu(getInvolvedButton, getInvolvedMenu);
+    });
+
+    var threeLines = document.getElementById("three-lines");
     threeLines.addEventListener("click", function() {
-        sidebar.firstElementChild.classList.remove("expanded-content");
-        if (sidebar.classList.toggle("expanded")) {
-            sidebar.firstElementChild.classList.add("expanded-content");
+        if (togglePopupMenu(threeLines, sidebar)) {
             showTOCEntry(location.pathname);
-            // Safari needs this to force .expanded animation to replay:
-            sidebar.style.animation = 'none';
-            void sidebar.offsetHeight; // triggers reflow
-            sidebar.style.animation = '';
         }
     });
     threeLines.addEventListener("mouseover", function() {
@@ -338,11 +380,6 @@ window.onload = function() {
     threeLines.addEventListener("mouseout", function() {
         this.firstElementChild.classList.remove("highlight");
     });
-    document.addEventListener("click", function(evt) {
-        if (!sidebar.contains(evt.target) && !threeLines.contains(evt.target)) {
-            sidebar.classList.remove("expanded");
-        }
-    });    
 
     replaceLinks(sidebar);
     replaceLinks(article);
@@ -359,6 +396,7 @@ window.onscroll = function() {
 
 window.addEventListener("popstate", function(evt) {
     if (evt.state) {
+        cancelPopupMenu();
         navigateTo(evt.state.path, false, evt.state.pageYOffset);
     }
 });
