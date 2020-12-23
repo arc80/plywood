@@ -200,6 +200,7 @@ body {
 }
 
 .get-involved-popup {
+    overflow: hidden;
     transform-origin: top right;
     display: none;
     position: fixed;
@@ -210,10 +211,29 @@ body {
     background: #ffffff;
     border: 1px solid #999999;
     @include box-shadow(0 2px 14px 0 rgba(0, 0, 0, 0.25));
+
+    li {
+        padding: 4px 12px;
+
+        img {
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        span {
+            position: relative;
+            top: 2px;
+        }
+    }
+    a:hover li {
+        background: #eeeeee;
+    }
+    a {
+        color: inherit;
+    }
 }
 
 .scroller {
-    overflow-x: none;
+    overflow-x: hidden;
     overflow-y: auto;
     width: 100%;
     height: 100%;
@@ -221,6 +241,9 @@ body {
 
     .inner {
         margin: 0.3em 0em;
+    }
+    ul {
+        margin-bottom: 0px;
     }
 }
 

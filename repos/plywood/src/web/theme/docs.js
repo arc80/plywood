@@ -303,8 +303,11 @@ function togglePopupMenu(button, menu) {
         menu.firstElementChild.classList.add("expanded-content");
         // Safari needs this to force .expanded animation to replay:
         menu.style.animation = 'none';
+        menu.firstElementChild.style.animation = 'none';
         void menu.offsetHeight; // triggers reflow
         menu.style.animation = '';
+        menu.firstElementChild.style.animation = '';
+        
         // Register close hook
         menuShown = {
             button: button,
