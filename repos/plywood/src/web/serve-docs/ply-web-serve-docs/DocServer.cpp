@@ -172,6 +172,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 <head>
 <title>{}</title>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 )#",
                pageTitle);
     *sw << R"#(<link href="/static/stylesheet.css" rel="stylesheet" type="text/css" />
@@ -181,19 +182,31 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 <body>
   <div class="siteTitle">
     <a href="/"><img src="/static/logo.svg" id="logo"/></a>
-    <a href="https://www.patreon.com/preshing"><img src="/static/patron-button.svg" id="patron"></a>
-    <a href="https://github.com/arc80/plywood"><img src="/static/github-button.svg" id="github"></a>
+    <span class="right"><span id="get-involved" class="button"><span class="text">Get Involved <span class="downcaret"></span></span></span><span id="three-lines" class="button"><span></span></span></span>
+  </div>
+  <div class="get-involved-popup">
+    <div class="scroller">
+      <div class="inner">
+        <ul>
+            <a href="https://www.patreon.com/preshing"><li><img src="/static/patron-button.svg" /> <span>Become a Supporter</span></li></a>
+            <a href="https://discord.gg/WnQhuVF"><li><img src="/static/discord-button.svg" /> <span>Join the Discord Server</span></li></a>
+            <a href="https://github.com/arc80/plywood"><li><img src="/static/github-button.svg" /> <span>View on GitHub</span></li></a>
+        </ul>
+      </div>
+    </div>
   </div>
   <div class="sidebar">
+    <div class="scroller">
       <div class="inner">
-          <ul>
+        <ul>
 )#";
     for (const Contents* node : this->contents) {
         dumpContents(sw, node, expandTo.view());
     }
     sw->format(R"(
-          </ul>
+        </ul>
       </div>
+    </div>
   </div>
   <article class="content" id="article">
 <h1>{}</h1>

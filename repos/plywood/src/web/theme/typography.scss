@@ -158,16 +158,6 @@ strong {
     font-weight: bold;
 }
 
-svg {
-    display: block;
-    margin-bottom: 1.2em;
-}
-
-img {
-    display: block;
-    margin-bottom: 1.2em;
-}
-
 .center {
     margin-left: auto;
     margin-right: auto;
@@ -233,6 +223,16 @@ article {
     }
     ul, ol {
         margin-left: 2.3em;
+    }
+
+    svg {
+        display: block;
+        margin-bottom: 1.2em;
+    }
+    
+    img {
+        display: block;
+        margin-bottom: 1.2em;
     }
 }
 
