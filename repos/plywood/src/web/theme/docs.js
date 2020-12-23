@@ -333,10 +333,10 @@ window.onload = function() {
         }
     });
     threeLines.addEventListener("mouseover", function() {
-        this.classList.add("highlight");
+        this.firstElementChild.classList.add("highlight");
     });
     threeLines.addEventListener("mouseout", function() {
-        this.classList.remove("highlight");
+        this.firstElementChild.classList.remove("highlight");
     });
     document.addEventListener("click", function(evt) {
         if (!sidebar.contains(evt.target) && !threeLines.contains(evt.target)) {

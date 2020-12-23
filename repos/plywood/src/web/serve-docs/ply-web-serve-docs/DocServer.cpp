@@ -182,7 +182,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 <body>
   <div class="siteTitle">
     <a href="/"><img src="/static/logo.svg" id="logo"/></a>
-    <span class="right"><a href="https://www.patreon.com/preshing"><img src="/static/patron-button.svg" id="patron" /></a><a href="https://github.com/arc80/plywood"><img src="/static/github-button.svg" id="github" /></a><span id="three-lines"></span></span>
+    <span class="right"><span id="get-involved" class="button"><span class="text">Get Involved <span class="downcaret"></span></span></span><span id="three-lines" class="button"><span></span></span></span>
   </div>
   <div class="sidebar">
     <div class="scroller">
