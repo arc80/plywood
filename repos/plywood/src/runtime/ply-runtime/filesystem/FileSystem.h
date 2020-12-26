@@ -311,7 +311,7 @@ struct FileSystem {
 
     The following example outputs a list of non-directory files in the current directory:
 
-        StringWriter sw = StdOut::strWriter();
+        StringWriter sw = StdOut::text();
         for (const DirectoryEntry& entry : FileSystem::native()->listDir(".", 0)) {
             if (!entry.isDir) {
                 sw << entry.name << '\n';
@@ -374,7 +374,7 @@ struct FileSystem {
     directory under the starting directory, except that it doesn't look under any subdirectory that
     starts with a dot `"."`:
 
-        StringWriter sw = StdOut::createStringWriter();
+        StringWriter sw = StdOut::text();
         for (WalkTriple& triple : fs->walk(".", FileSystem::WithSizes)) {
             // Calculate the number of bytes taken by non-directory files
             u64 sum = 0;

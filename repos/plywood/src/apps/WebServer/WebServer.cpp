@@ -40,7 +40,7 @@ void myRequestHandler(AllParams* params, StringView requestPath, ResponseIface* 
 }
 
 void writeMsgAndExit(StringView msg) {
-    StringWriter stdErr = StdErr::createStringWriter();
+    StringWriter stdErr = StdErr::text();
     stdErr << "Error: " << msg;
     if (!msg.endsWith("\n")) {
         stdErr << '\n';
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
     if (!dataRoot) {
         dataRoot = WEBSERVER_DEFAULT_DOC_DIR;
     }
-    StdOut::createStringWriter().format("Serving from {} on port {}\n", dataRoot, port);
+    StdOut::text().format("Serving from {} on port {}\n", dataRoot, port);
     AllParams allParams;
     allParams.fileSys.rootDir = dataRoot;
     allParams.docs.init(dataRoot);

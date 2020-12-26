@@ -90,7 +90,7 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
             }
             this->addParams.exec(newFolder, buildTargetInst->getFullyQualifiedName());
             newFolder->save();
-            StdOut::createStringWriter().format(
+            StdOut::text().format(
                 "Created build folder '{}' with root target '{}' at: {}\n",
                 newFolder->buildFolderName,
                 RepoRegistry::get()->getShortDepSourceName(buildTargetInst),
@@ -100,7 +100,7 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
             if (env->workspace->currentBuildFolder != result->folder->buildFolderName) {
                 env->workspace->currentBuildFolder = result->folder->buildFolderName;
                 env->workspace->save();
-                StdOut::createStringWriter().format("'{}' is now the current build folder.\n",
+                StdOut::text().format("'{}' is now the current build folder.\n",
                                                     result->folder->buildFolderName);
             }
         } else if (matches.numItems() == 1) {
@@ -108,7 +108,7 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
             if (env->workspace->currentBuildFolder != result->folder->buildFolderName) {
                 env->workspace->currentBuildFolder = result->folder->buildFolderName;
                 env->workspace->save();
-                StdOut::createStringWriter().format("'{}' is now the current build folder.\n",
+                StdOut::text().format("'{}' is now the current build folder.\n",
                                                     result->folder->buildFolderName);
             }
         } else {
@@ -153,7 +153,7 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
     if (!runTargetIdx.wasFound()) {
         if (this->doAdd) {
             this->addParams.exec(result->folder, result->runTargetInst->getFullyQualifiedName());
-            StdOut::createStringWriter().format(
+            StdOut::text().format(
                 "Added target '{}' to folder '{}'.\n",
                 RepoRegistry::get()->getShortDepSourceName(result->runTargetInst),
                 result->folder->buildFolderName);

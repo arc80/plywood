@@ -38,7 +38,7 @@ PLY_NO_INLINE void ModuleArgs::setPrecompiledHeader(StringView generatorSource,
 
 // This function is called when a dependency instantiator function does something wrong
 PLY_NO_INLINE void instantiatorError(StringView message) {
-    StdErr::createStringWriter() << message << '\n';
+    StdErr::text() << message << '\n';
     PLY_FORCE_CRASH(); // FIXME: Decide how to report such errors
 }
 

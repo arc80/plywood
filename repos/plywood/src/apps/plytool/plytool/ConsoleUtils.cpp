@@ -15,7 +15,7 @@ bool prefixMatch(StringView input, StringView cmd, u32 minUnits) {
 }
 
 void fatalError(StringView msg) {
-    StringWriter stdErr = StdErr::createStringWriter();
+    StringWriter stdErr = StdErr::text();
     stdErr << "error: " << msg;
     if (!msg.endsWith("\n")) {
         stdErr << '\n';

@@ -314,7 +314,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
         this->anyError = true;
         StringWriter sw;
         err->writeMessage(&sw, this->parser->pp->visitedFiles);
-        StdErr::createStringWriter() << sw.moveToString();
+        StdErr::text() << sw.moveToString();
         return true;
     }
 };

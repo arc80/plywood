@@ -31,7 +31,7 @@ PLY_NO_INLINE bool WorkspaceSettings::save() const {
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         getPath(), strContents, TextFormat::platformPreference());
     if (result != FSResult::OK && result != FSResult::Unchanged) {
-        StdErr::createStringWriter() << "Error: Can't save workspace settings.\n";
+        StdErr::text() << "Error: Can't save workspace settings.\n";
         return false;
     }
     return true;

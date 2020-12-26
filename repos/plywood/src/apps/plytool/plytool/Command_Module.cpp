@@ -21,7 +21,7 @@ void command_module(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        auto sw = StdErr::createStringWriter();
+        auto sw = StdErr::text();
         printUsage(&sw, "module",
                    {
                        {"list", "list description"},
@@ -37,7 +37,7 @@ void command_module(PlyToolCommandEnv* env) {
 
         PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
 
-        StringWriter sw = StdOut::createStringWriter();
+        StringWriter sw = StdOut::text();
         Array<const Repo*> repos;
         for (const Repo* repo : RepoRegistry::get()->repos) {
             repos.append(repo);

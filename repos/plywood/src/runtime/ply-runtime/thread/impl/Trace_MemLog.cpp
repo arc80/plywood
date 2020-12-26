@@ -67,7 +67,7 @@ void Trace_MemLog::dumpStats() {
         numEvents =
             (m_numPages - 1) * EventsPerPage + m_tail.load(ply::Consume)->index.load(ply::Relaxed);
     }
-    StdOut::createStringWriter().format("{} events logged\n", numEvents);
+    StdOut::text().format("{} events logged\n", numEvents);
 }
 
 void Trace_MemLog::dumpEntireLog(const char* path, ureg startPage) {

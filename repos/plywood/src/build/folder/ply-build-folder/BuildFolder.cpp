@@ -323,7 +323,7 @@ PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
         u32 numUnselected = instResult.unselectedExterns.numItems();
         if (numUnselected > 0) {
             canGenerate = false;
-            StringWriter sw = StdOut::createStringWriter();
+            StringWriter sw = StdOut::text();
             for (const DependencySource* unselectedExtern : instResult.unselectedExterns) {
                 sw.format("Can't generate build system in folder '{}' because extern '{}' is not "
                           "selected.\n",
@@ -361,7 +361,7 @@ PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
         }
         if (instResult.uninstalledProviders.numItems() > 0) {
             canGenerate = false;
-            StringWriter sw = StdOut::createStringWriter();
+            StringWriter sw = StdOut::text();
             for (const ExternProvider* prov : instResult.uninstalledProviders) {
                 sw.format("Can't generate build system in folder '{}' because extern provider "
                           "'{}' is selected, but not installed.\n",
@@ -372,7 +372,7 @@ PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
             // Reinstantiate, but this time pass isGenerating = true:
             instResult = this->instantiateAllTargets(true);
             if (this->generate(config, &instResult)) {
-                StdOut::createStringWriter().format(
+                StdOut::text().format(
                     "Successfully generated build system in folder '{}'.\n", this->buildFolderName);
                 return true;
             }

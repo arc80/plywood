@@ -5,6 +5,6 @@
 #include <ply-runtime/Base.h>
 
 int main() {
-    ply::StdOut::createStringWriter() << "Hello world!\n";
+    ply::StdOut::text() << "Hello world!\n";
     return 0;
 }

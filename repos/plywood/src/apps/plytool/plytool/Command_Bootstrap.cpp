@@ -22,7 +22,7 @@ void command_bootstrap(PlyToolCommandEnv* env) {
     const TargetInstantiator* target =
         RepoRegistry::get()->findTargetInstantiator("plywood.plytool");
     if (!target) {
-        StdErr::createStringWriter() << "Error: Can't find 'plytool' module in 'plywood' repo.\n";
+        StdErr::text() << "Error: Can't find 'plytool' module in 'plywood' repo.\n";
         return;
     }
 
@@ -35,7 +35,7 @@ void command_bootstrap(PlyToolCommandEnv* env) {
     }
     if (instResult.unselectedExterns.numItems() > 0 ||
         instResult.uninstalledProviders.numItems() > 0) {
-        StdErr::createStringWriter()
+        StdErr::text()
             << "Error: Bootstrap file must not have external dependencies.\n";
         return;
     }
@@ -47,12 +47,12 @@ void command_bootstrap(PlyToolCommandEnv* env) {
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         savePath, sw.moveToString(), TextFormat::platformPreference());
     if (result == FSResult::OK) {
-        StdOut::createStringWriter().format("Successfully wrote bootstrap file '{}'.\n", savePath);
+        StdOut::text().format("Successfully wrote bootstrap file '{}'.\n", savePath);
     } else if (result == FSResult::Unchanged) {
-        StdOut::createStringWriter().format("Bootstrap file '{}' is already up-to-date.\n",
+        StdOut::text().format("Bootstrap file '{}' is already up-to-date.\n",
                                             savePath);
     } else {
-        StdErr::createStringWriter().format("Error writing bootstrap file '{}'.\n", savePath);
+        StdErr::text().format("Error writing bootstrap file '{}'.\n", savePath);
     }
 }
 

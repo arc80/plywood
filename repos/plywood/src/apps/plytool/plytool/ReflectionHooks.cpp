@@ -394,7 +394,7 @@ struct ReflectionHooks : ParseSupervisor {
 
     virtual bool handleError(Owned<cpp::BaseError>&& err) override {
         this->anyError = true;
-        StringWriter sw = StdErr::createStringWriter();
+        StringWriter sw = StdErr::text();
         err->writeMessage(&sw, this->parser->pp->visitedFiles);
         return true;
     }

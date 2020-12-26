@@ -46,7 +46,7 @@ s32 command_run(PlyToolCommandEnv* env) {
 
     // FIXME: Implement --args option (should be last option on command line; rest of command line
     // consists of arguments to pass
-    StdOut::createStringWriter().format("Running '{}'...\n", exePath);
+    StdOut::text().format("Running '{}'...\n", exePath);
     Owned<Subprocess> child = Subprocess::exec(exePath, {}, {}, Subprocess::Output::inherit());
     return child->join();
 }

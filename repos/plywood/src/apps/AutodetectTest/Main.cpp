@@ -47,7 +47,7 @@ Tuple<bool, TextFormat> extractFormatFromName(StringView name) {
 bool runTestSuite() {
     String testsFolder =
         NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/AutodetectTest/tests");
-    StringWriter sw = StdOut::createStringWriter();
+    StringWriter sw = StdOut::text();
     u32 succeeded = 0;
     u32 failed = 0;
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(testsFolder)) {

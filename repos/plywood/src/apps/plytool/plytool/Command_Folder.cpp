@@ -17,7 +17,7 @@ void command_folder(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        auto sw = StdErr::createStringWriter();
+        auto sw = StdErr::text();
         printUsage(&sw, "folder",
                    {
                        {"list", "list description"},
@@ -33,7 +33,7 @@ void command_folder(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        StringWriter sw = StdOut::createStringWriter();
+        StringWriter sw = StdOut::text();
         sw << "Build folders found:\n";
         for (const BuildFolder* bf : env->buildFolders) {
             PLY_ASSERT(!bf->buildFolderName.isEmpty());
@@ -63,11 +63,11 @@ void command_folder(PlyToolCommandEnv* env) {
             info->activeConfig = env->workspace->defaultConfig;
         }
         info->save();
-        StdOut::createStringWriter().format("Created build folder '{}' at: {}\n",
+        StdOut::text().format("Created build folder '{}' at: {}\n",
                                             info->buildFolderName, info->getAbsPath());
         env->workspace->currentBuildFolder = name;
         env->workspace->save();
-        StdOut::createStringWriter().format("'{}' is now the current build folder.\n",
+        StdOut::text().format("'{}' is now the current build folder.\n",
                                             info->buildFolderName);
     } else if (prefixMatch(cmd, "delete")) {
         StringView name = env->cl->readToken();
@@ -86,7 +86,7 @@ void command_folder(PlyToolCommandEnv* env) {
         // FIXME: Add confirmation prompt or -f/--force option
         BuildFolder* bf = env->buildFolders[index];
         if (FileSystem::native()->removeDirTree(bf->getAbsPath()) == FSResult::OK) {
-            StdOut::createStringWriter().format("Deleted build folder '{}'.\n",
+            StdOut::text().format("Deleted build folder '{}'.\n",
                                                 bf->buildFolderName);
         } else {
             fatalError(String::format("Can't delete build folder '{}'.\n", bf->buildFolderName));
@@ -106,7 +106,7 @@ void command_folder(PlyToolCommandEnv* env) {
 
         env->workspace->currentBuildFolder = name;
         env->workspace->save();
-        StdOut::createStringWriter().format("'{}' is now the current build folder.\n", name);
+        StdOut::text().format("'{}' is now the current build folder.\n", name);
     } else {
         fatalError(String::format("Unrecognized folder command \"{}\"", cmd));
     }

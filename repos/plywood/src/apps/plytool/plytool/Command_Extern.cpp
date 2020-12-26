@@ -17,7 +17,7 @@ void installProvider(PlyToolCommandEnv* env, const build::ExternProvider* provid
     PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
     PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
 
-    StdOut::createStringWriter().format("Installing extern provider '{}'...\n",
+    StdOut::text().format("Installing extern provider '{}'...\n",
                                         RepoRegistry::get()->getShortProviderName(provider));
 
     Owned<pylon::Node> toolchain =
@@ -48,7 +48,7 @@ void installProvider(PlyToolCommandEnv* env, const build::ExternProvider* provid
             break;
         }
         case ExternResult::Installed: {
-            StdOut::createStringWriter()
+            StdOut::text()
                 << String::format("Successfully installed extern provider '{}'.\n",
                                   RepoRegistry::get()->getShortProviderName(provider));
             break;
@@ -75,7 +75,7 @@ void command_extern(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        auto sw = StdErr::createStringWriter();
+        auto sw = StdErr::text();
         printUsage(&sw, "extern",
                    {
                        {"list", "list description"},
@@ -94,7 +94,7 @@ void command_extern(PlyToolCommandEnv* env) {
         PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
 
         for (const Repo* repo : RepoRegistry::get()->repos) {
-            StringWriter sw = StdOut::createStringWriter();
+            StringWriter sw = StdOut::text();
             u32 n = repo->externs.numItems();
             sw.format("{} extern{} defined in repo '{}'{}\n", n, n == 1 ? "" : "s", repo->repoName,
                       n == 0 ? "." : ":");
@@ -134,7 +134,7 @@ void command_extern(PlyToolCommandEnv* env) {
             }
         }
         u32 n = candidates.numItems();
-        StringWriter sw = StdOut::createStringWriter();
+        StringWriter sw = StdOut::text();
         sw.format("Found {} provider{} for extern '{}':\n", n, n == 1 ? "" : "s",
                   RepoRegistry::get()->getShortDepSourceName(extern_));
         for (Tuple<const ExternProvider*, ExternResult::Code> pair : candidates) {
@@ -196,14 +196,14 @@ void command_extern(PlyToolCommandEnv* env) {
         env->currentBuildFolder->externSelectors.append(provider->getFullyQualifiedName());
         env->currentBuildFolder->save();
 
-        StdOut::createStringWriter().format("Selected extern provider '{}' in build folder '{}'.\n",
+        StdOut::text().format("Selected extern provider '{}' in build folder '{}'.\n",
                                             RepoRegistry::get()->getShortProviderName(provider),
                                             env->currentBuildFolder->buildFolderName);
     } else if (prefixMatch(cmd, "selected")) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        StringWriter sw = StdOut::createStringWriter();
+        StringWriter sw = StdOut::text();
         sw.format("The following extern providers are selected in build folder '{}':\n",
                   env->currentBuildFolder->buildFolderName);
         for (StringView sel : env->currentBuildFolder->externSelectors) {

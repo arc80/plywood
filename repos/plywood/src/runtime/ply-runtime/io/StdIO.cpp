@@ -8,12 +8,12 @@
 
 namespace ply {
 
-PLY_NO_INLINE StringReader StdIn::createStringReader() {
+PLY_NO_INLINE StringReader StdIn::text() {
     Owned<InStream> ins = new InStream{StdPipes::stdIn()};
     return StringReader{createInNewLineFilter(std::move(ins))};
 }
 
-PLY_NO_INLINE StringWriter StdOut::createStringWriter() {
+PLY_NO_INLINE StringWriter StdOut::text() {
     Owned<OutStream> outs = new OutStream{StdPipes::stdOut()};
     bool writeCRLF = false;
 #if PLY_TARGET_WIN32
@@ -22,7 +22,7 @@ PLY_NO_INLINE StringWriter StdOut::createStringWriter() {
     return StringWriter{createOutNewLineFilter(std::move(outs), writeCRLF)};
 }
 
-PLY_NO_INLINE StringWriter StdErr::createStringWriter() {
+PLY_NO_INLINE StringWriter StdErr::text() {
     Owned<OutStream> outs = new OutStream{StdPipes::stdErr()};
     bool writeCRLF = false;
 #if PLY_TARGET_WIN32

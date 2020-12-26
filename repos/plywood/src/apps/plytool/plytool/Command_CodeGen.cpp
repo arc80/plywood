@@ -52,7 +52,7 @@ void writeSwitchInl(SwitchInfo* switch_) {
     String absInlPath = NativePath::join(PLY_WORKSPACE_FOLDER, "repos", switch_->inlineInlPath);
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         absInlPath, getSwitchInl(switch_), TextFormat::platformPreference());
-    StringWriter stdOut = StdOut::createStringWriter();
+    StringWriter stdOut = StdOut::text();
     if (result == FSResult::OK) {
         stdOut.format("Wrote {}\n", absInlPath);
     } else if (result != FSResult::Unchanged) {
@@ -86,7 +86,7 @@ void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs) {
     if (FileSystem::native()->lastResult() == FSResult::OK) {
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
             absPath, srcWithSubst, TextFormat::platformPreference());
-        StringWriter stdOut = StdOut::createStringWriter();
+        StringWriter stdOut = StdOut::text();
         if (result == FSResult::OK) {
             stdOut.format("Wrote {}\n", absPath);
         } else if (result != FSResult::Unchanged) {
@@ -191,7 +191,7 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg) {
         }
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
             absPath, sw.moveToString(), TextFormat::platformPreference());
-        StringWriter stdOut = StdOut::createStringWriter();
+        StringWriter stdOut = StdOut::text();
         if (result == FSResult::OK) {
             stdOut.format("Wrote {}\n", absPath);
         } else if (result != FSResult::Unchanged) {

@@ -32,10 +32,10 @@ int main(int argc, char* argv[]) {
     auto errorHandler = [](build::ErrorHandler::Level errorLevel, HybridString&& error) {
         StringWriter sw;
         if (errorLevel == build::ErrorHandler::Error || errorLevel == build::ErrorHandler::Fatal) {
-            sw = StdErr::createStringWriter();
+            sw = StdErr::text();
             sw << "Error: ";
         } else {
-            sw = StdOut::createStringWriter();
+            sw = StdOut::text();
         }
         sw << error.view();
         if (!error.view().endsWith("\n")) {
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
     bool success = true;
     if (category.isEmpty()) {
         cl.finalize();
-        auto sw = StdErr::createStringWriter();
+        auto sw = StdErr::text();
         const CommandList commands = {
             {"bootstrap", "bootstrap description"}, {"build", "build description"},
             {"cleanup", "cleanup description"},     {"codegen", "codegen description"},

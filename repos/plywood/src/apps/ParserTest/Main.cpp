@@ -64,7 +64,7 @@ void runTest(StringView testPath) {
 void runTestSuite() {
     String testsFolder =
         NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/ParserTest/tests");
-    StringWriter sw = StdOut::createStringWriter();
+    StringWriter sw = StdOut::text();
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(testsFolder)) {
         if (!entry.isDir && entry.name.endsWith(".txt")) {
             sw << entry.name << '\n';

@@ -31,30 +31,42 @@ struct StdIn {
     static PLY_INLINE Borrowed<InPipe> pipe() {
         return StdPipes::stdIn();
     }
-    static PLY_INLINE InStream createStream() {
+    static PLY_INLINE InStream binary() {
         return InStream{StdPipes::stdIn()};
     }
-    static PLY_DLL_ENTRY StringReader createStringReader();
+    static PLY_DLL_ENTRY StringReader text();
+
+    // FIXME: Remove these declarations later:
+    static InStream createStream() = delete;       // call binary() instead
+    static InStream createStringReader() = delete; // call text() instead
 };
 
 struct StdOut {
     static PLY_INLINE Borrowed<OutPipe> pipe() {
         return StdPipes::stdOut();
     }
-    static PLY_INLINE OutStream createStream() {
+    static PLY_INLINE OutStream binary() {
         return OutStream{StdPipes::stdOut()};
     }
-    static PLY_DLL_ENTRY StringWriter createStringWriter();
+    static PLY_DLL_ENTRY StringWriter text();
+
+    // FIXME: Remove these declarations later:
+    static InStream createStream() = delete;       // call binary() instead
+    static InStream createStringWriter() = delete; // call text() instead
 };
 
 struct StdErr {
     static PLY_INLINE Borrowed<OutPipe> pipe() {
         return StdPipes::stdErr();
     }
-    static PLY_INLINE OutStream createStream() {
+    static PLY_INLINE OutStream binary() {
         return OutStream{StdPipes::stdErr()};
     }
-    static PLY_DLL_ENTRY StringWriter createStringWriter();
+    static PLY_DLL_ENTRY StringWriter text();
+
+    // FIXME: Remove these declarations later:
+    static InStream createStream() = delete;       // call binary() instead
+    static InStream createStringWriter() = delete; // call text() instead
 };
 
 } // namespace ply

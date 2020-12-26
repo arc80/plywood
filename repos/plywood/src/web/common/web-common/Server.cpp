@@ -169,7 +169,7 @@ void serverThreadEntry(const ThreadParams& params) {
 bool runServer(u16 port, const RequestHandler& reqHandler) {
     TCPListener listener = Socket::bindTCP(port);
     if (!listener.isValid()) {
-        StdErr::createStringWriter().format("Error: Can't bind to port {}\n", port);
+        StdErr::text().format("Error: Can't bind to port {}\n", port);
         return false;
     }
 

@@ -65,7 +65,7 @@ PLY_NO_INLINE void buildAndRun(const tool::Command::Type::Run& runCmd) {
 }
 
 PLY_NO_INLINE void command_rpc(PlyToolCommandEnv*) {
-    InStream ins = StdIn::createStream();
+    InStream ins = StdIn::binary();
     RegistryTypeResolver resolver;
     resolver.add(TypeResolver<tool::Command>::get());
     Schema schema;

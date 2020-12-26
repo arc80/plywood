@@ -119,7 +119,7 @@ void CookResult::addReference(const CookJobID& jobID) {
 
 void CookResult::addError(String&& error) {
     // FIXME: For now, we always dump the error to the console. Make it configurable instead.
-    StdErr::createStringWriter() << error;
+    StdErr::text() << error;
     this->errors.append(std::move(error));
 }
 

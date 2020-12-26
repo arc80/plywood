@@ -32,7 +32,7 @@ struct PackageManager_MacPorts : PackageManager {
     }
 
     virtual bool installPackage(StringView packageName) override {
-        StdOut::createStringWriter().format(
+        StdOut::text().format(
             R"(Warning: Superuser privileges are required to install '{}'.
 If you're not comfortable entering your password here, cancel with Ctrl+C,
 then run the following command manually:
