@@ -34,7 +34,8 @@ struct TypeResolver {
 
 #define PLY_REFLECT_ENUM(linkage, name) linkage ::ply::TypeDescriptor_Enum* getReflection(name*);
 
-#define PLY_DECLARE_TYPE_DESCRIPTOR(linkage, suffix, name) FIXME
+#define PLY_DECLARE_TYPE_DESCRIPTOR(linkage, suffix, name) \
+    linkage ::ply::TypeDescriptor##suffix* getReflection(name*);
 
 //-----------------------------------------------------------------------
 // TypeKey
@@ -512,7 +513,7 @@ struct Initializer {
     }
 
 #define PLY_STRUCT_BEGIN_PRIM(type) \
-    PLY_NO_INLINE ply::TypeDescriptor_Struct* ply::TypeResolver<type>::get() { \
+    PLY_NO_INLINE ply::TypeDescriptor_Struct* ply::getReflection(type*) { \
         using T = type; \
         static ply::TypeDescriptor_Struct typeDesc { \
             (type*) nullptr, #type, {
