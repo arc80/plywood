@@ -7,14 +7,31 @@
 
 namespace ply {
 
+//------------------------------------------------
+// Float2
+//------------------------------------------------
+PLY_NO_INLINE Float2 Float2::normalized() const {
+    return *this / length();
+}
+
+PLY_NO_INLINE Float2 Float2::safeNormalized(const Float2& fallback, float epsilon) const {
+    float L = length2();
+    if (L < epsilon)
+        return fallback;
+    return *this / sqrtf(L);
+}    
+
+//------------------------------------------------
+// Float3
+//------------------------------------------------
 PLY_NO_INLINE Float3 Float3::normalized() const {
     return *this / length();
 }
 
 PLY_NO_INLINE Float3 Float3::safeNormalized(const Float3& fallback, float epsilon) const {
     float L = length2();
-    if (L < 1e-20f)
-        return epsilon;
+    if (L < epsilon)
+        return fallback;
     return *this / sqrtf(L);
 }    
 
@@ -49,14 +66,17 @@ PLY_NO_INLINE Float3 quantizeUp(const Float3& value, float spacing) {
             quantizeUp(value.z, spacing)};
 }
 
+//------------------------------------------------
+// Float4
+//------------------------------------------------
 PLY_NO_INLINE Float4 Float4::normalized() const {
     return *this / length();
 }
 
 PLY_NO_INLINE Float4 Float4::safeNormalized(const Float4& fallback, float epsilon) const {
     float L = length2();
-    if (L < 1e-20f)
-        return epsilon;
+    if (L < epsilon)
+        return fallback;
     return *this / sqrtf(L);
 }    
 

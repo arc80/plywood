@@ -18,3 +18,11 @@ void module_ply_mathSerial(ModuleArgs* args) {
     args->addTarget(Visibility::Public, "math");
     args->addTarget(Visibility::Public, "reflect");
 }
+
+// [ply module="math-tests"]
+void module_ply_mathTests(ModuleArgs* args) {
+    args->buildTarget->targetType = BuildTargetType::EXE;
+    args->addSourceFiles("tests");
+    args->addTarget(Visibility::Private, "math");
+    args->addTarget(Visibility::Private, "test");
+}

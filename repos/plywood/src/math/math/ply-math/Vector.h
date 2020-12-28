@@ -203,11 +203,12 @@ struct Float2 {
     Returns a unit-length 2D vector having the same direction as `this`. No safety check is
     performed.
     */
-    PLY_NO_DISCARD Float3 normalized() const;
+    PLY_NO_DISCARD Float2 normalized() const;
     /*!
     Returns a unit-length 2D vector having the same direction as `this` with safety checks.
     */
-    PLY_NO_DISCARD Float3 safeNormalized(const Float3& fallback, float epsilon = 1e-20f) const;
+    PLY_NO_DISCARD Float2 safeNormalized(const Float2& fallback = {1, 0},
+                                         float epsilon = 1e-20f) const;
     /*!
     \beginGroup
     Swizzle functions.
@@ -535,7 +536,8 @@ struct Float3 {
     /*!
     Returns a unit-length 3D vector having the same direction as `this` with safety checks.
     */
-    PLY_NO_DISCARD Float3 safeNormalized(const Float3& fallback, float epsilon = 1e-20f) const;
+    PLY_NO_DISCARD Float3 safeNormalized(const Float3& fallback = {1, 0, 0},
+                                         float epsilon = 1e-20f) const;
     /*!
     \beginGroup
     Swizzle functions.
@@ -891,7 +893,8 @@ struct Float4 {
     /*!
     Returns a unit-length 3D vector having the same direction as `this` with safety checks.
     */
-    PLY_NO_DISCARD Float4 safeNormalized(const Float4& fallback, float epsilon = 1e-20f) const;
+    PLY_NO_DISCARD Float4 safeNormalized(const Float4& fallback = {1, 0, 0, 0},
+                                         float epsilon = 1e-20f) const;
     /*!
     \beginGroup
     Swizzle functions.
