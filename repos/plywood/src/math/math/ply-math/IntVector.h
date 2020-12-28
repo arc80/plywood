@@ -175,12 +175,12 @@ inline Int2<T> max(const Int2<T>& a, const Int2<T>& b) {
 // FIXME: Make this operator < and <= ... same for Float2/3/4
 // (Delete existing operator < first, to make sure nobody is using it for sorting)
 template <typename T>
-inline bool allLessThan(const Int2<T>& a, const Int2<T>& b) {
+inline bool allLess(const Int2<T>& a, const Int2<T>& b) {
     return (a.x < b.x) && (a.y < b.y);
 }
 
 template <typename T>
-inline bool allLessThanOrEqual(const Int2<T>& a, const Int2<T>& b) {
+inline bool allLessOrEqual(const Int2<T>& a, const Int2<T>& b) {
     return (a.x <= b.x) && (a.y <= b.y);
 }
 
@@ -344,12 +344,12 @@ inline Int3<T> max(const Int3<T>& a, const Int3<T>& b) {
 // FIXME: Make this operator < and <= ... same for Float2/3/4
 // (Delete existing operator < first, to make sure nobody is using it for sorting)
 template <typename T>
-inline bool allLessThan(const Int3<T>& a, const Int3<T>& b) {
+inline bool allLess(const Int3<T>& a, const Int3<T>& b) {
     return (a.x < b.x) && (a.y < b.y) && (a.z < b.z);
 }
 
 template <typename T>
-inline bool allLessThanOrEqual(const Int3<T>& a, const Int3<T>& b) {
+inline bool allLessOrEqual(const Int3<T>& a, const Int3<T>& b) {
     return (a.x <= b.x) && (a.y <= b.y) && (a.z <= b.z);
 }
 
@@ -512,12 +512,12 @@ inline Int4<T> max(const Int4<T>& a, const Int4<T>& b) {
 // FIXME: Make this operator < and <= ... same for Float2/3/4
 // (Delete existing operator < first, to make sure nobody is using it for sorting)
 template <typename T>
-inline bool allLessThan(const Int4<T>& a, const Int4<T>& b) {
+inline bool allLess(const Int4<T>& a, const Int4<T>& b) {
     return (a.x < b.x) && (a.y < b.y) && (a.z < b.z) && (a.w < b.w);
 }
 
 template <typename T>
-inline bool allLessThanOrEqual(const Int4<T>& a, const Int4<T>& b) {
+inline bool allLessOrEqual(const Int4<T>& a, const Int4<T>& b) {
     return (a.x <= b.x) && (a.y <= b.y) && (a.z <= b.z) && (a.w <= b.w);
 }
 

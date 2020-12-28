@@ -106,6 +106,116 @@ PLY_TEST_CASE("Float2 lengths") {
     PLY_TEST_CHECK(Float2{0}.safeNormalized().isUnit());
 }
 
+PLY_TEST_CASE("Float2 swizzles") {
+    Float2 v = {4, 5};
+    PLY_TEST_CHECK(v.swizzle(1, 0) == Float2{5, 4});
+    PLY_TEST_CHECK(v.swizzle(1, 0, 1) == Float3{5, 4, 5});
+    PLY_TEST_CHECK(v.swizzle(1, 1, 1, 0) == Float4{5, 5, 5, 4});
+}
+
+PLY_TEST_CASE("Float2 dot product") {
+    Float2 v1 = {2, 3};
+    Float2 v2 = {4, 5};
+    PLY_TEST_CHECK(dot(v1, v2) == 23);
+    PLY_TEST_CHECK(v1.length2() == dot(v1, v1));
+}
+
+PLY_TEST_CASE("Float2 cross product") {
+    PLY_TEST_CHECK(cross(Float2{1, 0}, Float2{0, 1}) == 1.f);
+    PLY_TEST_CHECK(cross(Float2{1, 0}, Float2{1, 0}) == 0.f);
+    PLY_TEST_CHECK(cross(Float2{2, 2}, Float2{0, 4}) == 8);
+    PLY_TEST_CHECK(cross(Float2{2, 2}, Float2{4, 0}) == -8);
+}
+
+PLY_TEST_CASE("Float2 clamp") {
+    PLY_TEST_CHECK(clamp(Float2{2, 2}, 0, 1) == Float2{1, 1});
+    PLY_TEST_CHECK(clamp(Float2{2, 0.5f}, 0, 1) == Float2{1, 0.5f});
+    PLY_TEST_CHECK(clamp(Float2{-1, -1}, 0, 1) == Float2{0, 0});
+    PLY_TEST_CHECK(clamp(Float2{3, 4}, Float2{0, 1}, Float2{1, 2}) == Float2{1, 2});
+    PLY_TEST_CHECK(clamp(Float2{3, 1.5f}, Float2{0, 1}, Float2{1, 2}) == Float2{1, 1.5f});
+    PLY_TEST_CHECK(clamp(Float2{-1, -1}, Float2{0, 1}, Float2{1, 2}) == Float2{0, 1});
+}
+
+PLY_TEST_CASE("Float2 abs") {
+    PLY_TEST_CHECK(abs(Float2{1, 1}) == Float2{1, 1});
+    PLY_TEST_CHECK(abs(Float2{-1, -1}) == Float2{1, 1});
+    PLY_TEST_CHECK(abs(Float2{-2, 3}) == Float2{2, 3});
+    PLY_TEST_CHECK(abs(Float2{2, -3}) == Float2{2, 3});
+}
+
+PLY_TEST_CASE("Float2 min") {
+    PLY_TEST_CHECK(min(Float2{1, 0}, Float2{0, 1}) == Float2{0, 0});
+    PLY_TEST_CHECK(min(Float2{0, 1}, Float2{1, 0}) == Float2{0, 0});
+    PLY_TEST_CHECK(min(Float2{2, 2}, Float2{3, 3}) == Float2{2, 2});
+    PLY_TEST_CHECK(min(Float2{3, 3}, Float2{2, 2}) == Float2{2, 2});
+}
+
+PLY_TEST_CASE("Float2 max") {
+    PLY_TEST_CHECK(max(Float2{1, 0}, Float2{0, 1}) == Float2{1, 1});
+    PLY_TEST_CHECK(max(Float2{0, 1}, Float2{1, 0}) == Float2{1, 1});
+    PLY_TEST_CHECK(max(Float2{2, 2}, Float2{3, 3}) == Float2{3, 3});
+    PLY_TEST_CHECK(max(Float2{3, 3}, Float2{2, 2}) == Float2{3, 3});
+}
+
+PLY_TEST_CASE("Float2 allLess") {
+    PLY_TEST_CHECK(allLess(Float2{-1, -1}, 0));
+    PLY_TEST_CHECK(!allLess(Float2{1, -1}, 0));
+    PLY_TEST_CHECK(!allLess(Float2{-1, 1}, 0));
+    PLY_TEST_CHECK(!allLess(Float2{1, 1}, 0));
+    PLY_TEST_CHECK(!allLess(Float2{0, 0}, 0));
+    PLY_TEST_CHECK(allLess(Float2{0, 1}, Float2{1, 2}));
+    PLY_TEST_CHECK(!allLess(Float2{2, 1}, Float2{1, 2}));
+    PLY_TEST_CHECK(!allLess(Float2{0, 3}, Float2{1, 2}));
+    PLY_TEST_CHECK(!allLess(Float2{2, 3}, Float2{1, 2}));
+    PLY_TEST_CHECK(!allLess(Float2{1, 2}, Float2{1, 2}));
+}
+
+PLY_TEST_CASE("Float2 allLessOrEqual") {
+    PLY_TEST_CHECK(allLessOrEqual(Float2{-1, -1}, 0));
+    PLY_TEST_CHECK(!allLessOrEqual(Float2{1, -1}, 0));
+    PLY_TEST_CHECK(!allLessOrEqual(Float2{-1, 1}, 0));
+    PLY_TEST_CHECK(!allLessOrEqual(Float2{1, 1}, 0));
+    PLY_TEST_CHECK(allLessOrEqual(Float2{0, 0}, 0));
+    PLY_TEST_CHECK(allLessOrEqual(Float2{0, 1}, Float2{1, 2}));
+    PLY_TEST_CHECK(!allLessOrEqual(Float2{2, 1}, Float2{1, 2}));
+    PLY_TEST_CHECK(!allLessOrEqual(Float2{0, 3}, Float2{1, 2}));
+    PLY_TEST_CHECK(!allLessOrEqual(Float2{2, 3}, Float2{1, 2}));
+    PLY_TEST_CHECK(allLessOrEqual(Float2{1, 2}, Float2{1, 2}));
+}
+
+PLY_TEST_CASE("Float2 quantizeNearest") {
+    PLY_TEST_CHECK(quantizeNearest(Float2{0.3f, 1.4f}, 2) == Float2{0, 2});
+    PLY_TEST_CHECK(quantizeNearest(Float2{-0.3f, 1.4f}, 1) == Float2{0, 1});
+    PLY_TEST_CHECK(quantizeNearest(Float2{0.3f, -1.4f}, 1) == Float2{0, -1});
+    PLY_TEST_CHECK(quantizeNearest(Float2{-0.3f, 1.4f}, 0.5f) == Float2{-0.5f, 1.5f});
+}
+
+PLY_TEST_CASE("Float2 quantizeUp") {
+    PLY_TEST_CHECK(quantizeUp(Float2{0.3f, 1.4f}, 2) == Float2{2, 2});
+    PLY_TEST_CHECK(quantizeUp(Float2{-0.3f, 1.4f}, 1) == Float2{0, 2});
+    PLY_TEST_CHECK(quantizeUp(Float2{0.3f, -1.4f}, 1) == Float2{1, -1});
+    PLY_TEST_CHECK(quantizeUp(Float2{-0.3f, 1.4f}, 0.5f) == Float2{0, 1.5f});
+}
+
+PLY_TEST_CASE("Float2 quantizeDown") {
+    PLY_TEST_CHECK(quantizeDown(Float2{0.3f, 1.4f}, 2) == Float2{0, 0});
+    PLY_TEST_CHECK(quantizeDown(Float2{-0.3f, 1.4f}, 1) == Float2{-1, 1});
+    PLY_TEST_CHECK(quantizeDown(Float2{0.3f, -1.4f}, 1) == Float2{0, -2});
+    PLY_TEST_CHECK(quantizeDown(Float2{-0.3f, 1.4f}, 0.5f) == Float2{-0.5f, 1});
+}
+
+PLY_TEST_CASE("Float2 isQuantized") {
+    PLY_TEST_CHECK(isQuantized(Float2{0, 1}, 1));
+    PLY_TEST_CHECK(!isQuantized(Float2{0.5f, 0}, 1));
+    PLY_TEST_CHECK(!isQuantized(Float2{1, -0.5}, 1));
+    PLY_TEST_CHECK(isQuantized(Float2{0, 1}, 0.5f));
+    PLY_TEST_CHECK(isQuantized(Float2{0.5f, -0.f}, 0.5f));
+    PLY_TEST_CHECK(isQuantized(Float2{1, -0.5}, 0.5f));
+    PLY_TEST_CHECK(!isQuantized(Float2{-0.5f, 0.3f}, 0.5f));
+    PLY_TEST_CHECK(!isQuantized(Float2{0, 1}, 2));
+    PLY_TEST_CHECK(isQuantized(Float2{4, 8}, 2));
+}
+
 } // namespace ply
 
 int main() {

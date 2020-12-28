@@ -51,6 +51,7 @@ inline float fastRound(float x) {
     return (float) _mm_cvtt_ss2si(added);
 #else
     // Non-intrinsic version
+    // PLY_PUN_SCOPE
     float frac = 0.5f;
     u32 s = (*(u32*) &x) & 0x80000000u;
     u32 c = (*(u32*) &frac) | s;

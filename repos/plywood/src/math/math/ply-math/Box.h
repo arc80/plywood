@@ -91,7 +91,7 @@ struct Box {
     }
 
     bool isEmpty() const {
-        return !allLessThan(mins, maxs); // Note: This is different from (maxs > mins)
+        return !allLess(mins, maxs); // Note: This is different from (maxs > mins)
     }
 
     T width() const {
@@ -150,11 +150,11 @@ struct Box {
 
     // Boolean operations
     bool contains(const V& arg) const {
-        return allLessThanOrEqual(mins, arg) && allLessThan(arg, maxs);
+        return allLessOrEqual(mins, arg) && allLess(arg, maxs);
     }
 
     bool contains(const Box& arg) const {
-        return allLessThanOrEqual(mins, arg.mins) && allLessThanOrEqual(arg.maxs, maxs);
+        return allLessOrEqual(mins, arg.mins) && allLessOrEqual(arg.maxs, maxs);
     }
 
     bool intersects(const Box& arg) const {
