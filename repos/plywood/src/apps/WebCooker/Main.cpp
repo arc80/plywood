@@ -172,6 +172,10 @@ int main() {
         getSourceFileKeys(NativePath::join(PLY_WORKSPACE_FOLDER,
                                            "repos/plywood/src/runtime/ply-runtime/filesystem"))
             .view());
+    srcKeys.extend(
+        getSourceFileKeys(NativePath::join(PLY_WORKSPACE_FOLDER,
+                                           "repos/plywood/src/math/math/ply-math"))
+            .view());
     for (StringView srcKey : srcKeys) {
         rootRefs.append(ctx.cook({&ply::docs::CookJobType_ExtractAPI, srcKey}));
     }

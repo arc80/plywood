@@ -109,12 +109,9 @@ struct Quaternion {
     Float4x4 toFloat4x4(const Float3& xlate = {0, 0, 0}) const;
 };
 
-inline const Quaternion& Float4::asQuaternion() const {
+PLY_INLINE const Quaternion& Float4::asQuaternion() const {
+    PLY_COMPILER_BARRIER();
     return reinterpret_cast<const Quaternion&>(*this);
-}
-
-inline Quaternion& Float4::asQuaternion() {
-    return reinterpret_cast<Quaternion&>(*this);
 }
 
 inline Quaternion mix(const Quaternion& lo, const Quaternion& hi, float f) {

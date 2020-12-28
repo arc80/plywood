@@ -24,8 +24,8 @@ Quaternion Quaternion::fromUnitVectors(const Float3& start, const Float3& end) {
     return Float4{v, w}.normalized().asQuaternion();
 }
 
-template <class M>
-Quaternion quaternionFromOrtho(const M& m) {
+template <typename M>
+PLY_INLINE Quaternion quaternionFromOrtho(M m) {
     float t; // This will be set to 4*c*c for some quaternion component c.
     // At least one component's square must be >= 1/4. (Otherwise, it isn't a unit quaternion.)
     // Let's require t >= 1/2. This will accept any component whose square is >= 1/8.
@@ -55,11 +55,13 @@ Quaternion quaternionFromOrtho(const M& m) {
 }
 
 Quaternion Quaternion::fromOrtho(const Float3x3& m) {
-    return quaternionFromOrtho(m);
+    PLY_PUN_SCOPE
+    return quaternionFromOrtho(reinterpret_cast<const float(*)[3]>(&m));
 }
 
 Quaternion Quaternion::fromOrtho(const Float4x4& m) {
-    return quaternionFromOrtho(m);
+    PLY_PUN_SCOPE
+    return quaternionFromOrtho(reinterpret_cast<const float(*)[4]>(&m));
 }
 
 } // namespace ply

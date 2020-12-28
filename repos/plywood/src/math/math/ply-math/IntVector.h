@@ -30,7 +30,9 @@ struct Int2 {
 
     template <typename OtherVec2>
     OtherVec2 to() const {
-        return {typename OtherVec2::T(x), typename OtherVec2::T(y)};
+        using T = decltype(OtherVec2::x);
+        PLY_STATIC_ASSERT(sizeof(OtherVec2) == sizeof(T) * 2);
+        return {(T) x, (T) y};
     }
 
     T& operator[](size_t i) {
@@ -374,8 +376,9 @@ struct Int4 {
 
     template <typename OtherVec4>
     OtherVec4 to() const {
-        return {typename OtherVec4::T(x), typename OtherVec4::T(y), typename OtherVec4::T(z),
-                typename OtherVec4::T(w)};
+        using T = decltype(OtherVec4::x);
+        PLY_STATIC_ASSERT(sizeof(OtherVec4) == sizeof(T) * 4);
+        return {(T) x, (T) y, (T) z, (T) w};
     }
 
     T& operator[](size_t i) {

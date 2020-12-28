@@ -34,6 +34,7 @@ PLY_INLINE void ply_yieldHWThread() {
 
 #define PLY_DEBUG_BREAK() __builtin_trap()
 #define PLY_FORCE_CRASH() __builtin_trap()
+#define PLY_COMPILER_BARRIER() asm volatile("" ::: "memory")
 
 //-------------------------------------
 //  DLL imports

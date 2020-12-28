@@ -23,7 +23,7 @@ struct Float4x4;
 
 struct Float2x2 {
     typedef Float2 V;
-    static const size_t Cols = 2;
+    static const ureg Cols = 2;
 
     V col[Cols];
 
@@ -31,17 +31,17 @@ struct Float2x2 {
 
     Float2x2(std::initializer_list<V> init) {
         PLY_ASSERT(init.size() == Cols);
-        size_t i = 0;
+        ureg i = 0;
         for (const V& c : init)
             col[i++] = c;
     }
 
-    V& operator[](size_t i) {
+    V& operator[](ureg i) {
         PLY_ASSERT(i < Cols);
         return col[i];
     }
 
-    const V& operator[](size_t i) const {
+    const V& operator[](ureg i) const {
         PLY_ASSERT(i < Cols);
         return col[i];
     }
@@ -58,32 +58,11 @@ struct Float2x2 {
         return (col[0] == arg.col[0]) && (col[1] == arg.col[1]);
     }
 
-    Float2 operator*(const Float2& arg) const {
-        Float2 result;
-        for (size_t r = 0; r < 2; r++) {
-            float v = 0;
-            for (size_t c = 0; c < 2; c++) {
-                v += col[c][r] * arg[c];
-            }
-            result[r] = v;
-        }
-        return result;
-    }
+    Float2 operator*(const Float2& arg) const;
 
-    Float2x2 operator*(const Float2x2& arg) const {
-        Float2x2 result;
-        for (size_t c = 0; c < 2; c++)
-            result[c] = *this * arg.col[c];
-        return result;
-    }
+    Float2x2 operator*(const Float2x2& arg) const;
 
-    Float2x2 transposed() const {
-        Float2x2 result;
-        for (size_t c = 0; c < 2; c++)
-            for (size_t r = 0; r < 2; r++)
-                result.col[c][r] = col[r][c];
-        return result;
-    }
+    Float2x2 transposed() const;
 
     static Float2x2 makeScale(const Float2& arg) {
         return Float2x2{{arg.x, 0}, {0, arg.y}};
@@ -108,7 +87,7 @@ struct Float2x2 {
 
 struct Float3x3 {
     typedef Float3 V;
-    static const size_t Cols = 3;
+    static const ureg Cols = 3;
 
     V col[Cols];
 
@@ -116,17 +95,17 @@ struct Float3x3 {
 
     Float3x3(std::initializer_list<V> init) {
         PLY_ASSERT(init.size() == Cols);
-        size_t i = 0;
+        ureg i = 0;
         for (const V& c : init)
             col[i++] = c;
     }
 
-    V& operator[](size_t i) {
+    V& operator[](ureg i) {
         PLY_ASSERT(i < Cols);
         return col[i];
     }
 
-    const V& operator[](size_t i) const {
+    const V& operator[](ureg i) const {
         PLY_ASSERT(i < Cols);
         return col[i];
     }
@@ -146,32 +125,11 @@ struct Float3x3 {
     Float3x4 toFloat3x4(const Float3& translate = {0, 0, 0}) const;
     Float4x4 toFloat4x4(const Float3& translate = {0, 0, 0}) const;
 
-    Float3 operator*(const Float3& arg) const {
-        Float3 result;
-        for (size_t r = 0; r < 3; r++) {
-            float v = 0;
-            for (size_t c = 0; c < 3; c++) {
-                v += col[c][r] * arg[c];
-            }
-            result[r] = v;
-        }
-        return result;
-    }
+    Float3 operator*(const Float3& arg) const;
 
-    Float3x3 operator*(const Float3x3& arg) const {
-        Float3x3 result;
-        for (size_t c = 0; c < 3; c++)
-            result[c] = *this * arg.col[c];
-        return result;
-    }
+    Float3x3 operator*(const Float3x3& arg) const;
 
-    Float3x3 transposed() const {
-        Float3x3 result;
-        for (size_t c = 0; c < 3; c++)
-            for (size_t r = 0; r < 3; r++)
-                result.col[c][r] = col[r][c];
-        return result;
-    }
+    Float3x3 transposed() const;
 
     bool hasScale(float thresh = 0.001f) const {
         return !col[0].isUnit() || !col[1].isUnit() || !col[2].isUnit();
@@ -204,7 +162,7 @@ inline Float3x3 Quaternion::toFloat3x3() const {
 
 struct Float3x4 {
     typedef Float3 V;
-    static const size_t Cols = 4;
+    static const ureg Cols = 4;
 
     V col[Cols];
 
@@ -215,7 +173,7 @@ struct Float3x4 {
 
     Float3x4(std::initializer_list<V> init) {
         PLY_ASSERT(init.size() == Cols);
-        size_t i = 0;
+        ureg i = 0;
         for (const V& c : init)
             col[i++] = c;
     }
@@ -228,12 +186,12 @@ struct Float3x4 {
         return reinterpret_cast<const Float3x3&>(*this);
     }
 
-    V& operator[](size_t i) {
+    V& operator[](ureg i) {
         PLY_ASSERT(i < Cols);
         return col[i];
     }
 
-    const V& operator[](size_t i) const {
+    const V& operator[](ureg i) const {
         PLY_ASSERT(i < Cols);
         return col[i];
     }
@@ -257,26 +215,13 @@ struct Float3x4 {
                (col[3] == arg.col[3]);
     }
 
-    Float3 operator*(const Float3& arg) const {
-        Float3 result;
-        for (size_t r = 0; r < 3; r++) {
-            result[r] = col[0][r] * arg[0] + col[1][r] * arg[1] + col[2][r] * arg[2] + col[3][r];
-        }
-        return result;
-    }
+    Float3 operator*(const Float3& arg) const;
 
-    Float3 operator*(const Float4& arg) const {
-        Float3 result;
-        for (size_t r = 0; r < 3; r++) {
-            result[r] =
-                col[0][r] * arg[0] + col[1][r] * arg[1] + col[2][r] * arg[2] + col[3][r] * arg[3];
-        }
-        return result;
-    }
+    Float3 operator*(const Float4& arg) const;
 
     Float3x4 operator*(const Float3x4& b) const {
         Float3x4 result;
-        for (size_t c = 0; c < 3; c++)
+        for (ureg c = 0; c < 3; c++)
             result[c] = asFloat3x3() * b.col[c];
         result[3] = *this * b.col[3];
         return result;
@@ -319,7 +264,7 @@ inline Float3x4 Quaternion::toFloat3x4(const Float3& xlate) const {
 
 struct Float4x4 {
     typedef Float4 V;
-    static const size_t Cols = 4;
+    static const ureg Cols = 4;
 
     V col[Cols];
 
@@ -327,17 +272,17 @@ struct Float4x4 {
 
     Float4x4(std::initializer_list<V> init) {
         PLY_ASSERT(init.size() == Cols);
-        size_t i = 0;
+        ureg i = 0;
         for (const V& c : init)
             col[i++] = c;
     }
 
-    V& operator[](size_t i) {
+    V& operator[](ureg i) {
         PLY_ASSERT(i < Cols);
         return col[i];
     }
 
-    const V& operator[](size_t i) const {
+    const V& operator[](ureg i) const {
         PLY_ASSERT(i < Cols);
         return col[i];
     }
@@ -367,57 +312,15 @@ struct Float4x4 {
                (col[3] == arg.col[3]);
     }
 
-    Float4 operator*(const Float4& arg) const {
-        Float4 result;
-        for (size_t r = 0; r < 4; r++) {
-            float v = 0;
-            for (size_t c = 0; c < 4; c++) {
-                v += col[c][r] * arg[c];
-            }
-            result[r] = v;
-        }
-        return result;
-    }
+    Float4 operator*(const Float4& arg) const;
 
-    Float4x4 operator*(const Float4x4& arg) const {
-        Float4x4 result;
-        for (size_t c = 0; c < 4; c++)
-            result[c] = *this * arg.col[c];
-        return result;
-    }
+    Float4x4 operator*(const Float4x4& arg) const;
 
-    Float4x4 operator*(const Float3x4& arg) const {
-        Float4x4 result;
-        for (size_t c = 0; c < 3; c++)
-            result[c] = *this * Float4{arg.col[c], 0};
-        result[3] = *this * Float4{arg.col[3], 1};
-        return result;
-    }
+    Float4x4 operator*(const Float3x4& arg) const;
 
-    friend Float4x4 operator*(const Float3x4& m0, const Float4x4& m1) {
-        Float4x4 result;
-        for (size_t c = 0; c < 4; c++)
-            result[c] = Float4{m0 * m1.col[c], m1.col[c][3]};
-        return result;
-    }
+    Float4x4 transposed() const;
 
-    Float4x4 transposed() const {
-        Float4x4 result;
-        for (size_t c = 0; c < 4; c++)
-            for (size_t r = 0; r < 4; r++)
-                result.col[c][r] = col[r][c];
-        return result;
-    }
-
-    Float4x4 invertedOrtho() const {
-        Float4x4 result = transposed();
-        result.col[0][3] = 0;
-        result.col[1][3] = 0;
-        result.col[2][3] = 0;
-        result.col[3][3] = 1;
-        result.col[3].asFloat3() = (result * -col[3]).asFloat3();
-        return result;
-    }
+    Float4x4 invertedOrtho() const;
 
     static Float4x4 makeScale(const Float3& arg) {
         return {{arg.x, 0, 0, 0}, {0, arg.y, 0, 0}, {0, 0, arg.z, 0}, {0, 0, 0, 1}};
@@ -441,13 +344,13 @@ struct Float4x4 {
         float ooXDenom = 1.f / (frustum.maxs.x - frustum.mins.x);
         float ooYDenom = 1.f / (frustum.maxs.y - frustum.mins.y);
         float ooZDenom = 1.f / (zNear - zFar);
-        result.col[0][0] = 2.f * ooXDenom;
-        result.col[2][0] = (frustum.mins.x + frustum.maxs.x) * ooXDenom;
-        result.col[1][1] = 2.f * ooYDenom;
-        result.col[2][1] = (frustum.mins.y + frustum.maxs.y) * ooXDenom;
-        result.col[2][2] = (zNear + zFar) * ooZDenom;
-        result.col[2][3] = -1.f;
-        result.col[3][2] = (2 * zNear * zFar) * ooZDenom;
+        result.col[0].x = 2.f * ooXDenom;
+        result.col[2].x = (frustum.mins.x + frustum.maxs.x) * ooXDenom;
+        result.col[1].y = 2.f * ooYDenom;
+        result.col[2].y = (frustum.mins.y + frustum.maxs.y) * ooXDenom;
+        result.col[2].z = (zNear + zFar) * ooZDenom;
+        result.col[2].w = -1.f;
+        result.col[3].z = (2 * zNear * zFar) * ooZDenom;
         return result;
     }
 
@@ -462,13 +365,13 @@ struct Float4x4 {
         float tow = 2 / rect.width();
         float toh = 2 / rect.height();
         float ooZRange = 1 / (zNear - zFar);
-        result.col[0][0] = tow;
-        result.col[3][0] = -rect.mid().x * tow;
-        result.col[1][1] = toh;
-        result.col[3][1] = -rect.mid().y * toh;
-        result.col[2][2] = 2 * ooZRange;
-        result.col[3][3] = 1.f;
-        result.col[3][2] = (zNear + zFar) * ooZRange;
+        result.col[0].x = tow;
+        result.col[3].x = -rect.mid().x * tow;
+        result.col[1].y = toh;
+        result.col[3].y = -rect.mid().y * toh;
+        result.col[2].z = 2 * ooZRange;
+        result.col[3].z = (zNear + zFar) * ooZRange;
+        result.col[3].w = 1.f;
         return result;
     }
 };

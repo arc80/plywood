@@ -7,10 +7,9 @@
 
 namespace ply {
 
-template <class V_>
+template <class V>
 struct Box {
-    typedef V_ V;
-    typedef typename V::T T;
+    using T = decltype(V::x);
 
     V mins;
     V maxs;
@@ -38,8 +37,8 @@ struct Box {
 
     template <typename OtherBox>
     OtherBox to() const {
-        return OtherBox{mins.template to<typename OtherBox::V>(),
-                        maxs.template to<typename OtherBox::V>()};
+        using V2 = decltype(OtherBox::mins);
+        return OtherBox{mins.template to<V2>(), maxs.template to<V2>()};
     }
 
     // +

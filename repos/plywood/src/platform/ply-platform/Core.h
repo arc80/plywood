@@ -136,21 +136,35 @@ struct Empty {};
     template <typename T0, typename T1> static constexpr bool name = (sizeof(Check##name<T0, T1>(nullptr)) == 4);
 
 namespace ply {
-PLY_INLINE constexpr u32 swizzle(u32 v) {
+PLY_INLINE constexpr u32 reverseBytes(u32 v) {
     return ((v >> 24) & 0xff) | ((v >> 8) & 0xff00) | ((v << 8) & 0xff0000) | ((v << 24) & 0xff000000u);
 }
-PLY_INLINE constexpr u16 swizzle(u16 v) {
+PLY_INLINE constexpr u16 reverseBytes(u16 v) {
     return ((v >> 8) & 0xff) | ((v << 8) & 0xff00);
 }
 } // namespace ply
 
 #if PLY_IS_BIG_ENDIAN
     #define PLY_CONVERT_BIG_ENDIAN(x) (x)
-    #define PLY_CONVERT_LITTLE_ENDIAN(x) ::ply::swizzle(x)
+    #define PLY_CONVERT_LITTLE_ENDIAN(x) ::ply::reverseBytes(x)
 #else
     #define PLY_CONVERT_LITTLE_ENDIAN(x) (x)
-    #define PLY_CONVERT_BIG_ENDIAN(x) ::ply::swizzle(x)
+    #define PLY_CONVERT_BIG_ENDIAN(x) ::ply::reverseBytes(x)
 #endif
+
+//---------------------------------------------
+// PLY_PUN_SCOPE
+//---------------------------------------------
+struct PunScope {
+    PLY_INLINE PunScope() {
+        PLY_COMPILER_BARRIER();
+    }
+    PLY_INLINE ~PunScope() {
+        PLY_COMPILER_BARRIER();
+    }
+};
+
+#define PLY_PUN_SCOPE PunScope PLY_UNIQUE_VARIABLE(_punScope_);
 
 //---------------------------------------------
 // PLY_DLL_ENTRY

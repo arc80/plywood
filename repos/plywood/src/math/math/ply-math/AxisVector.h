@@ -46,10 +46,12 @@ inline s32 dot(Axis3 va, Axis3 vb) {
     return sgn & mask;
 }
 
-inline float dot(Axis3 va, const Float3& vb) {
+PLY_INLINE float dot(Axis3 va, const Float3& vb) {
+    PLY_PUN_SCOPE
+    auto* vb_ = reinterpret_cast<const float*>(&vb);
     s32 a = s32(va);
     s32 sgn = 1 - (a & 1) * 2;
-    return vb[a >> 1] * sgn;
+    return vb_[a >> 1] * sgn;
 }
 
 inline Axis3 negate(Axis3 axis3D) {
@@ -86,8 +88,12 @@ inline Axis2 negate(Axis2 vec) {
 
 inline Float2 operator*(Axis2 rot, const Float2& v) {
     Float2 r;
-    r[u32(rot) & 1] = v.x * sgn(rot);
-    r[1 - (u32(rot) & 1)] = v.y * sgn(Axis2((u32(rot) + 1) & 3));
+    {
+        PLY_PUN_SCOPE
+        auto* r_ = reinterpret_cast<float*>(&r);
+        r_[u32(rot) & 1] = v.x * sgn(rot);
+        r_[1 - (u32(rot) & 1)] = v.y * sgn(Axis2((u32(rot) + 1) & 3));
+    }
     return r;
 }
 
@@ -185,9 +191,13 @@ struct AxisRot {
     Float3 operator*(const Float3& v) const {
         PLY_ASSERT(isOrtho());
         Float3 r = {0, 0, 0};
-        r[u32(cols[0]) >> 1] = v.x * sgn(cols[0]);
-        r[u32(cols[1]) >> 1] = v.y * sgn(cols[1]);
-        r[u32(cols[2]) >> 1] = v.z * sgn(cols[2]);
+        {
+            PLY_PUN_SCOPE
+            auto* r_ = reinterpret_cast<float*>(&r);
+            r_[u32(cols[0]) >> 1] = v.x * sgn(cols[0]);
+            r_[u32(cols[1]) >> 1] = v.y * sgn(cols[1]);
+            r_[u32(cols[2]) >> 1] = v.z * sgn(cols[2]);
+        }
         return r;
     }
 
@@ -280,14 +290,6 @@ struct AxisRotPos {
 
     bool operator==(const AxisRotPos& other) const {
         return rot == other.rot && pos == other.pos;
-    }
-
-    bool operator<(const AxisRotPos& other) const {
-        if (rot != other.rot) {
-            return rot < other.rot;
-        } else {
-            return pos < other.pos;
-        }
     }
 
     AxisRotPos inverted() const {
