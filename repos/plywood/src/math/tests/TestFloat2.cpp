@@ -207,10 +207,10 @@ PLY_TEST_CASE("Float2 quantizeDown") {
 PLY_TEST_CASE("Float2 isQuantized") {
     PLY_TEST_CHECK(isQuantized(Float2{0, 1}, 1));
     PLY_TEST_CHECK(!isQuantized(Float2{0.5f, 0}, 1));
-    PLY_TEST_CHECK(!isQuantized(Float2{1, -0.5}, 1));
+    PLY_TEST_CHECK(!isQuantized(Float2{1, -0.5f}, 1));
     PLY_TEST_CHECK(isQuantized(Float2{0, 1}, 0.5f));
     PLY_TEST_CHECK(isQuantized(Float2{0.5f, -0.f}, 0.5f));
-    PLY_TEST_CHECK(isQuantized(Float2{1, -0.5}, 0.5f));
+    PLY_TEST_CHECK(isQuantized(Float2{1, -0.5f}, 0.5f));
     PLY_TEST_CHECK(!isQuantized(Float2{-0.5f, 0.3f}, 0.5f));
     PLY_TEST_CHECK(!isQuantized(Float2{0, 1}, 2));
     PLY_TEST_CHECK(isQuantized(Float2{4, 8}, 2));
