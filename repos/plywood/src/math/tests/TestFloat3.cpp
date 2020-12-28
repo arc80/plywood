@@ -41,60 +41,51 @@ PLY_TEST_CASE("Float3 comparisons") {
 }
 
 PLY_TEST_CASE("Float3 unary negation") {
-    Float3 v = -Float3{1, 2, 5};
-    PLY_TEST_CHECK(v.x == -1 && v.y == -2 && v.z == -5);
+    PLY_TEST_CHECK(-Float3{1, 2, 5} == Float3{-1, -2, -5});
 }
 
 PLY_TEST_CASE("Float3 addition") {
-    Float3 v = Float3{1, 2, 5} + Float3{3, 4, 0};
-    PLY_TEST_CHECK(v.x == 4 && v.y == 6 && v.z == 5);
-    Float3 v2 = Float3{1, 2, 5} + 3;
-    PLY_TEST_CHECK(v2.x == 4 && v2.y == 5 && v2.z == 8);
-    Float3 v3 = 3 + Float3{1, 2, 5};
-    PLY_TEST_CHECK(v3.x == 4 && v3.y == 5 && v3.z == 8);
-    v3 += Float3{1, 2, 5};
-    PLY_TEST_CHECK(v3.x == 5 && v3.y == 7 && v3.z == 13);
-    v3 += 1;
-    PLY_TEST_CHECK(v3.x == 6 && v3.y == 8 && v3.z == 14);
+    PLY_TEST_CHECK(Float3{1, 2, 5} + Float3{3, 4, 0} == Float3{4, 6, 5});
+    PLY_TEST_CHECK(Float3{1, 2, 5} + 3 == Float3{4, 5, 8});
+    PLY_TEST_CHECK(3 + Float3{1, 2, 5} == Float3{4, 5, 8});
+    Float3 v = {4, 5, 8};
+    v += Float3{1, 2, 5};
+    PLY_TEST_CHECK(v == Float3{5, 7, 13});
+    v += 1;
+    PLY_TEST_CHECK(v == Float3{6, 8, 14});
 }
 
 PLY_TEST_CASE("Float3 subtraction") {
-    Float3 v = Float3{3, 4, 5} - Float3{1, 2, 1};
-    PLY_TEST_CHECK(v.x == 2 && v.y == 2 && v.z == 4);
-    Float3 v2 = Float3{2, 3, 5} - 1;
-    PLY_TEST_CHECK(v2.x == 1 && v2.y == 2 && v2.z == 4);
-    Float3 v3 = 6 - Float3{1, 2, 1};
-    PLY_TEST_CHECK(v3.x == 5 && v3.y == 4 && v3.z == 5);
-    v3 -= Float3{1, 2, 0};
-    PLY_TEST_CHECK(v3.x == 4 && v3.y == 2 && v3.z == 5);
-    v3 -= 1;
-    PLY_TEST_CHECK(v3.x == 3 && v3.y == 1 && v3.z == 4);
+    PLY_TEST_CHECK(Float3{3, 4, 5} - Float3{1, 2, 1} == Float3{2, 2, 4});
+    PLY_TEST_CHECK(Float3{2, 3, 5} - 1 == Float3{1, 2, 4});
+    PLY_TEST_CHECK(6 - Float3{1, 2, 1} == Float3{5, 4, 5});
+    Float3 v = {5, 4, 5};
+    v -= Float3{1, 2, 0};
+    PLY_TEST_CHECK(v == Float3{4, 2, 5});
+    v -= 1;
+    PLY_TEST_CHECK(v == Float3{3, 1, 4});
 }
 
 PLY_TEST_CASE("Float3 component-wise multiplication") {
-    Float3 v = Float3{1, 2, 5} * Float3{3, 4, 2};
-    PLY_TEST_CHECK(v.x == 3 && v.y == 8 && v.z == 10);
-    Float3 v2 = Float3{1, 2, 5} * 3;
-    PLY_TEST_CHECK(v2.x == 3 && v2.y == 6 && v2.z == 15);
-    Float3 v3 = 3 * Float3{1, 2, 5};
-    PLY_TEST_CHECK(v3.x == 3 && v3.y == 6 && v3.z == 15);
-    v3 *= Float3{1, 2, 3};
-    PLY_TEST_CHECK(v3.x == 3 && v3.y == 12 && v3.z == 45);
-    v3 *= 2;
-    PLY_TEST_CHECK(v3.x == 6 && v3.y == 24 && v3.z == 90);
+    PLY_TEST_CHECK(Float3{1, 2, 5} * Float3{3, 4, 2} == Float3{3, 8, 10});
+    PLY_TEST_CHECK(Float3{1, 2, 5} * 3 == Float3{3, 6, 15});
+    PLY_TEST_CHECK(3 * Float3{1, 2, 5} == Float3{3, 6, 15});
+    Float3 v = {3, 6, 15};
+    v *= Float3{1, 2, 3};
+    PLY_TEST_CHECK(v == Float3{3, 12, 45});
+    v *= 2;
+    PLY_TEST_CHECK(v == Float3{6, 24, 90});
 }
 
 PLY_TEST_CASE("Float3 component-wise division") {
-    Float3 v = Float3{2, 6, 4} / Float3{2, 3, 1};
-    PLY_TEST_CHECK(v.x == 1 && v.y == 2 && v.z == 4);
-    Float3 v2 = Float3{4, 6, 2} / 2;
-    PLY_TEST_CHECK(v2.x == 2 && v2.y == 3 && v2.z == 1);
-    Float3 v3 = 8 / Float3{4, 2, 1};
-    PLY_TEST_CHECK(v3.x == 2 && v3.y == 4 && v3.z == 8);
-    v3 /= Float3{1, 2, 1};
-    PLY_TEST_CHECK(v3.x == 2 && v3.y == 2 && v3.z == 8);
-    v3 /= 2;
-    PLY_TEST_CHECK(v3.x == 1 && v3.y == 1 && v3.z == 4);
+    PLY_TEST_CHECK(Float3{2, 6, 4} / Float3{2, 3, 1} == Float3{1, 2, 4});
+    PLY_TEST_CHECK(Float3{4, 6, 2} / 2 == Float3{2, 3, 1});
+    PLY_TEST_CHECK(8 / Float3{4, 2, 1} == Float3{2, 4, 8});
+    Float3 v = {2, 4, 8};
+    v /= Float3{1, 2, 1};
+    PLY_TEST_CHECK(v == Float3{2, 2, 8});
+    v /= 2;
+    PLY_TEST_CHECK(v == Float3{1, 1, 4});
 }
 
 PLY_TEST_CASE("Float3 lengths") {
@@ -142,6 +133,11 @@ PLY_TEST_CASE("Float3 abs") {
     PLY_TEST_CHECK(abs(Float3{-1, -1, -1}) == Float3{1, 1, 1});
     PLY_TEST_CHECK(abs(Float3{-2, 3, 0}) == Float3{2, 3, 0});
     PLY_TEST_CHECK(abs(Float3{0, 2, -3}) == Float3{0, 2, 3});
+}
+
+PLY_TEST_CASE("Float3 pow") {
+    PLY_TEST_CHECK(pow(Float3{1, 2, 1}, 2) == Float3{1, 4, 1});
+    PLY_TEST_CHECK(pow(2, Float3{1, 2, 0}) == Float3{2, 4, 1});
 }
 
 PLY_TEST_CASE("Float3 min") {

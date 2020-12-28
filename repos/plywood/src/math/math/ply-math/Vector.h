@@ -248,6 +248,10 @@ PLY_INLINE Float2 abs(const Float2& a) {
     return {fabsf(a.x), fabsf(a.y)};
 }
 
+PLY_INLINE Float2 pow(const Float2& a, const Float2& b) {
+    return {powf(a.x, b.x), powf(a.y, b.y)};
+}
+
 PLY_INLINE Float2 min(const Float2& a, const Float2& b) {
     return {min(a.x, b.x), min(a.y, b.y)};
 }
@@ -561,9 +565,9 @@ PLY_INLINE float dot(const Float3& a, const Float3& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-Float3 clamp(const Float3& v, const Float3& mins, const Float3& maxs);
-
 Float3 cross(const Float3& a, const Float3& b);
+
+Float3 clamp(const Float3& v, const Float3& mins, const Float3& maxs);
 
 PLY_INLINE Float3 abs(const Float3& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z)};
@@ -595,13 +599,25 @@ PLY_INLINE bool allLessOrEqual(const Float3& a, const Float3& b) {
     return (a.x <= b.x) && (a.y <= b.y) && (a.z <= b.z);
 }
 
-Float3 quantizeNearest(const Float3& value, float spacing);
+PLY_INLINE Float3 quantizeUp(const Float3& value, float spacing) {
+    return {quantizeUp(value.x, spacing), quantizeUp(value.y, spacing),
+            quantizeUp(value.z, spacing)};
+}
 
-bool isQuantized(const Float3& value, float spacing);
+PLY_INLINE Float3 quantizeDown(const Float3& value, float spacing) {
+    return {quantizeDown(value.x, spacing), quantizeDown(value.y, spacing),
+            quantizeDown(value.z, spacing)};
+}
 
-Float3 quantizeDown(const Float3& value, float spacing);
+PLY_INLINE Float3 quantizeNearest(const Float3& value, float spacing) {
+    return {quantizeNearest(value.x, spacing), quantizeNearest(value.y, spacing),
+            quantizeNearest(value.z, spacing)};
+}
 
-Float3 quantizeUp(const Float3& value, float spacing);
+PLY_INLINE bool isQuantized(const Float3& value, float spacing) {
+    return quantizeNearest(value, spacing) == value;
+}
+
 
 //------------------------------------------------------------------------------------------------
 /*!
@@ -928,17 +944,7 @@ inline Float4 abs(const Float4& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z), fabsf(a.w)};
 }
 
-inline Float4 pow(const Float4& a, const Float4& b) {
-    return {powf(a.x, b.x), powf(a.y, b.y), powf(a.z, b.z), powf(a.w, b.w)};
-}
-
-inline Float4 min(const Float4& a, float b) {
-    return {min(a.x, b), min(a.y, b), min(a.z, b), min(a.w, b)};
-}
-
-inline Float4 max(const Float4& a, float b) {
-    return {max(a.x, b), max(a.y, b), max(a.z, b), max(a.w, b)};
-}
+Float4 pow(const Float4& a, const Float4& b);
 
 inline Float4 min(const Float4& a, const Float4& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w)};
@@ -955,6 +961,27 @@ inline bool allLess(const Float4& a, const Float4& b) {
 inline bool allLessOrEqual(const Float4& a, const Float4& b) {
     return (a.x <= b.x) && (a.y <= b.y) && (a.z <= b.z) && (a.w <= b.w);
 }
+
+PLY_INLINE Float4 quantizeUp(const Float4& value, float spacing) {
+    return {quantizeUp(value.x, spacing), quantizeUp(value.y, spacing),
+            quantizeUp(value.z, spacing), quantizeUp(value.w, spacing)};
+}
+
+PLY_INLINE Float4 quantizeDown(const Float4& value, float spacing) {
+    return {quantizeDown(value.x, spacing), quantizeDown(value.y, spacing),
+            quantizeDown(value.z, spacing), quantizeDown(value.w, spacing)};
+}
+
+PLY_INLINE Float4 quantizeNearest(const Float4& value, float spacing) {
+    return {quantizeNearest(value.x, spacing), quantizeNearest(value.y, spacing),
+            quantizeNearest(value.z, spacing), quantizeNearest(value.w, spacing)};
+}
+
+PLY_INLINE bool isQuantized(const Float4& value, float spacing) {
+    return quantizeNearest(value, spacing) == value;
+}
+
+//---------------------------------
 
 typedef Box<Float2> Rect;
 typedef Box<Float3> Box3D;

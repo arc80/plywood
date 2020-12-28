@@ -47,25 +47,6 @@ PLY_NO_INLINE Float3 pow(const Float3& a, const Float3& b) {
     return {powf(a.x, b.x), powf(a.y, b.y), powf(a.z, b.z)};
 }
 
-PLY_NO_INLINE Float3 quantizeNearest(const Float3& value, float spacing) {
-    return {quantizeNearest(value.x, spacing), quantizeNearest(value.y, spacing),
-            quantizeNearest(value.z, spacing)};
-}
-
-PLY_NO_INLINE bool isQuantized(const Float3& value, float spacing) {
-    return quantizeNearest(value, spacing) == value;
-}
-
-PLY_NO_INLINE Float3 quantizeDown(const Float3& value, float spacing) {
-    return {quantizeDown(value.x, spacing), quantizeDown(value.y, spacing),
-            quantizeDown(value.z, spacing)};
-}
-
-PLY_NO_INLINE Float3 quantizeUp(const Float3& value, float spacing) {
-    return {quantizeUp(value.x, spacing), quantizeUp(value.y, spacing),
-            quantizeUp(value.z, spacing)};
-}
-
 //------------------------------------------------
 // Float4
 //------------------------------------------------
@@ -79,5 +60,9 @@ PLY_NO_INLINE Float4 Float4::safeNormalized(const Float4& fallback, float epsilo
         return fallback;
     return *this / sqrtf(L);
 }    
+
+PLY_NO_INLINE Float4 pow(const Float4& a, const Float4& b) {
+    return {powf(a.x, b.x), powf(a.y, b.y), powf(a.z, b.z), powf(a.w, b.w)};
+}
 
 } // namespace ply
