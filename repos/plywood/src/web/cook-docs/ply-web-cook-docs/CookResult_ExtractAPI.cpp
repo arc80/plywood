@@ -10,6 +10,7 @@
 #include <ply-cpp/ErrorFormatting.h>
 #include <ply-web-cook-docs/SemaEntity.h>
 #include <ply-web-cook-docs/WebCookerIndex.h>
+#include <ply-runtime/algorithm/Find.h>
 
 namespace ply {
 namespace cpp {
@@ -82,6 +83,7 @@ struct APIExtractor : cpp::ParseSupervisor {
         DocInfo::Entry* groupEntry = nullptr;
         Array<TitleSpan> altTitle;
         cpp::LinearLocation titleDirectiveLoc = -1; // >= 0 iff altDeclaration is valid
+        s32 categoryIndex = -1;
     };
 
     Array<Reference<SemaEntity>> semaScopeStack;
@@ -144,6 +146,7 @@ struct APIExtractor : cpp::ParseSupervisor {
                     this->docState.altTitle.clear();
                     this->docState.titleDirectiveLoc = -1;
                 }
+                this->docState.categoryIndex = -1;
             }
         });
 
@@ -277,6 +280,7 @@ struct APIExtractor : cpp::ParseSupervisor {
                 this->docState.altTitle.clear();
                 this->docState.titleDirectiveLoc = -1;
             }
+            this->docState.categoryIndex = -1;
         }
         this->semaScopeStack.pop();
     }
@@ -416,6 +420,20 @@ struct APIExtractor : cpp::ParseSupervisor {
                     }
                     this->docState.groupDirectiveLoc = -1;
                     this->docState.groupEntry = nullptr;
+                } else if (directive == "category") {
+                    if (scopeInfo.parentScope && scopeInfo.parentScope->type == SemaEntity::Class) {
+                        StringView categoryDesc = dr.viewAvailable().trim(isWhite);
+                        s32 categoryIndex = find(
+                            scopeInfo.parentScope->docInfo->categories.view(),
+                            [&](const DocInfo::Category& cat) { return cat.desc == categoryDesc; });
+                        if (categoryIndex < 0) {
+                            categoryIndex = scopeInfo.parentScope->docInfo->categories.numItems();
+                            scopeInfo.parentScope->docInfo->categories.append(categoryDesc);
+                        }
+                        this->docState.categoryIndex = categoryIndex;
+                    } else {
+                        this->error(Error::DirectiveOnlyValidWithinClass, directive, lineLoc);
+                    }
                 } else {
                     this->error(Error::BadDirective, directive, lineLoc);
                 }
@@ -556,6 +574,7 @@ struct APIExtractor : cpp::ParseSupervisor {
                         entry->markdownDesc = std::move(this->docState.markdown);
                         this->docState.markdownLoc = -1;
                     }
+                    entry->categoryIndex = this->docState.categoryIndex;
                 }
 
                 DocInfo::Entry::Title* title = &entry->titles.append();

@@ -292,10 +292,25 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
         htmlWriter << "</dl>\n\n";
     }
 
-    // Dump member functions
+    // Dump member functions in categories first
+    for (u32 c = 0; c < docInfo->categories.numItems(); c++) {
+        wroteSectionHeader = false;
+        for (const DocInfo::Entry& entry : docInfo->entries) {
+            if (entry.titles[0].member->isFunction() && entry.categoryIndex == c) {
+                if (!wroteSectionHeader) {
+                    htmlWriter.format("<h2>{}</h2>\n", docInfo->categories[c].desc);
+                    htmlWriter << "<dl>\n";
+                    wroteSectionHeader = true;
+                }
+                dumpMemberEntry(entry);
+            }
+        }
+    }
+
+    // Dump uncategorized member functions
     wroteSectionHeader = false;
     for (const DocInfo::Entry& entry : docInfo->entries) {
-        if (entry.titles[0].member->isFunction()) {
+        if (entry.titles[0].member->isFunction() && entry.categoryIndex < 0) {
             if (!wroteSectionHeader) {
                 htmlWriter << "<h2>Member Functions</h2>\n";
                 htmlWriter << "<dl>\n";

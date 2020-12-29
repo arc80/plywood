@@ -15,6 +15,10 @@ namespace docs {
 struct SemaEntity;
 
 struct DocInfo {
+    struct Category {
+        String desc;
+    };
+
     struct Entry {
         struct Title {
             SemaEntity* member = nullptr;
@@ -25,12 +29,14 @@ struct DocInfo {
 
         Array<Title> titles;
         String markdownDesc;
+        s32 categoryIndex = -1;
     };
 
     SemaEntity* class_ = nullptr;
     Array<TitleSpan> classAltTitle;
     String classMarkdownDesc;
     Array<Entry> entries;
+    Array<Category> categories;
 };
 
 // Note: SemaEntity doesn't really have to be refcounted.

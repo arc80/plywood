@@ -29,6 +29,7 @@ struct Float2 {
     */
 
     /*!
+    \category Constructors
     Constructs an uninitialized 2D vector.
     */
     PLY_INLINE Float2() = default;
@@ -48,6 +49,30 @@ struct Float2 {
     PLY_INLINE Float2(float x, float y) : x{x}, y{y} {
     }
     /*!
+    \category Assignment Operator
+    Copy assignment operator.
+    */
+    PLY_INLINE void operator=(const Float2& arg) {
+        x = arg.x;
+        y = arg.y;
+    }
+    /*!
+    \category Comparison Operators
+    \beginGroup
+    Returns `true` if the 2D vectors are equal (or not equal) using floating-point comparison. In
+    particular, `Float2{0.f} == Float2{-0.f}` is `true`.
+    */
+    PLY_INLINE bool operator==(const Float2& arg) const {
+        return (x == arg.x) && (y == arg.y);
+    }
+    PLY_INLINE bool operator!=(const Float2& arg) const {
+        return !(*this == arg);
+    }
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Conversion Functions
     Converts to another 2D vector type such as `IntVec2` or `Int2<s16>`.
 
         Float2 a = {4, 5};
@@ -60,27 +85,7 @@ struct Float2 {
         return {(T) x, (T) y};
     }
     /*!
-    Copy assignment operator.
-    */
-    PLY_INLINE void operator=(const Float2& arg) {
-        x = arg.x;
-        y = arg.y;
-    }
-    /*!
-    \beginGroup
-    Returns `true` if the 2D vectors are equal (or not equal) using floating-point comparison. In
-    particular, `Float2{0} == Float2{-0}` is `true`.
-    */
-    PLY_INLINE bool operator==(const Float2& arg) const {
-        return (x == arg.x) && (y == arg.y);
-    }
-    PLY_INLINE bool operator!=(const Float2& arg) const {
-        return !(*this == arg);
-    }
-    /*!
-    \endGroup
-    */
-    /*!
+    \category Arithmetic Operators
     Unary negation.
     */
     PLY_INLINE Float2 operator-() const {
@@ -181,13 +186,14 @@ struct Float2 {
     \endGroup
     */
     /*!
+    \category Length Functions
     Returns the square of the length of the 2D vector. Equivalent to `dot(this, this)`.
     */
     PLY_INLINE float length2() const {
         return x * x + y * y;
     }
     /*!
-    Returns the length of the 2D vector. Equivalent to `sqrtf(this.length2())`.
+    Returns the length of the 2D vector. Equivalent to `sqrtf(this->length2())`.
     */
     PLY_INLINE float length() const {
         return sqrtf(length2());
@@ -210,6 +216,30 @@ struct Float2 {
     PLY_NO_DISCARD Float2 safeNormalized(const Float2& fallback = {1, 0},
                                          float epsilon = 1e-20f) const;
     /*!
+    \category Interpreting as a Color
+    \beginGroup
+    Aliases for `x` and `y`.
+
+        Float4 c = {1.0f, 0.8f};
+        StdOut::text().format("{}, {}", c.r(), c.g());  // prints "{1.0, 0.8}"
+    */
+    PLY_INLINE float& r() {
+        return x;
+    }
+    PLY_INLINE float r() const {
+        return x;
+    }
+    PLY_INLINE float& g() {
+        return y;
+    }
+    PLY_INLINE float g() const {
+        return y;
+    }
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Swizzle Functions
     \beginGroup
     Swizzle functions.
 
@@ -302,6 +332,7 @@ struct Float3 {
     */
 
     /*!
+    \category Constructors
     Constructs an uninitialized 3D vector.
     */
     PLY_INLINE Float3() = default;
@@ -329,6 +360,31 @@ struct Float3 {
     PLY_INLINE Float3(const Float2& v, float z) : x{v.x}, y{v.y}, z{z} {
     }
     /*!
+    \category Assignment Operator
+    Copy assignment operator.
+    */
+    PLY_INLINE void operator=(const Float3& arg) {
+        x = arg.x;
+        y = arg.y;
+        z = arg.z;
+    }
+    /*!
+    \category Comparison Operators
+    \beginGroup
+    Returns `true` if the 3D vectors are equal (or not equal) using floating-point comparison. In
+    particular, `Float3{0.f} == Float3{-0.f}` is `true`.
+    */
+    PLY_INLINE bool operator==(const Float3& arg) const {
+        return (x == arg.x) && (y == arg.y) && (z == arg.z);
+    }
+    PLY_INLINE bool operator!=(const Float3& arg) const {
+        return !(*this == arg);
+    }
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Conversion Functions
     Returns a const reference to the first two components as a `Float2` using type punning. This
     should only be used as a temporary expression.
 
@@ -352,57 +408,7 @@ struct Float3 {
         return {(T) x, (T) y, (T) z};
     }
     /*!
-    \beginGroup
-    Aliases for `x`, `y` and `z`.
-
-        Float3 c = {1.0f, 0.8f, 0.7f};
-        StdOut::text().format("{}, {}, {}", c.r(), c.g(), c.b());
-        // prints "{1.0, 0.8, 0.7}"
-    */
-    PLY_INLINE float& r() {
-        return x;
-    }
-    PLY_INLINE float r() const {
-        return x;
-    }
-    PLY_INLINE float& g() {
-        return y;
-    }
-    PLY_INLINE float g() const {
-        return y;
-    }
-    PLY_INLINE float& b() {
-        return z;
-    }
-    PLY_INLINE float b() const {
-        return z;
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    Copy assignment operator.
-    */
-    PLY_INLINE void operator=(const Float3& arg) {
-        x = arg.x;
-        y = arg.y;
-        z = arg.z;
-    }
-    /*!
-    \beginGroup
-    Returns `true` if the 3D vectors are equal (or not equal) using floating-point comparison. In
-    particular, `Float3{0} == Float3{-0}` is `true`.
-    */
-    PLY_INLINE bool operator==(const Float3& arg) const {
-        return (x == arg.x) && (y == arg.y) && (z == arg.z);
-    }
-    PLY_INLINE bool operator!=(const Float3& arg) const {
-        return !(*this == arg);
-    }
-    /*!
-    \endGroup
-    */
-    /*!
+    \category Arithmetic Operators
     Unary negation.
     */
     PLY_INLINE Float3 operator-() const {
@@ -507,13 +513,14 @@ struct Float3 {
     \endGroup
     */
     /*!
+    \category Length Functions
     Returns the square of the length of the 3D vector. Equivalent to `dot(this, this)`.
     */
     PLY_INLINE float length2() const {
         return x * x + y * y + z * z;
     }
     /*!
-    Returns the length of the 3D vector. Equivalent to `sqrtf(this.length2())`.
+    Returns the length of the 3D vector. Equivalent to `sqrtf(this->length2())`.
     */
     PLY_INLINE float length() const {
         return sqrtf(length2());
@@ -536,6 +543,37 @@ struct Float3 {
     PLY_NO_DISCARD Float3 safeNormalized(const Float3& fallback = {1, 0, 0},
                                          float epsilon = 1e-20f) const;
     /*!
+    \category Interpreting as a Color
+    \beginGroup
+    Aliases for `x`, `y` and `z`.
+
+        Float3 c = {1.0f, 0.8f, 0.7f};
+        StdOut::text().format("{}, {}, {}", c.r(), c.g(), c.b());
+        // prints "{1.0, 0.8, 0.7}"
+    */
+    PLY_INLINE float& r() {
+        return x;
+    }
+    PLY_INLINE float r() const {
+        return x;
+    }
+    PLY_INLINE float& g() {
+        return y;
+    }
+    PLY_INLINE float g() const {
+        return y;
+    }
+    PLY_INLINE float& b() {
+        return z;
+    }
+    PLY_INLINE float b() const {
+        return z;
+    }
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Swizzle Functions
     \beginGroup
     Swizzle functions.
 
@@ -639,6 +677,7 @@ struct Float4 {
     */
 
     /*!
+    \category Constructors
     Constructs an uninitialized 4D vector.
     */
     PLY_INLINE Float4() = default;
@@ -674,6 +713,32 @@ struct Float4 {
     PLY_INLINE Float4(const Float2& v, float z, float w) : x{v.x}, y{v.y}, z{z}, w{w} {
     }
     /*!
+    \category Assignment Operator
+    Copy assignment operator.
+    */
+    PLY_INLINE void operator=(const Float4& arg) {
+        x = arg.x;
+        y = arg.y;
+        z = arg.z;
+        w = arg.w;
+    }
+    /*!
+    \category Comparison Operators
+    \beginGroup
+    Returns `true` if the 4D vectors are equal (or not equal) using floating-point comparison. In
+    particular, `Float4{0.f} == Float4{-0.f}` is `true`.
+    */
+    PLY_INLINE bool operator==(const Float4& arg) const {
+        return (x == arg.x) && (y == arg.y) && (z == arg.z) && (w == arg.w);
+    }
+    PLY_INLINE bool operator!=(const Float4& arg) const {
+        return !(*this == arg);
+    }
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Conversion Functions
     Returns a const reference to the first two components as a `Float2` using type punning. This
     should only be used as a temporary expression.
 
@@ -713,64 +778,7 @@ struct Float4 {
         return {(T) x, (T) y, (T) z, (T) w};
     }
     /*!
-    \beginGroup
-    Aliases for `x`, `y`, `z` and `w`.
-
-        Float4 c = {1.0f, 0.8f, 0.7f, 0.5f};
-        StdOut::text().format("{}, {}, {}, {}", c.r(), c.g(), c.b(), c.a());
-        // prints "{1.0, 0.8, 0.7, 0.5}"
-    */
-    PLY_INLINE float& r() {
-        return x;
-    }
-    PLY_INLINE float r() const {
-        return x;
-    }
-    PLY_INLINE float& g() {
-        return y;
-    }
-    PLY_INLINE float g() const {
-        return y;
-    }
-    PLY_INLINE float& b() {
-        return z;
-    }
-    PLY_INLINE float b() const {
-        return z;
-    }
-    PLY_INLINE float& a() {
-        return w;
-    }
-    PLY_INLINE float a() const {
-        return w;
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    Copy assignment operator.
-    */
-    PLY_INLINE void operator=(const Float4& arg) {
-        x = arg.x;
-        y = arg.y;
-        z = arg.z;
-        w = arg.w;
-    }
-    /*!
-    \beginGroup
-    Returns `true` if the 4D vectors are equal (or not equal) using floating-point comparison. In
-    particular, `Float4{0} == Float4{-0}` is `true`.
-    */
-    PLY_INLINE bool operator==(const Float4& arg) const {
-        return (x == arg.x) && (y == arg.y) && (z == arg.z) && (w == arg.w);
-    }
-    PLY_INLINE bool operator!=(const Float4& arg) const {
-        return !(*this == arg);
-    }
-    /*!
-    \endGroup
-    */
-    /*!
+    \category Arithmetic Operators
     Unary negation.
     */
     Float4 operator-() const {
@@ -876,13 +884,14 @@ struct Float4 {
     \endGroup
     */
     /*!
+    \category Length Functions
     Returns the square of the length of the 3D vector. Equivalent to `dot(this, this)`.
     */
     float length2() const {
         return x * x + y * y + z * z + w * w;
     }
     /*!
-    Returns the length of the 3D vector. Equivalent to `sqrtf(this.length2())`.
+    Returns the length of the 3D vector. Equivalent to `sqrtf(this->length2())`.
     */
     float length() const {
         return sqrtf(length2());
@@ -905,6 +914,43 @@ struct Float4 {
     PLY_NO_DISCARD Float4 safeNormalized(const Float4& fallback = {1, 0, 0, 0},
                                          float epsilon = 1e-20f) const;
     /*!
+    \category Interpreting as a Color
+    \beginGroup
+    Aliases for `x`, `y`, `z` and `w`.
+
+        Float4 c = {1.0f, 0.8f, 0.7f, 0.5f};
+        StdOut::text().format("{}, {}, {}, {}", c.r(), c.g(), c.b(), c.a());
+        // prints "{1.0, 0.8, 0.7, 0.5}"
+    */
+    PLY_INLINE float& r() {
+        return x;
+    }
+    PLY_INLINE float r() const {
+        return x;
+    }
+    PLY_INLINE float& g() {
+        return y;
+    }
+    PLY_INLINE float g() const {
+        return y;
+    }
+    PLY_INLINE float& b() {
+        return z;
+    }
+    PLY_INLINE float b() const {
+        return z;
+    }
+    PLY_INLINE float& a() {
+        return w;
+    }
+    PLY_INLINE float a() const {
+        return w;
+    }
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Swizzle Functions
     \beginGroup
     Swizzle functions.
 
