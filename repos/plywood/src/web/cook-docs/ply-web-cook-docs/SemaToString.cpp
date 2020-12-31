@@ -88,11 +88,16 @@ Array<Stringifier::Component> Stringifier::applyProductions(const DeclaratorProd
 
 Array<Stringifier::Component> Stringifier::toStringComps(const QualifiedID& qid, QIDRole role) {
     Array<Component> result;
-    if (role == QIDRole::RootDeclarator) {
-        result.append({Component::BeginRootDeclarator, {}, nullptr});
-    }
     docs::SemaEntity* scope = this->fromScope;
     bool checkParents = true;
+    if (role == QIDRole::RootDeclarator) {
+        PLY_ASSERT(qid.nestedName.isEmpty());
+        if (this->prependClassName && scope && scope->parent->type == docs::SemaEntity::Class) {
+            result.append({Component::KeywordOrIdentifier, scope->parent->name});
+            result.append({Component::Other, "::", nullptr});
+        }
+        result.append({Component::BeginRootDeclarator, {}, nullptr});
+    }
     for (const NestedNameComponent& nestedComp : qid.nestedName) {
         if (auto identifier = nestedComp.identifier()) {
             if (scope) {
@@ -204,7 +209,7 @@ Stringifier::toStringComps(ArrayView<const DeclSpecifier> declSpecifierSeq,
     Array<Component> qidComps;
     {
         // Don't try to lookup the declarator
-        PLY_SET_IN_SCOPE(this->fromScope, nullptr);
+        //        PLY_SET_IN_SCOPE(this->fromScope, nullptr);
         qidComps = this->toStringComps(qid, forRootDeclaration ? QIDRole::RootDeclarator
                                                                : QIDRole::Declarator);
     }
@@ -225,15 +230,16 @@ Stringifier::toStringComps(ArrayView<const DeclSpecifier> declSpecifierSeq,
 }
 
 Array<Stringifier::Component> toStringComps(const SingleDeclaration& single,
-                                            docs::SemaEntity* fromScope) {
+                                            docs::SemaEntity* fromScope, bool prependClassName) {
     Stringifier stringifier;
     stringifier.fromScope = fromScope;
+    stringifier.prependClassName = prependClassName;
     return stringifier.toStringComps(single, true);
 }
 
 String toString(const SingleDeclaration& single) {
     StringWriter sw;
-    for (const Stringifier::Component& comp : toStringComps(single, nullptr)) {
+    for (const Stringifier::Component& comp : toStringComps(single, nullptr, false)) {
         sw << comp.text;
     }
     return sw.moveToString();

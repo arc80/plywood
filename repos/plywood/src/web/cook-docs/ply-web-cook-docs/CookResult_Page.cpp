@@ -143,7 +143,7 @@ String convertMarkdownToHTML(StringView markdown, SemaEntity* fromSema) {
 }
 
 void writeMemberTitle(StringWriter& htmlWriter, const SemaEntity* templateParams,
-                      const cpp::sema::SingleDeclaration* singleDecl, SemaEntity* memberEnt) {
+                      const cpp::sema::SingleDeclaration* singleDecl, SemaEntity* memberEnt, bool prependClassName) {
     bool inRootDeclarator = false;
     using C = cpp::sema::Stringifier::Component;
     if (templateParams) {
@@ -154,14 +154,14 @@ void writeMemberTitle(StringWriter& htmlWriter, const SemaEntity* templateParams
                 htmlWriter << ", ";
             }
             first = false;
-            for (const C& comp : cpp::sema::toStringComps(param->singleDecl, nullptr)) {
+            for (const C& comp : cpp::sema::toStringComps(param->singleDecl, nullptr, false)) {
                 htmlWriter << fmt::XMLEscape{comp.text};
             }
         }
         htmlWriter << "&gt;</code><br>\n";
     }
     htmlWriter << "<code>";
-    for (const C& comp : cpp::sema::toStringComps(*singleDecl, memberEnt)) {
+    for (const C& comp : cpp::sema::toStringComps(*singleDecl, memberEnt, prependClassName)) {
         if (comp.type == C::BeginRootDeclarator) {
             htmlWriter << "<strong>";
             inRootDeclarator = true;
@@ -186,7 +186,7 @@ void writeMemberTitle(StringWriter& htmlWriter, const SemaEntity* templateParams
     htmlWriter << "</code>\n";
 }
 
-void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWriter) {
+void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWriter, bool prependClassName) {
     // Write title (formatted declaration)
     if (title.altTitle) {
         htmlWriter << "<code>";
@@ -195,7 +195,7 @@ void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWrite
         htmlWriter << "</code>\n";
     } else {
         writeMemberTitle(htmlWriter, title.member->templateParams, &title.member->singleDecl,
-                         title.member);
+                         title.member, prependClassName);
     }
 }
 
@@ -219,7 +219,7 @@ void dumpBaseClasses(StringWriter& htmlWriter, SemaEntity* classEnt) {
         for (const DocInfo::Entry& entry : baseEnt->docInfo->entries) {
             for (const DocInfo::Entry::Title& title : entry.titles) {
                 htmlWriter << "<li>";
-                dumpMemberTitle(title, htmlWriter);
+                dumpMemberTitle(title, htmlWriter, true);
                 htmlWriter << "</li>\n";
             }
         }
@@ -235,7 +235,7 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
     const DocInfo* docInfo = classEnt->docInfo;
     PLY_ASSERT(docInfo);
 
-    auto dumpMemberEntry = [&](const DocInfo::Entry& entry) {
+    auto dumpMemberEntry = [&](const DocInfo::Entry& entry, bool prependClassName) {
         htmlWriter << "<dt>";
         for (const DocInfo::Entry::Title& title : entry.titles) {
             String anchor;
@@ -252,7 +252,7 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
                 htmlWriter.format("<div class=\"defTitle\"{}>", anchor);
             }
 
-            dumpMemberTitle(title, htmlWriter);
+            dumpMemberTitle(title, htmlWriter, prependClassName);
 
             // Close <code> tag, write optional permalink & source code link, close <div>
             PLY_ASSERT(title.srcPath.startsWith(NativePath::normalize(PLY_WORKSPACE_FOLDER)));
@@ -285,7 +285,7 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
                 htmlWriter << "<dl>\n";
                 wroteSectionHeader = true;
             }
-            dumpMemberEntry(entry);
+            dumpMemberEntry(entry, false);
         }
     }
     if (wroteSectionHeader) {
@@ -302,7 +302,7 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
                     htmlWriter << "<dl>\n";
                     wroteSectionHeader = true;
                 }
-                dumpMemberEntry(entry);
+                dumpMemberEntry(entry, true);
             }
         }
     }
@@ -316,7 +316,7 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
                 htmlWriter << "<dl>\n";
                 wroteSectionHeader = true;
             }
-            dumpMemberEntry(entry);
+            dumpMemberEntry(entry, true);
         }
     }
     if (wroteSectionHeader) {

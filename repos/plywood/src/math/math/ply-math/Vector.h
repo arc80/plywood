@@ -262,55 +262,132 @@ struct Float2 {
     }
 };
 
+/*!
+\addToClass Float2
+\category Geometric Functions
+Returns the dot product of two 2D vectors.
+
+    StdOut::text() << dot(Float2{1, 0}, Float2{3, 4});  // prints "2"
+*/
 PLY_INLINE float dot(const Float2& a, const Float2& b) {
     return a.x * b.x + a.y * b.y;
 }
+/*!
+Returns the cross product of two 2D vectors.
 
+    StdOut::text() << cross(Float2{1, 0}, Float2{3, 4});  // prints "4"
+*/
 PLY_INLINE float cross(const Float2& a, const Float2& b) {
     return a.x * b.y - a.y * b.x;
 }
+/*!
+\category Component-wise Functions
+Returns a copy of `v` with each component constrained to lie within the range determined by the
+corresponding components of `mins` and `maxs`.
 
+    Float2 v = {3, 1.5f};
+    StdOut::text() << clamp(v, Float2{0, 1}, Float2{1, 2});  // prints "1, 1.5"
+    StdOut::text() << clamp(v, 0, 1);                        // prints "1, 1"
+*/
 PLY_INLINE Float2 clamp(const Float2& v, const Float2& mins, const Float2& maxs) {
     return {clamp(v.x, mins.x, maxs.x), clamp(v.y, mins.y, maxs.y)};
 }
+/*!
+Returns a 2D vector with each component set to the absolute value of the corresponding component of
+`a`.
 
+    StdOut::text() << abs(Float2{-2, 3});  // prints "2, 3"
+*/
 PLY_INLINE Float2 abs(const Float2& a) {
     return {fabsf(a.x), fabsf(a.y)};
 }
+/*!
+Returns a 2D vector with each component set to the corresponding component of `a` raised to the
+power of the corresponding component of `b`.
 
+    StdOut::text() << pow(Float2{1, 2}, Float2{2, 3});  // prints "1, 8"
+    StdOut::text() << pow(Float2{1, 2}, 2);             // prints "1, 4"
+*/
 PLY_INLINE Float2 pow(const Float2& a, const Float2& b) {
     return {powf(a.x, b.x), powf(a.y, b.y)};
 }
+/*!
+Returns a 2D vector with each component set to minimum of the corresponding components of `a` and
+`b`.
 
+    StdOut::text() << min(Float2{0, 1}, Float2{1, 0});  // prints "0, 0"
+*/
 PLY_INLINE Float2 min(const Float2& a, const Float2& b) {
     return {min(a.x, b.x), min(a.y, b.y)};
 }
+/*!
+Returns a 2D vector with each component set to maximum of the corresponding components of `a` and
+`b`.
 
+    StdOut::text() << max(Float2{0, 1}, Float2{1, 0});  // prints "1, 1"
+*/
 PLY_INLINE Float2 max(const Float2& a, const Float2& b) {
     return {max(a.x, b.x), max(a.y, b.y)};
 }
+/*!
+\category Comparison Functions
+\beginGroup
+Returns `true` if every component of `a` is less than (or less than or equal to) the corresponding
+component of `b`. You can use these functions to implement other comparisons:
 
+* `allLessOrEqual(b, a)` evaluates to `true` if every component of `a` is greater than the
+corresponding component of `b`.
+* `allLess(b, a)` evaluates to `true` if every component of `a` is greater than or equal to the
+corresponding component of `b`.
+* `!allLessOrEqual(b, a)` evaluates to `true` if _any_ component of `a` is less than the
+corresponding component of `b`.
+* `!allLess(b, a)` evaluates to `true` if _any_ component of `a` is less than or equal to the
+corresponding component of `b`.
+
+    allLess(Float2{0, 1}, Float2{1, 2})  // evaluates to true
+*/
 PLY_INLINE bool allLess(const Float2& a, const Float2& b) {
     return (a.x < b.x) && (a.y < b.y);
 }
-
 PLY_INLINE bool allLessOrEqual(const Float2& a, const Float2& b) {
     return (a.x <= b.x) && (a.y <= b.y);
 }
+/*!
+\endGroup
+*/
+/*!
+\category Quantization Functions
+\beginGroup
+These are rounding functions, except that instead of always rounding to a whole number, they round
+to multiples of `spacing`. Each function returns a 2D vector with each component set to the
+quantized result of the corresponding component of `value`.
 
+    StdOut::text() << quantizeUp(Float2{-0.3f, 1.4f}, 2);       // prints "0, 2"
+    StdOut::text() << quantizeDown(Float2{-0.3f, 1.4f}, 2);     // prints "-2, 0"
+    StdOut::text() << quantizeNearest(Float2{-0.3f, 1.4f}, 2);  // prints "0, 2"
+
+The functions are most precise when `spacing` is a power of 2. When `spacing` is 1, each component
+is rounded to a whole number.
+*/
 PLY_INLINE Float2 quantizeUp(const Float2& value, float spacing) {
     return {quantizeUp(value.x, spacing), quantizeUp(value.y, spacing)};
 }
-
 PLY_INLINE Float2 quantizeDown(const Float2& value, float spacing) {
     return {quantizeDown(value.x, spacing), quantizeDown(value.y, spacing)};
 }
-
 PLY_INLINE Float2 quantizeNearest(const Float2& value, float spacing) {
     // Good to let the compiler see the spacing so it can optimize the divide by constant
     return {quantizeNearest(value.x, spacing), quantizeNearest(value.y, spacing)};
 }
+/*!
+\endGroup
+*/
+/*!
+Returns `true` if every component of `value` is already quantized to the given `spacing`.
 
+    isQuantized(Float2{2, 4}, 2)    // evaluates to true
+    isQuantized(Float2{1, 4}, 2)    // evaluates to false
+*/
 PLY_INLINE bool isQuantized(const Float2& value, float spacing) {
     return quantizeNearest(value, spacing) == value;
 }
@@ -655,7 +732,6 @@ PLY_INLINE Float3 quantizeNearest(const Float3& value, float spacing) {
 PLY_INLINE bool isQuantized(const Float3& value, float spacing) {
     return quantizeNearest(value, spacing) == value;
 }
-
 
 //------------------------------------------------------------------------------------------------
 /*!

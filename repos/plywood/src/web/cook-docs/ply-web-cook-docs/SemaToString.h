@@ -34,6 +34,7 @@ struct Stringifier {
     };
 
     docs::SemaEntity* fromScope = nullptr;
+    bool prependClassName = false;
 
     Array<Stringifier::Component> toStringComps(const TemplateArg::Type& templateArgType);
     Array<Stringifier::Component> applyProductions(const DeclaratorProduction* prod,
@@ -51,7 +52,7 @@ struct Stringifier {
 };
 
 Array<Stringifier::Component> toStringComps(const SingleDeclaration& single,
-                                            docs::SemaEntity* fromScope);
+                                            docs::SemaEntity* fromScope, bool prependClassName);
 String toString(const SingleDeclaration& single);
 
 } // namespace sema

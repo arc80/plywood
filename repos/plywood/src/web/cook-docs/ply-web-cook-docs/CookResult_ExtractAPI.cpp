@@ -34,6 +34,7 @@ struct CookResult_ExtractAPI : cook::CookResult {
     PLY_REFLECT();
     // ply reflect off
     Array<Reference<SemaEntity>> extractedClasses;
+    Array<Reference<SemaEntity>> extractedAtNamespaceScope;
 };
 
 struct APIExtractor : cpp::ParseSupervisor {
@@ -58,7 +59,11 @@ struct APIExtractor : cpp::ParseSupervisor {
             StrayMarkdownInGroup,
             EmptyDocumentationComment,
             DirectiveOnlyValidWithinClass,
-            MarkdownOnlyValidWithinClass, // so far
+            MarkdownOnlyValidWithinClass,
+            DirectiveNotValidWithinClass,
+            ExpectedClassName,
+            UnexpectedAfterClassName,
+            ClassNotFound,
             BeginParseTitleError,
             EndParseTitleError = BeginParseTitleError + (u32) ParseTitleError::NumErrors,
         };
@@ -84,6 +89,7 @@ struct APIExtractor : cpp::ParseSupervisor {
         Array<TitleSpan> altTitle;
         cpp::LinearLocation titleDirectiveLoc = -1; // >= 0 iff altDeclaration is valid
         s32 categoryIndex = -1;
+        SemaEntity* addToClass = nullptr;
     };
 
     Array<Reference<SemaEntity>> semaScopeStack;
@@ -147,6 +153,7 @@ struct APIExtractor : cpp::ParseSupervisor {
                     this->docState.titleDirectiveLoc = -1;
                 }
                 this->docState.categoryIndex = -1;
+                this->docState.addToClass = nullptr;
             }
         });
 
@@ -281,6 +288,7 @@ struct APIExtractor : cpp::ParseSupervisor {
                 this->docState.titleDirectiveLoc = -1;
             }
             this->docState.categoryIndex = -1;
+            this->docState.addToClass = nullptr;
         }
         this->semaScopeStack.pop();
     }
@@ -405,7 +413,9 @@ struct APIExtractor : cpp::ParseSupervisor {
                         this->docState.groupDirectiveLoc = -1;
                         this->docState.groupEntry = nullptr;
                     }
-                    if (scopeInfo.parentScope && scopeInfo.parentScope->type == SemaEntity::Class) {
+                    if ((scopeInfo.parentScope &&
+                         scopeInfo.parentScope->type == SemaEntity::Class) ||
+                        this->docState.addToClass) {
                         this->docState.groupDirectiveLoc = lineLoc;
                     } else {
                         this->error(Error::DirectiveOnlyValidWithinClass, directive, lineLoc);
@@ -421,18 +431,47 @@ struct APIExtractor : cpp::ParseSupervisor {
                     this->docState.groupDirectiveLoc = -1;
                     this->docState.groupEntry = nullptr;
                 } else if (directive == "category") {
-                    if (scopeInfo.parentScope && scopeInfo.parentScope->type == SemaEntity::Class) {
+                    if ((scopeInfo.parentScope &&
+                         scopeInfo.parentScope->type == SemaEntity::Class) ||
+                        this->docState.addToClass) {
+                        SemaEntity* forClass = this->docState.addToClass;
+                        if (!this->docState.addToClass) {
+                            forClass = scopeInfo.parentScope;
+                        }
                         StringView categoryDesc = dr.viewAvailable().trim(isWhite);
                         s32 categoryIndex = find(
-                            scopeInfo.parentScope->docInfo->categories.view(),
+                            forClass->docInfo->categories.view(),
                             [&](const DocInfo::Category& cat) { return cat.desc == categoryDesc; });
                         if (categoryIndex < 0) {
-                            categoryIndex = scopeInfo.parentScope->docInfo->categories.numItems();
-                            scopeInfo.parentScope->docInfo->categories.append(categoryDesc);
+                            categoryIndex = forClass->docInfo->categories.numItems();
+                            forClass->docInfo->categories.append(categoryDesc);
                         }
                         this->docState.categoryIndex = categoryIndex;
                     } else {
                         this->error(Error::DirectiveOnlyValidWithinClass, directive, lineLoc);
+                    }
+                } else if (directive == "addToClass") {
+                    // There are serious limitations on \addToClass right now.
+                    if (scopeInfo.parentScope && scopeInfo.parentScope->type == SemaEntity::Class) {
+                        this->error(Error::DirectiveNotValidWithinClass, directive, lineLoc);
+                    } else {
+                        StringView className = dr.readView<fmt::Identifier>();
+                        if (className.isEmpty()) {
+                            this->error(Error::ExpectedClassName, directive, lineLoc);
+                        } else {
+                            if (dr.viewAvailable().trim(isWhite)) {
+                                this->error(Error::UnexpectedAfterClassName, directive, lineLoc);
+                            }
+                            s32 i =
+                                find(this->extractAPIResult->extractedClasses.view(),
+                                     [&](const SemaEntity* ent) { return ent->name == className; });
+                            if (i >= 0) {
+                                this->docState.addToClass =
+                                    this->extractAPIResult->extractedClasses[i];
+                            } else {
+                                this->error(Error::ClassNotFound, className, lineLoc);
+                            }
+                        }
                     }
                 } else {
                     this->error(Error::BadDirective, directive, lineLoc);
@@ -487,10 +526,12 @@ struct APIExtractor : cpp::ParseSupervisor {
             // Need to sort out ownership rules before this will work
             // global/namespace-scoped functions & vars should probably be owned directly by the
             // CookResult
-            if (!scopeInfo.parentScope || scopeInfo.parentScope->type != SemaEntity::Class)
+            if ((!scopeInfo.parentScope || scopeInfo.parentScope->type != SemaEntity::Class) &&
+                !this->docState.addToClass)
                 return;
         } else if (this->docState.markdownLoc >= 0) {
-            if (!scopeInfo.parentScope || scopeInfo.parentScope->type != SemaEntity::Class) {
+            if ((!scopeInfo.parentScope || scopeInfo.parentScope->type != SemaEntity::Class) &&
+                !this->docState.addToClass) {
                 // Need to sort out ownership rules before this will work
                 // global/namespace-scoped functions & vars should probably be owned directly by the
                 // CookResult
@@ -503,7 +544,7 @@ struct APIExtractor : cpp::ParseSupervisor {
             // Skip this declaration
             return;
         }
-        PLY_ASSERT(scopeInfo.parentScope->type == SemaEntity::Class);
+        PLY_ASSERT((scopeInfo.parentScope->type == SemaEntity::Class) || this->docState.addToClass);
 
         if (auto simple = decl.simple()) {
             Array<cpp::sema::SingleDeclaration> semaDecls =
@@ -528,13 +569,17 @@ struct APIExtractor : cpp::ParseSupervisor {
                 if (scopeInfo.templateIdx >= 0) {
                     memberEnt->templateParams = this->semaScopeStack[scopeInfo.templateIdx];
                 }
-                PLY_ASSERT(scopeInfo.parentScope->type == SemaEntity::Class);
-                if (!semaDecl.declSpecifierSeq.isEmpty()) {
-                    // If there are no declSpecifiers, it's a ctor/dtor, so don't
-                    // add it to the nameToChild map
+                if (scopeInfo.parentScope->type == SemaEntity::Class) {
+                    if (!semaDecl.declSpecifierSeq.isEmpty()) {
+                        // If there are no declSpecifiers, it's a ctor/dtor, so don't
+                        // add it to the nameToChild map
+                        scopeInfo.parentScope->nameToChild.insert(memberEnt);
+                    }
+                    scopeInfo.parentScope->childSeq.append(memberEnt);
+                } else {
                     scopeInfo.parentScope->nameToChild.insert(memberEnt);
+                    this->extractAPIResult->extractedAtNamespaceScope.append(memberEnt);
                 }
-                scopeInfo.parentScope->childSeq.append(memberEnt);
 
                 // Add function parameters as child SemaEntities
                 if (semaDecl.dcor.prod) {
@@ -554,8 +599,13 @@ struct APIExtractor : cpp::ParseSupervisor {
                 }
                 memberEnt->singleDecl = std::move(semaDecl);
 
-                DocInfo* docInfo = scopeInfo.parentScope->docInfo;
-                PLY_ASSERT(docInfo->class_ == scopeInfo.parentScope);
+                DocInfo* docInfo = nullptr;
+                if (this->docState.addToClass) {
+                    docInfo = this->docState.addToClass->docInfo;
+                } else {
+                    docInfo = scopeInfo.parentScope->docInfo;
+                    PLY_ASSERT(docInfo->class_ == scopeInfo.parentScope);
+                }
 
                 DocInfo::Entry* entry = this->docState.groupEntry;
                 if (!entry) {
@@ -690,7 +740,23 @@ void APIExtractor::Error::writeMessage(StringWriter* sw,
                 break;
             }
             case APIExtractor::Error::MarkdownOnlyValidWithinClass: {
-                sw->format("markdown is only supported for classes and class members\n", this->arg);
+                *sw << "markdown is only supported for classes and class members\n";
+                break;
+            }
+            case APIExtractor::Error::DirectiveNotValidWithinClass: {
+                sw->format("\\{} directive not allowed inside a class\n", this->arg);
+                break;
+            }
+            case APIExtractor::Error::ExpectedClassName: {
+                sw->format("expected class name after \\{} directive\n", this->arg);
+                break;
+            }
+            case APIExtractor::Error::UnexpectedAfterClassName: {
+                sw->format("unexpected text after class name in \\{} directive\n", this->arg);
+                break;
+            }
+            case APIExtractor::Error::ClassNotFound: {
+                sw->format("class '{}' not found\n", this->arg);
                 break;
             }
             default: {
