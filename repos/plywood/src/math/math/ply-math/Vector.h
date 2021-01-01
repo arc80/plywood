@@ -336,15 +336,13 @@ Returns `true` if every component of `a` is less than (or less than or equal to)
 component of `b`. You can use these functions to implement other comparisons:
 
 * `allLessOrEqual(b, a)` evaluates to `true` if every component of `a` is greater than the
-corresponding component of `b`.
+   corresponding component of `b`.
 * `allLess(b, a)` evaluates to `true` if every component of `a` is greater than or equal to the
-corresponding component of `b`.
+   corresponding component of `b`.
 * `!allLessOrEqual(b, a)` evaluates to `true` if _any_ component of `a` is less than the
-corresponding component of `b`.
+   corresponding component of `b`.
 * `!allLess(b, a)` evaluates to `true` if _any_ component of `a` is less than or equal to the
-corresponding component of `b`.
-
-    allLess(Float2{0, 1}, Float2{1, 2})  // evaluates to true
+   corresponding component of `b`.
 */
 PLY_INLINE bool allLess(const Float2& a, const Float2& b) {
     return (a.x < b.x) && (a.y < b.y);
