@@ -58,7 +58,7 @@ PLY_NO_INLINE void fmt::scanUsingCallback(InStream* ins, const LambdaView<bool(c
     }
 }
 
-PLY_NO_INLINE bool fmt::scanUpToAndIncludingSpecial(InStream* ins, StringView special) {
+PLY_NO_INLINE bool fmt::scanUpToAndIncludingSpecial(InStream* ins, const StringView special) {
     PLY_ASSERT(special.numBytes > 0);
     PLY_ASSERT(special.subStr(1).findByte(special[0]) < 0); // first letter must not reoccur
     u32 matchedUnits = 0;

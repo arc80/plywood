@@ -116,13 +116,13 @@ struct ConstBufferView {
     /*!
     Returns `true` if the contents of this `ConstBufferView` exactly match the contents of `other`.
     */
-    PLY_DLL_ENTRY bool operator==(ConstBufferView other) const;
+    PLY_DLL_ENTRY bool operator==(const ConstBufferView other) const;
 
     /*!
     Returns `true` if the contents of this `ConstBufferView` do not exactly match the contents of
     `other`.
     */
-    PLY_INLINE bool operator!=(ConstBufferView other) {
+    PLY_INLINE bool operator!=(const ConstBufferView other) {
         return !(*this == other);
     }
 };

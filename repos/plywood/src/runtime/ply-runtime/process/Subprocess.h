@@ -77,12 +77,12 @@ struct Subprocess {
     virtual ~Subprocess() = default;
     virtual s32 join() = 0;
 
-    static PLY_DLL_ENTRY Owned<Subprocess> execArgStr(StringView exePath, StringView argStr,
-                                                      StringView initialDir, const Output& output,
+    static PLY_DLL_ENTRY Owned<Subprocess> execArgStr(const StringView exePath, const StringView argStr,
+                                                      const StringView initialDir, const Output& output,
                                                       const Input& input = Input::open());
-    static PLY_DLL_ENTRY Owned<Subprocess> exec(StringView exePath,
+    static PLY_DLL_ENTRY Owned<Subprocess> exec(const StringView exePath,
                                                 ArrayView<const StringView> args,
-                                                StringView initialDir, const Output& output,
+                                                const StringView initialDir, const Output& output,
                                                 const Input& input = Input::open());
 };
 

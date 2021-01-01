@@ -9,7 +9,7 @@
 namespace ply {
 namespace web {
 
-PLY_NO_INLINE void echo_serve(const void*, StringView requestPath, ResponseIface* responseIface);
+PLY_NO_INLINE void echo_serve(const void*, const StringView requestPath, ResponseIface* responseIface);
 
 } // namespace web
 } // namespace ply

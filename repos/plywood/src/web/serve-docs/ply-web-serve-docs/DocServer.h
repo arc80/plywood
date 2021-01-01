@@ -35,8 +35,8 @@ struct DocServer {
 
     void init(StringView dataRoot);
     void reloadContents();
-    void serve(StringView requestPath, ResponseIface* responseIface);
-    void serveContentOnly(StringView requestPath, ResponseIface* responseIface);
+    void serve(const StringView requestPath, ResponseIface* responseIface);
+    void serveContentOnly(const StringView requestPath, ResponseIface* responseIface);
 };
 
 } // namespace web

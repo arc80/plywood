@@ -12,7 +12,7 @@ namespace web {
 struct SourceCode {
     String rootDir;
 
-    PLY_NO_INLINE static void serve(const SourceCode* params, StringView requestPath,
+    PLY_NO_INLINE static void serve(const SourceCode* params, const StringView requestPath,
                                     ResponseIface* responseIface);
 };
 

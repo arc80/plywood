@@ -47,7 +47,7 @@ body {
 
     .right {
         display: inline-block;
-        position: absolute;        
+        position: absolute;
         right: 0px;
         height: 100%;
 
@@ -133,7 +133,7 @@ body {
     border-right: 1px solid #e6e6e6;
     font-size: 82%;
     transform-origin: top right;
-    
+
     ul {
         line-height: 1.55em;
         overflow: hidden;
@@ -141,7 +141,7 @@ body {
     li.caret-down span::before {
         -ms-transform: rotate(90deg);
         -webkit-transform: rotate(90deg);
-        transform: rotate(90deg);  
+        transform: rotate(90deg);
     }
     .nested {
         display: none;
@@ -167,7 +167,7 @@ body {
         left: -19px;
         top: 1px;
         transform-origin: 66% 42%;
-        transition: transform 0.1s linear;  
+        transition: transform 0.1s linear;
     }
     li {
         padding-left: 1.7em;

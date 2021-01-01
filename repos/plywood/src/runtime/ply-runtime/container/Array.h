@@ -129,7 +129,7 @@ public:
     */
     template <typename Other,
               typename std::enable_if_t<std::is_constructible<T, Other>::value, int> = 0>
-    PLY_INLINE void operator=(ArrayView<Other> other) {
+    PLY_INLINE void operator=(const ArrayView<Other> other) {
         subst::destructArray(this->items, this->numItems_);
         ((details::BaseArray&) *this).realloc(other.numItems, (u32) sizeof(T));
         subst::unsafeConstructArrayFrom(this->items, other.items, other.numItems);
@@ -151,7 +151,7 @@ public:
     Returns the concatenation of two `Array`s. The array items are moved, not copied. Both `Array`
     operands must be rvalue references, and both are reset to empty `Array`s.
     */
-    PLY_INLINE Array operator+(Array&& other) && {
+    PLY_INLINE Array operator+(const Array&& other) && {
         Array result;
         ((details::BaseArray&) result).alloc(this->numItems_ + other.numItems_, (u32) sizeof(T));
         subst::moveConstructArray(result.items, this->items, this->numItems_);
@@ -352,7 +352,7 @@ public:
     /*!
     Appends multiple items to the array. The new array items are copy constructed from `view`.
     */
-    PLY_NO_INLINE void extend(ArrayView<const T> view) {
+    PLY_NO_INLINE void extend(const ArrayView<const T> view) {
         ((details::BaseArray&) *this).reserve(this->numItems_ + view.numItems, (u32) sizeof(T));
         subst::constructArrayFrom(this->items + this->numItems_, view.items, view.numItems);
         this->numItems_ += view.numItems;
@@ -361,7 +361,7 @@ public:
     /*!
     Appends multiple items to the array. The new array items are move constructed from `view`.
     */
-    PLY_NO_INLINE void moveExtend(ArrayView<T> view) {
+    PLY_NO_INLINE void moveExtend(const ArrayView<T> view) {
         ((details::BaseArray&) *this).reserve(this->numItems_ + view.numItems, (u32) sizeof(T));
         subst::moveConstructArray(this->items + this->numItems_, view.items, view.numItems);
         this->numItems_ += view.numItems;

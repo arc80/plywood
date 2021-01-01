@@ -32,7 +32,7 @@ void initCookJobTypes();
 
 using namespace ply;
 
-Array<Reference<cook::CookJob>> copyStaticFiles(cook::CookContext* ctx, StringView srcRoot) {
+Array<Reference<cook::CookJob>> copyStaticFiles(cook::CookContext* ctx, const StringView srcRoot) {
     Array<Reference<cook::CookJob>> copyJobs;
     for (WalkTriple& triple : FileSystem::native()->walk(srcRoot)) {
         for (const WalkTriple::FileInfo& file : triple.files) {
@@ -44,7 +44,7 @@ Array<Reference<cook::CookJob>> copyStaticFiles(cook::CookContext* ctx, StringVi
     return copyJobs;
 }
 
-Array<String> getSourceFileKeys(StringView srcRoot) {
+Array<String> getSourceFileKeys(const StringView srcRoot) {
     Array<String> srcKeys;
     for (WalkTriple& triple : FileSystem::native()->walk(srcRoot)) {
         for (const WalkTriple::FileInfo& file : triple.files) {
@@ -81,7 +81,7 @@ Array<String> getSourceFileKeys(StringView srcRoot) {
     return srcKeys;
 }
 
-Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, StringView relPath) {
+Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, const StringView relPath) {
     PLY_ASSERT(relPath.startsWith("/"));
     Reference<cook::CookJob> pageMetaJob = ctx->depTracker->getOrCreateCookJob(
         {&docs::CookJobType_ExtractPageMeta, PosixPath::join(relPath, "index")});
@@ -176,7 +176,7 @@ int main() {
         getSourceFileKeys(NativePath::join(PLY_WORKSPACE_FOLDER,
                                            "repos/plywood/src/math/math/ply-math"))
             .view());
-    for (StringView srcKey : srcKeys) {
+    for (const StringView srcKey : srcKeys) {
         rootRefs.append(ctx.cook({&ply::docs::CookJobType_ExtractAPI, srcKey}));
     }
 

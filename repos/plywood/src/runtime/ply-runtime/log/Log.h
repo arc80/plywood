@@ -20,7 +20,7 @@ struct LogChannel {
 
     struct LineHandler {
         StringWriter sw;
-        PLY_DLL_ENTRY LineHandler(StringView channelName);
+        PLY_DLL_ENTRY LineHandler(const StringView channelName);
         PLY_DLL_ENTRY ~LineHandler();
     };
 

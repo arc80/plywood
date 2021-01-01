@@ -62,7 +62,7 @@ grammar::TranslationUnit parse(String&& sourceCode, PPVisitedFiles* visitedFiles
 }
 
 Tuple<grammar::Declaration::Simple, Array<Owned<BaseError>>>
-parseSimpleDeclaration(StringView sourceCode, LinearLocation linearLocOfs) {
+parseSimpleDeclaration(const StringView sourceCode, LinearLocation linearLocOfs) {
     // Create preprocessor
     PPVisitedFiles visitedFiles;
     Preprocessor pp;

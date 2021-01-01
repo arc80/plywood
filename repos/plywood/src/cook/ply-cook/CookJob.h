@@ -98,8 +98,8 @@ struct CookResult {
     virtual void unlinkFromDatabase() {
     }
 
-    Owned<InStream> openFileAsDependency(StringView path);
-    FileDepScope createFileDependency(StringView path);
+    Owned<InStream> openFileAsDependency(const StringView path);
+    FileDepScope createFileDependency(const StringView path);
     void addReference(const CookJobID& jobID);
     void addError(String&& error);
 };

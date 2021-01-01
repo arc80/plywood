@@ -35,27 +35,27 @@ struct PathFormat {
     PLY_INLINE const char& sepByte() const {
         return this->isWindows ? BackSlash : FwdSlash;
     }
-    PLY_INLINE bool hasDriveLetter(StringView path) const {
+    PLY_INLINE bool hasDriveLetter(const StringView path) const {
         if (!this->isWindows)
             return false;
         return path.numBytes >= 2 && isAsciiLetter(path.bytes[0]) && path.bytes[1] == ':';
     }
-    PLY_INLINE StringView getDriveLetter(StringView path) const {
+    PLY_INLINE StringView getDriveLetter(const StringView path) const {
         return hasDriveLetter(path) ? path.left(2) : StringView{};
     }
-    PLY_INLINE bool isAbsolute(StringView path) const {
+    PLY_INLINE bool isAbsolute(const StringView path) const {
         if (this->isWindows) {
             return path.numBytes >= 3 && this->hasDriveLetter(path) && this->isSepByte(path[2]);
         } else {
             return path.numBytes >= 1 && this->isSepByte(path[0]);
         }
     }
-    PLY_INLINE bool isRelative(StringView path) const {
+    PLY_INLINE bool isRelative(const StringView path) const {
         return !this->hasDriveLetter(path) && path.numBytes > 0 && !this->isSepByte(path[0]);
     }
-    PLY_DLL_ENTRY Tuple<StringView, StringView> split(StringView path) const;
-    PLY_DLL_ENTRY Array<StringView> splitFull(StringView path) const;
-    PLY_DLL_ENTRY Tuple<StringView, StringView> splitExt(StringView path) const;
+    PLY_DLL_ENTRY Tuple<StringView, StringView> split(const StringView path) const;
+    PLY_DLL_ENTRY Array<StringView> splitFull(const StringView path) const;
+    PLY_DLL_ENTRY Tuple<StringView, StringView> splitExt(const StringView path) const;
     PLY_DLL_ENTRY String joinAndNormalize(ArrayView<const StringView> components) const;
     template <typename... StringViews>
     PLY_INLINE String join(StringViews&&... pathComponentArgs) const {
@@ -69,41 +69,41 @@ struct PathFormat {
             std::forward<StringViews>(pathComponentArgs)...};
         return joinAndNormalize(components.view());
     }
-    PLY_DLL_ENTRY String makeRelative(StringView ancestor, StringView descendant) const;
-    PLY_DLL_ENTRY HybridString from(const PathFormat& srcFormat, StringView srcPath) const;
+    PLY_DLL_ENTRY String makeRelative(const StringView ancestor, const StringView descendant) const;
+    PLY_DLL_ENTRY HybridString from(const PathFormat& srcFormat, const StringView srcPath) const;
     template <typename OtherTraits>
-    PLY_INLINE HybridString from(StringView path) const {
+    PLY_INLINE HybridString from(const StringView path) const {
         return from(OtherTraits::format(), path);
     }
-    PLY_INLINE bool endsWithSep(StringView path) {
+    PLY_INLINE bool endsWithSep(const StringView path) {
         return path.numBytes > 0 && this->isSepByte(path.back());
     }
 };
 
 struct WString;
-WString win32PathArg(StringView path, bool allowExtended = true);
+WString win32PathArg(const StringView path, bool allowExtended = true);
 
 template <bool IsWindows>
 struct Path {
     static PLY_INLINE bool isSepByte(char u) {
         return PathFormat{IsWindows}.isSepByte(u);
     }
-    static PLY_INLINE bool hasDriveLetter(StringView path) {
+    static PLY_INLINE bool hasDriveLetter(const StringView path) {
         return PathFormat{IsWindows}.hasDriveLetter(path);
     }
-    static PLY_INLINE StringView getDriveLetter(StringView path) {
+    static PLY_INLINE StringView getDriveLetter(const StringView path) {
         return PathFormat{IsWindows}.getDriveLetter(path);
     }
-    static PLY_INLINE bool isAbsolute(StringView path) {
+    static PLY_INLINE bool isAbsolute(const StringView path) {
         return PathFormat{IsWindows}.isAbsolute(path);
     }
     static PLY_INLINE PathFormat format() {
         return PathFormat{IsWindows};
     }
-    static PLY_INLINE Array<StringView> splitFull(StringView path) {
+    static PLY_INLINE Array<StringView> splitFull(const StringView path) {
         return PathFormat{IsWindows}.splitFull(path);
     }
-    static PLY_INLINE Tuple<StringView, StringView> split(StringView path) {
+    static PLY_INLINE Tuple<StringView, StringView> split(const StringView path) {
         return PathFormat{IsWindows}.split(path);
     }
     template <typename... StringViews>
@@ -112,7 +112,7 @@ struct Path {
             std::forward<StringViews>(pathComponentArgs)...};
         return PathFormat{IsWindows}.joinAndNormalize(components.view());
     }
-    static PLY_INLINE String makeRelative(StringView ancestor, StringView descendant) {
+    static PLY_INLINE String makeRelative(const StringView ancestor, const StringView descendant) {
         return PathFormat{IsWindows}.makeRelative(ancestor, descendant);
     }
     template <typename... StringViews>
@@ -121,20 +121,20 @@ struct Path {
             std::forward<StringViews>(pathComponentArgs)...};
         return PathFormat{IsWindows}.joinAndNormalize(components.view());
     }
-    static PLY_INLINE bool isNormalized(StringView path) {
+    static PLY_INLINE bool isNormalized(const StringView path) {
         return path == normalize(path);
     }
-    static PLY_INLINE HybridString from(const PathFormat& otherFmt, StringView path) {
+    static PLY_INLINE HybridString from(const PathFormat& otherFmt, const StringView path) {
         return PathFormat{IsWindows}.from(otherFmt, path);
     }
     template <typename OtherPath>
-    static PLY_INLINE HybridString from(StringView path) {
+    static PLY_INLINE HybridString from(const StringView path) {
         return PathFormat{IsWindows}.from(OtherPath::format(), path);
     }
-    static PLY_INLINE Tuple<StringView, StringView> splitExt(StringView path) {
+    static PLY_INLINE Tuple<StringView, StringView> splitExt(const StringView path) {
         return PathFormat{IsWindows}.splitExt(path);
     }
-    static PLY_INLINE bool endsWithSep(StringView path) {
+    static PLY_INLINE bool endsWithSep(const StringView path) {
         return path.numBytes > 0 && PathFormat{IsWindows}.isSepByte(path.back());
     }
 };

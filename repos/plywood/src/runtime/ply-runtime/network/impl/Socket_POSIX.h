@@ -40,7 +40,7 @@ struct Socket_POSIX {
     // FIXME: Make interface more configurable
     static PLY_DLL_ENTRY TCPListener_POSIX bindTCP(u16 port);
     static PLY_DLL_ENTRY Owned<TCPConnection_POSIX> connectTCP(const IPAddress& address, u16 port);
-    static PLY_DLL_ENTRY IPAddress resolveHostName(StringView hostName,
+    static PLY_DLL_ENTRY IPAddress resolveHostName(const StringView hostName,
                                                    IPAddress::Version ipVersion);
     static PLY_INLINE IPResult lastResult() {
         return Socket_POSIX::lastResult_.load();

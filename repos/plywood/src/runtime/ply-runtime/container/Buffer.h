@@ -45,7 +45,7 @@ struct Buffer {
     Constructs a copy of `other`. A new memory block is allocated on the heap and the contents of
     `other` are copied into it.
     */
-    PLY_DLL_ENTRY Buffer(ConstBufferView other);
+    PLY_DLL_ENTRY Buffer(const ConstBufferView other);
 
     /*!
     Move constructor. `other` is reset to an empty `Buffer`.
@@ -64,7 +64,7 @@ struct Buffer {
     Copy assignment operator. If this `Buffer` already owns a memory block, it is destroyed. A new
     memory block is allocated on the heap and the contents of `other` are copied into it.
     */
-    PLY_INLINE void operator=(ConstBufferView other) {
+    PLY_INLINE void operator=(const ConstBufferView other) {
         this->~Buffer();
         new (this) Buffer{other};
     }
@@ -198,7 +198,7 @@ struct Buffer {
     /*!
     Tests whether the owned memory block exactly matches the contents of `other`.
     */
-    PLY_INLINE bool operator==(ConstBufferView other) const {
+    PLY_INLINE bool operator==(const ConstBufferView other) const {
         return this->view() == other;
     }
 

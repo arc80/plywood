@@ -177,7 +177,7 @@ public:
     Rewinds the `InStream` back to a previously saved position. This also clears the `InStream`'s
     end-of-file status.
     */
-    PLY_DLL_ENTRY void rewind(ChunkCursor cursor);
+    PLY_DLL_ENTRY void rewind(const ChunkCursor cursor);
 
     /*!
     Attempts to make at least `numBytes` available to read contiguously at `curByte`. Returns the
@@ -271,7 +271,7 @@ public:
 struct ViewInStream : InStream {
     PLY_INLINE ViewInStream() = default;
 
-    PLY_INLINE ViewInStream(ConstBufferView view) : InStream{Type::View, 0} {
+    PLY_INLINE ViewInStream(const ConstBufferView view) : InStream{Type::View, 0} {
         this->startByte = (u8*) view.bytes;
         this->curByte = (u8*) view.bytes;
         this->endByte = (u8*) view.bytes + view.numBytes;

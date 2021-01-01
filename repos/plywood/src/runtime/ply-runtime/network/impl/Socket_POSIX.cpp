@@ -277,7 +277,7 @@ PLY_NO_INLINE Owned<TCPConnection_POSIX> Socket_POSIX::connectTCP(const IPAddres
     return nullptr;
 }
 
-PLY_NO_INLINE IPAddress Socket_POSIX::resolveHostName(StringView hostName,
+PLY_NO_INLINE IPAddress Socket_POSIX::resolveHostName(const StringView hostName,
                                                       IPAddress::Version ipVersion) {
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));

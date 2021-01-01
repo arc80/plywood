@@ -190,17 +190,17 @@ struct FileSystem {
 
     struct Funcs {
         PathFormat pathFmt;
-        Directory (*listDir)(FileSystem* fs, StringView path, u32 flags) = nullptr;
-        FSResult (*makeDir)(FileSystem* fs, StringView path) = nullptr;
-        FSResult (*setWorkingDirectory)(FileSystem* fs_, StringView path) = nullptr;
+        Directory (*listDir)(FileSystem* fs, const StringView path, u32 flags) = nullptr;
+        FSResult (*makeDir)(FileSystem* fs, const StringView path) = nullptr;
+        FSResult (*setWorkingDirectory)(FileSystem* fs_, const StringView path) = nullptr;
         String (*getWorkingDirectory)(FileSystem* fs) = nullptr;
-        ExistsResult (*exists)(FileSystem* fs, StringView path) = nullptr;
-        Owned<InPipe> (*openPipeForRead)(FileSystem* fs, StringView path) = nullptr;
-        Owned<OutPipe> (*openPipeForWrite)(FileSystem* fs, StringView path) = nullptr;
-        FSResult (*moveFile)(FileSystem* fs, StringView srcPath, StringView dstPath) = nullptr;
-        FSResult (*deleteFile)(FileSystem* fs, StringView path) = nullptr;
-        FSResult (*removeDirTree)(FileSystem* fs, StringView dirPath) = nullptr;
-        FileStatus (*getFileStatus)(FileSystem* fs, StringView path) = nullptr;
+        ExistsResult (*exists)(FileSystem* fs, const StringView path) = nullptr;
+        Owned<InPipe> (*openPipeForRead)(FileSystem* fs, const StringView path) = nullptr;
+        Owned<OutPipe> (*openPipeForWrite)(FileSystem* fs, const StringView path) = nullptr;
+        FSResult (*moveFile)(FileSystem* fs, const StringView srcPath, const StringView dstPath) = nullptr;
+        FSResult (*deleteFile)(FileSystem* fs, const StringView path) = nullptr;
+        FSResult (*removeDirTree)(FileSystem* fs, const StringView dirPath) = nullptr;
+        FileStatus (*getFileStatus)(FileSystem* fs, const StringView path) = nullptr;
     };
 
     static ThreadLocal<FSResult> lastResult_;
@@ -232,7 +232,7 @@ struct FileSystem {
     This function updates the internal result code. The result code is also returned directly.
     Expected result codes are `OK` or `NotFound`.
     */
-    PLY_INLINE FSResult setWorkingDirectory(StringView path) {
+    PLY_INLINE FSResult setWorkingDirectory(const StringView path) {
         return this->funcs->setWorkingDirectory(this, path);
     }
 
@@ -266,7 +266,7 @@ struct FileSystem {
 
     This function does not update the internal result code.
     */
-    PLY_INLINE ExistsResult exists(StringView path) {
+    PLY_INLINE ExistsResult exists(const StringView path) {
         return this->funcs->exists(this, path);
     }
 
@@ -276,7 +276,7 @@ struct FileSystem {
 
     This function does not update the internal result code.
     */
-    PLY_INLINE bool isDir(StringView path) {
+    PLY_INLINE bool isDir(const StringView path) {
         return this->funcs->exists(this, path) == ExistsResult::Directory;
     }
 
@@ -323,7 +323,7 @@ struct FileSystem {
     as well. Expected result codes are `OK` or `NotFound` (if, for example, the volume was removed
     during iteration).
     */
-    PLY_INLINE Directory listDir(StringView path, u32 flags = WithSizes | WithTimes) {
+    PLY_INLINE Directory listDir(const StringView path, u32 flags = WithSizes | WithTimes) {
         return this->funcs->listDir(this, path, flags);
     }
 
@@ -397,7 +397,7 @@ struct FileSystem {
     well. Expected result codes are `OK`, `NotFound` (if, for example, the volume was removed during
     iteration) or `AccessDenied`.
     */
-    PLY_DLL_ENTRY Walk walk(StringView path, u32 flags = WithSizes | WithTimes);
+    PLY_DLL_ENTRY Walk walk(const StringView path, u32 flags = WithSizes | WithTimes);
 
     /*!
     Creates a new directory. The parent directory must already exist.
@@ -405,7 +405,7 @@ struct FileSystem {
     This function updates the internal result code. The result code is also returned directly.
     Expected result codes are `OK`, `AlreadyExists` or `AccessDenied`.
     */
-    PLY_INLINE FSResult makeDir(StringView path) {
+    PLY_INLINE FSResult makeDir(const StringView path) {
         return this->funcs->makeDir(this, path);
     }
 
@@ -416,7 +416,7 @@ struct FileSystem {
     This function updates the internal result code. The result code is also returned directly.
     Expected result codes are `OK` or `AccessDenied`.
     */
-    PLY_DLL_ENTRY FSResult makeDirs(StringView path);
+    PLY_DLL_ENTRY FSResult makeDirs(const StringView path);
 
     /*!
     Renames the file at `srcPath` to `dstPath`. If `dstPath` already exists and is a file, it will
@@ -424,7 +424,7 @@ struct FileSystem {
 
     This function updates the internal result code. The result code is also returned directly.
     */
-    PLY_INLINE FSResult moveFile(StringView srcPath, StringView dstPath) {
+    PLY_INLINE FSResult moveFile(const StringView srcPath, const StringView dstPath) {
         return this->funcs->moveFile(this, srcPath, dstPath);
     }
 
@@ -433,7 +433,7 @@ struct FileSystem {
 
     This function updates the internal result code. The result code is also returned directly.
     */
-    PLY_INLINE FSResult deleteFile(StringView path) {
+    PLY_INLINE FSResult deleteFile(const StringView path) {
         return this->funcs->deleteFile(this, path);
     }
 
@@ -444,7 +444,7 @@ struct FileSystem {
     This function updates the internal result code. The result code is also returned directly.
     Expected result codes are `OK` or `AccessDenied`.
     */
-    PLY_INLINE FSResult removeDirTree(StringView dirPath) {
+    PLY_INLINE FSResult removeDirTree(const StringView dirPath) {
         return this->funcs->removeDirTree(this, dirPath);
     }
 
@@ -466,7 +466,7 @@ struct FileSystem {
     This function updates the internal result code. The result code is also returned in the `result`
     member. Expected result codes are `OK` or `NotFound`.
     */
-    PLY_INLINE FileStatus getFileStatus(StringView path) {
+    PLY_INLINE FileStatus getFileStatus(const StringView path) {
         return this->funcs->getFileStatus(this, path);
     }
 
@@ -482,7 +482,7 @@ struct FileSystem {
     suggested to wrap the returned `InPipe` in an `InStream`. The `openStreamForRead()` convenience
     function is provided for this.
     */
-    PLY_INLINE Owned<InPipe> openPipeForRead(StringView path) {
+    PLY_INLINE Owned<InPipe> openPipeForRead(const StringView path) {
         return this->funcs->openPipeForRead(this, path);
     }
 
@@ -498,7 +498,7 @@ struct FileSystem {
     suggested to wrap the returned `OutPipe` in an `OutStream`. The `openStreamForWrite()`
     convenience function is provided for this.
     */
-    PLY_INLINE Owned<OutPipe> openPipeForWrite(StringView path) {
+    PLY_INLINE Owned<OutPipe> openPipeForWrite(const StringView path) {
         return this->funcs->openPipeForWrite(this, path);
     }
 
@@ -509,7 +509,7 @@ struct FileSystem {
     This function updates the internal result code. Expected result codes are `OK`, `NotFound` or
     `Locked`.
     */
-    PLY_DLL_ENTRY Owned<InStream> openStreamForRead(StringView path);
+    PLY_DLL_ENTRY Owned<InStream> openStreamForRead(const StringView path);
 
     /*!
     Returns an `OutStream` that writes raw data to the specified file, or `nullptr` if the file
@@ -518,7 +518,7 @@ struct FileSystem {
     This function updates the internal result code. Expected result codes are `OK`, `NotFound`,
     `AccessDenied` or `Locked`.
     */
-    PLY_DLL_ENTRY Owned<OutStream> openStreamForWrite(StringView path);
+    PLY_DLL_ENTRY Owned<OutStream> openStreamForWrite(const StringView path);
 
     /*!
     Returns a `StringReader` that reads raw data from the specified text file and converts it to
@@ -536,7 +536,7 @@ struct FileSystem {
             return nullptr;
         return textFormat.createImporter(std::move(ins));
     */
-    PLY_DLL_ENTRY Owned<StringReader> openTextForRead(StringView path,
+    PLY_DLL_ENTRY Owned<StringReader> openTextForRead(const StringView path,
                                                       const TextFormat& textFormat);
 
     /*!
@@ -557,7 +557,7 @@ struct FileSystem {
         TextFormat textFormat = TextFormat::autodetect(ins);
         return {textFormat.createImporter(std::move(ins)), textformat};
     */
-    PLY_DLL_ENTRY Tuple<Owned<StringReader>, TextFormat> openTextForReadAutodetect(StringView path);
+    PLY_DLL_ENTRY Tuple<Owned<StringReader>, TextFormat> openTextForReadAutodetect(const StringView path);
 
     /*!
     Returns a `Buffer` containing the raw contents of the specified file, or an empty `Buffer` if
@@ -566,7 +566,7 @@ struct FileSystem {
     To check if the file was opened successfuly, call `lastResult()`. Expected result codes are
     `OK`, `NotFound`, `AccessDenied` or `Locked`.
     */
-    PLY_DLL_ENTRY Buffer loadBinary(StringView path);
+    PLY_DLL_ENTRY Buffer loadBinary(const StringView path);
 
     /*!
     Returns a `String` containing the contents of the specified text file converted to UTF-8 with
@@ -577,7 +577,7 @@ struct FileSystem {
     To check if the file was opened successfuly, call `lastResult()`. Expected result codes are
     `OK`, `NotFound`, `AccessDenied` or `Locked`.
     */
-    PLY_DLL_ENTRY String loadText(StringView path, const TextFormat& textFormat);
+    PLY_DLL_ENTRY String loadText(const StringView path, const TextFormat& textFormat);
 
     /*!
     Returns a `Tuple`. The first tuple item is a `String` containing the contents of the specified
@@ -589,7 +589,7 @@ struct FileSystem {
     To check if the file was opened successfuly, call `lastResult()`. Expected result codes are
     `OK`, `NotFound`, `AccessDenied` or `Locked`.
     */
-    PLY_DLL_ENTRY Tuple<String, TextFormat> loadTextAutodetect(StringView path);
+    PLY_DLL_ENTRY Tuple<String, TextFormat> loadTextAutodetect(const StringView path);
 
     /*!
     Returns a `StringWriter` that writes text to the specified text file in the specified format, or
@@ -608,7 +608,7 @@ struct FileSystem {
             return nullptr;
         return TextFormat::createExporter(std::move(outs), textFormat);
     */
-    Owned<StringWriter> openTextForWrite(StringView path, const TextFormat& textFormat);
+    Owned<StringWriter> openTextForWrite(const StringView path, const TextFormat& textFormat);
 
     /*!
     First, this function tries to load the raw contents of the specified file. If the load succeeds
@@ -620,7 +620,7 @@ struct FileSystem {
     In all cases, this function updates the internal result code. The result code is also returned
     directly.
     */
-    PLY_DLL_ENTRY FSResult makeDirsAndSaveBinaryIfDifferent(StringView path,
+    PLY_DLL_ENTRY FSResult makeDirsAndSaveBinaryIfDifferent(const StringView path,
                                                             ConstBufferView contents);
 
     /*!
@@ -635,7 +635,7 @@ struct FileSystem {
     In all cases, this function updates the internal result code. The result code is also returned
     directly.
     */
-    PLY_DLL_ENTRY FSResult makeDirsAndSaveTextIfDifferent(StringView path, StringView strContents,
+    PLY_DLL_ENTRY FSResult makeDirsAndSaveTextIfDifferent(const StringView path, const StringView strContents,
                                                           const TextFormat& textFormat);
 };
 

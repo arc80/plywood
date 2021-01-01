@@ -8,7 +8,7 @@
 
 namespace ply {
 
-PLY_NO_INLINE bool ConstBufferView::operator==(ConstBufferView other) const {
+PLY_NO_INLINE bool ConstBufferView::operator==(const ConstBufferView other) const {
     if (numBytes != other.numBytes)
         return false;
     return memcmp(bytes, other.bytes, numBytes) == 0;

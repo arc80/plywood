@@ -19,7 +19,7 @@ struct AllParams {
     SourceCode sourceCode;
 };
 
-void myRequestHandler(AllParams* params, StringView requestPath, ResponseIface* responseIface) {
+void myRequestHandler(AllParams* params, const StringView requestPath, ResponseIface* responseIface) {
     if (requestPath.startsWith("/static/")) {
         FetchFromFileSystem::serve(&params->fileSys, requestPath, responseIface);
     } else if (requestPath.startsWith("/file/")) {
@@ -39,7 +39,7 @@ void myRequestHandler(AllParams* params, StringView requestPath, ResponseIface* 
     }
 }
 
-void writeMsgAndExit(StringView msg) {
+void writeMsgAndExit(const StringView msg) {
     StringWriter stdErr = StdErr::text();
     stdErr << "Error: " << msg;
     if (!msg.endsWith("\n")) {

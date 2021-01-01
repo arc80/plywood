@@ -24,7 +24,7 @@ parse(String&& sourceCode, PPVisitedFiles* visitedFiles,
       ParseSupervisor* visor = nullptr);
 
 Tuple<grammar::Declaration::Simple, Array<Owned<BaseError>>>
-parseSimpleDeclaration(StringView sourceCode, LinearLocation linearLocOfs = 0);
+parseSimpleDeclaration(const StringView sourceCode, LinearLocation linearLocOfs = 0);
 
 } // namespace cpp
 } // namespace ply

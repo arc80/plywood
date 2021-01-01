@@ -163,7 +163,7 @@ struct String : StringMixin<String> {
     `StringWriter` instead, then convert to `String` at the final step by calling
     `StringWriter::moveToString()`.
     */
-    PLY_INLINE void operator+=(StringView other) {
+    PLY_INLINE void operator+=(const StringView other) {
         *this = this->view() + other;
     }
 
@@ -271,7 +271,7 @@ struct String : StringMixin<String> {
 };
 
 template <typename Derived>
-PLY_INLINE String StringMixin<Derived>::operator+(StringView other) const {
+PLY_INLINE String StringMixin<Derived>::operator+(const StringView other) const {
     return static_cast<const Derived*>(this)->view() + other;
 }
 

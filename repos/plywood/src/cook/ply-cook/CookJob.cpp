@@ -73,7 +73,7 @@ void CookResult::FileDepScope::onSuccessfulFileOpen() {
     this->depFile->modificationTime = this->modificationTime;
 }
 
-CookResult::FileDepScope CookResult::createFileDependency(StringView path) {
+CookResult::FileDepScope CookResult::createFileDependency(const StringView path) {
     CookResult::FileDepScope fds;
     fds.depFile = new Dependency_File;
     fds.depFile->path = path;
@@ -88,7 +88,7 @@ CookResult::FileDepScope CookResult::createFileDependency(StringView path) {
     return fds;
 }
 
-Owned<InStream> CookResult::openFileAsDependency(StringView path) {
+Owned<InStream> CookResult::openFileAsDependency(const StringView path) {
     FileDepScope fds = this->createFileDependency(path);
     if (!fds.isValid()) {
         return nullptr;

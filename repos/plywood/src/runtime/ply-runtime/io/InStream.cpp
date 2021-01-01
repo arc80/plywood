@@ -180,7 +180,7 @@ PLY_NO_INLINE ChunkCursor InStream::getCursor() const {
     return {this->chunk, this->curByte};
 }
 
-PLY_NO_INLINE void InStream::rewind(ChunkCursor cursor) {
+PLY_NO_INLINE void InStream::rewind(const ChunkCursor cursor) {
     // View is not supported yet, but could be in the future:
     PLY_ASSERT(this->status.type != (u32) Type::View);
     PLY_ASSERT(cursor.chunk->viewUsedBytes().contains(cursor.curByte));

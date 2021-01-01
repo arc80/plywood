@@ -284,13 +284,13 @@ struct StringView {
     Strings are sorted by comparing the unsigned value of each byte. If one of the strings contains
     the other as a prefix, the shorter string comes first in sorted order.
     */
-    PLY_DLL_ENTRY friend s32 compare(StringView str0, StringView str1);
+    PLY_DLL_ENTRY friend s32 compare(const StringView str0, const StringView str1);
 
     /*!
     Returns `true` if the string precedes `other` in sorted order. Equivalent to `compare(*this,
     other) < 0`.
     */
-    PLY_INLINE bool operator<(StringView other) const {
+    PLY_INLINE bool operator<(const StringView other) const {
         return compare(*this, other) < 0;
     }
 
@@ -299,10 +299,10 @@ struct StringView {
     Returns `true` if the string contents are identical (or not identical) when compared
     byte-for-byte.
     */
-    PLY_INLINE bool operator==(StringView src) const {
+    PLY_INLINE bool operator==(const StringView src) const {
         return this->bufferView() == src.bufferView();
     }
-    PLY_INLINE bool operator!=(StringView src) const {
+    PLY_INLINE bool operator!=(const StringView src) const {
         return !(this->bufferView() == src.bufferView());
     }
     /*!
@@ -312,7 +312,7 @@ struct StringView {
     /*!
     Returns a new `String` containing the concatenation of two `StringViews`.
     */
-    PLY_DLL_ENTRY String operator+(StringView other) const;
+    PLY_DLL_ENTRY String operator+(const StringView other) const;
 
     /*!
     Returns a new `String` containing the contents of the `StringView` repeated `count` times.
@@ -382,12 +382,12 @@ struct StringView {
     /*!
     Returns `true` if the string starts with `arg`.
     */
-    PLY_DLL_ENTRY bool startsWith(StringView arg) const;
+    PLY_DLL_ENTRY bool startsWith(const StringView arg) const;
 
     /*!
     Returns `true` if the string ends with `arg`.
     */
-    PLY_DLL_ENTRY bool endsWith(StringView arg) const;
+    PLY_DLL_ENTRY bool endsWith(const StringView arg) const;
 
     /*!
     \beginGroup
@@ -418,7 +418,7 @@ struct StringView {
         StringView{", "}.join({"a", "b", "c"}); // returns "a, b, c"
         StringView{""}.join({"a", "b", "c"});   // returns "abc"
     */
-    PLY_DLL_ENTRY String join(ArrayView<const StringView> comps) const;
+    PLY_DLL_ENTRY String join(const ArrayView<const StringView> comps) const;
 
     /*!
     Returns a list of the words in the given string using `sep` as a delimiter byte.

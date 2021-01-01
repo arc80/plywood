@@ -121,7 +121,7 @@ String getPageSource(DocServer* ds, StringView requestPath, ResponseIface* respo
     return pageHtml;
 }
 
-void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
+void DocServer::serve(const StringView requestPath, ResponseIface* responseIface) {
     FileSystem* fs = FileSystem::native();
 
     // Check if contents.pylon has been updated:
@@ -220,7 +220,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 )";
 }
 
-void DocServer::serveContentOnly(StringView requestPath, ResponseIface* responseIface) {
+void DocServer::serveContentOnly(const StringView requestPath, ResponseIface* responseIface) {
     String pageHtml = getPageSource(this, requestPath, responseIface);
     if (!pageHtml)
         return;

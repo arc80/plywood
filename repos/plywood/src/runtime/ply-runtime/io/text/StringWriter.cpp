@@ -110,7 +110,7 @@ PLY_NO_INLINE StringWriter::StringWriter(u32 chunkSizeExp) : OutStream{Type::Mem
     new (&this->headChunk) Reference<ChunkListNode>{this->chunk};
 }
 
-PLY_NO_INLINE void StringWriter::formatInternal(StringView fmt,
+PLY_NO_INLINE void StringWriter::formatInternal(const StringView fmt,
                                                 ArrayView<const StringWriter::Arg> args) {
     u32 argIndex = 0;
     ConstBufferView bytes = fmt.bufferView();

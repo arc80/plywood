@@ -69,7 +69,7 @@ private:
             return links[lo].child;
         }
 
-        u32 findLink(Node* child) {
+        u32 findLink(const Node* child) {
             PLY_ASSERT(!isLeaf);
             u32 s = size;
             Link* links = getLinks();

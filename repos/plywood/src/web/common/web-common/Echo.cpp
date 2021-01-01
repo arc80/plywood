@@ -10,7 +10,7 @@ extern char** environ;
 namespace ply {
 namespace web {
 
-PLY_NO_INLINE void echo_serve(const void*, StringView requestPath, ResponseIface* responseIface) {
+PLY_NO_INLINE void echo_serve(const void*, const StringView requestPath, ResponseIface* responseIface) {
     StringWriter* sw = responseIface->beginResponseHeader(ResponseCode::OK)->strWriter();
     *sw << "Content-type: text/html\r\n\r\n";
     responseIface->endResponseHeader();

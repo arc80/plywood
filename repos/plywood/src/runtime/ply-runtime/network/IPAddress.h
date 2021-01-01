@@ -41,7 +41,7 @@ struct IPAddress {
 
   String toString() const;
   static IPAddress fromString();
-  PLY_INLINE static IPAddress resolveHostName(StringView hostName,
+  PLY_INLINE static IPAddress resolveHostName(const StringView hostName,
                                               Version ipVersion);
 };
 

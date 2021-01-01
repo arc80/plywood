@@ -11,6 +11,6 @@
 namespace ply {
 
 void extractLiquidTags(StringWriter* outs, StringViewReader* ins,
-                       Functor<void(StringView, StringView)> tagHandler);
+                       Functor<void(const StringView, const StringView)> tagHandler);
 
 } // namespace ply

@@ -91,9 +91,9 @@ PLY_NO_INLINE int getNullOutFD_POSIX() {
     return fd2;
 }
 
-PLY_NO_INLINE Owned<Subprocess> Subprocess::exec(StringView exePath,
+PLY_NO_INLINE Owned<Subprocess> Subprocess::exec(const StringView exePath,
                                                  ArrayView<const StringView> args,
-                                                 StringView initialDir, const Output& output,
+                                                 const StringView initialDir, const Output& output,
                                                  const Input& input) {
     int childStdInFD[2] = {-1, -1};  // 0 is read, 1 is write
     int childStdOutFD[2] = {-1, -1}; // 0 is read, 1 is write

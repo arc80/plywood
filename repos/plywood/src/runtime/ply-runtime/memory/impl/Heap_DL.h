@@ -116,7 +116,9 @@ public:
     // zero-init.
     // Otherwise, you should call this function before using it:
     void zeroInit() {
-        memset(this, 0, sizeof(*this));
+        memset(&m_mstate, 0, sizeof(memory_dl::malloc_state));
+        m_mutex.zeroInit();
+        //memset(this, 0, sizeof(*this));
     }
 
     typedef memory_dl::Stats Stats;

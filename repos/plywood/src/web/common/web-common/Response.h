@@ -46,7 +46,7 @@ struct ResponseIface {
     void respondGeneric(ResponseCode responseCode);
 };
 
-using RequestHandler = HiddenArgFunctor<void(StringView requestPath, ResponseIface* responseIface)>;
+using RequestHandler = HiddenArgFunctor<void(const StringView requestPath, ResponseIface* responseIface)>;
 
 } // namespace web
 } // namespace ply

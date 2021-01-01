@@ -58,7 +58,7 @@ private:
         prepareArgList(argList + 1, rest...);
     }
 
-    PLY_DLL_ENTRY void formatInternal(StringView fmt, ArrayView<const Arg> args);
+    PLY_DLL_ENTRY void formatInternal(const StringView fmt, ArrayView<const Arg> args);
 
 public:
     /*!
@@ -116,7 +116,7 @@ public:
     For more information, see [Converting Values to Text](ConvertingValuesToText).
     */
     template <typename... Args>
-    PLY_NO_INLINE void format(StringView fmt, const Args&... args) {
+    PLY_NO_INLINE void format(const StringView fmt, const Args&... args) {
         FixedArray<Arg, sizeof...(args)> argList;
         prepareArgList(argList.items, args...);
         this->formatInternal(fmt, argList.view());
@@ -266,7 +266,7 @@ struct TypePrinter<char> {
 };
 template <>
 struct TypePrinter<StringView> {
-    static PLY_DLL_ENTRY void print(StringWriter* sw, StringView value);
+    static PLY_DLL_ENTRY void print(StringWriter* sw, const StringView value);
 };
 template <int N>
 struct TypePrinter<char[N]> {
@@ -337,7 +337,7 @@ struct TypePrinter<CmdLineArg_WinCrt> {
 // String member functions
 //-----------------------------------------------------------
 template <typename... Args>
-PLY_INLINE String String::format(StringView fmt, const Args&... args) {
+PLY_INLINE String String::format(const StringView fmt, const Args&... args) {
     StringWriter sw;
     sw.format(fmt, args...);
     return sw.moveToString();

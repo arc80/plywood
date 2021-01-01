@@ -43,7 +43,7 @@ PLY_NO_INLINE void dirEntryFromFindData(FileSystem_Win32::DirImpl* dirImpl) {
     }
 }
 
-PLY_NO_INLINE FSResult FileSystem_Win32::DirImpl::begin(StringView path) {
+PLY_NO_INLINE FSResult FileSystem_Win32::DirImpl::begin(const StringView path) {
     String pattern = WindowsPath::join(path, "*");
     this->hFind = FindFirstFileW(win32PathArg(pattern), &this->findData);
     if (this->hFind == INVALID_HANDLE_VALUE) {
@@ -96,14 +96,14 @@ PLY_NO_INLINE FSResult FileSystem_Win32::DirImpl::nextImpl(ply::Directory::Impl*
     }
 }
 
-PLY_NO_INLINE Directory FileSystem_Win32::listDir(FileSystem*, StringView path, u32 flags) {
+PLY_NO_INLINE Directory FileSystem_Win32::listDir(FileSystem*, const StringView path, u32 flags) {
     FileSystem_Win32::DirImpl* dirImpl = new FileSystem_Win32::DirImpl;
     dirImpl->flags = flags;
     dirImpl->begin(path);
     return {dirImpl};
 }
 
-PLY_NO_INLINE FSResult FileSystem_Win32::makeDir(FileSystem*, StringView path) {
+PLY_NO_INLINE FSResult FileSystem_Win32::makeDir(FileSystem*, const StringView path) {
     BOOL rc = CreateDirectoryW(win32PathArg(path), NULL);
     if (rc) {
         return FileSystem::setLastResult(FSResult::OK);
@@ -122,7 +122,7 @@ PLY_NO_INLINE FSResult FileSystem_Win32::makeDir(FileSystem*, StringView path) {
     }
 }
 
-PLY_NO_INLINE FSResult FileSystem_Win32::setWorkingDirectory(FileSystem* fs_, StringView path) {
+PLY_NO_INLINE FSResult FileSystem_Win32::setWorkingDirectory(FileSystem* fs_, const StringView path) {
     FileSystem_Win32* fs = static_cast<FileSystem_Win32*>(fs_);
     BOOL rc;
     {
@@ -185,7 +185,7 @@ PLY_NO_INLINE String FileSystem_Win32::getWorkingDirectory(FileSystem* fs_) {
     }
 }
 
-PLY_NO_INLINE ExistsResult FileSystem_Win32::exists(FileSystem*, StringView path) {
+PLY_NO_INLINE ExistsResult FileSystem_Win32::exists(FileSystem*, const StringView path) {
     // FIXME: Do something sensible when passed "C:" and other drive letters
     DWORD attribs = GetFileAttributesW(win32PathArg(path));
     if (attribs == INVALID_FILE_ATTRIBUTES) {
@@ -210,7 +210,7 @@ PLY_NO_INLINE ExistsResult FileSystem_Win32::exists(FileSystem*, StringView path
     }
 }
 
-PLY_NO_INLINE HANDLE FileSystem_Win32::openHandleForRead(StringView path) {
+PLY_NO_INLINE HANDLE FileSystem_Win32::openHandleForRead(const StringView path) {
     // Should this use FILE_SHARE_DELETE or FILE_SHARE_WRITE?
     HANDLE handle = CreateFileW(win32PathArg(path), GENERIC_READ, FILE_SHARE_READ, NULL,
                                 OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -242,14 +242,14 @@ PLY_NO_INLINE HANDLE FileSystem_Win32::openHandleForRead(StringView path) {
     return handle;
 }
 
-PLY_NO_INLINE Owned<InPipe> FileSystem_Win32::openPipeForRead(FileSystem*, StringView path) {
+PLY_NO_INLINE Owned<InPipe> FileSystem_Win32::openPipeForRead(FileSystem*, const StringView path) {
     HANDLE handle = openHandleForRead(path);
     if (handle == INVALID_HANDLE_VALUE)
         return nullptr;
     return new InPipe_Win32{handle};
 }
 
-PLY_NO_INLINE HANDLE FileSystem_Win32::openHandleForWrite(StringView path) {
+PLY_NO_INLINE HANDLE FileSystem_Win32::openHandleForWrite(const StringView path) {
     // FIXME: Needs graceful handling of ERROR_SHARING_VIOLATION
     // Should this use FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE?
     HANDLE handle = CreateFileW(win32PathArg(path), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
@@ -282,15 +282,15 @@ PLY_NO_INLINE HANDLE FileSystem_Win32::openHandleForWrite(StringView path) {
     return handle;
 }
 
-PLY_NO_INLINE Owned<OutPipe> FileSystem_Win32::openPipeForWrite(FileSystem*, StringView path) {
+PLY_NO_INLINE Owned<OutPipe> FileSystem_Win32::openPipeForWrite(FileSystem*, const StringView path) {
     HANDLE handle = openHandleForWrite(path);
     if (handle == INVALID_HANDLE_VALUE)
         return nullptr;
     return new OutPipe_Win32{handle};
 }
 
-PLY_NO_INLINE FSResult FileSystem_Win32::moveFile(FileSystem*, StringView srcPath,
-                                                  StringView dstPath) {
+PLY_NO_INLINE FSResult FileSystem_Win32::moveFile(FileSystem*, const StringView srcPath,
+                                                  const StringView dstPath) {
     BOOL rc = MoveFileExW(win32PathArg(srcPath), win32PathArg(dstPath), MOVEFILE_REPLACE_EXISTING);
     if (rc) {
         return FileSystem::setLastResult(FSResult::OK);
@@ -301,7 +301,7 @@ PLY_NO_INLINE FSResult FileSystem_Win32::moveFile(FileSystem*, StringView srcPat
     }
 }
 
-PLY_NO_INLINE FSResult FileSystem_Win32::deleteFile(FileSystem*, StringView path) {
+PLY_NO_INLINE FSResult FileSystem_Win32::deleteFile(FileSystem*, const StringView path) {
     BOOL rc = DeleteFileW(win32PathArg(path));
     if (rc) {
         return FileSystem::setLastResult(FSResult::OK);
@@ -312,7 +312,7 @@ PLY_NO_INLINE FSResult FileSystem_Win32::deleteFile(FileSystem*, StringView path
     }
 }
 
-PLY_NO_INLINE FSResult FileSystem_Win32::removeDirTree(FileSystem* fs, StringView dirPath) {   
+PLY_NO_INLINE FSResult FileSystem_Win32::removeDirTree(FileSystem* fs, const StringView dirPath) {   
     HybridString absPath = dirPath;
     if (!WindowsPath::isAbsolute(dirPath)) {
         absPath = WindowsPath::normalize(fs->funcs->getWorkingDirectory(fs), dirPath);
@@ -362,7 +362,7 @@ PLY_NO_INLINE void FileSystem_Win32::getFileStatus(HANDLE handle, FileStatus& st
     FileSystem::setLastResult(status.result);
 }
 
-PLY_NO_INLINE FileStatus FileSystem_Win32::getFileStatus(FileSystem*, StringView path) {
+PLY_NO_INLINE FileStatus FileSystem_Win32::getFileStatus(FileSystem*, const StringView path) {
     FileStatus status;
     HANDLE handle = openHandleForRead(path);
     status.result = FileSystem::lastResult_.load();

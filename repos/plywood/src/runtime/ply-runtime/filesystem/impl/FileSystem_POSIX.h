@@ -22,25 +22,25 @@ struct FileSystem_POSIX : FileSystem {
             this->next = nextImpl;
         }
         ~DirImpl() = delete; // Should be deleted through parent class
-        FSResult begin(StringView path);
+        FSResult begin(const StringView path);
     };
 
     // More direct access:
-    static int openFDForRead(StringView path);
-    static int openFDForWrite(StringView path);
+    static int openFDForRead(const StringView path);
+    static int openFDForWrite(const StringView path);
 
     // FileSystem::Funcs implementations:
-    static Directory listDir(FileSystem*, StringView path, u32 flags);
-    static FSResult makeDir(FileSystem*, StringView path);
+    static Directory listDir(FileSystem*, const StringView path, u32 flags);
+    static FSResult makeDir(FileSystem*, const StringView path);
     static String getWorkingDirectory(FileSystem*);
-    static FSResult setWorkingDirectory(FileSystem* fs_, StringView path);
-    static ExistsResult exists(FileSystem*, StringView path);
-    static Owned<InPipe> openPipeForRead(FileSystem*, StringView path);
-    static Owned<OutPipe> openPipeForWrite(FileSystem*, StringView path);
-    static FSResult moveFile(FileSystem*, StringView srcPath, StringView dstPath);
-    static FSResult deleteFile(FileSystem*, StringView path);
-    static FSResult removeDirTree(FileSystem*, StringView dirPath);
-    static FileStatus getFileStatus(FileSystem*, StringView path);
+    static FSResult setWorkingDirectory(FileSystem* fs_, const StringView path);
+    static ExistsResult exists(FileSystem*, const StringView path);
+    static Owned<InPipe> openPipeForRead(FileSystem*, const StringView path);
+    static Owned<OutPipe> openPipeForWrite(FileSystem*, const StringView path);
+    static FSResult moveFile(FileSystem*, const StringView srcPath, const StringView dstPath);
+    static FSResult deleteFile(FileSystem*, const StringView path);
+    static FSResult removeDirTree(FileSystem*, const StringView dirPath);
+    static FileStatus getFileStatus(FileSystem*, const StringView path);
 
     FileSystem_POSIX();
 };

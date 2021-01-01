@@ -72,7 +72,7 @@ struct Preprocessor {
     // It'll remain valid until the next call to readToken.
     Array<Token> macroArgs;
 
-    HiddenArgFunctor<void(StringView directive)> includeCallback;
+    HiddenArgFunctor<void(const StringView directive)> includeCallback;
 
     PLY_INLINE void error(Error&& err) {
         this->errorHandler.call(new Error{std::move(err)});
@@ -81,7 +81,7 @@ struct Preprocessor {
 PLY_REFLECT_ENUM(, Preprocessor::Error::Type)
 
 Token readToken(Preprocessor* pp);
-void addPPDef(Preprocessor* pp, StringView identifier, StringView expansion,
+void addPPDef(Preprocessor* pp, const StringView identifier, const StringView expansion,
               bool takesArgs = false);
 
 } // namespace cpp

@@ -217,13 +217,13 @@ public:
         return true;
     }
 
-    PLY_DLL_ENTRY bool writeSlowPath(ConstBufferView src);
+    PLY_DLL_ENTRY bool writeSlowPath(const ConstBufferView src);
 
     /*!
     Attempts to write `src` to the output stream in its entirety. Returns `true` if the write was
     successful. The return value of this function is equivalent to `!atEOF()`.
     */
-    PLY_INLINE bool write(ConstBufferView src) {
+    PLY_INLINE bool write(const ConstBufferView src) {
         // FIXME: Re-add race detection
         if ((s32) src.numBytes > this->endByte - this->curByte) {
             return writeSlowPath(src);

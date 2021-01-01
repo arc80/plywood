@@ -17,7 +17,7 @@ extern const u8 DigitTable[256];
 extern const u32 WhitespaceMask[8];
 PLY_DLL_ENTRY void scanUsingMask(InStream* ins, const u32* mask, bool invert);
 PLY_DLL_ENTRY void scanUsingCallback(InStream* ins, const LambdaView<bool(char)>& callback);
-PLY_DLL_ENTRY bool scanUpToAndIncludingSpecial(InStream* ins, StringView special);
+PLY_DLL_ENTRY bool scanUpToAndIncludingSpecial(InStream* ins, const StringView special);
 } // namespace fmt
 
 //------------------------------------------------------------------------------------------------
@@ -215,7 +215,7 @@ struct StringViewReader : StringReader {
     Constructs a `StringViewReader` that reads the contents of `view`. `view` must remain valid for
     the lifetime of the `StringViewReader`.
     */
-    PLY_INLINE StringViewReader(StringView view) : StringReader{Type::View, 0u} {
+    PLY_INLINE StringViewReader(const StringView view) : StringReader{Type::View, 0u} {
         this->startByte = (u8*) view.bytes;
         this->curByte = (u8*) view.bytes;
         this->endByte = (u8*) view.bytes + view.numBytes;

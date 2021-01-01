@@ -248,7 +248,7 @@ PLY_NO_INLINE Owned<TCPConnection_Winsock> Socket_Winsock::connectTCP(const IPAd
     return nullptr;
 }
 
-PLY_NO_INLINE IPAddress Socket_Winsock::resolveHostName(StringView hostName,
+PLY_NO_INLINE IPAddress Socket_Winsock::resolveHostName(const StringView hostName,
                                                         IPAddress::Version ipVersion) {
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));

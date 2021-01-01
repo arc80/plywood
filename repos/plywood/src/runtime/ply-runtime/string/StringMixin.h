@@ -102,7 +102,7 @@ struct StringMixin {
     Returns `true` if the string precedes `other` in sorted order. Equivalent to `compare(*this,
     other) < 0`.
     */
-    PLY_INLINE bool operator<(StringView other) const {
+    PLY_INLINE bool operator<(const StringView other) const {
         return static_cast<const Derived*>(this)->view() < other;
     }
 
@@ -111,10 +111,10 @@ struct StringMixin {
     Returns `true` if the string contents are identical (or not identical) when compared
     byte-for-byte.
     */
-    PLY_INLINE bool operator==(StringView src) const {
+    PLY_INLINE bool operator==(const StringView src) const {
         return static_cast<const Derived*>(this)->view() == src;
     }
-    PLY_INLINE bool operator!=(StringView src) const {
+    PLY_INLINE bool operator!=(const StringView src) const {
         return static_cast<const Derived*>(this)->view() != src;
     }
     /*!
@@ -124,7 +124,7 @@ struct StringMixin {
     /*!
     Returns a new `String` containing the concatenation of two `StringViews`.
     */
-    PLY_INLINE String operator+(StringView other) const;
+    PLY_INLINE String operator+(const StringView other) const;
 
     /*!
     Returns a new `String` containing the contents of the `StringView` repeated `count` times.
@@ -174,14 +174,14 @@ struct StringMixin {
     /*!
     Returns `true` if the string starts with `arg`.
     */
-    PLY_INLINE bool startsWith(StringView arg) const {
+    PLY_INLINE bool startsWith(const StringView arg) const {
         return static_cast<const Derived*>(this)->view().startsWith(arg);
     }
 
     /*!
     Returns `true` if the string ends with `arg`.
     */
-    PLY_INLINE bool endsWith(StringView arg) const {
+    PLY_INLINE bool endsWith(const StringView arg) const {
         return static_cast<const Derived*>(this)->view().endsWith(arg);
     }
 

@@ -33,11 +33,11 @@ enum class ParseTitleError {
 
 Array<TitleSpan> parseTitle(
     StringView srcText,
-    const LambdaView<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback);
-void writeParseTitleError(StringWriter* sw, ParseTitleError err, StringView arg);
+    const LambdaView<void(ParseTitleError err, const StringView arg, const char* loc)>& errorCallback);
+void writeParseTitleError(StringWriter* sw, ParseTitleError err, const StringView arg);
 void writeAltMemberTitle(StringWriter& htmlWriter, ArrayView<const TitleSpan> spans,
                          SemaEntity* classEnt,
-                         String (*getLinkDestination)(StringView, SemaEntity*));
+                         String (*getLinkDestination)(const StringView, SemaEntity*));
 
 } // namespace docs
 } // namespace ply

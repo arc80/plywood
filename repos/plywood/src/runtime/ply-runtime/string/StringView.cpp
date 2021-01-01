@@ -10,13 +10,13 @@
 
 namespace ply {
 
-PLY_NO_INLINE bool StringView::startsWith(StringView other) const {
+PLY_NO_INLINE bool StringView::startsWith(const StringView other) const {
     if (other.numBytes > numBytes)
         return false;
     return memcmp(bytes, other.bytes, other.numBytes) == 0;
 }
 
-PLY_NO_INLINE bool StringView::endsWith(StringView other) const {
+PLY_NO_INLINE bool StringView::endsWith(const StringView other) const {
     if (other.numBytes > numBytes)
         return false;
     return memcmp(bytes + numBytes - other.numBytes, other.bytes, other.numBytes) == 0;
@@ -104,7 +104,7 @@ PLY_NO_INLINE String StringView::filterBytes(char (*filterFunc)(char)) const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::operator+(StringView other) const {
+PLY_NO_INLINE String StringView::operator+(const StringView other) const {
     String result = String::allocate(this->numBytes + other.numBytes);
     memcpy(result.bytes, this->bytes, this->numBytes);
     memcpy(result.bytes + this->numBytes, other.bytes, other.numBytes);
@@ -121,7 +121,7 @@ PLY_NO_INLINE String StringView::operator*(u32 count) const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::join(ArrayView<const StringView> comps) const {
+PLY_NO_INLINE String StringView::join(const ArrayView<const StringView> comps) const {
     MemOutStream mout;
     bool first = true;
     for (StringView comp : comps) {
@@ -171,7 +171,7 @@ PLY_NO_INLINE StringView StringView::withoutNullTerminator() const {
     return {this->bytes, this->numBytes - 1};
 }
 
-PLY_NO_INLINE s32 compare(StringView str0, StringView str1) {
+PLY_NO_INLINE s32 compare(const StringView str0, const StringView str1) {
     // Returns:
     // -1 if str0 < str1
     // 0 if str0 == str1

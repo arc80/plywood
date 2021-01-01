@@ -11,7 +11,7 @@ namespace ply {
 CPUTimer::Point LogChannel::startTime = CPUTimer::get();
 CPUTimer::Converter LogChannel::converter;
 
-PLY_NO_INLINE LogChannel::LineHandler::LineHandler(StringView channelName) {
+PLY_NO_INLINE LogChannel::LineHandler::LineHandler(const StringView channelName) {
     CPUTimer::Point now = CPUTimer::get();
     TID::TID tid = TID::getCurrentThreadID();
     this->sw << (now - startTime); // Timestamp

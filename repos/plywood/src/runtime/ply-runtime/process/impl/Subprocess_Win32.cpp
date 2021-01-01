@@ -102,8 +102,8 @@ PLY_NO_INLINE HANDLE createInheritableHandle(HANDLE origHandle) {
     return dupHandle;
 }
 
-PLY_NO_INLINE Owned<Subprocess> Subprocess::execArgStr(StringView exePath, StringView argStr,
-                                                       StringView initialDir, const Output& output,
+PLY_NO_INLINE Owned<Subprocess> Subprocess::execArgStr(const StringView exePath, const StringView argStr,
+                                                       const StringView initialDir, const Output& output,
                                                        const Input& input) {
     // These are temporary handles meant for the subprocess to inherit.
     // They're manually closed (below) after the call to CreateProcessW:
@@ -271,9 +271,9 @@ PLY_NO_INLINE Owned<Subprocess> Subprocess::execArgStr(StringView exePath, Strin
     return subprocess;
 }
 
-PLY_NO_INLINE Owned<Subprocess> Subprocess::exec(StringView exePath,
+PLY_NO_INLINE Owned<Subprocess> Subprocess::exec(const StringView exePath,
                                                  ArrayView<const StringView> args,
-                                                 StringView initialDir, const Output& output,
+                                                 const StringView initialDir, const Output& output,
                                                  const Input& input) {
     StringWriter sw;
     for (StringView arg : args) {

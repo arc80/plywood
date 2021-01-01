@@ -26,7 +26,7 @@ PLY_NO_INLINE void FileSystem_POSIX::DirImpl::destructImpl(ply::Directory::Impl*
     }
 }
 
-PLY_NO_INLINE FSResult FileSystem_POSIX::DirImpl::begin(StringView path) {
+PLY_NO_INLINE FSResult FileSystem_POSIX::DirImpl::begin(const StringView path) {
     this->dirPath = path.withoutNullTerminator();
     this->dir = opendir(path.withNullTerminator().bytes);
     if (!this->dir) {
@@ -106,14 +106,14 @@ PLY_NO_INLINE FSResult FileSystem_POSIX::DirImpl::nextImpl(ply::Directory::Impl*
     }
 }
 
-PLY_NO_INLINE Directory FileSystem_POSIX::listDir(FileSystem*, StringView path, u32 flags) {
+PLY_NO_INLINE Directory FileSystem_POSIX::listDir(FileSystem*, const StringView path, u32 flags) {
     FileSystem_POSIX::DirImpl* dirImpl = new FileSystem_POSIX::DirImpl;
     dirImpl->flags = flags;
     dirImpl->begin(path);
     return {dirImpl};
 }
 
-PLY_NO_INLINE FSResult FileSystem_POSIX::makeDir(FileSystem*, StringView path) {
+PLY_NO_INLINE FSResult FileSystem_POSIX::makeDir(FileSystem*, const StringView path) {
     int rc = mkdir(path.withNullTerminator().bytes, mode_t(0755));
     if (rc == 0) {
         return FileSystem::setLastResult(FSResult::OK);
@@ -131,7 +131,7 @@ PLY_NO_INLINE FSResult FileSystem_POSIX::makeDir(FileSystem*, StringView path) {
     }
 }
 
-PLY_NO_INLINE FSResult FileSystem_POSIX::setWorkingDirectory(FileSystem*, StringView path) {
+PLY_NO_INLINE FSResult FileSystem_POSIX::setWorkingDirectory(FileSystem*, const StringView path) {
     int rc = chdir(path.withNullTerminator().bytes);
     if (rc == 0) {
         return FileSystem::setLastResult(FSResult::OK);
@@ -175,7 +175,7 @@ PLY_NO_INLINE String FileSystem_POSIX::getWorkingDirectory(FileSystem*) {
     }
 }
 
-PLY_NO_INLINE ExistsResult FileSystem_POSIX::exists(FileSystem*, StringView path) {
+PLY_NO_INLINE ExistsResult FileSystem_POSIX::exists(FileSystem*, const StringView path) {
     struct stat buf;
     int rc = stat(path.withNullTerminator().bytes, &buf);
     if (rc == 0)
@@ -186,7 +186,7 @@ PLY_NO_INLINE ExistsResult FileSystem_POSIX::exists(FileSystem*, StringView path
     return ExistsResult::NotFound;
 }
 
-PLY_NO_INLINE int FileSystem_POSIX::openFDForRead(StringView path) {
+PLY_NO_INLINE int FileSystem_POSIX::openFDForRead(const StringView path) {
     int fd = open(path.withNullTerminator().bytes, O_RDONLY | O_CLOEXEC);
     if (fd != -1) {
         FileSystem::setLastResult(FSResult::OK);
@@ -209,14 +209,14 @@ PLY_NO_INLINE int FileSystem_POSIX::openFDForRead(StringView path) {
     return fd;
 }
 
-PLY_NO_INLINE Owned<InPipe> FileSystem_POSIX::openPipeForRead(FileSystem*, StringView path) {
+PLY_NO_INLINE Owned<InPipe> FileSystem_POSIX::openPipeForRead(FileSystem*, const StringView path) {
     int fd = openFDForRead(path);
     if (fd == -1)
         return nullptr;
     return new InPipe_FD{fd};
 }
 
-PLY_NO_INLINE int FileSystem_POSIX::openFDForWrite(StringView path) {
+PLY_NO_INLINE int FileSystem_POSIX::openFDForWrite(const StringView path) {
     int fd = open(path.withNullTerminator().bytes, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
                   mode_t(0644));
     if (fd != -1) {
@@ -240,15 +240,15 @@ PLY_NO_INLINE int FileSystem_POSIX::openFDForWrite(StringView path) {
     return fd;
 }
 
-PLY_NO_INLINE Owned<OutPipe> FileSystem_POSIX::openPipeForWrite(FileSystem*, StringView path) {
+PLY_NO_INLINE Owned<OutPipe> FileSystem_POSIX::openPipeForWrite(FileSystem*, const StringView path) {
     int fd = openFDForWrite(path);
     if (fd == -1)
         return nullptr;
     return new OutPipe_FD{fd};
 }
 
-PLY_NO_INLINE FSResult FileSystem_POSIX::moveFile(FileSystem*, StringView srcPath,
-                                                  StringView dstPath) {
+PLY_NO_INLINE FSResult FileSystem_POSIX::moveFile(FileSystem*, const StringView srcPath,
+                                                  const StringView dstPath) {
     int rc = rename(srcPath.withNullTerminator().bytes, dstPath.withNullTerminator().bytes);
     if (rc != 0) {
         PLY_ASSERT(PLY_FSPOSIX_ALLOW_UNKNOWN_ERRORS);
@@ -257,7 +257,7 @@ PLY_NO_INLINE FSResult FileSystem_POSIX::moveFile(FileSystem*, StringView srcPat
     return FileSystem::setLastResult(FSResult::OK);
 }
 
-PLY_NO_INLINE FSResult FileSystem_POSIX::deleteFile(FileSystem*, StringView path) {
+PLY_NO_INLINE FSResult FileSystem_POSIX::deleteFile(FileSystem*, const StringView path) {
     int rc = unlink(path.withNullTerminator().bytes);
     if (rc != 0) {
         PLY_ASSERT(PLY_FSPOSIX_ALLOW_UNKNOWN_ERRORS);
@@ -266,7 +266,7 @@ PLY_NO_INLINE FSResult FileSystem_POSIX::deleteFile(FileSystem*, StringView path
     return FileSystem::setLastResult(FSResult::OK);
 }
 
-PLY_NO_INLINE FSResult FileSystem_POSIX::removeDirTree(FileSystem* fs, StringView dirPath) {   
+PLY_NO_INLINE FSResult FileSystem_POSIX::removeDirTree(FileSystem* fs, const StringView dirPath) {   
     for (const DirectoryEntry& dirEntry : fs->listDir(dirPath)) {
         String joined = PosixPath::join(dirPath, dirEntry.name);
         if (dirEntry.isDir) {
@@ -290,7 +290,7 @@ PLY_NO_INLINE FSResult FileSystem_POSIX::removeDirTree(FileSystem* fs, StringVie
     return FileSystem::setLastResult(FSResult::OK);
 }
 
-PLY_NO_INLINE FileStatus FileSystem_POSIX::getFileStatus(FileSystem*, StringView path) {
+PLY_NO_INLINE FileStatus FileSystem_POSIX::getFileStatus(FileSystem*, const StringView path) {
     FileStatus status;
     struct stat buf;
     int rc = stat(path.withNullTerminator().bytes, &buf);

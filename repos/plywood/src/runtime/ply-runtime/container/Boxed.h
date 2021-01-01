@@ -19,7 +19,7 @@ struct Boxed {};
 
 template <>
 struct Boxed<String> {
-    static void write(NativeEndianWriter& wr, StringView view) {
+    static void write(NativeEndianWriter& wr, const StringView view) {
         wr.write(view.numBytes);
         wr.outs->write(view.bufferView());
     }
@@ -38,7 +38,7 @@ struct Boxed<String> {
 
 template <>
 struct Boxed<Buffer> {
-    static void write(NativeEndianWriter& wr, ConstBufferView view) {
+    static void write(NativeEndianWriter& wr, const ConstBufferView view) {
         wr.write(view.numBytes);
         wr.outs->write(view);
     }

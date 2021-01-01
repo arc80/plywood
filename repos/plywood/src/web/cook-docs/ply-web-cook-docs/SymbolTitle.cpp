@@ -9,7 +9,7 @@
 namespace ply {
 namespace docs {
 
-void writeParseTitleError(StringWriter* sw, ParseTitleError err, StringView arg) {
+void writeParseTitleError(StringWriter* sw, ParseTitleError err, const StringView arg) {
     switch (err) {
         case ParseTitleError::ExpectedSpanTypeAfterOpenSquare: {
             *sw << "expected span type immediately following '['\n";
@@ -40,7 +40,7 @@ void writeParseTitleError(StringWriter* sw, ParseTitleError err, StringView arg)
 
 Array<TitleSpan> parseTitle(
     StringView srcText,
-    const LambdaView<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback) {
+    const LambdaView<void(ParseTitleError err, const StringView arg, const char* loc)>& errorCallback) {
     Array<TitleSpan> result;
     StringViewReader svr{srcText};
     StringWriter sw;
@@ -109,7 +109,7 @@ Array<TitleSpan> parseTitle(
 
 void writeAltMemberTitle(StringWriter& htmlWriter, ArrayView<const TitleSpan> spans,
                          SemaEntity* classEnt,
-                         String (*getLinkDestination)(StringView, SemaEntity*)) {
+                         String (*getLinkDestination)(const StringView, SemaEntity*)) {
     for (const TitleSpan& span : spans) {
         switch (span.type) {
             case TitleSpan::Normal: {

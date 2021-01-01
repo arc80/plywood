@@ -39,7 +39,9 @@ private:
 public:
     // Manual initialization is needed if not created at global scope:
     void zeroInit() {
-        memset(this, 0, sizeof(*this));
+        m_initFlag = false;
+        m_spinLock = false;
+        //memset(this, 0, sizeof(*this));
     }
 
     // There should be no threads racing to lock when the destructor is called.

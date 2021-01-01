@@ -9,7 +9,7 @@
 namespace ply {
 
 PLY_NO_INLINE void extractLiquidTags(StringWriter* sw, StringViewReader* svr,
-                                     Functor<void(StringView, StringView)> tagHandler) {
+                                     Functor<void(const StringView, const StringView)> tagHandler) {
     // advanceByte consumes the current byte from the InStream and returns true if there is
     // another byte available. Note that the return value is the same as svr->isValid(), so you
     // can ignore it and just test svr->isValid() later.

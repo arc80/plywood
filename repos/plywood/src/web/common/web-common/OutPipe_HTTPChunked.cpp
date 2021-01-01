@@ -15,7 +15,7 @@ PLY_NO_INLINE void OutPipe_HTTPChunked_destroy(OutPipe* outPipe_) {
     outPipe->outs->flushMem();
 }
 
-PLY_NO_INLINE bool OutPipe_HTTPChunked_write(OutPipe* outPipe_, ConstBufferView srcBuf) {
+PLY_NO_INLINE bool OutPipe_HTTPChunked_write(OutPipe* outPipe_, const ConstBufferView srcBuf) {
     OutPipe_HTTPChunked* outPipe = static_cast<OutPipe_HTTPChunked*>(outPipe_);
     if (outPipe->chunkMode) {
         PLY_ASSERT(srcBuf.numBytes > 0);

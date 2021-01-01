@@ -26,7 +26,7 @@ using Socket = PLY_IMPL_SOCKET_TYPE;
 using TCPConnection = Socket::TCPConnection;
 using TCPListener = Socket::TCPListener;
 
-PLY_INLINE IPAddress IPAddress::resolveHostName(StringView hostName, IPAddress::Version ipVersion) {
+PLY_INLINE IPAddress IPAddress::resolveHostName(const StringView hostName, IPAddress::Version ipVersion) {
     return Socket::resolveHostName(hostName, ipVersion);
 }
 
