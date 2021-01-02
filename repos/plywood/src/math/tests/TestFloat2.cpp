@@ -40,6 +40,14 @@ PLY_TEST_CASE("Float2 comparisons") {
     PLY_TEST_CHECK(!(Float2{1, 2} == Float2{2, 1}));
 }
 
+PLY_TEST_CASE("Float2 isNear") {
+    PLY_TEST_CHECK(isNear(Float2{4}, Float2{4}, 1e-6f));
+    PLY_TEST_CHECK(isNear(Float2{5}, Float2{5}, 0));
+    PLY_TEST_CHECK(!isNear(Float2{5}, Float2{6}, 0));
+    PLY_TEST_CHECK(isNear(Float2{1, 0}, Float2{0.9999f, 0.0001f}, 0.001f));
+    PLY_TEST_CHECK(!isNear(Float2{1, 0}, Float2{0.999f, 0.001f}, 0.001f));
+}
+
 PLY_TEST_CASE("Float2 unary negation") {
     PLY_TEST_CHECK(-Float2{1, 2} == Float2{-1, -2});
 }
@@ -153,30 +161,34 @@ PLY_TEST_CASE("Float2 max") {
     PLY_TEST_CHECK(max(Float2{3, 3}, Float2{2, 2}) == Float2{3, 3});
 }
 
-PLY_TEST_CASE("Float2 allLess") {
-    PLY_TEST_CHECK(allLess(Float2{-1, -1}, 0));
-    PLY_TEST_CHECK(!allLess(Float2{1, -1}, 0));
-    PLY_TEST_CHECK(!allLess(Float2{-1, 1}, 0));
-    PLY_TEST_CHECK(!allLess(Float2{1, 1}, 0));
-    PLY_TEST_CHECK(!allLess(Float2{0, 0}, 0));
-    PLY_TEST_CHECK(allLess(Float2{0, 1}, Float2{1, 2}));
-    PLY_TEST_CHECK(!allLess(Float2{2, 1}, Float2{1, 2}));
-    PLY_TEST_CHECK(!allLess(Float2{0, 3}, Float2{1, 2}));
-    PLY_TEST_CHECK(!allLess(Float2{2, 3}, Float2{1, 2}));
-    PLY_TEST_CHECK(!allLess(Float2{1, 2}, Float2{1, 2}));
+PLY_TEST_CASE("Float2 comparisons (all)") {
+    PLY_TEST_CHECK(all(Float2{-1, -1} < 0));
+    PLY_TEST_CHECK(!all(Float2{1, -1} <= 0));
+    PLY_TEST_CHECK(!all(0 > Float2{-1, 1}));
+    PLY_TEST_CHECK(!all(0 >= Float2{1, 1}));
+    PLY_TEST_CHECK(!all(Float2{0, 0} < 0));
+    PLY_TEST_CHECK(all(Float2{0, 0} <= 0));
+    PLY_TEST_CHECK(all(Float2{1, 2} > Float2{0, 1}));
+    PLY_TEST_CHECK(!all(Float2{1, 2} >= Float2{2, 1}));
+    PLY_TEST_CHECK(!all(Float2{0, 3} < Float2{1, 2}));
+    PLY_TEST_CHECK(!all(Float2{2, 3} <= Float2{1, 2}));
+    PLY_TEST_CHECK(!all(Float2{1, 2} > Float2{1, 2}));
+    PLY_TEST_CHECK(all(Float2{1, 2} >= Float2{1, 2}));
 }
 
-PLY_TEST_CASE("Float2 allLessOrEqual") {
-    PLY_TEST_CHECK(allLessOrEqual(Float2{-1, -1}, 0));
-    PLY_TEST_CHECK(!allLessOrEqual(Float2{1, -1}, 0));
-    PLY_TEST_CHECK(!allLessOrEqual(Float2{-1, 1}, 0));
-    PLY_TEST_CHECK(!allLessOrEqual(Float2{1, 1}, 0));
-    PLY_TEST_CHECK(allLessOrEqual(Float2{0, 0}, 0));
-    PLY_TEST_CHECK(allLessOrEqual(Float2{0, 1}, Float2{1, 2}));
-    PLY_TEST_CHECK(!allLessOrEqual(Float2{2, 1}, Float2{1, 2}));
-    PLY_TEST_CHECK(!allLessOrEqual(Float2{0, 3}, Float2{1, 2}));
-    PLY_TEST_CHECK(!allLessOrEqual(Float2{2, 3}, Float2{1, 2}));
-    PLY_TEST_CHECK(allLessOrEqual(Float2{1, 2}, Float2{1, 2}));
+PLY_TEST_CASE("Float2 comparisons (any)") {
+    PLY_TEST_CHECK(!any(Float2{-1, -1} >= 0));
+    PLY_TEST_CHECK(any(Float2{1, -1} > 0));
+    PLY_TEST_CHECK(any(0 <= Float2{-1, 1}));
+    PLY_TEST_CHECK(any(0 < Float2{1, 1}));
+    PLY_TEST_CHECK(any(Float2{0, 0} >= 0));
+    PLY_TEST_CHECK(!any(Float2{0, 0} > 0));
+    PLY_TEST_CHECK(!any(Float2{1, 2} <= Float2{0, 1}));
+    PLY_TEST_CHECK(any(Float2{1, 2} < Float2{2, 1}));
+    PLY_TEST_CHECK(any(Float2{0, 3} >= Float2{1, 2}));
+    PLY_TEST_CHECK(any(Float2{2, 3} > Float2{1, 2}));
+    PLY_TEST_CHECK(any(Float2{1, 2} <= Float2{1, 2}));
+    PLY_TEST_CHECK(!any(Float2{1, 2} < Float2{1, 2}));
 }
 
 PLY_TEST_CASE("Float2 quantizeNearest") {

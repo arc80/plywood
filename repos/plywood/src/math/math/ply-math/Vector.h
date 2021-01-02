@@ -5,6 +5,7 @@
 #pragma once
 #include <ply-math/Core.h>
 #include <ply-math/Box.h>
+#include <ply-math/BoolVector.h>
 
 namespace ply {
 
@@ -56,21 +57,6 @@ struct Float2 {
         x = arg.x;
         y = arg.y;
     }
-    /*!
-    \category Comparison Operators
-    \beginGroup
-    Returns `true` if the 2D vectors are equal (or not equal) using floating-point comparison. In
-    particular, `Float2{0.f} == Float2{-0.f}` is `true`.
-    */
-    PLY_INLINE bool operator==(const Float2& arg) const {
-        return (x == arg.x) && (y == arg.y);
-    }
-    PLY_INLINE bool operator!=(const Float2& arg) const {
-        return !(*this == arg);
-    }
-    /*!
-    \endGroup
-    */
     /*!
     \category Conversion Functions
     Converts to another 2D vector type such as `IntVec2` or `Int2<s16>`.
@@ -332,23 +318,48 @@ PLY_INLINE Float2 max(const Float2& a, const Float2& b) {
 /*!
 \category Comparison Functions
 \beginGroup
-Returns `true` if every component of `a` is less than (or less than or equal to) the corresponding
-component of `b`. You can use these functions to implement other comparisons:
-
-* `allLessOrEqual(b, a)` evaluates to `true` if every component of `a` is greater than the
-   corresponding component of `b`.
-* `allLess(b, a)` evaluates to `true` if every component of `a` is greater than or equal to the
-   corresponding component of `b`.
-* `!allLessOrEqual(b, a)` evaluates to `true` if _any_ component of `a` is less than the
-   corresponding component of `b`.
-* `!allLess(b, a)` evaluates to `true` if _any_ component of `a` is less than or equal to the
-   corresponding component of `b`.
+Returns `true` if the 2D vectors are equal (or not equal) using floating-point comparison. In
+particular, `Float2{0.f} == Float2{-0.f}` is `true`.
 */
-PLY_INLINE bool allLess(const Float2& a, const Float2& b) {
-    return (a.x < b.x) && (a.y < b.y);
+PLY_INLINE bool operator==(const Float2& a, const Float2& b) {
+    return a.x == b.x && a.y == b.y;
 }
-PLY_INLINE bool allLessOrEqual(const Float2& a, const Float2& b) {
-    return (a.x <= b.x) && (a.y <= b.y);
+PLY_INLINE bool operator!=(const Float2& a, const Float2& b) {
+    return !(a == b);
+}
+/*!
+\endGroup
+*/
+/*!
+Returns `true` if `a` is approximately equal to `b`. The tolerance is given by `epsilon`.
+
+    isNear(Float2{1, 0}, Float2{0.9999f, 0.0001f}, 0.001f)  // evaluates to true
+*/
+PLY_INLINE bool isNear(const Float2& a, const Float2& b, float epsilon) {
+    return (b - a).length2() <= square(epsilon);
+}
+/*!
+\beginGroup
+These functions compare each component individually. The result of each comparison is returned in
+a `BoolVector2`. Call `all` to check if the result was `true` for all components, or call `any` to
+check if the result was `true` for any component.
+
+    all(Float2{1, 2} > Float2{0, 1})  // evaluates to true
+
+These functions are useful for testing whether a point is inside a box. See the implementation of
+`Box<>::contains` for an example.
+*/
+PLY_INLINE BoolVector2 operator<(const Float2& a, const Float2& b) {
+    return {a.x < b.x, a.y < b.y};
+}
+PLY_INLINE BoolVector2 operator<=(const Float2& a, const Float2& b) {
+    return {a.x <= b.x, a.y <= b.y};
+}
+PLY_INLINE BoolVector2 operator>(const Float2& a, const Float2& b) {
+    return {a.x > b.x, a.y > b.y};
+}
+PLY_INLINE BoolVector2 operator>=(const Float2& a, const Float2& b) {
+    return {a.x >= b.x, a.y >= b.y};
 }
 /*!
 \endGroup
@@ -443,21 +454,6 @@ struct Float3 {
         y = arg.y;
         z = arg.z;
     }
-    /*!
-    \category Comparison Operators
-    \beginGroup
-    Returns `true` if the 3D vectors are equal (or not equal) using floating-point comparison. In
-    particular, `Float3{0.f} == Float3{-0.f}` is `true`.
-    */
-    PLY_INLINE bool operator==(const Float3& arg) const {
-        return (x == arg.x) && (y == arg.y) && (z == arg.z);
-    }
-    PLY_INLINE bool operator!=(const Float3& arg) const {
-        return !(*this == arg);
-    }
-    /*!
-    \endGroup
-    */
     /*!
     \category Conversion Functions
     Returns a const reference to the first two components as a `Float2` using type punning. This
@@ -704,12 +700,26 @@ PLY_INLINE Float3 max(const Float3& a, const Float3& b) {
     return {max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)};
 }
 
-PLY_INLINE bool allLess(const Float3& a, const Float3& b) {
-    return (a.x < b.x) && (a.y < b.y) && (a.z < b.z);
+PLY_INLINE bool operator==(const Float3& a, const Float3& b) {
+    return a.x == b.x && a.y == b.y && a.z == b.z;
 }
-
-PLY_INLINE bool allLessOrEqual(const Float3& a, const Float3& b) {
-    return (a.x <= b.x) && (a.y <= b.y) && (a.z <= b.z);
+PLY_INLINE bool operator!=(const Float3& a, const Float3& b) {
+    return !(a == b);
+}
+PLY_INLINE BoolVector3 operator<(const Float3& a, const Float3& b) {
+    return {a.x < b.x, a.y < b.y, a.z < b.z};
+}
+PLY_INLINE BoolVector3 operator<=(const Float3& a, const Float3& b) {
+    return {a.x <= b.x, a.y <= b.y, a.z <= b.z};
+}
+PLY_INLINE BoolVector3 operator>(const Float3& a, const Float3& b) {
+    return {a.x > b.x, a.y > b.y, a.z > b.z};
+}
+PLY_INLINE BoolVector3 operator>=(const Float3& a, const Float3& b) {
+    return {a.x >= b.x, a.y >= b.y, a.z >= b.z};
+}
+PLY_INLINE bool isNear(const Float3& a, const Float3& b, float epsilon) {
+    return (b - a).length2() <= square(epsilon);
 }
 
 PLY_INLINE Float3 quantizeUp(const Float3& value, float spacing) {
@@ -796,21 +806,6 @@ struct Float4 {
         z = arg.z;
         w = arg.w;
     }
-    /*!
-    \category Comparison Operators
-    \beginGroup
-    Returns `true` if the 4D vectors are equal (or not equal) using floating-point comparison. In
-    particular, `Float4{0.f} == Float4{-0.f}` is `true`.
-    */
-    PLY_INLINE bool operator==(const Float4& arg) const {
-        return (x == arg.x) && (y == arg.y) && (z == arg.z) && (w == arg.w);
-    }
-    PLY_INLINE bool operator!=(const Float4& arg) const {
-        return !(*this == arg);
-    }
-    /*!
-    \endGroup
-    */
     /*!
     \category Conversion Functions
     Returns a const reference to the first two components as a `Float2` using type punning. This
@@ -1074,12 +1069,26 @@ inline Float4 max(const Float4& a, const Float4& b) {
     return {max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w)};
 }
 
-inline bool allLess(const Float4& a, const Float4& b) {
-    return (a.x < b.x) && (a.y < b.y) && (a.z < b.z) && (a.w < b.w);
+PLY_INLINE bool operator==(const Float4& a, const Float4& b) {
+    return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
 }
-
-inline bool allLessOrEqual(const Float4& a, const Float4& b) {
-    return (a.x <= b.x) && (a.y <= b.y) && (a.z <= b.z) && (a.w <= b.w);
+PLY_INLINE bool operator!=(const Float4& a, const Float4& b) {
+    return !(a == b);
+}
+PLY_INLINE BoolVector4 operator<(const Float4& a, const Float4& b) {
+    return {a.x < b.x, a.y < b.y, a.z < b.z, a.w < b.w};
+}
+PLY_INLINE BoolVector4 operator<=(const Float4& a, const Float4& b) {
+    return {a.x <= b.x, a.y <= b.y, a.z <= b.z, a.w <= b.w};
+}
+PLY_INLINE BoolVector4 operator>(const Float4& a, const Float4& b) {
+    return {a.x > b.x, a.y > b.y, a.z > b.z, a.w > b.w};
+}
+PLY_INLINE BoolVector4 operator>=(const Float4& a, const Float4& b) {
+    return {a.x >= b.x, a.y >= b.y, a.z >= b.z, a.w >= b.w};
+}
+PLY_INLINE bool isNear(const Float4& a, const Float4& b, float epsilon) {
+    return (b - a).length2() <= square(epsilon);
 }
 
 PLY_INLINE Float4 quantizeUp(const Float4& value, float spacing) {

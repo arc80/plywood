@@ -70,13 +70,6 @@ struct Int2 {
         return !(*this == arg);
     }
 
-    bool operator<(const Int2& arg) const {
-        if (x == arg.x)
-            return y < arg.y;
-        else
-            return x < arg.x;
-    }
-
     Int2 operator-() const {
         return Int2{-x, -y};
     }
@@ -172,16 +165,21 @@ inline Int2<T> max(const Int2<T>& a, const Int2<T>& b) {
     return Int2<T>{max(a.x, b.x), max(a.y, b.y)};
 }
 
-// FIXME: Make this operator < and <= ... same for Float2/3/4
-// (Delete existing operator < first, to make sure nobody is using it for sorting)
 template <typename T>
-inline bool allLess(const Int2<T>& a, const Int2<T>& b) {
-    return (a.x < b.x) && (a.y < b.y);
+PLY_INLINE BoolVector2 operator<(const Int2<T>& a, const Int2<T>& b) {
+    return {a.x < b.x, a.y < b.y};
 }
-
 template <typename T>
-inline bool allLessOrEqual(const Int2<T>& a, const Int2<T>& b) {
-    return (a.x <= b.x) && (a.y <= b.y);
+PLY_INLINE BoolVector2 operator<=(const Int2<T>& a, const Int2<T>& b) {
+    return {a.x <= b.x, a.y <= b.y};
+}
+template <typename T>
+PLY_INLINE BoolVector2 operator>(const Int2<T>& a, const Int2<T>& b) {
+    return {a.x > b.x, a.y > b.y};
+}
+template <typename T>
+PLY_INLINE BoolVector2 operator>=(const Int2<T>& a, const Int2<T>& b) {
+    return {a.x >= b.x, a.y >= b.y};
 }
 
 using IntVec2 = Int2<s32>;
@@ -341,16 +339,21 @@ inline Int3<T> max(const Int3<T>& a, const Int3<T>& b) {
     return Int3<T>{max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)};
 }
 
-// FIXME: Make this operator < and <= ... same for Float2/3/4
-// (Delete existing operator < first, to make sure nobody is using it for sorting)
 template <typename T>
-inline bool allLess(const Int3<T>& a, const Int3<T>& b) {
-    return (a.x < b.x) && (a.y < b.y) && (a.z < b.z);
+PLY_INLINE BoolVector3 operator<(const Int3<T>& a, const Int3<T>& b) {
+    return {a.x < b.x, a.y < b.y, a.z < b.z};
 }
-
 template <typename T>
-inline bool allLessOrEqual(const Int3<T>& a, const Int3<T>& b) {
-    return (a.x <= b.x) && (a.y <= b.y) && (a.z <= b.z);
+PLY_INLINE BoolVector3 operator<=(const Int3<T>& a, const Int3<T>& b) {
+    return {a.x <= b.x, a.y <= b.y, a.z <= b.z};
+}
+template <typename T>
+PLY_INLINE BoolVector3 operator>(const Int3<T>& a, const Int3<T>& b) {
+    return {a.x > b.x, a.y > b.y, a.z > b.z};
+}
+template <typename T>
+PLY_INLINE BoolVector3 operator>=(const Int3<T>& a, const Int3<T>& b) {
+    return {a.x >= b.x, a.y >= b.y, a.z >= b.z};
 }
 
 using IntVec3 = Int3<s32>;
@@ -509,16 +512,21 @@ inline Int4<T> max(const Int4<T>& a, const Int4<T>& b) {
     return Int4<T>{max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w)};
 }
 
-// FIXME: Make this operator < and <= ... same for Float2/3/4
-// (Delete existing operator < first, to make sure nobody is using it for sorting)
 template <typename T>
-inline bool allLess(const Int4<T>& a, const Int4<T>& b) {
-    return (a.x < b.x) && (a.y < b.y) && (a.z < b.z) && (a.w < b.w);
+PLY_INLINE BoolVector4 operator<(const Int4<T>& a, const Int4<T>& b) {
+    return {a.x < b.x, a.y < b.y, a.z < b.z, a.w < b.w};
 }
-
 template <typename T>
-inline bool allLessOrEqual(const Int4<T>& a, const Int4<T>& b) {
-    return (a.x <= b.x) && (a.y <= b.y) && (a.z <= b.z) && (a.w <= b.w);
+PLY_INLINE BoolVector4 operator<=(const Int4<T>& a, const Int4<T>& b) {
+    return {a.x <= b.x, a.y <= b.y, a.z <= b.z, a.w <= b.w};
+}
+template <typename T>
+PLY_INLINE BoolVector4 operator>(const Int4<T>& a, const Int4<T>& b) {
+    return {a.x > b.x, a.y > b.y, a.z > b.z, a.w > b.w};
+}
+template <typename T>
+PLY_INLINE BoolVector4 operator>=(const Int4<T>& a, const Int4<T>& b) {
+    return {a.x >= b.x, a.y >= b.y, a.z >= b.z, a.w >= b.w};
 }
 
 using IntVec4 = Int4<s32>;
