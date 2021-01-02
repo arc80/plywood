@@ -71,107 +71,6 @@ struct Float2 {
         return {(T) x, (T) y};
     }
     /*!
-    \category Arithmetic Operators
-    Unary negation.
-    */
-    PLY_INLINE Float2 operator-() const {
-        return {-x, -y};
-    }
-    /*!
-    \beginGroup
-    Addition operators. A scalar operand `s` is equivalent to `Float2{s}`.
-    */
-    PLY_INLINE Float2 operator+(const Float2& arg) const {
-        return {x + arg.x, y + arg.y};
-    }
-    PLY_INLINE friend Float2 operator+(float a, const Float2& b) {
-        return {a + b.x, a + b.y};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    In-place addition.
-    */
-    PLY_INLINE void operator+=(const Float2& arg) {
-        x += arg.x;
-        y += arg.y;
-    }
-    /*!
-    \beginGroup
-    Subtraction operators. A scalar operand `s` is equivalent to `Float2{s}`.
-    */
-    PLY_INLINE Float2 operator-(const Float2& arg) const {
-        return {x - arg.x, y - arg.y};
-    }
-    PLY_INLINE friend Float2 operator-(float a, const Float2& b) {
-        return {a - b.x, a - b.y};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    In-place subtraction.
-    */
-    PLY_INLINE void operator-=(const Float2& arg) {
-        x -= arg.x;
-        y -= arg.y;
-    }
-    /*!
-    \beginGroup
-    Component-wise multiplication. A scalar operand `s` is equivalent to `Float2{s}`.
-    */
-    PLY_INLINE Float2 operator*(const Float2& arg) const {
-        return {x * arg.x, y * arg.y};
-    }
-    PLY_INLINE friend Float2 operator*(float a, const Float2& b) {
-        return {a * b.x, a * b.y};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    \beginGroup
-    In-place multiplication.
-    */
-    PLY_INLINE void operator*=(const Float2& arg) {
-        x *= arg.x;
-        y *= arg.y;
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    \beginGroup
-    Component-wise division. A scalar operand `s` is equivalent to `Float2{s}`.
-    */
-    PLY_INLINE Float2 operator/(const Float2& arg) const {
-        return {x / arg.x, y / arg.y};
-    }
-    PLY_INLINE Float2 operator/(float arg) const {
-        return *this * (1.f / arg);
-    }
-    PLY_INLINE friend Float2 operator/(float a, const Float2& b) {
-        return {a / b.x, a / b.y};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    \beginGroup
-    In-place division.
-    */
-    PLY_INLINE void operator/=(float arg) {
-        *this *= (1.f / arg);
-    }
-    PLY_INLINE void operator/=(const Float2& arg) {
-        x /= arg.x;
-        y /= arg.y;
-    }
-    /*!
-    \endGroup
-    */
-    /*!
     \category Length Functions
     Returns the square of the length of the 2D vector. Equivalent to `dot(this, this)`.
     */
@@ -250,6 +149,77 @@ struct Float2 {
 
 /*!
 \addToClass Float2
+\category Arithmetic Operators
+Unary negation.
+*/
+PLY_INLINE Float2 operator-(const Float2& a) {
+    return {-a.x, -a.y};
+}
+/*!
+\beginGroup
+Returns a 2D vector whose components are the result of applying the given operation to the
+corresponding components of `a` and `b`. Each component is acted on independently.
+
+    StdOut::text() << Float2{2, 3} * Float2{4, 1};  // "{8, 3}"
+
+If you specify a scalar value in place of a `Float2`, it will be promoted to a `Float2` by
+replicating the value to each component.
+
+    StdOut::text() << Float2{2, 3} * 2;  // "{4, 6}"
+    StdOut::text() << 8 / Float2{2, 4};  // "{4, 2}"
+*/
+PLY_INLINE Float2 operator+(const Float2& a, const Float2& b) {
+    return {a.x + b.x, a.y + b.y};
+}
+PLY_INLINE Float2 operator-(const Float2& a, const Float2& b) {
+    return {a.x - b.x, a.y - b.y};
+}
+PLY_INLINE Float2 operator*(const Float2& a, const Float2& b) {
+    return {a.x * b.x, a.y * b.y};
+}
+PLY_INLINE Float2 operator/(const Float2& a, const Float2& b) {
+    return {a.x / b.x, a.y / b.y};
+}
+/*!
+\endGroup
+*/
+PLY_INLINE Float2 operator/(const Float2& a, float b) {
+    float oob = 1.f / b;
+    return {a.x * oob, a.y * oob};
+}
+/*!
+\beginGroup
+In-place versions of the above operators.
+
+    Float2 v = {2, 3};
+    v *= {4, 1};
+    StdOut::text() << v;  // "{8, 3}"
+*/
+PLY_INLINE void operator+=(Float2& a, const Float2& b) {
+    a.x += b.x;
+    a.y += b.y;
+}
+PLY_INLINE void operator-=(Float2& a, const Float2& b) {
+    a.x -= b.x;
+    a.y -= b.y;
+}
+PLY_INLINE void operator*=(Float2& a, const Float2& b) {
+    a.x *= b.x;
+    a.y *= b.y;
+}
+PLY_INLINE void operator/=(Float2& a, const Float2& b) {
+    a.x /= b.x;
+    a.y /= b.y;
+}
+/*!
+\endGroup
+*/
+PLY_INLINE void operator/=(Float2& a, float b) {
+    float oob = 1.f / b;
+    a.x *= oob;
+    a.y *= oob;
+}
+/*!
 \category Geometric Functions
 Returns the dot product of two 2D vectors.
 
@@ -479,111 +449,6 @@ struct Float3 {
         return {(T) x, (T) y, (T) z};
     }
     /*!
-    \category Arithmetic Operators
-    Unary negation.
-    */
-    PLY_INLINE Float3 operator-() const {
-        return {-x, -y, -z};
-    }
-    /*!
-    \beginGroup
-    Addition operators. A scalar operand `s` is equivalent to `Float3{s}`.
-    */
-    PLY_INLINE Float3 operator+(const Float3& v) const {
-        return {x + v.x, y + v.y, z + v.z};
-    }
-    PLY_INLINE friend Float3 operator+(float s, const Float3& v) {
-        return {s + v.x, s + v.y, s + v.z};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    In-place addition.
-    */
-    PLY_INLINE void operator+=(const Float3& arg) {
-        x += arg.x;
-        y += arg.y;
-        z += arg.z;
-    }
-    /*!
-    \beginGroup
-    Subtraction operators. A scalar operand `s` is equivalent to `Float3{s}`.
-    */
-    PLY_INLINE Float3 operator-(const Float3& v) const {
-        return {x - v.x, y - v.y, z - v.z};
-    }
-    PLY_INLINE friend Float3 operator-(float s, const Float3& v) {
-        return {s - v.x, s - v.y, s - v.z};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    In-place subtraction.
-    */
-    PLY_INLINE void operator-=(const Float3& arg) {
-        x -= arg.x;
-        y -= arg.y;
-        z -= arg.z;
-    }
-    /*!
-    \beginGroup
-    Component-wise multiplication. A scalar operand `s` is equivalent to `Float3{s}`.
-    */
-    PLY_INLINE Float3 operator*(const Float3& arg) const {
-        return {x * arg.x, y * arg.y, z * arg.z};
-    }
-    PLY_INLINE friend Float3 operator*(float s, const Float3& v) {
-        return {s * v.x, s * v.y, s * v.z};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    \beginGroup
-    In-place multiplication.
-    */
-    PLY_INLINE void operator*=(const Float3& arg) {
-        x *= arg.x;
-        y *= arg.y;
-        z *= arg.z;
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    \beginGroup
-    Component-wise division. A scalar operand `s` is equivalent to `Float3{s}`.
-    */
-    PLY_INLINE Float3 operator/(const Float3& arg) const {
-        return {x / arg.x, y / arg.y, z / arg.z};
-    }
-    PLY_INLINE Float3 operator/(float arg) const {
-        return *this * (1.f / arg);
-    }
-    PLY_INLINE friend Float3 operator/(float s, const Float3& v) {
-        return {s / v.x, s / v.y, s / v.z};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    \beginGroup
-    In-place division.
-    */
-    PLY_INLINE void operator/=(float arg) {
-        *this *= (1.f / arg);
-    }
-    PLY_INLINE void operator/=(const Float3& arg) {
-        x /= arg.x;
-        y /= arg.y;
-        z /= arg.z;
-    }
-    /*!
-    \endGroup
-    */
-    /*!
     \category Length Functions
     Returns the square of the length of the 3D vector. Equivalent to `dot(this, this)`.
     */
@@ -672,6 +537,82 @@ struct Float3 {
 
 /*!
 \addToClass Float3
+\category Arithmetic Operators
+Unary negation.
+*/
+PLY_INLINE Float3 operator-(const Float3& a) {
+    return {-a.x, -a.y, -a.z};
+}
+/*!
+\beginGroup
+Returns a 3D vector whose components are the result of applying the given operation to the
+corresponding components of `a` and `b`. Each component is acted on independently.
+
+    StdOut::text() << Float3{2, 3, 2} * Float3{4, 1, 2};  // "{8, 3, 4}"
+
+If you specify a scalar value in place of a `Float3`, it will be promoted to a `Float3` by
+replicating the value to each component.
+
+    StdOut::text() << Float3{2, 3, 2} * 2;  // "{4, 6, 4}"
+    StdOut::text() << 8 / Float3{2, 4, 1};  // "{4, 2, 8}"
+*/
+PLY_INLINE Float3 operator+(const Float3& a, const Float3& b) {
+    return {a.x + b.x, a.y + b.y, a.z + b.z};
+}
+PLY_INLINE Float3 operator-(const Float3& a, const Float3& b) {
+    return {a.x - b.x, a.y - b.y, a.z - b.z};
+}
+PLY_INLINE Float3 operator*(const Float3& a, const Float3& b) {
+    return {a.x * b.x, a.y * b.y, a.z * b.z};
+}
+PLY_INLINE Float3 operator/(const Float3& a, const Float3& b) {
+    return {a.x / b.x, a.y / b.y, a.z / b.z};
+}
+/*!
+\endGroup
+*/
+PLY_INLINE Float3 operator/(const Float3& a, float b) {
+    float oob = 1.f / b;
+    return {a.x * oob, a.y * oob, a.z * oob};
+}
+/*!
+\beginGroup
+In-place versions of the above operators.
+
+    Float3 v = {2, 3, 2};
+    v *= {4, 1, 2};
+    StdOut::text() << v;  // "{8, 3, 4}"
+*/
+PLY_INLINE void operator+=(Float3& a, const Float3& b) {
+    a.x += b.x;
+    a.y += b.y;
+    a.z += b.z;
+}
+PLY_INLINE void operator-=(Float3& a, const Float3& b) {
+    a.x -= b.x;
+    a.y -= b.y;
+    a.z -= b.z;
+}
+PLY_INLINE void operator*=(Float3& a, const Float3& b) {
+    a.x *= b.x;
+    a.y *= b.y;
+    a.z *= b.z;
+}
+PLY_INLINE void operator/=(Float3& a, const Float3& b) {
+    a.x /= b.x;
+    a.y /= b.y;
+    a.z /= b.z;
+}
+/*!
+\endGroup
+*/
+PLY_INLINE void operator/=(Float3& a, float b) {
+    float oob = 1.f / b;
+    a.x *= oob;
+    a.y *= oob;
+    a.z *= oob;
+}
+/*!
 \category Geometric Functions
 Returns the dot product of two 3D vectors.
 
@@ -925,112 +866,6 @@ struct Float4 {
         return {(T) x, (T) y, (T) z, (T) w};
     }
     /*!
-    \category Arithmetic Operators
-    Unary negation.
-    */
-    Float4 operator-() const {
-        return {-x, -y, -z, -w};
-    }
-    /*!
-    \beginGroup
-    Addition operators. A scalar operand `s` is equivalent to `Float4{s}`.
-    */
-    Float4 operator+(const Float4& arg) const {
-        return {x + arg.x, y + arg.y, z + arg.z, w + arg.w};
-    }
-    PLY_INLINE friend Float4 operator+(float s, const Float4& v) {
-        return {s + v.x, s + v.y, s + v.z, s + v.w};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    In-place addition.
-    */
-    void operator+=(const Float4& arg) {
-        x += arg.x;
-        y += arg.y;
-        z += arg.z;
-        w += arg.w;
-    }
-    /*!
-    \beginGroup
-    Subtraction operators. A scalar operand `s` is equivalent to `Float4{s}`.
-    */
-    Float4 operator-(const Float4& arg) const {
-        return {x - arg.x, y - arg.y, z - arg.z, w - arg.w};
-    }
-    friend Float4 operator-(float a, const Float4& b) {
-        return {a - b.x, a - b.y, a - b.z, a - b.w};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    In-place subtraction.
-    */
-    void operator-=(const Float4& arg) {
-        x -= arg.x;
-        y -= arg.y;
-        z -= arg.z;
-        w -= arg.w;
-    }
-    /*!
-    \beginGroup
-    Component-wise multiplication. A scalar operand `s` is equivalent to `Float4{s}`.
-    */
-    Float4 operator*(const Float4& arg) const {
-        return {x * arg.x, y * arg.y, z * arg.z, w * arg.w};
-    }
-    PLY_INLINE friend Float4 operator*(float s, const Float4& v) {
-        return {s * v.x, s * v.y, s * v.z, s * v.w};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    \beginGroup
-    In-place multiplication.
-    */
-    void operator*=(const Float4& arg) {
-        x *= arg.x;
-        y *= arg.y;
-        z *= arg.z;
-        w *= arg.w;
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    \beginGroup
-    Component-wise division. A scalar operand `s` is equivalent to `Float3{s}`.
-    */
-    Float4 operator/(const Float4& arg) const {
-        return {x / arg.x, y / arg.y, z / arg.z, w / arg.w};
-    }
-    PLY_INLINE friend Float4 operator/(float s, const Float4& v) {
-        return {s / v.x, s / v.y, s / v.z, s / v.w};
-    }
-    /*!
-    \endGroup
-    */
-    /*!
-    \beginGroup
-    In-place division.
-    */
-    void operator/=(float arg) {
-        *this *= (1.f / arg);
-    }
-    void operator/=(const Float4& arg) {
-        x /= arg.x;
-        y /= arg.y;
-        z /= arg.z;
-        w /= arg.w;
-    }
-    /*!
-    \endGroup
-    */
-    /*!
     \category Length Functions
     Returns the square of the length of the 3D vector. Equivalent to `dot(this, this)`.
     */
@@ -1122,6 +957,87 @@ struct Float4 {
 
 /*!
 \addToClass Float4
+\category Arithmetic Operators
+Unary negation.
+*/
+PLY_INLINE Float4 operator-(const Float4& a) {
+    return {-a.x, -a.y, -a.z, -a.w};
+}
+/*!
+\beginGroup
+Returns a 4D vector whose components are the result of applying the given operation to the
+corresponding components of `a` and `b`. Each component is acted on independently.
+
+    StdOut::text() << Float4{2, 3, 2, 0} * Float4{4, 1, 2, 5};  // "{8, 3, 4, 0}"
+
+If you specify a scalar value in place of a `Float4`, it will be promoted to a `Float4` by
+replicating the value to each component.
+
+    StdOut::text() << Float4{2, 3, 2, 0} * 2;  // "{4, 6, 4, 0}"
+    StdOut::text() << 8 / Float4{2, 4, 1, 8};  // "{4, 2, 8, 1}"
+*/
+PLY_INLINE Float4 operator+(const Float4& a, const Float4& b) {
+    return {a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w};
+}
+PLY_INLINE Float4 operator-(const Float4& a, const Float4& b) {
+    return {a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w};
+}
+PLY_INLINE Float4 operator*(const Float4& a, const Float4& b) {
+    return {a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w};
+}
+PLY_INLINE Float4 operator/(const Float4& a, const Float4& b) {
+    return {a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w};
+}
+/*!
+\endGroup
+*/
+PLY_INLINE Float4 operator/(const Float4& a, float b) {
+    float oob = 1.f / b;
+    return {a.x * oob, a.y * oob, a.z * oob, a.w * oob};
+}
+/*!
+\beginGroup
+In-place versions of the above operators.
+
+    Float4 v = {2, 3, 2, 0};
+    v *= {4, 1, 2, 5};
+    StdOut::text() << v;  // "{8, 3, 4, 0}"
+*/
+PLY_INLINE void operator+=(Float4& a, const Float4& b) {
+    a.x += b.x;
+    a.y += b.y;
+    a.z += b.z;
+    a.w += b.w;
+}
+PLY_INLINE void operator-=(Float4& a, const Float4& b) {
+    a.x -= b.x;
+    a.y -= b.y;
+    a.z -= b.z;
+    a.w -= b.w;
+}
+PLY_INLINE void operator*=(Float4& a, const Float4& b) {
+    a.x *= b.x;
+    a.y *= b.y;
+    a.z *= b.z;
+    a.w *= b.w;
+}
+PLY_INLINE void operator/=(Float4& a, const Float4& b) {
+    a.x /= b.x;
+    a.y /= b.y;
+    a.z /= b.z;
+    a.w /= b.w;
+}
+/*!
+\endGroup
+*/
+PLY_INLINE void operator/=(Float4& a, float b) {
+    float oob = 1.f / b;
+    a.x *= oob;
+    a.y *= oob;
+    a.z *= oob;
+    a.w *= oob;
+}
+/*!
 \category Geometric Functions
 Returns the dot product of two 4D vectors.
 
