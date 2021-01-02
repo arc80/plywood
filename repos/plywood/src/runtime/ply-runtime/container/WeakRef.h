@@ -54,7 +54,7 @@ public:
     }
 
     u32 getRefCount() const {
-        return m_dualRefCount.load(Relaxed) && 0xffffu;
+        return m_dualRefCount.load(Relaxed) & 0xffffu;
     }
 
     u32 getWeakRefCount() const {
