@@ -53,7 +53,7 @@ private:
             return (Item*) (this + 1);
         }
 
-        Node* getChild(const Index& index) {
+        Node* getLastChildLessThan(const Index& index) {
             PLY_ASSERT(!isLeaf);
             PLY_ASSERT(size > 0);
             Link* links = getLinks();
@@ -61,10 +61,10 @@ private:
             u32 hi = size - 1;
             while (lo < hi) {
                 u32 mid = (lo + hi + 1) / 2;
-                if (Traits::less(index, links[mid].index))
-                    hi = mid - 1;
-                else
+                if (Traits::less(links[mid].index, index))
                     lo = mid;
+                else
+                    hi = mid - 1;
             }
             return links[lo].child;
         }
@@ -582,7 +582,7 @@ public:
             return {nullptr, 0};
         Node* node = m_root;
         while (!node->isLeaf) {
-            node = node->getChild(index);
+            node = node->getLastChildLessThan(index);
         }
         u32 pos = node->findGreaterOrEqualPos(index);
         if (pos > 0) {
@@ -598,7 +598,7 @@ public:
             return {nullptr, 0};
         Node* node = m_root;
         while (!node->isLeaf) {
-            node = node->getChild(index);
+            node = node->getLastChildLessThan(index);
         }
         u32 pos = node->findGreaterOrEqualPos(index);
         if (pos >= node->size)
@@ -611,7 +611,7 @@ public:
             m_root = Node::createLeaf();
         Node* node = m_root;
         while (!node->isLeaf) {
-            node = node->getChild(index);
+            node = node->getLastChildLessThan(index);
         }
         u32 pos = node->findInsertPos(index);
         if (node->size >= Traits::NodeCapacity) {
