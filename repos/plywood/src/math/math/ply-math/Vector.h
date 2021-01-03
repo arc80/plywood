@@ -128,12 +128,18 @@ struct Float2 {
     /*!
     \category Swizzle Functions
     \beginGroup
-    Swizzle functions.
+    Returns a new vector whose components are taken from the given indices. `x` and `y` are at
+    indices 0 and 1 respectively. Similar to [GLSL
+    swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except that the
+    components are specified by numeric index, and you can't use it to modify the original 2D
+    vector; only to read from it.
 
         Float2 v = {4, 5};
         StdOut::text() << v.swizzle(1, 0);        // "{5, 4}"
-        StdOut::text() << v.swizzle(1, 0, 1);     // "{5, 4, 5}"
-        StdOut::text() << v.swizzle(1, 1, 1, 0);  // "{5, 5, 5, 4}"
+        StdOut::text() << v.swizzle(0, 1, 1, 0);  // "{4, 5, 5, 4}"
+
+    These functions work correctly in the current version of all major compilers even though they
+    use type punning, which is undefined behavior in standard C++.
     */
     PLY_INLINE PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
     PLY_INLINE PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
@@ -514,12 +520,18 @@ struct Float3 {
     /*!
     \category Swizzle Functions
     \beginGroup
-    Swizzle functions.
+    Returns a new vector whose components are taken from the given indices. `x`, `y` and `z` are at
+    indices 0, 1 and 2 respectively. Similar to [GLSL
+    swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except that the
+    components are specified by numeric index, and you can't use it to modify the original 3D
+    vector; only to read from it.
 
         Float3 v = {4, 5, 6};
         StdOut::text() << v.swizzle(1, 0);        // "{5, 4}"
-        StdOut::text() << v.swizzle(2, 0, 1);     // "{6, 4, 5}"
-        StdOut::text() << v.swizzle(2, 2, 2, 1);  // "{6, 6, 6, 5}"
+        StdOut::text() << v.swizzle(2, 0, 2, 1);  // "{6, 4, 6, 5}"
+
+    These functions work correctly in the current version of all major compilers even though they
+    use type punning, which is undefined behavior in standard C++.
     */
     PLY_INLINE PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
     PLY_INLINE PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
@@ -938,12 +950,18 @@ struct Float4 {
     /*!
     \category Swizzle Functions
     \beginGroup
-    Swizzle functions.
+    Returns a new vector whose components are taken from the given indices. `x`, `y`, `z` and `w`
+    are at indices 0, 1, 2 and 3 respectively. Similar to [GLSL
+    swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except that the
+    components are specified by numeric index, and you can't use it to modify the original 4D
+    vector; only to read from it.
 
         Float4 v = {4, 5, 6, 0};
         StdOut::text() << v.swizzle(1, 0);        // "{5, 4}"
-        StdOut::text() << v.swizzle(3, 0, 1);     // "{0, 4, 5}"
         StdOut::text() << v.swizzle(2, 3, 2, 1);  // "{6, 0, 6, 5}"
+
+    These functions work correctly in the current version of all major compilers even though they
+    use type punning, which is undefined behavior in standard C++.
     */
     PLY_INLINE PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
     PLY_INLINE PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
