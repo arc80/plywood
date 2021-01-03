@@ -325,7 +325,7 @@ function togglePopupMenu(button, menu) {
     return mustShow;
 }
 
-window.onload = function() { 
+document.addEventListener("DOMContentLoaded", function() {
     injectKeyframeAnimation();
     sidebar = document.querySelector(".sidebar");
     article = document.getElementById("article");
@@ -387,7 +387,7 @@ window.onload = function() {
     replaceLinks(sidebar);
     replaceLinks(article);
     selected = sidebar.querySelector(".selected");
-}
+});
 
 window.onhashchange = function() { 
     highlight(location.hash.substr(1));
