@@ -44,8 +44,8 @@ PLY_TEST_CASE("Float3 isNear") {
     PLY_TEST_CHECK(isNear(Float3{4}, Float3{4}, 1e-6f));
     PLY_TEST_CHECK(isNear(Float3{5}, Float3{5}, 0));
     PLY_TEST_CHECK(!isNear(Float3{5}, Float3{6}, 0));
-    PLY_TEST_CHECK(isNear(Float3{1, 0, 2}, Float3{0.9999f, 0.0001f, 1.9999f}, 0.001f));
-    PLY_TEST_CHECK(!isNear(Float3{1, 0, 2}, Float3{0.999f, 0.001f, 1.9999f}, 0.001f));
+    PLY_TEST_CHECK(isNear(Float3{1, 0, 2}, Float3{0.9999f, 0.0001f, 1.9999f}, 1e-3f));
+    PLY_TEST_CHECK(!isNear(Float3{1, 0, 2}, Float3{0.999f, 0.001f, 1.9999f}, 1e-3f));
 }
 
 PLY_TEST_CASE("Float3 unary negation") {
