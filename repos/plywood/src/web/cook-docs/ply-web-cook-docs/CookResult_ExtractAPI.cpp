@@ -333,6 +333,7 @@ struct APIExtractor : cpp::ParseSupervisor {
                         if (sw.getSeekPos() > 0) {
                             // Add blank line to the markdown
                             sw << c;
+                            column = 1;
                         }
                     } else if (c == ' ') {
                         column++;

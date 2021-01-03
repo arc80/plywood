@@ -16,7 +16,7 @@ struct Float4;
 
 //------------------------------------------------------------------------------------------------
 /*!
-A 2D vector with floating-point components `x` and `y`.
+A vector with two floating-point components `x` and `y`.
 */
 struct Float2 {
     /*!
@@ -52,7 +52,9 @@ struct Float2 {
     \category Assignment Operator
     Copy assignment. Declared with an [lvalue
     ref-qualifier](https://en.cppreference.com/w/cpp/language/member_functions#ref-qualified_member_functions)
-    so that it's an error to assign to an rvalue, as in `a.normalized() = b`.
+    so that it's an error to assign to an rvalue.
+
+        a.normalized() = b;  // error
     */
     PLY_INLINE void operator=(const Float2& arg) & {
         x = arg.x;
@@ -102,9 +104,10 @@ struct Float2 {
     PLY_NO_DISCARD Float2 safeNormalized(const Float2& fallback = {1, 0},
                                          float epsilon = 1e-20f) const;
     /*!
-    \category Interpreting as a Color
+    \category Color Functions
     \beginGroup
-    Aliases for `x` and `y`.
+    Convenience functions for interpreting the vector as a color. The `r` and `g` functions are
+    aliases for the `x` and `y` components respectively.
 
         Float4 c = {1.0f, 0.8f};
         StdOut::text().format("{}, {}", c.r(), c.g());  // "1.0, 0.8"
@@ -244,7 +247,7 @@ PLY_INLINE float cross(const Float2& a, const Float2& b) {
     return a.x * b.y - a.y * b.x;
 }
 /*!
-\category Component-wise Functions
+\category Componentwise Functions
 Returns a copy of `v` with each component constrained to lie within the range determined by the
 corresponding components of `mins` and `maxs`.
 
@@ -377,7 +380,7 @@ PLY_INLINE bool isRounded(const Float2& value, float spacing = 1) {
 
 //------------------------------------------------------------------------------------------------
 /*!
-A 3D vector with floating-point components `x`, `y` and `z`.
+A vector with three floating-point components `x`, `y` and `z`.
 */
 struct Float3 {
     /*!
@@ -425,7 +428,9 @@ struct Float3 {
     \category Assignment Operator
     Copy assignment. Declared with an [lvalue
     ref-qualifier](https://en.cppreference.com/w/cpp/language/member_functions#ref-qualified_member_functions)
-    so that it's an error to assign to an rvalue, as in `a.normalized() = b`.
+    so that it's an error to assign to an rvalue.
+
+        a.normalized() = b;  // error
     */
     PLY_INLINE void operator=(const Float3& arg) & {
         x = arg.x;
@@ -487,9 +492,10 @@ struct Float3 {
     PLY_NO_DISCARD Float3 safeNormalized(const Float3& fallback = {1, 0, 0},
                                          float epsilon = 1e-20f) const;
     /*!
-    \category Interpreting as a Color
+    \category Color Functions
     \beginGroup
-    Aliases for `x`, `y` and `z`.
+    Convenience functions for interpreting the vector as a color. The `r`, `g` and `b` functions are
+    aliases for the `x`, `y` and `z` components respectively.
 
         Float3 c = {1.0f, 0.8f, 0.7f};
         StdOut::text().format("{}, {}, {}", c.r(), c.g(), c.b());  // "1.0, 0.8, 0.7"
@@ -641,7 +647,7 @@ Returns the cross product of two 3D vectors.
 */
 Float3 cross(const Float3& a, const Float3& b);
 /*!
-\category Component-wise Functions
+\category Componentwise Functions
 Returns a copy of `v` with each component constrained to lie within the range determined by the
 corresponding components of `mins` and `maxs`.
 
@@ -770,7 +776,7 @@ PLY_INLINE bool isRounded(const Float3& value, float spacing = 1) {
 
 //------------------------------------------------------------------------------------------------
 /*!
-A 4D vector with floating-point components `x`, `y`, `z` and `w`.
+A vector with four floating-point components `x`, `y`, `z` and `w`.
 */
 struct Float4 {
     /*!
@@ -829,7 +835,9 @@ struct Float4 {
     \category Assignment Operator
     Copy assignment. Declared with an [lvalue
     ref-qualifier](https://en.cppreference.com/w/cpp/language/member_functions#ref-qualified_member_functions)
-    so that it's an error to assign to an rvalue, as in `a.normalized() = b`.
+    so that it's an error to assign to an rvalue.
+
+        a.normalized() = b;  // error
     */
     PLY_INLINE void operator=(const Float4& arg) & {
         x = arg.x;
@@ -908,9 +916,10 @@ struct Float4 {
     PLY_NO_DISCARD Float4 safeNormalized(const Float4& fallback = {1, 0, 0, 0},
                                          float epsilon = 1e-20f) const;
     /*!
-    \category Interpreting as a Color
+    \category Color Functions
     \beginGroup
-    Aliases for `x`, `y`, `z` and `w`.
+    Convenience functions for interpreting the vector as a color. The `r`, `g`, `b` and `a`
+    functions are aliases for the `x`, `y`, `z` and `w` components respectively.
 
         Float4 c = {1.0f, 0.8f, 0.7f, 0.5f};
         StdOut::text().format("{}, {}, {}, {}", c.r(), c.g(), c.b(), c.a());
@@ -1065,7 +1074,7 @@ PLY_INLINE float dot(const Float4& a, const Float4& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 /*!
-\category Component-wise Functions
+\category Componentwise Functions
 Returns a copy of `v` with each component constrained to lie within the range determined by the
 corresponding components of `mins` and `maxs`.
 
