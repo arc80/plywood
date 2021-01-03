@@ -21,7 +21,6 @@ A 2D vector with floating-point components `x` and `y`.
 struct Float2 {
     /*!
     \beginGroup
-    The components.
     */
     float x;
     float y;
@@ -383,7 +382,6 @@ A 3D vector with floating-point components `x`, `y` and `z`.
 struct Float3 {
     /*!
     \beginGroup
-    The components.
     */
     float x;
     float y;
@@ -773,13 +771,11 @@ PLY_INLINE bool isRounded(const Float3& value, float spacing = 1) {
 //------------------------------------------------------------------------------------------------
 /*!
 A 4D vector with floating-point components `x`, `y`, `z` and `w`.
-
-`w` is the fourth component. It comes after `z` sequentially in memory.
 */
 struct Float4 {
     /*!
     \beginGroup
-    The components.
+    `w` is the fourth component. It follows `z` sequentially in memory.
     */
     float x;
     float y;

@@ -318,7 +318,7 @@ struct APIExtractor : cpp::ParseSupervisor {
         }
 
         // Loop over each line
-        bool gotAnyDirective = false;
+        bool gotNonGroupDirective = false;
         bool gotAnyMarkdown = false;
         bool logIndentationError = true;
         for (;;) {
@@ -374,10 +374,12 @@ struct APIExtractor : cpp::ParseSupervisor {
                     this->docState.markdown = sw.moveToString();
                     sw = {};
                 }
-                gotAnyDirective = true;
                 StringViewReader dr{line.subStr(1)};
                 StringView directive = dr.readView<fmt::Identifier>();
                 dr.parse<fmt::Whitespace>();
+                if (directive != "beginGroup") {
+                    gotNonGroupDirective = true;
+                }
                 if (!directive) {
                     this->error(Error::EmptyDirective, {}, lineLoc);
                 } else if (directive == "title") {
@@ -502,8 +504,12 @@ struct APIExtractor : cpp::ParseSupervisor {
             PLY_ASSERT(this->docState.markdownLoc >= 0);
             this->docState.markdown = sw.moveToString();
         }
-        if (!gotAnyMarkdown && !gotAnyDirective) {
-            this->error(Error::EmptyDocumentationComment, {}, token.linearLoc);
+        if (!gotAnyMarkdown && !gotNonGroupDirective) {
+            // Allow empty markdown in member documentation (eg. Float2::x and y).
+            // FIXME: Would be better to store the LinearLocation of the start of the last line of
+            // the documentation string.
+            this->docState.markdownLoc = token.linearLoc;
+            PLY_ASSERT(!this->docState.markdown);
         }
     }
 
@@ -523,18 +529,12 @@ struct APIExtractor : cpp::ParseSupervisor {
 
         ScopeInfo scopeInfo = this->getScopeInfo(this->scopeStack.numItems() - 1);
         if (this->docState.groupEntry) {
-            // Need to sort out ownership rules before this will work
-            // global/namespace-scoped functions & vars should probably be owned directly by the
-            // CookResult
             if ((!scopeInfo.parentScope || scopeInfo.parentScope->type != SemaEntity::Class) &&
                 !this->docState.addToClass)
                 return;
         } else if (this->docState.markdownLoc >= 0) {
             if ((!scopeInfo.parentScope || scopeInfo.parentScope->type != SemaEntity::Class) &&
                 !this->docState.addToClass) {
-                // Need to sort out ownership rules before this will work
-                // global/namespace-scoped functions & vars should probably be owned directly by the
-                // CookResult
                 this->error(Error::MarkdownOnlyValidWithinClass, {}, this->docState.markdownLoc);
                 this->docState.markdown = {};
                 this->docState.markdownLoc = -1;
