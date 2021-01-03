@@ -61,19 +61,9 @@ struct Float2 {
         y = arg.y;
     }
     /*!
-    \category Conversion Functions
-    Converts to another 2D vector type such as `IntVec2` or `Int2<s16>`.
-
-        Float2 a = {4, 5};
-        IntVec2 b = a.to<IntVec2>();
-    */
-    template <typename OtherVec2>
-    PLY_INLINE OtherVec2 to() const {
-        using T = decltype(OtherVec2::x);
-        PLY_STATIC_ASSERT(sizeof(OtherVec2) == sizeof(T) * 2);
-        return {(T) x, (T) y};
-    }
-    /*!
+    \category Arithmetic Operators
+    \category Comparison Functions
+    \category Geometric Functions
     \category Length Functions
     Returns the square of the length of the 2D vector.
     */
@@ -103,6 +93,19 @@ struct Float2 {
     */
     PLY_NO_DISCARD Float2 safeNormalized(const Float2& fallback = {1, 0},
                                          float epsilon = 1e-20f) const;
+    /*!
+    \category Conversion Functions
+    Converts to another 2D vector type such as `IntVec2` or `Int2<s16>`.
+
+        Float2 a = {4, 5};
+        IntVec2 b = a.to<IntVec2>();
+    */
+    template <typename OtherVec2>
+    PLY_INLINE OtherVec2 to() const {
+        using T = decltype(OtherVec2::x);
+        PLY_STATIC_ASSERT(sizeof(OtherVec2) == sizeof(T) * 2);
+        return {(T) x, (T) y};
+    }
     /*!
     \category Color Functions
     \beginGroup
@@ -438,30 +441,9 @@ struct Float3 {
         z = arg.z;
     }
     /*!
-    \category Conversion Functions
-    Returns a const reference to the first two components as a `Float2` using type punning. This
-    should only be used as a temporary expression.
-
-        Float3 v = {4, 5, 6};
-        StdOut::text() << v.asFloat2();  // "{4, 5}"
-    */
-    PLY_INLINE const Float2& asFloat2() const {
-        PLY_PUN_SCOPE
-        return reinterpret_cast<const Float2&>(*this);
-    }
-    /*!
-    Converts to another 3D vector type such as `IntVec3` or `Int3<s16>`.
-
-        Float3 a = {4, 5, 6};
-        IntVec3 b = a.to<IntVec3>();
-    */
-    template <typename OtherVec3>
-    PLY_INLINE OtherVec3 to() const {
-        using T = decltype(OtherVec3::x);
-        PLY_STATIC_ASSERT(sizeof(OtherVec3) == sizeof(T) * 3);
-        return {(T) x, (T) y, (T) z};
-    }
-    /*!
+    \category Arithmetic Operators
+    \category Comparison Functions
+    \category Geometric Functions
     \category Length Functions
     Returns the square of the length of the 3D vector.
     */
@@ -491,6 +473,30 @@ struct Float3 {
     */
     PLY_NO_DISCARD Float3 safeNormalized(const Float3& fallback = {1, 0, 0},
                                          float epsilon = 1e-20f) const;
+    /*!
+    \category Conversion Functions
+    Returns a const reference to the first two components as a `Float2` using type punning. This
+    should only be used as a temporary expression.
+
+        Float3 v = {4, 5, 6};
+        StdOut::text() << v.asFloat2();  // "{4, 5}"
+    */
+    PLY_INLINE const Float2& asFloat2() const {
+        PLY_PUN_SCOPE
+        return reinterpret_cast<const Float2&>(*this);
+    }
+    /*!
+    Converts to another 3D vector type such as `IntVec3` or `Int3<s16>`.
+
+        Float3 a = {4, 5, 6};
+        IntVec3 b = a.to<IntVec3>();
+    */
+    template <typename OtherVec3>
+    PLY_INLINE OtherVec3 to() const {
+        using T = decltype(OtherVec3::x);
+        PLY_STATIC_ASSERT(sizeof(OtherVec3) == sizeof(T) * 3);
+        return {(T) x, (T) y, (T) z};
+    }
     /*!
     \category Color Functions
     \beginGroup
@@ -846,6 +852,39 @@ struct Float4 {
         w = arg.w;
     }
     /*!
+    \category Arithmetic Operators
+    \category Comparison Functions
+    \category Geometric Functions
+    \category Length Functions
+    Returns the square of the length of the 3D vector.
+    */
+    float length2() const {
+        return x * x + y * y + z * z + w * w;
+    }
+    /*!
+    Returns the length of the 3D vector. Equivalent to `sqrtf(this->length2())`.
+    */
+    float length() const {
+        return sqrtf(length2());
+    }
+    /*!
+    Returns `true` if the squared length of the vector is sufficiently close to 1.0. The threshold
+    is given by `thresh`.
+    */
+    PLY_INLINE bool isUnit(float thresh = 0.001f) const {
+        return fabsf(1.f - length2()) < thresh;
+    }
+    /*!
+    Returns a unit-length 3D vector having the same direction as `this`. No safety check is
+    performed.
+    */
+    PLY_NO_DISCARD Float4 normalized() const;
+    /*!
+    Returns a unit-length 3D vector having the same direction as `this` with safety checks.
+    */
+    PLY_NO_DISCARD Float4 safeNormalized(const Float4& fallback = {1, 0, 0, 0},
+                                         float epsilon = 1e-20f) const;
+    /*!
     \category Conversion Functions
     Returns a const reference to the first two components as a `Float2` using type punning. This
     should only be used as a temporary expression.
@@ -885,36 +924,6 @@ struct Float4 {
         PLY_STATIC_ASSERT(sizeof(OtherVec4) == sizeof(T) * 4);
         return {(T) x, (T) y, (T) z, (T) w};
     }
-    /*!
-    \category Length Functions
-    Returns the square of the length of the 3D vector.
-    */
-    float length2() const {
-        return x * x + y * y + z * z + w * w;
-    }
-    /*!
-    Returns the length of the 3D vector. Equivalent to `sqrtf(this->length2())`.
-    */
-    float length() const {
-        return sqrtf(length2());
-    }
-    /*!
-    Returns `true` if the squared length of the vector is sufficiently close to 1.0. The threshold
-    is given by `thresh`.
-    */
-    PLY_INLINE bool isUnit(float thresh = 0.001f) const {
-        return fabsf(1.f - length2()) < thresh;
-    }
-    /*!
-    Returns a unit-length 3D vector having the same direction as `this`. No safety check is
-    performed.
-    */
-    PLY_NO_DISCARD Float4 normalized() const;
-    /*!
-    Returns a unit-length 3D vector having the same direction as `this` with safety checks.
-    */
-    PLY_NO_DISCARD Float4 safeNormalized(const Float4& fallback = {1, 0, 0, 0},
-                                         float epsilon = 1e-20f) const;
     /*!
     \category Color Functions
     \beginGroup
