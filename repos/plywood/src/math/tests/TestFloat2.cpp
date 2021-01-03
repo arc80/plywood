@@ -191,37 +191,37 @@ PLY_TEST_CASE("Float2 comparisons (any)") {
     PLY_TEST_CHECK(!any(Float2{1, 2} < Float2{1, 2}));
 }
 
-PLY_TEST_CASE("Float2 quantizeNearest") {
-    PLY_TEST_CHECK(quantizeNearest(Float2{0.3f, 1.4f}, 2) == Float2{0, 2});
-    PLY_TEST_CHECK(quantizeNearest(Float2{-0.3f, 1.4f}, 1) == Float2{0, 1});
-    PLY_TEST_CHECK(quantizeNearest(Float2{0.3f, -1.4f}, 1) == Float2{0, -1});
-    PLY_TEST_CHECK(quantizeNearest(Float2{-0.3f, 1.4f}, 0.5f) == Float2{-0.5f, 1.5f});
+PLY_TEST_CASE("Float2 roundNearest") {
+    PLY_TEST_CHECK(roundNearest(Float2{0.3f, 1.4f}, 2) == Float2{0, 2});
+    PLY_TEST_CHECK(roundNearest(Float2{-0.3f, 1.4f}, 1) == Float2{0, 1});
+    PLY_TEST_CHECK(roundNearest(Float2{0.3f, -1.4f}, 1) == Float2{0, -1});
+    PLY_TEST_CHECK(roundNearest(Float2{-0.3f, 1.4f}, 0.5f) == Float2{-0.5f, 1.5f});
 }
 
-PLY_TEST_CASE("Float2 quantizeUp") {
-    PLY_TEST_CHECK(quantizeUp(Float2{0.3f, 1.4f}, 2) == Float2{2, 2});
-    PLY_TEST_CHECK(quantizeUp(Float2{-0.3f, 1.4f}, 1) == Float2{0, 2});
-    PLY_TEST_CHECK(quantizeUp(Float2{0.3f, -1.4f}, 1) == Float2{1, -1});
-    PLY_TEST_CHECK(quantizeUp(Float2{-0.3f, 1.4f}, 0.5f) == Float2{0, 1.5f});
+PLY_TEST_CASE("Float2 roundUp") {
+    PLY_TEST_CHECK(roundUp(Float2{0.3f, 1.4f}, 2) == Float2{2, 2});
+    PLY_TEST_CHECK(roundUp(Float2{-0.3f, 1.4f}, 1) == Float2{0, 2});
+    PLY_TEST_CHECK(roundUp(Float2{0.3f, -1.4f}, 1) == Float2{1, -1});
+    PLY_TEST_CHECK(roundUp(Float2{-0.3f, 1.4f}, 0.5f) == Float2{0, 1.5f});
 }
 
-PLY_TEST_CASE("Float2 quantizeDown") {
-    PLY_TEST_CHECK(quantizeDown(Float2{0.3f, 1.4f}, 2) == Float2{0, 0});
-    PLY_TEST_CHECK(quantizeDown(Float2{-0.3f, 1.4f}, 1) == Float2{-1, 1});
-    PLY_TEST_CHECK(quantizeDown(Float2{0.3f, -1.4f}, 1) == Float2{0, -2});
-    PLY_TEST_CHECK(quantizeDown(Float2{-0.3f, 1.4f}, 0.5f) == Float2{-0.5f, 1});
+PLY_TEST_CASE("Float2 roundDown") {
+    PLY_TEST_CHECK(roundDown(Float2{0.3f, 1.4f}, 2) == Float2{0, 0});
+    PLY_TEST_CHECK(roundDown(Float2{-0.3f, 1.4f}, 1) == Float2{-1, 1});
+    PLY_TEST_CHECK(roundDown(Float2{0.3f, -1.4f}, 1) == Float2{0, -2});
+    PLY_TEST_CHECK(roundDown(Float2{-0.3f, 1.4f}, 0.5f) == Float2{-0.5f, 1});
 }
 
-PLY_TEST_CASE("Float2 isQuantized") {
-    PLY_TEST_CHECK(isQuantized(Float2{0, 1}, 1));
-    PLY_TEST_CHECK(!isQuantized(Float2{0.5f, 0}, 1));
-    PLY_TEST_CHECK(!isQuantized(Float2{1, -0.5f}, 1));
-    PLY_TEST_CHECK(isQuantized(Float2{0, 1}, 0.5f));
-    PLY_TEST_CHECK(isQuantized(Float2{0.5f, -0.f}, 0.5f));
-    PLY_TEST_CHECK(isQuantized(Float2{1, -0.5f}, 0.5f));
-    PLY_TEST_CHECK(!isQuantized(Float2{-0.5f, 0.3f}, 0.5f));
-    PLY_TEST_CHECK(!isQuantized(Float2{0, 1}, 2));
-    PLY_TEST_CHECK(isQuantized(Float2{4, 8}, 2));
+PLY_TEST_CASE("Float2 isRounded") {
+    PLY_TEST_CHECK(isRounded(Float2{0, 1}, 1));
+    PLY_TEST_CHECK(!isRounded(Float2{0.5f, 0}, 1));
+    PLY_TEST_CHECK(!isRounded(Float2{1, -0.5f}, 1));
+    PLY_TEST_CHECK(isRounded(Float2{0, 1}, 0.5f));
+    PLY_TEST_CHECK(isRounded(Float2{0.5f, -0.f}, 0.5f));
+    PLY_TEST_CHECK(isRounded(Float2{1, -0.5f}, 0.5f));
+    PLY_TEST_CHECK(!isRounded(Float2{-0.5f, 0.3f}, 0.5f));
+    PLY_TEST_CHECK(!isRounded(Float2{0, 1}, 2));
+    PLY_TEST_CHECK(isRounded(Float2{4, 8}, 2));
 }
 
 } // namespace ply

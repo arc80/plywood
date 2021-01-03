@@ -200,13 +200,13 @@ Box<V> makeSolid(const Box<V>& a) {
 }
 
 template <typename V>
-Box<V> quantizeNearest(const Box<V>& a, float spacing) {
-    return {quantizeNearest(a.mins, spacing), quantizeNearest(a.maxs, spacing)};
+Box<V> roundNearest(const Box<V>& a, float spacing = 1) {
+    return {roundNearest(a.mins, spacing), roundNearest(a.maxs, spacing)};
 }
 
 template <typename V>
-PLY_INLINE Box<V> quantizeExpand(const Box<V>& a, float spacing) {
-    return {quantizeDown(a.mins, spacing), quantizeUp(a.maxs, spacing)};
+PLY_INLINE Box<V> roundExpand(const Box<V>& a, float spacing = 1) {
+    return {roundDown(a.mins, spacing), roundUp(a.maxs, spacing)};
 }
 
 } // namespace ply

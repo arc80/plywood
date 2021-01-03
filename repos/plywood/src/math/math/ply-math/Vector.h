@@ -311,8 +311,8 @@ PLY_INLINE bool isNear(const Float2& a, const Float2& b, float epsilon) {
 /*!
 \beginGroup
 These functions compare each component individually. The result of each comparison is returned in
-a `Bool2`. Call `all` to check if the result was `true` for all components, or call `any` to check
-if the result was `true` for any component.
+a `Bool2`. Call `all()` to check if the result was `true` for all components, or call `any()` to
+check if the result was `true` for any component.
 
     all(Float2{1, 2} > Float2{0, 1})  // evaluates to true
 
@@ -335,40 +335,36 @@ PLY_INLINE Bool2 operator>=(const Float2& a, const Float2& b) {
 \endGroup
 */
 /*!
-\category Quantization Functions
+\category Rounding Functions
 \beginGroup
-These are rounding functions, except that instead of always rounding to a whole number, they round
-to multiples of `spacing`. Each function returns a 2D vector with each component set to the
-quantized result of the corresponding component of `value`.
+Returns a 2D vector with each component set to the rounded result of the corresponding component of
+`vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
+`spacing` is a power of 2.
 
-    StdOut::text() << quantizeUp(Float2{-0.3f, 1.4f}, 2);       // prints "{0, 2}"
-    StdOut::text() << quantizeDown(Float2{-0.3f, 1.4f}, 2);     // prints "{-2, 0}"
-    StdOut::text() << quantizeNearest(Float2{-0.3f, 1.4f}, 2);  // prints "{0, 2}"
-
-The functions are most precise when `spacing` is a power of 2. When `spacing` is 1, each component
-is rounded to a whole number.
+    StdOut::text() << roundUp(Float2{-0.3f, 1.4f});   // "{0, 2}"
+    StdOut::text() << roundDown(Float2{1.8f}, 0.5f);  // "{1.5, 1.5}"
 */
-PLY_INLINE Float2 quantizeUp(const Float2& value, float spacing) {
-    return {quantizeUp(value.x, spacing), quantizeUp(value.y, spacing)};
+PLY_INLINE Float2 roundUp(const Float2& value, float spacing = 1) {
+    return {roundUp(value.x, spacing), roundUp(value.y, spacing)};
 }
-PLY_INLINE Float2 quantizeDown(const Float2& value, float spacing) {
-    return {quantizeDown(value.x, spacing), quantizeDown(value.y, spacing)};
+PLY_INLINE Float2 roundDown(const Float2& value, float spacing = 1) {
+    return {roundDown(value.x, spacing), roundDown(value.y, spacing)};
 }
-PLY_INLINE Float2 quantizeNearest(const Float2& value, float spacing) {
+PLY_INLINE Float2 roundNearest(const Float2& value, float spacing = 1) {
     // Good to let the compiler see the spacing so it can optimize the divide by constant
-    return {quantizeNearest(value.x, spacing), quantizeNearest(value.y, spacing)};
+    return {roundNearest(value.x, spacing), roundNearest(value.y, spacing)};
 }
 /*!
 \endGroup
 */
 /*!
-Returns `true` if every component of `value` is already quantized to the given `spacing`.
+Returns `true` if every component of `vec` is already rounded. The optional `spacing` argument can
+be used to round to arbitrary spacings. Most precise when `spacing` is a power of 2.
 
-    isQuantized(Float2{2, 4}, 2)    // evaluates to true
-    isQuantized(Float2{1, 4}, 2)    // evaluates to false
+    isRounded(Float2{1.5f, 2.5f}, 0.5f)  // evaluates to true
 */
-PLY_INLINE bool isQuantized(const Float2& value, float spacing) {
-    return quantizeNearest(value, spacing) == value;
+PLY_INLINE bool isRounded(const Float2& value, float spacing = 1) {
+    return roundNearest(value, spacing) == value;
 }
 
 //------------------------------------------------------------------------------------------------
@@ -400,6 +396,9 @@ struct Float3 {
     */
     PLY_INLINE Float3(float t) : x{t}, y{t}, z{t} {
     }
+    // Catch the case where 2 scalars are passed to constructor.
+    // This would otherwise promote the first scalar to Float2:
+    Float3(float, float) = delete;
     /*!
     Constructs a 3D vector from the given components.
 
@@ -632,8 +631,8 @@ Float3 cross(const Float3& a, const Float3& b);
 Returns a copy of `v` with each component constrained to lie within the range determined by the
 corresponding components of `mins` and `maxs`.
 
-    Float2 v = {3, 1.5f, 0};
-    StdOut::text() << clamp(v, Float2{0, 1, 2}, Float2{1, 2, 3});  // prints "{1, 1.5, 2}"
+    Float3 v = {3, 1.5f, 0};
+    StdOut::text() << clamp(v, Float3{0, 1, 2}, Float3{1, 2, 3});  // prints "{1, 1.5, 2}"
     StdOut::text() << clamp(v, 0, 1);                              // prints "{1, 1, 0}"
 */
 Float3 clamp(const Float3& v, const Float3& mins, const Float3& maxs);
@@ -641,7 +640,7 @@ Float3 clamp(const Float3& v, const Float3& mins, const Float3& maxs);
 Returns a 3D vector with each component set to the absolute value of the corresponding component of
 `a`.
 
-    StdOut::text() << abs(Float2{-2, 3, 0});  // prints "{2, 3, 0}"
+    StdOut::text() << abs(Float3{-2, 3, 0});  // prints "{2, 3, 0}"
 */
 PLY_INLINE Float3 abs(const Float3& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z)};
@@ -650,15 +649,15 @@ PLY_INLINE Float3 abs(const Float3& a) {
 Returns a 3D vector with each component set to the corresponding component of `a` raised to the
 power of the corresponding component of `b`.
 
-    StdOut::text() << pow(Float2{1, 2, 2}, Float2{2, 3, 1});  // prints "{1, 8, 2}"
-    StdOut::text() << pow(Float2{1, 2, 3}, 2);                // prints "{1, 4, 9}"
+    StdOut::text() << pow(Float3{1, 2, 2}, Float3{2, 3, 1});  // prints "{1, 8, 2}"
+    StdOut::text() << pow(Float3{1, 2, 3}, 2);                // prints "{1, 4, 9}"
 */
 Float3 pow(const Float3& a, const Float3& b);
 /*!
 Returns a 3D vector with each component set to minimum of the corresponding components of `a` and
 `b`.
 
-    StdOut::text() << min(Float2{0, 1, 0}, Float2{1, 0, 1});  // prints "{0, 0, 0}"
+    StdOut::text() << min(Float3{0, 1, 0}, Float3{1, 0, 1});  // prints "{0, 0, 0}"
 */
 PLY_INLINE Float3 min(const Float3& a, const Float3& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)};
@@ -667,7 +666,7 @@ PLY_INLINE Float3 min(const Float3& a, const Float3& b) {
 Returns a 3D vector with each component set to maximum of the corresponding components of `a` and
 `b`.
 
-    StdOut::text() << max(Float2{0, 1, 0}, Float2{1, 0, 1});  // prints "{1, 1, 1}"
+    StdOut::text() << max(Float3{0, 1, 0}, Float3{1, 0, 1});  // prints "{1, 1, 1}"
 */
 PLY_INLINE Float3 max(const Float3& a, const Float3& b) {
     return {max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)};
@@ -690,7 +689,7 @@ PLY_INLINE bool operator!=(const Float3& a, const Float3& b) {
 /*!
 Returns `true` if `a` is approximately equal to `b`. The tolerance is given by `epsilon`.
 
-    isNear(Float3{1, 0, 2}, Float2{0.9999f, 0.0001f, 1.9999f}, 0.001f)  // evaluates to true
+    isNear(Float3{1, 0, 2}, Float3{0.9999f, 0.0001f, 1.9999f}, 0.001f)  // evaluates to true
 */
 PLY_INLINE bool isNear(const Float3& a, const Float3& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
@@ -698,8 +697,8 @@ PLY_INLINE bool isNear(const Float3& a, const Float3& b, float epsilon) {
 /*!
 \beginGroup
 These functions compare each component individually. The result of each comparison is returned in
-a `Bool3`. Call `all` to check if the result was `true` for all components, or call `any` to check
-if the result was `true` for any component.
+a `Bool3`. Call `all()` to check if the result was `true` for all components, or call `any()` to
+check if the result was `true` for any component.
 
     all(Float3{1, 2, 3} > Float3{0, 1, 2})  // evaluates to true
 
@@ -722,42 +721,36 @@ PLY_INLINE Bool3 operator>=(const Float3& a, const Float3& b) {
 \endGroup
 */
 /*!
-\category Quantization Functions
+\category Rounding Functions
 \beginGroup
-These are rounding functions, except that instead of always rounding to a whole number, they round
-to multiples of `spacing`. Each function returns a 2D vector with each component set to the
-quantized result of the corresponding component of `value`.
+Returns a 3D vector with each component set to the rounded result of the corresponding component of
+`vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
+`spacing` is a power of 2.
 
-    StdOut::text() << quantizeUp(Float3{-0.3f, 1.4f, 0.8f}, 2);       // prints "{0, 2, 2}"
-    StdOut::text() << quantizeDown(Float3{-0.3f, 1.4f, 0.8f}, 2);     // prints "{-2, 0, 0}"
-    StdOut::text() << quantizeNearest(Float3{-0.3f, 1.4f, 0.8f}, 2);  // prints "{0, 2, 0}"
-
-The functions are most precise when `spacing` is a power of 2. When `spacing` is 1, each component
-is rounded to a whole number.
+    StdOut::text() << roundUp(Float3{-0.3f, 1.4f, 0.8f});  // "{0, 2, 1}"
+    StdOut::text() << roundDown(Float3{1.8f}, 0.5f);       // "{1.5, 1.5, 1.5}"
 */
-PLY_INLINE Float3 quantizeUp(const Float3& value, float spacing) {
-    return {quantizeUp(value.x, spacing), quantizeUp(value.y, spacing),
-            quantizeUp(value.z, spacing)};
+PLY_INLINE Float3 roundUp(const Float3& value, float spacing = 1) {
+    return {roundUp(value.x, spacing), roundUp(value.y, spacing), roundUp(value.z, spacing)};
 }
-PLY_INLINE Float3 quantizeDown(const Float3& value, float spacing) {
-    return {quantizeDown(value.x, spacing), quantizeDown(value.y, spacing),
-            quantizeDown(value.z, spacing)};
+PLY_INLINE Float3 roundDown(const Float3& value, float spacing = 1) {
+    return {roundDown(value.x, spacing), roundDown(value.y, spacing), roundDown(value.z, spacing)};
 }
-PLY_INLINE Float3 quantizeNearest(const Float3& value, float spacing) {
-    return {quantizeNearest(value.x, spacing), quantizeNearest(value.y, spacing),
-            quantizeNearest(value.z, spacing)};
+PLY_INLINE Float3 roundNearest(const Float3& value, float spacing = 1) {
+    return {roundNearest(value.x, spacing), roundNearest(value.y, spacing),
+            roundNearest(value.z, spacing)};
 }
 /*!
 \endGroup
 */
 /*!
-Returns `true` if every component of `value` is already quantized to the given `spacing`.
+Returns `true` if every component of `vec` is already rounded. The optional `spacing` argument can
+be used to round to arbitrary spacings. Most precise when `spacing` is a power of 2.
 
-    isQuantized(Float2{2, 4, 0}, 2)    // evaluates to true
-    isQuantized(Float2{1, 4, 0}, 2)    // evaluates to false
+    isRounded(Float3{1.5f, 0.5f, 0}, 0.5f)  // evaluates to true
 */
-PLY_INLINE bool isQuantized(const Float3& value, float spacing) {
-    return quantizeNearest(value, spacing) == value;
+PLY_INLINE bool isRounded(const Float3& value, float spacing = 1) {
+    return roundNearest(value, spacing) == value;
 }
 
 //------------------------------------------------------------------------------------------------
@@ -792,6 +785,10 @@ struct Float4 {
     */
     PLY_INLINE Float4(float t) : x{t}, y{t}, z{t}, w{t} {
     }
+    // Catch wrong number of scalars passed to constructor.
+    // This would otherwise promote the first argument to Float2 or Float3:
+    Float4(float, float) = delete;
+    Float4(float, float, float) = delete;
     /*!
     Constructs a 4D vector from the given components.
 
@@ -813,7 +810,7 @@ struct Float4 {
         Float2 a = {1, 2};
         StdOut::text() << Float4{a, 0, 0};  // prints "{1, 2, 0, 0}"
     */
-    PLY_INLINE Float4(const Float2& v, float z, float w) : x{v.x}, y{v.y}, z{z}, w{w} {
+    PLY_INLINE explicit Float4(const Float2& v, float z, float w) : x{v.x}, y{v.y}, z{z}, w{w} {
     }
     /*!
     \category Assignment Operator
@@ -838,7 +835,7 @@ struct Float4 {
         return reinterpret_cast<const Float2&>(*this);
     }
     /*!
-    Returns a const reference to the first three components as a `Float3` using type punning. This
+    Returns a const reference to the first three components as a `Float4` using type punning. This
     should only be used as a temporary expression.
 
         Float4 v = {4, 5, 6, 7};
@@ -936,10 +933,10 @@ struct Float4 {
     \beginGroup
     Swizzle functions.
 
-        Float3 v = {4, 5, 6};
+        Float4 v = {4, 5, 6, 0};
         StdOut::text() << v.swizzle(1, 0);        // prints "{5, 4}"
-        StdOut::text() << v.swizzle(2, 0, 1);     // prints "{6, 4, 5}"
-        StdOut::text() << v.swizzle(2, 2, 2, 1);  // prints "{6, 6, 6, 5}"
+        StdOut::text() << v.swizzle(3, 0, 1);     // prints "{0, 4, 5}"
+        StdOut::text() << v.swizzle(2, 3, 2, 1);  // prints "{6, 0, 6, 5}"
     */
     PLY_INLINE PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
     PLY_INLINE PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
@@ -1041,7 +1038,7 @@ PLY_INLINE void operator/=(Float4& a, float b) {
 \category Geometric Functions
 Returns the dot product of two 4D vectors.
 
-    StdOut::text() << dot(Float3{2, 3, 1, 3}, Float3{4, 5, 1, 0});  // prints "24"
+    StdOut::text() << dot(Float4{2, 3, 1, 3}, Float4{4, 5, 1, 0});  // prints "24"
 */
 PLY_INLINE float dot(const Float4& a, const Float4& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
@@ -1051,8 +1048,8 @@ PLY_INLINE float dot(const Float4& a, const Float4& b) {
 Returns a copy of `v` with each component constrained to lie within the range determined by the
 corresponding components of `mins` and `maxs`.
 
-    Float2 v = {3, 1.5f, 0, 0.5f};
-    StdOut::text() << clamp(v, Float2{0, 1, 2, 3}, Float2{1, 2, 3, 4});  // prints "{1, 1.5, 2, 3}"
+    Float4 v = {3, 1.5f, 0, 0.5f};
+    StdOut::text() << clamp(v, Float4{0, 1, 2, 3}, Float4{1, 2, 3, 4});  // prints "{1, 1.5, 2, 3}"
     StdOut::text() << clamp(v, 0, 1);                                    // prints "{1, 1, 0, 0.5f}"
 */
 PLY_INLINE Float4 clamp(const Float4& v, const Float4& mins, const Float4& maxs) {
@@ -1063,7 +1060,7 @@ PLY_INLINE Float4 clamp(const Float4& v, const Float4& mins, const Float4& maxs)
 Returns a 4D vector with each component set to the absolute value of the corresponding component of
 `a`.
 
-    StdOut::text() << abs(Float2{-2, 3, 0, -1});  // prints "{2, 3, 0, 1}"
+    StdOut::text() << abs(Float4{-2, 3, 0, -1});  // prints "{2, 3, 0, 1}"
 */
 PLY_INLINE Float4 abs(const Float4& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z), fabsf(a.w)};
@@ -1072,15 +1069,15 @@ PLY_INLINE Float4 abs(const Float4& a) {
 Returns a 4D vector with each component set to the corresponding component of `a` raised to the
 power of the corresponding component of `b`.
 
-    StdOut::text() << pow(Float2{1, 2, 2, 3}, Float2{2, 3, 1, 2});  // prints "{1, 8, 2, 9}"
-    StdOut::text() << pow(Float2{1, 2, 3, -2}, 2);                  // prints "{1, 4, 9, 4}"
+    StdOut::text() << pow(Float4{1, 2, 2, 3}, Float4{2, 3, 1, 2});  // prints "{1, 8, 2, 9}"
+    StdOut::text() << pow(Float4{1, 2, 3, -2}, 2);                  // prints "{1, 4, 9, 4}"
 */
 Float4 pow(const Float4& a, const Float4& b);
 /*!
 Returns a 4D vector with each component set to minimum of the corresponding components of `a` and
 `b`.
 
-    StdOut::text() << min(Float2{0, 1, 0, 1}, Float2{1, 0, 1, 0});  // prints "{0, 0, 0, 0}"
+    StdOut::text() << min(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // prints "{0, 0, 0, 0}"
 */
 PLY_INLINE Float4 min(const Float4& a, const Float4& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w)};
@@ -1089,7 +1086,7 @@ PLY_INLINE Float4 min(const Float4& a, const Float4& b) {
 Returns a 4D vector with each component set to maximum of the corresponding components of `a` and
 `b`.
 
-    StdOut::text() << max(Float2{0, 1, 0, 1}, Float2{1, 0, 1, 0});  // prints "{1, 1, 1, 1}"
+    StdOut::text() << max(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // prints "{1, 1, 1, 1}"
 */
 PLY_INLINE Float4 max(const Float4& a, const Float4& b) {
     return {max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w)};
@@ -1113,7 +1110,7 @@ PLY_INLINE bool operator!=(const Float4& a, const Float4& b) {
 Returns `true` if `a` is approximately equal to `b`. The tolerance is given by `epsilon`.
 
     // evaluates to true:
-    isNear(Float3{1, 0, 2, 3}, Float2{0.9999f, 0.0001f, 1.9999f, 3.0001f}, 0.001f)
+    isNear(Float4{1, 0, 2, 3}, Float4{0.9999f, 0.0001f, 1.9999f, 3.0001f}, 0.001f)
 */
 PLY_INLINE bool isNear(const Float4& a, const Float4& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
@@ -1121,10 +1118,10 @@ PLY_INLINE bool isNear(const Float4& a, const Float4& b, float epsilon) {
 /*!
 \beginGroup
 These functions compare each component individually. The result of each comparison is returned in
-a `Bool4`. Call `all` to check if the result was `true` for all components, or call `any` to check
-if the result was `true` for any component.
+a `Bool4`. Call `all()` to check if the result was `true` for all components, or call `any()` to
+check if the result was `true` for any component.
 
-    all(Float3{1, 2, 3, 4} > Float3{0, 1, 2, 3})  // evaluates to true
+    all(Float4{1, 2, 3, 4} > Float4{0, 1, 2, 3})  // evaluates to true
 
 These functions are useful for testing whether a point is inside a box. See the implementation of
 `Box<>::contains` for an example.
@@ -1145,42 +1142,38 @@ PLY_INLINE Bool4 operator>=(const Float4& a, const Float4& b) {
 \endGroup
 */
 /*!
-\category Quantization Functions
+\category Rounding Functions
 \beginGroup
-These are rounding functions, except that instead of always rounding to a whole number, they round
-to multiples of `spacing`. Each function returns a 2D vector with each component set to the
-quantized result of the corresponding component of `value`.
+Returns a 4D vector with each component set to the rounded result of the corresponding component of
+`vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
+`spacing` is a power of 2.
 
-    StdOut::text() << quantizeUp(Float3{-0.3f, 1.4f, 0.8f, -1.2f}, 2);       // "{0, 2, 2, 0}"
-    StdOut::text() << quantizeDown(Float3{-0.3f, 1.4f, 0.8f, -1.2f}, 2);     // "{-2, 0, 0, -2}"
-    StdOut::text() << quantizeNearest(Float3{-0.3f, 1.4f, 0.8f, -1.2f}, 2);  // "{0, 2, 0, -2}"
-
-The functions are most precise when `spacing` is a power of 2. When `spacing` is 1, each component
-is rounded to a whole number.
+    StdOut::text() << roundUp(Float4{-0.3f, 1.4f, 0.8f, -1.2f});  // "{0, 2, 1, -1}"
+    StdOut::text() << roundDown(Float4{1.8f}, 0.5f);              // "{1.5, 1.5, 1.5, 1.5}"
 */
-PLY_INLINE Float4 quantizeUp(const Float4& value, float spacing) {
-    return {quantizeUp(value.x, spacing), quantizeUp(value.y, spacing),
-            quantizeUp(value.z, spacing), quantizeUp(value.w, spacing)};
+PLY_INLINE Float4 roundUp(const Float4& vec, float spacing = 1) {
+    return {roundUp(vec.x, spacing), roundUp(vec.y, spacing), roundUp(vec.z, spacing),
+            roundUp(vec.w, spacing)};
 }
-PLY_INLINE Float4 quantizeDown(const Float4& value, float spacing) {
-    return {quantizeDown(value.x, spacing), quantizeDown(value.y, spacing),
-            quantizeDown(value.z, spacing), quantizeDown(value.w, spacing)};
+PLY_INLINE Float4 roundDown(const Float4& vec, float spacing = 1) {
+    return {roundDown(vec.x, spacing), roundDown(vec.y, spacing), roundDown(vec.z, spacing),
+            roundDown(vec.w, spacing)};
+}
+PLY_INLINE Float4 roundNearest(const Float4& vec, float spacing = 1) {
+    return {roundNearest(vec.x, spacing), roundNearest(vec.y, spacing),
+            roundNearest(vec.z, spacing), roundNearest(vec.w, spacing)};
 }
 /*!
 \endGroup
 */
 /*!
-Returns `true` if every component of `value` is already quantized to the given `spacing`.
+Returns `true` if every component of `vec` is already rounded. The optional `spacing` argument can
+be used to round to arbitrary spacings. Most precise when `spacing` is a power of 2.
 
-    isQuantized(Float2{2, 4, 0, 2}, 2)    // evaluates to true
-    isQuantized(Float2{1, 4, 0, 2}, 2)    // evaluates to false
+    isRounded(Float4{1.5f, 0.5f, 0, 2}, 0.5f)  // evaluates to true
 */
-PLY_INLINE Float4 quantizeNearest(const Float4& value, float spacing) {
-    return {quantizeNearest(value.x, spacing), quantizeNearest(value.y, spacing),
-            quantizeNearest(value.z, spacing), quantizeNearest(value.w, spacing)};
-}
-PLY_INLINE bool isQuantized(const Float4& value, float spacing) {
-    return quantizeNearest(value, spacing) == value;
+PLY_INLINE bool isRounded(const Float4& vec, float spacing = 1) {
+    return roundNearest(vec, spacing) == vec;
 }
 
 //---------------------------------

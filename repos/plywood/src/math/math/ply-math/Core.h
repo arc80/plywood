@@ -80,16 +80,16 @@ inline s32 fastRoundInt(float x) {
     return (s32)(x + *(float*) &c);
 #endif
 }
-inline float quantizeNearest(float value, float spacing) {
+inline float roundNearest(float value, float spacing = 1) {
     return fastRound(value / spacing) * spacing;
 }
 
-PLY_INLINE float quantizeDown(float value, float spacing) {
+PLY_INLINE float roundDown(float value, float spacing = 1) {
     // FIXME: Optimize this
     return floorf(value / spacing) * spacing;
 }
 
-PLY_INLINE float quantizeUp(float value, float spacing) {
+PLY_INLINE float roundUp(float value, float spacing = 1) {
     // FIXME: Optimize this
     return ceilf(value / spacing) * spacing;
 }
