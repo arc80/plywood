@@ -51,9 +51,11 @@ struct Float2 {
     }
     /*!
     \category Assignment Operator
-    Copy assignment.
+    Copy assignment. Declared with an [lvalue
+    ref-qualifier](https://en.cppreference.com/w/cpp/language/member_functions#ref-qualified_member_functions)
+    so that it's an error to assign to an rvalue, as in `a.normalized() = b`.
     */
-    PLY_INLINE void operator=(const Float2& arg) {
+    PLY_INLINE void operator=(const Float2& arg) & {
         x = arg.x;
         y = arg.y;
     }
@@ -417,9 +419,11 @@ struct Float3 {
     }
     /*!
     \category Assignment Operator
-    Copy assignment.
+    Copy assignment. Declared with an [lvalue
+    ref-qualifier](https://en.cppreference.com/w/cpp/language/member_functions#ref-qualified_member_functions)
+    so that it's an error to assign to an rvalue, as in `a.normalized() = b`.
     */
-    PLY_INLINE void operator=(const Float3& arg) {
+    PLY_INLINE void operator=(const Float3& arg) & {
         x = arg.x;
         y = arg.y;
         z = arg.z;
@@ -815,9 +819,11 @@ struct Float4 {
     }
     /*!
     \category Assignment Operator
-    Copy assignment.
+    Copy assignment. Declared with an [lvalue
+    ref-qualifier](https://en.cppreference.com/w/cpp/language/member_functions#ref-qualified_member_functions)
+    so that it's an error to assign to an rvalue, as in `a.normalized() = b`.
     */
-    PLY_INLINE void operator=(const Float4& arg) {
+    PLY_INLINE void operator=(const Float4& arg) & {
         x = arg.x;
         y = arg.y;
         z = arg.z;
