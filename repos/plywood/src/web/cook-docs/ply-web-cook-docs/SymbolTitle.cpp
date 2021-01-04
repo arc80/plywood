@@ -108,8 +108,8 @@ Array<TitleSpan> parseTitle(
 }
 
 void writeAltMemberTitle(StringWriter& htmlWriter, ArrayView<const TitleSpan> spans,
-                         SemaEntity* classEnt,
-                         String (*getLinkDestination)(StringView, SemaEntity*)) {
+                         const LookupContext& lookupCtx,
+                         String (*getLinkDestination)(StringView, const LookupContext&)) {
     for (const TitleSpan& span : spans) {
         switch (span.type) {
             case TitleSpan::Normal: {
@@ -125,7 +125,7 @@ void writeAltMemberTitle(StringWriter& htmlWriter, ArrayView<const TitleSpan> sp
                 break;
             }
             case TitleSpan::QID: {
-                String linkDestination = getLinkDestination(span.text, classEnt);
+                String linkDestination = getLinkDestination(span.text, lookupCtx);
                 if (linkDestination) {
                     htmlWriter.format("<a href=\"{}\">", fmt::XMLEscape{linkDestination});
                 }

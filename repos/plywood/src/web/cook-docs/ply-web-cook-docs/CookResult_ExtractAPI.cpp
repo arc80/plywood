@@ -526,9 +526,8 @@ struct APIExtractor : cpp::ParseSupervisor {
                     memberEnt->templateParams = this->semaScopeStack[scopeInfo.templateIdx];
                 }
                 if (scopeInfo.parentScope->type == SemaEntity::Class) {
-                    if (!semaDecl.declSpecifierSeq.isEmpty()) {
-                        // If there are no declSpecifiers, it's a ctor/dtor, so don't
-                        // add it to the nameToChild map
+                    // Don't add ctors to the nameToChild map:
+                    if (memberEnt->name != memberEnt->parent->name) {
                         scopeInfo.parentScope->nameToChild.insert(memberEnt);
                     }
                     scopeInfo.parentScope->childSeq.append(memberEnt);

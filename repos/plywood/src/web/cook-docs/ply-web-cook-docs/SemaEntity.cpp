@@ -71,13 +71,16 @@ SemaEntity* SemaEntity::lookup(StringView name, bool checkParents) {
 SemaEntity* SemaEntity::lookupChain(ArrayView<const StringView> components) {
     if (!components)
         return nullptr;
-    bool checkParents = true;
+    bool first = true;
     SemaEntity* result = this;
-    for (StringView comp : components) {
-        result = result->lookup(comp, checkParents);
+    for (u32 i = 0; i < components.numItems; i++) {
+        // Qualified IDs should only work on namespaces and classes
+        if (!first && (result->type != SemaEntity::Namespace) && (result->type != SemaEntity::Class))
+            return nullptr;
+        result = result->lookup(components[i], first); // Only check parents on first component
         if (!result)
             return nullptr;
-        checkParents = false;
+        first = false;
     }
     return result;
 }

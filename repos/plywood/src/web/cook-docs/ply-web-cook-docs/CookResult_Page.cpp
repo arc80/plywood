@@ -31,14 +31,10 @@ SemaEntity* resolveClassScope(StringView classScopeText) {
     return wci->globalScope->lookupChain(comps.view());
 }
 
-String getLinkDestination(const SemaEntity* fromSema, const SemaEntity* targetSema) {
+String getLinkDestination(const SemaEntity* targetSema) {
     cook::DependencyTracker* depTracker = cook::DependencyTracker::current();
     WebCookerIndex* wci = depTracker->userData.safeCast<WebCookerIndex>();
     String memberSuffix;
-    if (fromSema == targetSema)
-        return {};
-    if (fromSema && targetSema->type == SemaEntity::Class && fromSema->parent == targetSema)
-        return {};
     if (targetSema->type == SemaEntity::Member) {
         memberSuffix = StringView{"#"} + targetSema->name;
         targetSema = targetSema->parent;
@@ -54,9 +50,8 @@ String getLinkDestination(const SemaEntity* fromSema, const SemaEntity* targetSe
     return {};
 }
 
-HybridString wrapWithLink(const SemaEntity* fromSema, StringView html,
-                          const SemaEntity* targetSema) {
-    String linkDestination = getLinkDestination(fromSema, targetSema);
+HybridString wrapWithLink(StringView html, const SemaEntity* targetSema) {
+    String linkDestination = getLinkDestination(targetSema);
     if (linkDestination) {
         return String::format("<a href=\"{}\">{}</a>", fmt::XMLEscape{linkDestination}, html);
     } else {
@@ -64,23 +59,52 @@ HybridString wrapWithLink(const SemaEntity* fromSema, StringView html,
     }
 }
 
-String getLinkDestinationFromSpan(StringView codeSpanText, SemaEntity* fromSema) {
+struct LookupContext {
+    SemaEntity* forClass = nullptr;
+    ArrayView<SemaEntity* const> semaGroup;
+
+    bool shouldShowLink(SemaEntity* semaToLink) const {
+        // Avoid unnecessary/unhelpful/"noisy" links
+        if (semaToLink == this->forClass)
+            return false;
+        for (SemaEntity* checkSema : this->semaGroup) {
+            if (semaToLink == checkSema || semaToLink->parent == checkSema)
+                return false;
+        }
+        return true;
+    }
+};
+
+String getLinkDestinationFromSpan(StringView codeSpanText, const LookupContext& lookupCtx) {
     if (codeSpanText.endsWith("()")) {
         codeSpanText = codeSpanText.shortenedBy(2);
     }
     Array<StringView> nameComps = codeSpanText.splitByte(':');
     if (nameComps.isEmpty())
         return {};
-    for (SemaEntity* checkSema = fromSema; checkSema; checkSema = checkSema->parent) {
-        SemaEntity* matchingEnt = checkSema->lookupChain(nameComps.view());
-        if (matchingEnt && (matchingEnt != fromSema)) {
-            return getLinkDestination(fromSema, matchingEnt);
+    PLY_ASSERT(!codeSpanText.startsWith(":")); // Not supported yet
+    for (SemaEntity* fromSema : lookupCtx.semaGroup) {
+        SemaEntity* foundSema = fromSema->lookupChain(nameComps.view());
+        if (foundSema) {
+            if (!lookupCtx.shouldShowLink(foundSema))
+                return {};
+            return getLinkDestination(foundSema);
         }
     }
+    {
+        // Try class itself last
+        SemaEntity* foundSema = lookupCtx.forClass->lookupChain(nameComps.view());
+        if (foundSema) {
+            if (!lookupCtx.shouldShowLink(foundSema))
+                return {};
+            return getLinkDestination(foundSema);
+        }
+    }
+    // No potential link destination found
     return {};
 }
 
-Owned<markdown::Node> parseMarkdown(StringView markdown, SemaEntity* fromSema) {
+Owned<markdown::Node> parseMarkdown(StringView markdown, const LookupContext& lookupCtx) {
     using namespace markdown;
     Owned<Node> document = parse(markdown);
     WebCookerIndex* wci = cook::DependencyTracker::current()->userData.safeCast<WebCookerIndex>();
@@ -96,13 +120,14 @@ Owned<markdown::Node> parseMarkdown(StringView markdown, SemaEntity* fromSema) {
                 if (linkID) {
                     auto iter = wci->linkIDMap.findFirstGreaterOrEqualTo(linkID);
                     if (iter.isValid() && iter.getItem()->linkID == linkID) {
-                        node->text = iter.getItem()->getLinkDestination() + node->text.subStr(anchorPos);
+                        node->text =
+                            iter.getItem()->getLinkDestination() + node->text.subStr(anchorPos);
                     }
                 }
             }
             return false;
         } else if (node->type == Node::CodeSpan) {
-            String linkDestination = getLinkDestinationFromSpan(node->text, fromSema);
+            String linkDestination = getLinkDestinationFromSpan(node->text, lookupCtx);
             if (!linkDestination)
                 return false;
             Node* parent = node->parent;
@@ -133,8 +158,8 @@ Owned<markdown::Node> parseMarkdown(StringView markdown, SemaEntity* fromSema) {
     return document;
 }
 
-String convertMarkdownToHTML(StringView markdown, SemaEntity* fromSema) {
-    Owned<markdown::Node> document = parseMarkdown(markdown, fromSema);
+String convertMarkdownToHTML(StringView markdown, const LookupContext& lookupCtx) {
+    Owned<markdown::Node> document = parseMarkdown(markdown, lookupCtx);
     StringWriter sw;
     markdown::HTMLOptions options;
     options.childAnchors = true;
@@ -142,7 +167,8 @@ String convertMarkdownToHTML(StringView markdown, SemaEntity* fromSema) {
     return sw.moveToString();
 }
 
-void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWriter, bool prependClassName) {
+void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWriter,
+                     bool prependClassName, const LookupContext& lookupCtx) {
     const SemaEntity* templateParams = title.member->templateParams;
     const cpp::sema::SingleDeclaration* singleDecl = &title.member->singleDecl;
 
@@ -174,7 +200,9 @@ void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWrite
             String linkDestination;
             if (!inRootDeclarator && comp.sema) {
                 PLY_ASSERT(comp.type == C::KeywordOrIdentifier);
-                linkDestination = getLinkDestination(title.member, comp.sema);
+                if (lookupCtx.shouldShowLink(comp.sema)) {
+                    linkDestination = getLinkDestination(comp.sema);
+                }
             }
             if (linkDestination) {
                 htmlWriter.format("<a href=\"{}\">", fmt::XMLEscape{linkDestination});
@@ -188,7 +216,8 @@ void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWrite
     htmlWriter << "</code>\n";
 }
 
-void dumpBaseClasses(StringWriter& htmlWriter, SemaEntity* classEnt) {
+void dumpBaseClasses(StringWriter& htmlWriter, SemaEntity* classEnt,
+                     const LookupContext& lookupCtx) {
     // Dump base classes
     for (const cpp::sema::QualifiedID& qid : classEnt->baseClasses) {
         Array<StringView> comps = qid.getSimplifiedComponents();
@@ -200,21 +229,20 @@ void dumpBaseClasses(StringWriter& htmlWriter, SemaEntity* classEnt) {
         if (!baseEnt->docInfo->entries)
             continue;
 
-        htmlWriter.format("<h2>Members Inherited From {}</h2>\n",
-                          wrapWithLink(nullptr,
-                                       String::format("<code>{}</code>", baseEnt->getQualifiedID()),
-                                       baseEnt));
+        htmlWriter.format(
+            "<h2>Members Inherited From {}</h2>\n",
+            wrapWithLink(String::format("<code>{}</code>", baseEnt->getQualifiedID()), baseEnt));
         htmlWriter << "<ul>\n";
         for (const DocInfo::Entry& entry : baseEnt->docInfo->entries) {
             for (const DocInfo::Entry::Title& title : entry.titles) {
                 htmlWriter << "<li>";
-                dumpMemberTitle(title, htmlWriter, true);
+                dumpMemberTitle(title, htmlWriter, true, {baseEnt, lookupCtx.semaGroup});
                 htmlWriter << "</li>\n";
             }
         }
         htmlWriter << "</ul>\n";
 
-        dumpBaseClasses(htmlWriter, baseEnt);
+        dumpBaseClasses(htmlWriter, baseEnt, {baseEnt, lookupCtx.semaGroup});
     }
 };
 
@@ -225,12 +253,20 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
     PLY_ASSERT(docInfo);
 
     auto dumpMemberEntry = [&](const DocInfo::Entry& entry, bool prependClassName) {
+        Array<SemaEntity*> semaGroup;
+        for (const DocInfo::Entry::Title& title : entry.titles) {
+            semaGroup.append(title.member);
+        }
+        LookupContext lookupCtx{classEnt, semaGroup.view()};
+
         htmlWriter << "<dt>";
         for (const DocInfo::Entry::Title& title : entry.titles) {
             String anchor;
             String permalink;
             if (title.member->name) {
-                htmlWriter.format("<div class=\"defTitle anchored\"><span class=\"anchor\" id=\"{}\">&nbsp;</span>", fmt::XMLEscape{title.member->name});
+                htmlWriter.format("<div class=\"defTitle anchored\"><span class=\"anchor\" "
+                                  "id=\"{}\">&nbsp;</span>",
+                                  fmt::XMLEscape{title.member->name});
                 /*
                 permalink =
                     String::format(" <a class=\"headerlink\" href=\"#{}\" title=\"Permalink to "
@@ -241,7 +277,7 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
                 htmlWriter.format("<div class=\"defTitle\"{}>", anchor);
             }
 
-            dumpMemberTitle(title, htmlWriter, prependClassName);
+            dumpMemberTitle(title, htmlWriter, prependClassName, lookupCtx);
 
             // Close <code> tag, write optional permalink & source code link, close <div>
             PLY_ASSERT(title.srcPath.startsWith(NativePath::normalize(PLY_WORKSPACE_FOLDER)));
@@ -261,7 +297,7 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
         }
         htmlWriter << "</dt>\n";
         htmlWriter << "<dd>\n";
-        htmlWriter << convertMarkdownToHTML(entry.markdownDesc, entry.titles[0].member);
+        htmlWriter << convertMarkdownToHTML(entry.markdownDesc, lookupCtx);
         htmlWriter << "</dd>\n";
     };
 
@@ -312,7 +348,7 @@ void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
         htmlWriter << "</dl>\n\n";
     }
 
-    dumpBaseClasses(htmlWriter, classEnt);
+    dumpBaseClasses(htmlWriter, classEnt, {classEnt, {}});
 }
 
 //---------------------------
@@ -380,7 +416,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
     bool inMembers = false;
     auto flushMarkdown = [&] {
         String page = sw.moveToString();
-        htmlWriter << convertMarkdownToHTML(page, classScope);
+        htmlWriter << convertMarkdownToHTML(page, {classScope, {}});
         sw = StringWriter{};
     };
     extractLiquidTags(&sw, &sr, [&](StringView tag, StringView section) {
@@ -395,7 +431,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             flushMarkdown();
             htmlWriter
                 << "<div class=\"note\"><img src=\"/static/info-icon.svg\" class=\"icon\"/>\n";
-            htmlWriter << convertMarkdownToHTML(svr.viewAvailable(), classScope);
+            htmlWriter << convertMarkdownToHTML(svr.viewAvailable(), {classScope, {}});
             htmlWriter << "</div>\n";
         } else if (command == "member") {
             flushMarkdown();
@@ -409,7 +445,8 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             // FIXME: handle errors here
             Array<TitleSpan> spans = parseTitle(svr.viewAvailable().rtrim(isWhite),
                                                 [](ParseTitleError, StringView, const char*) {});
-            writeAltMemberTitle(htmlWriter, spans.view(), classScope, getLinkDestinationFromSpan);
+            writeAltMemberTitle(htmlWriter, spans.view(), {classScope, {}},
+                                getLinkDestinationFromSpan);
             htmlWriter << "</code></dt>\n";
             htmlWriter << "<dd>\n";
         } else if (command == "endMembers") {
@@ -433,7 +470,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             } else {
                 if (classScope->docInfo->classMarkdownDesc) {
                     htmlWriter << convertMarkdownToHTML(classScope->docInfo->classMarkdownDesc,
-                                                        classScope);
+                                                        {classScope, {}});
                 }
             }
         } else if (command == "dumpExtractedMembers") {

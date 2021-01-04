@@ -30,11 +30,11 @@ struct Float2 {
 
     /*!
     \category Constructors
-    Constructs an uninitialized 2D vector.
+    Constructs an uninitialized `Float2`.
     */
     PLY_INLINE Float2() = default;
     /*!
-    Constructs a 2D vector with both components set to `t`.
+    Constructs a `Float2` with both components set to `t`.
 
         Float2 v = {1};
         StdOut::text() << v;  // "{1, 1}"
@@ -42,7 +42,7 @@ struct Float2 {
     PLY_INLINE Float2(float t) : x{t}, y{t} {
     }
     /*!
-    Constructs a 2D vector from the given components.
+    Constructs a `Float2` from the given components.
 
         Float2 v = {1, 0};
     */
@@ -65,13 +65,13 @@ struct Float2 {
     \category Comparison Functions
     \category Geometric Functions
     \category Length Functions
-    Returns the square of the length of the 2D vector.
+    Returns the square of the length of the vector.
     */
     PLY_INLINE float length2() const {
         return x * x + y * y;
     }
     /*!
-    Returns the length of the 2D vector. Equivalent to `sqrtf(this->length2())`.
+    Returns the length of the vector. Equivalent to `sqrtf(this->length2())`.
     */
     PLY_INLINE float length() const {
         return sqrtf(length2());
@@ -84,12 +84,11 @@ struct Float2 {
         return fabsf(1.f - length2()) < thresh;
     }
     /*!
-    Returns a unit-length 2D vector having the same direction as `this`. No safety check is
-    performed.
+    Returns a unit-length vector having the same direction as `this`. No safety check is performed.
     */
     PLY_NO_DISCARD Float2 normalized() const;
     /*!
-    Returns a unit-length 2D vector having the same direction as `this` with safety checks.
+    Returns a unit-length vector having the same direction as `this` with safety checks.
     */
     PLY_NO_DISCARD Float2 safeNormalized(const Float2& fallback = {1, 0},
                                          float epsilon = 1e-20f) const;
@@ -109,7 +108,7 @@ struct Float2 {
     /*!
     \category Color Functions
     \beginGroup
-    Convenience functions for interpreting the vector as a color. The `r` and `g` functions are
+    Convenience functions for interpreting the vector as a color. The `r()` and `g()` functions are
     aliases for the `x` and `y` components respectively.
 
         Float4 c = {1.0f, 0.8f};
@@ -136,8 +135,8 @@ struct Float2 {
     Returns a new vector whose components are taken from the given indices. `x` and `y` are at
     indices 0 and 1 respectively. Similar to [GLSL
     swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except that the
-    components are specified by numeric index, and you can't use it to modify the original 2D
-    vector; only to read from it.
+    components are specified by numeric index, and you can't use it to modify the original vector;
+    only to read from it.
 
         Float2 v = {4, 5};
         StdOut::text() << v.swizzle(1, 0);        // "{5, 4}"
@@ -170,7 +169,7 @@ PLY_INLINE Float2 operator-(const Float2& a) {
 }
 /*!
 \beginGroup
-Returns a 2D vector whose components are the result of applying the given operation to the
+Returns a vector whose components are the result of applying the given operation to the
 corresponding components of `a` and `b`. Each component is acted on independently.
 
     StdOut::text() << Float2{2, 3} * Float2{4, 1};  // "{8, 3}"
@@ -234,7 +233,7 @@ PLY_INLINE void operator/=(Float2& a, float b) {
 }
 /*!
 \category Geometric Functions
-Returns the dot product of two 2D vectors.
+Returns the dot product of two vectors.
 
     StdOut::text() << dot(Float2{1, 0}, Float2{3, 4});  // "2"
 */
@@ -242,7 +241,7 @@ PLY_INLINE float dot(const Float2& a, const Float2& b) {
     return a.x * b.x + a.y * b.y;
 }
 /*!
-Returns the cross product of two 2D vectors.
+Returns the cross product of two vectors.
 
     StdOut::text() << cross(Float2{1, 0}, Float2{3, 4});  // "4"
 */
@@ -262,7 +261,7 @@ PLY_INLINE Float2 clamp(const Float2& v, const Float2& mins, const Float2& maxs)
     return {clamp(v.x, mins.x, maxs.x), clamp(v.y, mins.y, maxs.y)};
 }
 /*!
-Returns a 2D vector with each component set to the absolute value of the corresponding component of
+Returns a vector with each component set to the absolute value of the corresponding component of
 `a`.
 
     StdOut::text() << abs(Float2{-2, 3});  // "{2, 3}"
@@ -271,8 +270,8 @@ PLY_INLINE Float2 abs(const Float2& a) {
     return {fabsf(a.x), fabsf(a.y)};
 }
 /*!
-Returns a 2D vector with each component set to the corresponding component of `a` raised to the
-power of the corresponding component of `b`.
+Returns a vector with each component set to the corresponding component of `a` raised to the power
+of the corresponding component of `b`.
 
     StdOut::text() << pow(Float2{1, 2}, Float2{2, 3});  // "{1, 8}"
     StdOut::text() << pow(Float2{1, 2}, 2);             // "{1, 4}"
@@ -281,8 +280,7 @@ PLY_INLINE Float2 pow(const Float2& a, const Float2& b) {
     return {powf(a.x, b.x), powf(a.y, b.y)};
 }
 /*!
-Returns a 2D vector with each component set to minimum of the corresponding components of `a` and
-`b`.
+Returns a vector with each component set to minimum of the corresponding components of `a` and `b`.
 
     StdOut::text() << min(Float2{0, 1}, Float2{1, 0});  // "{0, 0}"
 */
@@ -290,8 +288,7 @@ PLY_INLINE Float2 min(const Float2& a, const Float2& b) {
     return {min(a.x, b.x), min(a.y, b.y)};
 }
 /*!
-Returns a 2D vector with each component set to maximum of the corresponding components of `a` and
-`b`.
+Returns a vector with each component set to maximum of the corresponding components of `a` and `b`.
 
     StdOut::text() << max(Float2{0, 1}, Float2{1, 0});  // "{1, 1}"
 */
@@ -301,7 +298,7 @@ PLY_INLINE Float2 max(const Float2& a, const Float2& b) {
 /*!
 \category Comparison Functions
 \beginGroup
-Returns `true` if the 2D vectors are equal (or not equal) using floating-point comparison. In
+Returns `true` if the vectors are equal (or not equal) using floating-point comparison. In
 particular, `Float2{0.f} == Float2{-0.f}` is `true`.
 */
 PLY_INLINE bool operator==(const Float2& a, const Float2& b) {
@@ -351,7 +348,7 @@ PLY_INLINE Bool2 operator>=(const Float2& a, const Float2& b) {
 /*!
 \category Rounding Functions
 \beginGroup
-Returns a 2D vector with each component set to the rounded result of the corresponding component of
+Returns a vector with each component set to the rounded result of the corresponding component of
 `vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
 `spacing` is a power of 2.
 
@@ -398,11 +395,11 @@ struct Float3 {
 
     /*!
     \category Constructors
-    Constructs an uninitialized 3D vector.
+    Constructs an uninitialized `Float3`.
     */
     PLY_INLINE Float3() = default;
     /*!
-    Constructs a 3D vector with all components set to `t`.
+    Constructs a `Float3` with all components set to `t`.
 
         Float3 v = {1};
         StdOut::text() << v;  // "{1, 1, 1}"
@@ -413,14 +410,14 @@ struct Float3 {
     // This would otherwise promote the first scalar to Float2:
     Float3(float, float) = delete;
     /*!
-    Constructs a 3D vector from the given components.
+    Constructs a `Float3` from the given components.
 
         Float3 v = {1, 0, 0};
     */
     PLY_INLINE Float3(float x, float y, float z) : x{x}, y{y}, z{z} {
     }
     /*!
-    Constructs a 3D vector from a 2D vector and a third component.
+    Constructs a `Float3` from a `Float2` and a third component.
 
         Float2 a = {1, 2};
         StdOut::text() << Float3{a, 0};  // "{1, 2, 0}"
@@ -445,13 +442,13 @@ struct Float3 {
     \category Comparison Functions
     \category Geometric Functions
     \category Length Functions
-    Returns the square of the length of the 3D vector.
+    Returns the square of the length of the vector.
     */
     PLY_INLINE float length2() const {
         return x * x + y * y + z * z;
     }
     /*!
-    Returns the length of the 3D vector. Equivalent to `sqrtf(this->length2())`.
+    Returns the length of the vector. Equivalent to `sqrtf(this->length2())`.
     */
     PLY_INLINE float length() const {
         return sqrtf(length2());
@@ -464,12 +461,11 @@ struct Float3 {
         return fabsf(1.f - length2()) < thresh;
     }
     /*!
-    Returns a unit-length 3D vector having the same direction as `this`. No safety check is
-    performed.
+    Returns a unit-length vector having the same direction as `this`. No safety check is performed.
     */
     PLY_NO_DISCARD Float3 normalized() const;
     /*!
-    Returns a unit-length 3D vector having the same direction as `this` with safety checks.
+    Returns a unit-length vector having the same direction as `this` with safety checks.
     */
     PLY_NO_DISCARD Float3 safeNormalized(const Float3& fallback = {1, 0, 0},
                                          float epsilon = 1e-20f) const;
@@ -500,8 +496,8 @@ struct Float3 {
     /*!
     \category Color Functions
     \beginGroup
-    Convenience functions for interpreting the vector as a color. The `r`, `g` and `b` functions are
-    aliases for the `x`, `y` and `z` components respectively.
+    Convenience functions for interpreting the vector as a color. The `r()`, `g()` and `b()`
+    functions are aliases for the `x`, `y` and `z` components respectively.
 
         Float3 c = {1.0f, 0.8f, 0.7f};
         StdOut::text().format("{}, {}, {}", c.r(), c.g(), c.b());  // "1.0, 0.8, 0.7"
@@ -533,8 +529,8 @@ struct Float3 {
     Returns a new vector whose components are taken from the given indices. `x`, `y` and `z` are at
     indices 0, 1 and 2 respectively. Similar to [GLSL
     swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except that the
-    components are specified by numeric index, and you can't use it to modify the original 3D
-    vector; only to read from it.
+    components are specified by numeric index, and you can't use it to modify the original vector;
+    only to read from it.
 
         Float3 v = {4, 5, 6};
         StdOut::text() << v.swizzle(1, 0);        // "{5, 4}"
@@ -570,7 +566,7 @@ PLY_INLINE Float3 operator-(const Float3& a) {
 }
 /*!
 \beginGroup
-Returns a 3D vector whose components are the result of applying the given operation to the
+Returns a vector whose components are the result of applying the given operation to the
 corresponding components of `a` and `b`. Each component is acted on independently.
 
     StdOut::text() << Float3{2, 3, 2} * Float3{4, 1, 2};  // "{8, 3, 4}"
@@ -639,7 +635,7 @@ PLY_INLINE void operator/=(Float3& a, float b) {
 }
 /*!
 \category Geometric Functions
-Returns the dot product of two 3D vectors.
+Returns the dot product of two vectors.
 
     StdOut::text() << dot(Float3{2, 3, 1}, Float3{4, 5, 1});  // "24"
 */
@@ -647,7 +643,7 @@ PLY_INLINE float dot(const Float3& a, const Float3& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 /*!
-Returns the cross product of two 3D vectors.
+Returns the cross product of two vectors.
 
     StdOut::text() << cross(Float3{1, 0, 0}, Float3{0, 1, 0});  // "{0, 0, 1}"
 */
@@ -663,7 +659,7 @@ corresponding components of `mins` and `maxs`.
 */
 Float3 clamp(const Float3& v, const Float3& mins, const Float3& maxs);
 /*!
-Returns a 3D vector with each component set to the absolute value of the corresponding component of
+Returns a vector with each component set to the absolute value of the corresponding component of
 `a`.
 
     StdOut::text() << abs(Float3{-2, 3, 0});  // "{2, 3, 0}"
@@ -672,16 +668,15 @@ PLY_INLINE Float3 abs(const Float3& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z)};
 }
 /*!
-Returns a 3D vector with each component set to the corresponding component of `a` raised to the
-power of the corresponding component of `b`.
+Returns a vector with each component set to the corresponding component of `a` raised to the power
+of the corresponding component of `b`.
 
     StdOut::text() << pow(Float3{1, 2, 2}, Float3{2, 3, 1});  // "{1, 8, 2}"
     StdOut::text() << pow(Float3{1, 2, 3}, 2);                // "{1, 4, 9}"
 */
 Float3 pow(const Float3& a, const Float3& b);
 /*!
-Returns a 3D vector with each component set to minimum of the corresponding components of `a` and
-`b`.
+Returns a vector with each component set to minimum of the corresponding components of `a` and `b`.
 
     StdOut::text() << min(Float3{0, 1, 0}, Float3{1, 0, 1});  // "{0, 0, 0}"
 */
@@ -689,8 +684,7 @@ PLY_INLINE Float3 min(const Float3& a, const Float3& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)};
 }
 /*!
-Returns a 3D vector with each component set to maximum of the corresponding components of `a` and
-`b`.
+Returns a vector with each component set to maximum of the corresponding components of `a` and `b`.
 
     StdOut::text() << max(Float3{0, 1, 0}, Float3{1, 0, 1});  // "{1, 1, 1}"
 */
@@ -700,7 +694,7 @@ PLY_INLINE Float3 max(const Float3& a, const Float3& b) {
 /*!
 \category Comparison Functions
 \beginGroup
-Returns `true` if the 3D vectors are equal (or not equal) using floating-point comparison. In
+Returns `true` if the vectors are equal (or not equal) using floating-point comparison. In
 particular, `Float3{0.f} == Float3{-0.f}` is `true`.
 */
 PLY_INLINE bool operator==(const Float3& a, const Float3& b) {
@@ -750,7 +744,7 @@ PLY_INLINE Bool3 operator>=(const Float3& a, const Float3& b) {
 /*!
 \category Rounding Functions
 \beginGroup
-Returns a 3D vector with each component set to the rounded result of the corresponding component of
+Returns a vector with each component set to the rounded result of the corresponding component of
 `vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
 `spacing` is a power of 2.
 
@@ -799,11 +793,11 @@ struct Float4 {
 
     /*!
     \category Constructors
-    Constructs an uninitialized 4D vector.
+    Constructs an uninitialized `Float4`.
     */
     PLY_INLINE Float4() = default;
     /*!
-    Constructs a 4D vector with all components set to `t`.
+    Constructs a `Float4` with all components set to `t`.
 
         Float4 v = {1};
         StdOut::text() << v;  // "{1, 1, 1, 1}"
@@ -815,14 +809,14 @@ struct Float4 {
     Float4(float, float) = delete;
     Float4(float, float, float) = delete;
     /*!
-    Constructs a 4D vector from the given components.
+    Constructs a `Float4` from the given components.
 
         Float4 v = {1, 0, 0, 0};
     */
     PLY_INLINE Float4(float x, float y, float z, float w) : x{x}, y{y}, z{z}, w{w} {
     }
     /*!
-    Constructs a 4D vector from a 3D vector and a fourth component.
+    Constructs a `Float4` from a `Float3` and a fourth component.
 
         Float3 a = {1, 2, 3};
         StdOut::text() << Float4{a, 0};  // "{1, 2, 3, 0}"
@@ -830,12 +824,12 @@ struct Float4 {
     PLY_INLINE Float4(const Float3& v, float w) : x{v.x}, y{v.y}, z{v.z}, w{w} {
     }
     /*!
-    Constructs a 4D vector from a 2D vector and two additional components.
+    Constructs a `Float4` from a `Float2` and two additional components.
 
         Float2 a = {1, 2};
         StdOut::text() << Float4{a, 0, 0};  // "{1, 2, 0, 0}"
     */
-    PLY_INLINE explicit Float4(const Float2& v, float z, float w) : x{v.x}, y{v.y}, z{z}, w{w} {
+    PLY_INLINE Float4(const Float2& v, float z, float w) : x{v.x}, y{v.y}, z{z}, w{w} {
     }
     /*!
     \category Assignment Operator
@@ -856,13 +850,13 @@ struct Float4 {
     \category Comparison Functions
     \category Geometric Functions
     \category Length Functions
-    Returns the square of the length of the 3D vector.
+    Returns the square of the length of the vector.
     */
     float length2() const {
         return x * x + y * y + z * z + w * w;
     }
     /*!
-    Returns the length of the 3D vector. Equivalent to `sqrtf(this->length2())`.
+    Returns the length of the vector. Equivalent to `sqrtf(this->length2())`.
     */
     float length() const {
         return sqrtf(length2());
@@ -875,12 +869,12 @@ struct Float4 {
         return fabsf(1.f - length2()) < thresh;
     }
     /*!
-    Returns a unit-length 3D vector having the same direction as `this`. No safety check is
+    Returns a unit-length vector having the same direction as `this`. No safety check is
     performed.
     */
     PLY_NO_DISCARD Float4 normalized() const;
     /*!
-    Returns a unit-length 3D vector having the same direction as `this` with safety checks.
+    Returns a unit-length vector having the same direction as `this` with safety checks.
     */
     PLY_NO_DISCARD Float4 safeNormalized(const Float4& fallback = {1, 0, 0, 0},
                                          float epsilon = 1e-20f) const;
@@ -897,7 +891,7 @@ struct Float4 {
         return reinterpret_cast<const Float2&>(*this);
     }
     /*!
-    Returns a const reference to the first three components as a `Float4` using type punning. This
+    Returns a const reference to the first three components as a `Float3` using type punning. This
     should only be used as a temporary expression.
 
         Float4 v = {4, 5, 6, 7};
@@ -908,8 +902,7 @@ struct Float4 {
         return reinterpret_cast<const Float3&>(*this);
     }
     /*!
-    Casts the 4D vector to a `Quaternion` using type punning. This should only be used as a
-    temporary expression.
+    Casts to a `Quaternion` using type punning. This should only be used as a temporary expression.
     */
     PLY_INLINE const Quaternion& asQuaternion() const;
     /*!
@@ -927,7 +920,7 @@ struct Float4 {
     /*!
     \category Color Functions
     \beginGroup
-    Convenience functions for interpreting the vector as a color. The `r`, `g`, `b` and `a`
+    Convenience functions for interpreting the vector as a color. The `r()`, `g()`, `b()` and `a()`
     functions are aliases for the `x`, `y`, `z` and `w` components respectively.
 
         Float4 c = {1.0f, 0.8f, 0.7f, 0.5f};
@@ -967,8 +960,8 @@ struct Float4 {
     Returns a new vector whose components are taken from the given indices. `x`, `y`, `z` and `w`
     are at indices 0, 1, 2 and 3 respectively. Similar to [GLSL
     swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except that the
-    components are specified by numeric index, and you can't use it to modify the original 4D
-    vector; only to read from it.
+    components are specified by numeric index, and you can't use it to modify the original vector;
+    only to read from it.
 
         Float4 v = {4, 5, 6, 0};
         StdOut::text() << v.swizzle(1, 0);        // "{5, 4}"
@@ -1001,7 +994,7 @@ PLY_INLINE Float4 operator-(const Float4& a) {
 }
 /*!
 \beginGroup
-Returns a 4D vector whose components are the result of applying the given operation to the
+Returns a vector whose components are the result of applying the given operation to the
 corresponding components of `a` and `b`. Each component is acted on independently.
 
     StdOut::text() << Float4{2, 3, 2, 0} * Float4{4, 1, 2, 5};  // "{8, 3, 4, 0}"
@@ -1075,7 +1068,7 @@ PLY_INLINE void operator/=(Float4& a, float b) {
 }
 /*!
 \category Geometric Functions
-Returns the dot product of two 4D vectors.
+Returns the dot product of two vectors.
 
     StdOut::text() << dot(Float4{2, 3, 1, 3}, Float4{4, 5, 1, 0});  // "24"
 */
@@ -1096,7 +1089,7 @@ PLY_INLINE Float4 clamp(const Float4& v, const Float4& mins, const Float4& maxs)
             clamp(v.w, mins.w, maxs.w)};
 }
 /*!
-Returns a 4D vector with each component set to the absolute value of the corresponding component of
+Returns a vector with each component set to the absolute value of the corresponding component of
 `a`.
 
     StdOut::text() << abs(Float4{-2, 3, 0, -1});  // "{2, 3, 0, 1}"
@@ -1105,16 +1098,15 @@ PLY_INLINE Float4 abs(const Float4& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z), fabsf(a.w)};
 }
 /*!
-Returns a 4D vector with each component set to the corresponding component of `a` raised to the
-power of the corresponding component of `b`.
+Returns a vector with each component set to the corresponding component of `a` raised to the power
+of the corresponding component of `b`.
 
     StdOut::text() << pow(Float4{1, 2, 2, 3}, Float4{2, 3, 1, 2});  // "{1, 8, 2, 9}"
     StdOut::text() << pow(Float4{1, 2, 3, -2}, 2);                  // "{1, 4, 9, 4}"
 */
 Float4 pow(const Float4& a, const Float4& b);
 /*!
-Returns a 4D vector with each component set to minimum of the corresponding components of `a` and
-`b`.
+Returns a vector with each component set to minimum of the corresponding components of `a` and `b`.
 
     StdOut::text() << min(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // "{0, 0, 0, 0}"
 */
@@ -1122,8 +1114,7 @@ PLY_INLINE Float4 min(const Float4& a, const Float4& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w)};
 }
 /*!
-Returns a 4D vector with each component set to maximum of the corresponding components of `a` and
-`b`.
+Returns a vector with each component set to maximum of the corresponding components of `a` and `b`.
 
     StdOut::text() << max(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // "{1, 1, 1, 1}"
 */
@@ -1133,7 +1124,7 @@ PLY_INLINE Float4 max(const Float4& a, const Float4& b) {
 /*!
 \category Comparison Functions
 \beginGroup
-Returns `true` if the 4D vectors are equal (or not equal) using floating-point comparison. In
+Returns `true` if the vectors are equal (or not equal) using floating-point comparison. In
 particular, `Float4{0.f} == Float4{-0.f}` is `true`.
 */
 PLY_INLINE bool operator==(const Float4& a, const Float4& b) {
@@ -1183,7 +1174,7 @@ PLY_INLINE Bool4 operator>=(const Float4& a, const Float4& b) {
 /*!
 \category Rounding Functions
 \beginGroup
-Returns a 4D vector with each component set to the rounded result of the corresponding component of
+Returns a vector with each component set to the rounded result of the corresponding component of
 `vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
 `spacing` is a power of 2.
 

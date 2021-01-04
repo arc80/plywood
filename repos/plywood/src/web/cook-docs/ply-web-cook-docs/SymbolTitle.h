@@ -9,6 +9,7 @@ namespace ply {
 namespace docs {
 
 struct SemaEntity;
+struct LookupContext;
 
 struct TitleSpan {
     enum Type {
@@ -36,8 +37,8 @@ Array<TitleSpan> parseTitle(
     const LambdaView<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback);
 void writeParseTitleError(StringWriter* sw, ParseTitleError err, StringView arg);
 void writeAltMemberTitle(StringWriter& htmlWriter, ArrayView<const TitleSpan> spans,
-                         SemaEntity* classEnt,
-                         String (*getLinkDestination)(StringView, SemaEntity*));
+                         const LookupContext& lookupCtx,
+                         String (*getLinkDestination)(StringView, const LookupContext&));
 
 } // namespace docs
 } // namespace ply
