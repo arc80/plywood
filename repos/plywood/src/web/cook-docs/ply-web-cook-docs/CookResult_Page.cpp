@@ -142,8 +142,10 @@ String convertMarkdownToHTML(StringView markdown, SemaEntity* fromSema) {
     return sw.moveToString();
 }
 
-void writeMemberTitle(StringWriter& htmlWriter, const SemaEntity* templateParams,
-                      const cpp::sema::SingleDeclaration* singleDecl, SemaEntity* memberEnt, bool prependClassName) {
+void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWriter, bool prependClassName) {
+    const SemaEntity* templateParams = title.member->templateParams;
+    const cpp::sema::SingleDeclaration* singleDecl = &title.member->singleDecl;
+
     bool inRootDeclarator = false;
     using C = cpp::sema::Stringifier::Component;
     if (templateParams) {
@@ -161,7 +163,7 @@ void writeMemberTitle(StringWriter& htmlWriter, const SemaEntity* templateParams
         htmlWriter << "&gt;</code><br>\n";
     }
     htmlWriter << "<code>";
-    for (const C& comp : cpp::sema::toStringComps(*singleDecl, memberEnt, prependClassName)) {
+    for (const C& comp : cpp::sema::toStringComps(*singleDecl, title.member, prependClassName)) {
         if (comp.type == C::BeginRootDeclarator) {
             htmlWriter << "<strong>";
             inRootDeclarator = true;
@@ -172,7 +174,7 @@ void writeMemberTitle(StringWriter& htmlWriter, const SemaEntity* templateParams
             String linkDestination;
             if (!inRootDeclarator && comp.sema) {
                 PLY_ASSERT(comp.type == C::KeywordOrIdentifier);
-                linkDestination = getLinkDestination(memberEnt, comp.sema);
+                linkDestination = getLinkDestination(title.member, comp.sema);
             }
             if (linkDestination) {
                 htmlWriter.format("<a href=\"{}\">", fmt::XMLEscape{linkDestination});
@@ -184,19 +186,6 @@ void writeMemberTitle(StringWriter& htmlWriter, const SemaEntity* templateParams
         }
     }
     htmlWriter << "</code>\n";
-}
-
-void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWriter, bool prependClassName) {
-    // Write title (formatted declaration)
-    if (title.altTitle) {
-        htmlWriter << "<code>";
-        writeAltMemberTitle(htmlWriter, title.altTitle.view(), title.member,
-                            getLinkDestinationFromSpan);
-        htmlWriter << "</code>\n";
-    } else {
-        writeMemberTitle(htmlWriter, title.member->templateParams, &title.member->singleDecl,
-                         title.member, prependClassName);
-    }
 }
 
 void dumpBaseClasses(StringWriter& htmlWriter, SemaEntity* classEnt) {

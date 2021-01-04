@@ -49,9 +49,7 @@ struct APIExtractor : cpp::ParseSupervisor {
             DirectivesMustBeAtStartOfDocumentationComment,
             EmptyDirective,
             BadDirective,
-            ExpectedSingleDeclaratorForTitleDirective,
             DirectiveDoesNotTakeArguments,
-            StrayTitleDirective,
             AlreadyInsideGroup,
             UnterminatedGroup,
             EndGroupOutsideGroup,
@@ -86,8 +84,6 @@ struct APIExtractor : cpp::ParseSupervisor {
         cpp::LinearLocation markdownLoc = -1;
         cpp::LinearLocation groupDirectiveLoc = -1;
         DocInfo::Entry* groupEntry = nullptr;
-        Array<TitleSpan> altTitle;
-        cpp::LinearLocation titleDirectiveLoc = -1; // >= 0 iff altDeclaration is valid
         s32 categoryIndex = -1;
         SemaEntity* addToClass = nullptr;
     };
@@ -147,11 +143,6 @@ struct APIExtractor : cpp::ParseSupervisor {
                     this->docState.markdown = {};
                     this->docState.markdownLoc = -1;
                 }
-                if (this->docState.titleDirectiveLoc >= 0) {
-                    this->error(Error::StrayTitleDirective, {}, this->docState.titleDirectiveLoc);
-                    this->docState.altTitle.clear();
-                    this->docState.titleDirectiveLoc = -1;
-                }
                 this->docState.categoryIndex = -1;
                 this->docState.addToClass = nullptr;
             }
@@ -188,10 +179,6 @@ struct APIExtractor : cpp::ParseSupervisor {
             if (this->docState.markdownLoc >= 0) {
                 classEnt->docInfo->classMarkdownDesc = std::move(this->docState.markdown);
                 this->docState.markdownLoc = -1;
-            }
-            if (this->docState.titleDirectiveLoc >= 0) {
-                classEnt->docInfo->classAltTitle = std::move(this->docState.altTitle);
-                this->docState.titleDirectiveLoc = -1;
             }
             for (const cpp::grammar::BaseSpecifierWithComma& base : record->baseSpecifierList) {
                 cpp::sema::QualifiedID qid =
@@ -281,11 +268,6 @@ struct APIExtractor : cpp::ParseSupervisor {
                 this->error(Error::UnterminatedGroup, {}, this->docState.groupDirectiveLoc);
                 this->docState.groupDirectiveLoc = -1;
                 this->docState.groupEntry = nullptr;
-            }
-            if (this->docState.titleDirectiveLoc >= 0) {
-                this->error(Error::StrayTitleDirective, {}, this->docState.titleDirectiveLoc);
-                this->docState.altTitle.clear();
-                this->docState.titleDirectiveLoc = -1;
             }
             this->docState.categoryIndex = -1;
             this->docState.addToClass = nullptr;
@@ -383,28 +365,6 @@ struct APIExtractor : cpp::ParseSupervisor {
                 }
                 if (!directive) {
                     this->error(Error::EmptyDirective, {}, lineLoc);
-                } else if (directive == "title") {
-                    // \title directive
-                    // Log error for stray \title directive
-                    if (this->docState.altTitle) {
-                        this->error(Error::StrayTitleDirective, {},
-                                    this->docState.titleDirectiveLoc);
-                    }
-                    this->docState.altTitle.clear();
-                    this->docState.titleDirectiveLoc = -1;
-
-                    // Parse this \title directive
-                    StringView declPart = dr.viewAvailable();
-                    cpp::LinearLocation declLoc =
-                        token.linearLoc + (declPart.bytes - token.identifier.bytes);
-                    this->docState.altTitle = parseTitle(
-                        declPart, [&](ParseTitleError err, StringView arg, const char* loc) {
-                            this->error((Error::Type)(Error::BeginParseTitleError + (u32) err), arg,
-                                        token.linearLoc + (loc - token.identifier.bytes));
-                        });
-                    if (this->docState.altTitle) {
-                        this->docState.titleDirectiveLoc = declLoc;
-                    }
                 } else if (directive == "beginGroup") {
                     // \beginGroup directive
                     if (dr.viewAvailable().trim(isWhite)) {
@@ -521,11 +481,6 @@ struct APIExtractor : cpp::ParseSupervisor {
                 this->docState.markdown = {};
                 this->docState.markdownLoc = -1;
             }
-            if (this->docState.titleDirectiveLoc >= 0) {
-                this->error(Error::StrayTitleDirective, {}, this->docState.titleDirectiveLoc);
-                this->docState.altTitle.clear();
-                this->docState.titleDirectiveLoc = -1;
-            }
         });
 
         ScopeInfo scopeInfo = this->getScopeInfo(this->scopeStack.numItems() - 1);
@@ -638,8 +593,6 @@ struct APIExtractor : cpp::ParseSupervisor {
                     simple->initDeclarators[i].dcor.qid.getFirstToken().linearLoc);
                 title->srcPath = fileLoc.srcFile->absPath;
                 title->lineNumber = fileLoc.fileLoc.lineNumber;
-                title->altTitle = std::move(this->docState.altTitle);
-                this->docState.titleDirectiveLoc = -1;
             }
         }
     }
@@ -698,16 +651,8 @@ void APIExtractor::Error::writeMessage(StringWriter* sw,
                 sw->format("unrecognized directive '\\{}'\n", this->arg);
                 break;
             }
-            case APIExtractor::Error::ExpectedSingleDeclaratorForTitleDirective: {
-                *sw << "\\title directive requires a declaration with exactly one declarator\n";
-                break;
-            }
             case APIExtractor::Error::DirectiveDoesNotTakeArguments: {
                 sw->format("\\{} directive does not accept any arguments\n", this->arg);
-                break;
-            }
-            case APIExtractor::Error::StrayTitleDirective: {
-                *sw << "\\title directive must be followed by a declaration\n";
                 break;
             }
             case APIExtractor::Error::UnterminatedGroup: {

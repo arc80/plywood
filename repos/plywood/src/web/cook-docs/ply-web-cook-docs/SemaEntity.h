@@ -24,7 +24,6 @@ struct DocInfo {
             SemaEntity* member = nullptr;
             String srcPath; // FIXME: Deduplicate this (optimization)
             u32 lineNumber = 0;
-            Array<TitleSpan> altTitle;
         };
 
         Array<Title> titles;
@@ -33,7 +32,6 @@ struct DocInfo {
     };
 
     SemaEntity* class_ = nullptr;
-    Array<TitleSpan> classAltTitle;
     String classMarkdownDesc;
     Array<Entry> entries;
     Array<Category> categories;
