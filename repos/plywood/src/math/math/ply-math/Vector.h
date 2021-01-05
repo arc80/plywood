@@ -1211,6 +1211,8 @@ PLY_INLINE bool isRounded(const Float4& vec, float spacing = 1) {
 typedef Box<Float2> Rect;
 typedef Box<Float3> Box3D;
 
+Rect rectFromFov(float fovY, float aspect);
+
 //---------------------------------
 
 PLY_INLINE PLY_NO_DISCARD Float2 Float2::swizzle(u32 i0, u32 i1) const {

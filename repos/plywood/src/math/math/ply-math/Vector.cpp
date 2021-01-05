@@ -21,6 +21,11 @@ PLY_NO_INLINE Float2 Float2::safeNormalized(const Float2& fallback, float epsilo
     return *this / sqrtf(L);
 }    
 
+PLY_NO_INLINE Rect rectFromFov(float fovY, float aspect) {
+    float halfTanY = tanf(fovY / 2);
+    return expand(Rect{{0, 0}}, {halfTanY * aspect, halfTanY});
+}
+
 //------------------------------------------------
 // Float3
 //------------------------------------------------

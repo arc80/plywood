@@ -103,10 +103,6 @@ struct Quaternion {
 
     static Quaternion fromOrtho(const Float3x3& m);
     static Quaternion fromOrtho(const Float4x4& m);
-
-    Float3x3 toFloat3x3() const;
-    Float3x4 toFloat3x4(const Float3& xlate = {0, 0, 0}) const;
-    Float4x4 toFloat4x4(const Float3& xlate = {0, 0, 0}) const;
 };
 
 PLY_INLINE const Quaternion& Float4::asQuaternion() const {

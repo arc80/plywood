@@ -116,11 +116,11 @@ struct QuatPos {
     }
 
     Float3x4 toFloat3x4() const {
-        return quat.toFloat3x4(pos);
+        return Float3x4::fromQuaternion(quat, pos);
     }
 
     Float4x4 toFloat4x4() const {
-        return quat.toFloat4x4(pos);
+        return Float4x4::fromQuaternion(quat, pos);
     }
 };
 
@@ -165,11 +165,11 @@ struct QuatPosScale {
     }
 
     Float4x4 toFloat4x4() const {
-        return quat.toFloat4x4(pos) * Float4x4::makeScale(scale);
+        return Float4x4::fromQuaternion(quat, pos) * Float4x4::makeScale(scale);
     }
 
     Float3x4 toFloat3x4() const {
-        return quat.toFloat3x4(pos) * Float3x4::makeScale(scale);
+        return Float3x4::fromQuaternion(quat, pos) * Float3x4::makeScale(scale);
     }
 
     QuatPos& asQuatPos() {

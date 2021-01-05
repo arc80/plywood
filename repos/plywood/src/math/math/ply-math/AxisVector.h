@@ -312,7 +312,7 @@ struct AxisRotPos {
     }
 
     Float4x4 toFloat4x4() const {
-        return rot.toFloat3x3().toFloat4x4(pos);
+        return Float4x4{rot.toFloat3x3()};
     }
 };
 

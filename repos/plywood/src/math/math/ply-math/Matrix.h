@@ -17,382 +17,523 @@ struct Float3x3;
 struct Float3x4;
 struct Float4x4;
 
-//----------------------------------------------------
-// Float2x2
-//----------------------------------------------------
+//------------------------------------------------------------------------------------------------
+/*!
+A 2x2 matrix of floating-point values.
 
+A `Float2x2` can represent any linear transformation on the 2D plane without a translation
+component, such as rotation, scale or shear.
+
+The matrix is stored in column-major order. In other words, it's an array of two `Float2` column
+vectors.
+*/
 struct Float2x2 {
-    typedef Float2 V;
-    static const ureg Cols = 2;
+    Float2 col[2];
 
-    V col[Cols];
+    /*!
+    \category Constructors
+    Constructs an uninitialized `Float2x2`.
+    */
+    PLY_INLINE Float2x2() = default;
+    /*!
+    Constructs a 2x2 matrix from the given column vectors.
 
-    Float2x2() = default;
-
-    Float2x2(std::initializer_list<V> init) {
-        PLY_ASSERT(init.size() == Cols);
-        ureg i = 0;
-        for (const V& c : init)
-            col[i++] = c;
+        Float2x2 m = {{1, 0}, {0, 1}};
+    */
+    PLY_INLINE Float2x2(const Float2& col0, const Float2& col1) : col{col0, col1} {
     }
+    /*!
+    \category Element Access
+    \beginGroup
+    Accesses the column vector at the specified index.
 
-    V& operator[](ureg i) {
-        PLY_ASSERT(i < Cols);
+        Float2x2 m = {{1, 0}, {0, 1}};
+        m[0].x = -1;
+        StdOut::text() << m[1];  // "{0, 1}"
+    */
+    PLY_INLINE Float2& operator[](ureg i) {
+        PLY_ASSERT(i < 2);
         return col[i];
     }
-
-    const V& operator[](ureg i) const {
-        PLY_ASSERT(i < Cols);
+    PLY_INLINE const Float2& operator[](ureg i) const {
+        PLY_ASSERT(i < 2);
         return col[i];
     }
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Comparison Functions
+    \category Creation Functions
+    Returns the identity matrix `{{1, 0}, {0, 1}}`.
+    */
+    static Float2x2 identity();
+    /*!
+    Returns a scale matrix.
+    */
+    static Float2x2 makeScale(const Float2& scale);
+    /*!
+    Returns a counter-clockwise rotation matrix. The angle is specified in radians.
+    */
+    static Float2x2 makeRotation(float radians);
+    /*!
+    Returns a rotation and scale matrix whose first column is given by `c`. Transforming a vector by
+    this matrix is equivalent to premultiplying by the vector by `c` on the complex plane.
 
-    static Float2x2 zero() {
-        return Float2x2{{0, 0}, {0, 0}};
-    }
-
-    static Float2x2 identity() {
-        return Float2x2{{1, 0}, {0, 1}};
-    }
-
-    bool operator==(const Float2x2 arg) const {
-        return (col[0] == arg.col[0]) && (col[1] == arg.col[1]);
-    }
-
-    Float2 operator*(const Float2& arg) const;
-
-    Float2x2 operator*(const Float2x2& arg) const;
-
+        Float2x2::fromComplex({1, 0})  // returns the identity matrix
+    */
+    static Float2x2 fromComplex(const Float2& c);
+    /*!
+    \category Matrix Operations
+    Returns the transpose of the 2x2 matrix. If the matrix is
+    [orthogonal](https://en.wikipedia.org/wiki/Orthogonal_matrix) (in other words, it consists only
+    of a rotation and/or reflection), this function also returns the inverse matrix.
+    */
     Float2x2 transposed() const;
-
-    static Float2x2 makeScale(const Float2& arg) {
-        return Float2x2{{arg.x, 0}, {0, arg.y}};
-    }
-
-    static Float2x2 makeScale(float arg) {
-        return Float2x2{{arg, 0}, {0, arg}};
-    }
-
-    static Float2x2 fromComplex(const Float2& r) {
-        return Float2x2{{r.x, r.y}, {-r.y, r.x}};
-    }
-
-    static Float2x2 makeRotation(float angle) {
-        return fromComplex(Complex::fromAngle(angle));
-    }
 };
 
-//----------------------------------------------------
-// Float3x3
-//----------------------------------------------------
-
-struct Float3x3 {
-    typedef Float3 V;
-    static const ureg Cols = 3;
-
-    V col[Cols];
-
-    Float3x3() = default;
-
-    Float3x3(std::initializer_list<V> init) {
-        PLY_ASSERT(init.size() == Cols);
-        ureg i = 0;
-        for (const V& c : init)
-            col[i++] = c;
-    }
-
-    V& operator[](ureg i) {
-        PLY_ASSERT(i < Cols);
-        return col[i];
-    }
-
-    const V& operator[](ureg i) const {
-        PLY_ASSERT(i < Cols);
-        return col[i];
-    }
-
-    static Float3x3 zero() {
-        return Float3x3{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-    }
-
-    static Float3x3 identity() {
-        return Float3x3{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-    }
-
-    bool operator==(const Float3x3& arg) const {
-        return (col[0] == arg.col[0]) && (col[1] == arg.col[1]) && (col[2] == arg.col[2]);
-    }
-
-    Float3x4 toFloat3x4(const Float3& translate = {0, 0, 0}) const;
-    Float4x4 toFloat4x4(const Float3& translate = {0, 0, 0}) const;
-
-    Float3 operator*(const Float3& arg) const;
-
-    Float3x3 operator*(const Float3x3& arg) const;
-
-    Float3x3 transposed() const;
-
-    bool hasScale(float thresh = 0.001f) const {
-        return !col[0].isUnit() || !col[1].isUnit() || !col[2].isUnit();
-    }
-
-    static Float3x3 makeScale(const Float3& arg) {
-        return Float3x3{{arg.x, 0, 0}, {0, arg.y, 0}, {0, 0, arg.z}};
-    }
-
-    static Float3x3 makeScale(float arg) {
-        return Float3x3{{arg, 0, 0}, {0, arg, 0}, {0, 0, arg}};
-    }
-
-    static Float3x3 makeRotation(const Float3& unitAxis, float angle) {
-        return Quaternion::fromAxisAngle(unitAxis, angle).toFloat3x3();
-    }
-};
-
-inline Float3x3 Quaternion::toFloat3x3() const {
-    return {
-        Float3{1 - 2 * y * y - 2 * z * z, 2 * x * y + 2 * z * w, 2 * x * z - 2 * y * w},
-        Float3{2 * x * y - 2 * z * w, 1 - 2 * x * x - 2 * z * z, 2 * y * z + 2 * x * w},
-        Float3{2 * x * z + 2 * y * w, 2 * y * z - 2 * x * w, 1 - 2 * x * x - 2 * y * y},
-    };
+/*!
+\addToClass Float2x2
+\category Comparison Functions
+\beginGroup
+Returns `true` if the matrices are equal (or not equal) using floating-point comparison. In
+particular, a component with a value of `0.f` is equal to a component with a value of `-0.f`.
+*/
+bool operator==(const Float2x2& a, const Float2x2& b);
+PLY_INLINE bool operator!=(const Float2x2& a, const Float2x2& b) {
+    return !(a == b);
 }
+/*!
+\endGroup
+*/
+/*!
+\category Matrix Operations
+Transform a vector using a matrix. `v` is treated as a column vector and premultiplied by the matrix
+`m`.
+*/
+Float2 operator*(const Float2x2& m, const Float2& v);
+void operator*(const Float2x2&, float) = delete; // not sure whether to support this
+/*!
+Matrix multiplication.
+*/
+Float2x2 operator*(const Float2x2& a, const Float2x2& b);
 
-//----------------------------------------------------
-// Float3x4
-//----------------------------------------------------
+//------------------------------------------------------------------------------------------------
+/*!
+A 3x3 matrix of floating-point values.
 
+A `Float3x3` can represent any linear transformation in 3D space without a translation component,
+such as rotation, scale or shear. If a translation component is needed, use `Float3x4` or
+`Float4x4`.
+
+The matrix is stored in column-major order. In other words, it's an array of three `Float3` column
+vectors.
+*/
+struct Float3x3 {
+    Float3 col[3];
+
+    /*!
+    \category Constructors
+    Constructs an uninitialized `Float3x3`.
+    */
+    PLY_INLINE Float3x3() = default;
+    /*!
+    Constructs a 3x3 matrix from the given column vectors.
+
+        Float3x3 m = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    */
+    PLY_INLINE Float3x3(const Float3& col0, const Float3& col1, const Float3& col2)
+        : col{col0, col1, col2} {
+    }
+    /*!
+    \category Element Access
+    \beginGroup
+    Accesses the column vector at the specified index.
+
+        Float3x3 m = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+        m[0].x = -1;
+        StdOut::text() << m[2];  // "{0, 0, 1}"
+    */
+    PLY_INLINE Float3& operator[](ureg i) {
+        PLY_ASSERT(i < 3);
+        return col[i];
+    }
+    PLY_INLINE const Float3& operator[](ureg i) const {
+        PLY_ASSERT(i < 3);
+        return col[i];
+    }
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Comparison Functions
+    \category Creation Functions
+    Returns the identity matrix `{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}`.
+    */
+    static PLY_INLINE Float3x3 identity();
+    /*!
+    Returns a scale matrix.
+    */
+    static Float3x3 makeScale(const Float3& arg);
+    /*!
+    Returns a matrix that performs the same rotation as `q`.
+    */
+    static Float3x3 fromQuaternion(const Quaternion& q);
+    /*!
+    Returns a matrix that performs a counter-clockwise rotation around the specified axis following
+    the [right-hand rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations). `unitAxis` must
+    have have unit length and the angle is specified in radians.
+    */
+    static Float3x3 makeRotation(const Float3& unitAxis, float radians);
+
+    bool hasScale(float thresh = 0.001f) const;
+    /*!
+    \category Matrix Operations
+    Returns the transpose of the 3x3 matrix. If the matrix is
+    [orthogonal](https://en.wikipedia.org/wiki/Orthogonal_matrix) (in other words, it consists only
+    of a rotation and/or reflection), this function also returns the inverse matrix.
+    */
+    Float3x3 transposed() const;
+};
+
+/*!
+\addToClass Float3x3
+\category Comparison Functions
+\beginGroup
+Returns `true` if the matrices are equal (or not equal) using floating-point comparison. In
+particular, a component with a value of `0.f` is equal to a component with a value of `-0.f`.
+*/
+bool operator==(const Float3x3& a, const Float3x3& b);
+PLY_INLINE bool operator!=(const Float3x3& a, const Float3x3& b) {
+    return !(a != b);
+}
+/*!
+\endGroup
+*/
+/*!
+\category Matrix Operations
+Transform a vector using a matrix. `v` is treated as a column vector and premultiplied by the matrix
+`m`.
+*/
+Float3 operator*(const Float3x3& m, const Float3& v);
+void operator*(const Float3x3&, float) = delete; // not sure whether to support this
+/*!
+Matrix multiplication.
+*/
+Float3x3 operator*(const Float3x3& a, const Float3x3& b);
+
+//------------------------------------------------------------------------------------------------
+/*!
+A 3x4 matrix of floating-point values having 3 rows and 4 columns.
+
+A `Float3x4` can represent any affine transformation in 3D space including rotations, scales, shears
+and translations.
+
+The matrix is stored in column-major order. In other words, it's an array of four `Float3` column
+vectors.
+
+In general, a `Float3x4` acts like a `Float4x4` with **[0 0 0 1]** as the implicit fourth row. The
+main difference between `Float3x4` and `Float4x4` is that `Float3x4` can't represent a perspective
+projection matrix.
+*/
 struct Float3x4 {
-    typedef Float3 V;
-    static const ureg Cols = 4;
+    Float3 col[4];
 
-    V col[Cols];
+    /*!
+    \category Constructors
+    Constructs an uninitialized `Float3x4`.
+    */
+    PLY_INLINE Float3x4() = default;
+    /*!
+    Constructs a 3x4 matrix from the given column vectors.
 
-    Float3x4() = default;
-
-    Float3x4(const Float3x3 m, const Float3 t) : col{m.col[0], m.col[1], m.col[2], t} {
+        Float3x3 m = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}};
+    */
+    PLY_INLINE Float3x4(const Float3& col0, const Float3& col1, const Float3& col2,
+                        const Float3& col3)
+        : col{col0, col1, col2, col3} {
     }
+    /*!
+    Constructs a 3x4 matrix from a 3x3 matrix and optional fourth column vector. When the resulting
+    3x4 matrix transforms a `Float3`, it's equivalent to a transformation by `m3x3` followed by a
+    translation by `xlate`.
 
-    Float3x4(std::initializer_list<V> init) {
-        PLY_ASSERT(init.size() == Cols);
-        ureg i = 0;
-        for (const V& c : init)
-            col[i++] = c;
-    }
-
-    Float3x3& asFloat3x3() {
-        return reinterpret_cast<Float3x3&>(*this);
-    }
-
+        Float4x4 m = {Float3x3::identity(), {5, 0, 0}};
+    */
+    explicit Float3x4(const Float3x3& m3x3, const Float3& xlate = {0, 0, 0});
+    /*!
+    \category Conversion Functions
+    Returns a const reference to the first three columns as `Float3x3` using type punning. This
+    should only be used as a temporary expression.
+    */
     const Float3x3& asFloat3x3() const {
         return reinterpret_cast<const Float3x3&>(*this);
     }
+    /*!
+    \category Element Access
+    \beginGroup
+    Accesses the column vector at the specified index. In general, `m[3]` can be thought of as the
+    translation component.
 
-    V& operator[](ureg i) {
-        PLY_ASSERT(i < Cols);
+        Float3x4 m = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}};
+        m[0].x = -1;
+        StdOut::text() << m[3];  // "{0, 0, 0}"
+    */
+    Float3& operator[](ureg i) {
+        PLY_ASSERT(i < 4);
         return col[i];
     }
-
-    const V& operator[](ureg i) const {
-        PLY_ASSERT(i < Cols);
+    const Float3& operator[](ureg i) const {
+        PLY_ASSERT(i < 4);
         return col[i];
     }
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Comparison Functions
+    \category Creation Functions
+    Returns the identity matrix `{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}}`.
+    */
+    static Float3x4 identity();
+    /*!
+    Returns a scale matrix.
+    */
+    static Float3x4 makeScale(const Float3& arg);
+    /*!
+    Returns a matrix that performs the same rotation as `q`. If `xlate` is specified, it's used as
+    the fourth column, so that the resulting matrix performs the same rotation as `q` followed by a
+    translation by `xlate`.
+    */
+    static Float3x4 fromQuaternion(const Quaternion& q, const Float3& xlate = {0, 0, 0});
+    /*!
+    Returns a matrix that performs a counter-clockwise rotation around the specified axis following
+    the [right-hand rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations). `unitAxis` must
+    have have unit length and the angle is specified in radians.
+    */
+    static Float3x4 makeRotation(const Float3& unitAxis, float angle);
+    /*!
+    Returns a translation matrix.
+    */
+    static Float3x4 makeTranslation(const Float3& arg);
 
-    bool hasScale(float thresh = 0.001f) const {
-        return asFloat3x3().hasScale(thresh);
-    }
-
-    static Float3x4 zero() {
-        return Float3x4{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-    }
-
-    static Float3x4 identity() {
-        return Float3x4{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}};
-    }
-
-    Float4x4 toFloat4x4() const;
-
-    bool operator==(const Float3x4 arg) const {
-        return (col[0] == arg.col[0]) && (col[1] == arg.col[1]) && (col[2] == arg.col[2]) &&
-               (col[3] == arg.col[3]);
-    }
-
-    Float3 operator*(const Float3& arg) const;
-
-    Float3 operator*(const Float4& arg) const;
-
-    Float3x4 operator*(const Float3x4& b) const {
-        Float3x4 result;
-        for (ureg c = 0; c < 3; c++)
-            result[c] = asFloat3x3() * b.col[c];
-        result[3] = *this * b.col[3];
-        return result;
-    }
-
-    Float3x4 invertedOrtho() const {
-        Float3x4 result;
-        reinterpret_cast<Float3x3&>(result) = reinterpret_cast<const Float3x3&>(*this).transposed();
-        result.col[3] = reinterpret_cast<Float3x3&>(result) * -col[3];
-        return result;
-    }
-
-    static Float3x4 makeScale(const Float3& arg) {
-        return Float3x4{{arg.x, 0, 0}, {0, arg.y, 0}, {0, 0, arg.z}, {0, 0, 0}};
-    }
-
-    static Float3x4 makeScale(float arg) {
-        return Float3x4{{arg, 0, 0}, {0, arg, 0}, {0, 0, arg}, {0, 0, 0}};
-    }
-
-    static Float3x4 makeRotation(const Float3& unitAxis, float angle) {
-        return Quaternion::fromAxisAngle(unitAxis, angle).toFloat3x4();
-    }
-
-    static Float3x4 makeTranslation(const Float3& arg) {
-        return Float3x4{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, arg};
-    }
+    bool hasScale(float thresh = 0.001f) const;
+    /*!
+    \category Matrix Operations
+    A fast method to compute the inverse of a 3x4 matrix whose first three columns are
+    [orthogonal](https://en.wikipedia.org/wiki/Orthogonal_matrix). In other words, the input matrix
+    must only consist of a rotation, translation and/or reflection; no scale or shear is allowed.
+    */
+    Float3x4 invertedOrtho() const;
 };
 
-inline Float3x4 Quaternion::toFloat3x4(const Float3& xlate) const {
-    return {{1 - 2 * y * y - 2 * z * z, 2 * x * y + 2 * z * w, 2 * x * z - 2 * y * w},
-            {2 * x * y - 2 * z * w, 1 - 2 * x * x - 2 * z * z, 2 * y * z + 2 * x * w},
-            {2 * x * z + 2 * y * w, 2 * y * z - 2 * x * w, 1 - 2 * x * x - 2 * y * y},
-            xlate};
+/*!
+\addToClass Float3x4
+\category Comparison Functions
+\beginGroup
+Returns `true` if the matrices are equal (or not equal) using floating-point comparison. In
+particular, a component with a value of `0.f` is equal to a component with a value of `-0.f`.
+*/
+bool operator==(const Float3x4& a, const Float3x4& b);
+PLY_INLINE bool operator!=(const Float3x4& a, const Float3x4& b) {
+    return !(a != b);
 }
+/*!
+\endGroup
+*/
+/*!
+\category Matrix Operations
+Transform the vector `v` by the 3x4 matrix `m`. `v` is interpreted as a column vector with an
+implicit fourth component equal to 1 and premultiplied by `m`. This transformation is equivalent to
+transforming `v` by the first three columns of `m`, then translating the result by the fourth
+column, as in `m.asFloat3x3() * v + m[3]`.
 
-//----------------------------------------------------
-// Float4x4
-//----------------------------------------------------
+If you don't want the implicit fourth component equal to 1, so that no translation is performed, use
+`m.asFloat3x3() * v` instead.
+*/
+Float3 operator*(const Float3x4& m, const Float3& v);
+/*!
+Interpret `m` as a 4x4 matrix with **[0 0 0 1]** as the fourth row and use it to transform the
+vector `v`.
+*/
+Float4 operator*(const Float3x4& m, const Float4& v);
+void operator*(const Float3x4&, float) = delete; // not sure whether to support this
+/*!
+Matrix multiplication. All matrices are interpreted as 4x4 matrices with **[0 0 0 1]** as the
+implicit fourth row.
+*/
+Float3x4 operator*(const Float3x4& a, const Float3x4& b);
 
+//------------------------------------------------------------------------------------------------
+/*!
+A 4x4 matrix of floating-point values.
+
+A `Float4x4` can represent any affine transformation in 3D space including rotations, scales, shears
+and translations. Unlike `Float3x4`, it can also represent perspective projections.
+
+The matrix is stored in column-major order. In other words, it's an array of four `Float4` column
+vectors.
+*/
 struct Float4x4 {
-    typedef Float4 V;
-    static const ureg Cols = 4;
+    Float4 col[4];
 
-    V col[Cols];
-
+    /*!
+    \category Constructors
+    Constructs an uninitialized `Float4x4`.
+    */
     Float4x4() = default;
+    /*!
+    Constructs a 4x4 matrix from the given column vectors.
 
-    Float4x4(std::initializer_list<V> init) {
-        PLY_ASSERT(init.size() == Cols);
-        ureg i = 0;
-        for (const V& c : init)
-            col[i++] = c;
+        Float4x4 m = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+    */
+    Float4x4(const Float4& col0, const Float4& col1, const Float4& col2, const Float4& col3)
+        : col{col0, col1, col2, col3} {
     }
+    /*!
+    Constructs a 4x4 matrix by concatenating a 3x3 matrix with an optional fourth column vector and
+    adding **[0 0 0 1]** as the fourth row. When the resulting 4x4 matrix transforms a `Float3`,
+    it's equivalent to a transformation by `m3x3` followed by a translation by `xlate`.
 
-    V& operator[](ureg i) {
-        PLY_ASSERT(i < Cols);
+        Float4x4 m = {Float3x3::identity(), {5, 0, 0}};
+    */
+    explicit Float4x4(const Float3x3& m3x3, const Float3& xlate = {0, 0, 0});
+    /*!
+    \category Conversion Functions
+    Returns a 3x3 matrix by truncating the fourth column and fourth row of the 4x4 matrix.
+    */
+    Float3x3 toFloat3x3() const;
+    /*!
+    Returns a 3x4 matrix by truncating the fourth row of the 4x4 matrix.
+    */
+    Float3x4 toFloat3x4() const;
+    /*!
+    \category Element Access
+    \beginGroup
+    Accesses the column vector at the specified index.
+
+        Float4x4 m = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+        m[0].x = -1;
+        StdOut::text() << m[3];  // "{0, 0, 0, 1}"
+    */
+    Float4& operator[](ureg i) {
+        PLY_ASSERT(i < 4);
         return col[i];
     }
-
-    const V& operator[](ureg i) const {
-        PLY_ASSERT(i < Cols);
+    const Float4& operator[](ureg i) const {
+        PLY_ASSERT(i < 4);
         return col[i];
     }
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Comparison Functions
+    \category Creation Functions
+    Returns the identity matrix `{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}}`.
+    */
+    static Float4x4 identity();
+    /*!
+    Returns a scale matrix.
+    */
+    static Float4x4 makeScale(const Float3& arg);
+    /*!
+    Returns a matrix that performs the same rotation as `q`. If `xlate` is specified, it's used as
+    the fourth column, so that the resulting matrix performs the same rotation as `q` followed by a
+    translation by `xlate`.
+    */
+    static Float4x4 fromQuaternion(const Quaternion& q, const Float3& xlate = {0, 0, 0});
+    /*!
+    Returns a matrix that performs a counter-clockwise rotation around the specified axis following
+    the [right-hand rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations). `unitAxis` must
+    have have unit length and the angle is specified in radians.
+    */
+    static Float4x4 makeRotation(const Float3& unitAxis, float angle);
+    /*!
+    Returns a translation matrix.
+    */
+    static Float4x4 makeTranslation(const Float3& arg);
+    /*!
+    \beginGroup
+    Returns a perspective projection matrix that maps a 3D frustum to OpenGL clip space in
+    homogeneous coordinates. OpenGL clip space goes from -1 at the near plane to +1 at the far
+    plane, with x and y coordinates in the range [-1, 1].
 
-    const Float3& origin() const {
-        return col[3].asFloat3();
-    }
+    Assuming a right-handed coordinate system, the 3D frustum starts at the origin, faces the -z
+    direction, and intersects the z = -1 plane at the rectangle given by `frustum`. Use the
+    `rectFromFov()` helper function to convert a field-of-view angle and aspect ratio to a `frustum`
+    rectangle.
 
-    static Float4x4 zero() {
-        return Float4x4{{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
-    }
+        Float4x4 p = Float4x4::makeProjection(rectFromFov(Pi / 2, 16.f / 9), 1, 100);
 
-    static Float4x4 identity() {
-        return Float4x4{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
-    }
+    `zNear` and `zFar` are interpreted as distances from the origin and must be positive values.
+    Since the 3D frustum faces the -z direction, the actual near and far clip planes are given by z
+    = `-zNear` and z = `-zFar`.
 
-    Float3x3 toFloat3x3() const {
-        return Float3x3{col[0].asFloat3(), col[1].asFloat3(), col[2].asFloat3()};
-    }
+    Note: This type of projection matrix works, but is considered outdated. More modern projection
+    matrices, such as those [using reversed z or having an infinite far
+    plane](https://developer.nvidia.com/content/depth-precision-visualized), typically offer better
+    precision, but those aren't implemented in Plywood yet.
+    */
+    static Float4x4 makeProjection(const Rect& frustum, float zNear, float zFar);
+    /*!
+    \endGroup
+    */
+    /*!
+    Returns an orthographic projection matrix that maps a 3D box to OpenGL clip space. OpenGL clip
+    space goes from -1 at the near plane to +1 at the far plane, with x and y coordinates in the
+    range [-1, 1].
 
-    Float3x4 toFloat3x4() const {
-        return Float3x4{col[0].asFloat3(), col[1].asFloat3(), col[2].asFloat3(), col[3].asFloat3()};
-    }
-
-    bool operator==(const Float4x4 arg) const {
-        return (col[0] == arg.col[0]) && (col[1] == arg.col[1]) && (col[2] == arg.col[2]) &&
-               (col[3] == arg.col[3]);
-    }
-
-    Float4 operator*(const Float4& arg) const;
-
-    Float4x4 operator*(const Float4x4& arg) const;
-
-    Float4x4 operator*(const Float3x4& arg) const;
-
+    Assuming a right-handed coordinate system, the 3D box being transformed faces the -z direction.
+    `zNear` and `zFar` are interpreted as distances from the origin, so the actual near and far clip
+    planes are given by z = `-zNear` and z = `-zFar`.
+    */
+    static Float4x4 makeOrtho(const Rect& rect, float zNear, float zFar);
+    /*!
+    \category Matrix Operations
+    Returns the transpose of the 4x4 matrix.
+    */
     Float4x4 transposed() const;
-
+    /*!
+    A fast method to compute the inverse of a 4x4 matrix whose fourth row is **[0 0 0 1]** and whose
+    first three columns are [orthogonal](https://en.wikipedia.org/wiki/Orthogonal_matrix). In other
+    words, the input matrix must only consist of a rotation, translation and/or reflection; no scale
+    or shear is allowed.
+    */
     Float4x4 invertedOrtho() const;
-
-    static Float4x4 makeScale(const Float3& arg) {
-        return {{arg.x, 0, 0, 0}, {0, arg.y, 0, 0}, {0, 0, arg.z, 0}, {0, 0, 0, 1}};
-    }
-
-    static Float4x4 makeScale(float arg) {
-        return {{arg, 0, 0, 0}, {0, arg, 0, 0}, {0, 0, arg, 0}, {0, 0, 0, 1}};
-    }
-
-    static Float4x4 makeRotation(const Float3& unitAxis, float angle) {
-        return Quaternion::fromAxisAngle(unitAxis, angle).toFloat4x4();
-    }
-
-    static Float4x4 makeTranslation(const Float3& arg) {
-        return {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {arg, 1}};
-    }
-
-    // frustum is on Z = -1 plane
-    static Float4x4 makeProjection(const Rect& frustum, float zNear, float zFar) {
-        Float4x4 result = Float4x4::zero();
-        float ooXDenom = 1.f / (frustum.maxs.x - frustum.mins.x);
-        float ooYDenom = 1.f / (frustum.maxs.y - frustum.mins.y);
-        float ooZDenom = 1.f / (zNear - zFar);
-        result.col[0].x = 2.f * ooXDenom;
-        result.col[2].x = (frustum.mins.x + frustum.maxs.x) * ooXDenom;
-        result.col[1].y = 2.f * ooYDenom;
-        result.col[2].y = (frustum.mins.y + frustum.maxs.y) * ooXDenom;
-        result.col[2].z = (zNear + zFar) * ooZDenom;
-        result.col[2].w = -1.f;
-        result.col[3].z = (2 * zNear * zFar) * ooZDenom;
-        return result;
-    }
-
-    static PLY_INLINE Float4x4 makeProjection(float fovY, float aspect, float zNear, float zFar) {
-        float halfTanY = tanf(fovY / 2);
-        return makeProjection(expand(Rect{{0, 0}}, {halfTanY * aspect, halfTanY}), zNear, zFar);
-    }
-
-    // FIXME: This is coordinate system-specific, maybe should re-organize:
-    static Float4x4 makeOrtho(const Rect& rect, float zNear, float zFar) {
-        Float4x4 result = Float4x4::zero();
-        float tow = 2 / rect.width();
-        float toh = 2 / rect.height();
-        float ooZRange = 1 / (zNear - zFar);
-        result.col[0].x = tow;
-        result.col[3].x = -rect.mid().x * tow;
-        result.col[1].y = toh;
-        result.col[3].y = -rect.mid().y * toh;
-        result.col[2].z = 2 * ooZRange;
-        result.col[3].z = (zNear + zFar) * ooZRange;
-        result.col[3].w = 1.f;
-        return result;
-    }
 };
 
-inline Float4x4 Quaternion::toFloat4x4(const Float3& xlate) const {
-    return {{1 - 2 * y * y - 2 * z * z, 2 * x * y + 2 * z * w, 2 * x * z - 2 * y * w, 0},
-            {2 * x * y - 2 * z * w, 1 - 2 * x * x - 2 * z * z, 2 * y * z + 2 * x * w, 0},
-            {2 * x * z + 2 * y * w, 2 * y * z - 2 * x * w, 1 - 2 * x * x - 2 * y * y, 0},
-            {xlate, 1}};
+/*!
+\addToClass Float4x4
+\category Comparison Functions
+\beginGroup
+Returns `true` if the matrices are equal (or not equal) using floating-point comparison. In
+particular, a component with a value of `0.f` is equal to a component with a value of `-0.f`.
+*/
+bool operator==(const Float4x4& a, const Float4x4& b);
+PLY_INLINE bool operator!=(const Float4x4& a, const Float4x4& b) {
+    return !(a == b);
 }
-
-inline Float3x4 Float3x3::toFloat3x4(const Float3& translate) const {
-    return Float3x4{col[0], col[1], col[2], translate};
-}
-
-inline Float4x4 Float3x3::toFloat4x4(const Float3& translate) const {
-    return Float4x4{{col[0], 0}, {col[1], 0}, {col[2], 0}, {translate, 1}};
-}
-
-inline Float4x4 Float3x4::toFloat4x4() const {
-    return Float4x4{{col[0], 0}, {col[1], 0}, {col[2], 0}, {col[3], 1}};
-}
+/*!
+\endGroup
+*/
+/*!
+\category Matrix Operations
+Transform a vector using a matrix. `v` is treated as a column vector and premultiplied by the
+matrix `m`.
+*/
+Float4 operator*(const Float4x4& m, const Float4& v);
+void operator*(const Float4x4&, float) = delete; // not sure whether to support this
+/*!
+\beginGroup
+Matrix multiplication. `Float3x4` arguments are interpreted as 4x4 matrices with **[0 0 0 1]** as
+the implicit fourth row.
+*/
+Float4x4 operator*(const Float4x4& a, const Float4x4& b);
+Float4x4 operator*(const Float3x4& a, const Float4x4& b);
+Float4x4 operator*(const Float4x4& a, const Float3x4& b);
+/*!
+\endGroup
+*/
 
 } // namespace ply
