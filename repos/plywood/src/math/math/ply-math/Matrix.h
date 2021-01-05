@@ -311,7 +311,7 @@ struct Float3x4 {
     the [right-hand rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations). `unitAxis` must
     have have unit length and the angle is specified in radians.
     */
-    static Float3x4 makeRotation(const Float3& unitAxis, float angle);
+    static Float3x4 makeRotation(const Float3& unitAxis, float radians);
     /*!
     Returns a translation matrix.
     */
@@ -448,7 +448,7 @@ struct Float4x4 {
     the [right-hand rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations). `unitAxis` must
     have have unit length and the angle is specified in radians.
     */
-    static Float4x4 makeRotation(const Float3& unitAxis, float angle);
+    static Float4x4 makeRotation(const Float3& unitAxis, float radians);
     /*!
     Returns a translation matrix.
     */

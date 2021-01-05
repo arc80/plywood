@@ -160,8 +160,8 @@ PLY_NO_INLINE Float3x4 Float3x4::fromQuaternion(const Quaternion& q, const Float
             xlate};
 }
 
-PLY_NO_INLINE Float3x4 Float3x4::makeRotation(const Float3& unitAxis, float angle) {
-    return Float3x4::fromQuaternion(Quaternion::fromAxisAngle(unitAxis, angle));
+PLY_NO_INLINE Float3x4 Float3x4::makeRotation(const Float3& unitAxis, float radians) {
+    return Float3x4::fromQuaternion(Quaternion::fromAxisAngle(unitAxis, radians));
 }
 
 PLY_NO_INLINE Float3x4 Float3x4::makeTranslation(const Float3& arg) {
@@ -264,8 +264,8 @@ PLY_NO_INLINE Float4x4 Float4x4::fromQuaternion(const Quaternion& q, const Float
             {xlate, 1}};
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::makeRotation(const Float3& unitAxis, float angle) {
-    return Float4x4::fromQuaternion(Quaternion::fromAxisAngle(unitAxis, angle));
+PLY_NO_INLINE Float4x4 Float4x4::makeRotation(const Float3& unitAxis, float radians) {
+    return Float4x4::fromQuaternion(Quaternion::fromAxisAngle(unitAxis, radians));
 }
 
 PLY_NO_INLINE Float4x4 Float4x4::makeTranslation(const Float3& arg) {
