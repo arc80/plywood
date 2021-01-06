@@ -72,6 +72,10 @@ PLY_NO_INLINE Float3x3 Float3x3::makeScale(const Float3& arg) {
     return {{arg.x, 0, 0}, {0, arg.y, 0}, {0, 0, arg.z}};
 }
 
+PLY_NO_INLINE Float3x3 Float3x3::makeRotation(const Float3& unitAxis, float radians) {
+    return Float3x3::fromQuaternion(Quaternion::fromAxisAngle(unitAxis, radians));
+}
+
 PLY_NO_INLINE Float3x3 Float3x3::fromQuaternion(const Quaternion& q) {
     return {{1 - 2 * q.y * q.y - 2 * q.z * q.z, 2 * q.x * q.y + 2 * q.z * q.w,
              2 * q.x * q.z - 2 * q.y * q.w},
@@ -79,10 +83,6 @@ PLY_NO_INLINE Float3x3 Float3x3::fromQuaternion(const Quaternion& q) {
              2 * q.y * q.z + 2 * q.x * q.w},
             {2 * q.x * q.z + 2 * q.y * q.w, 2 * q.y * q.z - 2 * q.x * q.w,
              1 - 2 * q.x * q.x - 2 * q.y * q.y}};
-}
-
-PLY_NO_INLINE Float3x3 Float3x3::makeRotation(const Float3& unitAxis, float radians) {
-    return Float3x3::fromQuaternion(Quaternion::fromAxisAngle(unitAxis, radians));
 }
 
 PLY_NO_INLINE bool Float3x3::hasScale(float thresh) const {
@@ -135,11 +135,11 @@ PLY_NO_INLINE Float3x3 operator*(const Float3x3& a, const Float3x3& b) {
 //--------------------------------------------
 //  Float3x4
 //--------------------------------------------
-PLY_NO_INLINE Float3x4::Float3x4(const Float3x3& m3x3, const Float3& xlate) {
+PLY_NO_INLINE Float3x4::Float3x4(const Float3x3& m3x3, const Float3& pos) {
     for (u32 i = 0; i < 3; i++) {
         col[i] = m3x3.col[i];
     }
-    col[3] = xlate;
+    col[3] = pos;
 }
 
 PLY_NO_INLINE Float3x4 Float3x4::identity() {
@@ -150,22 +150,22 @@ PLY_NO_INLINE Float3x4 Float3x4::makeScale(const Float3& arg) {
     return {{arg.x, 0, 0}, {0, arg.y, 0}, {0, 0, arg.z}, {0, 0, 0}};
 }
 
-PLY_NO_INLINE Float3x4 Float3x4::fromQuaternion(const Quaternion& q, const Float3& xlate) {
+PLY_NO_INLINE Float3x4 Float3x4::makeRotation(const Float3& unitAxis, float radians) {
+    return Float3x4::fromQuaternion(Quaternion::fromAxisAngle(unitAxis, radians));
+}
+
+PLY_NO_INLINE Float3x4 Float3x4::makeTranslation(const Float3& pos) {
+    return {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, pos};
+}
+
+PLY_NO_INLINE Float3x4 Float3x4::fromQuaternion(const Quaternion& q, const Float3& pos) {
     return {{1 - 2 * q.y * q.y - 2 * q.z * q.z, 2 * q.x * q.y + 2 * q.z * q.w,
              2 * q.x * q.z - 2 * q.y * q.w},
             {2 * q.x * q.y - 2 * q.z * q.w, 1 - 2 * q.x * q.x - 2 * q.z * q.z,
              2 * q.y * q.z + 2 * q.x * q.w},
             {2 * q.x * q.z + 2 * q.y * q.w, 2 * q.y * q.z - 2 * q.x * q.w,
              1 - 2 * q.x * q.x - 2 * q.y * q.y},
-            xlate};
-}
-
-PLY_NO_INLINE Float3x4 Float3x4::makeRotation(const Float3& unitAxis, float radians) {
-    return Float3x4::fromQuaternion(Quaternion::fromAxisAngle(unitAxis, radians));
-}
-
-PLY_NO_INLINE Float3x4 Float3x4::makeTranslation(const Float3& arg) {
-    return {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, arg};
+            pos};
 }
 
 PLY_NO_INLINE bool Float3x4::hasScale(float thresh) const {
@@ -231,11 +231,11 @@ PLY_NO_INLINE Float3x4 operator*(const Float3x4& a, const Float3x4& b) {
 //--------------------------------------------
 //  Float4x4
 //--------------------------------------------
-PLY_NO_INLINE Float4x4::Float4x4(const Float3x3& m3x3, const Float3& xlate) {
+PLY_NO_INLINE Float4x4::Float4x4(const Float3x3& m3x3, const Float3& pos) {
     for (u32 i = 0; i < 3; i++) {
         col[i] = {m3x3.col[i], 0};
     }
-    col[3] = {xlate, 1};
+    col[3] = {pos, 1};
 }
 
 PLY_NO_INLINE Float3x3 Float4x4::toFloat3x3() const {
@@ -254,22 +254,22 @@ PLY_NO_INLINE Float4x4 Float4x4::makeScale(const Float3& arg) {
     return {{arg.x, 0, 0, 0}, {0, arg.y, 0, 0}, {0, 0, arg.z, 0}, {0, 0, 0, 1}};
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::fromQuaternion(const Quaternion& q, const Float3& xlate) {
+PLY_NO_INLINE Float4x4 Float4x4::makeRotation(const Float3& unitAxis, float radians) {
+    return Float4x4::fromQuaternion(Quaternion::fromAxisAngle(unitAxis, radians));
+}
+
+PLY_NO_INLINE Float4x4 Float4x4::makeTranslation(const Float3& pos) {
+    return {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {pos, 1}};
+}
+
+PLY_NO_INLINE Float4x4 Float4x4::fromQuaternion(const Quaternion& q, const Float3& pos) {
     return {{1 - 2 * q.y * q.y - 2 * q.z * q.z, 2 * q.x * q.y + 2 * q.z * q.w,
              2 * q.x * q.z - 2 * q.y * q.w, 0},
             {2 * q.x * q.y - 2 * q.z * q.w, 1 - 2 * q.x * q.x - 2 * q.z * q.z,
              2 * q.y * q.z + 2 * q.x * q.w, 0},
             {2 * q.x * q.z + 2 * q.y * q.w, 2 * q.y * q.z - 2 * q.x * q.w,
              1 - 2 * q.x * q.x - 2 * q.y * q.y, 0},
-            {xlate, 1}};
-}
-
-PLY_NO_INLINE Float4x4 Float4x4::makeRotation(const Float3& unitAxis, float radians) {
-    return Float4x4::fromQuaternion(Quaternion::fromAxisAngle(unitAxis, radians));
-}
-
-PLY_NO_INLINE Float4x4 Float4x4::makeTranslation(const Float3& arg) {
-    return {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {arg, 1}};
+            {pos, 1}};
 }
 
 PLY_NO_INLINE Float4x4 Float4x4::makeProjection(const Rect& frustum, float zNear, float zFar) {

@@ -64,65 +64,104 @@ inline Rect operator*(const ScalePos2& xform, const Rect& r) {
 // QuatPos
 //----------------------------------------------------
 
+//------------------------------------------------------------------------------------------------
+/*!
+A transformation consisting of a rotation followed by a translation.
+
+A `QuatPos` behaves like a `Float4x4` or `Float3x4` that performs only rotation and translation.
+While `Float4x4` uses 64 bytes of storage and `Float3x4` uses 48 bytes, `QuatPos` uses only 28
+bytes.
+*/
 struct QuatPos {
+    /*!
+    The rotation component.
+    */
     Quaternion quat;
+    /*!
+    The translation component.
+    */
     Float3 pos;
 
-    QuatPos() {
+    /*!
+    \category Constructors
+    Constructs an uninitialized `QuatPos`.
+    */
+    PLY_INLINE QuatPos() = default;
+    /*!
+    Constructs a `QuatPos` from a quaternion.
+    */
+    explicit PLY_INLINE QuatPos(const Quaternion& quat) : quat(quat) {
     }
-
-    QuatPos(const Quaternion& quat, const Float3& pos) : quat(quat), pos(pos) {
+    /*!
+    Constructs a `QuatPos` from a quaternion and a translation.
+    */
+    PLY_INLINE QuatPos(const Quaternion& quat, const Float3& pos) : quat(quat), pos(pos) {
     }
-
-    static QuatPos identity() {
-        return {Quaternion::identity(), {0, 0, 0}};
-    }
-
-    static QuatPos fromOrtho(const Float3x4& m) {
-        return {Quaternion::fromOrtho(m.asFloat3x3()), m[3]};
-    }
-
-    static QuatPos fromOrtho(const Float4x4& m) {
-        return {Quaternion::fromOrtho(m), m[3].asFloat3()};
-    }
-
-    static QuatPos makeTranslation(const Float3& pos) {
-        return {{0, 0, 0, 1}, pos};
-    }
-
-    static QuatPos makeRotation(const Float3& unitAxis, float radians) {
-        return {Quaternion::fromAxisAngle(unitAxis, radians), {0, 0, 0}};
-    }
-
-    QuatPos operator*(const QuatPos& arg) const {
-        return {quat * arg.quat, (quat * arg.pos) + pos};
-    }
-
-    Float3 operator*(const Float3& p) const {
-        return (quat * p) + pos;
-    }
-
-    QuatPos operator*(const Quaternion& q) const {
-        return {quat * q, pos};
-    }
-
-    friend QuatPos operator*(const Quaternion& q, const QuatPos& qp) {
-        return {q * qp.quat, q * qp.pos};
-    }
-
-    QuatPos inverted() const {
-        Quaternion qi = quat.inverted();
-        return {qi, qi * -pos};
-    }
-
-    Float3x4 toFloat3x4() const {
-        return Float3x4::fromQuaternion(quat, pos);
-    }
-
-    Float4x4 toFloat4x4() const {
-        return Float4x4::fromQuaternion(quat, pos);
-    }
+    /*!
+    \category Transformation Functions
+    Returns a `QuatPos` that performs the inverse transformation of the given `QuatPos`.
+    */
+    QuatPos inverted() const;
+    /*!
+    \category Creation Functions
+    Returns the identity `QuatPos{{0, 0, 0, 1}, {0, 0, 0}}`.
+    */
+    static QuatPos identity();
+    /*!
+    Returns a `QuatPos` that performs translation only.
+    */
+    static QuatPos makeTranslation(const Float3& pos);
+    /*!
+    Returns a `QuatPos` that performs rotation only. `unitAxis` must have unit length. The angle is
+    specified in radians. Rotation follows the [right-hand
+    rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations) in a right-handed coordinate
+    system.
+    */
+    static QuatPos makeRotation(const Float3& unitAxis, float radians);
+    /*!
+    \beginGroup
+    Converts a transformation matrix to a `QuatPos`. The matrix must only consist of a rotation
+    and/or translation component.
+    */
+    static QuatPos fromOrtho(const Float3x4& m);
+    static QuatPos fromOrtho(const Float4x4& m);
+    /*!
+    \endGroup
+    */
 };
+
+/*!
+\addToClass QuatPos
+\category Transformation Functions
+Transforms `v` using `qp`. Equivalent to `qp.quat * v + qp.pos`.
+*/
+PLY_INLINE Float3 operator*(const QuatPos& qp, const Float3& v) {
+    return (qp.quat * v) + qp.pos;
+}
+/*!
+\beginGroup
+Composes a `QuatPos` with another `QuatPos` or a `Quaternion`. The resulting `QuatPos` performs
+the transformation performed by `b` followed by the transformation performed by `a`.
+*/
+PLY_INLINE QuatPos operator*(const QuatPos& a, const QuatPos& b) {
+    return {a.quat * b.quat, (a.quat * b.pos) + a.pos};
+}
+PLY_INLINE QuatPos operator*(const QuatPos& a, const Quaternion& b) {
+    return {a.quat * b, a.pos};
+}
+PLY_INLINE QuatPos operator*(const Quaternion& a, const QuatPos& b) {
+    return {a * b.quat, a * b.pos};
+}
+/*!
+\endGroup
+*/
+
+PLY_INLINE Float3x4 Float3x4::fromQuatPos(const QuatPos& qp) {
+    return fromQuaternion(qp.quat, qp.pos);
+}
+PLY_INLINE Float4x4 Float4x4::fromQuatPos(const QuatPos& qp) {
+    return fromQuaternion(qp.quat, qp.pos);
+}
 
 //----------------------------------------------------
 // QuatPosScale

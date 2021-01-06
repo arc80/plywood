@@ -16,6 +16,7 @@ struct Float2x2;
 struct Float3x3;
 struct Float3x4;
 struct Float4x4;
+struct QuatPos;
 
 //------------------------------------------------------------------------------------------------
 /*!
@@ -176,15 +177,15 @@ struct Float3x3 {
     */
     static Float3x3 makeScale(const Float3& arg);
     /*!
-    Returns a matrix that performs the same rotation as `q`.
-    */
-    static Float3x3 fromQuaternion(const Quaternion& q);
-    /*!
     Returns a matrix that performs a counter-clockwise rotation around the specified axis following
     the [right-hand rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations). `unitAxis` must
     have have unit length and the angle is specified in radians.
     */
     static Float3x3 makeRotation(const Float3& unitAxis, float radians);
+    /*!
+    Returns a matrix that performs the same rotation as `q`.
+    */
+    static Float3x3 fromQuaternion(const Quaternion& q);
 
     bool hasScale(float thresh = 0.001f) const;
     /*!
@@ -256,11 +257,11 @@ struct Float3x4 {
     /*!
     Constructs a 3x4 matrix from a 3x3 matrix and optional fourth column vector. When the resulting
     3x4 matrix transforms a `Float3`, it's equivalent to a transformation by `m3x3` followed by a
-    translation by `xlate`.
+    translation by `pos`.
 
         Float4x4 m = {Float3x3::identity(), {5, 0, 0}};
     */
-    explicit Float3x4(const Float3x3& m3x3, const Float3& xlate = {0, 0, 0});
+    explicit Float3x4(const Float3x3& m3x3, const Float3& pos = {0, 0, 0});
     /*!
     \category Conversion Functions
     Returns a const reference to the first three columns as `Float3x3` using type punning. This
@@ -301,12 +302,6 @@ struct Float3x4 {
     */
     static Float3x4 makeScale(const Float3& arg);
     /*!
-    Returns a matrix that performs the same rotation as `q`. If `xlate` is specified, it's used as
-    the fourth column, so that the resulting matrix performs the same rotation as `q` followed by a
-    translation by `xlate`.
-    */
-    static Float3x4 fromQuaternion(const Quaternion& q, const Float3& xlate = {0, 0, 0});
-    /*!
     Returns a matrix that performs a counter-clockwise rotation around the specified axis following
     the [right-hand rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations). `unitAxis` must
     have have unit length and the angle is specified in radians.
@@ -315,7 +310,16 @@ struct Float3x4 {
     /*!
     Returns a translation matrix.
     */
-    static Float3x4 makeTranslation(const Float3& arg);
+    static Float3x4 makeTranslation(const Float3& pos);
+    /*!
+    Returns a matrix that performs the same rotation as `q`. If `pos` is specified, it's used as the fourth column, so that the resulting matrix performs the same rotation as `q` followed by a
+    translation by `pos`.
+    */
+    static Float3x4 fromQuaternion(const Quaternion& q, const Float3& pos = {0, 0, 0});
+    /*!
+    Returns a matrix that performs the same transformation as `qp`.
+    */
+    static Float3x4 fromQuatPos(const QuatPos& qp);
 
     bool hasScale(float thresh = 0.001f) const;
     /*!
@@ -397,11 +401,11 @@ struct Float4x4 {
     /*!
     Constructs a 4x4 matrix by concatenating a 3x3 matrix with an optional fourth column vector and
     adding **[0 0 0 1]** as the fourth row. When the resulting 4x4 matrix transforms a `Float3`,
-    it's equivalent to a transformation by `m3x3` followed by a translation by `xlate`.
+    it's equivalent to a transformation by `m3x3` followed by a translation by `pos`.
 
         Float4x4 m = {Float3x3::identity(), {5, 0, 0}};
     */
-    explicit Float4x4(const Float3x3& m3x3, const Float3& xlate = {0, 0, 0});
+    explicit Float4x4(const Float3x3& m3x3, const Float3& pos = {0, 0, 0});
     /*!
     \category Conversion Functions
     Returns a 3x3 matrix by truncating the fourth column and fourth row of the 4x4 matrix.
@@ -442,12 +446,6 @@ struct Float4x4 {
     */
     static Float4x4 makeScale(const Float3& arg);
     /*!
-    Returns a matrix that performs the same rotation as `q`. If `xlate` is specified, it's used as
-    the fourth column, so that the resulting matrix performs the same rotation as `q` followed by a
-    translation by `xlate`.
-    */
-    static Float4x4 fromQuaternion(const Quaternion& q, const Float3& xlate = {0, 0, 0});
-    /*!
     Returns a matrix that performs a counter-clockwise rotation around the specified axis following
     the [right-hand rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations). `unitAxis` must
     have have unit length and the angle is specified in radians.
@@ -456,7 +454,16 @@ struct Float4x4 {
     /*!
     Returns a translation matrix.
     */
-    static Float4x4 makeTranslation(const Float3& arg);
+    static Float4x4 makeTranslation(const Float3& pos);
+    /*!
+    Returns a matrix that performs the same rotation as `q`. If `pos` is specified, it's used as the fourth column, so that the resulting matrix performs the same rotation as `q` followed by a
+    translation by `pos`.
+    */
+    static Float4x4 fromQuaternion(const Quaternion& q, const Float3& pos = {0, 0, 0});
+    /*!
+    Returns a matrix that performs the same transformation as `qp`.
+    */
+    static PLY_INLINE Float4x4 fromQuatPos(const QuatPos& qp);
     /*!
     \beginGroup
     Returns a perspective projection matrix that maps a 3D frustum to OpenGL clip space in
