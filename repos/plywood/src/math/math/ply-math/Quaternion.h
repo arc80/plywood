@@ -12,106 +12,181 @@ struct Float3x3;
 struct Float3x4;
 struct Float4x4;
 
+//------------------------------------------------------------------------------------------------
+/*!
+A quaternion is commonly used to represent a 3D rotation. Like `Float4`, it consists of four
+floating-point components `x`, `y`, `z` and `w`.
+
+Only unit quaternions (ie. quaternions with unit length) represent valid 3D rotations. The `x`, `y`
+and `z` components give the direction of the rotation axis, while the `w` component is the cosine of
+half the rotation angle. Rotation follows the [right-hand
+rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations) in a right-handed coordinate system.
+
+When working with quaternions and vectors, the `*` operator behaves differently depending on the
+type of the operands:
+
+* If `a` and `b` are both `Quaternion`, `a * b` returns their [Hamilton
+  product](https://en.wikipedia.org/wiki/Quaternion#Hamilton_product) (composition).
+* If `q` is a unit `Quaternion` and `v` is a `Float3`, `q * v` rotates `v` using `q`.
+* If `a` and `b` are both `Float4`, `a * b` performs componentwise multiplication.
+*/
 struct Quaternion {
+    /*!
+    \beginGroup
+    `w` is the fourth component. It follows `z` sequentially in memory.
+    */
     float x;
     float y;
     float z;
     float w;
+    /*!
+    \endGroup
+    */
 
-    Quaternion() {
+    /*!
+    \category Constructors
+    Constructs an uninitialized `Quaternion`.
+    */
+    PLY_INLINE Quaternion() = default;
+    /*!
+    Constructs a `Quaternion` from the given components.
+
+        Quaternion q = {0, 0, 0, 1};
+    */
+    PLY_INLINE Quaternion(float x, float y, float z, float w) : x{x}, y{y}, z{z}, w{w} {
     }
-
-    Quaternion(const Float3& v, float w) : x(v.x), y(v.y), z(v.z), w(w) {
+    /*!
+    Constructs a `Quaternion` from a `Float3` and a fourth component.
+    */
+    PLY_INLINE Quaternion(const Float3& v, float w) : x{v.x}, y{v.y}, z{v.z}, w{w} {
     }
-
-    Quaternion(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {
-    }
-
-    Float3& asFloat3() {
-        return reinterpret_cast<Float3&>(*this);
-    }
-
-    const Float3& asFloat3() const {
+    /*!
+    \category Conversion Functions
+    Returns a const reference to the first three components as a `Float3` using type punning. This
+    should only be used as a temporary expression.
+    */
+    PLY_INLINE const Float3& asFloat3() const {
+        PLY_PUN_SCOPE
         return reinterpret_cast<const Float3&>(*this);
     }
-
-    Float4& asFloat4() {
-        return reinterpret_cast<Float4&>(*this);
-    }
-
-    const Float4& asFloat4() const {
+    /*!
+    Casts to `Float4` using type punning. This should only be used as a temporary expression.
+    */
+    PLY_INLINE const Float4& asFloat4() const {
+        PLY_PUN_SCOPE
         return reinterpret_cast<const Float4&>(*this);
     }
-
-    static Quaternion identity() {
+    /*!
+    \category Creation Functions
+    Returns the identity quaternion `{0, 0, 0, 1}`.
+    */
+    static PLY_INLINE Quaternion identity() {
         return {0, 0, 0, 1};
     }
-
-    Quaternion operator-() const {
-        return {-x, -y, -z, -w};
-    }
-
-    static Quaternion fromAxisAngle(const Float3& unitAxis, float radians) {
-        float c = cosf(radians / 2);
-        float s = sinf(radians / 2);
-        return {s * unitAxis.x, s * unitAxis.y, s * unitAxis.z, c};
-    }
-
+    /*!
+    Returns a quaternion that represents a rotation around the given axis. `unitAxis` must have unit
+    length. The angle is specified in radians. Rotation follows the [right-hand
+    rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations) in a right-handed coordinate
+    system.
+    */
+    static Quaternion fromAxisAngle(const Float3& unitAxis, float radians);
+    /*!
+    Returns a unit quaternion that transforms `start` to `end`. Both input vectors must have unit
+    length.
+    */
     static Quaternion fromUnitVectors(const Float3& start, const Float3& end);
+    /*!
+    \beginGroup
+    Converts a rotation matrix to a unit quaternion.
+    */
+    static Quaternion fromOrtho(const Float3x3& m);
+    static Quaternion fromOrtho(const Float3x4& m);
+    static Quaternion fromOrtho(const Float4x4& m);
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Rotation Functions
+    Given a unit quaternion, returns a unit quaternion that represents its inverse rotation.
 
-    friend Quaternion operator*(const Quaternion& a, const Quaternion& b) {
-        return {a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
-                a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
-                a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
-                a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z};
-    }
-
-    friend Float3 operator*(const Quaternion& quat, const Float3& v) {
-        // From https://gist.github.com/rygorous/8da6651b597f3d825862
-        Float3 t = cross(quat.asFloat3(), v) * 2.f;
-        return v + t * quat.w + cross(quat.asFloat3(), t);
-    }
-
-    Float3 rotateUnitX() const {
-        return {1 - 2 * y * y - 2 * z * z, 2 * x * y + 2 * z * w, 2 * x * z - 2 * y * w};
-    }
-
-    Float3 rotateUnitY() const {
-        return {2 * x * y - 2 * z * w, 1 - 2 * x * x - 2 * z * z, 2 * y * z + 2 * x * w};
-    }
-
-    Float3 rotateUnitZ() const {
-        return {2 * x * z + 2 * y * w, 2 * y * z - 2 * x * w, 1 - 2 * x * x - 2 * y * y};
-    }
-
-    Quaternion renormalized() const {
-        return asFloat4().normalized().asQuaternion();
-    }
-
-    Quaternion inverted() const {
+    This function actually returns the
+    [conjugate](https://www.3dgep.com/understanding-quaternions/#Quaternion_Conjugate) of the given
+    quaternion by negating its `x`, `y` and `z` components, with the understanding that the
+    conjugate of a unit quaternion is also its inverse.
+    */
+    PLY_INLINE Quaternion inverted() const {
         // Small rotations have large w component, so prefer to keep the same sign of w.
         // Better for interpolation.
         return {-x, -y, -z, w};
     }
+    /*!
+    \beginGroup
+    Rotates the special vectors (1, 0, 0), (0, 1, 0) and (0, 0, 1) by the given quaternion using
+    fewer instructions than `operator*()`.
 
-    Quaternion negatedIfCloserTo(const Quaternion& other) const {
-        const Float4& v0 = asFloat4();
-        const Float4& v1 = other.asFloat4();
-        return (v0 - v1).length2() < (-v0 - v1).length2() ? v0.asQuaternion()
-                                                          : (-v0).asQuaternion();
+    * `q.rotateUnitX()` is equivalent to `q * Float3{1, 0, 0}`
+    * `q.rotateUnitY()` is equivalent to `q * Float3{0, 1, 0}`
+    * `q.rotateUnitZ()` is equivalent to `q * Float3{0, 0, 1}`
+
+    This function will probably be replaced by an overload of `operator*()` that accepts `Axis3`
+    values.
+    */
+    Float3 rotateUnitX() const;
+    Float3 rotateUnitY() const;
+    Float3 rotateUnitZ() const;
+    /*!
+    \endGroup
+    */
+    /*!
+    \category Quaternion Functions
+    Returns a unit quaternion having the same direction as `this`. The input quaternion must not be
+    zero. When many unit quaternions are composed together, it's a good idea to occasionally
+    re-normalize the result to compensate for any drift caused by floating-point imprecision.
+    */
+    PLY_INLINE Quaternion normalized() const {
+        return asFloat4().normalized().asQuaternion();
     }
+    /*!
+    \category Interpolation Functions
+    Returns either `this` or `-this`, whichever is closer to `other`. If `this` has unit length, the
+    resulting quaternion represents the same 3D rotation as `this`.
 
-    static Quaternion fromOrtho(const Float3x3& m);
-    static Quaternion fromOrtho(const Float4x4& m);
+    In general, when interpolating between arbitrary quaternions `a` and `b`, it's best to
+    interpolate from `a` to `b.negatedIfCloserTo(a)` since this form takes the shortest path.
+    */
+    Quaternion negatedIfCloserTo(const Quaternion& other) const;
 };
+
+/*!
+\addToClass Quaternion
+\category Quaternion Functions
+Unary negation. All components of the original quaternion are negated. If the quaternion has unit
+length, the resulting quaternion represents the same 3D rotation as the original quaternion.
+*/
+PLY_INLINE Quaternion operator-(const Quaternion& q) {
+    return {-q.x, -q.y, -q.z, -q.w};
+}
+/*!
+\category Rotation Functions
+Rotates the vector `v` by the quaternion `q`. `q` must have unit length.
+*/
+Float3 operator*(const Quaternion& q, const Float3& v);
+/*!
+Composes two quaternions using the [Hamilton
+product](https://en.wikipedia.org/wiki/Quaternion#Hamilton_product). If both quaternions have unit
+length, the resulting quaternion represents a rotation by `b` followed by a rotation by `a`.
+*/
+Quaternion operator*(const Quaternion& a, const Quaternion& b);
+/*!
+\category Interpolation Functions
+Interpolates between two quaternions. Performs a linear interpolation on the components of
+`a.negatedIfCloserTo(b)` and `b`, then normalizes the result.
+*/
+Quaternion mix(const Quaternion& a, const Quaternion& b, float f);
 
 PLY_INLINE const Quaternion& Float4::asQuaternion() const {
     PLY_COMPILER_BARRIER();
     return reinterpret_cast<const Quaternion&>(*this);
-}
-
-inline Quaternion mix(const Quaternion& lo, const Quaternion& hi, float f) {
-    return mix(lo.negatedIfCloserTo(hi).asFloat4(), hi.asFloat4(), f).normalized().asQuaternion();
 }
 
 } // namespace ply

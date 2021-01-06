@@ -902,7 +902,7 @@ struct Float4 {
         return reinterpret_cast<const Float3&>(*this);
     }
     /*!
-    Casts to a `Quaternion` using type punning. This should only be used as a temporary expression.
+    Casts to `Quaternion` using type punning. This should only be used as a temporary expression.
     */
     PLY_INLINE const Quaternion& asQuaternion() const;
     /*!

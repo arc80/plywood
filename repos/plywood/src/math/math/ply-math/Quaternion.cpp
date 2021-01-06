@@ -8,7 +8,14 @@
 
 namespace ply {
 
-Quaternion Quaternion::fromUnitVectors(const Float3& start, const Float3& end) {
+PLY_NO_INLINE Quaternion Quaternion::fromAxisAngle(const Float3& unitAxis, float radians) {
+    PLY_ASSERT(unitAxis.isUnit());
+    float c = cosf(radians / 2);
+    float s = sinf(radians / 2);
+    return {s * unitAxis.x, s * unitAxis.y, s * unitAxis.z, c};
+}
+
+PLY_NO_INLINE Quaternion Quaternion::fromUnitVectors(const Float3& start, const Float3& end) {
     // Float4{cross(start, end), dot(start, end)} gives you double the desired rotation.
     // To get the desired rotation, "average" (really just sum) that with Float4{0, 0, 0, 1},
     // then normalize.
@@ -54,14 +61,49 @@ PLY_INLINE Quaternion quaternionFromOrtho(M m) {
     return {0, 0, 0, 1};
 }
 
-Quaternion Quaternion::fromOrtho(const Float3x3& m) {
+PLY_NO_INLINE Quaternion Quaternion::fromOrtho(const Float3x3& m) {
     PLY_PUN_SCOPE
     return quaternionFromOrtho(reinterpret_cast<const float(*)[3]>(&m));
 }
 
-Quaternion Quaternion::fromOrtho(const Float4x4& m) {
+PLY_NO_INLINE Quaternion Quaternion::fromOrtho(const Float4x4& m) {
     PLY_PUN_SCOPE
     return quaternionFromOrtho(reinterpret_cast<const float(*)[4]>(&m));
+}
+
+PLY_NO_INLINE Float3 Quaternion::rotateUnitX() const {
+    return {1 - 2 * y * y - 2 * z * z, 2 * x * y + 2 * z * w, 2 * x * z - 2 * y * w};
+}
+
+PLY_NO_INLINE Float3 Quaternion::rotateUnitY() const {
+    return {2 * x * y - 2 * z * w, 1 - 2 * x * x - 2 * z * z, 2 * y * z + 2 * x * w};
+}
+
+PLY_NO_INLINE Float3 Quaternion::rotateUnitZ() const {
+    return {2 * x * z + 2 * y * w, 2 * y * z - 2 * x * w, 1 - 2 * x * x - 2 * y * y};
+}
+
+PLY_NO_INLINE Quaternion Quaternion::negatedIfCloserTo(const Quaternion& other) const {
+    const Float4& v0 = asFloat4();
+    const Float4& v1 = other.asFloat4();
+    return (v0 - v1).length2() < (-v0 - v1).length2() ? v0.asQuaternion() : (-v0).asQuaternion();
+}
+
+PLY_NO_INLINE Float3 operator*(const Quaternion& q, const Float3& v) {
+    // From https://gist.github.com/rygorous/8da6651b597f3d825862
+    Float3 t = cross(q.asFloat3(), v) * 2.f;
+    return v + t * q.w + cross(q.asFloat3(), t);
+}
+
+PLY_NO_INLINE Quaternion operator*(const Quaternion& a, const Quaternion& b) {
+    return {a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+            a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+            a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
+            a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z};
+}
+
+PLY_NO_INLINE Quaternion mix(const Quaternion& a, const Quaternion& b, float f) {
+    return mix(a.negatedIfCloserTo(b).asFloat4(), b.asFloat4(), f).normalized().asQuaternion();
 }
 
 } // namespace ply

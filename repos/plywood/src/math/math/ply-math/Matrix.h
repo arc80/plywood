@@ -364,6 +364,10 @@ implicit fourth row.
 */
 Float3x4 operator*(const Float3x4& a, const Float3x4& b);
 
+PLY_INLINE static Quaternion fromOrtho(const Float3x4& m) {
+    return Quaternion::fromOrtho(m.asFloat3x3());
+}
+
 //------------------------------------------------------------------------------------------------
 /*!
 A 4x4 matrix of floating-point values.
