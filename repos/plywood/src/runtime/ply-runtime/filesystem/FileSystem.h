@@ -350,9 +350,7 @@ struct FileSystem {
 
     `dirPath` contains the path to the directory. `dirNames` is a list of the names of the
     subdirectories in `dirPath` excluding `"."` and `".."`. `files` is a list of
-    `WalkTriple::FileInfo` objects for the non-directory files in `dirPath`. Note that the names in
-    the lists contain no path components. To get a full path (which begins with `top`) to a file or
-    directory in `dirPath`, call `pathFormat().join(dirPath, name)`.
+    `WalkTriple::FileInfo` objects for the non-directory files in `dirPath`.
 
     On each iteration of the loop, the caller can modify the `dirNames` list in-place, and `walk()`
     will only recurse into the subdirectories whose names remain in `dirNames`. This can be used to
@@ -397,7 +395,7 @@ struct FileSystem {
     well. Expected result codes are `OK`, `NotFound` (if, for example, the volume was removed during
     iteration) or `AccessDenied`.
     */
-    PLY_DLL_ENTRY Walk walk(StringView path, u32 flags = WithSizes | WithTimes);
+    PLY_DLL_ENTRY Walk walk(StringView top, u32 flags = WithSizes | WithTimes);
 
     /*!
     Creates a new directory. The parent directory must already exist.

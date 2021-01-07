@@ -72,13 +72,13 @@ struct WalkImpl : FileSystem::Walk::Impl {
 };
 } // namespace details
 
-PLY_NO_INLINE FileSystem::Walk FileSystem::walk(StringView path, u32 flags) {
+PLY_NO_INLINE FileSystem::Walk FileSystem::walk(StringView top, u32 flags) {
     details::WalkImpl* walk = new details::WalkImpl;
     walk->destruct = details::WalkImpl::destructImpl;
     walk->next = details::WalkImpl::nextImpl;
     walk->fs = this;
     walk->flags = flags;
-    walk->visit(path);
+    walk->visit(top);
     return walk;
 }
 
