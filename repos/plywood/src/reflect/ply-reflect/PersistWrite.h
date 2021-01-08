@@ -76,11 +76,6 @@ struct SavedPtrResolver {
         static PLY_INLINE Key comparand(Item item, const Context& ctx) {
             return ctx[item].ptr.ptr;
         }
-        static PLY_INLINE u32 hash(const void* src) {
-            Hasher h;
-            h.appendPtr(src);
-            return h.result();
-        }
     };
 
     Array<WeakPointerToResolve> weakPtrsToResolve;

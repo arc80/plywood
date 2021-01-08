@@ -4,17 +4,16 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
+#include <ply-runtime/container/BufferView.h>
 
 namespace ply {
 
 // Adapted from https://github.com/aappleby/smhasher
 // Specifically https://raw.githubusercontent.com/aappleby/smhasher/master/src/PMurHash.c
 
-class Hasher {
-private:
-    u32 m_accum = 0;
+struct Hasher {
+    u32 accum = 0;
 
-public:
     static PLY_INLINE u32 finalize(u32 h) {
         h ^= h >> 16;
         h *= 0x85ebca6bu;
@@ -24,31 +23,47 @@ public:
         return h;
     }
 
-    PLY_DLL_ENTRY void append(u32 value);
+    PLY_DLL_ENTRY u32 result() const;
 
-    PLY_INLINE void append(float value) {
+    template <typename T>
+    static PLY_INLINE u32 hash(const T& obj) {
+        Hasher h;
+        h << obj;
+        return h.result();
+    }
+};
+
+//------------------------------------------
+// Built-in hash support
+//------------------------------------------
+PLY_DLL_ENTRY Hasher& operator<<(Hasher& hasher, u32 value);
+
+PLY_INLINE Hasher& operator<<(Hasher& hasher, float value) {
 #if PLY_COMPILER_GCC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
-        append(value == 0 ? (u32) 0 : *(u32*) &value);
+    hasher << (value == 0 ? (u32) 0 : *reinterpret_cast<u32*>(&value));
 #if PLY_COMPILER_GCC
 #pragma GCC diagnostic pop
 #endif
-    }
+}
 
-    PLY_INLINE void append(u64 value) {
-        append(u32(value));
-        append(u32(value >> 32));
-    }
+PLY_INLINE Hasher& operator<<(Hasher& hasher, u64 value) {
+    hasher << u32(value);
+    hasher << u32(value >> 32);
+    return hasher;
+}
 
-    PLY_INLINE void appendPtr(const void* ptr) {
-        append(uptr(ptr));
-    }
-
-    PLY_DLL_ENTRY void appendBuffer(const void* data, u32 len);
-
-    PLY_DLL_ENTRY u32 result() const;
+// For pointer to class or void*, use pointer value only.
+// (Note: char* is not accepted here.)
+template <typename T,
+          std::enable_if_t<std::is_class<T>::value || std::is_same<T, void>::value, int> = 0>
+PLY_INLINE Hasher& operator<<(Hasher& hasher, const T* value) {
+    hasher << uptr(value);
+    return hasher;
 };
+
+PLY_DLL_ENTRY Hasher& operator<<(Hasher& hasher, ConstBufferView buf);
 
 } // namespace ply

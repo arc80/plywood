@@ -481,15 +481,11 @@ struct StringView {
     omitted.
     */
     PLY_DLL_ENTRY StringView withoutNullTerminator() const;
-
-    /*!
-    Feeds the contents of the given string to a hash function.
-    */
-    template <typename Hasher>
-    PLY_INLINE void appendTo(Hasher& hasher) const {
-        hasher.append(this->numBytes);
-        hasher.appendBuffer(this->bytes, this->numBytes);
-    }
 };
+
+// Note: char* will be implicitly converted to StringView here:
+PLY_INLINE Hasher& operator<<(Hasher& h, StringView str) {
+    return h << str.bufferView();
+}
 
 } // namespace ply

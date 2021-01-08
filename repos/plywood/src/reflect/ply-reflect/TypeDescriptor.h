@@ -143,10 +143,6 @@ struct TypeDescriptor {
         PLY_ASSERT(typeKey == T::typeKey);
         return static_cast<const T*>(this);
     }
-    PLY_INLINE void appendTo(Hasher& hasher) const {
-        hasher.appendPtr(typeKey);
-        typeKey->hashDescriptor(hasher, this);
-    }
 
     PLY_INLINE bool isEquivalentTo(const TypeDescriptor* other) const {
         if (this == other)
@@ -158,6 +154,12 @@ struct TypeDescriptor {
         return typeKey->equalDescriptors(this, other);
     }
 };
+
+PLY_INLINE Hasher& operator<<(Hasher& hasher, const TypeDescriptor* typeDesc) {
+    hasher << typeDesc->typeKey;
+    typeDesc->typeKey->hashDescriptor(hasher, typeDesc);
+    return hasher;
+}
 
 //-----------------------------------------------------------------------
 // Built-in TypeDescriptors

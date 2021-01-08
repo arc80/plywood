@@ -53,11 +53,6 @@ struct CookJobID {
     PLY_INLINE String str() const {
         return String::format("{}:{}", this->type->name, this->desc);
     }
-    template <typename Hasher>
-    PLY_INLINE void appendTo(Hasher& hasher) const {
-        hasher.appendPtr(this->type);
-        this->desc.appendTo(hasher);
-    }
 };
 
 struct Dependency;
@@ -169,16 +164,11 @@ struct CookContext {
         struct Item {
             CookJob* job;
             Status status;
-            Item(CookJob* job) : job{job}, status{CookInProgress} {
+            PLY_INLINE Item(CookJob* job) : job{job}, status{CookInProgress} {
             }
         };
         static PLY_INLINE Key comparand(const Item& item) {
             return item.job;
-        }
-        static PLY_INLINE u32 hash(Key key) {
-            Hasher h;
-            h.appendPtr(key);
-            return h.result();
         }
     };
 
@@ -187,11 +177,6 @@ struct CookContext {
         using Item = CookJob*;
         static PLY_INLINE Key comparand(const Item& item) {
             return item;
-        }
-        static PLY_INLINE u32 hash(Key key) {
-            Hasher h;
-            h.appendPtr(key);
-            return h.result();
         }
     };
 

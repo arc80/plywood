@@ -18,12 +18,6 @@ struct FetchFromFileSystem {
             PLY_INLINE Item(StringView extension) : extension{extension} {
             }
         };
-        PLY_INLINE static u32 hash(const Key& key) {
-            String keyCopy = key; // FIXME: hack to satisfy hasher alignment
-            Hasher hasher;
-            keyCopy.appendTo(hasher);
-            return hasher.result();
-        }
         PLY_INLINE static const Key& comparand(const Item& item) {
             return item.extension;
         }

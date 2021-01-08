@@ -116,20 +116,11 @@ struct HashMap {
         static PLY_NO_INLINE u32 hash(const void* key) {
             return Traits::hash(*(const Key*) key);
         }
-        template <typename U = Traits,
-                  std::enable_if_t<!HasHash<U> && std::is_pointer<typename U::Key>::value, int> = 0>
-        static PLY_NO_INLINE u32 hash(const void* key) {
-            Hasher hasher;
-            hasher.appendPtr(*(const Key*) key);
-            return hasher.result();
-        }
         template <
             typename U = Traits,
-            std::enable_if_t<!HasHash<U> && !std::is_pointer<typename U::Key>::value, int> = 0>
+            std::enable_if_t<!HasHash<U>, int> = 0>
         static PLY_NO_INLINE u32 hash(const void* key) {
-            Hasher hasher;
-            ((const Key*) key)->appendTo(hasher);
-            return hasher.result();
+            return Hasher::hash(*(const Key*) key);
         }
 
         // equalOp (internal function)
@@ -269,9 +260,35 @@ public:
     }
 };
 
-//------------------------------------------------------------------
-// HashMap
-//------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+/*!
+A class template for hash maps and hash sets. Allows you to create various kinds of associative maps
+using hashed key lookups.
+
+`HashMap` is a versatile class template. It provides the functionality of both `std::unordered_map`
+and `std::unordered_set` while supporting use cases that aren't possible with either of those class
+templates:
+
+* You can create an index into an existing container (which could be an `Array`, `FixedArray`,
+  `std::vector` or `Pool`) without duplicating any of the data stored in that container. This is
+  made possible by the optional `context` parameter accepted by `find()` and `insertOrFind()`.
+
+* The type used for key lookup can differ from the storage type. For example, a `HashMap` can
+  contain `String` objects but use `StringView` objects for lookup, thus avoiding the need to create
+  temporary `String` objects during lookup. `std::unordered_map` only began to support this behavior
+  in C++20.
+
+The `find()` and `insertOrFind()` functions return `Cursor` (or `ConstCursor`) objects. With a
+`Cursor` object, you can determine whether the given key was found, retrieve the item associated
+with that key, or erase the item from the map.
+
+Internally, `HashMap` uses [leapfrog probing](https://preshing.com/20160314/leapfrog-probing/).
+
+`HashMap` is not thread-safe. If you manipulate a map object from multiple threads, you must
+enforce mutual exclusion yourself.
+
+See [HashMap Traits](HashMapTraits).
+*/
 template <class Traits>
 class HashMap {
 private:

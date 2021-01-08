@@ -1,8 +1,10 @@
-<% setClassScope ply::HashMap %>
 <% title "HashMap" %>
+<% setClassScope ply::HashMap %>
 
-A template class suitable for creating hash maps and hash sets. Internally, the hash map/set uses [leapfrog probing](https://preshing.com/20160314/leapfrog-probing/). A hash map/set created using `HashMap` is not thread-safe, so if you manipulate it from multiple threads, you must enforce mutual exclusion yourself.
+## Header File
 
-See [HashMap Traits](HashMapTraits).
+`#include <ply-runtime/container/HashMap.h>`
+
+Also included from `<ply-runtime/Base.h>`.
 
 <% dumpExtractedMembers ply::HashMap %>

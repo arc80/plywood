@@ -7,35 +7,39 @@
 
 namespace ply {
 
-PLY_NO_INLINE void Hasher::append(u32 value) {
+PLY_NO_INLINE u32 Hasher::result() const {
+    return finalize(this->accum);
+}
+
+PLY_NO_INLINE Hasher& operator<<(Hasher& hasher, u32 value) {
     value *= 0xcc9e2d51u;
     value = (value << 15) | (value >> 17);
     value *= 0x1b873593u;
-    m_accum ^= value;
-    m_accum = (m_accum << 13) | (m_accum >> 19);
-    m_accum = m_accum * 5 + 0xe6546b64u;
+    hasher.accum ^= value;
+    hasher.accum = (hasher.accum << 13) | (hasher.accum >> 19);
+    hasher.accum = hasher.accum * 5 + 0xe6546b64u;
+    return hasher;
 }
 
-PLY_NO_INLINE u32 Hasher::result() const {
-    return finalize(m_accum);
-}
+PLY_NO_INLINE Hasher& operator<<(Hasher& hasher, ConstBufferView buf) {
+    // FIXME: More work is needed for platforms that don't support unaligned reads
 
-PLY_NO_INLINE void Hasher::appendBuffer(const void* data, u32 len) {
-    // Note: This may need to be adapted for platforms that don't support unaligned reads
-    while (len >= 4) {
-        append(*(const u32*) data);
-        data = (const void*) PLY_PTR_OFFSET(data, 4);
-        len -= 4;
+    while (buf.numBytes >= 4) {
+        hasher << *(const u32*) buf.bytes;  // May be unaligned
+        buf.bytes += 4;
+        buf.numBytes -= 4;
     }
-    if (len > 0) {
+    if (buf.numBytes > 0) {
+        // Avoid potential unaligned read across page boundary
         u32 v = 0;
-        while (len > 0) {
-            v = (v << 8) | *(const u8*) data;
-            data = (const void*) PLY_PTR_OFFSET(data, 1);
-            len--;
+        while (buf.numBytes > 0) {
+            v = (v << 8) | *(const u8*) buf.bytes;
+            buf.bytes++;
+            buf.numBytes--;
         }
-        append(len);
+        hasher << v;
     }
+    return hasher;
 }
 
 } // namespace ply

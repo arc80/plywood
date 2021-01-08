@@ -224,9 +224,9 @@ TypeKey TypeKey_FixedArray{
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {
         const auto* fixedArrayType = typeDesc->cast<const TypeDescriptor_FixedArray>();
-        fixedArrayType->itemType->appendTo(hasher);
-        hasher.append(fixedArrayType->numItems);
-        hasher.append(fixedArrayType->stride);
+        hasher << fixedArrayType->itemType;
+        hasher << fixedArrayType->numItems;
+        hasher << fixedArrayType->stride;
     },
     // equalDescriptors
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
@@ -295,7 +295,7 @@ TypeKey TypeKey_Array{
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {
         const auto* arrayType = typeDesc->cast<const TypeDescriptor_Array>();
-        arrayType->itemType->appendTo(hasher);
+        hasher << arrayType->itemType;
     },
     // equalDescriptors
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
@@ -401,7 +401,7 @@ TypeKey TypeKey_Owned{
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {
         const auto* ownedType = typeDesc->cast<const TypeDescriptor_Owned>();
-        ownedType->targetType->appendTo(hasher);
+        hasher << ownedType->targetType;
     },
     // equalDescriptors
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
@@ -437,7 +437,7 @@ TypeKey TypeKey_Reference{
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {
         const auto* referencedType = typeDesc->cast<const TypeDescriptor_Reference>();
-        referencedType->targetType->appendTo(hasher);
+        hasher << referencedType->targetType;
     },
     // equalDescriptors
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
@@ -512,11 +512,11 @@ TypeKey TypeKey_Struct{
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {
         const auto* structType = typeDesc->cast<const TypeDescriptor_Struct>();
-        hasher.append(structType->members.numItems());
+        hasher << structType->members.numItems();
         for (const auto& member : structType->members) {
-            member.name.view().appendTo(hasher);
-            hasher.append(member.offset);
-            member.type->appendTo(hasher);
+            hasher << member.name.view();
+            hasher << member.offset;
+            hasher << member.type;
         }
     },
     // equalDescriptors
@@ -684,7 +684,7 @@ TypeKey TypeKey_WeakPtr{
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {
         const auto* weakPtrType = typeDesc->cast<const TypeDescriptor_WeakPtr>();
-        weakPtrType->targetType->appendTo(hasher);
+        hasher << weakPtrType->targetType;
     },
     // equalDescriptors
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {

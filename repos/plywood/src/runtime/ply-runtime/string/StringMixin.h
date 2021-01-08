@@ -283,14 +283,11 @@ struct StringMixin {
     PLY_INLINE StringView withoutNullTerminator() const {
         return static_cast<const Derived*>(this)->view().withoutNullTerminator();
     }
-
-    /*!
-    Feeds the contents of the given string to a hash function.
-    */
-    template <typename Hasher>
-    PLY_INLINE void appendTo(Hasher& hasher) const {
-        static_cast<const Derived*>(this)->view().appendTo(hasher);
-    }
 };
+
+template <typename Derived>
+PLY_INLINE Hasher& operator<<(Hasher& hasher, const StringMixin<Derived>& str) {
+    return hasher << static_cast<const Derived*>(&str)->view();
+}
 
 } // namespace ply
