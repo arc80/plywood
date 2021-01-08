@@ -6,119 +6,102 @@
 #include <ply-runtime/filesystem/FileSystem.h>
 #include <ply-runtime/io/Pipe.h>
 
-#if 0
 namespace ply {
-namespace details {
 
 struct FileSystem_Virtual : FileSystem {
     FileSystem* targetFS = nullptr;
     String targetRoot;
 
-    FileSystem_Virtual(const PathFormat& pathFmt);
+    FileSystem_Virtual();
 
     PLY_NO_INLINE String convertToTargetPath(StringView path) const {
-        if (targetRoot.isEmpty()) {
-            return targetFS->pathFmt.convertFrom(pathFmt, path).view();
-        } else {
-            // If there's a targetRoot, only accept relative paths
-            // FIXME: should also detect and prohibit ".."
-            PLY_ASSERT(!pathFmt.isAbsolute(path));
-            return targetFS->pathFmt.join(targetRoot, targetFS->pathFmt.convertFrom(pathFmt, path));
-        }
+        // FIXME: should also detect and prohibit ".."
+        PathFormat pathFmt = this->targetFS->pathFormat();
+        PLY_ASSERT(!pathFmt.isAbsolute(path));
+        return pathFmt.join(this->targetRoot, PosixPath::from(pathFmt, path));
     }
 
-    static PLY_NO_INLINE Directory listDir(FileSystem* fs_, StringView path) {
+    static PLY_NO_INLINE Directory listDir(FileSystem* fs_, StringView path, u32 flags) {
         FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
-        return fs->targetFS->listDir(fs->convertToTargetPath(path));
+        return fs->targetFS->listDir(fs->convertToTargetPath(path), flags);
     }
 
-    static PLY_NO_INLINE OpenResult makeDirImpl(FileSystem* fs_, StringView path) {
+    static PLY_NO_INLINE FSResult makeDir(FileSystem* fs_, StringView path) {
         FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
         return fs->targetFS->makeDir(fs->convertToTargetPath(path));
     }
 
-    static PLY_NO_INLINE String getWorkingDirectoryImpl(const FileSystem* fs_) {
+    static PLY_NO_INLINE FSResult setWorkingDirectory(FileSystem*, StringView) {
+        PLY_ASSERT(0); // Unsupported
+        return FSResult::NotFound;
+    }
+
+    static PLY_NO_INLINE String getWorkingDirectory(FileSystem*) {
         PLY_ASSERT(0); // Unsupported
         return {};
     }
 
-    static PLY_NO_INLINE ExistsResult existsImpl(const FileSystem* fs_, StringView path) {
-        const FileSystem_Virtual* fs = static_cast<const FileSystem_Virtual*>(fs_);
+    static PLY_NO_INLINE ExistsResult exists(FileSystem* fs_, StringView path) {
+        FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
         return fs->targetFS->exists(fs->convertToTargetPath(path));
     }
 
-    static PLY_NO_INLINE Tuple<Owned<InPipe>, OpenResult> openPipeForReadImpl(FileSystem* fs_,
-                                                                              StringView path) {
+    static PLY_NO_INLINE Owned<InPipe> openPipeForRead(FileSystem* fs_, StringView path) {
         FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
         return fs->targetFS->openPipeForRead(fs->convertToTargetPath(path));
     }
 
-    static PLY_NO_INLINE Tuple<Owned<InStream>, OpenResult> openForReadImpl(FileSystem* fs_,
-                                                                            StringView path) {
-        FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
-        return fs->targetFS->openForRead(fs->convertToTargetPath(path));
-    }
-
-    static PLY_NO_INLINE Tuple<Owned<OutPipe>, OpenResult> openPipeForWriteImpl(FileSystem* fs_,
-                                                                                StringView path) {
+    static PLY_NO_INLINE Owned<OutPipe> openPipeForWrite(FileSystem* fs_, StringView path) {
         FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
         return fs->targetFS->openPipeForWrite(fs->convertToTargetPath(path));
     }
 
-    static PLY_NO_INLINE Tuple<Owned<OutStream>, OpenResult> openForWriteImpl(FileSystem* fs_,
-                                                                              StringView path) {
-        FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
-        return fs->targetFS->openForWrite(fs->convertToTargetPath(path));
-    }
-
-    static PLY_NO_INLINE OpenResult replaceFileImpl(FileSystem* fs_, StringView dstPath,
-                                                    StringView srcPath) {
+    static PLY_NO_INLINE FSResult moveFile(FileSystem* fs_, StringView dstPath,
+                                           StringView srcPath) {
         FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
         return fs->targetFS->moveFile(fs->convertToTargetPath(dstPath),
-                                         fs->convertToTargetPath(srcPath));
+                                      fs->convertToTargetPath(srcPath));
     }
 
-    static PLY_NO_INLINE OpenResult deleteFileImpl(FileSystem* fs_, StringView path) {
+    static PLY_NO_INLINE FSResult deleteFile(FileSystem* fs_, StringView path) {
         FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
         return fs->targetFS->deleteFile(fs->convertToTargetPath(path));
     }
 
-    static PLY_NO_INLINE Tuple<FileStatus, OpenResult> getFileStatusImpl(const FileSystem* fs_,
-                                                                         StringView path) {
-        const FileSystem_Virtual* fs = static_cast<const FileSystem_Virtual*>(fs_);
+    static PLY_NO_INLINE FSResult removeDirTree(FileSystem* fs_, StringView dirPath) {   
+        FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
+        return fs->targetFS->removeDirTree(fs->convertToTargetPath(dirPath));
+    }
+
+    static PLY_NO_INLINE FileStatus getFileStatus(FileSystem* fs_, StringView path) {
+        FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
         return fs->targetFS->getFileStatus(fs->convertToTargetPath(path));
     }
 };
 
-// clang-format off
-FileSystem::Funcs FileSystem_Virtual_Funcs = {
+FileSystem::Funcs FileSystemFuncs_Virtual = {
+    {false},
     FileSystem_Virtual::listDir,
-    FileSystem_Virtual::makeDirImpl,
-    FileSystem_Virtual::getWorkingDirectoryImpl,
-    FileSystem_Virtual::existsImpl,
-    FileSystem_Virtual::openPipeForReadImpl,
-    FileSystem_Virtual::openForReadImpl,
-    FileSystem_Virtual::openPipeForWriteImpl,
-    FileSystem_Virtual::openForWriteImpl,
-    FileSystem_Virtual::replaceFileImpl,
-    FileSystem_Virtual::deleteFileImpl,
-    FileSystem_Virtual::getFileStatusImpl,
+    FileSystem_Virtual::makeDir,
+    FileSystem_Virtual::setWorkingDirectory,
+    FileSystem_Virtual::getWorkingDirectory,
+    FileSystem_Virtual::exists,
+    FileSystem_Virtual::openPipeForRead,
+    FileSystem_Virtual::openPipeForWrite,
+    FileSystem_Virtual::moveFile,
+    FileSystem_Virtual::deleteFile,
+    FileSystem_Virtual::removeDirTree,
+    FileSystem_Virtual::getFileStatus,
 };
-// clang-format on
 
-PLY_INLINE FileSystem_Virtual::FileSystem_Virtual(const PathFormat& pathFmt)
-    : FileSystem{&FileSystem_Virtual_Funcs, pathFmt} {
+PLY_INLINE FileSystem_Virtual::FileSystem_Virtual() : FileSystem{&FileSystemFuncs_Virtual} {
 }
 
-} // namespace details
-
-Owned<FileSystem> createVirtualFileSystem(FileSystem* targetFS, const PathFormat& pathFmt,
-                                          StringView targetRoot) {
-    details::FileSystem_Virtual* fs = new details::FileSystem_Virtual{pathFmt};
-    fs->targetFS = targetFS;
-    fs->targetRoot = targetRoot;
+Owned<FileSystem> FileSystem::createVirtual(StringView rootPath) {
+    FileSystem_Virtual* fs = new FileSystem_Virtual;
+    fs->targetFS = this;
+    fs->targetRoot = rootPath;
     return fs;
 }
 
 } // namespace ply
-#endif

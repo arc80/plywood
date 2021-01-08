@@ -130,7 +130,7 @@ native filesystem. When working with an abstract `FileSystem` where the path for
 `pathFormat()` will return a `PathFormat` object suitable for manipulating paths in the expected
 format. See [Manipulating Paths](ManipulatingPaths) for more information.
 
-You can create a virtual filesystem using `createVirtualFileSystem()`, or even implement your own.
+You can create a virtual filesystem by calling `createVirtual()`, or even implement your own.
 Virtual filesystems don't necessarily support all the member functions in the `FileSystem`
 interface.
 
@@ -635,6 +635,15 @@ struct FileSystem {
     */
     PLY_DLL_ENTRY FSResult makeDirsAndSaveTextIfDifferent(StringView path, StringView strContents,
                                                           const TextFormat& textFormat);
+
+    /*!
+    Creates a virtual `FileSystem` that acts entirely within the directory specified by `rootPath`.
+
+    The result virtual `FileSystem` works with POSIX-style paths, doesn't implement
+    `getWorkingDirectory` or `setWorkingDirectory`, and doesn't accept absolute paths as arguments
+    to any of its member functions. Some of those restrictions might be removed in the future.
+    */
+    Owned<FileSystem> createVirtual(StringView rootPath);
 };
 
 } // namespace ply
