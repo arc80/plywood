@@ -121,8 +121,8 @@ ExternResult extern_libpng_builtFromSource(ExternCommand cmd, ExternProviderArgs
         return {ExternResult::UnsupportedToolchain, "Target platform must be 'windows'"};
     }
     StringView arch = args->toolchain->get("arch")->text();
-    if (findItem(ArrayView<const StringView>{"x86"}, arch) < 0) {
-        return {ExternResult::UnsupportedToolchain, "Target arch must be 'x86'"};
+    if (findItem(ArrayView<const StringView>{"x86", "x64"}, arch) < 0) {
+        return {ExternResult::UnsupportedToolchain, "Target arch must be 'x86' or 'x64'"};
     }
     if (args->providerArgs) {
         return {ExternResult::BadArgs, ""};
@@ -145,10 +145,14 @@ ExternResult extern_libpng_builtFromSource(ExternCommand cmd, ExternProviderArgs
         String installFolder = er.second->path;
         args->dep->includeDirs.append(NativePath::join(installFolder, "libpng"));
         args->dep->includeDirs.append(NativePath::join(installFolder, "zlib"));
-        args->dep->libs.append(NativePath::join(
-            installFolder, "libpng/projects/vstudio/Release Library/libpng16.lib"));
-        args->dep->libs.append(
-            NativePath::join(installFolder, "libpng/projects/vstudio/Release Library/zlib.lib"));
+        StringView archFolder;
+        if (arch == "x64") {
+            archFolder = "x64";
+        }
+        args->dep->libs.append(NativePath::join(installFolder, "libpng/projects/vstudio",
+                                                archFolder, "Release Library/libpng16.lib"));
+        args->dep->libs.append(NativePath::join(installFolder, "libpng/projects/vstudio",
+                                                archFolder, "Release Library/zlib.lib"));
         return {ExternResult::Instantiated, ""};
     }
     PLY_ASSERT(0);

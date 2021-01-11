@@ -58,8 +58,8 @@ ExternResult extern_libavcodec_prebuilt(ExternCommand cmd, ExternProviderArgs* a
         "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2020-10-26-12-33/"
         "ffmpeg-n4.3.1-20-g8a2acdc6da-win64-lgpl-shared-4.3.zip";
     String archiveName = PosixPath::split(url).second;
-    Array<StringView> libVersions = {"avcodec-58", "avutil-56", "avformat-58", "swresample-3",
-                                     "swscale-5"};
+    Array<StringView> libVersions = {"avcodec-58",  "avutil-56",    "avfilter-7",
+                                     "avformat-58", "swresample-3", "swscale-5"};
 
     // Handle Command
     Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(arch);
