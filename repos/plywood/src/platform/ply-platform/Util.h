@@ -29,7 +29,7 @@ template <typename I0, typename I1>
 PLY_INLINE std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, I0>
 alignPowerOf2(I0 v, I1 a) {
     PLY_ASSERT(isPowerOf2(a));
-    return (v + a - 1) & ~(a - 1);
+    return (v + a - 1) & ~I0(a - 1);
 }
 
 template <typename I0, typename I1>
