@@ -326,8 +326,8 @@ Owned<Node> Parser::readObject(const Token& startToken) {
             HybridString name;
             u32 fileOfs;
         };
-        static Key comparand(const Item& item) {
-            return item.name.view();
+        static PLY_INLINE bool match(const Item& item, Key key) {
+            return item.name.view() == key;
         }
     };
     HashMap<PropLocationTraits> propLocations;

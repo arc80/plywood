@@ -73,8 +73,8 @@ struct SavedPtrResolver {
         using Key = void*;
         using Item = u32;
         using Context = Array<SavedOwnedPtr>;
-        static PLY_INLINE Key comparand(Item item, const Context& ctx) {
-            return ctx[item].ptr.ptr;
+        static PLY_INLINE bool match(Item item, Key key, const Context& ctx) {
+            return ctx[item].ptr.ptr == key;
         }
     };
 

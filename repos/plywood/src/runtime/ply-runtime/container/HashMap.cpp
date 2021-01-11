@@ -92,14 +92,13 @@ PLY_NO_INLINE void HashMap::migrateToNewTable(const Callbacks* cb) {
 }
 
 PLY_NO_INLINE HashMap::FindResult HashMap::findNext(FindInfo* info, const Callbacks* cb,
-                                                    const void* context) const {
+                                                    const void* key, const void* context) const {
     PLY_ASSERT(m_cellGroups);
     PLY_ASSERT(info->itemSlot);
     u32 cellGroupSize = sizeof(CellGroup) + cb->itemSize * 4;
     CellGroup* group =
         (CellGroup*) PLY_PTR_OFFSET(m_cellGroups, cellGroupSize * ((info->idx & m_sizeMask) >> 2));
     PLY_ASSERT(info->itemSlot == PLY_PTR_OFFSET(group + 1, cb->itemSize * (info->idx & 3)));
-    const void* fromItem = info->itemSlot;
     u32 hash = group->hashes[info->idx & 3];
 
     // Follow probe chain for our bucket.
@@ -110,7 +109,7 @@ PLY_NO_INLINE HashMap::FindResult HashMap::findNext(FindInfo* info, const Callba
         group = m_cellGroups + ((info->idx & m_sizeMask) >> 2);
         if (group->hashes[info->idx & 3] == hash) {
             void* item = PLY_PTR_OFFSET(group + 1, cb->itemSize * (info->idx & 3));
-            if (cb->equalItems(item, fromItem, context)) {
+            if (cb->match(item, key, context)) {
                 info->itemSlot = item;
                 return FindResult::Found;
             }
@@ -150,7 +149,7 @@ PLY_NO_INLINE HashMap::FindResult HashMap::insertOrFind(FindInfo* info, const Ca
     if (((flags & AllowFind) != 0) && (group->nextDelta[info->idx & 3] != EmptySlot) &&
         (group->hashes[info->idx & 3] == hash)) {
         void* item = PLY_PTR_OFFSET(group + 1, cb->itemSize * (info->idx & 3));
-        if (cb->equal(item, key, context)) {
+        if (cb->match(item, key, context)) {
             info->itemSlot = item;
             return FindResult::Found;
         }
@@ -166,7 +165,7 @@ PLY_NO_INLINE HashMap::FindResult HashMap::insertOrFind(FindInfo* info, const Ca
         PLY_ASSERT(group->nextDelta[info->idx & 3] != EmptySlot);
         if (((flags & AllowFind) != 0) && (group->hashes[info->idx & 3] == hash)) {
             void* item = PLY_PTR_OFFSET(group + 1, cb->itemSize * (info->idx & 3));
-            if (cb->equal(item, key, context)) {
+            if (cb->match(item, key, context)) {
                 info->itemSlot = item;
                 return FindResult::Found; // Item found in table
             }

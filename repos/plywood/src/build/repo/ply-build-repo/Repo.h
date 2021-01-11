@@ -14,8 +14,8 @@ struct Repo {
     struct TargetInstantiatorsTraits {
         using Key = StringView;
         using Item = Owned<TargetInstantiator>;
-        static PLY_INLINE StringView comparand(const Item& item) {
-            return item->name;
+        static PLY_INLINE bool match(const Item& item, Key key) {
+            return item->name == key;
         }
     };
 

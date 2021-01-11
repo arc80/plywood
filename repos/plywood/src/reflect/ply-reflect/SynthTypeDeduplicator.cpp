@@ -12,10 +12,10 @@ struct SynthTypeDeduplicator {
     struct HashMapTraits {
         using Key = TypeDescriptorOwner*;
         using Item = Reference<TypeDescriptorOwner>;
-        PLY_INLINE static u32 hash(const Key& key) {
+        static PLY_INLINE u32 hash(const Key& key) {
             return Hasher::hash(key->getRootType());
         }
-        static bool equal(Key a, Key b) {
+        static PLY_INLINE bool match(const Item& a, Key b) {
             return a->getRootType()->isEquivalentTo(b->getRootType());
         }
     };

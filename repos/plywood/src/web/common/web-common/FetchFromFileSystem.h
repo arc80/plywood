@@ -18,8 +18,8 @@ struct FetchFromFileSystem {
             PLY_INLINE Item(StringView extension) : extension{extension} {
             }
         };
-        PLY_INLINE static const Key& comparand(const Item& item) {
-            return item.extension;
+        static PLY_INLINE bool match(const Item& item, Key key) {
+            return item.extension == key;
         }
     };
 

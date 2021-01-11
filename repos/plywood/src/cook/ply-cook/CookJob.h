@@ -167,16 +167,16 @@ struct CookContext {
             PLY_INLINE Item(CookJob* job) : job{job}, status{CookInProgress} {
             }
         };
-        static PLY_INLINE Key comparand(const Item& item) {
-            return item.job;
+        static PLY_INLINE bool match(const Item& item, Key key) {
+            return item.job == key;
         }
     };
 
     struct DeferredTraits {
         using Key = CookJob*;
         using Item = CookJob*;
-        static PLY_INLINE Key comparand(const Item& item) {
-            return item;
+        static PLY_INLINE bool match(Item item, Key key) {
+            return item == key;
         }
     };
 

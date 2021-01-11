@@ -59,8 +59,8 @@ struct Preprocessor {
             String identifier;
             u32 expansionIdx = 0;
         };
-        static Key comparand(const Item& item) {
-            return item.identifier;
+        static PLY_INLINE bool match(const Item& item, Key key) {
+            return item.identifier == key;
         }
     };
     HashMap<MacrosTraits> macros;

@@ -26,8 +26,8 @@ struct ProjectInstantiationResult {
         using Key = const DependencySource*;
         using Item = s32;
         using Context = Array<DependencyEntry>;
-        static PLY_INLINE const Key& comparand(Item item, const Context& ctx) {
-            return ctx[item].depSrc;
+        static PLY_INLINE bool match(Item item, Key key, const Context& ctx) {
+            return ctx[item].depSrc == key;
         }
     };
 

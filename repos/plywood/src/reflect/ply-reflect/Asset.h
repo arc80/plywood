@@ -54,8 +54,8 @@ public:
             StringView name;
             TypeDescriptor* type = nullptr;
         };
-        static Key comparand(const Item& item) {
-            return item.name;
+        static PLY_INLINE bool match(const Item& item, Key key) {
+            return item.name == key;
         }
     };
 

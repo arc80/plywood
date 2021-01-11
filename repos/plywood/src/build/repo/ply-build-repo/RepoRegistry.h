@@ -16,8 +16,8 @@ struct RepoRegistry {
     struct RepoMapTraits {
         using Key = StringView;
         using Item = Owned<Repo>;
-        static PLY_INLINE Key comparand(const Item& item) {
-            return item->repoName;
+        static PLY_INLINE bool match(const Item& item, Key key) {
+            return item->repoName == key;
         }
     };
 

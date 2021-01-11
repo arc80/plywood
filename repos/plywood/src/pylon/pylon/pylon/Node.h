@@ -30,8 +30,8 @@ struct Node {
             using Key = StringView;
             using Item = u32;
             using Context = Array<Object::Item>;
-            static PLY_INLINE StringView comparand(u32 item, const Array<Object::Item>& ctx) {
-                return ctx[item].key.view();
+            static PLY_INLINE bool match(Item item, Key key, const Context& ctx) {
+                return ctx[item].key.view() == key;
             }
         };
 

@@ -19,8 +19,8 @@ struct DocServer {
             PLY_INLINE Item(StringView linkPath) : linkPath{linkPath} {
             }
         };
-        static PLY_INLINE Key comparand(const Item& item) {
-            return item.linkPath;
+        static PLY_INLINE bool match(const Item& item, Key key) {
+            return item.linkPath == key;
         }
     };
 

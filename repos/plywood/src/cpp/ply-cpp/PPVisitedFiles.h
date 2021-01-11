@@ -73,7 +73,7 @@ struct PPVisitedFiles {
         }
         static PLY_INLINE void onItemMoved(const Item, void*) {
         }
-        static bool equal(const Item& a, const Item& b) {
+        static PLY_INLINE bool match(const Item& a, const Item& b) {
             return a.linearLoc == b.linearLoc;
         }
     };

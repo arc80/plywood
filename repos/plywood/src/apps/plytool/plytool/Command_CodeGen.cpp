@@ -112,8 +112,8 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg) {
             Item(const Key& key) : cppInlPath{key} {
             }
         };
-        static Key comparand(const Item& item) {
-            return item.cppInlPath;
+        static PLY_INLINE bool match(const Item& item, Key key) {
+            return item.cppInlPath == key;
         }
     };
     HashMap<Traits> fileToGeneratorList;

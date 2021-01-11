@@ -48,23 +48,19 @@ struct HashMap {
         void (*moveConstruct)(void* dstItem, void* srcItem) = nullptr;
         void (*moveAssign)(void* dstItem, void* srcItem) = nullptr;
         u32 (*hash)(const void* key) = nullptr;
-        bool (*equal)(const void* item, const void* key, const void* context) = nullptr;
-        bool (*equalItems)(const void* item0, const void* item1, const void* context) = nullptr;
+        bool (*match)(const void* item, const void* key, const void* context) = nullptr;
     };
 
     PLY_SFINAE_EXPR_1(HasConstruct, &T0::construct);
     PLY_SFINAE_EXPR_1(HasHash, &T0::hash);
-    PLY_SFINAE_EXPR_1(HasComparand, &T0::comparand);
-    PLY_SFINAE_EXPR_1(HasEqual, &T0::equal);
-    PLY_SFINAE_EXPR_1(HasComparandWithContext, T0::comparand(std::declval<typename T0::Item>(),
-                                                             std::declval<typename T0::Context>()));
+    PLY_SFINAE_EXPR_1(HasContext, (typename T0::Context*) nullptr);
 
     template <class, class = void>
-    struct Context_ {
+    struct Context {
         using Type = Empty;
     };
     template <class Traits>
-    struct Context_<Traits, void_t<typename Traits::Context>> {
+    struct Context<Traits, void_t<typename Traits::Context>> {
         using Type = typename Traits::Context;
     };
 
@@ -72,7 +68,6 @@ struct HashMap {
     struct CallbackMaker {
         using Key = typename Traits::Key;
         using Item = typename Traits::Item;
-        using Context = typename Context_<Traits>::Type;
 
         // construct
         template <typename U = Traits, std::enable_if_t<HasConstruct<U>, int> = 0>
@@ -116,73 +111,33 @@ struct HashMap {
         static PLY_NO_INLINE u32 hash(const void* key) {
             return Traits::hash(*(const Key*) key);
         }
-        template <
-            typename U = Traits,
-            std::enable_if_t<!HasHash<U>, int> = 0>
+        template <typename U = Traits, std::enable_if_t<!HasHash<U>, int> = 0>
         static PLY_NO_INLINE u32 hash(const void* key) {
             return Hasher::hash(*(const Key*) key);
         }
 
-        // equalOp (internal function)
-        template <typename U = Traits, std::enable_if_t<HasEqual<U>, int> = 0>
-        static PLY_INLINE bool equalOp(const Key& a, const Key& b) {
-            return Traits::equal(a, b);
+        // match (item and key)
+        template <typename U = Traits, std::enable_if_t<!HasContext<U>, int> = 0>
+        static PLY_NO_INLINE bool match(const void* item, const void* key, const void*) {
+            return Traits::match(*(const Item*) item, *(const Key*) key);
         }
-        template <typename U = Traits, std::enable_if_t<!HasEqual<U>, int> = 0>
-        static PLY_INLINE bool equalOp(const Key& a, const Key& b) {
-            return a == b;
-        }
-
-        // equal
-        template <typename U = Traits, std::enable_if_t<HasComparandWithContext<U>, int> = 0>
-        static PLY_NO_INLINE bool equal(const void* item, const void* key, const void* context) {
-            return equalOp(Traits::comparand(*(const Item*) item, *(const Context*) context),
-                           *(const Key*) key);
-        }
-        template <typename U = Traits,
-                  std::enable_if_t<!HasComparandWithContext<U> && HasComparand<U>, int> = 0>
-        static PLY_NO_INLINE bool equal(const void* item, const void* key, const void*) {
-            return equalOp(Traits::comparand(*(const Item*) item), *(const Key*) key);
-        }
-        template <typename U = Traits, std::enable_if_t<!HasComparand<U>, int> = 0>
-        static PLY_NO_INLINE bool equal(const void* item, const void* key, const void*) {
-            const Key& comp = *(const Item*) item;
-            return equalOp(comp, *(const Key*) key);
-        }
-
-        // equalItems (Note: This can be deleted if insertMulti() is deleted)
-        template <typename U = Traits, std::enable_if_t<HasComparandWithContext<U>, int> = 0>
-        static PLY_NO_INLINE bool equalItems(const void* item0, const void* item1,
-                                             const void* context) {
-            return equalOp(Traits::comparand(*(const Item*) item0, *(const Context*) context),
-                           Traits::comparand(*(const Item*) item1, *(const Context*) context));
-        }
-        template <typename U = Traits,
-                  std::enable_if_t<!HasComparandWithContext<U> && HasComparand<U>, int> = 0>
-        static PLY_NO_INLINE bool equalItems(const void* item0, const void* item1, const void*) {
-            return equalOp(Traits::comparand(*(const Item*) item0),
-                           Traits::comparand(*(const Item*) item1));
-        }
-        template <typename U = Traits, std::enable_if_t<!HasComparand<U>, int> = 0>
-        static PLY_NO_INLINE bool equalItems(const void* item0, const void* item1,
-                                             const void* context) {
-            const Key& comp0 = *(const Item*) item0;
-            const Key& comp1 = *(const Item*) item1;
-            return equalOp(comp0, comp1);
+        template <typename U = Traits, std::enable_if_t<HasContext<U>, int> = 0>
+        static PLY_NO_INLINE bool match(const void* item, const void* key, const void* context) {
+            return Traits::match(*(const Item*) item, *(const Key*) key,
+                                 *(const typename U::Context*) context);
         }
 
         static PLY_INLINE const Callbacks* instance() {
             static Callbacks ins = {
                 sizeof(Item),
                 std::is_trivially_destructible<Item>::value,
-                !std::is_same<Context, Empty>::value,
+                HasContext<Traits>,
                 &construct,
                 &destruct,
                 &moveConstruct,
                 &moveAssign,
                 &hash,
-                &equal,
-                &equalItems,
+                &match,
             };
             return &ins;
         };
@@ -207,7 +162,7 @@ struct HashMap {
     static PLY_DLL_ENTRY CellGroup* createTable(const Callbacks* cb, u32 size = InitialSize);
     static PLY_DLL_ENTRY void destroyTable(const Callbacks* cb, CellGroup* cellGroups, u32 size);
     PLY_DLL_ENTRY void migrateToNewTable(const Callbacks* cb);
-    PLY_DLL_ENTRY FindResult findNext(FindInfo* info, const Callbacks* cb,
+    PLY_DLL_ENTRY FindResult findNext(FindInfo* info, const Callbacks* cb, const void* key,
                                       const void* context) const;
     PLY_DLL_ENTRY FindResult insertOrFind(FindInfo* info, const Callbacks* cb, const void* key,
                                           const void* context, u32 flags);
@@ -294,8 +249,8 @@ class HashMap {
 private:
     using Key = typename Traits::Key;
     using Item = typename Traits::Item;
+    using Context = typename details::HashMap::Context<Traits>::Type;
     using Callbacks = details::HashMap::CallbackMaker<Traits>;
-    using Context = typename Callbacks::Context;
 
     // Note: Must be kept binary compatible with details::HashMap::CellGroup
     struct CellGroup {
@@ -401,9 +356,9 @@ public:
         PLY_INLINE bool wasFound() const {
             return m_findResult == details::HashMap::FindResult::Found;
         }
-        PLY_INLINE void next(const Context& context = {}) {
+        PLY_INLINE void next(const Key& key, const Context& context = {}) {
             m_findResult = reinterpret_cast<const details::HashMap*>(m_map)->findNext(
-                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &context);
+                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
         }
         PLY_INLINE Item& operator*() {
             PLY_ASSERT(m_findInfo.itemSlot);
@@ -419,10 +374,10 @@ public:
                 (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), unusedLink);
             m_findResult = details::HashMap::FindResult::NotFound;
         }
-        PLY_INLINE void eraseAndAdvance(const Context& context = {}) {
+        PLY_INLINE void eraseAndAdvance(const Key& key, const Context& context = {}) {
             FindInfo infoToErase = m_findInfo;
             m_findResult = reinterpret_cast<const details::HashMap&>(m_map).findNext(
-                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &context);
+                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
             reinterpret_cast<details::HashMap*>(m_map)->erase(
                 (details::HashMap::FindInfo*) &infoToErase, Callbacks::instance(),
                 m_findInfo.prevLink);
@@ -466,9 +421,9 @@ public:
         PLY_INLINE bool wasFound() const {
             return m_findResult == details::HashMap::FindResult::Found;
         }
-        PLY_INLINE void next(const Context& context = {}) {
+        PLY_INLINE void next(const Key& key, const Context& context = {}) {
             m_findResult = reinterpret_cast<const details::HashMap&>(m_map).findNext(
-                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &context);
+                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
         }
         PLY_INLINE Item& operator*() {
             PLY_ASSERT(m_findInfo.itemSlot);
