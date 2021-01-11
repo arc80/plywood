@@ -5,7 +5,7 @@
 #include <image-reflect/Core.h>
 #include <image-reflect/ImageReflect.h>
 
-PLY_ENUM_BEGIN(image::Format)
+PLY_ENUM_BEGIN(ply::image::, Format)
 PLY_ENUM_IDENTIFIER(Unknown)
 PLY_ENUM_IDENTIFIER(Char)
 PLY_ENUM_IDENTIFIER(Byte)

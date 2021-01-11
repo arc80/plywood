@@ -515,7 +515,7 @@ struct Initializer {
     }
 
 #define PLY_STRUCT_BEGIN_PRIM(type) \
-    PLY_NO_INLINE ply::TypeDescriptor_Struct* ply::getReflection(type*) { \
+    PLY_NO_INLINE ply::TypeDescriptor_Struct* getReflection(type*) { \
         using T = type; \
         static ply::TypeDescriptor_Struct typeDesc { \
             (type*) nullptr, #type, {
