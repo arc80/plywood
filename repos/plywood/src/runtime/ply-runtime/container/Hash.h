@@ -47,6 +47,7 @@ PLY_INLINE Hasher& operator<<(Hasher& hasher, float value) {
 #if PLY_COMPILER_GCC
 #pragma GCC diagnostic pop
 #endif
+    return hasher;
 }
 
 PLY_INLINE Hasher& operator<<(Hasher& hasher, u64 value) {
