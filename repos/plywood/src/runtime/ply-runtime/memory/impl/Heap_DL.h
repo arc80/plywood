@@ -116,7 +116,7 @@ public:
     // zero-init.
     // Otherwise, you should call this function before using it:
     void zeroInit() {
-        memset(this, 0, sizeof(*this));
+        memset(static_cast<void*>(this), 0, sizeof(*this));
     }
 
     typedef memory_dl::Stats Stats;
