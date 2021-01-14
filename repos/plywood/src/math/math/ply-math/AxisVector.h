@@ -242,13 +242,6 @@ struct AxisRot {
             {toFloat3(cols[0]), 0}, {toFloat3(cols[1]), 0}, {toFloat3(cols[2]), 0}, {0, 0, 0, 1}};
     }
 
-    template <typename Hasher>
-    void appendTo(Hasher& hasher) const {
-        PLY_ASSERT(isValid());
-        u32 value = u32(cols[0]) | (u32(cols[1]) << 8) | (u32(cols[2]) << 16);
-        hasher.append(value);
-    }
-
     template <typename Callback>
     static void forEach(const Callback& cb) {
         for (u32 xImg = 0; xImg < 6; xImg++) {
@@ -303,12 +296,6 @@ struct AxisRotPos {
 
     static AxisRotPos makeTranslation(const Float3& pos) {
         return {AxisRot::identity(), pos};
-    }
-
-    template <typename Hasher>
-    void appendTo(Hasher& hasher) const {
-        rot.appendTo(hasher);
-        pos.appendTo(hasher);
     }
 
     Float4x4 toFloat4x4() const {

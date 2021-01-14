@@ -151,12 +151,6 @@ struct Float2 {
     /*!
     \endGroup
     */
-    template <typename Hasher>
-    void appendTo(Hasher& hasher) const {
-        for (u32 i = 0; i < 2; i++) {
-            hasher.append(((const float*) this)[i]);
-        }
-    }
 };
 
 /*!
@@ -545,15 +539,6 @@ struct Float3 {
     /*!
     \endGroup
     */
-    template <typename Hasher>
-    PLY_INLINE void appendTo(Hasher& hasher) const {
-        PLY_PUN_SCOPE {
-            auto* v = (const float*) this;
-            for (u32 i = 0; i < 3; i++) {
-                hasher.append(v[i]);
-            }
-        }
-    }
 };
 
 /*!
@@ -976,12 +961,6 @@ struct Float4 {
     /*!
     \endGroup
     */
-    template <typename Hasher>
-    void appendTo(Hasher& hasher) const {
-        for (u32 i = 0; i < 4; i++) {
-            hasher.append(((const float*) this)[i]);
-        }
-    }
 };
 
 /*!
