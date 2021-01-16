@@ -340,7 +340,7 @@ particular, a component with a value of `0.f` is equal to a component with a val
 */
 bool operator==(const Float3x4& a, const Float3x4& b);
 PLY_INLINE bool operator!=(const Float3x4& a, const Float3x4& b) {
-    return !(a != b);
+    return !(a == b);
 }
 /*!
 \endGroup
