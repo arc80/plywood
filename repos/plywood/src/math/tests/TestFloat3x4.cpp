@@ -24,6 +24,14 @@ PLY_TEST_CASE("Float3x4 constructor") {
     PLY_TEST_CHECK(m[3].x == 10 && m[3].y == 11 && m[3].z == 12);
 }
 
+PLY_TEST_CASE("Float3x4 conversion as Float3x3") {
+    Float3x3 m33 ={{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+    Float3x4 m = Float3x4{m33, {13, 14, 15}};
+
+    PLY_TEST_CHECK(m33 == m.asFloat3x3());
+}
+
+
 PLY_TEST_CASE("Float3x4 element modification") {
     Float3x4 m = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}};
 
@@ -54,11 +62,11 @@ PLY_TEST_CASE("Float3x4 comparisons") {
     PLY_TEST_CHECK(Float3x4{{5, 4, 2}, {3, 2, 1}, {2, 1, 0}, {3, 6, 10}} !=
                    Float3x4{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}, {17, 18, 19}});
 
-    PLY_TEST_CHECK(!(Float3x4{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}, {17, 18, 19}} ==
+    PLY_TEST_CHECK(!(Float3x4{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}, {17, 18, 19}} !=
                      Float3x4{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}, {17, 18, 19}}));
-    PLY_TEST_CHECK(!(Float3x4{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}} ==
+    PLY_TEST_CHECK(!(Float3x4{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}} !=
                      Float3x4{{-0.f, 0, 0}, {0, 0, -0.f}, {0, -0.f, 0}, {0, 0, 0.f}}));
-    PLY_TEST_CHECK(!(Float3x4{{5, 4, 2}, {3, 2, 1}, {2, 1, 0}, {3, 6, 10}} !=
+    PLY_TEST_CHECK(!(Float3x4{{5, 4, 2}, {3, 2, 1}, {2, 1, 0}, {3, 6, 10}} ==
                      Float3x4{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}, {17, 18, 19}}));
 }
 
