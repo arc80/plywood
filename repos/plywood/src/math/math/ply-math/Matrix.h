@@ -171,7 +171,7 @@ struct Float3x3 {
     \category Creation Functions
     Returns the identity matrix `{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}`.
     */
-    static PLY_INLINE Float3x3 identity();
+    static Float3x3 identity();
     /*!
     Returns a scale matrix.
     */
@@ -206,7 +206,7 @@ particular, a component with a value of `0.f` is equal to a component with a val
 */
 bool operator==(const Float3x3& a, const Float3x3& b);
 PLY_INLINE bool operator!=(const Float3x3& a, const Float3x3& b) {
-    return !(a != b);
+    return !(a == b);
 }
 /*!
 \endGroup
@@ -340,7 +340,7 @@ particular, a component with a value of `0.f` is equal to a component with a val
 */
 bool operator==(const Float3x4& a, const Float3x4& b);
 PLY_INLINE bool operator!=(const Float3x4& a, const Float3x4& b) {
-    return !(a != b);
+    return !(a == b);
 }
 /*!
 \endGroup
