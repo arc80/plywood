@@ -84,6 +84,8 @@ PLY_NO_INLINE bool OutPipe_Win32_flush(OutPipe* outPipe_, bool toDevice) {
             switch (err) {
                 case ERROR_INVALID_HANDLE:
                     break;
+                case ERROR_BROKEN_PIPE:
+                    break;
                 default: {
                     PLY_ASSERT(0); // Need to recognize this error code
                     break;
