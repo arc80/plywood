@@ -271,6 +271,10 @@ struct Float3x4 {
         return reinterpret_cast<const Float3x3&>(*this);
     }
     /*!
+    Returns a 4x4 matrix by adding **[0 0 0 1]** as the fourth row.
+    */
+    Float4x4 toFloat4x4() const;
+    /*!
     \category Element Access
     \beginGroup
     Accesses the column vector at the specified index. In general, `m[3]` can be thought of as the

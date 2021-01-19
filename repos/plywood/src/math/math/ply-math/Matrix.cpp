@@ -142,6 +142,10 @@ PLY_NO_INLINE Float3x4::Float3x4(const Float3x3& m3x3, const Float3& pos) {
     col[3] = pos;
 }
 
+PLY_NO_INLINE Float4x4 Float3x4::toFloat4x4() const {
+    return Float4x4{{col[0], 0}, {col[1], 0}, {col[2], 0}, {col[3], 1}};
+}
+
 PLY_NO_INLINE Float3x4 Float3x4::identity() {
     return {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}};
 }
