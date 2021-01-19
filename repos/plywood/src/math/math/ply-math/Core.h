@@ -29,7 +29,7 @@ inline float square(float v) {
 inline double square(double v) {
     return v * v;
 }
-template <typename T>
+template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
 inline T approach(T from, T to, T step) {
     return (from <= to) ? min(from + step, to) : max(from - step, to);
 }

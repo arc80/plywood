@@ -56,10 +56,10 @@ inline Float3x3 makeBasis(const Float3& unitFwd, Axis3 fwdFrom) {
 }
 
 // FIXME: Move approach() out of extra namespace?
-template <class V>
-V approach(const V& from, const V& to, typename V::T step) {
-    V delta = to - from;
-    typename V::T length = delta.length();
+template <typename T, typename = std::enable_if_t<!std::is_arithmetic<T>::value>>
+T approach(const T& from, const T& to, decltype(T::x) step) {
+    T delta = to - from;
+    decltype(T::x) length = delta.length();
     return (length < step) ? to : from + delta * (step / length);
 }
 
