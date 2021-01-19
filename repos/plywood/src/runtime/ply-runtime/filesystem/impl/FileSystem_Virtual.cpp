@@ -56,11 +56,11 @@ struct FileSystem_Virtual : FileSystem {
         return fs->targetFS->openPipeForWrite(fs->convertToTargetPath(path));
     }
 
-    static PLY_NO_INLINE FSResult moveFile(FileSystem* fs_, StringView dstPath,
-                                           StringView srcPath) {
+    static PLY_NO_INLINE FSResult moveFile(FileSystem* fs_, StringView srcPath,
+                                           StringView dstPath) {
         FileSystem_Virtual* fs = static_cast<FileSystem_Virtual*>(fs_);
-        return fs->targetFS->moveFile(fs->convertToTargetPath(dstPath),
-                                      fs->convertToTargetPath(srcPath));
+        return fs->targetFS->moveFile(fs->convertToTargetPath(srcPath),
+                                      fs->convertToTargetPath(dstPath));
     }
 
     static PLY_NO_INLINE FSResult deleteFile(FileSystem* fs_, StringView path) {
