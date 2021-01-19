@@ -31,7 +31,7 @@ struct IPAddress {
   static constexpr PLY_INLINE IPAddress localHost(Version ipVersion) {
     return (ipVersion == Version::V4)
                ? IPAddress{{0, 0, PLY_CONVERT_BIG_ENDIAN(0xffffu),
-                            PLY_CONVERT_BIG_ENDIAN(0x100007fu)}}
+                            PLY_CONVERT_BIG_ENDIAN(0x7f000001u)}}
                : IPAddress{{0, 0, 0, PLY_CONVERT_BIG_ENDIAN(1u)}};
   }
 
