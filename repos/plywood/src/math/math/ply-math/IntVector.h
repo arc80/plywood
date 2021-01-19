@@ -216,7 +216,9 @@ struct Int3 {
 
     template <typename OtherVec3>
     OtherVec3 to() const {
-        return {typename OtherVec3::T(x), typename OtherVec3::T(y), typename OtherVec3::T(z)};
+        using T = decltype(OtherVec3::x);
+        PLY_STATIC_ASSERT(sizeof(OtherVec3) == sizeof(T) * 3);
+        return {(T) x, (T) y, (T) z};
     }
 
     T& operator[](size_t i) {
