@@ -5,6 +5,37 @@
 #pragma once
 #include <ply-runtime/Core.h>
 
+namespace ply {
+
+// Used as the return value of ThreadLocal::setInScope()
+template <template <typename> typename TL, typename T>
+class ThreadLocalScope {
+private:
+    TL<T>* var;
+    T oldValue;
+
+public:
+    PLY_INLINE ThreadLocalScope(TL<T>* var, T newValue) : var{var} {
+        this->oldValue = var->load();
+        var->store(newValue);
+    }
+
+    ThreadLocalScope(const ThreadLocalScope&) = delete;
+    PLY_INLINE ThreadLocalScope(ThreadLocalScope&& other) {
+        this->var = other->var;
+        this->oldValue = std::move(other.oldValue);
+        other->var = nullptr;
+    }
+
+    ~ThreadLocalScope() {
+        if (this->var) {
+            this->var->store(this->oldValue);
+        }
+    }
+};
+
+} // namespace ply
+
 // clang-format off
 
 // Choose default implementation if not already configured by ply_userconfig.h:
@@ -28,19 +59,7 @@
 // Alias it:
 namespace ply {
 
-template<typename T>
-class ThreadLocal : public PLY_IMPL_THREADLOCAL_TYPE<T> {
-public:
-    void operator=(T value) {
-        PLY_IMPL_THREADLOCAL_TYPE<T>::operator=(value);
-    }
-};
-
-template<typename T>
-class ThreadLocalScope : public PLY_IMPL_THREADLOCALSCOPE_TYPE<T> {
-public:
-    ThreadLocalScope(ThreadLocal<T>& ptr, T value) : PLY_IMPL_THREADLOCALSCOPE_TYPE<T>(ptr, value) {
-    }
-};
+template <typename T>
+using ThreadLocal = PLY_IMPL_THREADLOCAL_TYPE<T>;
 
 } // namespace ply
