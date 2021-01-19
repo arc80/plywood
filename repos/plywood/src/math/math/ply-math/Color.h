@@ -13,8 +13,9 @@ void convertFromHex(float* values, size_t numValues, const char* hex);
 
 template <typename V>
 V fromHex(const char* hex) {
+    static constexpr u32 Rows = sizeof(V) / sizeof(V::x);
     V result;
-    convertFromHex(&result.x, V::Rows, hex);
+    convertFromHex(&result.x, Rows, hex);
     return result;
 }
 
