@@ -53,18 +53,10 @@ struct ChunkListNode {
         return this->bytes + this->numBytes;
     }
 
-    PLY_DLL_ENTRY void onRefCountZero();
-
     PLY_INLINE void incRef() {
         this->refCount++;
     }
-    PLY_INLINE void decRef() {
-        refCount--;
-        PLY_ASSERT(refCount >= 0);
-        if (refCount == 0) {
-            onRefCountZero();
-        }
-    }
+    PLY_DLL_ENTRY void decRef();
 
     static PLY_DLL_ENTRY Reference<ChunkListNode> allocate(u64 fileOffset, u32 numBytes);
     static PLY_DLL_ENTRY void addChunkToTail(Reference<ChunkListNode>& nodeRef, u32 numBytes);

@@ -41,11 +41,16 @@ PLY_NO_INLINE void ChunkListNode::addChunkToTail(Reference<ChunkListNode>& chunk
     }
 }
 
-PLY_NO_INLINE void ChunkListNode::onRefCountZero() {
-    ChunkListNode* n = this->next;
-    PLY_HEAP.freeAligned(this->bytes); // frees the header too
-    if (n) {
-        n->decRef();
+PLY_NO_INLINE void ChunkListNode::decRef() {
+    ChunkListNode* node = this;
+    while (node) {
+        node->refCount--;
+        PLY_ASSERT(node->refCount >= 0);
+        if (node->refCount > 0)
+            break;
+        ChunkListNode* n = node->next;
+        PLY_HEAP.freeAligned(node->bytes);
+        node = n;
     }
 }
 
