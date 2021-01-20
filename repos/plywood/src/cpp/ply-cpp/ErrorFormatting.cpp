@@ -34,6 +34,8 @@ StringView getExpectedTokenDesc(ExpectedToken expected) {
             return "'('";
         case ExpectedToken::OpenCurly:
             return "'{'";
+        case ExpectedToken::OpenAngle:
+            return "'<'";
         case ExpectedToken::OpenCurlyOrParen:
             return "'{' or '('";
         case ExpectedToken::CloseParen:

@@ -64,6 +64,39 @@ PLY_NO_INLINE void parseParameterDeclarationList(Parser* parser,
             ellipsis->ellipsisToken = expectedLoc;
             pdc->declSpecifierSeq.append(declSpec);
             anyTokensConsumed = true;
+        } else if (forTemplate && expectedLoc.identifier == "template") {
+            // template template parameter
+            // FIXME: Extend the grammar and store the result in params
+            grammar::Declaration::Template_ tmpl;
+            tmpl.keyword = expectedLoc;
+            Token token2 = readToken(parser);
+            if (token2.type != Token::OpenAngle) {
+                // expected <
+                parser->error(true, {ParseError::Expected, token2, ExpectedToken::OpenAngle});
+                pushBackToken(parser, token2);
+                goto endOfParam;
+            }
+            pushBackToken(parser, token2);
+            ParseActivity pa{parser};
+            {
+                PLY_SET_IN_SCOPE(parser->pp->tokenizeCloseAnglesOnly, true);
+                parseParameterDeclarationList(parser, tmpl.params, true);
+            }
+            if (pa.errorOccurred())
+                goto endOfParam;
+            Token classToken = readToken(parser);
+            if (classToken.identifier != "class") { // C++17 also accepts 'typename'
+                parser->error(true, {ParseError::Expected, classToken, ExpectedToken::OpenAngle});
+                pushBackToken(parser, classToken);
+                goto endOfParam;
+            }
+            // read stuff after that
+            grammar::Declaration::Simple simple;
+            parseSpecifiersAndDeclarators(parser, simple, SpecDcorMode::TypeID);
+            if (!pa.errorOccurred()) {
+                // We successfully parsed a template template parameter declaration.
+                parser->stopMutingErrors();
+            }
         } else {
             pushBackToken(parser, expectedLoc);
             grammar::Declaration::Simple simple;
@@ -85,6 +118,8 @@ PLY_NO_INLINE void parseParameterDeclarationList(Parser* parser,
             }
             anyTokensConsumed = pa.anyTokensConsumed();
         }
+    endOfParam:
+        ;
 
         token = readToken(parser);
         if (token.type == pp->closePunc) {

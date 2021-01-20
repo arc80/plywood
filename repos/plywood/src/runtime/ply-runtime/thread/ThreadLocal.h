@@ -8,7 +8,7 @@
 namespace ply {
 
 // Used as the return value of ThreadLocal::setInScope()
-template <template <typename> typename TL, typename T>
+template <template <typename> class TL, typename T>
 class ThreadLocalScope {
 private:
     TL<T>* var;

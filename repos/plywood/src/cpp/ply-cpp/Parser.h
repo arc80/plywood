@@ -64,6 +64,7 @@ enum class ExpectedToken {
     NestedNamePrefix,
     OpenParen,
     OpenCurly,
+    OpenAngle,
     OpenCurlyOrParen,
     CloseParen,
     CloseSquare,
@@ -86,6 +87,7 @@ enum class ExpectedToken {
     ParameterType,
     TemplateParameterDecl,
     TypeSpecifier,
+    ClassKeyword,
 };
 PLY_REFLECT_ENUM(, ExpectedToken)
 
