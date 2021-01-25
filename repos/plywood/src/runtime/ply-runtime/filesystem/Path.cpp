@@ -121,7 +121,8 @@ struct PathCompIterator {
             PLY_ASSERT((u32) absoluteIndex >= i);
             i = absoluteIndex;
             if (driveLetterIndex < 0) {
-                callback({&pathFmt->sepByte(), 1});
+                char sepByte = pathFmt->sepByte();
+                callback({&sepByte, 1});
             }
         }
 

@@ -32,7 +32,7 @@ struct PathFormat {
     PLY_INLINE bool isSepByte(char c) const {
         return c == '/' || (this->isWindows && c == '\\');
     }
-    PLY_INLINE const char& sepByte() const {
+    PLY_INLINE char sepByte() const {
         return this->isWindows ? BackSlash : FwdSlash;
     }
     PLY_INLINE bool hasDriveLetter(StringView path) const {
