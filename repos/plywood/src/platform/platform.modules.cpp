@@ -32,7 +32,7 @@ void module_plyPlatform(ModuleArgs* args) {
 #define PLY_BUILD_FOLDER "{}"
 #define PLY_CMAKE_PATH "{}"
 #define WITH_AUDIO 1
-    )",
+)",
             fmt::EscapedString{PLY_WORKSPACE_FOLDER},
             fmt::EscapedString{args->projInst->env->buildFolderPath},
             fmt::EscapedString{PLY_CMAKE_PATH});
