@@ -226,6 +226,3 @@ PLY_TEST_CASE("Float2 isRounded") {
 
 } // namespace ply
 
-int main() {
-    return ply::test::run() ? 0 : 1;
-}
