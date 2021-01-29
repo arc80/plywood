@@ -24,15 +24,15 @@ struct PathFormat {
     //  / is the only separator
     //  Windows-style drive letters are treated like any other path component
 
-    static constexpr char FwdSlash = '/';
-    static constexpr char BackSlash = '\\';
+    static const char FwdSlash;
+    static const char BackSlash;
 
     bool isWindows = false;
 
     PLY_INLINE bool isSepByte(char c) const {
         return c == '/' || (this->isWindows && c == '\\');
     }
-    PLY_INLINE char sepByte() const {
+    PLY_INLINE const char& sepByte() const {
         return this->isWindows ? BackSlash : FwdSlash;
     }
     PLY_INLINE bool hasDriveLetter(StringView path) const {

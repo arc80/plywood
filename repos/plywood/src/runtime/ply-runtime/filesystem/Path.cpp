@@ -9,8 +9,8 @@
 
 namespace ply {
 
-constexpr char PathFormat::FwdSlash;
-constexpr char PathFormat::BackSlash;
+const char PathFormat::FwdSlash = '/';
+const char PathFormat::BackSlash = '\\';
 
 PLY_NO_INLINE Tuple<StringView, StringView> PathFormat::split(StringView path) const {
     s32 lastSepIndex = path.rfindByte([&](char c) { return this->isSepByte(c); });
@@ -121,8 +121,7 @@ struct PathCompIterator {
             PLY_ASSERT((u32) absoluteIndex >= i);
             i = absoluteIndex;
             if (driveLetterIndex < 0) {
-                char sepByte = pathFmt->sepByte();
-                callback({&sepByte, 1});
+                callback({&pathFmt->sepByte(), 1});
             }
         }
 
