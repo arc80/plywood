@@ -73,11 +73,11 @@ PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream* ins, const TextEn
     bool prevWasCR = false;
     u32 numBytes = 0;
     while (numBytes < maxBytes) {
-        u32 numBytesAvailable = ins->tryMakeBytesAvailable(4); // returns < 4 only EOF/error *ONLY*
-        if (numBytesAvailable == 0)
-            break;
+        u32 numBytesAvailable = ins->tryMakeBytesAvailable(4); // returns < 4 on EOF/error *ONLY*
         DecodeResult decoded = encoding->decodePoint(ins->viewAvailable());
-        PLY_ASSERT(decoded.numBytes > 0);
+        if (decoded.status == DecodeResult::Status::Truncated)
+            break; // EOF/error
+        PLY_ASSERT(decoded.point >= 0 && decoded.numBytes > 0);
         ins->curByte += decoded.numBytes;
         numBytes += decoded.numBytes;
         stats->numPoints++;
@@ -137,7 +137,8 @@ PLY_NO_INLINE TextFormat guessFileEncoding(InStream* ins) {
         return {TextFormat::Encoding::UTF8, stats8.getNewLineType(), false};
     }
 
-    // If more than 20% of the high bytes in UTF-8 are encoding errors, reinterpret UTF-8 as just bytes.
+    // If more than 20% of the high bytes in UTF-8 are encoding errors, reinterpret UTF-8 as just
+    // bytes.
     TextFormat::Encoding encoding8 = TextFormat::Encoding::UTF8;
     {
         u32 numHighBytes = numBytesRead - stats8.numPlainAscii - stats8.numControl;
@@ -151,11 +152,13 @@ PLY_NO_INLINE TextFormat guessFileEncoding(InStream* ins) {
 
     // Examine both UTF16 endianness:
     TextFileStats stats16_le;
-    scanTextFile(&stats16_le, ins, TextEncoding::get<UTF16_LE>(), TextFormat::NumBytesForAutodetect);
+    scanTextFile(&stats16_le, ins, TextEncoding::get<UTF16_LE>(),
+                 TextFormat::NumBytesForAutodetect);
     ins->rewind(start);
 
     TextFileStats stats16_be;
-    scanTextFile(&stats16_be, ins, TextEncoding::get<UTF16_BE>(), TextFormat::NumBytesForAutodetect);
+    scanTextFile(&stats16_be, ins, TextEncoding::get<UTF16_BE>(),
+                 TextFormat::NumBytesForAutodetect);
     ins->rewind(start);
 
     // Choose the better UTF16 candidate:

@@ -13,11 +13,15 @@ struct WString;
 
 struct DecodeResult {
     enum class Status : u8 {
-        Truncated,
-        Invalid,
+        Truncated, // Buffer wasn't long enough to read a valid point. A (invalid) point may be
+                   // available anyway, such as when flushing the last few bytes of a UTF-8 file.
+        Invalid, // Invalid byte sequence was encountered. Such sequences are typically decoded one
+                 // code unit at a time.
         Valid,
     };
 
+    // (point >= 0) if and only if (numBytes > 0), which means that a code point is available to
+    // read (even if status is Invalid or Truncated).
     s32 point = -1;
     Status status = Status::Truncated;
     u8 numBytes = 0;

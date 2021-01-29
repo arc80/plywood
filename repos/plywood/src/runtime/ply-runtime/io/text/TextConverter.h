@@ -44,10 +44,14 @@ struct TextConverter {
 
     // Convert using memory buffers
     // Returns true if any work done (reading or writing)
+    // When flush is true, consumes as much srcBuf as possible, even if it contains a partially
+    // encoded point.
     PLY_DLL_ENTRY bool convert(BufferView* dstBuf, ConstBufferView* srcBuf, bool flush);
 
     // Read/write to a Stream
     // Returns true if any work done (reading or writing)
+    // When flush is true, consumes as much srcBuf as possible, even if it contains a partially
+    // encoded point.
     PLY_DLL_ENTRY bool writeTo(OutStream* outs, ConstBufferView* srcBuf, bool flush);
     PLY_DLL_ENTRY u32 readFrom(InStream* ins, BufferView* dstBuf);
 
