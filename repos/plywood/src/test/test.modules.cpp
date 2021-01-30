@@ -17,4 +17,5 @@ void module_PlywoodTests(ModuleArgs* args) {
     args->addSourceFiles("PlywoodTests");
     args->addTarget(Visibility::Private, "test");
     args->addTarget(Visibility::Private, "math-tests");
+    args->addTarget(Visibility::Private, "runtime-tests");
 }
