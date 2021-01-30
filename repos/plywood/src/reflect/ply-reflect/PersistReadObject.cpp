@@ -105,7 +105,7 @@ void skip(ReadObjectContext* context, FormatDescriptor* formatDesc) {
             PLY_ASSERT(enumFormat->fixedSize <= 4);
             // FIXME: Could implement an InStream::skip function instead of this unsafe code:
             u32 value;
-            context->in.ins->read({&value, enumFormat->fixedSize});
+            context->in.ins->read({(char*) &value, enumFormat->fixedSize});
             break;
         }
         case FormatKey::EnumIndexedArray: {

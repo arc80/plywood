@@ -133,14 +133,14 @@ FileSystem::openTextForReadAutodetect(StringView path) {
     return {textFormat.createImporter(std::move(ins)), textFormat};
 }
 
-PLY_NO_INLINE Buffer FileSystem::loadBinary(StringView path) {
-    Buffer result;
+PLY_NO_INLINE String FileSystem::loadBinary(StringView path) {
+    String result;
     Owned<InPipe> inPipe = this->openPipeForRead(path);
     if (inPipe) {
         u64 fileSize = inPipe->getFileSize();
         // Files >= 4GB cannot be loaded this way:
         result.resize(safeDemote<u32>(fileSize));
-        inPipe->read(result);
+        inPipe->read({result.bytes, result.numBytes});
     }
     return result;
 }
@@ -172,15 +172,15 @@ PLY_NO_INLINE Owned<StringWriter> FileSystem::openTextForWrite(StringView path,
 }
 
 PLY_NO_INLINE FSResult FileSystem::makeDirsAndSaveBinaryIfDifferent(StringView path,
-                                                                    ConstBufferView binView) {
+                                                                    StringView view) {
     // FIXME: This could be optimized
     // We don't really need to load the existing file as a binary. We could read and compare it to
-    // binView incrementally.
+    // view incrementally.
 
     // Load existing contents
-    Buffer existingContents = this->loadBinary(path);
+    String existingContents = this->loadBinary(path);
     FSResult existingResult = this->lastResult();
-    if (existingResult == FSResult::OK && existingContents == binView) {
+    if (existingResult == FSResult::OK && existingContents == view) {
         return FileSystem::setLastResult(FSResult::Unchanged);
     }
     if (existingResult != FSResult::OK && existingResult != FSResult::NotFound) {
@@ -201,7 +201,7 @@ PLY_NO_INLINE FSResult FileSystem::makeDirsAndSaveBinaryIfDifferent(StringView p
     if (result != FSResult::OK) {
         return result;
     }
-    outPipe->write(binView);
+    outPipe->write(view);
     return result;
 }
 
@@ -209,14 +209,14 @@ PLY_NO_INLINE FSResult FileSystem::makeDirsAndSaveTextIfDifferent(StringView pat
                                                                   StringView strContents,
                                                                   const TextFormat& textFormat) {
     // FIXME: This could be optimized
-    // We don't really need to convert strContents to raw data as a Buffer. We could create an
+    // We don't really need to convert strContents to raw data as a String. We could create an
     // exporter and compare to the existing file incrementally.
 
     MemOutStream memOut;
     Owned<StringWriter> sw = textFormat.createExporter(borrow(&memOut));
     *sw << strContents;
     sw.clear();
-    Buffer rawContents = memOut.moveToBuffer();
+    String rawContents = memOut.moveToString();
     return this->makeDirsAndSaveBinaryIfDifferent(path, rawContents);
 }
 

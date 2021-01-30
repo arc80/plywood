@@ -129,10 +129,10 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
     bool anyError = false;
 
     static PLY_INLINE cpp::LinearLocation getLinearLocation(const cpp::Token& token,
-                                                            const u8* curByte) {
-        PLY_ASSERT((const char*) curByte >= token.identifier.bytes);
-        PLY_ASSERT((const char*) curByte <= token.identifier.end());
-        return token.linearLoc + ((const char*) curByte - token.identifier.bytes);
+                                                            const char* curByte) {
+        PLY_ASSERT(curByte >= token.identifier.bytes);
+        PLY_ASSERT(curByte <= token.identifier.end());
+        return token.linearLoc + (curByte - token.identifier.bytes);
     }
 
     virtual void gotMacroOrComment(cpp::Token token) override {
@@ -150,7 +150,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                     if (this->cmd) {
                         this->parser->pp->errorHandler.call(
                             new RepoRegError{RepoRegError::AlreadyInsideCommand,
-                                             getLinearLocation(token, (const u8*) first.bytes),
+                                             getLinearLocation(token, first.bytes),
                                              this->cmd->macro.linearLoc});
                         this->cmd = nullptr;
                     }
@@ -161,7 +161,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         if (this->scopeStack.numItems() != 1) {
                             this->parser->pp->errorHandler.call(new RepoRegError{
                                 RepoRegError::MustBeAtFileScope,
-                                getLinearLocation(token, (const u8*) second.bytes)});
+                                getLinearLocation(token, second.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
@@ -197,7 +197,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         if (this->scopeStack.numItems() != 1) {
                             this->parser->pp->errorHandler.call(new RepoRegError{
                                 RepoRegError::MustBeAtFileScope,
-                                getLinearLocation(token, (const u8*) second.bytes)});
+                                getLinearLocation(token, second.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
@@ -221,7 +221,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         if (third != "provider") {
                             this->parser->pp->errorHandler.call(new RepoRegError{
                                 RepoRegError::ExpectedProviderKeyword,
-                                getLinearLocation(token, (const u8*) third.bytes)});
+                                getLinearLocation(token, third.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
@@ -257,7 +257,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                     } else {
                         this->parser->pp->errorHandler.call(
                             new RepoRegError{RepoRegError::UnrecognizedCommand,
-                                             getLinearLocation(token, (const u8*) second.bytes)});
+                                             getLinearLocation(token, second.bytes)});
                     }
                     return;
                 }

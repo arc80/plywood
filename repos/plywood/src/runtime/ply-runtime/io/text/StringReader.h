@@ -155,39 +155,25 @@ public:
 
         ChunkCursor startCursor = strReader.getCursor();
         u32 value = strReader.parse<u32>();
-        String str = String::fromChunks(std::move(startCursor), strReader.getCursor());
+        String str = ChunkCursor::toString(std::move(startCursor), strReader.getCursor());
     */
     template <typename Type>
     PLY_INLINE String readString(const decltype(fmt::TypeParser<Type>::defaultFormat())& format =
                                      fmt::TypeParser<Type>::defaultFormat()) {
         ChunkCursor startCursor = this->getCursor();
         fmt::TypeParser<Type>::parse(this, format); // ignore return value
-        return String::fromChunks(std::move(startCursor), this->getCursor());
+        return ChunkCursor::toString(std::move(startCursor), this->getCursor());
     }
 
     template <typename Format, typename = void_t<decltype(fmt::FormatParser<Format>::parse)>>
     PLY_INLINE String readString(const Format& format = {}) {
         ChunkCursor startCursor = this->getCursor();
         fmt::FormatParser<Format>::parse(this, format); // ignore return value
-        return String::fromChunks(std::move(startCursor), this->getCursor());
+        return ChunkCursor::toString(std::move(startCursor), this->getCursor());
     }
     /*!
     \endGroup
     */
-
-    /*!
-    Reads all the remaining data from the input stream and returns the contents as a `String`.
-    */
-    PLY_INLINE String readRemainingContents() {
-        return String::moveFromBuffer(this->InStream::readRemainingContents());
-    }
-
-    /*!
-    Reads all the remaining data from the input stream and returns the contents as a `String`.
-    */
-    PLY_INLINE StringView viewAvailable() const {
-        return StringView::fromBufferView(this->InStream::viewAvailable());
-    }
 };
 
 //------------------------------------------------------------------------------------------------
@@ -216,9 +202,9 @@ struct StringViewReader : StringReader {
     the lifetime of the `StringViewReader`.
     */
     PLY_INLINE StringViewReader(StringView view) : StringReader{Type::View, 0u} {
-        this->startByte = (u8*) view.bytes;
-        this->curByte = (u8*) view.bytes;
-        this->endByte = (u8*) view.bytes + view.numBytes;
+        this->startByte = view.bytes;
+        this->curByte = view.bytes;
+        this->endByte = view.bytes + view.numBytes;
     }
 
     /*!
@@ -239,12 +225,12 @@ struct StringViewReader : StringReader {
         return this->asViewInStream()->savePoint();
     }
     PLY_INLINE StringView getViewFrom(const ViewInStream::SavePoint& savePoint) const {
-        return StringView::fromBufferView(this->asViewInStream()->getViewFrom(savePoint));
+        return this->asViewInStream()->getViewFrom(savePoint);
     }
     PLY_INLINE void restore(const ViewInStream::SavePoint& savePoint) {
         return this->asViewInStream()->restore(savePoint);
     }
-    PLY_INLINE const u8* getStartByte() const {
+    PLY_INLINE const char* getStartByte() const {
         return this->asViewInStream()->getStartByte();
     }
 

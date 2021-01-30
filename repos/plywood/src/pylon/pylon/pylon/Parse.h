@@ -67,7 +67,7 @@ private:
     Functor<void(const ParseError& err)> errorCallback;
     FileLocationMap fileLocMap;
     bool anyError_ = false;
-    ConstBufferView srcView;
+    StringView srcView;
     u32 readOfs = 0;
     s32 nextUnit = 0;
     u32 tabSize = 4;
@@ -129,11 +129,7 @@ public:
 
     void dumpError(const ParseError& error, StringWriter& sw) const;
 
-    Result parse(ConstBufferView srcView_);
-
-    PLY_INLINE Result parse(StringView srcView_) {
-        return parse(srcView_.bufferView());
-    }
+    Result parse(StringView srcView_);
 };
 
 } // namespace pylon

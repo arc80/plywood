@@ -4,7 +4,8 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/BufferView.h>
+#include <ply-runtime/string/String.h>
+#include <ply-runtime/memory/Heap.h>
 
 namespace ply {
 
@@ -167,7 +168,7 @@ public:
         m_last->writePos += size;
     }
 
-    void write(ConstBufferView data) {
+    void write(StringView data) {
         void* dst = beginWrite(safeDemote<u32>(data.numBytes));
         memcpy(dst, data.bytes, data.numBytes);
         endWrite(data.numBytes);
@@ -182,11 +183,11 @@ public:
         endWrite(sizeof(T));
     }
 
-    Buffer flatCopy() const {
-        Buffer result;
+    String flatCopy() const {
+        String result;
         result.resize(numBytes());
-        u8* current = result.bytes;
-        u8* end = current + result.numBytes;
+        char* current = result.bytes;
+        char* end = current + result.numBytes;
         PLY_UNUSED(end);
         for (ChunkListNode* chunk = m_first; chunk;) {
             PLY_ASSERT(current + chunk->writePos <= end);

@@ -219,17 +219,17 @@ PLY_NO_INLINE DependencyTree BuildFolder::buildDepTree() const {
 PLY_NO_INLINE u128 BuildFolder::currentBuildSystemSignature() const {
     Hash128 h;
     u128 mds = RepoRegistry::get()->moduleDefSignature;
-    h.append({&mds, sizeof(mds)});
-    h.append(this->solutionName.bufferView());
+    h.append({(const char*) &mds, sizeof(mds)});
+    h.append(this->solutionName);
     this->cmakeOptions.appendTo(h);
     for (StringView rt : this->rootTargets) {
-        h.append(rt.bufferView());
+        h.append(rt);
     }
     for (StringView ms : this->makeShared) {
-        h.append(ms.bufferView());
+        h.append(ms);
     }
     for (StringView es : this->externSelectors) {
-        h.append(es.bufferView());
+        h.append(es);
     }
     return h.get();
 }

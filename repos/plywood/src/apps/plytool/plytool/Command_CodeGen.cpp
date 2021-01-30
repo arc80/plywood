@@ -72,7 +72,7 @@ String performSubsts(StringView absPath, ArrayView<Subst> substs) {
         u32 endPos = subst.start + subst.numBytes;
         PLY_ASSERT(endPos < src.numBytes);
         sw.write({src.bytes + prevEndPos, subst.start - prevEndPos});
-        sw.write(subst.replacement.bufferView());
+        sw.write(subst.replacement);
         prevEndPos = endPos;
     }
     sw.write({src.bytes + prevEndPos, src.numBytes - prevEndPos});

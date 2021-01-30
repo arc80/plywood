@@ -19,7 +19,7 @@ PLY_NO_INLINE void InPipe_Winsock_destroy(InPipe* inPipe_) {
     }
 }
 
-PLY_NO_INLINE u32 InPipe_Winsock_readSome(InPipe* inPipe_, BufferView buf) {
+PLY_NO_INLINE u32 InPipe_Winsock_readSome(InPipe* inPipe_, MutableStringView buf) {
     InPipe_Winsock* inPipe = static_cast<InPipe_Winsock*>(inPipe_);
     int rc = recv(inPipe->socket, (char*) buf.bytes, int(buf.numBytes), 0);
     if (rc == 0 || rc == SOCKET_ERROR)
@@ -46,7 +46,7 @@ PLY_NO_INLINE void OutPipe_Winsock_destroy(OutPipe* outPipe_) {
     }
 }
 
-PLY_NO_INLINE bool OutPipe_Winsock_write(OutPipe* outPipe_, ConstBufferView buf) {
+PLY_NO_INLINE bool OutPipe_Winsock_write(OutPipe* outPipe_, StringView buf) {
     OutPipe_Winsock* outPipe = static_cast<OutPipe_Winsock*>(outPipe_);
     while (buf.numBytes > 0) {
         int rc = send(outPipe->socket, (const char*) buf.bytes, (DWORD) buf.numBytes, 0);

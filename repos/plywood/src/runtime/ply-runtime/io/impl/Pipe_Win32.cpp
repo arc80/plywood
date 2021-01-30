@@ -19,7 +19,7 @@ PLY_NO_INLINE void InPipe_Win32_destroy(InPipe* inPipe_) {
     }
 }
 
-PLY_NO_INLINE u32 InPipe_Win32_readSome(InPipe* inPipe_, BufferView buf) {
+PLY_NO_INLINE u32 InPipe_Win32_readSome(InPipe* inPipe_, MutableStringView buf) {
     InPipe_Win32* inPipe = static_cast<InPipe_Win32*>(inPipe_);
     DWORD readBytes;
     BOOL rc = ReadFile(inPipe->handle, buf.bytes, (DWORD) buf.numBytes, &readBytes, NULL);
@@ -58,7 +58,7 @@ PLY_NO_INLINE void OutPipe_Win32_destroy(OutPipe* outPipe_) {
     }
 }
 
-PLY_NO_INLINE bool OutPipe_Win32_write(OutPipe* outPipe_, ConstBufferView buf) {
+PLY_NO_INLINE bool OutPipe_Win32_write(OutPipe* outPipe_, StringView buf) {
     OutPipe_Win32* outPipe = static_cast<OutPipe_Win32*>(outPipe_);
     while (buf.numBytes > 0) {
         DWORD desiredBytes = min<DWORD>((DWORD) buf.numBytes, UINT32_MAX);

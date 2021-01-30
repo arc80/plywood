@@ -68,7 +68,6 @@ Otherwise, `HashMap` will use a `Hasher` object to hash the key. `Hasher` provid
 * `float`
 * Pointer to class type or `void*`. By default, the pointer value itself is hashed; the object pointed to is not examined in any way.
 * `StringView`, `String` and `HybridString`. In particular, note that `char*` will be implicitly converted to `StringView`.
-* `ConstBufferView`
 
 ## Using Contexts
 

@@ -4,36 +4,36 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/Buffer.h>
 #include <ply-runtime/string/StringMixin.h>
+#include <ply-runtime/memory/Heap.h>
 
 namespace ply {
 
 struct HybridString;
-struct ChunkCursor;
 
 //------------------------------------------------------------------------------------------------
 /*!
-A `String` object owns a single block of memory, allocated on the heap, that is generally intended
-(but not required) to contain UTF-8-encoded text. Many `String` functions also work with text in any
-8-bit format compatible with ASCII, such as ISO 8859-1 or Windows-1252. The memory block is freed
+A `String` object owns a single block of memory allocated on the heap. The memory block is freed
 when the `String` is destroyed.
 
-The `String` class uses the same memory representation as `Buffer` but provides member functions
-suitable for string manipulation, such as `trim()`, `split()` and concatenation using the `+`
-operator.
+`String` objects often contain UTF-8-encoded text, but this is isn't a requirement. In general,
+a `String` can hold any kind of data. For example, `FileSystem::loadBinary` returns raw file
+contents in a `String` object.
 
-`String` objects are not automatically null-terminated. If you need a null-terminated string (for
-example, to pass to a third-party library), you must add a null terminator byte to the string
-yourself. The null terminator then counts towards the number of bytes in `numBytes`. A convenience
-function `withNullTerminator()` is provided for this.
+Even though `String` objects aren't required to contain text, they provide many member functions to
+help manipulate text, such as `trim()`, `splitByte()` and `upperAsc()`. These text manipulation
+functions are generally intended to work with UTF-8-encoding strings, but most of them will also
+work with any 8-bit format compatible with ASCII, such as ISO 8859-1 or Windows-1252.
 
-Strictly speaking, `String` objects are not _required_ to contain text, though many member functions
-expect it. Internally, a `String` just contains a sequence of bytes. The main reason to prefer a
-variable of type `String` over `Buffer` is to express the intention for the allocated memory to
-contain text and/or for the convenience of having the `String` member functions available.
+When a `String` object does contain text, the text string is generally _not_ null-terminated. If you
+need a null-terminated string (for example, to pass to a third-party library), you must add a null
+terminator byte to the string yourself. The null terminator then counts towards the number of bytes
+in `numBytes`. A convenience function `withNullTerminator()` is provided for this.
 
-For more information, see [Unicode Support](Unicode).
+Several `String` functions accept byte offset arguments, such as `subStr()`, `left()` and `right()`.
+Be aware that when a `StringView` contains UTF-8-encoded text, byte offsets are not necessarily the
+same as the number of characters (Unicode points) encoded by the string. For more information, see
+[Unicode Support](Unicode).
 */
 struct String : StringMixin<String> {
     using View = StringView;
@@ -110,17 +110,6 @@ struct String : StringMixin<String> {
     }
 
     /*!
-    Converts a `Buffer` to a `String`. No new memory is allocated by this function. The returned
-    `String` takes ownership of the memory block previously owned by `buffer`, and `buffer` is reset
-    to an empty buffer.
-
-        String str = String::moveFromBuffer(std::move(buffer));
-    */
-    PLY_INLINE static String moveFromBuffer(Buffer&& buffer) {
-        return reinterpret_cast<String&&>(buffer);
-    }
-
-    /*!
     Conversion operator. Makes `String` implicitly convertible to `StringView`.
     */
     PLY_INLINE operator const StringView&() const {
@@ -128,22 +117,11 @@ struct String : StringMixin<String> {
     }
 
     /*!
-    \beginGroup
-    Explicitly creates a `StringView`, `BufferView` or `ConstBufferView` into the given string. No
-    new memory is allocated by these functions.
+    Explicitly creates a `StringView`. No new memory is allocated by this function.
     */
     PLY_INLINE const StringView& view() const {
         return reinterpret_cast<const StringView&>(*this);
     }
-    PLY_INLINE const ConstBufferView& bufferView() const {
-        return reinterpret_cast<const ConstBufferView&>(*this);
-    }
-    PLY_INLINE const BufferView& bufferView() {
-        return reinterpret_cast<const BufferView&>(*this);
-    }
-    /*!
-    \endGroup
-    */
 
     /*!
     If this `String` owns a memory block, it is destroyed and the `String` is reset to an empty
@@ -183,6 +161,17 @@ struct String : StringMixin<String> {
     PLY_DLL_ENTRY void resize(u32 numBytes);
 
     /*!
+    Returns a `String` that takes ownership of the memory block at `bytes`. This memory block must
+    have been allocated on the heap.
+    */
+    static PLY_INLINE String adopt(char* bytes, u32 numBytes) {
+        String str;
+        str.bytes = bytes;
+        str.numBytes = numBytes;
+        return str;
+    }
+
+    /*!
     Returns a pointer to the owned memory block while releasing ownership. The `String` is reset to
     an empty string.
     */
@@ -213,28 +202,6 @@ struct String : StringMixin<String> {
     */
     template <typename T>
     static PLY_INLINE String from(const T& value);
-
-    /*!
-    \beginGroup
-    Returns a `String` that owns a newly allocated block of memory containing a copy of the data
-    contained in some (possible multiple) chunks. The first form of `fromChunks` copies all the data
-    from `start` up to the end of the chunk list. The second form copies all the data between
-    `start` and `end`.
-
-    The first argument must be an rvalue reference to a `ChunkCursor` which might be moved from
-    (reset to an empty state) as a result of this call. This requirement enables an optimization: If
-    `start` is the sole reference to the start of a single `ChunkListNode`, no data is copied;
-    instead, the chunk's memory block is truncated and ownership is passed directly to the `Buffer`.
-    To satisfy this requirement, either use `std::move()` or pass a temporary copy of a
-    `ChunkCursor`.
-
-    This function is used internally by `StringOutStream::moveToString()`.
-    */
-    static PLY_INLINE String fromChunks(ChunkCursor&& start);
-    static PLY_INLINE String fromChunks(ChunkCursor&& start, const ChunkCursor& end);
-    /*!
-    \endGroup
-    */
 
     /*!
     \beginGroup
@@ -371,7 +338,7 @@ struct HybridString : StringMixin<HybridString> {
         other.isOwner = 0;
         other.numBytes = 0;
     }
-    
+
     /*!
     Copy constructor.
     */

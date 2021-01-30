@@ -17,11 +17,11 @@ void writeObject(TypedPtr obj, WriteObjectContext* writeObjectContext) {
     obj.type->typeKey->write(obj, writeObjectContext);
 }
 
-void resolveLinksAndWriteLinkTable(BufferView binView, OutStream* outs,
+void resolveLinksAndWriteLinkTable(MutableStringView view, OutStream* outs,
                                    SavedPtrResolver* ptrResolver) {
     u32 linkIndex = 0;
     for (const SavedPtrResolver::WeakPointerToResolve& weakInfo : ptrResolver->weakPtrsToResolve) {
-        PLY_ASSERT(weakInfo.fileOffset + 4 <= binView.numBytes);
+        PLY_ASSERT(weakInfo.fileOffset + 4 <= view.numBytes);
         auto cursor =
             ptrResolver->addrToSaveInfo.find(weakInfo.ptr.ptr, &ptrResolver->savedOwnedPtrs);
         if (cursor.wasFound()) {
@@ -32,7 +32,7 @@ void resolveLinksAndWriteLinkTable(BufferView binView, OutStream* outs,
                 linkIndex++;
             }
             // Note: This performs a potentially unaligned write
-            *(u32*) PLY_PTR_OFFSET(binView.bytes, weakInfo.fileOffset) = savedOwnedPtr.linkIndex;
+            *(u32*) PLY_PTR_OFFSET(view.bytes, weakInfo.fileOffset) = savedOwnedPtr.linkIndex;
         } else {
             PLY_ASSERT(0); // FIXME: Handle unresolved pointers gracefully
         }

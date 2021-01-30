@@ -212,10 +212,6 @@ template <>
 struct TypeResolver<String> {
     static PLY_DLL_ENTRY ply::TypeDescriptor* get();
 };
-template <>
-struct TypeResolver<Buffer> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
 
 //-----------------------------------------------------------------------
 // Strip const qualifiers

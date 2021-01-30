@@ -32,7 +32,7 @@ void SemaEntity::setClassHash() {
     PLY_ASSERT(this->hash == 0);
 
     Hash128 hasher;
-    hasher.append(this->getQualifiedID().bufferView());
+    hasher.append(this->getQualifiedID());
     // FIXME
     /*
     for (const SemaEntity* member : this->childSeq) {

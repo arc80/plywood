@@ -7,7 +7,7 @@
 
 namespace ply {
 
-PLY_NO_INLINE bool InPipe::read(BufferView buf) {
+PLY_NO_INLINE bool InPipe::read(MutableStringView buf) {
     while (buf.numBytes > 0) {
         u32 rc = this->readSome(buf);
         if (rc == 0)

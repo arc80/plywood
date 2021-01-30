@@ -23,7 +23,7 @@ PLY_NO_INLINE void addPPDef(Preprocessor* pp, StringView identifier, StringView 
     cursor->expansionIdx = expIdx;
 }
 
-PLY_INLINE LinearLocation getLinearLocation(const Preprocessor* pp, const u8* curByte) {
+PLY_INLINE LinearLocation getLinearLocation(const Preprocessor* pp, const char* curByte) {
     const Preprocessor::StackItem& item = pp->stack.back();
     PLY_ASSERT(curByte >= item.strViewReader.getStartByte());
     PLY_ASSERT(curByte <= item.strViewReader.endByte);
@@ -188,8 +188,8 @@ void readPreprocessorDirective(StringViewReader* strViewReader, Preprocessor* pp
             }
         } else {
             // Invalid directive
-            pp->error({Preprocessor::Error::InvalidDirective,
-                       getLinearLocation(pp, (const u8*) directive.bytes)});
+            pp->error(
+                {Preprocessor::Error::InvalidDirective, getLinearLocation(pp, directive.bytes)});
             strViewReader->parse<fmt::Line>();
         }
     }
@@ -312,7 +312,7 @@ bool readDelimiterAndRawStringLiteral(StringViewReader* strViewReader, Preproces
     strViewReader->advanceByte();
 
     // read delimiter
-    const u8* delimiterStart = strViewReader->curByte;
+    const char* delimiterStart = strViewReader->curByte;
     for (;;) {
         if (!strViewReader->tryMakeBytesAvailable()) {
             // End of file while reading raw string delimiter
@@ -334,7 +334,7 @@ bool readDelimiterAndRawStringLiteral(StringViewReader* strViewReader, Preproces
     }
 
     // FIXME: Enforce maximum length of delimiter (at most 16 characters)
-    const u8* delimiterEnd = strViewReader->curByte;
+    const char* delimiterEnd = strViewReader->curByte;
     strViewReader->advanceByte();
 
     // Read remainder of string
@@ -349,7 +349,7 @@ bool readDelimiterAndRawStringLiteral(StringViewReader* strViewReader, Preproces
         strViewReader->advanceByte();
         if (c == ')') {
             // Try to match delimiter
-            const u8* d = delimiterStart;
+            const char* d = delimiterStart;
             for (;;) {
                 if (d == delimiterEnd) {
                     if (!strViewReader->tryMakeBytesAvailable()) {
@@ -400,7 +400,7 @@ Token::Type readIdentifierOrLiteral(StringViewReader* strViewReader, Preprocesso
     mask[1] |= 0x10;      // '$'
     mask[1] |= 0x3ff0000; // accept digits (we already know the first character is non-digit)
 
-    const u8* startByte = strViewReader->curByte;
+    const char* startByte = strViewReader->curByte;
     for (;;) {
         if (!strViewReader->tryMakeBytesAvailable()) {
             PLY_ASSERT(strViewReader->curByte != startByte);
@@ -807,7 +807,7 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
                     LinearLocation linearLocAtMacro =
                         pp->linearLocAtEndOfStackTop -
                         safeDemote<LinearLocation>(item->strViewReader.endByte -
-                                                   (u8*) token.identifier.bytes);
+                                                   token.identifier.bytes);
                     PPVisitedFiles* vf = pp->visitedFiles;
 
                     const PPVisitedFiles::MacroExpansion& exp =

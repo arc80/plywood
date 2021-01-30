@@ -230,7 +230,8 @@ PLY_NO_INLINE Owned<Subprocess> Subprocess::execArgStr(StringView exePath, Strin
         cmdLine << ' ' << argStr;
     }
     cmdLine << '\0';
-    WString wCmdLine = TextConverter::convert<UTF16_Native, UTF8>(cmdLine.moveToString());
+    WString wCmdLine =
+        WString::moveFromString(TextConverter::convert<UTF16_Native, UTF8>(cmdLine.moveToString()));
 
     // Create the child process:
     WString win32Dir;

@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/BufferView.h>
+#include <ply-runtime/string/StringView.h>
 
 namespace ply {
 
@@ -32,7 +32,7 @@ struct InPipe {
     // FIXME: Make these virtual?
     struct Funcs {
         void (*destroy)(InPipe*) = nullptr;
-        u32 (*readSome)(InPipe*, BufferView) = nullptr;
+        u32 (*readSome)(InPipe*, MutableStringView) = nullptr;
         u64 (*getFileSize)(const InPipe*) = nullptr;
     };
 
@@ -60,7 +60,7 @@ struct InPipe {
     data, this function will block until some data arrives. Returns the actual number of bytes read,
     which might be less than the size of `buf`. Returns 0 if EOF/error is encountered.
     */
-    PLY_INLINE u32 readSome(BufferView buf) {
+    PLY_INLINE u32 readSome(MutableStringView buf) {
         return this->funcs->readSome(this, buf);
     }
 
@@ -69,7 +69,7 @@ struct InPipe {
     for data, this function will block until `buf` is completely filled. Returns `true` if
     successful. [FIXME: Reconsider how incomplete reads are handled]
     */
-    PLY_DLL_ENTRY bool read(BufferView buf);
+    PLY_DLL_ENTRY bool read(MutableStringView buf);
 
     /*!
     If the `InPipe` is reading from a file, returns the size of the file in bytes.
@@ -98,7 +98,7 @@ binary formats -- it's better to work with `OutStream` or `StringWriter` instead
 struct OutPipe {
     struct Funcs {
         void (*destroy)(OutPipe*) = nullptr;
-        bool (*write)(OutPipe*, ConstBufferView) = nullptr;
+        bool (*write)(OutPipe*, StringView) = nullptr;
         bool (*flush)(OutPipe*, bool) = nullptr;
         u64 (*seek)(OutPipe*, s64, SeekDir) = nullptr;
     };
@@ -129,7 +129,7 @@ struct OutPipe {
     block. Returns `true` if successful. Return `false` if the write fails such as when attempting
     to write to a network socket that was closed prematurely.
     */
-    PLY_INLINE bool write(ConstBufferView buf) {
+    PLY_INLINE bool write(StringView buf) {
         return this->funcs->write(this, buf);
     }
 

@@ -221,7 +221,7 @@ struct StringMixin {
     /*!
     Returns a list of the words in the given string using `sep` as a delimiter byte.
     */
-    PLY_INLINE Array<StringView> splitByte(char sep) const {
+    PLY_INLINE auto splitByte(char sep) const {
         return static_cast<const Derived*>(this)->view().splitByte(sep);
     }
 
@@ -284,10 +284,5 @@ struct StringMixin {
         return static_cast<const Derived*>(this)->view().withoutNullTerminator();
     }
 };
-
-template <typename Derived>
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const StringMixin<Derived>& str) {
-    return hasher << static_cast<const Derived*>(&str)->view();
-}
 
 } // namespace ply

@@ -21,10 +21,10 @@ struct CMakeGeneratorOptions {
 
     template <typename Hasher>
     void appendTo(Hasher& h) const {
-        h.append(this->generator.bufferView());
-        h.append(this->platform.bufferView());
-        h.append(this->toolset.bufferView());
-        h.append(this->toolchainFile.bufferView());
+        h.append(this->generator);
+        h.append(this->platform);
+        h.append(this->toolset);
+        h.append(this->toolchainFile);
     }
 };
 

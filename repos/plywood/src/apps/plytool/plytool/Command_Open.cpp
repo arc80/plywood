@@ -39,10 +39,10 @@ bool command_open(PlyToolCommandEnv* env) {
         WString wstr;
         {
             MemOutStream mout;
-            ConstBufferView srcView = slnPath.view().bufferView();
+            StringView srcView = slnPath.view();
             TextConverter::create<UTF16_Native, UTF8>().writeTo(&mout, &srcView, true);
             *mout.strWriter() << "\0\0"; // null terminated
-            wstr = WString::moveFromBuffer(mout.moveToBuffer());
+            wstr = WString::moveFromString(mout.moveToString());
         }
 
         // Open IDE

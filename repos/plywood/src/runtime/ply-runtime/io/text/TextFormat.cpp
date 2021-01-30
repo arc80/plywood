@@ -226,20 +226,20 @@ TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
                 break;
             }
             case Enc::UTF8: {
-                u8 h[3] = {0};
-                bool valid = ins->read(h);
+                char h[3] = {0};
+                bool valid = ins->read({h, PLY_STATIC_ARRAY_SIZE(h)});
                 gotBom = valid && memcmp(h, "\xef\xbb\xbf", 3) == 0;
                 break;
             }
             case Enc::UTF16_be: {
-                u8 h[2] = {0};
-                bool valid = ins->read(h);
+                char h[2] = {0};
+                bool valid = ins->read({h, PLY_STATIC_ARRAY_SIZE(h)});
                 gotBom = valid && memcmp(h, "\xfe\xff", 2) == 0;
                 break;
             }
             case Enc::UTF16_le: {
-                u8 h[2] = {0};
-                bool valid = ins->read(h);
+                char h[2] = {0};
+                bool valid = ins->read({h, PLY_STATIC_ARRAY_SIZE(h)});
                 gotBom = valid && memcmp(h, "\xff\xfe", 2) == 0;
                 break;
             }

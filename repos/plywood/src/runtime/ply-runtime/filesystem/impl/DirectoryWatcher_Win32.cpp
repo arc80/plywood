@@ -43,7 +43,7 @@ PLY_NO_INLINE void DirectoryWatcher_Win32::runWatcher() {
             // "The file name is in the Unicode character format and is not null-terminated."
             // https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-_file_notify_information
             WStringView win32Path{r->FileName, r->FileNameLength / sizeof(WCHAR)};
-            String path = TextConverter::convert<UTF8, UTF16_Native>(win32Path);
+            String path = TextConverter::convert<UTF8, UTF16_Native>(win32Path.stringView());
             bool isDirectory = false;
             DWORD attribs;
             {

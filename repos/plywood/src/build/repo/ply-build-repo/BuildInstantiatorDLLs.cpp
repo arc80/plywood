@@ -189,9 +189,9 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
                     {
                         FileStatus stat = FileSystem::native()->getFileStatus(absPath);
                         Hash128 h;
-                        h.append(absPath.bufferView());
-                        h.append({&stat.fileSize, sizeof(stat.fileSize)});
-                        h.append({&stat.modificationTime, sizeof(stat.modificationTime)});
+                        h.append(absPath);
+                        h.append({(const char*) &stat.fileSize, sizeof(stat.fileSize)});
+                        h.append({(const char*) &stat.modificationTime, sizeof(stat.modificationTime)});
                         moduleDefSignature += h.get();
                     }
 

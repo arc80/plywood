@@ -9,10 +9,10 @@ namespace ply {
 
 struct NewLineFilter {
     struct Params {
-        const u8* srcByte = nullptr;
-        const u8* srcEndByte = nullptr;
-        u8* dstByte = nullptr;
-        u8* dstEndByte = nullptr;
+        const char* srcByte = nullptr;
+        const char* srcEndByte = nullptr;
+        char* dstByte = nullptr;
+        char* dstEndByte = nullptr;
     };
 
     bool crlf = false; // If true, outputs \r\n instead of \n
@@ -59,7 +59,7 @@ PLY_NO_INLINE void InPipe_NewLineFilter_destroy(InPipe* inPipe_) {
     destruct(inPipe->ins);
 }
 
-PLY_NO_INLINE u32 InPipe_NewLineFilter_readSome(InPipe* inPipe_, BufferView buf) {
+PLY_NO_INLINE u32 InPipe_NewLineFilter_readSome(InPipe* inPipe_, MutableStringView buf) {
     InPipe_NewLineFilter* inPipe = static_cast<InPipe_NewLineFilter*>(inPipe_);
     PLY_ASSERT(buf.numBytes > 0);
 
@@ -71,7 +71,7 @@ PLY_NO_INLINE u32 InPipe_NewLineFilter_readSome(InPipe* inPipe_, BufferView buf)
         params.srcEndByte = inPipe->ins->endByte;
         inPipe->filter.process(&params);
 
-        inPipe->ins->curByte = (u8*) params.srcByte;
+        inPipe->ins->curByte = params.srcByte;
         u32 numBytesWritten = safeDemote<u32>(params.dstByte - buf.bytes);
         if (numBytesWritten > 0)
             return numBytesWritten;
@@ -111,7 +111,7 @@ PLY_NO_INLINE void OutPipe_NewLineFilter_destroy(OutPipe* outPipe_) {
     destruct(outPipe->outs);
 }
 
-PLY_NO_INLINE bool OutPipe_NewLineFilter_write(OutPipe* outPipe_, ConstBufferView buf) {
+PLY_NO_INLINE bool OutPipe_NewLineFilter_write(OutPipe* outPipe_, StringView buf) {
     OutPipe_NewLineFilter* outPipe = static_cast<OutPipe_NewLineFilter*>(outPipe_);
     u32 desiredTotalBytesRead = buf.numBytes;
     u32 totalBytesRead = 0;

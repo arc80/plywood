@@ -12,14 +12,15 @@ namespace ply {
 //---------------------------------------------------------------
 // Primitives for printing numeric types
 //----------------------------------------------------------------
-PLY_INLINE u8 toDigit(u32 d, bool capitalize = false) {
-    const char* digitTable = capitalize ? "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" : "0123456789abcdefghijklmnopqrstuvwxyz";
+PLY_INLINE char toDigit(u32 d, bool capitalize = false) {
+    const char* digitTable = capitalize ? "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                        : "0123456789abcdefghijklmnopqrstuvwxyz";
     return (d <= 35) ? digitTable[d] : '?';
 }
 
 PLY_NO_INLINE void printString(OutStream* outs, u64 value, u32 radix, bool capitalize) {
     PLY_ASSERT(radix >= 2);
-    u8 digitBuffer[64];
+    char digitBuffer[64];
     s32 digitIndex = PLY_STATIC_ARRAY_SIZE(digitBuffer);
 
     if (value == 0) {
@@ -74,7 +75,7 @@ PLY_NO_INLINE void printString(OutStream* outs, double value, u32 radix, bool ca
             u64 fractionalPart = fixedPoint % radix3;
             {
                 // Print zeroed
-                u8 digitBuffer[3];
+                char digitBuffer[3];
                 for (s32 i = 2; i >= 0; i--) {
                     u64 quotient = fractionalPart / radix;
                     u32 digit = u32(fractionalPart - quotient * radix);
@@ -113,17 +114,16 @@ PLY_NO_INLINE StringWriter::StringWriter(u32 chunkSizeExp) : OutStream{Type::Mem
 PLY_NO_INLINE void StringWriter::formatInternal(StringView fmt,
                                                 ArrayView<const StringWriter::Arg> args) {
     u32 argIndex = 0;
-    ConstBufferView bytes = fmt.bufferView();
-    while (bytes.numBytes > 0) {
-        if (bytes[0] == '{') {
-            bytes.offsetHead(1);
-            if (bytes.numBytes == 0) {
+    while (fmt.numBytes > 0) {
+        if (fmt[0] == '{') {
+            fmt.offsetHead(1);
+            if (fmt.numBytes == 0) {
                 PLY_ASSERT(0); // Invalid format string!
                 break;
             }
-            if (bytes[0] == '{') {
+            if (fmt[0] == '{') {
                 this->writeByte('{');
-            } else if (bytes[0] == '}') {
+            } else if (fmt[0] == '}') {
                 PLY_ASSERT(argIndex <
                            args.numItems); // Not enough arguments provided for format string!
                 args[argIndex].formatter(this, args[argIndex].pvalue);
@@ -131,21 +131,21 @@ PLY_NO_INLINE void StringWriter::formatInternal(StringView fmt,
             } else {
                 PLY_ASSERT(0); // Invalid format string!
             }
-        } else if (bytes[0] == '}') {
-            bytes.offsetHead(1);
-            if (bytes.numBytes == 0) {
+        } else if (fmt[0] == '}') {
+            fmt.offsetHead(1);
+            if (fmt.numBytes == 0) {
                 PLY_ASSERT(0); // Invalid format string!
                 break;
             }
-            if (bytes[0] == '}') {
+            if (fmt[0] == '}') {
                 this->writeByte('}');
             } else {
                 PLY_ASSERT(0); // Invalid format string!
             }
         } else {
-            this->writeByte(bytes[0]);
+            this->writeByte(fmt[0]);
         }
-        bytes.offsetHead(1);
+        fmt.offsetHead(1);
     }
     PLY_ASSERT(argIndex == args.numItems); // Too many arguments provided for format string!
 }
@@ -177,7 +177,7 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::WithRadix>::print(StringWriter* sw,
 
 PLY_NO_INLINE void fmt::TypePrinter<StringView>::print(StringWriter* sw, StringView value) {
     // FIXME: Do newline conversion here
-    sw->write(value.bufferView());
+    sw->write(value);
 }
 
 PLY_NO_INLINE void fmt::TypePrinter<u64>::print(StringWriter* sw, u64 value) {
@@ -213,7 +213,7 @@ PLY_NO_INLINE void fmt::TypePrinter<CPUTimer::Duration>::print(StringWriter* sw,
 
 PLY_NO_INLINE void fmt::TypePrinter<fmt::EscapedString>::print(StringWriter* sw,
                                                                const fmt::EscapedString& value) {
-    ConstBufferView srcUnits = value.view.bufferView();
+    StringView srcUnits = value.view;
     u32 points = 0;
     while (srcUnits.numBytes > 0) {
         if (value.maxPoints > 0 && points >= value.maxPoints) {
@@ -246,7 +246,7 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::EscapedString>::print(StringWriter* sw,
                 if (decoded.point >= 32) {
                     // This will preserve badly encoded UTF8 characters exactly as they are in
                     // the source string:
-                    sw->write(srcUnits.subView(0, decoded.numBytes));
+                    sw->write(srcUnits.left(decoded.numBytes));
                 } else {
                     static const char* digits = "0123456789abcdef";
                     *sw << '\\' << digits[(decoded.point >> 4) & 0xf]
@@ -262,7 +262,7 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::EscapedString>::print(StringWriter* sw,
 
 PLY_NO_INLINE void fmt::TypePrinter<fmt::XMLEscape>::print(StringWriter* sw,
                                                            const XMLEscape& value) {
-    ConstBufferView srcUnits = value.view.bufferView();
+    StringView srcUnits = value.view;
     u32 points = 0;
     while (srcUnits.numBytes > 0) {
         if (value.maxPoints > 0 && points >= value.maxPoints) {
@@ -290,7 +290,7 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::XMLEscape>::print(StringWriter* sw,
             default: {
                 // This will preserve badly encoded UTF8 characters exactly as they are in
                 // the source string:
-                sw->write(srcUnits.subView(0, decoded.numBytes));
+                sw->write(srcUnits.left(decoded.numBytes));
                 break;
             }
         }

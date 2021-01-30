@@ -273,10 +273,10 @@ PLY_NO_INLINE HybridString PathFormat::from(const PathFormat& srcFormat, StringV
 PLY_NO_INLINE WString win32PathArg(StringView path, bool allowExtended) {
     MemOutStream outs;
     if (allowExtended && WindowsPath::isAbsolute(path)) {
-        outs.write(ArrayView<const char16_t>{u"\\\\?\\", 4}.bufferView());
+        outs.write(ArrayView<const char16_t>{u"\\\\?\\", 4}.stringView());
     }
     while (path.numBytes > 0) {
-        DecodeResult decoded = UTF8::decodePoint(path.bufferView());
+        DecodeResult decoded = UTF8::decodePoint(path);
         outs.tryMakeBytesAvailable(4);
         u32 numEncodedBytes = UTF16_Native::encodePoint(
             outs.viewAvailable(), decoded.point == '/' ? '\\' : decoded.point);
@@ -285,7 +285,7 @@ PLY_NO_INLINE WString win32PathArg(StringView path, bool allowExtended) {
         path.numBytes -= decoded.numBytes;
     }
     NativeEndianWriter{&outs}.write<u16>(0);
-    return WString::moveFromBuffer(outs.moveToBuffer());
+    return WString::moveFromString(outs.moveToString());
 }
 
 } // namespace ply

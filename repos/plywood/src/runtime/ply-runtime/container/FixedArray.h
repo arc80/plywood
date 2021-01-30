@@ -67,12 +67,12 @@ struct FixedArray {
         return {items, Size};
     }
 
-    BufferView bufferView() {
-        return {items, safeDemote<u32>(Size * sizeof(T))};
+    MutableStringView mutableStringView() {
+        return {reinterpret_cast<char*>(items), safeDemote<u32>(Size * sizeof(T))};
     }
 
-    ConstBufferView bufferView() const {
-        return {items, safeDemote<u32>(Size * sizeof(T))};
+    StringView stringView() const {
+        return {reinterpret_cast<const char*>(items), safeDemote<u32>(Size * sizeof(T))};
     }
 
     T* begin() {

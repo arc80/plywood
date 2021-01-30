@@ -7,6 +7,7 @@
 #include <ply-runtime/container/ArrayView.h>
 #include <ply-runtime/container/details/BaseArray.h>
 #include <ply-runtime/memory/Heap.h>
+#include <ply-runtime/string/StringMixin.h>
 
 namespace ply {
 

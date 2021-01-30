@@ -465,11 +465,11 @@ Owned<Node> Parser::readExpression(Token&& firstToken, const Token* afterToken) 
     }
 }
 
-Parser::Result Parser::parse(ConstBufferView srcView_) {
+Parser::Result Parser::parse(StringView srcView_) {
     srcView = srcView_;
     nextUnit = srcView.numBytes > 0 ? srcView[0] : -1;
 
-    this->fileLocMap = FileLocationMap::fromView(StringView::fromBufferView(srcView_));
+    this->fileLocMap = FileLocationMap::fromView(srcView_);
 
     Token rootToken = readToken();
     Owned<Node> root = readExpression(std::move(rootToken));

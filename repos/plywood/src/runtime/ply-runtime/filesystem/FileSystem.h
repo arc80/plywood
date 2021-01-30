@@ -8,7 +8,6 @@
 #include <ply-runtime/string/String.h>
 #include <ply-runtime/filesystem/Path.h>
 #include <ply-runtime/container/Array.h>
-#include <ply-runtime/container/Buffer.h>
 #include <ply-runtime/container/Tuple.h>
 #include <ply-runtime/container/Owned.h>
 #include <ply-runtime/io/Pipe.h>
@@ -558,13 +557,13 @@ struct FileSystem {
     PLY_DLL_ENTRY Tuple<Owned<StringReader>, TextFormat> openTextForReadAutodetect(StringView path);
 
     /*!
-    Returns a `Buffer` containing the raw contents of the specified file, or an empty `Buffer` if
+    Returns a `String` containing the raw contents of the specified file, or an empty `String` if
     the file could not be opened.
 
     To check if the file was opened successfuly, call `lastResult()`. Expected result codes are
     `OK`, `NotFound`, `AccessDenied` or `Locked`.
     */
-    PLY_DLL_ENTRY Buffer loadBinary(StringView path);
+    PLY_DLL_ENTRY String loadBinary(StringView path);
 
     /*!
     Returns a `String` containing the contents of the specified text file converted to UTF-8 with
@@ -619,7 +618,7 @@ struct FileSystem {
     directly.
     */
     PLY_DLL_ENTRY FSResult makeDirsAndSaveBinaryIfDifferent(StringView path,
-                                                            ConstBufferView contents);
+                                                            StringView contents);
 
     /*!
     First, this function converts `strContents` to a raw memory buffer using the text file format

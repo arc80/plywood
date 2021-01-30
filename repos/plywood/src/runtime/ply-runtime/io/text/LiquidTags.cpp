@@ -27,7 +27,7 @@ PLY_NO_INLINE void extractLiquidTags(StringWriter* sw, StringViewReader* svr,
                    0); // At start of this loop, there is always a byte available to read
         u8 unit = *svr->curByte;
         if (unit == '<') {
-            const u8* startByte = svr->curByte;
+            const char* startByte = svr->curByte;
             if (!advanceByte()) {
                 sw->writeByte(unit);
                 return;
@@ -68,7 +68,7 @@ PLY_NO_INLINE void extractLiquidTags(StringWriter* sw, StringViewReader* svr,
                 }
 
                 tagHandler.call(
-                    StringView::fromRange((const char*) startByte, (const char*) svr->curByte),
+                    StringView::fromRange(startByte, svr->curByte),
                     mout.moveToString());
 
                 if (svr->atEOF()) {

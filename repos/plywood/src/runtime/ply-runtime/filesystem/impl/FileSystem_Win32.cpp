@@ -30,7 +30,8 @@ PLY_INLINE double windowsToPosixTime(const FILETIME& fileTime) {
 
 PLY_NO_INLINE void dirEntryFromFindData(FileSystem_Win32::DirImpl* dirImpl) {
     dirImpl->entry = {};
-    dirImpl->entry.name = TextConverter::convert<UTF8, UTF16_Native>(dirImpl->findData.cFileName);
+    WStringView fnView{dirImpl->findData.cFileName};
+    dirImpl->entry.name = TextConverter::convert<UTF8, UTF16_Native>(fnView.stringView());
     dirImpl->entry.isDir = (dirImpl->findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
     if (dirImpl->flags & FileSystem::WithSizes) {
         dirImpl->entry.fileSize =
@@ -170,13 +171,13 @@ PLY_NO_INLINE String FileSystem_Win32::getWorkingDirectory(FileSystem* fs_) {
             // terminating null character.
             WStringView truncatedWin32Path = {win32Path.units, rc};
             if (truncatedWin32Path.numUnits >= 4 &&
-                truncatedWin32Path.bufferView().subView(0, 8) == ConstBufferView{L"\\\\?\\", 8}) {
+                truncatedWin32Path.stringView().left(8) == StringView{(const char*) L"\\\\?\\", 8}) {
                 // Drop leading "\\\\?\\":
                 truncatedWin32Path.units += 4;
                 truncatedWin32Path.numUnits -= 4;
             }
             FileSystem::setLastResult(FSResult::OK);
-            return TextConverter::convert<UTF8, UTF16_Native>(truncatedWin32Path);
+            return TextConverter::convert<UTF8, UTF16_Native>(truncatedWin32Path.stringView());
         }
         // GetCurrentDirectoryW: If the buffer that is pointed to by lpBuffer is not large
         // enough, the return value specifies the required size of the buffer, in characters,
@@ -312,16 +313,16 @@ PLY_NO_INLINE FSResult FileSystem_Win32::deleteFile(FileSystem*, StringView path
     }
 }
 
-PLY_NO_INLINE FSResult FileSystem_Win32::removeDirTree(FileSystem* fs, StringView dirPath) {   
+PLY_NO_INLINE FSResult FileSystem_Win32::removeDirTree(FileSystem* fs, StringView dirPath) {
     HybridString absPath = dirPath;
     if (!WindowsPath::isAbsolute(dirPath)) {
         absPath = WindowsPath::normalize(fs->funcs->getWorkingDirectory(fs), dirPath);
     }
     MemOutStream mout;
-    ConstBufferView srcView = absPath.view().bufferView();
+    StringView srcView = absPath.view();
     TextConverter::create<UTF16_Native, UTF8>().writeTo(&mout, &srcView, true);
     *mout.strWriter() << "\0\0\0\0"; // double null terminated
-    WString wstr = WString::moveFromBuffer(mout.moveToBuffer());
+    WString wstr = WString::moveFromString(mout.moveToString());
     SHFILEOPSTRUCTW shfo;
     memset(&shfo, 0, sizeof(shfo));
     shfo.hwnd = NULL;

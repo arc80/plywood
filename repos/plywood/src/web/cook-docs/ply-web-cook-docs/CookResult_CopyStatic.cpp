@@ -36,7 +36,7 @@ void cook_CopyStatic(cook::CookResult* cookResult, TypedPtr) {
     }
 
     // Allocate temporary storage
-    Buffer buf = Buffer::allocate(32768);
+    String buf = String::allocate(32768);
 
     // Open destination file
     // FIXME: Copy to temporary file first, then rename it
@@ -49,11 +49,11 @@ void cook_CopyStatic(cook::CookResult* cookResult, TypedPtr) {
 
     // Copy in chunks
     for (;;) {
-        u32 numBytes = inPipe->readSome(buf);
+        u32 numBytes = inPipe->readSome({buf.bytes, buf.numBytes});
         // FIXME: Distinguish failed read from EOF
         if (numBytes == 0)
             break;
-        outPipe->write(buf.view().subView(0, numBytes));
+        outPipe->write(buf.left(numBytes));
     }
 }
 

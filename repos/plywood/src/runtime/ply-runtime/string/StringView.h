@@ -4,16 +4,17 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/Array.h>
-#include <ply-runtime/container/BufferView.h>
-#include <ply-runtime/container/Hash.h>
-#include <ply-runtime/container/Tuple.h>
+#include <ply-runtime/container/Subst.h>
 #include <string> // for char_traits
 
 namespace ply {
 
 struct String;
 struct HybridString;
+template <typename>
+class Array;
+template <typename>
+struct ArrayView;
 
 namespace fmt {
 template <typename>
@@ -36,39 +37,29 @@ PLY_INLINE bool isDecimalDigit(char cp) {
 
 //------------------------------------------------------------------------------------------------
 /*!
-A `StringView` references an immutable range of memory that is generally intended (but not required)
-to contain UTF-8-encoded text. It consists of a pointer `bytes` and an integer `numBytes`. Many
-`StringView` functions also work with text in any 8-bit format compatible with ASCII, such as ISO
-8859-1 or Windows-1252. A `StringView` does not own the memory it points to, and no heap memory is
-freed when the `StringView` is destroyed.
+A `StringView` references an immutable range of memory. It consists of a pointer `bytes` and an
+integer `numBytes`. A `StringView` does not own the memory it points to, and no heap memory is freed
+when the `StringView` is destroyed. The caller is responible for ensuring that memory referenced by
+`StringView` remains valid for the lifetime of the `StringView` object.
 
-The `StringView` class is similar to `ConstBufferView` except that it provides member functions
-suitable for string manipulation, such as `trim()`, `split()` and concatenation using the `+`
-operator.
+`StringView` objects often reference UTF-8-encoded text, but this isn't a requirement. The memory
+referenced by a `StringView` can hold any kind of data.
 
-`StringView` objects are not implicitly convertible to or from `ConstBufferView`, but they can be
-explicitly converted using `bufferView()` or `fromBufferView()`.
+Even though `StringView` objects aren't required to contain text, they provide many member functions
+to help manipulate text, such as `trim()`, `splitByte()` and `upperAsc()`. These text manipulation
+functions are generally intended to work with UTF-8-encoding strings, but most of them will also
+work with any 8-bit format compatible with ASCII, such as ISO 8859-1 or Windows-1252.
 
-`StringView` objects are not guaranteed to be null-terminated. If you need a null-terminated string
-(for example, to pass to a third-party library), you must construct a string that includes the null
-terminator byte yourself. The null terminator then counts towards the total number of bytes in
-`numBytes`. A convenience function `withNullTerminator()` is provided for this.
+When a `StringView` object does contain text, the text string is generally _not_ null-terminated. If
+you need a null-terminated string (for example, to pass to a third-party library), you must
+construct a string that includes the null terminator byte yourself. The null terminator then counts
+towards the total number of bytes in `numBytes`. A convenience function `withNullTerminator()` is
+provided for this.
 
-Strictly speaking, `StringView` objects are not _required_ to contain text, though many member
-functions expect it. Internally, a `StringView` is simply a reference to an immutable sequence of
-bytes. The main reason to prefer a variable of type `StringView` over `ConstBufferView` is to
-express the intention for the memory range to contain text and/or for the convenience of having the
-`StringView` member functions available.
-
-Several `StringView` functions work directly with byte offsets, such as `subStr()`, `left()` and
-`right()`. Be aware that when a string is encoded in UTF-8, byte offsets are not necessarily the
-same as the number of characters (Unicode points) encoded by the string. If the string contains
-multibyte characters, it is the caller's responsibility to pass byte offsets that begin and end at
-character boundaries.
-
-For more information, see [Unicode Support](Unicode).
-
-[FIXME: Mention caller is responsible for lifetime of the underlying data.]
+Several `StringView` functions accept byte offset arguments, such as `subStr()`, `left()` and
+`right()`. Be aware that when a `StringView` contains UTF-8-encoded text, byte offsets are not
+necessarily the same as the number of characters (Unicode points) encoded by the string. For more
+information, see [Unicode Support](Unicode).
 */
 struct StringView {
     /*!
@@ -94,11 +85,6 @@ struct StringView {
 
     When the argument is a C-style string literal, compilers are able to compute `numBytes` at
     compile time if optimization is enabled.
-
-    If you have a C-style string literal, and you want the null terminator character included in the
-    `StringView`, use `StringView::fromBufferView("hello")` instead. In that case, the null
-    terminator character counts towards the number of bytes in `numBytes`, making `numBytes` equal
-    to 6 in this example.
 
     The second form of this constructor exists in order to support C++20 compilers, where the type
     of UTF-8 string literals such as `u8"hello"` has been changed from `const char*` (before C++20)
@@ -130,27 +116,6 @@ struct StringView {
     valid for the lifetime of the `StringView`.
     */
     PLY_INLINE StringView(const char* bytes, u32 numBytes) : bytes{bytes}, numBytes{numBytes} {
-    }
-
-    /*!
-    \beginGroup
-    Explicitly convert the `StringView` to a `ConstBufferView`.
-    */
-    PLY_INLINE ConstBufferView& bufferView() {
-        return reinterpret_cast<ConstBufferView&>(*this);
-    }
-    PLY_INLINE const ConstBufferView& bufferView() const {
-        return reinterpret_cast<const ConstBufferView&>(*this);
-    }
-    /*!
-    \endGroup
-    */
-
-    /*!
-    Explicitly convert a `ConstBufferView` to a `StringView`.
-    */
-    static PLY_INLINE const StringView& fromBufferView(const ConstBufferView& binView) {
-        return reinterpret_cast<const StringView&>(binView);
     }
 
     /*!
@@ -194,6 +159,15 @@ struct StringView {
         PLY_ASSERT(numBytes <= this->numBytes);
         this->bytes += numBytes;
         this->numBytes -= numBytes;
+    }
+
+    /*!
+    Advances the end of the memory range by `ofs` bytes while keeping the start of the memory range
+    unchanged.
+    */
+    PLY_INLINE void offsetBack(s32 ofs) {
+        PLY_ASSERT((u32) -ofs <= this->numBytes);
+        this->numBytes += ofs;
     }
 
     /*!
@@ -253,6 +227,13 @@ struct StringView {
     */
 
     /*!
+    Returns `true` if `curByte` points to a byte inside the memory range.
+    */
+    PLY_INLINE bool contains(const char* curByte) const {
+        return uptr(curByte - this->bytes) <= this->numBytes;
+    }
+
+    /*!
     Returns a substring that contains only the first `numBytes` bytes of the string.
     */
     PLY_INLINE StringView left(u32 numBytes) const {
@@ -299,11 +280,9 @@ struct StringView {
     Returns `true` if the string contents are identical (or not identical) when compared
     byte-for-byte.
     */
-    PLY_INLINE bool operator==(StringView src) const {
-        return this->bufferView() == src.bufferView();
-    }
+    PLY_DLL_ENTRY bool operator==(StringView src) const;
     PLY_INLINE bool operator!=(StringView src) const {
-        return !(this->bufferView() == src.bufferView());
+        return !(*this == src);
     }
     /*!
     \endGroup
@@ -483,9 +462,62 @@ struct StringView {
     PLY_DLL_ENTRY StringView withoutNullTerminator() const;
 };
 
-// Note: char* will be implicitly converted to StringView here:
-PLY_INLINE Hasher& operator<<(Hasher& h, StringView str) {
-    return h << str.bufferView();
-}
+struct MutableStringView {
+    /*!
+    The first byte in the mutable memory range.
+    */
+    char* bytes = nullptr;
+
+    /*!
+    The number of bytes in the mutable memory range.
+    */
+    u32 numBytes = 0;
+
+    /*!
+    Constructs an empty `MutableStringView`.
+    */
+    PLY_INLINE MutableStringView() = default;
+
+    /*!
+    Constructs a `MutableStringView` explicitly from the arguments. The string memory is expected to
+    remain valid for the lifetime of the `MutableStringView`.
+    */
+    PLY_INLINE MutableStringView(char* bytes, u32 numBytes) : bytes{bytes}, numBytes{numBytes} {
+    }
+
+    /*!
+    Returns a `MutableStringView` referencing an mutable range of memory between two pointers. The
+    number of bytes in the memory range is given by `endByte` - `startByte`, and `endByte` is
+    considered a pointer to the first byte _after_ the memory range.
+    */
+    static PLY_INLINE MutableStringView fromRange(char* startByte, char* endByte) {
+        return {startByte, safeDemote<u32>(endByte - startByte)};
+    }
+
+    /*!
+    Conversion operator. Makes `MutableStringView` implicitly convertible to `StringView`.
+    */
+    PLY_INLINE operator const StringView&() const {
+        return reinterpret_cast<const StringView&>(*this);
+    }
+
+    /*!
+    Moves `bytes` forward and subtracts the given number of bytes from `numBytes`.
+    */
+    PLY_INLINE void offsetHead(u32 numBytes) {
+        PLY_ASSERT(numBytes <= this->numBytes);
+        this->bytes += numBytes;
+        this->numBytes -= numBytes;
+    }
+
+    /*!
+    Advances the end of the memory range by `ofs` bytes while keeping the start of the memory range
+    unchanged.
+    */
+    PLY_INLINE void offsetBack(s32 ofs) {
+        PLY_ASSERT((u32) -ofs <= this->numBytes);
+        this->numBytes += ofs;
+    }
+};
 
 } // namespace ply

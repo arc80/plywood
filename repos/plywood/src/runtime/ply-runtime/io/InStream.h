@@ -60,7 +60,7 @@ struct InStream {
     safe to read from the pointer. Use member functions such as `tryMakeBytesAvailable()` to ensure
     that this pointer can be read safely.
     */
-    u8* curByte = nullptr;
+    const char* curByte = nullptr;
 
     /*!
     A pointer to the last byte in the input buffer. This pointer does not necessarily represent the
@@ -68,10 +68,10 @@ struct InStream {
     underlying `InPipe`, or to advance to the next chunk in a `ChunkList`, by calling
     `tryMakeBytesAvailable()`.
     */
-    u8* endByte = nullptr;
+    const char* endByte = nullptr;
 
     union {
-        u8* startByte;                  // if Type::View
+        const char* startByte;                // if Type::View
         Reference<ChunkListNode> chunk; // if Type::Pipe or Type::Mem
     };
     union {
@@ -151,9 +151,9 @@ public:
     }
 
     /*!
-    Returns the memory region between `curByte` and `endByte` as a `ConstBufferView`.
+    Returns the memory region between `curByte` and `endByte` as a `StringView`.
     */
-    PLY_INLINE ConstBufferView viewAvailable() const {
+    PLY_INLINE StringView viewAvailable() const {
         return {this->curByte, safeDemote<u32>(this->endByte - this->curByte)};
     }
 
@@ -227,7 +227,7 @@ public:
         return *this->curByte++;
     }
 
-    PLY_DLL_ENTRY bool readSlowPath(BufferView dst);
+    PLY_DLL_ENTRY bool readSlowPath(MutableStringView dst);
 
     /*!
     Attempts to fill `dst` with data from the input stream. If the underlying `InPipe` is waiting
@@ -235,7 +235,7 @@ public:
     successfully. If EOF/error is encountered before `dst` can be filled, the remainder of `dst` is
     filled with zeros and `false` is returned.
     */
-    PLY_INLINE bool read(BufferView dst) {
+    PLY_INLINE bool read(MutableStringView dst) {
         if (dst.numBytes > safeDemote<u32>(this->endByte - this->curByte)) {
             return this->readSlowPath(dst);
         }
@@ -247,9 +247,9 @@ public:
     }
 
     /*!
-    Reads all the remaining data from the input stream and returns the contents as a `Buffer`.
+    Reads all the remaining data from the input stream and returns the contents as a `String`.
     */
-    PLY_DLL_ENTRY Buffer readRemainingContents();
+    PLY_DLL_ENTRY String readRemainingContents();
 
     /*!
     \beginGroup
@@ -271,10 +271,10 @@ public:
 struct ViewInStream : InStream {
     PLY_INLINE ViewInStream() = default;
 
-    PLY_INLINE ViewInStream(ConstBufferView view) : InStream{Type::View, 0} {
-        this->startByte = (u8*) view.bytes;
-        this->curByte = (u8*) view.bytes;
-        this->endByte = (u8*) view.bytes + view.numBytes;
+    PLY_INLINE ViewInStream(StringView view) : InStream{Type::View, 0} {
+        this->startByte = view.bytes;
+        this->curByte = view.bytes;
+        this->endByte = view.bytes + view.numBytes;
         this->reserved = nullptr;
     }
 
@@ -293,7 +293,7 @@ struct ViewInStream : InStream {
     }
 
     struct SavePoint {
-        u8* startByte = nullptr;
+        const char* startByte = nullptr;
 
         PLY_INLINE SavePoint(const InStream* ins) : startByte{ins->curByte} {
         }
@@ -304,11 +304,11 @@ struct ViewInStream : InStream {
         return {this};
     }
 
-    PLY_INLINE ConstBufferView getViewFrom(const SavePoint& savePoint) const {
+    PLY_INLINE StringView getViewFrom(const SavePoint& savePoint) const {
         PLY_ASSERT(this->isView());
         PLY_ASSERT(uptr(this->curByte - savePoint.startByte) <=
                    uptr(this->endByte - this->startByte));
-        return ConstBufferView::fromRange(savePoint.startByte, this->curByte);
+        return StringView::fromRange(savePoint.startByte, this->curByte);
     }
 
     PLY_INLINE void restore(const SavePoint& savePoint) {
@@ -318,7 +318,7 @@ struct ViewInStream : InStream {
         this->curByte = savePoint.startByte;
     }
 
-    PLY_INLINE const u8* getStartByte() const {
+    PLY_INLINE const char* getStartByte() const {
         PLY_ASSERT(this->isView());
         return this->startByte;
     }
@@ -347,7 +347,7 @@ public:
     template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
     PLY_INLINE T read() {
         T value;
-        ins->read({&value, sizeof(value)});
+        ins->read({(char*) &value, sizeof(value)});
         return value;
     }
 };

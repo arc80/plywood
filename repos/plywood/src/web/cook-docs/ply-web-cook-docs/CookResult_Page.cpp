@@ -91,7 +91,7 @@ String getLinkDestinationFromSpan(StringView codeSpanText, const LookupContext& 
             return getLinkDestination(foundSema);
         }
     }
-    {
+    if (lookupCtx.forClass) {
         // Try class itself last
         SemaEntity* foundSema = lookupCtx.forClass->lookupChain(nameComps.view());
         if (foundSema) {
