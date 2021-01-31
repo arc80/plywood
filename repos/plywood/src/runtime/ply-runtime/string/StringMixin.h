@@ -87,41 +87,6 @@ struct StringMixin {
     }
 
     /*!
-    Returns:
-    * `-1` if `str0` precedes `str1` in sorted order
-    * `0` if the strings are equal
-    * `1` if `str0` follows `str1` in sorted order
-    Strings are sorted by comparing the unsigned value of each byte. If one of the strings contains
-    the other as a prefix, the shorter string comes first in sorted order.
-    */
-    PLY_DLL_ENTRY friend s32 compare(const Derived& str0, const Derived& str1) {
-        return compare(str0.view(), str1.view());
-    }
-
-    /*!
-    Returns `true` if the string precedes `other` in sorted order. Equivalent to `compare(*this,
-    other) < 0`.
-    */
-    PLY_INLINE bool operator<(StringView other) const {
-        return static_cast<const Derived*>(this)->view() < other;
-    }
-
-    /*!
-    \beginGroup
-    Returns `true` if the string contents are identical (or not identical) when compared
-    byte-for-byte.
-    */
-    PLY_INLINE bool operator==(StringView src) const {
-        return static_cast<const Derived*>(this)->view() == src;
-    }
-    PLY_INLINE bool operator!=(StringView src) const {
-        return static_cast<const Derived*>(this)->view() != src;
-    }
-    /*!
-    \endGroup
-    */
-
-    /*!
     Returns a new `String` containing the concatenation of two `StringViews`.
     */
     PLY_INLINE String operator+(StringView other) const;

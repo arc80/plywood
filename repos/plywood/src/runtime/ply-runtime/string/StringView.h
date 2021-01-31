@@ -258,49 +258,6 @@ struct StringView {
     }
 
     /*!
-    Returns:
-    * `-1` if `str0` precedes `str1` in sorted order
-    * `0` if the strings are equal
-    * `1` if `str0` follows `str1` in sorted order
-    Strings are sorted by comparing the unsigned value of each byte. If one of the strings contains
-    the other as a prefix, the shorter string comes first in sorted order.
-    */
-    PLY_DLL_ENTRY friend s32 compare(StringView str0, StringView str1);
-
-    /*!
-    Returns `true` if the string precedes `other` in sorted order. Equivalent to `compare(*this,
-    other) < 0`.
-    */
-    PLY_INLINE bool operator<(StringView other) const {
-        return compare(*this, other) < 0;
-    }
-
-    /*!
-    \beginGroup
-    Returns `true` if the string contents are identical (or not identical) when compared
-    byte-for-byte.
-    */
-    PLY_DLL_ENTRY bool operator==(StringView src) const;
-    PLY_INLINE bool operator!=(StringView src) const {
-        return !(*this == src);
-    }
-    /*!
-    \endGroup
-    */
-
-    /*!
-    Returns a new `String` containing the concatenation of two `StringViews`.
-    */
-    PLY_DLL_ENTRY String operator+(StringView other) const;
-
-    /*!
-    Returns a new `String` containing the contents of the `StringView` repeated `count` times.
-
-        StringView{'*'};    // returns "**********"
-    */
-    PLY_DLL_ENTRY String operator*(u32 count) const;
-
-    /*!
     Returns the offset of the first occurence of `matchByte` in the string, or `-1` if not found.
     The search begins at the offset specified by `startPos`. This function can find ASCII codes in
     UTF-8 encoded strings, since ASCII codes are always encoded as a single byte in UTF-8.
@@ -461,6 +418,55 @@ struct StringView {
     */
     PLY_DLL_ENTRY StringView withoutNullTerminator() const;
 };
+
+/*!
+\addToClass StringView
+Returns:
+* `-1` if `a` precedes `b` in sorted order
+* `0` if the strings are equal
+* `1` if `a` follows `b` in sorted order
+Strings are sorted by comparing the unsigned value of each byte. If one of the strings contains
+the other as a prefix, the shorter string comes first in sorted order.
+*/
+PLY_DLL_ENTRY s32 compare(StringView a, StringView b);
+
+/*!
+\beginGroup
+Comparison functions. `a` < `b` if `a` precedes `b` in sorted order.
+*/
+PLY_INLINE bool operator==(StringView a, StringView b) {
+    return compare(a, b) == 0;
+}
+PLY_INLINE bool operator!=(StringView a, StringView b) {
+    return compare(a, b) != 0;
+}
+PLY_INLINE bool operator<(StringView a, StringView b) {
+    return compare(a, b) < 0;
+}
+PLY_INLINE bool operator<=(StringView a, StringView b) {
+    return compare(a, b) <= 0;
+}
+PLY_INLINE bool operator>(StringView a, StringView b) {
+    return compare(a, b) > 0;
+}
+PLY_INLINE bool operator>=(StringView a, StringView b) {
+    return compare(a, b) >= 0;
+}
+/*!
+\endGroup
+*/
+
+/*!
+Returns a new `String` containing the concatenation of two `StringViews`.
+*/
+PLY_DLL_ENTRY String operator+(StringView a, StringView b);
+
+/*!
+Returns a new `String` containing the contents of the given `StringView` repeated `count` times.
+
+    StringView{'*'} * 10;    // returns "**********"
+*/
+PLY_DLL_ENTRY String operator*(StringView str, u32 count);
 
 struct MutableStringView {
     /*!

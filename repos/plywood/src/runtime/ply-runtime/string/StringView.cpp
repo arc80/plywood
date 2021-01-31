@@ -104,23 +104,6 @@ PLY_NO_INLINE String StringView::filterBytes(char (*filterFunc)(char)) const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::operator+(StringView other) const {
-    String result = String::allocate(this->numBytes + other.numBytes);
-    memcpy(result.bytes, this->bytes, this->numBytes);
-    memcpy(result.bytes + this->numBytes, other.bytes, other.numBytes);
-    return result;
-}
-
-PLY_NO_INLINE String StringView::operator*(u32 count) const {
-    String result = String::allocate(this->numBytes * count);
-    char* dst = result.bytes;
-    for (u32 i = 0; i < count; i++) {
-        memcpy(dst, this->bytes, this->numBytes);
-        dst += this->numBytes;
-    }
-    return result;
-}
-
 PLY_NO_INLINE String StringView::join(ArrayView<const StringView> comps) const {
     MemOutStream mout;
     bool first = true;
@@ -171,14 +154,10 @@ PLY_NO_INLINE StringView StringView::withoutNullTerminator() const {
     return {this->bytes, this->numBytes - 1};
 }
 
-PLY_NO_INLINE s32 compare(StringView str0, StringView str1) {
-    // Returns:
-    // -1 if str0 < str1
-    // 0 if str0 == str1
-    // 1 if str0 > str1
-    u32 compareBytes = min(str0.numBytes, str1.numBytes);
-    const u8* u0 = (const u8*) str0.bytes;
-    const u8* u1 = (const u8*) str1.bytes;
+PLY_NO_INLINE s32 compare(StringView a, StringView b) {
+    u32 compareBytes = min(a.numBytes, b.numBytes);
+    const u8* u0 = (const u8*) a.bytes;
+    const u8* u1 = (const u8*) b.bytes;
     const u8* uEnd0 = u0 + compareBytes;
     while (u0 < uEnd0) {
         s32 diff = *u0 - *u1;
@@ -187,13 +166,24 @@ PLY_NO_INLINE s32 compare(StringView str0, StringView str1) {
         u0++;
         u1++;
     }
-    return str0.numBytes - str1.numBytes;
+    return a.numBytes - b.numBytes;
 }
 
-PLY_NO_INLINE bool StringView::operator==(StringView other) const {
-    if (numBytes != other.numBytes)
-        return false;
-    return memcmp(bytes, other.bytes, numBytes) == 0;
+PLY_NO_INLINE String operator+(StringView a, StringView b) {
+    String result = String::allocate(a.numBytes + b.numBytes);
+    memcpy(result.bytes, a.bytes, a.numBytes);
+    memcpy(result.bytes + a.numBytes, b.bytes, b.numBytes);
+    return result;
+}
+
+PLY_NO_INLINE String operator*(StringView str, u32 count) {
+    String result = String::allocate(str.numBytes * count);
+    char* dst = result.bytes;
+    for (u32 i = 0; i < count; i++) {
+        memcpy(dst, str.bytes, str.numBytes);
+        dst += str.numBytes;
+    }
+    return result;
 }
 
 } // namespace ply
