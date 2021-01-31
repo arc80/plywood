@@ -76,13 +76,13 @@ struct Node {
 };
 
 Owned<Node> parse(StringView src);
-void dump(StringWriter* sw, const Node* node, u32 level = 0);
+void dump(OutStream* outs, const Node* node, u32 level = 0);
 
 struct HTMLOptions {
     bool childAnchors = false;
 };
 
-void convertToHTML(StringWriter* sw, const Node* node, const HTMLOptions& options);
+void convertToHTML(OutStream* outs, const Node* node, const HTMLOptions& options);
 
 } // namespace markdown
 } // namespace ply

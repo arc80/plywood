@@ -13,32 +13,32 @@ bool isAlnumUnit(u32 c) {
            (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c >= 128);
 }
 
-void Parser::dumpError(const ParseError& error, StringWriter& sw) const {
+void Parser::dumpError(const ParseError& error, OutStream& outs) const {
     FileLocation errorLoc = this->fileLocMap.getFileLocation(error.fileOfs);
-    sw.format("({}, {}): error: {}\n", errorLoc.lineNumber, errorLoc.columnNumber, error.message);
+    outs.format("({}, {}): error: {}\n", errorLoc.lineNumber, errorLoc.columnNumber, error.message);
     for (u32 i = 0; i < error.context.numItems(); i++) {
         const ParseError::Scope& scope = error.context.back(-(s32) i - 1);
         FileLocation contextLoc = this->fileLocMap.getFileLocation(scope.fileOfs);
-        sw.format("({}, {}) ", contextLoc.lineNumber, contextLoc.columnNumber);
+        outs.format("({}, {}) ", contextLoc.lineNumber, contextLoc.columnNumber);
         switch (scope.type) {
             case ParseError::Scope::Object:
-                sw << "while reading object started here";
+                outs << "while reading object started here";
                 break;
 
             case ParseError::Scope::Property:
-                sw << "while reading property " << scope.name << " started here";
+                outs << "while reading property " << scope.name << " started here";
                 break;
 
             case ParseError::Scope::Duplicate:
-                sw << "existing property was defined here";
+                outs << "existing property was defined here";
                 break;
 
             case ParseError::Scope::Array:
-                sw << "while reading item " << scope.index
+                outs << "while reading item " << scope.index
                    << " of the array started here (index is zero-based)";
                 break;
         }
-        sw << '\n';
+        outs << '\n';
     }
 }
 
@@ -454,12 +454,12 @@ Owned<Node> Parser::readExpression(Token&& firstToken, const Token* afterToken) 
             return {};
 
         default: {
-            StringWriter sw;
-            sw << "Unexpected " << toString(firstToken);
+            MemOutStream mout;
+            mout << "Unexpected " << toString(firstToken);
             if (afterToken) {
-                sw << " after " << toString(*afterToken);
+                mout << " after " << toString(*afterToken);
             }
-            error(firstToken.fileOfs, sw.moveToString());
+            error(firstToken.fileOfs, mout.moveToString());
             return {};
         }
     }

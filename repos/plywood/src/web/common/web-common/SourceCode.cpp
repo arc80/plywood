@@ -24,16 +24,15 @@ PLY_NO_INLINE void SourceCode::serve(const SourceCode* params, StringView reques
     }
 
     OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
-    StringWriter* sw = outs->strWriter();
-    *sw << "Content-Type: text/html\r\n\r\n";
+    *outs << "Content-Type: text/html\r\n\r\n";
     responseIface->endResponseHeader();
-    sw->format(R"#(<!DOCTYPE html>
+    outs->format(R"#(<!DOCTYPE html>
 <html>
 <head>
 <title>{}</title>
 )#",
                fmt::XMLEscape{NativePath::split(normRequestPath).second});
-    *sw << R"#(<link href="/static/stylesheet.css" rel="stylesheet" type="text/css" />
+    *outs << R"#(<link href="/static/stylesheet.css" rel="stylesheet" type="text/css" />
 <script>
 var highlighted = null;
 function highlight(elementID) {
@@ -60,11 +59,11 @@ window.onhashchange = function() {
 )#";
     u32 lineNumber = 1;
     while (String line = sr->readString<fmt::Line>()) {
-        sw->format("<tr><td id=\"L{}\">{}</td><td id=\"LC{}\">{}</td></tr>", lineNumber, lineNumber,
+        outs->format("<tr><td id=\"L{}\">{}</td><td id=\"LC{}\">{}</td></tr>", lineNumber, lineNumber,
                    lineNumber, fmt::XMLEscape{line});
         lineNumber++;
     }
-    *sw << R"#(</tbody>
+    *outs << R"#(</tbody>
 </table>
 </div>
 </body>

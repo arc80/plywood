@@ -62,8 +62,8 @@ PLY_NO_INLINE void FetchFromFileSystem::serve(const FetchFromFileSystem* params,
     }
 
     OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
-    outs->strWriter()->format("Content-Type: {}\r\n", cursor->mimeType);
-    *outs->strWriter() << "Cache-Control: max-age=1200\r\n\r\n";
+    outs->format("Content-Type: {}\r\n", cursor->mimeType);
+    *outs << "Cache-Control: max-age=1200\r\n\r\n";
     responseIface->endResponseHeader();
     outs->write(bin);
 }

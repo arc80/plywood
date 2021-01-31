@@ -238,11 +238,11 @@ Array<Stringifier::Component> toStringComps(const SingleDeclaration& single,
 }
 
 String toString(const SingleDeclaration& single) {
-    StringWriter sw;
+    MemOutStream mout;
     for (const Stringifier::Component& comp : toStringComps(single, nullptr, false)) {
-        sw << comp.text;
+        mout << comp.text;
     }
-    return sw.moveToString();
+    return mout.moveToString();
 }
 
 } // namespace sema

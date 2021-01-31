@@ -77,55 +77,55 @@ struct ReflectionHookError : BaseError {
                                    LinearLocation otherLoc = -1)
         : type{type}, linearLoc{linearLoc}, otherLoc{otherLoc} {
     }
-    virtual void writeMessage(StringWriter* sw, const PPVisitedFiles* visitedFiles) const override;
+    virtual void writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const override;
 };
 PLY_REFLECT_ENUM(, ReflectionHookError::Type)
 
-void ReflectionHookError::writeMessage(StringWriter* sw, const PPVisitedFiles* visitedFiles) const {
-    sw->format("{}: error: ", expandFileLocation(visitedFiles, this->linearLoc).toString());
+void ReflectionHookError::writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const {
+    outs->format("{}: error: ", expandFileLocation(visitedFiles, this->linearLoc).toString());
     switch (this->type) {
         case ReflectionHookError::SwitchMayOnlyContainStructs: {
-            *sw << "a switch may only contain structs\n";
+            *outs << "a switch may only contain structs\n";
             break;
         }
         case ReflectionHookError::MissingReflectOffCommand: {
-            *sw << "can't find matching // ply reflect off\n";
+            *outs << "can't find matching // ply reflect off\n";
             break;
         }
         case ReflectionHookError::UnexpectedReflectOffCommand: {
-            *sw << "unexpected // ply reflect off\n";
+            *outs << "unexpected // ply reflect off\n";
             break;
         }
         case ReflectionHookError::CannotInjectCodeIntoMacro: {
-            *sw << "can't inject code inside macro\n";
-            sw->format("{}: note: for code injected by this command\n",
+            *outs << "can't inject code inside macro\n";
+            outs->format("{}: note: for code injected by this command\n",
                        expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case ReflectionHookError::DuplicateCommand: {
-            *sw << "duplicate command\n";
-            sw->format("{}: note: see previous command\n",
+            *outs << "duplicate command\n";
+            outs->format("{}: note: see previous command\n",
                        expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope: {
-            *sw << "command can only be used at declaration scope\n";
+            *outs << "command can only be used at declaration scope\n";
             break;
         }
         case ReflectionHookError::CommandCanOnlyBeUsedInClassOrStruct: {
-            *sw << "command can only be used inside a class or struct\n";
+            *outs << "command can only be used inside a class or struct\n";
             break;
         }
         case ReflectionHookError::CommandCanOnlyBeUsedInsideEnum: {
-            *sw << "command can only be used inside an enum\n";
+            *outs << "command can only be used inside an enum\n";
             break;
         }
         case ReflectionHookError::UnrecognizedCommand: {
-            *sw << "unrecognized command\n";
+            *outs << "unrecognized command\n";
             break;
         }
         default: {
-            *sw << "error message not implemented!\n";
+            *outs << "error message not implemented!\n";
             break;
         }
     }
@@ -394,8 +394,8 @@ struct ReflectionHooks : ParseSupervisor {
 
     virtual bool handleError(Owned<cpp::BaseError>&& err) override {
         this->anyError = true;
-        StringWriter sw = StdErr::text();
-        err->writeMessage(&sw, this->parser->pp->visitedFiles);
+        OutStream outs = StdErr::text();
+        err->writeMessage(&outs, this->parser->pp->visitedFiles);
         return true;
     }
 };

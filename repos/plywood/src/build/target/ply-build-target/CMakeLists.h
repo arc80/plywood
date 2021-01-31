@@ -38,7 +38,7 @@ struct CMakeBuildFolder {
 
 extern CMakeGeneratorOptions NativeToolchain;
 extern String DefaultNativeConfig;
-void writeCMakeLists(StringWriter* sw, CMakeBuildFolder* cbf);
+void writeCMakeLists(OutStream* outs, CMakeBuildFolder* cbf);
 bool isMultiConfigCMakeGenerator(StringView generator);
 bool cmakeBuildSystemExists(StringView cmakeListsFolder, const CMakeGeneratorOptions& generatorOpts,
                             String solutionName, StringView config);

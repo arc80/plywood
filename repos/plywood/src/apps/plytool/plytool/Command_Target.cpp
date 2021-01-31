@@ -19,9 +19,9 @@ struct DepTreeIndent {
     String children;
 };
 
-PLY_NO_INLINE void dumpDepTree(StringWriter* sw, const build::DependencyTree* depTreeNode,
+PLY_NO_INLINE void dumpDepTree(OutStream* outs, const build::DependencyTree* depTreeNode,
                                const DepTreeIndent& indent) {
-    sw->format("{}{}\n", indent.node, depTreeNode->desc);
+    outs->format("{}{}\n", indent.node, depTreeNode->desc);
     for (u32 i = 0; i < depTreeNode->children.numItems(); i++) {
         DepTreeIndent childIndent;
         if (i + 1 < depTreeNode->children.numItems()) {
@@ -31,7 +31,7 @@ PLY_NO_INLINE void dumpDepTree(StringWriter* sw, const build::DependencyTree* de
             childIndent.node = indent.children + "`-- ";
             childIndent.children = indent.children + "    ";
         }
-        dumpDepTree(sw, &depTreeNode->children[i], childIndent);
+        dumpDepTree(outs, &depTreeNode->children[i], childIndent);
     }
 }
 
@@ -48,8 +48,8 @@ void command_target(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        auto sw = StdErr::text();
-        printUsage(&sw, "target",
+        auto outs = StdErr::text();
+        printUsage(&outs, "target",
                    {
                        {"list", "list description"},
                        {"add", "add description"},
@@ -64,20 +64,20 @@ void command_target(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        StringWriter sw = StdOut::text();
-        sw.format("List of root targets in build folder '{}':\n",
+        OutStream outs = StdOut::text();
+        outs.format("List of root targets in build folder '{}':\n",
                   env->currentBuildFolder->buildFolderName);
         for (StringView targetName : env->currentBuildFolder->rootTargets) {
             const TargetInstantiator* targetInst =
                 RepoRegistry::get()->findTargetInstantiator(targetName);
             if (!targetInst) {
-                sw.format("    {} (not found)\n", targetName);
+                outs.format("    {} (not found)\n", targetName);
             } else {
                 String activeText;
                 if (targetName == env->currentBuildFolder->activeTarget) {
                     activeText = " (active)";
                 }
-                sw.format("    {}{}\n", RepoRegistry::get()->getShortDepSourceName(targetInst),
+                outs.format("    {}{}\n", RepoRegistry::get()->getShortDepSourceName(targetInst),
                           activeText);
             }
         }
@@ -174,13 +174,13 @@ void command_target(PlyToolCommandEnv* env) {
         PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
         PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
         DependencyTree depTree = env->currentBuildFolder->buildDepTree();
-        StringWriter sw = StdOut::text();
-        sw.format("Dependency graph for folder '{}':\n", env->currentBuildFolder->buildFolderName);
+        OutStream outs = StdOut::text();
+        outs.format("Dependency graph for folder '{}':\n", env->currentBuildFolder->buildFolderName);
         DepTreeIndent indent;
         indent.node = "    ";
         indent.children = "    ";
         for (const DependencyTree& treeNode : depTree.children) {
-            dumpDepTree(&sw, &treeNode, indent);
+            dumpDepTree(&outs, &treeNode, indent);
         }
     } else {
         fatalError(String::format("Unrecognized target command '{}'", cmd));

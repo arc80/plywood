@@ -28,8 +28,8 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
             String msg;
             PLY_INLINE ErrorWrapper(String&& msg) : msg{std::move(msg)} {
             }
-            void writeMessage(StringWriter* sw, const PPVisitedFiles*) const override {
-                *sw << msg;
+            void writeMessage(OutStream* outs, const PPVisitedFiles*) const override {
+                *outs << msg;
             }
         };
         visor->handleError(new ErrorWrapper{String::format("Can't open '{}'\n", srcFile.absPath)});

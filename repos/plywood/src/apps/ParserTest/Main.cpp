@@ -48,27 +48,27 @@ void runTest(StringView testPath) {
     ParserTestSupervisor visor;
     cpp::grammar::TranslationUnit parseResult = cpp::parse(sourceCode, &visitedFiles, {}, {}, &visor);
 
-    StringWriter sw;
-    sw << sourceCode;
+    MemOutStream mout;
+    mout << sourceCode;
     if (!sourceCode.endsWith("\n")) {
-        sw << "\n";
+        mout << "\n";
     }
-    sw << "-----\n";
+    mout << "-----\n";
     for (const cpp::BaseError* err : visor.errors) {
-        err->writeMessage(&sw, &visitedFiles);
+        err->writeMessage(&mout, &visitedFiles);
     }
-    sw.flushMem();
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(testPath, sw.moveToString(), TextFormat::platformPreference());
+    mout.flushMem();
+    FileSystem::native()->makeDirsAndSaveTextIfDifferent(testPath, mout.moveToString(), TextFormat::platformPreference());
 }
 
 void runTestSuite() {
     String testsFolder =
         NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/ParserTest/tests");
-    StringWriter sw = StdOut::text();
+    OutStream outs = StdOut::text();
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(testsFolder)) {
         if (!entry.isDir && entry.name.endsWith(".txt")) {
-            sw << entry.name << '\n';
-            sw.flushMem();
+            outs << entry.name << '\n';
+            outs.flushMem();
             runTest(NativePath::join(testsFolder, entry.name));
         }
     }

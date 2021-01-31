@@ -5,7 +5,7 @@
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/io/text/StringReader.h>
-#include <ply-runtime/io/text/StringWriter.h>
+#include <ply-runtime/io/OutStream.h>
 
 namespace ply {
 
@@ -79,13 +79,13 @@ struct TextFormat {
     PLY_DLL_ENTRY Owned<StringReader> createImporter(OptionallyOwned<InStream>&& ins) const;
 
     /*!
-    Creates a new `StringWriter` that writes raw data to `outs` in the format described by the
-    provided `TextFormat` object. The resulting `StringWriter` object expects UTF-8-encoded text.
-    The `StringWriter` accepts both Windows and Unix-style newlines; all newlines will be converted
-    to the format described by the provided `TextFormat` object. Conversion is performed on-the-fly
-    while data is written.
+    Creates a new `OutStream` that writes raw data to `outs` in the format described by the provided
+    `TextFormat` object. The resulting `OutStream` object expects UTF-8-encoded text. The
+    `OutStream` accepts both Windows and Unix-style newlines; all newlines will be converted to the
+    format described by the provided `TextFormat` object. Conversion is performed on-the-fly while
+    data is written.
     */
-    PLY_DLL_ENTRY Owned<StringWriter> createExporter(OptionallyOwned<OutStream>&& outs) const;
+    PLY_DLL_ENTRY Owned<OutStream> createExporter(OptionallyOwned<OutStream>&& outs) const;
 
     /*!
     Returns `true` if the `TextFormat`s are identical.

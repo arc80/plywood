@@ -138,8 +138,8 @@ struct String : StringMixin<String> {
     /*!
     Appends the contents of `other` to this string. This function performs a heap reallocation each
     time it is called. If you wish to concatenate several strings together, consider using a
-    `StringWriter` instead, then convert to `String` at the final step by calling
-    `StringWriter::moveToString()`.
+    `MemOutStream` instead, then convert to `String` at the final step by calling
+    `MemOutStream::moveToString()`.
     */
     PLY_INLINE void operator+=(StringView other) {
         *this = this->view() + other;

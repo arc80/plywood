@@ -3,7 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
-#include <ply-runtime/io/text/StringWriter.h>
+#include <ply-runtime/io/OutStream.h>
 #include <ply-runtime/string/TextEncoding.h>
 #include <math.h>
 
@@ -62,9 +62,9 @@ PLY_NO_INLINE void printString(OutStream* outs, double value, u32 radix, bool ca
         outs->writeByte('-');
     }
     if (isnan(value)) {
-        *outs->strWriter() << "nan";
+        *outs << "nan";
     } else if (isinf(value)) {
-        *outs->strWriter() << "inf";
+        *outs << "inf";
     } else {
         u32 radix3 = radix * radix * radix;
         u32 radix6 = radix3 * radix3;
@@ -104,15 +104,9 @@ PLY_NO_INLINE void printString(OutStream* outs, double value, u32 radix, bool ca
 }
 
 //----------------------------------------------------------------
-// StringWriter
+// OutStream
 //----------------------------------------------------------------
-PLY_NO_INLINE StringWriter::StringWriter(u32 chunkSizeExp) : OutStream{Type::Mem, chunkSizeExp} {
-    this->initFirstChunk();
-    new (&this->headChunk) Reference<ChunkListNode>{this->chunk};
-}
-
-PLY_NO_INLINE void StringWriter::formatInternal(StringView fmt,
-                                                ArrayView<const StringWriter::Arg> args) {
+PLY_NO_INLINE void OutStream::formatInternal(StringView fmt, ArrayView<const OutStream::Arg> args) {
     u32 argIndex = 0;
     while (fmt.numBytes > 0) {
         if (fmt[0] == '{') {
@@ -153,19 +147,19 @@ PLY_NO_INLINE void StringWriter::formatInternal(StringView fmt,
 //----------------------------------------------------
 // fmt::TypePrinters
 //----------------------------------------------------
-PLY_NO_INLINE void fmt::TypePrinter<fmt::WithRadix>::print(StringWriter* sw,
+PLY_NO_INLINE void fmt::TypePrinter<fmt::WithRadix>::print(OutStream* outs,
                                                            const fmt::WithRadix& value) {
     switch (value.type) {
         case WithRadix::U64: {
-            printString(sw, value.u64_, value.radix, value.capitalize);
+            printString(outs, value.u64_, value.radix, value.capitalize);
             break;
         }
         case WithRadix::S64: {
-            printString(sw, value.s64_, value.radix, value.capitalize);
+            printString(outs, value.s64_, value.radix, value.capitalize);
             break;
         }
         case WithRadix::Double: {
-            printString(sw, value.double_, value.radix, value.capitalize);
+            printString(outs, value.double_, value.radix, value.capitalize);
             break;
         }
         default: {
@@ -175,28 +169,28 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::WithRadix>::print(StringWriter* sw,
     }
 }
 
-PLY_NO_INLINE void fmt::TypePrinter<StringView>::print(StringWriter* sw, StringView value) {
+PLY_NO_INLINE void fmt::TypePrinter<StringView>::print(OutStream* outs, StringView value) {
     // FIXME: Do newline conversion here
-    sw->write(value);
+    outs->write(value);
 }
 
-PLY_NO_INLINE void fmt::TypePrinter<u64>::print(StringWriter* sw, u64 value) {
-    printString(sw, value, 10, false);
+PLY_NO_INLINE void fmt::TypePrinter<u64>::print(OutStream* outs, u64 value) {
+    printString(outs, value, 10, false);
 }
 
-PLY_NO_INLINE void fmt::TypePrinter<s64>::print(StringWriter* sw, s64 value) {
-    printString(sw, value, 10, false);
+PLY_NO_INLINE void fmt::TypePrinter<s64>::print(OutStream* outs, s64 value) {
+    printString(outs, value, 10, false);
 }
 
-PLY_NO_INLINE void fmt::TypePrinter<double>::print(StringWriter* sw, double value) {
-    printString(sw, value, 10, false);
+PLY_NO_INLINE void fmt::TypePrinter<double>::print(OutStream* outs, double value) {
+    printString(outs, value, 10, false);
 }
 
-PLY_NO_INLINE void fmt::TypePrinter<bool>::print(StringWriter* sw, bool value) {
-    *sw << (value ? StringView{"true"} : "false");
+PLY_NO_INLINE void fmt::TypePrinter<bool>::print(OutStream* outs, bool value) {
+    *outs << (value ? StringView{"true"} : "false");
 }
 
-PLY_NO_INLINE void fmt::TypePrinter<CPUTimer::Duration>::print(StringWriter* sw,
+PLY_NO_INLINE void fmt::TypePrinter<CPUTimer::Duration>::print(OutStream* outs,
                                                                CPUTimer::Duration value) {
     static CPUTimer::Converter converter;
     double seconds = converter.toSeconds(value);
@@ -207,49 +201,49 @@ PLY_NO_INLINE void fmt::TypePrinter<CPUTimer::Duration>::print(StringWriter* sw,
 
     // FIXME: Optimize this, too much intermediate stuff
     // FIXME: Support zero-padding in format string
-    sw->format("{}:{}.{}", m, (StringView{"0"} + String::from(s)).right(2),
+    outs->format("{}:{}.{}", m, (StringView{"0"} + String::from(s)).right(2),
                (StringView{"00000"} + String::from(us)).right(6));
 }
 
-PLY_NO_INLINE void fmt::TypePrinter<fmt::EscapedString>::print(StringWriter* sw,
+PLY_NO_INLINE void fmt::TypePrinter<fmt::EscapedString>::print(OutStream* outs,
                                                                const fmt::EscapedString& value) {
     StringView srcUnits = value.view;
     u32 points = 0;
     while (srcUnits.numBytes > 0) {
         if (value.maxPoints > 0 && points >= value.maxPoints) {
-            *sw << "...";
+            *outs << "...";
             break;
         }
         DecodeResult decoded = UTF8::decodePoint(srcUnits);
         switch (decoded.point) {
             case '"': {
-                *sw << "\\\"";
+                *outs << "\\\"";
                 break;
             }
             case '\\': {
-                *sw << "\\\\";
+                *outs << "\\\\";
                 break;
             }
             case '\r': {
-                *sw << "\\r";
+                *outs << "\\r";
                 break;
             }
             case '\n': {
-                *sw << "\\n";
+                *outs << "\\n";
                 break;
             }
             case '\t': {
-                *sw << "\\t";
+                *outs << "\\t";
                 break;
             }
             default: {
                 if (decoded.point >= 32) {
                     // This will preserve badly encoded UTF8 characters exactly as they are in
                     // the source string:
-                    sw->write(srcUnits.left(decoded.numBytes));
+                    outs->write(srcUnits.left(decoded.numBytes));
                 } else {
                     static const char* digits = "0123456789abcdef";
-                    *sw << '\\' << digits[(decoded.point >> 4) & 0xf]
+                    *outs << '\\' << digits[(decoded.point >> 4) & 0xf]
                         << digits[decoded.point & 0xf];
                 }
                 break;
@@ -260,37 +254,36 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::EscapedString>::print(StringWriter* sw,
     }
 }
 
-PLY_NO_INLINE void fmt::TypePrinter<fmt::XMLEscape>::print(StringWriter* sw,
-                                                           const XMLEscape& value) {
+PLY_NO_INLINE void fmt::TypePrinter<fmt::XMLEscape>::print(OutStream* outs, const XMLEscape& value) {
     StringView srcUnits = value.view;
     u32 points = 0;
     while (srcUnits.numBytes > 0) {
         if (value.maxPoints > 0 && points >= value.maxPoints) {
-            *sw << "...";
+            *outs << "...";
             break;
         }
         DecodeResult decoded = UTF8::decodePoint(srcUnits);
         switch (decoded.point) {
             case '<': {
-                *sw << "&lt;";
+                *outs << "&lt;";
                 break;
             }
             case '>': {
-                *sw << "&gt;";
+                *outs << "&gt;";
                 break;
             }
             case '"': {
-                *sw << "&quot;";
+                *outs << "&quot;";
                 break;
             }
             case '&': {
-                *sw << "&amp;";
+                *outs << "&amp;";
                 break;
             }
             default: {
                 // This will preserve badly encoded UTF8 characters exactly as they are in
                 // the source string:
-                sw->write(srcUnits.left(decoded.numBytes));
+                outs->write(srcUnits.left(decoded.numBytes));
                 break;
             }
         }
@@ -300,7 +293,7 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::XMLEscape>::print(StringWriter* sw,
 }
 
 PLY_NO_INLINE void
-fmt::TypePrinter<fmt::CmdLineArg_WinCrt>::print(StringWriter* sw,
+fmt::TypePrinter<fmt::CmdLineArg_WinCrt>::print(OutStream* outs,
                                                 const fmt::CmdLineArg_WinCrt& value) {
     bool needsQuote = false;
     const char* end = value.view.end();
@@ -311,7 +304,7 @@ fmt::TypePrinter<fmt::CmdLineArg_WinCrt>::print(StringWriter* sw,
         }
     }
     if (needsQuote) {
-        *sw << '"';
+        *outs << '"';
         u32 backslashCount = 0;
         for (const char* cur = value.view.bytes; cur < end; cur++) {
             char c = *cur;
@@ -319,19 +312,19 @@ fmt::TypePrinter<fmt::CmdLineArg_WinCrt>::print(StringWriter* sw,
                 backslashCount++;
             } else if (*cur == '"') {
                 for (; backslashCount > 0; backslashCount--) {
-                    *sw << "\\\\";
+                    *outs << "\\\\";
                 }
-                *sw << "\\\"";
+                *outs << "\\\"";
             } else {
                 for (; backslashCount > 0; backslashCount--) {
-                    *sw << '\\';
+                    *outs << '\\';
                 }
-                *sw << c;
+                *outs << c;
             }
         }
-        *sw << '"';
+        *outs << '"';
     } else {
-        *sw << value.view;
+        *outs << value.view;
     }
 }
 

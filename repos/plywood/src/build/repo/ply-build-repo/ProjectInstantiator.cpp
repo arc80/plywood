@@ -172,7 +172,7 @@ void ProjectInstantiator::propagateAllDependencies() {
     }
 }
 
-void writeCMakeLists(StringWriter* sw, StringView solutionName, StringView buildFolderPath,
+void writeCMakeLists(OutStream* outs, StringView solutionName, StringView buildFolderPath,
                      const ProjectInstantiationResult* instResult, bool forBootstrap) {
     CMakeBuildFolder cbf;
     cbf.solutionName = solutionName;
@@ -183,7 +183,7 @@ void writeCMakeLists(StringWriter* sw, StringView solutionName, StringView build
             cbf.targets.append(depEntry.dep);
         }
     }
-    writeCMakeLists(sw, &cbf);
+    writeCMakeLists(outs, &cbf);
 }
 
 } // namespace build

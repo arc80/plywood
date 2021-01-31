@@ -8,7 +8,7 @@
 
 #include <ply-runtime/network/impl/Socket_Winsock.h>
 #include <ply-runtime/thread/Thread.h>
-#include <ply-runtime/io/text/StringWriter.h>
+#include <ply-runtime/io/OutStream.h>
 
 #define PLY_IPWINSOCK_ALLOW_UNKNOWN_ERRORS 0
 

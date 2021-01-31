@@ -7,16 +7,16 @@ Plywood provides several functions to convert arbitrary values to text.
 
     String a = String::format("{}\n", 123);
     String b = String::from(123.0);
-    StringWriter sw;
-    sw.format("\"{}\"\n", fmt::EscapedString{"C:\\plywood"});
-    sw << fmt::Hex{0xbadf00d};
-    String c = sw.moveToString();
+    MemOutStream mout;
+    mout.format("\"{}\"\n", fmt::EscapedString{"C:\\plywood"});
+    mout << fmt::Hex{0xbadf00d};
+    String c = mout.moveToString();
 
-The `String::format()` and `StringWriter::format()` template functions accept a format string and a variable number of additional arguments. The number of additional arguments must match the number of occurrences of `"{}"` in the format string. Each argument will be converted to text according to its type. Plywood provides built-in support for the types listed in the following section. Support for additional types can be added by specializing the `fmt::TypePrinter` class template.
+The `String::format()` and `OutStream::format()` template functions accept a format string and a variable number of additional arguments. The number of additional arguments must match the number of occurrences of `"{}"` in the format string. Each argument will be converted to text according to its type. Plywood provides built-in support for the types listed in the following section. Support for additional types can be added by specializing the `fmt::TypePrinter` class template.
 
 The `String::from()` template function accepts a single argument. The argument will be converted to text according to its type and returned as a `String`. This function supports the same types as `String::format()`.
 
-The `StringWriter::operator<<()` template function also accepts a single argument. The argument will be converted to text according to its type and written to the `StringWriter`. This function supports the same types as `String::format()`.
+The `OutStream::operator<<()` template function also accepts a single argument. The argument will be converted to text according to its type and written to the `OutStream`. This function supports the same types as `String::format()`.
 
 ## Built-In Type Support
 
@@ -57,13 +57,13 @@ You can add support for conversion to text from other types by specializing the 
 
     template <>
     struct ply::fmt::TypePrinter<Foo> {
-        static void print(ply::StringWriter* sw, const Foo& value);
+        static void print(ply::OutStream* outs, const Foo& value);
     };
 
 Then, in a source file somewhere, implement the `print` function as follows:
 
-    PLY_NO_INLINE void ply::fmt::TypePrinter<Foo>::print(StringWriter* sw, const Foo& value) {
-        // Write some output to sw here...
+    PLY_NO_INLINE void ply::fmt::TypePrinter<Foo>::print(OutStream* outs, const Foo& value) {
+        // Write some output to outs here...
     }
 
-This makes it possible to pass `Foo` to any of the `String::format()`, `StringWriter::format()`, `String::from()` or `StringWriter::operator<<()` functions.
+This makes it possible to pass `Foo` to any of the `String::format()`, `OutStream::format()`, `String::from()` or `OutStream::operator<<()` functions.

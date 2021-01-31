@@ -8,7 +8,7 @@
 
 namespace ply {
 
-PLY_NO_INLINE void extractLiquidTags(StringWriter* sw, StringViewReader* svr,
+PLY_NO_INLINE void extractLiquidTags(OutStream* outs, StringViewReader* svr,
                                      Functor<void(StringView, StringView)> tagHandler) {
     // advanceByte consumes the current byte from the InStream and returns true if there is
     // another byte available. Note that the return value is the same as svr->isValid(), so you
@@ -29,7 +29,7 @@ PLY_NO_INLINE void extractLiquidTags(StringWriter* sw, StringViewReader* svr,
         if (unit == '<') {
             const char* startByte = svr->curByte;
             if (!advanceByte()) {
-                sw->writeByte(unit);
+                outs->writeByte(unit);
                 return;
             }
             if (*svr->curByte == '%') {
@@ -76,13 +76,13 @@ PLY_NO_INLINE void extractLiquidTags(StringWriter* sw, StringViewReader* svr,
                     return;
                 }
             } else {
-                sw->writeByte(unit);
-                sw->writeByte(*svr->curByte);
+                outs->writeByte(unit);
+                outs->writeByte(*svr->curByte);
                 if (!advanceByte())
                     return; // EOF
             }
         } else {
-            sw->writeByte(unit);
+            outs->writeByte(unit);
             if (!advanceByte())
                 return; // EOF
         }

@@ -5,7 +5,7 @@
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/log/Logger.h>
-#include <ply-runtime/io/text/StringWriter.h>
+#include <ply-runtime/io/OutStream.h>
 #include <ply-runtime/time/CPUTimer.h>
 
 namespace ply {
@@ -19,7 +19,7 @@ struct LogChannel {
     static CPUTimer::Converter converter;
 
     struct LineHandler {
-        StringWriter sw;
+        MemOutStream mout;
         PLY_DLL_ENTRY LineHandler(StringView channelName);
         PLY_DLL_ENTRY ~LineHandler();
     };
@@ -27,7 +27,7 @@ struct LogChannel {
     template <typename... Args>
     PLY_INLINE void log(const char* fmt, const Args&... args) {
         LineHandler lh{channelName};
-        lh.sw.format(fmt, args...);
+        lh.mout.format(fmt, args...);
     }
 };
 

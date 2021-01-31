@@ -310,10 +310,10 @@ struct FileSystem {
 
     The following example outputs a list of non-directory files in the current directory:
 
-        StringWriter sw = StdOut::text();
+        OutStream outs = StdOut::text();
         for (const DirectoryEntry& entry : FileSystem::native()->listDir(".", 0)) {
             if (!entry.isDir) {
-                sw << entry.name << '\n';
+                outs << entry.name << '\n';
             }
         }
 
@@ -371,14 +371,14 @@ struct FileSystem {
     directory under the starting directory, except that it doesn't look under any subdirectory that
     starts with a dot `"."`:
 
-        StringWriter sw = StdOut::text();
+        OutStream outs = StdOut::text();
         for (WalkTriple& triple : fs->walk(".", FileSystem::WithSizes)) {
             // Calculate the number of bytes taken by non-directory files
             u64 sum = 0;
             for (const WalkTriple::FileInfo& file : triple.files) {
                 sum += file.fileSize;
             }
-            sw.format("{}: {} bytes\n", triple.dirPath, sum);
+            outs.format("{}: {} bytes\n", triple.dirPath, sum);
 
             // Prune subdirectories that start with "."
             for (u32 i = 0; i < triple.dirNames.numItems(); i++) {
@@ -589,11 +589,11 @@ struct FileSystem {
     PLY_DLL_ENTRY Tuple<String, TextFormat> loadTextAutodetect(StringView path);
 
     /*!
-    Returns a `StringWriter` that writes text to the specified text file in the specified format, or
-    `nullptr` if the file could not be opened. The `StringWriter` expects UTF-8-encoded text. The
-    `StringWriter` accepts both Windows and Unix-style newlines; all newlines will be converted to
-    the format described by `textFormat`. See `TextFormat` for more information on supported text
-    file formats.
+    Returns an `OutStream` that writes text to the specified text file in the specified format, or
+    `nullptr` if the file could not be opened. The `OutStream` expects UTF-8-encoded text. The
+    `OutStream` accepts both Windows and Unix-style newlines; all newlines will be converted to the
+    format described by `textFormat`. See `TextFormat` for more information on supported text file
+    formats.
 
     This function updates the internal result code. Expected result codes are `OK`, `NotFound`,
     `AccessDenied` or `Locked`.
@@ -605,7 +605,7 @@ struct FileSystem {
             return nullptr;
         return TextFormat::createExporter(std::move(outs), textFormat);
     */
-    Owned<StringWriter> openTextForWrite(StringView path, const TextFormat& textFormat);
+    Owned<OutStream> openTextForWrite(StringView path, const TextFormat& textFormat);
 
     /*!
     First, this function tries to load the raw contents of the specified file. If the load succeeds
@@ -617,8 +617,7 @@ struct FileSystem {
     In all cases, this function updates the internal result code. The result code is also returned
     directly.
     */
-    PLY_DLL_ENTRY FSResult makeDirsAndSaveBinaryIfDifferent(StringView path,
-                                                            StringView contents);
+    PLY_DLL_ENTRY FSResult makeDirsAndSaveBinaryIfDifferent(StringView path, StringView contents);
 
     /*!
     First, this function converts `strContents` to a raw memory buffer using the text file format

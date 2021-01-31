@@ -30,57 +30,57 @@ PLY_INLINE LinearLocation getLinearLocation(const Preprocessor* pp, const char* 
     return pp->linearLocAtEndOfStackTop - (item.strViewReader.endByte - curByte);
 }
 
-void Preprocessor::Error::writeMessage(StringWriter* sw, const PPVisitedFiles* visitedFiles) const {
-    sw->format("{}: error: ", expandFileLocation(visitedFiles, this->linearLoc).toString());
+void Preprocessor::Error::writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const {
+    outs->format("{}: error: ", expandFileLocation(visitedFiles, this->linearLoc).toString());
     switch (this->type) {
         case Preprocessor::Error::InvalidDirective: {
-            *sw << "invalid preprocessing directive\n";
+            *outs << "invalid preprocessing directive\n";
             break;
         }
         case Preprocessor::Error::EOFInMacro: {
-            *sw << "unexpected end-of-file in preprocessor macro parameter list\n";
-            sw->format("{}: note: parameter list started here\n",
+            *outs << "unexpected end-of-file in preprocessor macro parameter list\n";
+            outs->format("{}: note: parameter list started here\n",
                        expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case Preprocessor::Error::EOFInComment: {
-            *sw << "unexpected end-of-file in C-style comment\n";
-            sw->format("{}: note: comment started here\n",
+            *outs << "unexpected end-of-file in C-style comment\n";
+            outs->format("{}: note: comment started here\n",
                        expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case Preprocessor::Error::EOFInStringLiteral: {
-            *sw << "unexpected end-of-file in string literal\n";
-            sw->format("{}: note: string literal started here\n",
+            *outs << "unexpected end-of-file in string literal\n";
+            outs->format("{}: note: string literal started here\n",
                        expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case Preprocessor::Error::DirectiveNotAtStartOfLine: {
-            *sw << "preprocessing directives must begin at start of line\n";
+            *outs << "preprocessing directives must begin at start of line\n";
             break;
         }
         case Preprocessor::Error::EOFInRawStringDelimiter: {
-            *sw << "unexpected end-of-file in raw string delimiter\n";
-            sw->format("{}: note: delimiter started here\n",
+            *outs << "unexpected end-of-file in raw string delimiter\n";
+            outs->format("{}: note: delimiter started here\n",
                        expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case Preprocessor::Error::InvalidCharInRawStringDelimiter: {
-            *sw << "invalid character in raw string delimiter\n";
-            sw->format("{}: note: delimiter started here\n",
+            *outs << "invalid character in raw string delimiter\n";
+            outs->format("{}: note: delimiter started here\n",
                        expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case Preprocessor::Error::InvalidStringLiteralPrefix: {
-            *sw << "invalid string literal prefix\n";
+            *outs << "invalid string literal prefix\n";
             break;
         }
         case Preprocessor::Error::GarbageCharacters: {
-            *sw << "garbage characters encountered\n";
+            *outs << "garbage characters encountered\n";
             break;
         }
         default: {
-            *sw << "error message not implemented!\n";
+            *outs << "error message not implemented!\n";
             break;
         }
     }

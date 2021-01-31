@@ -18,41 +18,41 @@ namespace cpp {
 struct CodeGenerator {
     virtual ~CodeGenerator() {
     }
-    virtual void write(StringWriter* sw) = 0;
+    virtual void write(OutStream* outs) = 0;
 };
 
 String getSwitchInl(SwitchInfo* switch_) {
-    StringWriter sw;
-    sw << "enum class ID : u16 {\n";
+    MemOutStream mout;
+    mout << "enum class ID : u16 {\n";
     for (StringView state : switch_->states) {
-        sw.format("    {},\n", state);
+        mout.format("    {},\n", state);
     }
-    sw << "    Count,\n";
-    sw << "};\n";
-    sw << "union Storage_ {\n";
+    mout << "    Count,\n";
+    mout << "};\n";
+    mout << "union Storage_ {\n";
     for (StringView state : switch_->states) {
-        sw.format("    {} {}{};\n", state, state.left(1).lowerAsc(), state.subStr(1));
+        mout.format("    {} {}{};\n", state, state.left(1).lowerAsc(), state.subStr(1));
     }
-    sw << "    PLY_INLINE Storage_() {}\n";
-    sw << "    PLY_INLINE ~Storage_() {}\n";
-    sw << "};\n";
+    mout << "    PLY_INLINE Storage_() {}\n";
+    mout << "    PLY_INLINE ~Storage_() {}\n";
+    mout << "};\n";
     StringView className = switch_->name.splitByte(':').back(); // FIXME: more elegant
     // FIXME: Log an error if there are no states
-    sw.format("SWITCH_FOOTER({}, {})\n", className, switch_->states[0]);
+    mout.format("SWITCH_FOOTER({}, {})\n", className, switch_->states[0]);
     for (StringView state : switch_->states) {
-        sw.format("SWITCH_ACCESSOR({}, {}{})\n", state, state.left(1).lowerAsc(), state.subStr(1));
+        mout.format("SWITCH_ACCESSOR({}, {}{})\n", state, state.left(1).lowerAsc(), state.subStr(1));
     }
     if (switch_->isReflected) {
-        sw << "PLY_SWITCH_REFLECT()\n";
+        mout << "PLY_SWITCH_REFLECT()\n";
     }
-    return sw.moveToString();
+    return mout.moveToString();
 }
 
 void writeSwitchInl(SwitchInfo* switch_) {
     String absInlPath = NativePath::join(PLY_WORKSPACE_FOLDER, "repos", switch_->inlineInlPath);
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         absInlPath, getSwitchInl(switch_), TextFormat::platformPreference());
-    StringWriter stdOut = StdOut::text();
+    OutStream stdOut = StdOut::text();
     if (result == FSResult::OK) {
         stdOut.format("Wrote {}\n", absInlPath);
     } else if (result != FSResult::Unchanged) {
@@ -65,18 +65,18 @@ String performSubsts(StringView absPath, ArrayView<Subst> substs) {
     if (FileSystem::native()->lastResult() != FSResult::OK)
         return {};
 
-    StringWriter sw;
+    MemOutStream mout;
     u32 prevEndPos = 0;
     for (const Subst& subst : substs) {
         PLY_ASSERT(subst.start >= prevEndPos);
         u32 endPos = subst.start + subst.numBytes;
         PLY_ASSERT(endPos < src.numBytes);
-        sw.write({src.bytes + prevEndPos, subst.start - prevEndPos});
-        sw.write(subst.replacement);
+        mout.write({src.bytes + prevEndPos, subst.start - prevEndPos});
+        mout.write(subst.replacement);
         prevEndPos = endPos;
     }
-    sw.write({src.bytes + prevEndPos, src.numBytes - prevEndPos});
-    return sw.moveToString();
+    mout.write({src.bytes + prevEndPos, src.numBytes - prevEndPos});
+    return mout.moveToString();
 }
 
 void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs) {
@@ -86,7 +86,7 @@ void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs) {
     if (FileSystem::native()->lastResult() == FSResult::OK) {
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
             absPath, srcWithSubst, TextFormat::platformPreference());
-        StringWriter stdOut = StdOut::text();
+        OutStream stdOut = StdOut::text();
         if (result == FSResult::OK) {
             stdOut.format("Wrote {}\n", absPath);
         } else if (result != FSResult::Unchanged) {
@@ -101,7 +101,7 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg) {
     struct CodeGenerator {
         virtual ~CodeGenerator() {
         }
-        virtual void write(StringWriter* sw) = 0;
+        virtual void write(OutStream* outs) = 0;
     };
 
     struct Traits {
@@ -121,12 +121,12 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg) {
     for (cpp::ReflectedClass* clazz : agg->classes) {
         struct StructGenerator : CodeGenerator {
             cpp::ReflectedClass* clazz;
-            virtual void write(StringWriter* sw) override {
-                sw->format("PLY_STRUCT_BEGIN({})\n", this->clazz->name);
+            virtual void write(OutStream* outs) override {
+                outs->format("PLY_STRUCT_BEGIN({})\n", this->clazz->name);
                 for (StringView member : this->clazz->members) {
-                    sw->format("PLY_STRUCT_MEMBER({})\n", member);
+                    outs->format("PLY_STRUCT_MEMBER({})\n", member);
                 }
-                *sw << "PLY_STRUCT_END()\n\n";
+                *outs << "PLY_STRUCT_END()\n\n";
             }
             StructGenerator(cpp::ReflectedClass* clazz) : clazz{clazz} {
             }
@@ -138,16 +138,16 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg) {
     for (cpp::ReflectedEnum* enum_ : agg->enums) {
         struct EnumGenerator : CodeGenerator {
             cpp::ReflectedEnum* enum_;
-            virtual void write(StringWriter* sw) override {
-                sw->format("PLY_ENUM_BEGIN({}, {})\n", this->enum_->namespacePrefix,
+            virtual void write(OutStream* outs) override {
+                outs->format("PLY_ENUM_BEGIN({}, {})\n", this->enum_->namespacePrefix,
                            this->enum_->enumName);
                 for (u32 i : range(this->enum_->enumerators.numItems())) {
                     StringView enumerator = this->enum_->enumerators[i];
                     if ((i != this->enum_->enumerators.numItems() - 1) || (enumerator != "Count")) {
-                        sw->format("PLY_ENUM_IDENTIFIER({})\n", enumerator);
+                        outs->format("PLY_ENUM_IDENTIFIER({})\n", enumerator);
                     }
                 }
-                sw->format("PLY_ENUM_END()\n\n");
+                outs->format("PLY_ENUM_END()\n\n");
             }
             EnumGenerator(cpp::ReflectedEnum* enum_) : enum_{enum_} {
             }
@@ -159,19 +159,19 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg) {
     for (cpp::SwitchInfo* switch_ : agg->switches) {
         struct SwitchGenerator : CodeGenerator {
             cpp::SwitchInfo* switch_;
-            virtual void write(StringWriter* sw) override {
-                sw->format("SWITCH_TABLE_BEGIN({})\n", this->switch_->name);
+            virtual void write(OutStream* outs) override {
+                outs->format("SWITCH_TABLE_BEGIN({})\n", this->switch_->name);
                 for (StringView state : this->switch_->states) {
-                    sw->format("SWITCH_TABLE_STATE({}, {})\n", this->switch_->name, state);
+                    outs->format("SWITCH_TABLE_STATE({}, {})\n", this->switch_->name, state);
                 }
-                sw->format("SWITCH_TABLE_END({})\n\n", this->switch_->name);
+                outs->format("SWITCH_TABLE_END({})\n\n", this->switch_->name);
 
                 if (this->switch_->isReflected) {
-                    sw->format("PLY_SWITCH_BEGIN({})\n", this->switch_->name);
+                    outs->format("PLY_SWITCH_BEGIN({})\n", this->switch_->name);
                     for (StringView state : this->switch_->states) {
-                        sw->format("PLY_SWITCH_MEMBER({})\n", state);
+                        outs->format("PLY_SWITCH_MEMBER({})\n", state);
                     }
-                    sw->format("PLY_SWITCH_END()\n\n");
+                    outs->format("PLY_SWITCH_END()\n\n");
                 }
             }
             SwitchGenerator(cpp::SwitchInfo* switch_) : switch_{switch_} {
@@ -185,13 +185,13 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg) {
         PLY_ASSERT(item.cppInlPath.endsWith(".inl"));
         String absPath = NativePath::join(PLY_WORKSPACE_FOLDER, "repos", item.cppInlPath);
 
-        StringWriter sw;
+        MemOutStream mout;
         for (CodeGenerator* generator : item.sources) {
-            generator->write(&sw);
+            generator->write(&mout);
         }
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-            absPath, sw.moveToString(), TextFormat::platformPreference());
-        StringWriter stdOut = StdOut::text();
+            absPath, mout.moveToString(), TextFormat::platformPreference());
+        OutStream stdOut = StdOut::text();
         if (result == FSResult::OK) {
             stdOut.format("Wrote {}\n", absPath);
         } else if (result != FSResult::Unchanged) {
@@ -240,8 +240,6 @@ void command_codegen(PlyToolCommandEnv* env) {
                         goto skipIt;
                 }
                 {
-                    // StringWriter{stdOut()}.format("[{}] {}\n", fileNum,
-                    //                                        NativePath::join(triple.path, fn));
                     fileNum++;
 
                     Tuple<cpp::SingleFileReflectionInfo, bool> sfri = cpp::extractReflection(

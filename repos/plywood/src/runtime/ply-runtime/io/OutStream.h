@@ -8,25 +8,33 @@
 #include <ply-runtime/io/Pipe.h>
 #include <ply-runtime/container/Owned.h>
 #include <ply-runtime/string/String.h>
+#include <ply-runtime/container/FixedArray.h>
 
 namespace ply {
 
-struct StringWriter;
+namespace fmt {
+template <typename T>
+struct TypePrinter;
+} // namespace fmt
 
 //------------------------------------------------------------------------------------------------
 /*!
-`OutStream` performs buffered output to an arbitrary output destination. The output can be sent to
-an `OutPipe` or to memory.
+`OutStream` performs buffered output to an arbitrary output destination.
 
 `OutStream` is similar to `FILE` in C or `std::ostream` in C++. It maintains an internal output
 buffer on the heap, and provides functions to quickly write small amounts of data incrementally,
 making it suitable for application-level serialization of text and binary formats. `OutPipe`, on the
 other hand, is a lower-level class more akin to a Unix file descriptor.
 
-Every `OutStream` is also a `StringWriter`, and you can cast an `OutStream` to a `StringWriter` at
-any time by calling `strWriter()`. The main reason why `OutStream` and `StringWriter` are separate
-classes is to help express intention in the code. `OutStream` is mainly intended to write binary
-data and `StringWriter` is mainly intended to write text, but the two classes are interchangeable.
+In general, the `format` function and `<<` operator are meant for writing text in an 8-bit format
+compatible with ASCII, such as UTF-8, ISO 8859-1 or Windows-1252. Arithmetic arguments like `int`
+and `float` are converted to text when passed to these functions.
+
+Some `OutStream` objects contain adapters that perform further conversions. For example, the
+`OutStream` returned by `FileSystem::openTextForWrite` can normalize line endings and convert UTF-8
+to other formats such as UTF-16. For more information, see [Unicode Support](Unicode).
+
+To create an `OutStream` that writes to memory, use `MemOutStream`.
 */
 struct OutStream {
     static constexpr u32 DefaultChunkSizeExp = 12;
@@ -63,7 +71,7 @@ struct OutStream {
     */
     char* endByte = nullptr;
     union {
-        char* startByte;                  // if Type::View
+        char* startByte;                // if Type::View
         Reference<ChunkListNode> chunk; // if Type::Pipe or Type::Mem
     };
     union {
@@ -233,10 +241,66 @@ public:
         return this->status.eof == 0;
     }
 
+private:
+    struct Arg {
+        void (*formatter)(OutStream*, const void*) = nullptr;
+        const void* pvalue = nullptr;
+        template <typename T>
+        static PLY_NO_INLINE void formatFunc(OutStream* outs, const void* arg) {
+            fmt::TypePrinter<T>::print(outs, *(const T*) arg);
+        }
+    };
+
+    // Convert variable number of arguments into array of Arg:
+    static PLY_INLINE void prepareArgList(Arg*) {
+    }
+    template <typename T, typename... Rest>
+    static PLY_INLINE void prepareArgList(Arg* argList, const T& arg, const Rest&... rest) {
+        argList->formatter = Arg::formatFunc<T>;
+        argList->pvalue = &arg;
+        prepareArgList(argList + 1, rest...);
+    }
+
+    PLY_DLL_ENTRY void formatInternal(StringView fmt, ArrayView<const Arg> args);
+
+public:
     /*!
-    Returns a `StringWriter` interface for the output stream.
+    Template function that expands the format string `fmt` using the given arguments and writes the
+    result to the output stream.
+
+        MemOutStream mout;
+        mout.format("The answer is {}.\n", 42);
+        return mout.moveToString();
+
+    For more information, see [Converting Values to Text](ConvertingValuesToText).
     */
-    PLY_INLINE StringWriter* strWriter();
+    template <typename... Args>
+    PLY_NO_INLINE void format(StringView fmt, const Args&... args) {
+        FixedArray<Arg, sizeof...(args)> argList;
+        prepareArgList(argList.items, args...);
+        this->formatInternal(fmt, argList.view());
+    }
+
+    /*!
+    Template function that writes the the default text representation of `value` to the output
+    stream.
+
+        MemOutStream mout;
+        mout << "The answer is " << 42 << ".\n";
+        return mout.moveToString();
+
+    For more information, see [Converting Values to Text](ConvertingValuesToText).
+    */
+    template <typename T>
+    PLY_NO_INLINE OutStream& operator<<(const T& value) {
+        fmt::TypePrinter<T>::print(this, value);
+        return *this;
+    }
+
+    PLY_INLINE OutStream& operator<<(char c) {
+        this->writeByte(c);
+        return *this;
+    }
 };
 
 //------------------------------------------------------------------------------------------------
@@ -312,4 +376,23 @@ public:
     }
 };
 
+//-----------------------------------------------------------
+// String member functions
+//-----------------------------------------------------------
+template <typename... Args>
+PLY_INLINE String String::format(StringView fmt, const Args&... args) {
+    MemOutStream mout;
+    mout.format(fmt, args...);
+    return mout.moveToString();
+}
+
+template <typename T>
+PLY_INLINE String String::from(const T& value) {
+    MemOutStream mout;
+    mout << value;
+    return mout.moveToString();
+}
+
 } // namespace ply
+
+#include <ply-runtime/io/impl/FormatString.h>

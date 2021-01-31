@@ -59,28 +59,28 @@ struct DLLSignature {
 
 Owned<Dependency> createDLLTarget(const GenerateDLLContext& ctx, const ExtractedRepo& exRepo) {
     // Generate .cpp file to include all the .inls
-    StringWriter sw;
-    sw << "#include <ply-build-repo/Repo.h>\n";
-    sw << "\n";
-    sw << "using namespace ply::build;\n";
-    sw << "\n";
+    MemOutStream mout;
+    mout << "#include <ply-build-repo/Repo.h>\n";
+    mout << "\n";
+    mout << "using namespace ply::build;\n";
+    mout << "\n";
 
     for (const ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
         for (const ModuleDefinitionFile::ModuleFunc& moduleFunc : modDefFile.moduleFuncs) {
-            sw.format("void {}(ModuleArgs* args);\n", moduleFunc.funcName);
+            mout.format("void {}(ModuleArgs* args);\n", moduleFunc.funcName);
         }
         for (const ModuleDefinitionFile::ExternProviderFunc& externProviderFunc :
              modDefFile.externProviderFuncs) {
-            sw.format("ExternResult {}(ExternCommand cmd, ExternProviderArgs* args);\n",
+            mout.format("ExternResult {}(ExternCommand cmd, ExternProviderArgs* args);\n",
                       externProviderFunc.funcName);
         }
     }
 
-    sw << "\nextern \"C\" PLY_DLL_EXPORT void registerInstantiators(Repo* repo) "
+    mout << "\nextern \"C\" PLY_DLL_EXPORT void registerInstantiators(Repo* repo) "
           "{\n";
     for (const ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
         for (const ModuleDefinitionFile::ModuleFunc& moduleFunc : modDefFile.moduleFuncs) {
-            sw.format("    repo->addTargetInstantiator(new TargetInstantiator{{\"{}\", \"{}\", "
+            mout.format("    repo->addTargetInstantiator(new TargetInstantiator{{\"{}\", \"{}\", "
                       "repo, {}}});\n",
                       fmt::EscapedString(moduleFunc.moduleName),
                       fmt::EscapedString(NativePath::split(modDefFile.absPath).first),
@@ -88,17 +88,17 @@ Owned<Dependency> createDLLTarget(const GenerateDLLContext& ctx, const Extracted
         }
         for (const ModuleDefinitionFile::ExternProviderFunc& externProviderFunc :
              modDefFile.externProviderFuncs) {
-            sw.format("    repo->addExternProvider(\"{}\", \"{}\", {});\n",
+            mout.format("    repo->addExternProvider(\"{}\", \"{}\", {});\n",
                       fmt::EscapedString(externProviderFunc.externName),
                       fmt::EscapedString(externProviderFunc.providerName),
                       externProviderFunc.funcName);
         }
     }
-    sw << "}\n";
+    mout << "}\n";
 
     String generatedCppPath =
         NativePath::join(ctx.dllBuildFolder, "codegen", exRepo.repoName + "_Instantiators.cpp");
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(generatedCppPath, sw.moveToString(),
+    FileSystem::native()->makeDirsAndSaveTextIfDifferent(generatedCppPath, mout.moveToString(),
                                                          TextFormat::platformPreference());
 
     Owned<Dependency> dep = new Dependency;
@@ -246,11 +246,11 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
         }
 
         // Generate build system
-        StringWriter sw;
-        writeCMakeLists(&sw, &cbf);
+        MemOutStream mout;
+        writeCMakeLists(&mout, &cbf);
         String cmakeListsPath = NativePath::join(ctx.dllBuildFolder, "CMakeLists.txt");
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-            cmakeListsPath, sw.moveToString(), TextFormat::platformPreference());
+            cmakeListsPath, mout.moveToString(), TextFormat::platformPreference());
         if (result != FSResult::OK && result != FSResult::Unchanged) {
             ErrorHandler::log(ErrorHandler::Error,
                               String::format("Can't write '{}'\n", cmakeListsPath));

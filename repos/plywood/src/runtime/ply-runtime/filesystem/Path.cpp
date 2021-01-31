@@ -180,22 +180,22 @@ PLY_NO_INLINE String PathFormat::joinAndNormalize(ArrayView<const StringView> co
             return ".";
         }
     } else {
-        StringWriter sw;
+        MemOutStream mout;
         bool needSep = false;
         for (StringView comp : normComps) {
             if (needSep) {
-                sw << this->sepByte();
+                mout << this->sepByte();
             } else {
                 if (comp.numBytes > 0) {
                     needSep = !this->isSepByte(comp[comp.numBytes - 1]);
                 }
             }
-            sw << comp;
+            mout << comp;
         }
         if ((components.back().isEmpty() || this->isSepByte(components.back().back())) && needSep) {
-            sw << this->sepByte();
+            mout << this->sepByte();
         }
-        return sw.moveToString();
+        return mout.moveToString();
     }
 }
 
@@ -226,35 +226,35 @@ PLY_NO_INLINE String PathFormat::makeRelative(StringView ancestor, StringView de
     }
 
     // Form relative path (or absolute path if drive letters mismatch)
-    StringWriter sw;
+    MemOutStream mout;
     bool needSep = false;
     for (u32 i = 0; i < upFolders; i++) {
         if (needSep) {
-            sw << this->sepByte();
+            mout << this->sepByte();
         }
-        sw << "..";
+        mout << "..";
         needSep = true;
     }
     for (u32 i = mc; i < descendantComps.numItems(); i++) {
         if (needSep) {
-            sw << this->sepByte();
+            mout << this->sepByte();
         }
-        sw << descendantComps[i];
+        mout << descendantComps[i];
         needSep = !this->isSepByte(descendantComps[i].back());
     }
 
     // .
-    if (sw.getSeekPos() == 0) {
-        sw << ".";
+    if (mout.getSeekPos() == 0) {
+        mout << ".";
         needSep = true;
     }
 
     // Trailing slash
     if (descendant.numBytes > 0 && this->isSepByte(descendant.back()) && needSep) {
-        sw << this->sepByte();
+        mout << this->sepByte();
     }
 
-    return sw.moveToString();
+    return mout.moveToString();
 }
 
 PLY_NO_INLINE HybridString PathFormat::from(const PathFormat& srcFormat, StringView srcPath) const {

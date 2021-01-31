@@ -58,7 +58,7 @@ struct ProjectInstantiator {
     void propagateAllDependencies();
 };
 
-void writeCMakeLists(StringWriter* sw, StringView solutionName, StringView buildFolderPath,
+void writeCMakeLists(OutStream* outs, StringView solutionName, StringView buildFolderPath,
                      const ProjectInstantiationResult* instResult, bool forBootstrap);
 
 void instantiatorError(StringView message);

@@ -41,7 +41,7 @@ bool command_open(PlyToolCommandEnv* env) {
             MemOutStream mout;
             StringView srcView = slnPath.view();
             TextConverter::create<UTF16_Native, UTF8>().writeTo(&mout, &srcView, true);
-            *mout.strWriter() << "\0\0"; // null terminated
+            mout << StringView{"\0\0", 2}; // null terminated
             wstr = WString::moveFromString(mout.moveToString());
         }
 

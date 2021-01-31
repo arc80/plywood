@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <web-common/Core.h>
-#include <ply-runtime/io/text/StringWriter.h>
+#include <ply-runtime/io/OutStream.h>
 
 namespace ply {
 namespace web {
@@ -18,6 +18,6 @@ struct URLEscape {
 
 template <>
 struct fmt::TypePrinter<web::URLEscape> {
-    static PLY_NO_INLINE void print(StringWriter* sw, const web::URLEscape& value);
+    static PLY_NO_INLINE void print(OutStream* outs, const web::URLEscape& value);
 };
 } // namespace ply

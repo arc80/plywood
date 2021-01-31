@@ -163,8 +163,8 @@ PLY_NO_INLINE Tuple<String, TextFormat> FileSystem::loadTextAutodetect(StringVie
     return {contents, tuple.second};
 }
 
-PLY_NO_INLINE Owned<StringWriter> FileSystem::openTextForWrite(StringView path,
-                                                               const TextFormat& textFormat) {
+PLY_NO_INLINE Owned<OutStream> FileSystem::openTextForWrite(StringView path,
+                                                            const TextFormat& textFormat) {
     Owned<OutStream> outs = this->openStreamForWrite(path);
     if (!outs)
         return nullptr;
@@ -213,9 +213,9 @@ PLY_NO_INLINE FSResult FileSystem::makeDirsAndSaveTextIfDifferent(StringView pat
     // exporter and compare to the existing file incrementally.
 
     MemOutStream memOut;
-    Owned<StringWriter> sw = textFormat.createExporter(borrow(&memOut));
-    *sw << strContents;
-    sw.clear();
+    Owned<OutStream> outs = textFormat.createExporter(borrow(&memOut));
+    *outs << strContents;
+    outs.clear();
     String rawContents = memOut.moveToString();
     return this->makeDirsAndSaveBinaryIfDifferent(path, rawContents);
 }

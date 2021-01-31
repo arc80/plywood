@@ -58,10 +58,10 @@ struct RepoInstantiator {
         if (result == FSResult::OK) {
             pylon::Parser parser;
             parser.setErrorCallback([&](const pylon::ParseError& err) {
-                StringWriter sw;
-                sw << infoPath;
-                parser.dumpError(err, sw);
-                ErrorHandler::log(ErrorHandler::Error, sw.moveToString());
+                MemOutStream mout;
+                mout << infoPath;
+                parser.dumpError(err, mout);
+                ErrorHandler::log(ErrorHandler::Error, mout.moveToString());
             });
             pylon::Parser::Result parseResult = parser.parse(infoText);
             if (parser.anyError()) {

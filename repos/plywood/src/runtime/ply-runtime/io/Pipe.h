@@ -93,7 +93,7 @@ the OS kernel. Therefore, when writing directly to an `OutPipe`, it's best to wr
 quantities of data (say, several KB) at a time in order to minimize system call overhead.
 
 If writing small amounts of data (say, a few bytes) at a time -- for example, to parse text or
-binary formats -- it's better to work with `OutStream` or `StringWriter` instead.
+binary formats -- it's better to work with `OutStream` instead.
 */
 struct OutPipe {
     struct Funcs {

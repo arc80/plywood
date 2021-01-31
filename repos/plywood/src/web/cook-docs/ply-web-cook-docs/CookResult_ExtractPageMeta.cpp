@@ -49,8 +49,8 @@ void cook_ExtractPageMeta(cook::CookResult* cookResult_, TypedPtr jobArg) {
         StringViewReader sr{src};
 
         // Extract liquid tags
-        StringWriter sw; // Note: This could be some kind of "null writer" if such a thing existed
-        extractLiquidTags(&sw, &sr, [&](StringView tag, StringView section) {
+        MemOutStream mout; // Note: This could be some kind of "null writer" if such a thing existed
+        extractLiquidTags(&mout, &sr, [&](StringView tag, StringView section) {
             StringViewReader svr{section};
             svr.parse<fmt::Whitespace>();
             StringView command = svr.readView(fmt::Identifier{});

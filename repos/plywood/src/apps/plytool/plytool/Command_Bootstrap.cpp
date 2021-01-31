@@ -40,12 +40,12 @@ void command_bootstrap(PlyToolCommandEnv* env) {
         return;
     }
 
-    StringWriter sw;
-    writeCMakeLists(&sw, buildFolder->solutionName, buildFolder->getAbsPath(), &instResult, true);
+    MemOutStream mout;
+    writeCMakeLists(&mout, buildFolder->solutionName, buildFolder->getAbsPath(), &instResult, true);
     String savePath =
         NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/scripts/bootstrap_CMakeLists.txt");
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-        savePath, sw.moveToString(), TextFormat::platformPreference());
+        savePath, mout.moveToString(), TextFormat::platformPreference());
     if (result == FSResult::OK) {
         StdOut::text().format("Successfully wrote bootstrap file '{}'.\n", savePath);
     } else if (result == FSResult::Unchanged) {

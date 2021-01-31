@@ -14,13 +14,13 @@ CPUTimer::Converter LogChannel::converter;
 PLY_NO_INLINE LogChannel::LineHandler::LineHandler(StringView channelName) {
     CPUTimer::Point now = CPUTimer::get();
     TID::TID tid = TID::getCurrentThreadID();
-    this->sw << (now - startTime); // Timestamp
-    this->sw.format(" 0x{}[{}] ", String::from(fmt::Hex(tid)), channelName);
+    this->mout << (now - startTime); // Timestamp
+    this->mout.format(" 0x{}[{}] ", String::from(fmt::Hex(tid)), channelName);
 }
 
 PLY_NO_INLINE LogChannel::LineHandler::~LineHandler() {
-    this->sw.write({"\n", 2}); // include null terminator
-    Logger::log(this->sw.moveToString());
+    this->mout.write({"\n", 2}); // include null terminator
+    Logger::log(this->mout.moveToString());
 }
 
 } // namespace ply

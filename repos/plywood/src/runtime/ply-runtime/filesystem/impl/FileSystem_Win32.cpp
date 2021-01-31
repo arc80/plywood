@@ -321,7 +321,7 @@ PLY_NO_INLINE FSResult FileSystem_Win32::removeDirTree(FileSystem* fs, StringVie
     MemOutStream mout;
     StringView srcView = absPath.view();
     TextConverter::create<UTF16_Native, UTF8>().writeTo(&mout, &srcView, true);
-    *mout.strWriter() << "\0\0\0\0"; // double null terminated
+    mout << StringView{"\0\0\0\0", 4}; // double null terminated
     WString wstr = WString::moveFromString(mout.moveToString());
     SHFILEOPSTRUCTW shfo;
     memset(&shfo, 0, sizeof(shfo));

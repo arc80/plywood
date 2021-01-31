@@ -21,8 +21,8 @@ void command_module(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        auto sw = StdErr::text();
-        printUsage(&sw, "module",
+        auto outs = StdErr::text();
+        printUsage(&outs, "module",
                    {
                        {"list", "list description"},
                        {"update", "update description"},
@@ -37,7 +37,7 @@ void command_module(PlyToolCommandEnv* env) {
 
         PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
 
-        StringWriter sw = StdOut::text();
+        OutStream outs = StdOut::text();
         Array<const Repo*> repos;
         for (const Repo* repo : RepoRegistry::get()->repos) {
             repos.append(repo);
@@ -46,7 +46,7 @@ void command_module(PlyToolCommandEnv* env) {
             return a->repoName < b->repoName;
         });
         for (const Repo* repo : repos) {
-            sw.format("Modules in repo '{}':\n", repo->repoName);
+            outs.format("Modules in repo '{}':\n", repo->repoName);
             Array<TargetInstantiator*> targetInsts;
             for (TargetInstantiator* targetInst : repo->targetInstantiators) {
                 targetInsts.append(targetInst);
@@ -55,9 +55,9 @@ void command_module(PlyToolCommandEnv* env) {
                 return a->name < b->name;
             });
             for (TargetInstantiator* targetInst : targetInsts) {
-                sw.format("    {}\n", targetInst->name);
+                outs.format("    {}\n", targetInst->name);
             }
-            sw << "\n";
+            outs << "\n";
         }
     } else if (prefixMatch(cmd, "update")) {
         ensureTerminated(env->cl);

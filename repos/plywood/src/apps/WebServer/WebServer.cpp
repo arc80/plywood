@@ -40,7 +40,7 @@ void myRequestHandler(AllParams* params, StringView requestPath, ResponseIface* 
 }
 
 void writeMsgAndExit(StringView msg) {
-    StringWriter stdErr = StdErr::text();
+    OutStream stdErr = StdErr::text();
     stdErr << "Error: " << msg;
     if (!msg.endsWith("\n")) {
         stdErr << '\n';

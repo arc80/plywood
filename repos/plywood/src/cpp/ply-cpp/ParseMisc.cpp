@@ -41,38 +41,38 @@ void ParseSupervisor::gotDeclaration(grammar::Declaration&& decl) {
 }
 
 String ParseSupervisor::getClassName(StringView withSep, bool withNameSpace) const {
-    StringWriter sw;
+    MemOutStream mout;
     PLY_ASSERT(this->scopeStack[0].is<grammar::TranslationUnit>());
     StringView sep = "";
     for (u32 i : range(1, this->scopeStack.numItems())) {
         const TypedPtr& scope = scopeStack[i];
         if (auto ns = scope.safeCast<grammar::Declaration::Namespace_>()) {
             if (withNameSpace) {
-                sw << sep << ns->qid.getClassName();
+                mout << sep << ns->qid.getClassName();
                 sep = withSep;
             }
         } else if (auto record = scope.safeCast<grammar::DeclSpecifier::Record>()) {
-            sw << sep << record->qid.getClassName();
+            mout << sep << record->qid.getClassName();
             sep = withSep;
         } else if (auto enum_ = scope.safeCast<grammar::DeclSpecifier::Enum_>()) {
-            sw << sep << enum_->qid.getClassName();
+            mout << sep << enum_->qid.getClassName();
             sep = withSep;
         }
     }
-    return sw.moveToString();
+    return mout.moveToString();
 }
 
 String ParseSupervisor::getNamespacePrefix() const {
-    StringWriter sw;
+    MemOutStream mout;
     PLY_ASSERT(this->scopeStack[0].is<grammar::TranslationUnit>());
     for (u32 i : range(1, this->scopeStack.numItems())) {
         const TypedPtr& scope = scopeStack[i];
         auto ns = scope.safeCast<grammar::Declaration::Namespace_>();
         if (!ns)
             break;
-        sw << ns->qid.getClassName() << "::";
+        mout << ns->qid.getClassName() << "::";
     }
-    return sw.moveToString();
+    return mout.moveToString();
 }
 
 PLY_NO_INLINE Token readTokenInternal(Parser* parser) {

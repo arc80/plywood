@@ -265,7 +265,7 @@ TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
     return Owned<StringReader>::create(createInNewLineFilter(std::move(importer)));
 }
 
-PLY_NO_INLINE Owned<StringWriter>
+PLY_NO_INLINE Owned<OutStream>
 TextFormat::createExporter(OptionallyOwned<OutStream>&& outs) const {
     OptionallyOwned<OutStream> exporter = std::move(outs);
 
@@ -301,7 +301,7 @@ TextFormat::createExporter(OptionallyOwned<OutStream>&& outs) const {
     }
 
     // Install newline filter
-    return Owned<StringWriter>::create(
+    return Owned<OutStream>::create(
         createOutNewLineFilter(std::move(exporter), this->newLine == TextFormat::NewLine::CRLF));
 }
 

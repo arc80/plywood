@@ -48,13 +48,13 @@ void SemaEntity::setClassHash() {
     this->hash = hasher.get();
 }
 
-void SemaEntity::appendToQualifiedID(StringWriter* sw) const {
+void SemaEntity::appendToQualifiedID(OutStream* outs) const {
     PLY_ASSERT(this->parent); // Must not be the global namespace
     if (this->parent->parent) {
-        this->parent->appendToQualifiedID(sw);
-        *sw << "::";
+        this->parent->appendToQualifiedID(outs);
+        *outs << "::";
     }
-    *sw << this->name;
+    *outs << this->name;
 }
 
 SemaEntity* SemaEntity::lookup(StringView name, bool checkParents) {
@@ -86,13 +86,13 @@ SemaEntity* SemaEntity::lookupChain(ArrayView<const StringView> components) {
 }
 
 // FIXME: Support BTree const iteration and make scope const
-void dumpSemaEnts(StringWriter* sw, SemaEntity* scope, u32 level) {
+void dumpSemaEnts(OutStream* outs, SemaEntity* scope, u32 level) {
     if (scope->type == SemaEntity::Member) {
-        sw->format("{}{}\n", StringView{"  "} * level, toString(scope->singleDecl));
+        outs->format("{}{}\n", StringView{"  "} * level, toString(scope->singleDecl));
     } else {
-        sw->format("{}{}\n", StringView{"  "} * level, scope->name);
+        outs->format("{}{}\n", StringView{"  "} * level, scope->name);
         for (SemaEntity* childEnt : scope->childSeq) {
-            dumpSemaEnts(sw, childEnt, level + 1);
+            dumpSemaEnts(outs, childEnt, level + 1);
         }
     }
 }

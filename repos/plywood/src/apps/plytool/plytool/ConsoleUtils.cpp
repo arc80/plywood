@@ -15,7 +15,7 @@ bool prefixMatch(StringView input, StringView cmd, u32 minUnits) {
 }
 
 void fatalError(StringView msg) {
-    StringWriter stdErr = StdErr::text();
+    OutStream stdErr = StdErr::text();
     stdErr << "error: " << msg;
     if (!msg.endsWith("\n")) {
         stdErr << '\n';
@@ -62,38 +62,38 @@ void ensureTerminated(CommandLine* cl) {
     }
 }
 
-void printCommands(StringWriter* sw, const CommandList& commands) {
-    *sw << "Available commands:\n\n";
+void printCommands(OutStream* outs, const CommandList& commands) {
+    *outs << "Available commands:\n\n";
 
     for (auto& d : commands) {
-        *sw << d.name;
+        *outs << d.name;
         for (s32 i = 0; i < 20 - (s32) d.name.numBytes; ++i) {
-            *sw << ' ';
+            *outs << ' ';
         }
-        *sw << d.description << "\n";
+        *outs << d.description << "\n";
     }
 }
 
-void printUsage(StringWriter* sw, CommandList commands) {
-    *sw << "Usage: plytool <command>\n\n";
+void printUsage(OutStream* outs, CommandList commands) {
+    *outs << "Usage: plytool <command>\n\n";
 
     if (commands.numItems > 0) {
-        printCommands(sw, commands);
+        printCommands(outs, commands);
     }
 
-    *sw << "\n";
-    sw->flush();
+    *outs << "\n";
+    outs->flush();
 }
 
-void printUsage(StringWriter* sw, StringView command, CommandList commands) {
-    *sw << "Usage: plytool " << command << " [<command>]\n";
+void printUsage(OutStream* outs, StringView command, CommandList commands) {
+    *outs << "Usage: plytool " << command << " [<command>]\n";
 
     if (commands.numItems > 0) {
-        printCommands(sw, commands);
+        printCommands(outs, commands);
     }
 
-    *sw << "\n";
-    sw->flush();
+    *outs << "\n";
+    outs->flush();
 }
 
 } // namespace ply

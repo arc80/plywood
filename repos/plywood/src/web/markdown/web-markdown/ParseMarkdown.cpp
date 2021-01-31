@@ -440,13 +440,13 @@ struct InlineConsumer {
 };
 
 String getCodeSpan(InlineConsumer& ic, u32 endTickCount) {
-    StringWriter sw;
+    MemOutStream mout;
     for (;;) {
         InlineConsumer::ValidIndexResult res = ic.validIndex();
         if (res == InlineConsumer::End)
             return {};
         if (res == InlineConsumer::NextLine) {
-            sw << ' ';
+            mout << ' ';
         }
         char c = ic.rawLine[ic.i];
         ic.i++;
@@ -456,7 +456,7 @@ String getCodeSpan(InlineConsumer& ic, u32 endTickCount) {
                 tickCount++;
             }
             if (tickCount == endTickCount) {
-                String result = sw.moveToString();
+                String result = mout.moveToString();
                 PLY_ASSERT(result);
                 if (result[0] == ' ' && result.back() == ' ' &&
                     result.findByte([](char c) { return c != ' '; }) >= 0) {
@@ -464,9 +464,9 @@ String getCodeSpan(InlineConsumer& ic, u32 endTickCount) {
                 }
                 return result;
             }
-            sw << ic.rawLine.subStr(ic.i - tickCount, tickCount);
+            mout << ic.rawLine.subStr(ic.i - tickCount, tickCount);
         } else {
-            sw << c;
+            mout << c;
         }
     }
 }
@@ -532,7 +532,7 @@ Tuple<bool, String> parseLinkDestination(InlineConsumer& ic) {
         ic.i++;
     }
 
-    StringWriter sw;
+    MemOutStream mout;
     u32 parenNestLevel = 0;
     for (;;) {
         InlineConsumer::ValidIndexResult res = ic.validIndex();
@@ -543,22 +543,22 @@ Tuple<bool, String> parseLinkDestination(InlineConsumer& ic) {
         if (c == '\\') {
             ic.i++;
             if (ic.validIndex() != InlineConsumer::SameLine) {
-                sw << '\\';
+                mout << '\\';
                 break;
             }
             c = ic.rawLine[ic.i];
             if (!isAscPunc(c)) {
-                sw << '\\';
+                mout << '\\';
             }
-            sw << c;
+            mout << c;
         } else if (c == '(') {
             ic.i++;
-            sw << c;
+            mout << c;
             parenNestLevel++;
         } else if (c == ')') {
             if (parenNestLevel > 0) {
                 ic.i++;
-                sw << c;
+                mout << c;
                 parenNestLevel--;
             } else {
                 break;
@@ -567,7 +567,7 @@ Tuple<bool, String> parseLinkDestination(InlineConsumer& ic) {
             break;
         } else {
             ic.i++;
-            sw << c;
+            mout << c;
         }
     }
 
@@ -584,7 +584,7 @@ Tuple<bool, String> parseLinkDestination(InlineConsumer& ic) {
         char c = ic.rawLine[ic.i];
         if (c == ')') {
             ic.i++;
-            return {true, sw.moveToString()};
+            return {true, mout.moveToString()};
         } else if (!isWhite(c)) {
             return {false, String{}};
         }
