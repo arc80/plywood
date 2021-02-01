@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/Subst.h>
+#include <ply-runtime/container/ArrayView.h>
 #include <string> // for char_traits
 
 namespace ply {
@@ -13,8 +13,6 @@ struct String;
 struct HybridString;
 template <typename>
 class Array;
-template <typename>
-struct ArrayView;
 
 namespace fmt {
 template <typename>
@@ -525,5 +523,15 @@ struct MutableStringView {
         this->numBytes += ofs;
     }
 };
+
+template <typename T>
+PLY_INLINE StringView ArrayView<T>::stringView() const {
+    return {(const char*) items, safeDemote<u32>(numItems * sizeof(T))};
+}
+
+template <typename T>
+PLY_INLINE MutableStringView ArrayView<T>::mutableStringView() {
+    return {(char*) items, safeDemote<u32>(numItems * sizeof(T))};
+}
 
 } // namespace ply

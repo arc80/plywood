@@ -5,9 +5,11 @@
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/container/Subst.h>
-#include <ply-runtime/string/StringView.h>
 
 namespace ply {
+
+struct StringView;
+struct MutableStringView;
 
 //------------------------------------------------------------------------------------------------
 /*!
@@ -75,12 +77,8 @@ struct ArrayView {
     \beginGroup
     Explicitly convert the `ArrayView` to a `StringView` or `MutableStringView`.
     */
-    PLY_INLINE StringView stringView() const {
-        return {(const char*) items, safeDemote<u32>(numItems * sizeof(T))};
-    }
-    PLY_INLINE MutableStringView mutableStringView() {
-        return {(char*) items, safeDemote<u32>(numItems * sizeof(T))};
-    }
+    PLY_INLINE StringView stringView() const;
+    PLY_INLINE MutableStringView mutableStringView();
     /*!
     \endGroup
     */

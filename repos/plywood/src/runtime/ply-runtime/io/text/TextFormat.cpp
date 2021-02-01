@@ -73,7 +73,7 @@ PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream* ins, const TextEn
     bool prevWasCR = false;
     u32 numBytes = 0;
     while (numBytes < maxBytes) {
-        u32 numBytesAvailable = ins->tryMakeBytesAvailable(4); // returns < 4 on EOF/error *ONLY*
+        ins->tryMakeBytesAvailable(4); // returns < 4 on EOF/error *ONLY*
         DecodeResult decoded = encoding->decodePoint(ins->viewAvailable());
         if (decoded.status == DecodeResult::Status::Truncated)
             break; // EOF/error
