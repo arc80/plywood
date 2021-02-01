@@ -248,9 +248,9 @@ struct ReflectionHooks : ParseSupervisor {
 
     virtual void onGotInclude(StringView directive) override {
         const Preprocessor::StackItem& ppItem = this->parser->pp->stack.back();
-        const char* ppItemStartUnit = (const char*) ppItem.strViewReader.getStartByte();
+        const char* ppItemStartUnit = (const char*) ppItem.vins.getStartByte();
         PLY_ASSERT(directive.bytes >= ppItemStartUnit &&
-                   directive.end() <= (const char*) ppItem.strViewReader.endByte);
+                   directive.end() <= (const char*) ppItem.vins.endByte);
         if (!directive.rtrim([](char c) { return isWhite(c); }).endsWith("//@@ply"))
             return;
 
@@ -299,7 +299,7 @@ struct ReflectionHooks : ParseSupervisor {
                 this->beginCapture(token);
             }
         } else if (token.type == Token::LineComment) {
-            StringViewReader commentReader{token.identifier};
+            ViewInStream commentReader{token.identifier};
             PLY_ASSERT(commentReader.viewAvailable().startsWith("//"));
             commentReader.advanceByte(2);
             commentReader.parse<fmt::Whitespace>();

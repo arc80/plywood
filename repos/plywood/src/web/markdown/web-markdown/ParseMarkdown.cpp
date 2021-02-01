@@ -12,14 +12,14 @@ namespace markdown {
 
 // A helper class that keeps track of the indentation level while consuming input.
 struct LineConsumer {
-    StringViewReader svr;
+    ViewInStream vins;
     u32 outerIndent = 0;
     u32 indent = 0;
 
     PLY_NO_INLINE bool consumeSpaceOrTab() {
-        if (this->svr.numBytesAvailable() == 0)
+        if (this->vins.numBytesAvailable() == 0)
             return false;
-        char c = *this->svr.curByte;
+        char c = *this->vins.curByte;
         if (c == ' ') {
             this->indent++;
         } else if (c == '\t') {
@@ -28,7 +28,7 @@ struct LineConsumer {
         } else {
             return false;
         }
-        this->svr.advanceByte();
+        this->vins.advanceByte();
         return true;
     }
 
@@ -37,10 +37,10 @@ struct LineConsumer {
     }
 
     PLY_INLINE StringView trimmedRemainder() const {
-        return this->svr.viewAvailable().trim(isWhite);
+        return this->vins.viewAvailable().trim(isWhite);
     }
 
-    PLY_INLINE LineConsumer(StringView line) : svr{line} {
+    PLY_INLINE LineConsumer(StringView line) : vins{line} {
     }
 };
 
@@ -103,10 +103,10 @@ struct Parser {
                 break;
             Node* node = this->blockNodes[keepStackDepth];
             if (node->type == Node::BlockQuote) {
-                if (lc.svr.numBytesAvailable() > 0 && *lc.svr.curByte == '>' &&
+                if (lc.vins.numBytesAvailable() > 0 && *lc.vins.curByte == '>' &&
                     lc.innerIndent() <= 3) {
                     // Continue the current blockquote
-                    lc.svr.advanceByte();
+                    lc.vins.advanceByte();
                     lc.indent++;
                     lc.outerIndent = lc.indent;
                     keepStackDepth++;
@@ -198,11 +198,11 @@ struct Parser {
         PLY_ASSERT(!lc.trimmedRemainder().isEmpty()); // Not called if remainder of line is blank
 
         // Attempt to parse new Node markers
-        while (lc.svr.numBytesAvailable() > 0) {
+        while (lc.vins.numBytesAvailable() > 0) {
             if (lc.innerIndent() >= 4)
                 break;
 
-            auto savePoint = lc.svr.savePoint();
+            auto savePoint = lc.vins.savePoint();
             u32 savedIndent = lc.indent;
 
             // This code block will handle any list markers encountered:
@@ -237,20 +237,20 @@ struct Parser {
                 this->blockNodes.append(listItem);
             };
 
-            char c = *lc.svr.curByte;
+            char c = *lc.vins.curByte;
             PLY_ASSERT(!isWhite(c));
             if (c == '>') {
                 // Begin a new blockquote
                 this->blockNodes.append(new Node{this->blockNodes.back(), Node::BlockQuote});
                 // Consume optional space after '>'
-                lc.svr.advanceByte();
+                lc.vins.advanceByte();
                 lc.indent++;
                 lc.outerIndent = lc.indent;
                 if (lc.consumeSpaceOrTab()) {
                     lc.outerIndent++;
                 }
             } else if (c == '*' || c == '-' || c == '+') {
-                lc.svr.advanceByte();
+                lc.vins.advanceByte();
                 lc.indent++;
                 u32 indentAfterStar = lc.indent;
                 if (!lc.consumeSpaceOrTab())
@@ -264,23 +264,23 @@ struct Parser {
                 lc.outerIndent = indentAfterStar + 1;
                 gotListMarker(-1, c);
             } else if (isDecimalDigit(c)) {
-                u64 num = lc.svr.parse<u64>();
+                u64 num = lc.vins.parse<u64>();
                 if (this->leafNode && num != 1) {
                     // If list item interrupts a paragraph, the start number must be 1.
                     goto notMarker;
                 }
-                uptr markerLength = (lc.svr.curByte - savePoint.startByte);
+                uptr markerLength = (lc.vins.curByte - savePoint.startByte);
                 if (markerLength > 9)
                     goto notMarker; // marker too long
                 lc.indent += safeDemote<u32>(markerLength);
-                if (lc.svr.numBytesAvailable() < 2)
+                if (lc.vins.numBytesAvailable() < 2)
                     goto notMarker;
-                char punc = *lc.svr.curByte;
+                char punc = *lc.vins.curByte;
                 // FIXME: support alternate punctuator ')'.
                 // If the punctuator doesn't match, it should start a new list.
                 if (punc != '.' && punc != ')')
                     goto notMarker;
-                lc.svr.advanceByte();
+                lc.vins.advanceByte();
                 lc.indent++;
                 u32 indentAfterMarker = lc.indent;
                 if (!lc.consumeSpaceOrTab())
@@ -304,7 +304,7 @@ struct Parser {
             continue;
 
         notMarker:
-            lc.svr.restore(savePoint);
+            lc.vins.restore(savePoint);
             lc.indent = savedIndent;
             break;
         }
@@ -349,14 +349,14 @@ struct Parser {
                     this->checkListContinuations = false;
                 }
 
-                if (*lc.svr.curByte == '#' && lc.innerIndent() <= 3) {
+                if (*lc.vins.curByte == '#' && lc.innerIndent() <= 3) {
                     // Attempt to parse a heading
-                    auto savePoint = lc.svr.savePoint();
+                    auto savePoint = lc.vins.savePoint();
                     StringView poundSeq =
-                        lc.svr.readView(fmt::Callback{[](char c) { return c == '#'; }});
-                    StringView space = lc.svr.readView<fmt::Whitespace>();
+                        lc.vins.readView(fmt::Callback{[](char c) { return c == '#'; }});
+                    StringView space = lc.vins.readView<fmt::Whitespace>();
                     if (poundSeq.numBytes <= 6 &&
-                        (!space.isEmpty() || lc.svr.numBytesAvailable() == 0)) {
+                        (!space.isEmpty() || lc.vins.numBytesAvailable() == 0)) {
                         // Got a heading
                         Node* headingNode = new Node{this->blockNodes.back(), Node::Heading};
                         headingNode->indentOrLevel = poundSeq.numBytes;
@@ -366,7 +366,7 @@ struct Parser {
                         this->leafNode = nullptr;
                         return;
                     }
-                    lc.svr.restore(savePoint);
+                    lc.vins.restore(savePoint);
                 }
                 // If this->leafNode already exists, it's a lazy paragraph continuation
                 if (!hasPara) {
@@ -382,7 +382,7 @@ struct Parser {
     }
 
     PLY_NO_INLINE Owned<Node> parse(StringView src) {
-        StringViewReader svr{src};
+        ViewInStream vins{src};
         Owned<Node> document = new Node{nullptr, Node::Document};
 
         // Initialize stack
@@ -390,7 +390,7 @@ struct Parser {
         this->leafNode = nullptr;
         this->numBlankLinesInCodeBlock = 0;
 
-        while (StringView line = svr.readView<fmt::Line>()) {
+        while (StringView line = vins.readView<fmt::Line>()) {
             LineConsumer lc{line};
             if (!matchExistingIndentation(line, lc))
                 continue; // Remainder of line is blank

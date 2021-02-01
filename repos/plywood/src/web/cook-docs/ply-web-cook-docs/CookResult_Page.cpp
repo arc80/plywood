@@ -403,7 +403,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
     }
     String src = FileIOWrappers::loadTextAutodetect(std::move(ins)).first;
     FileLocationMap srcFileLocMap = FileLocationMap::fromView(src);
-    StringViewReader sr{src};
+    ViewInStream srcVins{src};
 
     // Extract liquid tags
     MemOutStream mout;
@@ -419,11 +419,11 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
         htmlWriter << convertMarkdownToHTML(page, {classScope, {}});
         mout = MemOutStream{};
     };
-    extractLiquidTags(&mout, &sr, [&](StringView tag, StringView section) {
-        StringViewReader svr{section};
-        svr.parse<fmt::Whitespace>();
-        StringView command = svr.readView(fmt::Identifier{});
-        svr.parse<fmt::Whitespace>();
+    extractLiquidTags(&mout, &srcVins, [&](StringView tag, StringView section) {
+        ViewInStream vins{section};
+        vins.parse<fmt::Whitespace>();
+        StringView command = vins.readView(fmt::Identifier{});
+        vins.parse<fmt::Whitespace>();
         if (command == "title" || command == "linkID" || command == "synopsis" ||
             command == "childOrder") {
             // Handled by CookResult_ExtractPageMeta
@@ -431,7 +431,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             flushMarkdown();
             htmlWriter
                 << "<div class=\"note\"><img src=\"/static/info-icon.svg\" class=\"icon\"/>\n";
-            htmlWriter << convertMarkdownToHTML(svr.viewAvailable(), {classScope, {}});
+            htmlWriter << convertMarkdownToHTML(vins.viewAvailable(), {classScope, {}});
             htmlWriter << "</div>\n";
         } else if (command == "member") {
             flushMarkdown();
@@ -443,7 +443,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             }
             htmlWriter << "<dt><code>";
             // FIXME: handle errors here
-            Array<TitleSpan> spans = parseTitle(svr.viewAvailable().rtrim(isWhite),
+            Array<TitleSpan> spans = parseTitle(vins.viewAvailable().rtrim(isWhite),
                                                 [](ParseTitleError, StringView, const char*) {});
             writeAltMemberTitle(htmlWriter, spans.view(), {classScope, {}},
                                 getLinkDestinationFromSpan);
@@ -459,7 +459,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
                 PLY_ASSERT(0); // FIXME: Handle gracefully
             }
         } else if (command == "setClassScope") {
-            classScopeText = svr.viewAvailable().trim(isWhite);
+            classScopeText = vins.viewAvailable().trim(isWhite);
             classScope = resolveClassScope(classScopeText);
             if (!classScope) {
                 FileLocation srcFileLoc =
@@ -475,7 +475,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             }
         } else if (command == "dumpExtractedMembers") {
             flushMarkdown();
-            String classFQID = svr.viewAvailable().trim(isWhite);
+            String classFQID = vins.viewAvailable().trim(isWhite);
             if (classFQID != classScopeText) {
                 FileLocation srcFileLoc =
                     srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));
@@ -505,7 +505,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             dumpExtractedMembers(htmlWriter, classEnt);
         } else if (command == "html") {
             flushMarkdown();
-            htmlWriter << svr.viewAvailable();
+            htmlWriter << vins.viewAvailable();
         } else {
             FileLocation srcFileLoc =
                 srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));

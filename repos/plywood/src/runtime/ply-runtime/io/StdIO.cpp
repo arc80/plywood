@@ -8,9 +8,9 @@
 
 namespace ply {
 
-PLY_NO_INLINE StringReader StdIn::text() {
+PLY_NO_INLINE InStream StdIn::text() {
     Owned<InStream> ins = new InStream{StdPipes::stdIn()};
-    return StringReader{createInNewLineFilter(std::move(ins))};
+    return InStream{createInNewLineFilter(std::move(ins))};
 }
 
 PLY_NO_INLINE OutStream StdOut::text() {

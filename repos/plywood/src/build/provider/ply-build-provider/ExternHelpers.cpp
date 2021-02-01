@@ -33,7 +33,7 @@ message("${{statusVar}}")
         return false;
 
     // Get result
-    String output = StringReader{sub->readFromStdOut.borrow()}.readRemainingContents();
+    String output = InStream{sub->readFromStdOut.borrow()}.readRemainingContents();
     u32 exitCode = sub->join();
     if (exitCode != 0)
         return false;

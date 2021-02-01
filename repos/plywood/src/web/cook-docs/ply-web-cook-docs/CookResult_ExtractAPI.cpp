@@ -357,7 +357,7 @@ struct APIExtractor : cpp::ParseSupervisor {
                     this->docState.markdown = mout.moveToString();
                     mout = {};
                 }
-                StringViewReader dr{line.subStr(1)};
+                ViewInStream dr{line.subStr(1)};
                 StringView directive = dr.readView<fmt::Identifier>();
                 dr.parse<fmt::Whitespace>();
                 if (directive != "beginGroup") {

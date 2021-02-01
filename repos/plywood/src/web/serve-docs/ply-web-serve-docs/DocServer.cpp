@@ -146,8 +146,8 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
     String pageHtml = getPageSource(this, requestPath, responseIface);
     if (!pageHtml)
         return;
-    StringViewReader svr{pageHtml};
-    String pageTitle = svr.readView<fmt::Line>().trim(isWhite);
+    ViewInStream vins{pageHtml};
+    String pageTitle = vins.readView<fmt::Line>().trim(isWhite);
 
     // Figure out which TOC entries to expand
     Array<const Contents*> expandTo;
@@ -211,7 +211,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 <h1>{}</h1>
 )",
                pageTitle);
-    *outs << svr.viewAvailable();
+    *outs << vins.viewAvailable();
     *outs << R"(
   </article>
 </body>
@@ -224,12 +224,12 @@ void DocServer::serveContentOnly(StringView requestPath, ResponseIface* response
     if (!pageHtml)
         return;
     OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
-    StringViewReader svr{pageHtml};
-    String pageTitle = svr.readView<fmt::Line>().trim(isWhite);
+    ViewInStream vins{pageHtml};
+    String pageTitle = vins.readView<fmt::Line>().trim(isWhite);
     *outs << "Content-Type: text/html\r\n\r\n";
     responseIface->endResponseHeader();
     outs->format("{}\n<h1>{}</h1>\n", pageTitle, pageTitle);
-    *outs << svr.viewAvailable();
+    *outs << vins.viewAvailable();
 }
 
 } // namespace web

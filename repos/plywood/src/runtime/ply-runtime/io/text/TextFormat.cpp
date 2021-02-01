@@ -214,8 +214,7 @@ PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream* ins) {
 
 //-----------------------------------------------------------------------
 
-PLY_NO_INLINE Owned<StringReader>
-TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
+PLY_NO_INLINE Owned<InStream> TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
     using Enc = TextFormat::Encoding;
     if (this->bom) {
         ChunkCursor start = ins->getCursor();
@@ -262,11 +261,10 @@ TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
 
     // Install newline filter (basically just eats \r)
     // FIXME: Some caller might want the LFs to be unchanged.
-    return Owned<StringReader>::create(createInNewLineFilter(std::move(importer)));
+    return Owned<InStream>::create(createInNewLineFilter(std::move(importer)));
 }
 
-PLY_NO_INLINE Owned<OutStream>
-TextFormat::createExporter(OptionallyOwned<OutStream>&& outs) const {
+PLY_NO_INLINE Owned<OutStream> TextFormat::createExporter(OptionallyOwned<OutStream>&& outs) const {
     OptionallyOwned<OutStream> exporter = std::move(outs);
 
     switch (this->encoding) {

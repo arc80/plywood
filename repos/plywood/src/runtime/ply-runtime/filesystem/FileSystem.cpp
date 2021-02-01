@@ -116,7 +116,7 @@ PLY_NO_INLINE Owned<OutStream> FileSystem::openStreamForWrite(StringView path) {
     return new OutStream{std::move(outPipe)};
 }
 
-PLY_NO_INLINE Owned<StringReader> FileSystem::openTextForRead(StringView path,
+PLY_NO_INLINE Owned<InStream> FileSystem::openTextForRead(StringView path,
                                                               const TextFormat& textFormat) {
     Owned<InStream> ins = this->openStreamForRead(path);
     if (!ins)
@@ -124,7 +124,7 @@ PLY_NO_INLINE Owned<StringReader> FileSystem::openTextForRead(StringView path,
     return textFormat.createImporter(std::move(ins));
 }
 
-PLY_DLL_ENTRY Tuple<Owned<StringReader>, TextFormat>
+PLY_DLL_ENTRY Tuple<Owned<InStream>, TextFormat>
 FileSystem::openTextForReadAutodetect(StringView path) {
     Owned<InStream> ins = this->openStreamForRead(path);
     if (!ins)
@@ -146,16 +146,16 @@ PLY_NO_INLINE String FileSystem::loadBinary(StringView path) {
 }
 
 PLY_NO_INLINE String FileSystem::loadText(StringView path, const TextFormat& textFormat) {
-    Owned<StringReader> sr = this->openTextForRead(path, textFormat);
+    Owned<InStream> ins = this->openTextForRead(path, textFormat);
     String contents;
-    if (sr) {
-        contents = sr->readRemainingContents();
+    if (ins) {
+        contents = ins->readRemainingContents();
     }
     return contents;
 }
 
 PLY_NO_INLINE Tuple<String, TextFormat> FileSystem::loadTextAutodetect(StringView path) {
-    Tuple<Owned<StringReader>, TextFormat> tuple = this->openTextForReadAutodetect(path);
+    Tuple<Owned<InStream>, TextFormat> tuple = this->openTextForReadAutodetect(path);
     String contents;
     if (tuple.first) {
         contents = tuple.first->readRemainingContents();

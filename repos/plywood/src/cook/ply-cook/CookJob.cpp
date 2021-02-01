@@ -10,7 +10,7 @@
 namespace ply {
 
 // FIXME: Rename and move to runtime
-Tuple<Owned<StringReader>, TextFormat>
+Tuple<Owned<InStream>, TextFormat>
 FileIOWrappers::createStringReaderAutodetect(Owned<InStream>&& ins) {
     if (!ins)
         return {nullptr, TextFormat{}};
@@ -19,7 +19,7 @@ FileIOWrappers::createStringReaderAutodetect(Owned<InStream>&& ins) {
 }
 
 Tuple<String, TextFormat> FileIOWrappers::loadTextAutodetect(Owned<InStream>&& ins) {
-    Tuple<Owned<StringReader>, TextFormat> tuple = createStringReaderAutodetect(std::move(ins));
+    Tuple<Owned<InStream>, TextFormat> tuple = createStringReaderAutodetect(std::move(ins));
     String contents;
     if (tuple.first) {
         contents = tuple.first->readRemainingContents();

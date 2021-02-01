@@ -42,7 +42,7 @@ Array<TitleSpan> parseTitle(
     StringView srcText,
     const LambdaView<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback) {
     Array<TitleSpan> result;
-    StringViewReader svr{srcText};
+    ViewInStream vins{srcText};
     MemOutStream mout;
     TitleSpan::Type inSpanType = TitleSpan::Normal;
     const char* spanStart = srcText.bytes;
@@ -55,19 +55,19 @@ Array<TitleSpan> parseTitle(
         mout = {}; // Begin new MemOutStream
     };
 
-    while (svr.numBytesAvailable() > 0) {
-        char c = svr.readByte();
+    while (vins.numBytesAvailable() > 0) {
+        char c = vins.readByte();
         if (c == '\\') {
-            if (svr.numBytesAvailable() > 0) {
-                mout << (char) svr.readByte();
+            if (vins.numBytesAvailable() > 0) {
+                mout << (char) vins.readByte();
             }
         } else if (c == '[') {
             if (inSpanType != TitleSpan::Normal) {
                 errorCallback(ParseTitleError::UnclosedSpan, {}, spanStart);
             }
             flushSpan();
-            spanStart = (const char*) svr.curByte - 1;
-            StringView spanType = svr.readView<fmt::Identifier>();
+            spanStart = (const char*) vins.curByte - 1;
+            StringView spanType = vins.readView<fmt::Identifier>();
             if (!spanType) {
                 errorCallback(ParseTitleError::ExpectedSpanTypeAfterOpenSquare, {}, spanStart);
             } else if (spanType == "strong") {
@@ -80,16 +80,16 @@ Array<TitleSpan> parseTitle(
                 errorCallback(ParseTitleError::UnrecognizedSpanType, spanType, spanType.bytes);
                 inSpanType = TitleSpan::Strong;
             }
-            if (svr.numBytesAvailable() == 0 || svr.peekByte() != ' ') {
+            if (vins.numBytesAvailable() == 0 || vins.peekByte() != ' ') {
                 errorCallback(ParseTitleError::ExpectedSpaceAfterSpanType, spanType,
-                              (const char*) svr.curByte);
+                              (const char*) vins.curByte);
             } else {
-                svr.advanceByte();
+                vins.advanceByte();
             }
         } else if (c == ']') {
             if (inSpanType == TitleSpan::Normal) {
                 errorCallback(ParseTitleError::UnexpectedCloseSquare, {},
-                              (const char*) svr.curByte - 1);
+                              (const char*) vins.curByte - 1);
             } else {
                 flushSpan();
                 inSpanType = TitleSpan::Normal;

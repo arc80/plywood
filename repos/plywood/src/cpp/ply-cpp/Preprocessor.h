@@ -48,7 +48,7 @@ struct Preprocessor {
 
     struct StackItem {
         u32 includeChainIdx = 0;
-        StringViewReader strViewReader;
+        ViewInStream vins;
     };
     Array<StackItem> stack;
     LinearLocation linearLocAtEndOfStackTop = -1;

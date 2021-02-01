@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/io/text/StringReader.h>
+#include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
 
 namespace ply {
@@ -69,14 +69,14 @@ struct TextFormat {
     static PLY_DLL_ENTRY TextFormat autodetect(InStream* ins);
 
     /*!
-    Creates a new `StringReader` that converts the raw contents of `ins` to UTF-8 with Unix-style
+    Creates a new `InStream` that converts the raw contents of `ins` to UTF-8 with Unix-style
     newlines and no byte order mark (BOM). The contents of `ins` are expected to have the format
     described by the provided `TextFormat` object. Conversion is performed on-the-fly while data is
     being read.
 
     [FIXME: Say something here about OptionallyOwned.]
     */
-    PLY_DLL_ENTRY Owned<StringReader> createImporter(OptionallyOwned<InStream>&& ins) const;
+    PLY_DLL_ENTRY Owned<InStream> createImporter(OptionallyOwned<InStream>&& ins) const;
 
     /*!
     Creates a new `OutStream` that writes raw data to `outs` in the format described by the provided

@@ -8,11 +8,11 @@ using namespace ply;
 
 template <typename T>
 void testParse(OutStream* outs, StringView type, StringView str, u32 radix) {
-    StringViewReader sr{str};
-    T result = sr.parse<T>(fmt::Radix{radix});
+    ViewInStream ins{str};
+    T result = ins.parse<T>(fmt::Radix{radix});
     String backToString = String::from(fmt::WithRadix{result, radix});
     outs->format("Parsing \"{}\" as {}, radix {} -> \"{}\", {}\n", str, type, radix, backToString,
-                 sr.anyParseError() ? "failed" : "success");
+                 ins.anyParseError() ? "failed" : "success");
 }
 
 StringView strList[] = {

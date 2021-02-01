@@ -34,7 +34,7 @@ void checkFileHeader(StringView srcPath, StringView desiredHeader) {
 
     Preprocessor::StackItem& item = pp.stack.append();
     item.includeChainIdx = includeChainIdx;
-    item.strViewReader = StringViewReader{srcFile.contents};
+    item.vins = ViewInStream{srcFile.contents};
     pp.linearLocAtEndOfStackTop = srcFile.contents.numBytes;
 
     PPVisitedFiles::LocationMapTraits::Item locMapItem;
@@ -59,8 +59,8 @@ void checkFileHeader(StringView srcPath, StringView desiredHeader) {
 
     // Trim header at first blank line
     {
-        StringViewReader svr{existingFileHeader};
-        while (StringView line = svr.readView<fmt::Line>()) {
+        ViewInStream vins{existingFileHeader};
+        while (StringView line = vins.readView<fmt::Line>()) {
             if (line.rtrim(isWhite).isEmpty()) {
                 existingFileHeader = StringView::fromRange(existingFileHeader.bytes, line.bytes);
                 break;

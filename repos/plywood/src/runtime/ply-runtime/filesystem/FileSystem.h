@@ -518,8 +518,8 @@ struct FileSystem {
     PLY_DLL_ENTRY Owned<OutStream> openStreamForWrite(StringView path);
 
     /*!
-    Returns a `StringReader` that reads raw data from the specified text file and converts it to
-    UTF-8 with Unix-style newlines, or `nullptr` if the file could not be opened. The text file is
+    Returns an `InStream` that reads raw data from the specified text file and converts it to UTF-8
+    with Unix-style newlines, or `nullptr` if the file could not be opened. The text file is
     expected to have the file format described by `textFormat`. Any byte order mark (BOM) in the
     file is skipped. See `TextFormat` for more information on supported text file formats.
 
@@ -533,15 +533,14 @@ struct FileSystem {
             return nullptr;
         return textFormat.createImporter(std::move(ins));
     */
-    PLY_DLL_ENTRY Owned<StringReader> openTextForRead(StringView path,
-                                                      const TextFormat& textFormat);
+    PLY_DLL_ENTRY Owned<InStream> openTextForRead(StringView path, const TextFormat& textFormat);
 
     /*!
-    Returns a `Tuple`. The first tuple item is a `StringReader` that reads raw data from the
-    specified text file and converts it to UTF-8 with Unix-style newlines, or `nullptr` if the file
-    could not be opened. The text file format is detected automatically and returned as the second
-    tuple item. Any byte order mark (BOM) in the text file is skipped. See `TextFormat` for more
-    information on supported text file formats.
+    Returns a `Tuple`. The first tuple item is a `InStream` that reads raw data from the specified
+    text file and converts it to UTF-8 with Unix-style newlines, or `nullptr` if the file could not
+    be opened. The text file format is detected automatically and returned as the second tuple item.
+    Any byte order mark (BOM) in the text file is skipped. See `TextFormat` for more information on
+    supported text file formats.
 
     This function updates the internal result code. Expected result codes are `OK`, `NotFound`,
     `AccessDenied` or `Locked`.
@@ -554,7 +553,7 @@ struct FileSystem {
         TextFormat textFormat = TextFormat::autodetect(ins);
         return {textFormat.createImporter(std::move(ins)), textformat};
     */
-    PLY_DLL_ENTRY Tuple<Owned<StringReader>, TextFormat> openTextForReadAutodetect(StringView path);
+    PLY_DLL_ENTRY Tuple<Owned<InStream>, TextFormat> openTextForReadAutodetect(StringView path);
 
     /*!
     Returns a `String` containing the raw contents of the specified file, or an empty `String` if

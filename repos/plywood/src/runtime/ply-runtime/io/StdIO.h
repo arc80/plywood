@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/io/text/StringReader.h>
+#include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
 
 #if !defined(PLY_IMPL_STDPIPES_PATH)
@@ -34,7 +34,7 @@ struct StdIn {
     static PLY_INLINE InStream binary() {
         return InStream{StdPipes::stdIn()};
     }
-    static PLY_DLL_ENTRY StringReader text();
+    static PLY_DLL_ENTRY InStream text();
 
     // FIXME: Remove these declarations later:
     static InStream createStream() = delete;       // call binary() instead

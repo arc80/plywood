@@ -45,7 +45,7 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
 
     Preprocessor::StackItem& item = pp.stack.append();
     item.includeChainIdx = includeChainIdx;
-    item.strViewReader = StringViewReader{srcFile.contents};
+    item.vins = ViewInStream{srcFile.contents};
     pp.linearLocAtEndOfStackTop = srcFile.contents.numBytes;
 
     PPVisitedFiles::LocationMapTraits::Item locMapItem;

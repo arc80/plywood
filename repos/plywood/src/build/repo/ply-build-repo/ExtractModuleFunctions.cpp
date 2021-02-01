@@ -142,7 +142,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                 StringView commentText = token.identifier.subStr(2).trim(isWhite);
                 if (commentText.startsWith("[") && commentText.endsWith("]")) {
                     // New command format: [ply ...]
-                    StringViewReader commentReader{commentText.subStr(1, commentText.numBytes - 2)};
+                    ViewInStream commentReader{commentText.subStr(1, commentText.numBytes - 2)};
                     StringView first = commentReader.readView<fmt::Identifier>();
                     if (first != "ply")
                         return;
@@ -263,7 +263,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                 }
 
                 // FIXME: Delete this later
-                StringViewReader commentReader{commentText};
+                ViewInStream commentReader{commentText};
                 StringView first = commentReader.readView<fmt::NonWhitespace>();
                 commentReader.parse<fmt::Whitespace>();
                 if (first == "ply") {

@@ -25,9 +25,9 @@ PLY_NO_INLINE void addPPDef(Preprocessor* pp, StringView identifier, StringView 
 
 PLY_INLINE LinearLocation getLinearLocation(const Preprocessor* pp, const char* curByte) {
     const Preprocessor::StackItem& item = pp->stack.back();
-    PLY_ASSERT(curByte >= item.strViewReader.getStartByte());
-    PLY_ASSERT(curByte <= item.strViewReader.endByte);
-    return pp->linearLocAtEndOfStackTop - (item.strViewReader.endByte - curByte);
+    PLY_ASSERT(curByte >= item.vins.getStartByte());
+    PLY_ASSERT(curByte <= item.vins.endByte);
+    return pp->linearLocAtEndOfStackTop - (item.vins.endByte - curByte);
 }
 
 void Preprocessor::Error::writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const {
@@ -111,74 +111,74 @@ PLY_NO_INLINE StringView PPVisitedFiles::getContents(u32 includeChainIndex) cons
     }
 }
 
-void readNumericLiteral(StringViewReader* strViewReader) {
-    if (strViewReader->tryMakeBytesAvailable() && (strViewReader->peekByte() == '0')) {
-        strViewReader->advanceByte();
-        if (strViewReader->tryMakeBytesAvailable() && (strViewReader->peekByte() == 'x')) {
-            strViewReader->advanceByte();
-            strViewReader->parse<u64>(fmt::Radix{16});
+void readNumericLiteral(ViewInStream* vins) {
+    if (vins->tryMakeBytesAvailable() && (vins->peekByte() == '0')) {
+        vins->advanceByte();
+        if (vins->tryMakeBytesAvailable() && (vins->peekByte() == 'x')) {
+            vins->advanceByte();
+            vins->parse<u64>(fmt::Radix{16});
             goto suffix;
         }
     }
-    strViewReader->parse<double>();
+    vins->parse<double>();
 suffix:
-    if (strViewReader->tryMakeBytesAvailable() && (strViewReader->peekByte() == 'f')) {
-        strViewReader->advanceByte();
+    if (vins->tryMakeBytesAvailable() && (vins->peekByte() == 'f')) {
+        vins->advanceByte();
     } else {
-        if (strViewReader->tryMakeBytesAvailable() && (strViewReader->peekByte() == 'U')) {
-            strViewReader->advanceByte();
+        if (vins->tryMakeBytesAvailable() && (vins->peekByte() == 'U')) {
+            vins->advanceByte();
         }
-        if (strViewReader->tryMakeBytesAvailable() && (strViewReader->peekByte() == 'L')) {
-            strViewReader->advanceByte();
-            if (strViewReader->tryMakeBytesAvailable() && (strViewReader->peekByte() == 'L')) {
-                strViewReader->advanceByte();
+        if (vins->tryMakeBytesAvailable() && (vins->peekByte() == 'L')) {
+            vins->advanceByte();
+            if (vins->tryMakeBytesAvailable() && (vins->peekByte() == 'L')) {
+                vins->advanceByte();
             }
         }
     }
 }
 
-void readPreprocessorDirective(StringViewReader* strViewReader, Preprocessor* pp) {
-    bool avail = strViewReader->tryMakeBytesAvailable();
+void readPreprocessorDirective(ViewInStream* vins, Preprocessor* pp) {
+    bool avail = vins->tryMakeBytesAvailable();
     PLY_ASSERT(avail);
     PLY_UNUSED(avail);
-    PLY_ASSERT(strViewReader->peekByte() == '#');
-    auto savePoint = strViewReader->savePoint();
-    strViewReader->advanceByte();
+    PLY_ASSERT(vins->peekByte() == '#');
+    auto savePoint = vins->savePoint();
+    vins->advanceByte();
 
     // Skip whitespace
-    while (strViewReader->tryMakeBytesAvailable()) {
-        char c = strViewReader->peekByte();
+    while (vins->tryMakeBytesAvailable()) {
+        char c = vins->peekByte();
         if (!isWhite(c))
             break;
-        strViewReader->advanceByte();
+        vins->advanceByte();
         if (c == '\n')
             return; // null directive
     }
 
     // Read directive
-    StringView directive = strViewReader->readView<fmt::Identifier>(fmt::WithDollarSign);
+    StringView directive = vins->readView<fmt::Identifier>(fmt::WithDollarSign);
     if (directive.isEmpty()) {
         // invalid characters after #
         pp->error(
-            {Preprocessor::Error::InvalidDirective, getLinearLocation(pp, strViewReader->curByte)});
-        strViewReader->parse<fmt::Line>();
+            {Preprocessor::Error::InvalidDirective, getLinearLocation(pp, vins->curByte)});
+        vins->parse<fmt::Line>();
     } else {
         // Handle directive
         if (directive == "include") {
-            strViewReader->parse<fmt::Line>();
+            vins->parse<fmt::Line>();
             if (pp->includeCallback) {
-                pp->includeCallback(strViewReader->getViewFrom(savePoint));
+                pp->includeCallback(vins->getViewFrom(savePoint));
             }
         } else if (directive == "pragma" || directive == "if" || directive == "else" ||
                    directive == "elif" || directive == "endif" || directive == "ifdef" ||
                    directive == "ifndef" || directive == "error" || directive == "undef" ||
                    directive == "import") {
-            strViewReader->parse<fmt::Line>();
+            vins->parse<fmt::Line>();
         } else if (directive == "define") {
             bool escaping = false;
-            while (strViewReader->tryMakeBytesAvailable()) {
-                char c = strViewReader->peekByte();
-                strViewReader->advanceByte();
+            while (vins->tryMakeBytesAvailable()) {
+                char c = vins->peekByte();
+                vins->advanceByte();
                 if (c == '\n') {
                     if (!escaping)
                         break;
@@ -190,7 +190,7 @@ void readPreprocessorDirective(StringViewReader* strViewReader, Preprocessor* pp
             // Invalid directive
             pp->error(
                 {Preprocessor::Error::InvalidDirective, getLinearLocation(pp, directive.bytes)});
-            strViewReader->parse<fmt::Line>();
+            vins->parse<fmt::Line>();
         }
     }
     pp->atStartOfLine = true;
@@ -199,50 +199,50 @@ void readPreprocessorDirective(StringViewReader* strViewReader, Preprocessor* pp
 // Returns true if arguments were encountered, which means the macro can be expanded
 // Returns false if arguments were not encountered, which means the macro cannot be expanded
 // and the identifier should be returned as a token.
-Array<Token> readMacroArguments(Preprocessor* pp, StringViewReader* strViewReader) {
+Array<Token> readMacroArguments(Preprocessor* pp, ViewInStream* vins) {
     Array<Token> macroArgs;
 
     // Skip whitespace
-    strViewReader->parse<fmt::Whitespace>();
+    vins->parse<fmt::Whitespace>();
 
     // Look for opening parenthesis
-    if (!(strViewReader->tryMakeBytesAvailable() && strViewReader->peekByte() == '('))
+    if (!(vins->tryMakeBytesAvailable() && vins->peekByte() == '('))
         return macroArgs;
-    LinearLocation openParenLoc = getLinearLocation(pp, strViewReader->curByte);
-    strViewReader->advanceByte();
-    const char* argStart = (const char*) strViewReader->curByte;
+    LinearLocation openParenLoc = getLinearLocation(pp, vins->curByte);
+    vins->advanceByte();
+    const char* argStart = (const char*) vins->curByte;
     LinearLocation argStartLoc = openParenLoc + 1;
 
     // Read up to closing parenthesis
     s32 nestLevel = 1;
     for (;;) {
-        if (!strViewReader->tryMakeBytesAvailable()) {
+        if (!vins->tryMakeBytesAvailable()) {
             // end of file in macro arguments
             pp->error({Preprocessor::Error::EOFInMacro,
-                       getLinearLocation(pp, strViewReader->curByte), openParenLoc});
+                       getLinearLocation(pp, vins->curByte), openParenLoc});
             return macroArgs;
         }
 
-        char c = strViewReader->peekByte();
-        strViewReader->advanceByte();
+        char c = vins->peekByte();
+        vins->advanceByte();
         // FIXME: Detect strings here
         switch (c) {
             case '/': {
-                if (!strViewReader->tryMakeBytesAvailable()) {
+                if (!vins->tryMakeBytesAvailable()) {
                     // end of file in macro arguments
                     pp->error({Preprocessor::Error::EOFInMacro,
-                               getLinearLocation(pp, strViewReader->curByte), openParenLoc});
+                               getLinearLocation(pp, vins->curByte), openParenLoc});
                     return macroArgs;
                 }
-                if (strViewReader->peekByte() == '/') {
-                    strViewReader->advanceByte();
-                    strViewReader->parse<fmt::Line>();
-                } else if (strViewReader->peekByte() == '*') {
-                    strViewReader->advanceByte();
-                    if (!fmt::scanUpToAndIncludingSpecial(strViewReader, "*/")) {
+                if (vins->peekByte() == '/') {
+                    vins->advanceByte();
+                    vins->parse<fmt::Line>();
+                } else if (vins->peekByte() == '*') {
+                    vins->advanceByte();
+                    if (!fmt::scanUpToAndIncludingSpecial(vins, "*/")) {
                         // EOF in comment
                         pp->error({Preprocessor::Error::EOFInComment,
-                                   getLinearLocation(pp, strViewReader->curByte), openParenLoc});
+                                   getLinearLocation(pp, vins->curByte), openParenLoc});
                         return macroArgs;
                     }
                 }
@@ -259,7 +259,7 @@ Array<Token> readMacroArguments(Preprocessor* pp, StringViewReader* strViewReade
                 if (nestLevel <= 0) {
                     macroArgs.append({argStartLoc, Token::MacroArgument,
                                       StringView::fromRange(
-                                          argStart, (const char*) strViewReader->curByte - 1)});
+                                          argStart, (const char*) vins->curByte - 1)});
                     return macroArgs;
                 }
                 break;
@@ -269,9 +269,9 @@ Array<Token> readMacroArguments(Preprocessor* pp, StringViewReader* strViewReade
                 if (nestLevel == 1) {
                     macroArgs.append({argStartLoc, Token::MacroArgument,
                                       StringView::fromRange(
-                                          argStart, (const char*) strViewReader->curByte - 1)});
-                    argStart = (const char*) strViewReader->curByte;
-                    argStartLoc = getLinearLocation(pp, strViewReader->curByte);
+                                          argStart, (const char*) vins->curByte - 1)});
+                    argStart = (const char*) vins->curByte;
+                    argStartLoc = getLinearLocation(pp, vins->curByte);
                 }
             }
 
@@ -281,98 +281,98 @@ Array<Token> readMacroArguments(Preprocessor* pp, StringViewReader* strViewReade
     }
 }
 
-bool readStringLiteral(StringViewReader* strViewReader, Preprocessor* pp, char quotePunc,
+bool readStringLiteral(ViewInStream* vins, Preprocessor* pp, char quotePunc,
                        LinearLocation beginStringLoc) {
     for (;;) {
-        if (!strViewReader->tryMakeBytesAvailable()) {
+        if (!vins->tryMakeBytesAvailable()) {
             // End of file in string literal
             pp->error({Preprocessor::Error::EOFInStringLiteral,
-                       getLinearLocation(pp, strViewReader->curByte), beginStringLoc});
+                       getLinearLocation(pp, vins->curByte), beginStringLoc});
             return false;
         }
-        char c = strViewReader->peekByte();
-        strViewReader->advanceByte();
+        char c = vins->peekByte();
+        vins->advanceByte();
         if (c == '\\') {
-            if (!strViewReader->tryMakeBytesAvailable()) {
+            if (!vins->tryMakeBytesAvailable()) {
                 // End of file in string literal
                 pp->error({Preprocessor::Error::EOFInStringLiteral,
-                           getLinearLocation(pp, strViewReader->curByte), beginStringLoc});
+                           getLinearLocation(pp, vins->curByte), beginStringLoc});
                 return false;
             }
-            strViewReader->advanceByte();
+            vins->advanceByte();
         } else if (c == quotePunc) {
             return true;
         }
     }
 }
 
-bool readDelimiterAndRawStringLiteral(StringViewReader* strViewReader, Preprocessor* pp,
+bool readDelimiterAndRawStringLiteral(ViewInStream* vins, Preprocessor* pp,
                                       LinearLocation beginStringLoc) {
-    PLY_ASSERT(strViewReader->peekByte() == '"');
-    strViewReader->advanceByte();
+    PLY_ASSERT(vins->peekByte() == '"');
+    vins->advanceByte();
 
     // read delimiter
-    const char* delimiterStart = strViewReader->curByte;
+    const char* delimiterStart = vins->curByte;
     for (;;) {
-        if (!strViewReader->tryMakeBytesAvailable()) {
+        if (!vins->tryMakeBytesAvailable()) {
             // End of file while reading raw string delimiter
             pp->error({Preprocessor::Error::EOFInRawStringDelimiter,
-                       getLinearLocation(pp, strViewReader->curByte), beginStringLoc});
+                       getLinearLocation(pp, vins->curByte), beginStringLoc});
             return false;
         }
-        char c = strViewReader->peekByte();
+        char c = vins->peekByte();
         if (c == '(')
             break;
         // FIXME: Recognize more whitespace characters
         if (isWhite(c) || c == ')' || c == '\\') {
             // Invalid character in delimiter
             pp->error({Preprocessor::Error::InvalidCharInRawStringDelimiter,
-                       getLinearLocation(pp, strViewReader->curByte), beginStringLoc});
+                       getLinearLocation(pp, vins->curByte), beginStringLoc});
             return false;
         }
-        strViewReader->advanceByte();
+        vins->advanceByte();
     }
 
     // FIXME: Enforce maximum length of delimiter (at most 16 characters)
-    const char* delimiterEnd = strViewReader->curByte;
-    strViewReader->advanceByte();
+    const char* delimiterEnd = vins->curByte;
+    vins->advanceByte();
 
     // Read remainder of string
     for (;;) {
-        if (!strViewReader->tryMakeBytesAvailable()) {
+        if (!vins->tryMakeBytesAvailable()) {
             // End of file in string literal
             pp->error({Preprocessor::Error::EOFInStringLiteral,
-                       getLinearLocation(pp, strViewReader->curByte), beginStringLoc});
+                       getLinearLocation(pp, vins->curByte), beginStringLoc});
             return false;
         }
-        char c = strViewReader->peekByte();
-        strViewReader->advanceByte();
+        char c = vins->peekByte();
+        vins->advanceByte();
         if (c == ')') {
             // Try to match delimiter
             const char* d = delimiterStart;
             for (;;) {
                 if (d == delimiterEnd) {
-                    if (!strViewReader->tryMakeBytesAvailable()) {
+                    if (!vins->tryMakeBytesAvailable()) {
                         // End of file while matching closing "
                         pp->error({Preprocessor::Error::EOFInStringLiteral,
-                                   getLinearLocation(pp, strViewReader->curByte), beginStringLoc});
+                                   getLinearLocation(pp, vins->curByte), beginStringLoc});
                         return false;
                     }
-                    c = strViewReader->peekByte();
+                    c = vins->peekByte();
                     if (c == '"') {
                         // End of string literal
-                        strViewReader->advanceByte();
+                        vins->advanceByte();
                         return true;
                     }
                 }
-                if (!strViewReader->tryMakeBytesAvailable()) {
+                if (!vins->tryMakeBytesAvailable()) {
                     // End of file while matching delimiter
                     pp->error({Preprocessor::Error::EOFInStringLiteral,
-                               getLinearLocation(pp, strViewReader->curByte), beginStringLoc});
+                               getLinearLocation(pp, vins->curByte), beginStringLoc});
                     return false;
                 }
-                c = strViewReader->peekByte();
-                strViewReader->advanceByte();
+                c = vins->peekByte();
+                vins->advanceByte();
                 if ((u8) c != *d)
                     break; // No match here
                 d++;
@@ -381,17 +381,17 @@ bool readDelimiterAndRawStringLiteral(StringViewReader* strViewReader, Preproces
     }
 }
 
-// Copied from StringReader.cpp:
+// Copied from TypeParser.cpp:
 PLY_INLINE bool match(u8 c, const u32* mask) {
     u32 bitValue = mask[c >> 5] & (1 << (c & 31));
     return (bitValue != 0);
 }
 
-Token::Type readIdentifierOrLiteral(StringViewReader* strViewReader, Preprocessor* pp,
+Token::Type readIdentifierOrLiteral(ViewInStream* vins, Preprocessor* pp,
                                     LinearLocation beginTokenLoc) {
-    char c = strViewReader->peekByte();
+    char c = vins->peekByte();
     if (c >= '0' && c <= '9') {
-        readNumericLiteral(strViewReader);
+        readNumericLiteral(vins);
         return Token::NumericLiteral;
     }
 
@@ -400,32 +400,32 @@ Token::Type readIdentifierOrLiteral(StringViewReader* strViewReader, Preprocesso
     mask[1] |= 0x10;      // '$'
     mask[1] |= 0x3ff0000; // accept digits (we already know the first character is non-digit)
 
-    const char* startByte = strViewReader->curByte;
+    const char* startByte = vins->curByte;
     for (;;) {
-        if (!strViewReader->tryMakeBytesAvailable()) {
-            PLY_ASSERT(strViewReader->curByte != startByte);
+        if (!vins->tryMakeBytesAvailable()) {
+            PLY_ASSERT(vins->curByte != startByte);
             return Token::Identifier;
         }
-        c = strViewReader->peekByte();
+        c = vins->peekByte();
         if (!match(c, mask)) {
             if (c == '"') {
-                if (strViewReader->curByte == startByte + 1 && *startByte == 'R') {
-                    if (readDelimiterAndRawStringLiteral(strViewReader, pp, beginTokenLoc)) {
+                if (vins->curByte == startByte + 1 && *startByte == 'R') {
+                    if (readDelimiterAndRawStringLiteral(vins, pp, beginTokenLoc)) {
                         return Token::StringLiteral;
                     }
                 } else {
                     // Treat it as a string prefix
-                    strViewReader->advanceByte();
-                    if (!readStringLiteral(strViewReader, pp, c, beginTokenLoc))
+                    vins->advanceByte();
+                    if (!readStringLiteral(vins, pp, c, beginTokenLoc))
                         return Token::Invalid;
                     return Token::StringLiteral;
                 }
             } else {
-                if (startByte == strViewReader->curByte) {
+                if (startByte == vins->curByte) {
                     // Garbage token
                     // FIXME: Should we return 't report error here, but return garbage token to
                     // caller instead, so that parser can decide how to recover from it
-                    strViewReader->advanceByte();
+                    vins->advanceByte();
                     pp->error({Preprocessor::Error::GarbageCharacters, beginTokenLoc});
                     return Token::Invalid;
                 } else {
@@ -433,7 +433,7 @@ Token::Type readIdentifierOrLiteral(StringViewReader* strViewReader, Preprocesso
                 }
             }
         }
-        strViewReader->advanceByte();
+        vins->advanceByte();
     }
 }
 
@@ -442,8 +442,8 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
     Token token;
     while (pp->stack.numItems() > 0) {
         item = &pp->stack.back();
-        auto savePoint = item->strViewReader.savePoint();
-        if (!item->strViewReader.tryMakeBytesAvailable()) {
+        auto savePoint = item->vins.savePoint();
+        if (!item->vins.tryMakeBytesAvailable()) {
             pp->stack.pop();
             if (pp->stack.numItems() > 0) {
                 PPVisitedFiles* vf = pp->visitedFiles;
@@ -453,28 +453,28 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
                 PPVisitedFiles::LocationMapTraits::Item locMapItem;
                 locMapItem.linearLoc = pp->linearLocAtEndOfStackTop;
                 locMapItem.includeChainIdx = item->includeChainIdx;
-                locMapItem.offset = safeDemote<u32>(item->strViewReader.curByte -
-                                                    item->strViewReader.getStartByte());
+                locMapItem.offset = safeDemote<u32>(item->vins.curByte -
+                                                    item->vins.getStartByte());
                 vf->locationMap.insert(std::move(locMapItem));
 
-                pp->linearLocAtEndOfStackTop += item->strViewReader.numBytesAvailable();
+                pp->linearLocAtEndOfStackTop += item->vins.numBytesAvailable();
             }
             continue;
         }
 
         PLY_ASSERT(pp->linearLocAtEndOfStackTop >= 0);
-        token.linearLoc = pp->linearLocAtEndOfStackTop - item->strViewReader.numBytesAvailable();
+        token.linearLoc = pp->linearLocAtEndOfStackTop - item->vins.numBytesAvailable();
         bool wasAtStartOfLine = pp->atStartOfLine;
         pp->atStartOfLine = false;
-        switch (item->strViewReader.peekByte()) {
+        switch (item->vins.peekByte()) {
             case '\n':
             case '\r':
             case '\t':
             case ' ': {
                 // Skip whitespace while keeping track of start of line
                 pp->atStartOfLine = wasAtStartOfLine;
-                while (item->strViewReader.tryMakeBytesAvailable()) {
-                    switch (item->strViewReader.peekByte()) {
+                while (item->vins.tryMakeBytesAvailable()) {
+                    switch (item->vins.peekByte()) {
                         case '\n':
                             pp->atStartOfLine = true;
                         case '\r':
@@ -484,7 +484,7 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
                         default:
                             goto endOfWhite;
                     }
-                    item->strViewReader.advanceByte();
+                    item->vins.advanceByte();
                 }
             endOfWhite:
                 // FIXME: Optionally return a whitespace token
@@ -494,43 +494,43 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             case '#': {
                 if (wasAtStartOfLine) {
                     // Preprocessor directive
-                    readPreprocessorDirective(&item->strViewReader, pp);
+                    readPreprocessorDirective(&item->vins, pp);
                     token.type = Token::Directive;
                     goto gotToken;
                 } else {
                     // FIXME: Don't report error here. Return garbage token to caller instead
                     // (like below)
                     pp->error({Preprocessor::Error::DirectiveNotAtStartOfLine,
-                               getLinearLocation(pp, item->strViewReader.curByte)});
-                    item->strViewReader.advanceByte();
+                               getLinearLocation(pp, item->vins.curByte)});
+                    item->vins.advanceByte();
                 }
                 break;
             }
 
             case '/': {
-                LinearLocation startCommentLoc = getLinearLocation(pp, item->strViewReader.curByte);
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == '/') {
-                        item->strViewReader.advanceByte();
-                        item->strViewReader.parse<fmt::Line>();
+                LinearLocation startCommentLoc = getLinearLocation(pp, item->vins.curByte);
+                item->vins.advanceByte();
+                if (item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == '/') {
+                        item->vins.advanceByte();
+                        item->vins.parse<fmt::Line>();
                         token.type = Token::LineComment;
                         pp->atStartOfLine = true;
                         goto gotToken;
-                    } else if (item->strViewReader.peekByte() == '*') {
-                        item->strViewReader.advanceByte();
-                        if (fmt::scanUpToAndIncludingSpecial(&item->strViewReader, "*/")) {
+                    } else if (item->vins.peekByte() == '*') {
+                        item->vins.advanceByte();
+                        if (fmt::scanUpToAndIncludingSpecial(&item->vins, "*/")) {
                             token.type = Token::CStyleComment;
                             goto gotToken;
                         } else {
                             // EOF in comment
                             pp->error({Preprocessor::Error::EOFInComment,
-                                       getLinearLocation(pp, item->strViewReader.curByte),
+                                       getLinearLocation(pp, item->vins.curByte),
                                        startCommentLoc});
                         }
                         break;
-                    } else if (item->strViewReader.peekByte() == '=') {
-                        item->strViewReader.advanceByte();
+                    } else if (item->vins.peekByte() == '=') {
+                        item->vins.advanceByte();
                         token.type = Token::SlashEqual;
                         goto gotToken;
                     }
@@ -540,44 +540,44 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case '{': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::OpenCurly;
                 goto gotToken;
             }
 
             case '}': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::CloseCurly;
                 goto gotToken;
             }
 
             case ';': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::Semicolon;
                 goto gotToken;
             }
 
             case '(': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::OpenParen;
                 goto gotToken;
             }
 
             case ')': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::CloseParen;
                 goto gotToken;
             }
 
             case '<': {
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == '<') {
-                        item->strViewReader.advanceByte();
+                item->vins.advanceByte();
+                if (item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == '<') {
+                        item->vins.advanceByte();
                         token.type = Token::LeftShift;
                         goto gotToken;
-                    } else if (item->strViewReader.peekByte() == '=') {
-                        item->strViewReader.advanceByte();
+                    } else if (item->vins.peekByte() == '=') {
+                        item->vins.advanceByte();
                         token.type = Token::LessThanOrEqual;
                         goto gotToken;
                     }
@@ -587,15 +587,15 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case '>': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 // FIXME: Disable tokenizeCloseAnglesOnly inside parenthesized expressions
-                if (!pp->tokenizeCloseAnglesOnly && item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == '>') {
-                        item->strViewReader.advanceByte();
+                if (!pp->tokenizeCloseAnglesOnly && item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == '>') {
+                        item->vins.advanceByte();
                         token.type = Token::RightShift;
                         goto gotToken;
-                    } else if (item->strViewReader.peekByte() == '=') {
-                        item->strViewReader.advanceByte();
+                    } else if (item->vins.peekByte() == '=') {
+                        item->vins.advanceByte();
                         token.type = Token::GreaterThanOrEqual;
                         goto gotToken;
                     }
@@ -605,22 +605,22 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case '[': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::OpenSquare;
                 goto gotToken;
             }
 
             case ']': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::CloseSquare;
                 goto gotToken;
             }
 
             case ':': {
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == ':') {
-                        item->strViewReader.advanceByte();
+                item->vins.advanceByte();
+                if (item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == ':') {
+                        item->vins.advanceByte();
                         token.type = Token::DoubleColon;
                         goto gotToken;
                     }
@@ -630,22 +630,22 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case ',': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::Comma;
                 goto gotToken;
             }
 
             case '?': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::QuestionMark;
                 goto gotToken;
             }
 
             case '=': {
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == '=') {
-                        item->strViewReader.advanceByte();
+                item->vins.advanceByte();
+                if (item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == '=') {
+                        item->vins.advanceByte();
                         token.type = Token::DoubleEqual;
                         goto gotToken;
                     }
@@ -655,10 +655,10 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case '*': {
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == '=') {
-                        item->strViewReader.advanceByte();
+                item->vins.advanceByte();
+                if (item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == '=') {
+                        item->vins.advanceByte();
                         token.type = Token::StarEqual;
                         goto gotToken;
                     }
@@ -668,16 +668,16 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case '%': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::Percent;
                 goto gotToken;
             }
 
             case '&': {
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == '&') {
-                        item->strViewReader.advanceByte();
+                item->vins.advanceByte();
+                if (item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == '&') {
+                        item->vins.advanceByte();
                         token.type = Token::DoubleAmpersand;
                         goto gotToken;
                     }
@@ -687,10 +687,10 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case '|': {
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == '|') {
-                        item->strViewReader.advanceByte();
+                item->vins.advanceByte();
+                if (item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == '|') {
+                        item->vins.advanceByte();
                         token.type = Token::DoubleVerticalBar;
                         goto gotToken;
                     }
@@ -700,14 +700,14 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case '+': {
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == '+') {
-                        item->strViewReader.advanceByte();
+                item->vins.advanceByte();
+                if (item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == '+') {
+                        item->vins.advanceByte();
                         token.type = Token::DoublePlus;
                         goto gotToken;
-                    } else if (item->strViewReader.peekByte() == '=') {
-                        item->strViewReader.advanceByte();
+                    } else if (item->vins.peekByte() == '=') {
+                        item->vins.advanceByte();
                         token.type = Token::PlusEqual;
                         goto gotToken;
                     }
@@ -717,18 +717,18 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case '-': {
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == '-') {
-                        item->strViewReader.advanceByte();
+                item->vins.advanceByte();
+                if (item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == '-') {
+                        item->vins.advanceByte();
                         token.type = Token::DoubleMinus;
                         goto gotToken;
-                    } else if (item->strViewReader.peekByte() == '=') {
-                        item->strViewReader.advanceByte();
+                    } else if (item->vins.peekByte() == '=') {
+                        item->vins.advanceByte();
                         token.type = Token::MinusEqual;
                         goto gotToken;
-                    } else if (item->strViewReader.peekByte() == '>') {
-                        item->strViewReader.advanceByte();
+                    } else if (item->vins.peekByte() == '>') {
+                        item->vins.advanceByte();
                         token.type = Token::Arrow;
                         goto gotToken;
                     }
@@ -738,11 +738,11 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case '.': {
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.numBytesAvailable() >= 2) {
-                    if (item->strViewReader.peekByte(0) == '.' &&
-                        item->strViewReader.peekByte(1) == '.') {
-                        item->strViewReader.advanceByte(2);
+                item->vins.advanceByte();
+                if (item->vins.numBytesAvailable() >= 2) {
+                    if (item->vins.peekByte(0) == '.' &&
+                        item->vins.peekByte(1) == '.') {
+                        item->vins.advanceByte(2);
                         token.type = Token::Ellipsis;
                         goto gotToken;
                     }
@@ -752,22 +752,22 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
             }
 
             case '~': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::Tilde;
                 goto gotToken;
             }
 
             case '^': {
-                item->strViewReader.advanceByte();
+                item->vins.advanceByte();
                 token.type = Token::Caret;
                 goto gotToken;
             }
 
             case '!': {
-                item->strViewReader.advanceByte();
-                if (item->strViewReader.tryMakeBytesAvailable()) {
-                    if (item->strViewReader.peekByte() == '=') {
-                        item->strViewReader.advanceByte();
+                item->vins.advanceByte();
+                if (item->vins.tryMakeBytesAvailable()) {
+                    if (item->vins.peekByte() == '=') {
+                        item->vins.advanceByte();
                         token.type = Token::NotEqual;
                         goto gotToken;
                     }
@@ -778,35 +778,35 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
 
             case '\'':
             case '"': {
-                LinearLocation beginStringLoc = getLinearLocation(pp, item->strViewReader.curByte);
-                char c = item->strViewReader.peekByte();
-                item->strViewReader.advanceByte();
-                if (!readStringLiteral(&item->strViewReader, pp, c, beginStringLoc))
+                LinearLocation beginStringLoc = getLinearLocation(pp, item->vins.curByte);
+                char c = item->vins.peekByte();
+                item->vins.advanceByte();
+                if (!readStringLiteral(&item->vins, pp, c, beginStringLoc))
                     break;
                 token.type = Token::StringLiteral;
                 goto gotToken;
             }
 
             default: {
-                LinearLocation beginTokenLoc = getLinearLocation(pp, item->strViewReader.curByte);
-                token.type = readIdentifierOrLiteral(&item->strViewReader, pp, beginTokenLoc);
+                LinearLocation beginTokenLoc = getLinearLocation(pp, item->vins.curByte);
+                token.type = readIdentifierOrLiteral(&item->vins, pp, beginTokenLoc);
                 if (token.type != Token::Identifier) {
                     if (token.type == Token::Invalid)
                         break;
                     goto gotToken;
                 }
 
-                token.identifier = item->strViewReader.getViewFrom(savePoint);
+                token.identifier = item->vins.getViewFrom(savePoint);
                 PLY_ASSERT(token.identifier);
                 auto cursor = pp->macros.find(token.identifier);
                 if (cursor.wasFound()) {
                     token.type = Token::Macro;
-                    token.identifier = item->strViewReader.getViewFrom(savePoint);
+                    token.identifier = item->vins.getViewFrom(savePoint);
 
                     // This is a macro expansion
                     LinearLocation linearLocAtMacro =
                         pp->linearLocAtEndOfStackTop -
-                        safeDemote<LinearLocation>(item->strViewReader.endByte -
+                        safeDemote<LinearLocation>(item->vins.endByte -
                                                    token.identifier.bytes);
                     PPVisitedFiles* vf = pp->visitedFiles;
 
@@ -815,11 +815,11 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
                     pp->macroArgs.clear();
                     if (exp.takesArgs) {
                         // This macro expects arguments
-                        auto savePoint = item->strViewReader.savePoint();
-                        pp->macroArgs = readMacroArguments(pp, &item->strViewReader);
+                        auto savePoint = item->vins.savePoint();
+                        pp->macroArgs = readMacroArguments(pp, &item->vins);
                         if (!pp->macroArgs) {
                             // No arguments were provided, so just return a plain token
-                            item->strViewReader.restore(savePoint);
+                            item->vins.restore(savePoint);
                             token.type = Token::Identifier;
                             goto gotToken;
                         }
@@ -838,9 +838,9 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
 
                     item = &pp->stack.append();
                     item->includeChainIdx = includeChainIdx;
-                    item->strViewReader = StringViewReader{vf->getContents(includeChainIdx)};
+                    item->vins = ViewInStream{vf->getContents(includeChainIdx)};
                     pp->linearLocAtEndOfStackTop =
-                        linearLocAtMacro + item->strViewReader.numBytesAvailable();
+                        linearLocAtMacro + item->vins.numBytesAvailable();
 
                     // Add new locationMap range
                     PPVisitedFiles::LocationMapTraits::Item locMapItem;
@@ -859,7 +859,7 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
         continue;
 
     gotToken:
-        token.identifier = item->strViewReader.getViewFrom(savePoint);
+        token.identifier = item->vins.getViewFrom(savePoint);
         PLY_ASSERT(token.type != Token::Invalid);
         return token;
     }

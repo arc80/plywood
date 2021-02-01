@@ -26,7 +26,7 @@ medium-to-large quantities of data (say, several KB) at a time in order to minim
 overhead.
 
 If reading small amounts of data (say, a few bytes) at a time -- for example, to parse text or
-binary formats -- it's better to work with `InStream` or `StringReader` instead.
+binary formats -- it's better to work with `InStream` instead.
 */
 struct InPipe {
     // FIXME: Make these virtual?

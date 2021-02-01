@@ -182,8 +182,8 @@ struct StringView {
         StringView{""}.to<u32>();       // returns 0
         StringView{""}.to<s32>(-1);     // returns -1
 
-    This function uses `StringViewReader` internally. If you need to distinguish between a
-    successful parse and an unsuccessful one, create and use a `StringViewReader` object directly.
+    This function uses `ViewInStream` internally. If you need to distinguish between a successful
+    parse and an unsuccessful one, create and use a `ViewInStream` object directly.
     */
     template <typename T>
     PLY_NO_INLINE T to(const T& defaultValue = subst::createDefault<T>()) const;

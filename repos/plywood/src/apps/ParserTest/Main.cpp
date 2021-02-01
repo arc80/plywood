@@ -25,10 +25,10 @@ void runTest(StringView testPath) {
     String testFileContents = FileSystem::native()->loadTextAutodetect(testPath).first;
 
     // Find the line with five dashes
-    StringViewReader strViewReader{testFileContents};
+    ViewInStream vins{testFileContents};
     const char* dashedLine = nullptr;
     for (;;) {
-        StringView line = strViewReader.readView<fmt::Line>();
+        StringView line = vins.readView<fmt::Line>();
         if (line.isEmpty())
             break;
         if (line.startsWith("-----")) {
@@ -38,7 +38,7 @@ void runTest(StringView testPath) {
     }
     if (!dashedLine) {
         // No dashed line. Consider the whole file source code:
-        dashedLine = (const char*) strViewReader.curByte;
+        dashedLine = (const char*) vins.curByte;
     }
 
     StringView sourceCode = StringView::fromRange(testFileContents.bytes, dashedLine);

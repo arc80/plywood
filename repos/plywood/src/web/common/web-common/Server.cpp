@@ -107,7 +107,7 @@ void serverThreadEntry(const ThreadParams& params) {
         // down the server.
         Array<String> lines;
         for (;;) {
-            String line = ins.asStringReader()->readString<fmt::Line>();
+            String line = ins.readString<fmt::Line>();
             if (!line && ins.atEOF()) {
                 if (!lines.isEmpty()) {
                     // Ill-formed request
