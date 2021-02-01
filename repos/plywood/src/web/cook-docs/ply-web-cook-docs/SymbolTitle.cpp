@@ -9,30 +9,30 @@
 namespace ply {
 namespace docs {
 
-void writeParseTitleError(StringWriter* sw, ParseTitleError err, StringView arg) {
+void writeParseTitleError(OutStream* outs, ParseTitleError err, StringView arg) {
     switch (err) {
         case ParseTitleError::ExpectedSpanTypeAfterOpenSquare: {
-            *sw << "expected span type immediately following '['\n";
+            *outs << "expected span type immediately following '['\n";
             break;
         }
         case ParseTitleError::UnclosedSpan: {
-            *sw << "unclosed '['\n";
+            *outs << "unclosed '['\n";
             break;
         }
         case ParseTitleError::UnrecognizedSpanType: {
-            sw->format("unrecognized span type '{}'\n", arg);
+            outs->format("unrecognized span type '{}'\n", arg);
             break;
         }
         case ParseTitleError::ExpectedSpaceAfterSpanType: {
-            sw->format("expected a single space immedately following '{}'", arg);
+            outs->format("expected a single space immedately following '{}'", arg);
             break;
         }
         case ParseTitleError::UnexpectedCloseSquare: {
-            *sw << "unexpected ']'\n";
+            *outs << "unexpected ']'\n";
             break;
         }
         default: {
-            *sw << "error message not implemented!\n";
+            *outs << "error message not implemented!\n";
             break;
         }
     }
@@ -42,32 +42,32 @@ Array<TitleSpan> parseTitle(
     StringView srcText,
     const LambdaView<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback) {
     Array<TitleSpan> result;
-    StringViewReader svr{srcText};
-    StringWriter sw;
+    ViewInStream vins{srcText};
+    MemOutStream mout;
     TitleSpan::Type inSpanType = TitleSpan::Normal;
     const char* spanStart = srcText.bytes;
 
     auto flushSpan = [&] {
-        String text = sw.moveToString();
+        String text = mout.moveToString();
         if (text) {
             result.append({inSpanType, std::move(text)});
         }
-        sw = {}; // Begin new StringWriter
+        mout = {}; // Begin new MemOutStream
     };
 
-    while (svr.numBytesAvailable() > 0) {
-        char c = svr.readByte();
+    while (vins.numBytesAvailable() > 0) {
+        char c = vins.readByte();
         if (c == '\\') {
-            if (svr.numBytesAvailable() > 0) {
-                sw << (char) svr.readByte();
+            if (vins.numBytesAvailable() > 0) {
+                mout << (char) vins.readByte();
             }
         } else if (c == '[') {
             if (inSpanType != TitleSpan::Normal) {
                 errorCallback(ParseTitleError::UnclosedSpan, {}, spanStart);
             }
             flushSpan();
-            spanStart = (const char*) svr.curByte - 1;
-            StringView spanType = svr.readView<fmt::Identifier>();
+            spanStart = (const char*) vins.curByte - 1;
+            StringView spanType = vins.readView<fmt::Identifier>();
             if (!spanType) {
                 errorCallback(ParseTitleError::ExpectedSpanTypeAfterOpenSquare, {}, spanStart);
             } else if (spanType == "strong") {
@@ -80,22 +80,22 @@ Array<TitleSpan> parseTitle(
                 errorCallback(ParseTitleError::UnrecognizedSpanType, spanType, spanType.bytes);
                 inSpanType = TitleSpan::Strong;
             }
-            if (svr.numBytesAvailable() == 0 || svr.peekByte() != ' ') {
+            if (vins.numBytesAvailable() == 0 || vins.peekByte() != ' ') {
                 errorCallback(ParseTitleError::ExpectedSpaceAfterSpanType, spanType,
-                              (const char*) svr.curByte);
+                              (const char*) vins.curByte);
             } else {
-                svr.advanceByte();
+                vins.advanceByte();
             }
         } else if (c == ']') {
             if (inSpanType == TitleSpan::Normal) {
                 errorCallback(ParseTitleError::UnexpectedCloseSquare, {},
-                              (const char*) svr.curByte - 1);
+                              (const char*) vins.curByte - 1);
             } else {
                 flushSpan();
                 inSpanType = TitleSpan::Normal;
             }
         } else {
-            sw << c;
+            mout << c;
         }
     }
 
@@ -107,7 +107,7 @@ Array<TitleSpan> parseTitle(
     return result;
 }
 
-void writeAltMemberTitle(StringWriter& htmlWriter, ArrayView<const TitleSpan> spans,
+void writeAltMemberTitle(OutStream& htmlWriter, ArrayView<const TitleSpan> spans,
                          const LookupContext& lookupCtx,
                          String (*getLinkDestination)(StringView, const LookupContext&)) {
     for (const TitleSpan& span : spans) {

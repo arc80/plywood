@@ -112,18 +112,18 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
                                                     result->folder->buildFolderName);
             }
         } else {
-            StringWriter sw;
-            sw.format("Can't use --auto because target '{}' was found in {} build folders: ",
+            MemOutStream mout;
+            mout.format("Can't use --auto because target '{}' was found in {} build folders: ",
                       this->targetName, matches.numItems());
             for (u32 i = 0; i < matches.numItems(); i++) {
-                sw.format("'{}'", matches[i].first->buildFolderName);
+                mout.format("'{}'", matches[i].first->buildFolderName);
                 if (i + 2 < matches.numItems()) {
-                    sw << ", ";
+                    mout << ", ";
                 } else if (i + 2 == matches.numItems()) {
-                    sw << " and ";
+                    mout << " and ";
                 }
             }
-            fatalError(sw.moveToString());
+            fatalError(mout.moveToString());
         }
     } else {
         if (!result->folder) {

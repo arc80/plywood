@@ -91,74 +91,74 @@ String ExpandedFileLocation::toString() const {
                           this->fileLoc.columnNumber);
 }
 
-void ParseError::writeMessage(StringWriter* sw, const PPVisitedFiles* visitedFiles) const {
-    sw->format("{}: error: ",
+void ParseError::writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const {
+    outs->format("{}: error: ",
                expandFileLocation(visitedFiles, this->errorToken.linearLoc).toString());
     switch (this->type) {
         case ParseError::UnexpectedEOF: {
             PLY_ASSERT(this->errorToken.type == Token::EndOfFile);
-            *sw << "unexpected end-of-file\n";
+            *outs << "unexpected end-of-file\n";
             break;
         }
         case ParseError::Expected: {
-            sw->format("expected {} before '{}'\n", getExpectedTokenDesc(this->expected),
+            outs->format("expected {} before '{}'\n", getExpectedTokenDesc(this->expected),
                        this->errorToken.toString());
             break;
         }
         case ParseError::UnclosedToken: {
-            sw->format("expected '{}'\n",
+            outs->format("expected '{}'\n",
                        getPunctuationString((Token::Type)((u32) this->precedingToken.type + 1)));
             PLY_ASSERT(this->precedingToken.isValid());
-            sw->format("{}: note: to match this '{}'\n",
+            outs->format("{}: note: to match this '{}'\n",
                        expandFileLocation(visitedFiles, this->precedingToken.linearLoc).toString(),
                        this->precedingToken.toString());
             break;
         }
         case ParseError::MissingCommaAfterEnumerator: {
-            *sw << "missing ',' between enumerators\n";
+            *outs << "missing ',' between enumerators\n";
             break;
         }
         case ParseError::QualifierNotAllowedHere: {
-            sw->format("'{}' qualifier not allowed here\n", this->errorToken.identifier);
+            outs->format("'{}' qualifier not allowed here\n", this->errorToken.identifier);
             break;
         }
         case ParseError::TypeIDCannotHaveName: {
             // FIXME: It would be nice to somehow store the entire qualified-id in the error
             // somehow, and write it in the error message. (Currently, we only store the first
             // token.)
-            *sw << "type-id cannot have a name\n";
+            *outs << "type-id cannot have a name\n";
             break;
         }
         case ParseError::NestedNameNotAllowedHere: {
             // FIXME: It would be nice to somehow store the entire nested-name-prefix in the error
             // somehow, and write it in the error message. (Currently, we only store the first
             // token.)
-            sw->format("'{}' cannot have a nested name prefix\n", this->errorToken.toString());
+            outs->format("'{}' cannot have a nested name prefix\n", this->errorToken.toString());
             break;
         }
         case ParseError::TooManyTypeSpecifiers: {
-            *sw << "too many type specifiers\n";
+            *outs << "too many type specifiers\n";
             break;
         }
         case ParseError::ExpectedFunctionBodyAfterMemberInitList: {
-            *sw << "expected function body after member initializer list\n";
+            *outs << "expected function body after member initializer list\n";
             break;
         }
         case ParseError::CantMixFunctionDefAndDecl: {
-            *sw << "can't mix function definitions with other declarations\n";
+            *outs << "can't mix function definitions with other declarations\n";
             break;
         }
         case ParseError::MissingDeclaration: {
             // FIXME: This should only be a warning, but we don't have a warning system yet
-            *sw << "declaration does not declare anything\n";
+            *outs << "declaration does not declare anything\n";
             break;
         }
         case ParseError::DuplicateVirtSpecifier: {
-            sw->format("'{}' used more than once\n", this->errorToken.identifier);
+            outs->format("'{}' used more than once\n", this->errorToken.identifier);
             break;
         }
         default: {
-            *sw << "error message not implemented!\n";
+            *outs << "error message not implemented!\n";
             break;
         }
     }

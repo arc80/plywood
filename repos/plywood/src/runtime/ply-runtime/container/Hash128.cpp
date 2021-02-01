@@ -316,7 +316,7 @@ PLY_NO_INLINE Hash128::Hash128() {
     this->state.Init(0, 0);
 }
 
-PLY_NO_INLINE void Hash128::append(ConstBufferView view) {
+PLY_NO_INLINE void Hash128::append(StringView view) {
     this->state.Update(view.bytes, view.numBytes);
 }
 
@@ -326,7 +326,7 @@ PLY_NO_INLINE u128 Hash128::get() const {
     return r;
 }
 
-PLY_NO_INLINE u128 Hash128::compute(ConstBufferView view) {
+PLY_NO_INLINE u128 Hash128::compute(StringView view) {
     Hash128 hasher;
     hasher.append(view);
     return hasher.get();

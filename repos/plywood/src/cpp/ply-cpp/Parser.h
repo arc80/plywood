@@ -124,7 +124,7 @@ struct ParseError : BaseError {
                           Token precedingToken = {})
         : type{type}, errorToken{errorToken}, expected{expected}, precedingToken{precedingToken} {
     }
-    virtual void writeMessage(StringWriter* sw, const PPVisitedFiles* visitedFiles) const override;
+    virtual void writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const override;
 };
 PLY_REFLECT_ENUM(, ParseError::Type)
 
@@ -198,7 +198,7 @@ Tuple<Token, Token> parseExpression(Parser* parser, bool optional = false);
 // Misc
 void parseEnumBody(Parser* parser, grammar::DeclSpecifier::Enum_* en);
 
-void dumpParseTree(StringWriter* sw, TypedPtr any, u32 indent = 0,
+void dumpParseTree(OutStream* outs, TypedPtr any, u32 indent = 0,
                    const PPVisitedFiles* visitedFiles = nullptr);
 bool closeScope(Parser* parser, Token* outCloseToken, const Token& openToken);
 

@@ -22,7 +22,7 @@ FileLocationMap FileLocationMap::fromView(StringView src) {
         if (src.numBytes == 0)
             break;
 
-        DecodeResult decoded = UTF8::decodePoint(src.bufferView());
+        DecodeResult decoded = UTF8::decodePoint(src);
         u32 nextOfs = ofs + decoded.numBytes;
         if (nextOfs > nextChunkOfs) {
             result.table.append({lineNumber, nextChunkOfs - lineStartOfs, columnNumber, ofs - 256});
@@ -64,7 +64,7 @@ FileLocation FileLocationMap::getFileLocation(u32 offset) const {
         }
 
         // FIXME: Unify with similar code in previous function
-        DecodeResult decoded = UTF8::decodePoint(src.bufferView());
+        DecodeResult decoded = UTF8::decodePoint(src);
         src.offsetHead(decoded.numBytes);
 
         if (decoded.point == '\n') {

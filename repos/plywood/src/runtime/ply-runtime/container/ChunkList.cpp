@@ -16,7 +16,7 @@ PLY_NO_INLINE Reference<ChunkListNode> ChunkListNode::allocate(u64 fileOffset, u
     u32 alignment = ChunkListNode::DefaultAlignment;
     u32 alignedNumBytes = alignPowerOf2(numBytes, alignment);
     u32 allocSize = alignedNumBytes + ChunkListNode::getAlignedSize();
-    u8* bytes = (u8*) PLY_HEAP.allocAligned(allocSize, alignment);
+    char* bytes = (char*) PLY_HEAP.allocAligned(allocSize, alignment);
     ChunkListNode* chunk = (ChunkListNode*) (bytes + alignedNumBytes);
     new (chunk) ChunkListNode;
     chunk->fileOffset = fileOffset;
@@ -54,17 +54,17 @@ PLY_NO_INLINE void ChunkListNode::decRef() {
     }
 }
 
-PLY_NO_INLINE void ChunkCursor::iterateOverViews(LambdaView<void(ConstBufferView)> callback,
+PLY_NO_INLINE void ChunkCursor::iterateOverViews(LambdaView<void(StringView)> callback,
                                                  const ChunkCursor& end) const {
     PLY_ASSERT(this->curByte);
     if (this->chunk == end.chunk) {
         PLY_ASSERT(this->curByte <= end.curByte);
         PLY_ASSERT(end.curByte);
-        callback(ConstBufferView::fromRange(this->curByte, end.curByte));
+        callback(StringView::fromRange(this->curByte, end.curByte));
     } else {
         PLY_ASSERT(this->chunk->viewUsedBytes().contains(this->curByte));
         callback(
-            ConstBufferView::fromRange(this->curByte, this->chunk->bytes + this->chunk->writePos));
+            StringView::fromRange(this->curByte, this->chunk->bytes + this->chunk->writePos));
         const ChunkListNode* chunk = this->chunk->next;
         while (chunk != end.chunk) {
             callback(chunk->viewUsedBytes());
@@ -73,20 +73,20 @@ PLY_NO_INLINE void ChunkCursor::iterateOverViews(LambdaView<void(ConstBufferView
         }
         if (end.chunk) {
             PLY_ASSERT(end.chunk->viewUsedBytes().contains(end.curByte));
-            callback(ConstBufferView::fromRange(end.chunk->bytes, end.curByte));
+            callback(StringView::fromRange(end.chunk->bytes, end.curByte));
         }
     }
 }
 
-PLY_NO_INLINE Buffer ChunkCursor::toBuffer(ChunkCursor&& start, const ChunkCursor& end) {
+PLY_NO_INLINE String ChunkCursor::toString(ChunkCursor&& start, const ChunkCursor& end) {
     PLY_ASSERT(start.curByte);
 
     if (!start.chunk->next && start.chunk->refCount == 1 && start.chunk->bytes == start.curByte) {
         // Optimization: When there is only one chunk and only one reference to the chunk, we can
         // reuse its memory, and no memcpy is performed:
         u32 numBytes = start.chunk->writePos;
-        u8* bytes = (u8*) PLY_HEAP.realloc(start.curByte, numBytes);
-        Buffer result = Buffer::adopt(bytes, numBytes);
+        char* bytes = (char*) PLY_HEAP.realloc(start.curByte, numBytes);
+        String result = String::adopt(bytes, numBytes);
         start.chunk.release();
         start.curByte = nullptr;
         return result;
@@ -94,16 +94,16 @@ PLY_NO_INLINE Buffer ChunkCursor::toBuffer(ChunkCursor&& start, const ChunkCurso
 
     u32 numBytes = 0;
     start.iterateOverViews(
-        [&](ConstBufferView view) {
+        [&](StringView view) {
             u32 sum = numBytes + view.numBytes;
             PLY_ASSERT(sum >= numBytes); // overflow check
             numBytes = sum;
         },
         end);
-    Buffer result = Buffer::allocate(numBytes);
+    String result = String::allocate(numBytes);
     u32 offset = 0;
     start.iterateOverViews(
-        [&](ConstBufferView view) {
+        [&](StringView view) {
             memcpy(result.bytes + offset, view.bytes, view.numBytes);
             offset += view.numBytes;
         },
@@ -113,7 +113,7 @@ PLY_NO_INLINE Buffer ChunkCursor::toBuffer(ChunkCursor&& start, const ChunkCurso
 
 PLY_NO_INLINE void ChunkCursor::writeToStream(OutStream* outs, const ChunkCursor& end) const {
     this->iterateOverViews(
-        [&](ConstBufferView view) { //
+        [&](StringView view) { //
             outs->write(view);
         },
         end);

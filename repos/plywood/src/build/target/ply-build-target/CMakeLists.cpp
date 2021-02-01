@@ -13,7 +13,7 @@ namespace build {
 
 #include "ply-build-target/NativeToolchain.inl"
 
-void writeCMakeLists(StringWriter* sw, CMakeBuildFolder* cbf) {
+void writeCMakeLists(OutStream* outs, CMakeBuildFolder* cbf) {
     PLY_ASSERT(NativePath::isNormalized(cbf->absPath));
     PLY_ASSERT(NativePath::endsWithSep(cbf->absPath));
 
@@ -40,19 +40,19 @@ void writeCMakeLists(StringWriter* sw, CMakeBuildFolder* cbf) {
 
     // CMakeLists 3.8 supports generator expressions such as "$<CONFIG>", which is used in
     // COMPILE_FLAGS source property on Win32
-    *sw << "cmake_minimum_required(VERSION 3.8)\n";
-    *sw << "set(CMAKE_CONFIGURATION_TYPES \"Debug;RelWithAsserts;RelWithDebInfo\" CACHE "
+    *outs << "cmake_minimum_required(VERSION 3.8)\n";
+    *outs << "set(CMAKE_CONFIGURATION_TYPES \"Debug;RelWithAsserts;RelWithDebInfo\" CACHE "
            "INTERNAL "
            "\"Build configs\")\n";
-    sw->format("project({})\n", cbf->solutionName);
+    outs->format("project({})\n", cbf->solutionName);
     if (cbf->forBootstrap) {
-        *sw << R"(set(WORKSPACE_FOLDER "<<<WORKSPACE_FOLDER>>>")
+        *outs << R"(set(WORKSPACE_FOLDER "<<<WORKSPACE_FOLDER>>>")
 set(SRC_FOLDER "<<<SRC_FOLDER>>>")
 set(BUILD_FOLDER "<<<BUILD_FOLDER>>>")
 include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
 )";
     } else {
-        sw->format("include(\"{}\")\n",
+        outs->format("include(\"{}\")\n",
                    fmt::EscapedString(PosixPath::from<NativePath>(NativePath::join(
                        PLY_WORKSPACE_FOLDER, "repos/plywood/scripts/Helper.cmake"))));
     }
@@ -68,7 +68,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
         */
 
         StringView uniqueTargetName = buildTarget->name;
-        sw->format("\n# {}\n", uniqueTargetName);
+        outs->format("\n# {}\n", uniqueTargetName);
 
         // Define a CMake variable for each group of source files (usually, there's just one
         // group)
@@ -82,23 +82,23 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
         for (const BuildTarget::SourceFilesPair& sfPair : sourceFiles) {
             String varName = uniqueTargetName.upperAsc() + "_SOURCES";
             sourceVarNames.append(varName);
-            sw->format("SetSourceFolders({} \"{}\"\n", varName,
+            outs->format("SetSourceFolders({} \"{}\"\n", varName,
                        fmt::EscapedString(filterPath(sfPair.root)));
             for (StringView relPath : sfPair.relFiles) {
-                sw->format("    \"{}\"\n", fmt::EscapedString(filterPath(relPath)));
+                outs->format("    \"{}\"\n", fmt::EscapedString(filterPath(relPath)));
             }
-            *sw << ")\n";
+            *outs << ")\n";
         }
 
         // Add this target
         BuildTargetType targetType = buildTarget->targetType;
         switch (targetType) {
             case BuildTargetType::HeaderOnly: {
-                sw->format("add_custom_target({} SOURCES\n", uniqueTargetName);
+                outs->format("add_custom_target({} SOURCES\n", uniqueTargetName);
                 break;
             }
             case BuildTargetType::Lib: {
-                sw->format("add_library({}\n", uniqueTargetName);
+                outs->format("add_library({}\n", uniqueTargetName);
                 break;
             }
             case BuildTargetType::ObjectLib: {
@@ -107,39 +107,39 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
                 // instead of .lib files. If we use .lib files instead, some DLL exports may
                 // get dropped if there are no references to the .obj where the export is
                 // defined:
-                sw->format("add_library({} OBJECT\n", uniqueTargetName);
+                outs->format("add_library({} OBJECT\n", uniqueTargetName);
                 break;
             }
             case BuildTargetType::DLL: {
-                sw->format("add_library({} SHARED\n", uniqueTargetName);
+                outs->format("add_library({} SHARED\n", uniqueTargetName);
                 break;
             }
             case BuildTargetType::EXE: {
-                sw->format("add_executable({}\n", uniqueTargetName);
+                outs->format("add_executable({}\n", uniqueTargetName);
                 break;
             }
         }
         for (StringView varName : sourceVarNames) {
-            sw->format("    ${{{}}}\n", varName);
+            outs->format("    ${{{}}}\n", varName);
         }
         if (targetType == BuildTargetType::DLL || targetType == BuildTargetType::EXE) {
             // Use TARGET_OBJECTS generator expression to support OBJECT libraries
             for (s32 i = dep->libs.numItems() - 1; i >= 0; i--) {
                 StringView lib = dep->libs[i];
                 if (lib.startsWith("$<TARGET_OBJECTS")) {
-                    sw->format("    {}\n", lib);
+                    outs->format("    {}\n", lib);
                 }
             }
         }
-        *sw << ")\n";
+        *outs << ")\n";
         if (targetType == BuildTargetType::EXE) {
-            sw->format("set_property(TARGET {} PROPERTY ENABLE_EXPORTS TRUE)\n", uniqueTargetName);
+            outs->format("set_property(TARGET {} PROPERTY ENABLE_EXPORTS TRUE)\n", uniqueTargetName);
         }
 
         // Precompiled headers
         if (!buildTarget->precompiledHeader.pchInclude.isEmpty()) {
             for (StringView varName : sourceVarNames) {
-                sw->format("SetPrecompiledHeader({} {}\n    \"{}\"\n    \"{}\"\n    \"{}\"\n)\n",
+                outs->format("SetPrecompiledHeader({} {}\n    \"{}\"\n    \"{}\"\n    \"{}\"\n)\n",
                            uniqueTargetName, varName,
                            filterPath(buildTarget->precompiledHeader.generatorSourcePath),
                            buildTarget->precompiledHeader.pchInclude,
@@ -151,30 +151,30 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
         if (targetType != BuildTargetType::HeaderOnly) {
             bool enableExceptions =
                 (findItem(buildTarget->privateAbstractFlags.view(), StringView{"exceptions"}) >= 0);
-            sw->format("EnableCppExceptions({} {})\n", uniqueTargetName,
+            outs->format("EnableCppExceptions({} {})\n", uniqueTargetName,
                        enableExceptions ? "TRUE" : "FALSE");
         }
 
         // Include directories
         if (targetType != BuildTargetType::HeaderOnly) {
             // FIXME: Add ArrayView::reversed() iterator?
-            sw->format("target_include_directories({} PRIVATE\n", uniqueTargetName);
+            outs->format("target_include_directories({} PRIVATE\n", uniqueTargetName);
             for (s32 i = buildTarget->privateIncludeDirs.numItems() - 1; i >= 0; i--) {
-                sw->format("    \"{}\"\n", filterPath(buildTarget->privateIncludeDirs[i]));
+                outs->format("    \"{}\"\n", filterPath(buildTarget->privateIncludeDirs[i]));
             }
-            *sw << ")\n";
+            *outs << ")\n";
         }
 
         // Defines
         if (targetType != BuildTargetType::HeaderOnly &&
             buildTarget->privateDefines.numItems() > 0) {
-            sw->format("target_compile_definitions({} PRIVATE\n", uniqueTargetName);
+            outs->format("target_compile_definitions({} PRIVATE\n", uniqueTargetName);
             for (const PreprocessorDefinition& define : buildTarget->privateDefines) {
                 PLY_ASSERT(define.key.findByte('=') < 0);
                 PLY_ASSERT(define.value.findByte('=') < 0);
-                sw->format("    \"{}={}\"\n", define.key, define.value);
+                outs->format("    \"{}={}\"\n", define.key, define.value);
             }
-            *sw << ")\n";
+            *outs << ")\n";
         }
 
         if (targetType == BuildTargetType::DLL || targetType == BuildTargetType::EXE) {
@@ -183,45 +183,45 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
             for (StringView fw : dep->frameworks) {
                 String fwVar = fw.upperAsc() + "_FRAMEWORK";
                 frameworkVars.append(fwVar);
-                sw->format("find_library({} {})\n", fwVar, fw);
+                outs->format("find_library({} {})\n", fwVar, fw);
             }
 
             // Link libraries
             // List in reserve order so that dependencies follow dependents
             if (dep->libs.numItems() > 0 || frameworkVars.numItems() > 0) {
-                sw->format("target_link_libraries({} PRIVATE\n", uniqueTargetName);
+                outs->format("target_link_libraries({} PRIVATE\n", uniqueTargetName);
                 for (s32 i = dep->libs.numItems() - 1; i >= 0; i--) {
                     StringView lib = dep->libs[i];
                     if (!lib.startsWith("$<TARGET_OBJECTS")) {
                         if (lib.startsWith("${")) {
-                            sw->format("    {}\n", lib);
+                            outs->format("    {}\n", lib);
                         } else {
-                            sw->format("    \"{}\"\n", filterPath(lib));
+                            outs->format("    \"{}\"\n", filterPath(lib));
                         }
                     }
                 }
                 for (StringView fwVar : frameworkVars) {
-                    sw->format("    ${{{}}}\n", fwVar);
+                    outs->format("    ${{{}}}\n", fwVar);
                 }
-                *sw << ")\n";
+                *outs << ")\n";
             }
 
             // FIXME: SafeSEH
 
             // Copy DLLs
             if (dep->dlls.numItems() > 0) {
-                sw->format("AddDLLCopyStep({}\n", uniqueTargetName);
+                outs->format("AddDLLCopyStep({}\n", uniqueTargetName);
                 for (s32 i = dep->dlls.numItems() - 1; i >= 0; i--) {
-                    sw->format("    \"{}\"\n", PosixPath::from<NativePath>(dep->dlls[i]));
+                    outs->format("    \"{}\"\n", PosixPath::from<NativePath>(dep->dlls[i]));
                 }
-                *sw << ")\n";
+                *outs << ")\n";
             }
 
             // In bootstrap_CMakeLists.txt, add a post-build command that copies PlyTool to the
             // workspace root.
             if (cbf->forBootstrap && buildTarget->name == "plytool") {
-                *sw << "add_custom_command(TARGET plytool POST_BUILD COMMAND\n";
-                *sw << "   ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:plytool> "
+                *outs << "add_custom_command(TARGET plytool POST_BUILD COMMAND\n";
+                *outs << "   ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:plytool> "
                        "\"${WORKSPACE_FOLDER}\")\n";
             }
         }

@@ -7,9 +7,9 @@ Plywood encourages the use of UTF-8-encoded text and is generally forgiving of e
 
 Plywood provides the `TextFormat` class for compatibility with other encodings. The `createImporter()` and `createExporter()` functions convert UTF-8-encoded text to and from other formats such as UTF-16, ISO 8859-1 or Windows-1252, allowing you to work exclusively with UTF-8 at runtime. There's also a `TextFormat::autodetect()` function to detect source encodings at load time.
 
-Plywood's `String` and `StringView` classes are generally meant to hold UTF-8-encoded text, but there's nothing to prevent you from storing other kinds of data in them as well. The exact encoding requirements depend on the operations performed on the string. For example, the `findByte()` and `trim()` functions will work with any 8-bit text encoding, including UTF-8, ISO 8859-1, Windows-1252 and ASCII. On the other hand, `reversedUTF8()` does expect UTF-8.
+Plywood's `String` and `StringView` classes often contain UTF-8-encoded text, but there's nothing to prevent you from storing other kinds of data in them as well. The exact encoding requirements depend on the operations performed on the string. For example, the `findByte()` and `trim()` functions will work with any 8-bit text encoding, including UTF-8, ISO 8859-1, Windows-1252 and ASCII. On the other hand, `reversedUTF8()` does expect UTF-8.
 
-The `StringReader` and `StringWriter` classes, which do things like read alphanumeric identifiers and convert numbers to text, will generally work with any 8-bit encoding that is compatible with ASCII, including UTF-8, ISO 8859-1 and Windows-1252.
+The `StringReader` and `OutStream` classes, which do things like read alphanumeric identifiers and convert numbers to text, will generally work with any 8-bit encoding that is compatible with ASCII, including UTF-8, ISO 8859-1 and Windows-1252.
 
 At the lowest level, Plywood provides functions to encode and decode text one character (code point) at time through a variety of encodings. These functions reside in `TextEncoding.h` and include `UTF8::encodePoint()` and `UTF8::decodePoint()`. A decoded character is always represented as a Unicode point stored in a 32-bit integer. These functions are tolerant of encoding errors as described in the following section.
 

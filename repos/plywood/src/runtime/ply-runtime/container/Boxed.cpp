@@ -7,13 +7,12 @@
 
 namespace ply {
 
-Buffer Boxed<Buffer>::read(NativeEndianReader& rd) {
+String Boxed<String>::read(NativeEndianReader& rd) {
     u32 numBytes = rd.read<u32>();
     if (rd.ins->atEOF())
         return {};
-    Buffer bin;
-    bin.resize(numBytes);
-    rd.ins->read(bin);
+    String bin = String::allocate(numBytes);
+    rd.ins->read({bin.bytes, bin.numBytes});
     return bin;
 }
 

@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/Buffer.h>
+#include <ply-runtime/string/String.h>
 #include <string>
 
 namespace ply {
@@ -19,8 +19,8 @@ struct WStringView {
     PLY_INLINE WStringView() = default;
     PLY_INLINE WStringView(const char16_t* units, u32 numUnits) : units{units}, numUnits{numUnits} {
     }
-    PLY_INLINE ConstBufferView bufferView() const {
-        return {(u8*) this->units, this->numUnits << 1};
+    PLY_INLINE StringView stringView() const {
+        return {(const char*) this->units, this->numUnits << 1};
     }
 #if PLY_TARGET_WIN32
     WStringView(LPCWSTR units)
@@ -54,7 +54,7 @@ struct WString {
         this->~WString();
         new (this) WString{std::move(other)};
     }
-    PLY_INLINE static WString moveFromBuffer(Buffer&& other) {
+    PLY_INLINE static WString moveFromString(String&& other) {
         PLY_ASSERT(isAlignedPowerOf2(uptr(other.bytes), 2));
         PLY_ASSERT(isAlignedPowerOf2(other.numBytes, 2));
         WString result;

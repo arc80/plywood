@@ -116,7 +116,7 @@ PLY_NO_INLINE Owned<OutStream> FileSystem::openStreamForWrite(StringView path) {
     return new OutStream{std::move(outPipe)};
 }
 
-PLY_NO_INLINE Owned<StringReader> FileSystem::openTextForRead(StringView path,
+PLY_NO_INLINE Owned<InStream> FileSystem::openTextForRead(StringView path,
                                                               const TextFormat& textFormat) {
     Owned<InStream> ins = this->openStreamForRead(path);
     if (!ins)
@@ -124,7 +124,7 @@ PLY_NO_INLINE Owned<StringReader> FileSystem::openTextForRead(StringView path,
     return textFormat.createImporter(std::move(ins));
 }
 
-PLY_DLL_ENTRY Tuple<Owned<StringReader>, TextFormat>
+PLY_DLL_ENTRY Tuple<Owned<InStream>, TextFormat>
 FileSystem::openTextForReadAutodetect(StringView path) {
     Owned<InStream> ins = this->openStreamForRead(path);
     if (!ins)
@@ -133,29 +133,29 @@ FileSystem::openTextForReadAutodetect(StringView path) {
     return {textFormat.createImporter(std::move(ins)), textFormat};
 }
 
-PLY_NO_INLINE Buffer FileSystem::loadBinary(StringView path) {
-    Buffer result;
+PLY_NO_INLINE String FileSystem::loadBinary(StringView path) {
+    String result;
     Owned<InPipe> inPipe = this->openPipeForRead(path);
     if (inPipe) {
         u64 fileSize = inPipe->getFileSize();
         // Files >= 4GB cannot be loaded this way:
         result.resize(safeDemote<u32>(fileSize));
-        inPipe->read(result);
+        inPipe->read({result.bytes, result.numBytes});
     }
     return result;
 }
 
 PLY_NO_INLINE String FileSystem::loadText(StringView path, const TextFormat& textFormat) {
-    Owned<StringReader> sr = this->openTextForRead(path, textFormat);
+    Owned<InStream> ins = this->openTextForRead(path, textFormat);
     String contents;
-    if (sr) {
-        contents = sr->readRemainingContents();
+    if (ins) {
+        contents = ins->readRemainingContents();
     }
     return contents;
 }
 
 PLY_NO_INLINE Tuple<String, TextFormat> FileSystem::loadTextAutodetect(StringView path) {
-    Tuple<Owned<StringReader>, TextFormat> tuple = this->openTextForReadAutodetect(path);
+    Tuple<Owned<InStream>, TextFormat> tuple = this->openTextForReadAutodetect(path);
     String contents;
     if (tuple.first) {
         contents = tuple.first->readRemainingContents();
@@ -163,8 +163,8 @@ PLY_NO_INLINE Tuple<String, TextFormat> FileSystem::loadTextAutodetect(StringVie
     return {contents, tuple.second};
 }
 
-PLY_NO_INLINE Owned<StringWriter> FileSystem::openTextForWrite(StringView path,
-                                                               const TextFormat& textFormat) {
+PLY_NO_INLINE Owned<OutStream> FileSystem::openTextForWrite(StringView path,
+                                                            const TextFormat& textFormat) {
     Owned<OutStream> outs = this->openStreamForWrite(path);
     if (!outs)
         return nullptr;
@@ -172,15 +172,15 @@ PLY_NO_INLINE Owned<StringWriter> FileSystem::openTextForWrite(StringView path,
 }
 
 PLY_NO_INLINE FSResult FileSystem::makeDirsAndSaveBinaryIfDifferent(StringView path,
-                                                                    ConstBufferView binView) {
+                                                                    StringView view) {
     // FIXME: This could be optimized
     // We don't really need to load the existing file as a binary. We could read and compare it to
-    // binView incrementally.
+    // view incrementally.
 
     // Load existing contents
-    Buffer existingContents = this->loadBinary(path);
+    String existingContents = this->loadBinary(path);
     FSResult existingResult = this->lastResult();
-    if (existingResult == FSResult::OK && existingContents == binView) {
+    if (existingResult == FSResult::OK && existingContents == view) {
         return FileSystem::setLastResult(FSResult::Unchanged);
     }
     if (existingResult != FSResult::OK && existingResult != FSResult::NotFound) {
@@ -201,7 +201,7 @@ PLY_NO_INLINE FSResult FileSystem::makeDirsAndSaveBinaryIfDifferent(StringView p
     if (result != FSResult::OK) {
         return result;
     }
-    outPipe->write(binView);
+    outPipe->write(view);
     return result;
 }
 
@@ -209,14 +209,14 @@ PLY_NO_INLINE FSResult FileSystem::makeDirsAndSaveTextIfDifferent(StringView pat
                                                                   StringView strContents,
                                                                   const TextFormat& textFormat) {
     // FIXME: This could be optimized
-    // We don't really need to convert strContents to raw data as a Buffer. We could create an
+    // We don't really need to convert strContents to raw data as a String. We could create an
     // exporter and compare to the existing file incrementally.
 
     MemOutStream memOut;
-    Owned<StringWriter> sw = textFormat.createExporter(borrow(&memOut));
-    *sw << strContents;
-    sw.clear();
-    Buffer rawContents = memOut.moveToBuffer();
+    Owned<OutStream> outs = textFormat.createExporter(borrow(&memOut));
+    *outs << strContents;
+    outs.clear();
+    String rawContents = memOut.moveToString();
     return this->makeDirsAndSaveBinaryIfDifferent(path, rawContents);
 }
 

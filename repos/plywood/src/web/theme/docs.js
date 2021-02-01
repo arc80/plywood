@@ -240,10 +240,10 @@ function replaceLinks(root) {
             a.onclick = function(evt) {
                 var caretSpan = this.querySelector(".selectable.caret span");
                 if (caretSpan) {
-                    var sr = caretSpan.getBoundingClientRect();
+                    var ins = caretSpan.getBoundingClientRect();
                     var inflate = 8;
                     // Hardcoding the dimensions of li.caret span::before since there's no way to retrieve them from the DOM
-                    caretRect = {left: sr.left - 19 - inflate, top: sr.top + 1 - inflate, right: sr.left - 8 + inflate, bottom: sr.top + 12 + inflate};
+                    caretRect = {left: ins.left - 19 - inflate, top: ins.top + 1 - inflate, right: ins.left - 8 + inflate, bottom: ins.top + 12 + inflate};
                     if (rectContains(caretRect, evt.clientX, evt.clientY))
                         return false;
                 }

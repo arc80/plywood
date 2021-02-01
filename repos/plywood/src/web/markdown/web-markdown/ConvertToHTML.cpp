@@ -9,141 +9,141 @@
 namespace ply {
 namespace markdown {
 
-void convertToHTML(StringWriter* sw, const Node* node, const HTMLOptions& options) {
+void convertToHTML(OutStream* outs, const Node* node, const HTMLOptions& options) {
     switch (node->type) {
         case Node::Document: {
             for (const Node* child : node->children) {
-                convertToHTML(sw, child, options);
+                convertToHTML(outs, child, options);
             }
             break;
         }
         case Node::List: {
             if (node->isOrderedList()) {
                 if (node->listStartNumber != 1) {
-                    sw->format("<ol start=\"{}\">\n", node->listStartNumber);
+                    outs->format("<ol start=\"{}\">\n", node->listStartNumber);
                 } else {
-                    *sw << "<ol>\n";
+                    *outs << "<ol>\n";
                 }
             } else {
-                *sw << "<ul>\n";
+                *outs << "<ul>\n";
             }
             for (const Node* child : node->children) {
-                convertToHTML(sw, child, options);
+                convertToHTML(outs, child, options);
             }
             if (node->isOrderedList()) {
-                *sw << "</ol>\n";
+                *outs << "</ol>\n";
             } else {
-                *sw << "</ul>\n";
+                *outs << "</ul>\n";
             }
             break;
         }
         case Node::ListItem: {
-            *sw << "<li>";
+            *outs << "<li>";
             if (!node->parent->isLoose && node->children[0]->type == Node::Paragraph) {
                 // Don't output a newline before the paragraph in a tight list.
             } else {
-                *sw << "\n";
+                *outs << "\n";
             }
             for (u32 i = 0; i < node->children.numItems(); i++) {
-                convertToHTML(sw, node->children[i], options);
+                convertToHTML(outs, node->children[i], options);
                 if (!node->parent->isLoose && node->children[i]->type == Node::Paragraph &&
                     i + 1 < node->children.numItems()) {
                     // This paragraph had no <p> tag and didn't end in a newline, but there are more
                     // children following it, so add a newline here.
-                    *sw << "\n";
+                    *outs << "\n";
                 }
             }
-            *sw << "</li>\n";
+            *outs << "</li>\n";
             break;
         }
         case Node::BlockQuote: {
-            *sw << "<blockquote>\n";
+            *outs << "<blockquote>\n";
             for (const Node* child : node->children) {
-                convertToHTML(sw, child, options);
+                convertToHTML(outs, child, options);
             }
-            *sw << "</blockquote>\n";
+            *outs << "</blockquote>\n";
             break;
         }
         case Node::Heading: {
-            sw->format("<h{}", node->indentOrLevel);
+            outs->format("<h{}", node->indentOrLevel);
             if (node->id) {
                 if (options.childAnchors) {
-                    sw->format(" class=\"anchored\"><span class=\"anchor\" id=\"{}\">&nbsp;</span>",
+                    outs->format(" class=\"anchored\"><span class=\"anchor\" id=\"{}\">&nbsp;</span>",
                                fmt::XMLEscape{node->id});
                 } else {
-                    sw->format(" id=\"{}\">", fmt::XMLEscape{node->id});
+                    outs->format(" id=\"{}\">", fmt::XMLEscape{node->id});
                 }
             } else {
-                *sw << '>';
+                *outs << '>';
             }
             PLY_ASSERT(node->rawLines.isEmpty());
             for (const Node* child : node->children) {
-                convertToHTML(sw, child, options);
+                convertToHTML(outs, child, options);
             }
-            sw->format("</h{}>\n", node->indentOrLevel);
+            outs->format("</h{}>\n", node->indentOrLevel);
             break;
         }
         case Node::Paragraph: {
             bool isInsideTight =
                 (node->parent->type == Node::ListItem && !node->parent->parent->isLoose);
             if (!isInsideTight) {
-                *sw << "<p>";
+                *outs << "<p>";
             }
             PLY_ASSERT(node->rawLines.isEmpty());
             for (const Node* child : node->children) {
-                convertToHTML(sw, child, options);
+                convertToHTML(outs, child, options);
             }
             if (!isInsideTight) {
-                *sw << "</p>\n";
+                *outs << "</p>\n";
             }
             break;
         }
         case Node::CodeBlock: {
-            *sw << "<pre><code>";
+            *outs << "<pre><code>";
             PLY_ASSERT(node->children.isEmpty());
             for (StringView rawLine : node->rawLines) {
-                *sw << fmt::XMLEscape{rawLine};
+                *outs << fmt::XMLEscape{rawLine};
             }
-            *sw << "</code></pre>\n";
+            *outs << "</code></pre>\n";
             break;
         }
         case Node::Text: {
-            *sw << fmt::XMLEscape{node->text};
+            *outs << fmt::XMLEscape{node->text};
             PLY_ASSERT(node->children.isEmpty());
             break;
         }
         case Node::Link: {
-            sw->format("<a href=\"{}\">", fmt::XMLEscape{node->text});
+            outs->format("<a href=\"{}\">", fmt::XMLEscape{node->text});
             for (const Node* child : node->children) {
-                convertToHTML(sw, child, options);
+                convertToHTML(outs, child, options);
             }
-            *sw << "</a>";
+            *outs << "</a>";
             break;
         }
         case Node::CodeSpan: {
-            *sw << "<code>" << fmt::XMLEscape{node->text} << "</code>";
+            *outs << "<code>" << fmt::XMLEscape{node->text} << "</code>";
             PLY_ASSERT(node->children.isEmpty());
             break;
         }
         case Node::SoftBreak: {
-            *sw << "\n";
+            *outs << "\n";
             PLY_ASSERT(node->children.isEmpty());
             break;
         }
         case Node::Emphasis: {
-            *sw << "<em>";
+            *outs << "<em>";
             for (const Node* child : node->children) {
-                convertToHTML(sw, child, options);
+                convertToHTML(outs, child, options);
             }
-            *sw << "</em>";
+            *outs << "</em>";
             break;
         }
         case Node::Strong: {
-            *sw << "<strong>";
+            *outs << "<strong>";
             for (const Node* child : node->children) {
-                convertToHTML(sw, child, options);
+                convertToHTML(outs, child, options);
             }
-            *sw << "</strong>";
+            *outs << "</strong>";
             break;
         }
         default: {

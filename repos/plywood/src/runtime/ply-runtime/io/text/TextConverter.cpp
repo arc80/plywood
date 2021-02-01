@@ -16,7 +16,8 @@ PLY_NO_INLINE TextConverter::TextConverter(const TextEncoding* dstEncoding,
     : dstEncoding{dstEncoding}, srcEncoding{srcEncoding} {
 }
 
-PLY_NO_INLINE bool TextConverter::convert(BufferView* dstBuf, ConstBufferView* srcBuf, bool flush) {
+PLY_NO_INLINE bool TextConverter::convert(MutableStringView* dstBuf, StringView* srcBuf,
+                                          bool flush) {
     bool wroteAnything = false;
 
     auto flushDstSmallBuf = [&] {
@@ -45,11 +46,11 @@ PLY_NO_INLINE bool TextConverter::convert(BufferView* dstBuf, ConstBufferView* s
 
         // Append more input to srcSmallBuf.
         // We might put it back after.
-        u32 numCopiedFromSrc = min((u32) PLY_STATIC_ARRAY_SIZE(this->srcSmallBuf.bytes) -
-                                        this->srcSmallBuf.numBytes,
-                                    srcBuf->numBytes);
+        u32 numCopiedFromSrc =
+            min((u32) PLY_STATIC_ARRAY_SIZE(this->srcSmallBuf.bytes) - this->srcSmallBuf.numBytes,
+                srcBuf->numBytes);
         memcpy(this->srcSmallBuf.bytes + this->srcSmallBuf.numBytes, srcBuf->bytes,
-                numCopiedFromSrc);
+               numCopiedFromSrc);
 
         // Try to decode from srcSmallBuf.
         this->srcSmallBuf.numBytes += numCopiedFromSrc;
@@ -139,14 +140,14 @@ PLY_NO_INLINE bool TextConverter::convert(BufferView* dstBuf, ConstBufferView* s
     return wroteAnything;
 }
 
-PLY_NO_INLINE bool TextConverter::writeTo(OutStream* outs, ConstBufferView* srcBuf, bool flush) {
+PLY_NO_INLINE bool TextConverter::writeTo(OutStream* outs, StringView* srcBuf, bool flush) {
     bool anyWorkDone = false;
     for (;;) {
         if (!outs->tryMakeBytesAvailable())
             break;
 
         // Write as much output as we can
-        BufferView dstBuf = outs->viewAvailable();
+        MutableStringView dstBuf = outs->viewAvailable();
         bool didWork = this->convert(&dstBuf, srcBuf, flush);
         outs->curByte = dstBuf.bytes;
         if (!didWork)
@@ -156,7 +157,7 @@ PLY_NO_INLINE bool TextConverter::writeTo(OutStream* outs, ConstBufferView* srcB
     return anyWorkDone;
 }
 
-PLY_NO_INLINE u32 TextConverter::readFrom(InStream* ins, BufferView* dstBuf) {
+PLY_NO_INLINE u32 TextConverter::readFrom(InStream* ins, MutableStringView* dstBuf) {
     u32 totalBytesWritten = 0;
     for (;;) {
         // FIXME: Make this algorithm tighter!
@@ -165,11 +166,11 @@ PLY_NO_INLINE u32 TextConverter::readFrom(InStream* ins, BufferView* dstBuf) {
         ins->tryMakeBytesAvailable(4); // will return less than 4 on EOF/error *ONLY*
 
         // Filter as much input as we can:
-        u8* dstBefore = dstBuf->bytes;
-        ConstBufferView srcBuf = ins->viewAvailable();
+        char* dstBefore = dstBuf->bytes;
+        StringView srcBuf = ins->viewAvailable();
         bool flush = ins->atEOF();
         this->convert(dstBuf, &srcBuf, flush);
-        ins->curByte = (u8*) srcBuf.bytes;
+        ins->curByte = srcBuf.bytes;
         s32 numBytesWritten = safeDemote<s32>(dstBuf->bytes - dstBefore);
         totalBytesWritten += numBytesWritten;
 
@@ -185,14 +186,14 @@ PLY_NO_INLINE u32 TextConverter::readFrom(InStream* ins, BufferView* dstBuf) {
     return totalBytesWritten;
 }
 
-PLY_NO_INLINE Buffer TextConverter::convertInternal(const TextEncoding* dstEncoding,
+PLY_NO_INLINE String TextConverter::convertInternal(const TextEncoding* dstEncoding,
                                                     const TextEncoding* srcEncoding,
-                                                    ConstBufferView srcText) {
+                                                    StringView srcText) {
     MemOutStream outs;
     TextConverter converter{dstEncoding, srcEncoding};
     converter.writeTo(&outs, &srcText, true);
     PLY_ASSERT(dstEncoding->unitSize > 0);
-    return outs.moveToBuffer();
+    return outs.moveToString();
 }
 
 //-----------------------------------------------------------------------
@@ -203,7 +204,7 @@ PLY_NO_INLINE void InPipe_TextConverter_destroy(InPipe* inPipe_) {
     destruct(inPipe->ins);
 }
 
-PLY_NO_INLINE u32 InPipe_TextConverter_readSome(InPipe* inPipe_, BufferView dstBuf) {
+PLY_NO_INLINE u32 InPipe_TextConverter_readSome(InPipe* inPipe_, MutableStringView dstBuf) {
     InPipe_TextConverter* inPipe = static_cast<InPipe_TextConverter*>(inPipe_);
     return inPipe->converter.readFrom(inPipe->ins, &dstBuf);
 }
@@ -228,7 +229,7 @@ PLY_NO_INLINE void OutPipe_TextConverter_destroy(OutPipe* outPipe_) {
     destruct(outPipe->outs);
 }
 
-PLY_NO_INLINE bool OutPipe_TextConverter_write(OutPipe* outPipe_, ConstBufferView srcBuf) {
+PLY_NO_INLINE bool OutPipe_TextConverter_write(OutPipe* outPipe_, StringView srcBuf) {
     OutPipe_TextConverter* outPipe = static_cast<OutPipe_TextConverter*>(outPipe_);
     outPipe->converter.writeTo(outPipe->outs, &srcBuf, false);
     return !outPipe->outs->atEOF();
@@ -236,7 +237,7 @@ PLY_NO_INLINE bool OutPipe_TextConverter_write(OutPipe* outPipe_, ConstBufferVie
 
 PLY_NO_INLINE bool OutPipe_TextConverter_flush(OutPipe* outPipe_, bool toDevice) {
     OutPipe_TextConverter* outPipe = static_cast<OutPipe_TextConverter*>(outPipe_);
-    ConstBufferView emptySrcBuf;
+    StringView emptySrcBuf;
     outPipe->converter.writeTo(outPipe->outs, &emptySrcBuf, true);
     return outPipe->outs->flush(toDevice);
 }

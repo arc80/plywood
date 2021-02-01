@@ -13,7 +13,7 @@ namespace cpp {
 struct BaseError {
     virtual ~BaseError() {
     }
-    virtual void writeMessage(StringWriter* sw, const PPVisitedFiles* visitedFiles) const = 0;
+    virtual void writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const = 0;
 };
 
 } // namespace cpp

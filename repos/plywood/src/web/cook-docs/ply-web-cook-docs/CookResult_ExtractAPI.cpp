@@ -75,7 +75,7 @@ struct APIExtractor : cpp::ParseSupervisor {
         PLY_INLINE Error(Type type, String arg, cpp::LinearLocation linearLoc)
             : type{type}, arg{arg}, linearLoc{linearLoc} {
         }
-        virtual void writeMessage(StringWriter* sw,
+        virtual void writeMessage(OutStream* outs,
                                   const cpp::PPVisitedFiles* visitedFiles) const override;
     };
 
@@ -282,7 +282,7 @@ struct APIExtractor : cpp::ParseSupervisor {
         cpp::ExpandedFileLocation exp =
             cpp::expandFileLocation(this->parser->pp->visitedFiles, token.linearLoc);
         u32 indent = exp.fileLoc.columnNumber;
-        StringWriter sw;
+        MemOutStream mout;
         PLY_ASSERT(token.identifier.startsWith("/*!"));
         PLY_ASSERT(token.identifier.endsWith("*/"));
         const char* curByte = token.identifier.bytes + 3;
@@ -312,9 +312,9 @@ struct APIExtractor : cpp::ParseSupervisor {
                         goto endOfComment;
                     char c = *curByte++;
                     if (c == '\n') {
-                        if (sw.getSeekPos() > 0) {
+                        if (mout.getSeekPos() > 0) {
                             // Add blank line to the markdown
-                            sw << c;
+                            mout << c;
                             column = 1;
                         }
                     } else if (c == ' ') {
@@ -352,12 +352,12 @@ struct APIExtractor : cpp::ParseSupervisor {
             // Check for directives
             if (line.startsWith("\\")) {
                 // This is a directive
-                if (sw.getSeekPos() > 0) {
+                if (mout.getSeekPos() > 0) {
                     // Finish reading markdown
-                    this->docState.markdown = sw.moveToString();
-                    sw = {};
+                    this->docState.markdown = mout.moveToString();
+                    mout = {};
                 }
-                StringViewReader dr{line.subStr(1)};
+                ViewInStream dr{line.subStr(1)};
                 StringView directive = dr.readView<fmt::Identifier>();
                 dr.parse<fmt::Whitespace>();
                 if (directive != "beginGroup") {
@@ -442,7 +442,7 @@ struct APIExtractor : cpp::ParseSupervisor {
             } else {
                 // Not a directive; treat as markdown
                 gotAnyMarkdown = true;
-                if (sw.getSeekPos() == 0) {
+                if (mout.getSeekPos() == 0) {
                     if (this->docState.groupEntry) {
                         this->error(Error::StrayMarkdownInGroup, {}, lineLoc);
                     } else {
@@ -454,16 +454,16 @@ struct APIExtractor : cpp::ParseSupervisor {
                     }
                 }
                 for (u32 i = indent; i < column; i++) {
-                    sw << ' ';
+                    mout << ' ';
                 }
-                sw << line;
+                mout << line;
             }
         }
     endOfComment:
-        if (sw.getSeekPos() > 0) {
+        if (mout.getSeekPos() > 0) {
             PLY_ASSERT(!this->docState.markdown);
             PLY_ASSERT(this->docState.markdownLoc >= 0);
-            this->docState.markdown = sw.moveToString();
+            this->docState.markdown = mout.moveToString();
         }
         if (!gotAnyMarkdown && !gotNonGroupDirective) {
             // Allow empty markdown in member documentation (eg. Float2::x and y).
@@ -603,109 +603,109 @@ struct APIExtractor : cpp::ParseSupervisor {
     }
 
     virtual bool handleError(Owned<cpp::BaseError>&& err) override {
-        StringWriter sw;
-        err->writeMessage(&sw, this->parser->pp->visitedFiles);
-        this->extractAPIResult->addError(sw.moveToString());
+        MemOutStream mout;
+        err->writeMessage(&mout, this->parser->pp->visitedFiles);
+        this->extractAPIResult->addError(mout.moveToString());
         return true;
     }
 };
 PLY_REFLECT_ENUM(, APIExtractor::Error::Type)
 
-void APIExtractor::Error::writeMessage(StringWriter* sw,
+void APIExtractor::Error::writeMessage(OutStream* outs,
                                        const cpp::PPVisitedFiles* visitedFiles) const {
     if (this->linearLoc >= 0) {
-        sw->format("{}: ", expandFileLocation(visitedFiles, this->linearLoc).toString());
+        outs->format("{}: ", expandFileLocation(visitedFiles, this->linearLoc).toString());
     }
-    *sw << "error: ";
+    *outs << "error: ";
     if (this->type >= APIExtractor::Error::BeginParseTitleError &&
         this->type < APIExtractor::Error::EndParseTitleError) {
         writeParseTitleError(
-            sw, (ParseTitleError)(this->type - APIExtractor::Error::BeginParseTitleError),
+            outs, (ParseTitleError)(this->type - APIExtractor::Error::BeginParseTitleError),
             this->arg);
     } else {
         switch (this->type) {
             case APIExtractor::Error::AlreadyDefined: {
-                sw->format("'{}' already defined\n", this->arg);
+                outs->format("'{}' already defined\n", this->arg);
                 break;
             }
             case APIExtractor::Error::StrayMarkdown: {
-                sw->format("markdown text must be followed by a declaration\n");
+                outs->format("markdown text must be followed by a declaration\n");
                 break;
             }
             case APIExtractor::Error::NestedNamesNotSupported: {
-                sw->format(
+                outs->format(
                     "documentation comment on nested name \"{}\" is not currently supported\n",
                     this->arg);
                 break;
             }
             case APIExtractor::Error::DirectivesMustBeAtStartOfDocumentationComment: {
-                *sw << "directives must be at start of documentation comment\n";
+                *outs << "directives must be at start of documentation comment\n";
                 break;
             }
             case APIExtractor::Error::EmptyDirective: {
-                *sw << "expected directive after '\\'\n";
+                *outs << "expected directive after '\\'\n";
                 break;
             }
             case APIExtractor::Error::BadDirective: {
-                sw->format("unrecognized directive '\\{}'\n", this->arg);
+                outs->format("unrecognized directive '\\{}'\n", this->arg);
                 break;
             }
             case APIExtractor::Error::DirectiveDoesNotTakeArguments: {
-                sw->format("\\{} directive does not accept any arguments\n", this->arg);
+                outs->format("\\{} directive does not accept any arguments\n", this->arg);
                 break;
             }
             case APIExtractor::Error::UnterminatedGroup: {
-                *sw << "unterminated \\beginGroup directive\n";
+                *outs << "unterminated \\beginGroup directive\n";
                 break;
             }
             case APIExtractor::Error::AlreadyInsideGroup: {
-                *sw << "already insde a \\beginGroup directive\n";
+                *outs << "already insde a \\beginGroup directive\n";
                 break;
             }
             case APIExtractor::Error::EndGroupOutsideGroup: {
-                *sw << "\\endGroup must be preceded by a \\beginGroup directive\n";
+                *outs << "\\endGroup must be preceded by a \\beginGroup directive\n";
                 break;
             }
             case APIExtractor::Error::GroupHasNoMarkdown: {
-                *sw << "\\beginGroup directive without markdown description\n";
+                *outs << "\\beginGroup directive without markdown description\n";
                 break;
             }
             case APIExtractor::Error::StrayMarkdownInGroup: {
                 // FIXME: Log the location of the opening \\beginGroup block as additional
                 // information
-                *sw << "illegal markdown inside \\beginGroup block\n";
+                *outs << "illegal markdown inside \\beginGroup block\n";
                 break;
             }
             case APIExtractor::Error::EmptyDocumentationComment: {
-                *sw << "empty documentation comment\n";
+                *outs << "empty documentation comment\n";
                 break;
             }
             case APIExtractor::Error::DirectiveOnlyValidWithinClass: {
-                sw->format("\\{} directive is only allowed inside a class\n", this->arg);
+                outs->format("\\{} directive is only allowed inside a class\n", this->arg);
                 break;
             }
             case APIExtractor::Error::MarkdownOnlyValidWithinClass: {
-                *sw << "markdown is only supported for classes and class members\n";
+                *outs << "markdown is only supported for classes and class members\n";
                 break;
             }
             case APIExtractor::Error::DirectiveNotValidWithinClass: {
-                sw->format("\\{} directive not allowed inside a class\n", this->arg);
+                outs->format("\\{} directive not allowed inside a class\n", this->arg);
                 break;
             }
             case APIExtractor::Error::ExpectedClassName: {
-                sw->format("expected class name after \\{} directive\n", this->arg);
+                outs->format("expected class name after \\{} directive\n", this->arg);
                 break;
             }
             case APIExtractor::Error::UnexpectedAfterClassName: {
-                sw->format("unexpected text after class name in \\{} directive\n", this->arg);
+                outs->format("unexpected text after class name in \\{} directive\n", this->arg);
                 break;
             }
             case APIExtractor::Error::ClassNotFound: {
-                sw->format("class '{}' not found\n", this->arg);
+                outs->format("class '{}' not found\n", this->arg);
                 break;
             }
             default: {
-                *sw << "error message not implemented!\n";
+                *outs << "error message not implemented!\n";
                 break;
             }
         }

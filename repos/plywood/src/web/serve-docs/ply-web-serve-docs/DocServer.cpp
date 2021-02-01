@@ -10,7 +10,7 @@
 namespace ply {
 namespace web {
 
-void dumpContents(StringWriter* sw, const Contents* node, ArrayView<const Contents*> expandTo) {
+void dumpContents(OutStream* outs, const Contents* node, ArrayView<const Contents*> expandTo) {
     bool isExpanded = false;
     bool isSelected = false;
     if (expandTo && expandTo.back() == node) {
@@ -22,12 +22,12 @@ void dumpContents(StringWriter* sw, const Contents* node, ArrayView<const Conten
     }
 
     if (node->linkDestination) {
-        sw->format("<a href=\"{}\">", node->linkDestination);
+        outs->format("<a href=\"{}\">", node->linkDestination);
     }
-    *sw << "<li";
+    *outs << "<li";
     bool anyClasses = false;
     auto addClass = [&](StringView name) {
-        *sw << (anyClasses ? StringView{" "} : StringView{" class=\""}) << name;
+        *outs << (anyClasses ? StringView{" "} : StringView{" class=\""}) << name;
         anyClasses = true;
     };
     addClass("selectable");
@@ -40,18 +40,18 @@ void dumpContents(StringWriter* sw, const Contents* node, ArrayView<const Conten
     if (isSelected) {
         addClass("selected");
     }
-    *sw << (anyClasses ? StringView{"\">"} : StringView{">"});
-    *sw << "<span>" << fmt::XMLEscape{node->title} << "</span>";
-    *sw << "</li>\n";
+    *outs << (anyClasses ? StringView{"\">"} : StringView{">"});
+    *outs << "<span>" << fmt::XMLEscape{node->title} << "</span>";
+    *outs << "</li>\n";
     if (node->linkDestination) {
-        *sw << "</a>";
+        *outs << "</a>";
     }
     if (node->children) {
-        sw->format("<ul class=\"nested{}\">\n", isExpanded ? StringView{" active"} : StringView{});
+        outs->format("<ul class=\"nested{}\">\n", isExpanded ? StringView{" active"} : StringView{});
         for (const Contents* child : node->children) {
-            dumpContents(sw, child, expandTo);
+            dumpContents(outs, child, expandTo);
         }
-        *sw << "</ul>\n";
+        *outs << "</ul>\n";
     }
 }
 
@@ -146,8 +146,8 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
     String pageHtml = getPageSource(this, requestPath, responseIface);
     if (!pageHtml)
         return;
-    StringViewReader svr{pageHtml};
-    String pageTitle = svr.readView<fmt::Line>().trim(isWhite);
+    ViewInStream vins{pageHtml};
+    String pageTitle = vins.readView<fmt::Line>().trim(isWhite);
 
     // Figure out which TOC entries to expand
     Array<const Contents*> expandTo;
@@ -164,10 +164,9 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
     }
 
     OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
-    StringWriter* sw = outs->strWriter();
-    *sw << "Content-Type: text/html; charset=utf-8\r\n\r\n";
+    *outs << "Content-Type: text/html; charset=utf-8\r\n\r\n";
     responseIface->endResponseHeader();
-    sw->format(R"#(<!DOCTYPE html>
+    outs->format(R"#(<!DOCTYPE html>
 <html>
 <head>
 <title>{}</title>
@@ -175,7 +174,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 )#",
                pageTitle);
-    *sw << R"#(<link href="/static/stylesheet.css?1" rel="stylesheet" type="text/css" />
+    *outs << R"#(<link href="/static/stylesheet.css?1" rel="stylesheet" type="text/css" />
 <link rel="icon" href="/static/favicon@32x32.png" sizes="32x32" />
 <script src="/static/docs.js"></script>
 </head>
@@ -201,9 +200,9 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
         <ul>
 )#";
     for (const Contents* node : this->contents) {
-        dumpContents(sw, node, expandTo.view());
+        dumpContents(outs, node, expandTo.view());
     }
-    sw->format(R"(
+    outs->format(R"(
         </ul>
       </div>
     </div>
@@ -212,8 +211,8 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 <h1>{}</h1>
 )",
                pageTitle);
-    *sw << svr.viewAvailable();
-    *sw << R"(
+    *outs << vins.viewAvailable();
+    *outs << R"(
   </article>
 </body>
 </html>
@@ -225,13 +224,12 @@ void DocServer::serveContentOnly(StringView requestPath, ResponseIface* response
     if (!pageHtml)
         return;
     OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
-    StringWriter* sw = outs->strWriter();
-    StringViewReader svr{pageHtml};
-    String pageTitle = svr.readView<fmt::Line>().trim(isWhite);
-    *sw << "Content-Type: text/html\r\n\r\n";
+    ViewInStream vins{pageHtml};
+    String pageTitle = vins.readView<fmt::Line>().trim(isWhite);
+    *outs << "Content-Type: text/html\r\n\r\n";
     responseIface->endResponseHeader();
-    sw->format("{}\n<h1>{}</h1>\n", pageTitle, pageTitle);
-    *sw << svr.viewAvailable();
+    outs->format("{}\n<h1>{}</h1>\n", pageTitle, pageTitle);
+    *outs << vins.viewAvailable();
 }
 
 } // namespace web

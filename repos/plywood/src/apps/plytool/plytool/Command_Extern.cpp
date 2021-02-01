@@ -75,8 +75,8 @@ void command_extern(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        auto sw = StdErr::text();
-        printUsage(&sw, "extern",
+        auto outs = StdErr::text();
+        printUsage(&outs, "extern",
                    {
                        {"list", "list description"},
                        {"info", "info description"},
@@ -94,12 +94,12 @@ void command_extern(PlyToolCommandEnv* env) {
         PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
 
         for (const Repo* repo : RepoRegistry::get()->repos) {
-            StringWriter sw = StdOut::text();
+            OutStream outs = StdOut::text();
             u32 n = repo->externs.numItems();
-            sw.format("{} extern{} defined in repo '{}'{}\n", n, n == 1 ? "" : "s", repo->repoName,
+            outs.format("{} extern{} defined in repo '{}'{}\n", n, n == 1 ? "" : "s", repo->repoName,
                       n == 0 ? "." : ":");
             for (const DependencySource* extern_ : repo->externs) {
-                sw.format("    {}\n", RepoRegistry::get()->getShortDepSourceName(extern_));
+                outs.format("    {}\n", RepoRegistry::get()->getShortDepSourceName(extern_));
             }
         }
     } else if (prefixMatch(cmd, "info")) {
@@ -134,8 +134,8 @@ void command_extern(PlyToolCommandEnv* env) {
             }
         }
         u32 n = candidates.numItems();
-        StringWriter sw = StdOut::text();
-        sw.format("Found {} provider{} for extern '{}':\n", n, n == 1 ? "" : "s",
+        OutStream outs = StdOut::text();
+        outs.format("Found {} provider{} for extern '{}':\n", n, n == 1 ? "" : "s",
                   RepoRegistry::get()->getShortDepSourceName(extern_));
         for (Tuple<const ExternProvider*, ExternResult::Code> pair : candidates) {
             StringView codeStr = "???";
@@ -160,7 +160,7 @@ void command_extern(PlyToolCommandEnv* env) {
                 default:
                     break;
             }
-            sw.format("    {} ({})\n", RepoRegistry::get()->getShortProviderName(pair.first),
+            outs.format("    {} ({})\n", RepoRegistry::get()->getShortProviderName(pair.first),
                       codeStr);
         }
     } else if (prefixMatch(cmd, "select")) {
@@ -203,11 +203,11 @@ void command_extern(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        StringWriter sw = StdOut::text();
-        sw.format("The following extern providers are selected in build folder '{}':\n",
+        OutStream outs = StdOut::text();
+        outs.format("The following extern providers are selected in build folder '{}':\n",
                   env->currentBuildFolder->buildFolderName);
         for (StringView sel : env->currentBuildFolder->externSelectors) {
-            sw.format("    {}\n", sel);
+            outs.format("    {}\n", sel);
         }
     } else if (prefixMatch(cmd, "install")) {
         StringView qualifiedName = env->cl->readToken();

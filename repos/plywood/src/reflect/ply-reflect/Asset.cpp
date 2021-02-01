@@ -20,8 +20,8 @@ void writeAsset(OutStream* out, TypedPtr obj) {
     writeFormatContext.endSchema();
 
     // Resolve links and write link table
-    Buffer bin = memOut.moveToBuffer();
-    resolveLinksAndWriteLinkTable(bin, out, &writeObjectContext.ptrResolver);
+    String bin = memOut.moveToString();
+    resolveLinksAndWriteLinkTable({bin.bytes, bin.numBytes}, out, &writeObjectContext.ptrResolver);
 
     // Write object data
     out->write(bin);

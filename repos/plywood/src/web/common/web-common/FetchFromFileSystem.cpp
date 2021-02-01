@@ -54,7 +54,7 @@ PLY_NO_INLINE void FetchFromFileSystem::serve(const FetchFromFileSystem* params,
 
     // FIXME: Don't load the whole file completely in memory first.
     // Could open the raw pipe and feed it to outs.
-    Buffer bin = FileSystem::native()->loadBinary(nativePath);
+    String bin = FileSystem::native()->loadBinary(nativePath);
     if (FileSystem::native()->lastResult() != FSResult::OK) {
         // file could not be loaded
         responseIface->respondGeneric(ResponseCode::NotFound);
@@ -62,8 +62,8 @@ PLY_NO_INLINE void FetchFromFileSystem::serve(const FetchFromFileSystem* params,
     }
 
     OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
-    outs->strWriter()->format("Content-Type: {}\r\n", cursor->mimeType);
-    *outs->strWriter() << "Cache-Control: max-age=1200\r\n\r\n";
+    outs->format("Content-Type: {}\r\n", cursor->mimeType);
+    *outs << "Cache-Control: max-age=1200\r\n\r\n";
     responseIface->endResponseHeader();
     outs->write(bin);
 }

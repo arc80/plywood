@@ -7,12 +7,12 @@
 using namespace ply;
 
 template <typename T>
-void testParse(StringWriter* outs, StringView type, StringView str, u32 radix) {
-    StringViewReader sr{str};
-    T result = sr.parse<T>(fmt::Radix{radix});
+void testParse(OutStream* outs, StringView type, StringView str, u32 radix) {
+    ViewInStream ins{str};
+    T result = ins.parse<T>(fmt::Radix{radix});
     String backToString = String::from(fmt::WithRadix{result, radix});
     outs->format("Parsing \"{}\" as {}, radix {} -> \"{}\", {}\n", str, type, radix, backToString,
-                 sr.anyParseError() ? "failed" : "success");
+                 ins.anyParseError() ? "failed" : "success");
 }
 
 StringView strList[] = {
@@ -42,7 +42,7 @@ StringView strList[] = {
 };
 
 int main() {
-    StringWriter outs;
+    MemOutStream mout;
     for (u32 i = 0; i < PLY_STATIC_ARRAY_SIZE(strList); i++) {
         for (u32 s = 0; s < 2; s++) {
             String str = strList[i];
@@ -50,16 +50,16 @@ int main() {
                 str = StringView{"-"} + str;
             }
             for (u32 radix : {10, 16}) {
-                testParse<u32>(&outs, "u32", str, radix);
-                testParse<s32>(&outs, "s32", str, radix);
-                testParse<u64>(&outs, "u64", str, radix);
-                testParse<s64>(&outs, "s64", str, radix);
+                testParse<u32>(&mout, "u32", str, radix);
+                testParse<s32>(&mout, "s32", str, radix);
+                testParse<u64>(&mout, "u64", str, radix);
+                testParse<s64>(&mout, "s64", str, radix);
             }
         }
     }
     FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         NativePath::join(PLY_WORKSPACE_FOLDER,
                          "repos/plywood/src/apps/StringReaderTest/result.txt"),
-        outs.moveToString(), TextFormat::platformPreference());
+        mout.moveToString(), TextFormat::platformPreference());
     return 0;
 }

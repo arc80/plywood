@@ -21,7 +21,7 @@ PLY_NO_INLINE Hasher& operator<<(Hasher& hasher, u32 value) {
     return hasher;
 }
 
-PLY_NO_INLINE Hasher& operator<<(Hasher& hasher, ConstBufferView buf) {
+PLY_NO_INLINE Hasher& operator<<(Hasher& hasher, StringView buf) {
     // FIXME: More work is needed for platforms that don't support unaligned reads
 
     while (buf.numBytes >= 4) {

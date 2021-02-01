@@ -16,10 +16,10 @@ struct PackageManager_Vcpkg : PackageManager {
                                                  Subprocess::Output::openStdOutOnly());
         if (!sub)
             return false;
-        Owned<StringReader> sr = TextFormat::platformPreference().createImporter(
+        Owned<InStream> ins = TextFormat::platformPreference().createImporter(
             Owned<InStream>::create(sub->readFromStdOut.borrow()));
         bool anyLines = false;
-        while (String line = sr->readString<fmt::Line>()) {
+        while (String line = ins->readString<fmt::Line>()) {
             anyLines = true;
         }
         return (anyLines && sub->join() == 0);
@@ -31,9 +31,9 @@ struct PackageManager_Vcpkg : PackageManager {
         if (!sub)
             return {};
 
-        Owned<StringReader> sr = TextFormat::platformPreference().createImporter(
+        Owned<InStream> ins = TextFormat::platformPreference().createImporter(
             Owned<InStream>::create(sub->readFromStdOut.borrow()));
-        String line = sr->readString<fmt::Line>();
+        String line = ins->readString<fmt::Line>();
         if (sub->join() != 0) {
             return {};
         }

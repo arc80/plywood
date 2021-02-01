@@ -10,7 +10,6 @@
 #endif
 
 #include <ply-runtime/io/Pipe.h>
-#include <ply-runtime/container/BufferView.h>
 #include <winsock2.h>
 
 namespace ply {

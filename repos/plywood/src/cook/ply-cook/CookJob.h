@@ -12,7 +12,7 @@ namespace ply {
 
 // FIXME: Rename and move to runtime
 struct FileIOWrappers {
-    static Tuple<Owned<StringReader>, TextFormat>
+    static Tuple<Owned<InStream>, TextFormat>
     createStringReaderAutodetect(Owned<InStream>&& ins);
     static Tuple<String, TextFormat> loadTextAutodetect(Owned<InStream>&& ins);
 };

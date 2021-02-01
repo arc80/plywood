@@ -130,7 +130,7 @@ PLY_NO_INLINE u32 OutStream::tryMakeBytesAvailableInternal(s32 numBytes) {
     return this->chunk->numBytes;
 }
 
-PLY_NO_INLINE bool OutStream::writeSlowPath(ConstBufferView src) {
+PLY_NO_INLINE bool OutStream::writeSlowPath(StringView src) {
     if (this->status.eof)
         return false;
 
@@ -154,7 +154,7 @@ PLY_NO_INLINE MemOutStream::MemOutStream(u32 chunkSizeExp) : OutStream{Type::Mem
     new (&this->headChunk) Reference<ChunkListNode>{this->chunk};
 }
 
-PLY_NO_INLINE Buffer MemOutStream::moveToBuffer() {
+PLY_NO_INLINE String MemOutStream::moveToString() {
     PLY_ASSERT(this->status.type == (u32) Type::Mem);
 
     // Flush writePos
@@ -163,12 +163,12 @@ PLY_NO_INLINE Buffer MemOutStream::moveToBuffer() {
     PLY_ASSERT(newWritePos <= this->chunk->numBytes);
     this->chunk->writePos = newWritePos;
 
-    // Release chunk references and create Buffer. Releasing the references allows
+    // Release chunk references and create String. Releasing the references allows
     // binaryFromChunks() to optimize in the case where there's only one chunk: Chunk memory gets
     // trimmed and returned immediately, avoiding a memcpy.
     this->chunk = nullptr;
-    u8* bytes = this->headChunk->bytes;
-    Buffer result = Buffer::fromChunks({std::move(this->headChunk), bytes});
+    char* bytes = this->headChunk->bytes;
+    String result = ChunkCursor::toString({std::move(this->headChunk), bytes});
 
     // Leave this stream in the state of a null ViewOutStream
     makeNull(this);

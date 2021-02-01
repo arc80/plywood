@@ -214,8 +214,7 @@ PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream* ins) {
 
 //-----------------------------------------------------------------------
 
-PLY_NO_INLINE Owned<StringReader>
-TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
+PLY_NO_INLINE Owned<InStream> TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
     using Enc = TextFormat::Encoding;
     if (this->bom) {
         ChunkCursor start = ins->getCursor();
@@ -226,20 +225,20 @@ TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
                 break;
             }
             case Enc::UTF8: {
-                u8 h[3] = {0};
-                bool valid = ins->read(h);
+                char h[3] = {0};
+                bool valid = ins->read({h, PLY_STATIC_ARRAY_SIZE(h)});
                 gotBom = valid && memcmp(h, "\xef\xbb\xbf", 3) == 0;
                 break;
             }
             case Enc::UTF16_be: {
-                u8 h[2] = {0};
-                bool valid = ins->read(h);
+                char h[2] = {0};
+                bool valid = ins->read({h, PLY_STATIC_ARRAY_SIZE(h)});
                 gotBom = valid && memcmp(h, "\xfe\xff", 2) == 0;
                 break;
             }
             case Enc::UTF16_le: {
-                u8 h[2] = {0};
-                bool valid = ins->read(h);
+                char h[2] = {0};
+                bool valid = ins->read({h, PLY_STATIC_ARRAY_SIZE(h)});
                 gotBom = valid && memcmp(h, "\xff\xfe", 2) == 0;
                 break;
             }
@@ -262,11 +261,10 @@ TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
 
     // Install newline filter (basically just eats \r)
     // FIXME: Some caller might want the LFs to be unchanged.
-    return Owned<StringReader>::create(createInNewLineFilter(std::move(importer)));
+    return Owned<InStream>::create(createInNewLineFilter(std::move(importer)));
 }
 
-PLY_NO_INLINE Owned<StringWriter>
-TextFormat::createExporter(OptionallyOwned<OutStream>&& outs) const {
+PLY_NO_INLINE Owned<OutStream> TextFormat::createExporter(OptionallyOwned<OutStream>&& outs) const {
     OptionallyOwned<OutStream> exporter = std::move(outs);
 
     switch (this->encoding) {
@@ -301,7 +299,7 @@ TextFormat::createExporter(OptionallyOwned<OutStream>&& outs) const {
     }
 
     // Install newline filter
-    return Owned<StringWriter>::create(
+    return Owned<OutStream>::create(
         createOutNewLineFilter(std::move(exporter), this->newLine == TextFormat::NewLine::CRLF));
 }
 

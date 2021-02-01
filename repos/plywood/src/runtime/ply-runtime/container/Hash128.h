@@ -33,7 +33,7 @@
 
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/BufferView.h>
+#include <ply-runtime/string/StringView.h>
 #include <ply-runtime/container/Int128.h>
 
 namespace ply {
@@ -279,10 +279,10 @@ struct Hash128 {
     SpookyHash state;
 
     Hash128();
-    void append(ConstBufferView view);
+    void append(StringView view);
     u128 get() const;
 
-    static u128 compute(ConstBufferView view);
+    static u128 compute(StringView view);
 };
 
 } // namespace ply

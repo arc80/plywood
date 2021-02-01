@@ -94,7 +94,7 @@ struct WriteObjectContext {
 //
 
 void writeObject(TypedPtr obj, WriteObjectContext* context);
-void resolveLinksAndWriteLinkTable(BufferView binView, OutStream* outs,
+void resolveLinksAndWriteLinkTable(MutableStringView view, OutStream* outs,
                                    SavedPtrResolver* ptrResolver);
 
 } // namespace ply

@@ -45,62 +45,62 @@ struct RepoRegError : cpp::BaseError {
                             cpp::LinearLocation otherLoc = -1)
         : type{type}, linearLoc{linearLoc}, otherLoc{otherLoc} {
     }
-    virtual void writeMessage(StringWriter* sw,
+    virtual void writeMessage(OutStream* outs,
                               const cpp::PPVisitedFiles* visitedFiles) const override;
 };
 PLY_REFLECT_ENUM(, RepoRegError::Type)
 
-void RepoRegError::writeMessage(StringWriter* sw, const cpp::PPVisitedFiles* visitedFiles) const {
-    sw->format("{}: error: ", cpp::expandFileLocation(visitedFiles, this->linearLoc).toString());
+void RepoRegError::writeMessage(OutStream* outs, const cpp::PPVisitedFiles* visitedFiles) const {
+    outs->format("{}: error: ", cpp::expandFileLocation(visitedFiles, this->linearLoc).toString());
     switch (this->type) {
         case RepoRegError::AlreadyInsideCommand: {
-            *sw << "already inside command\n";
-            sw->format("{}: note: previous command started here\n",
+            *outs << "already inside command\n";
+            outs->format("{}: note: previous command started here\n",
                        expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case RepoRegError::ExpectedModuleName: {
-            *sw << "expected module name in quotes\n";
+            *outs << "expected module name in quotes\n";
             break;
         }
         case RepoRegError::MustBeAtFileScope: {
-            *sw << "command can only be used at file scope\n";
+            *outs << "command can only be used at file scope\n";
             break;
         }
         case RepoRegError::ExpectedExternName: {
-            *sw << "expected extern name in quotes\n";
+            *outs << "expected extern name in quotes\n";
             break;
         }
         case RepoRegError::ExpectedProviderKeyword: {
-            *sw << "expected keyword 'provider'\n";
+            *outs << "expected keyword 'provider'\n";
             break;
         }
         case RepoRegError::ExpectedProviderName: {
-            *sw << "expected provider name in quotes\n";
+            *outs << "expected provider name in quotes\n";
             break;
         }
         case RepoRegError::UnrecognizedCommand: {
-            *sw << "unrecognized command\n";
+            *outs << "unrecognized command\n";
             break;
         }
         case RepoRegError::CouldNotApplyCommand: {
-            *sw << "command can't be applied to the declaration that follows it\n";
+            *outs << "command can't be applied to the declaration that follows it\n";
             break;
         }
         case RepoRegError::ExpectedEqualSign: {
-            *sw << "expected '='\n";
+            *outs << "expected '='\n";
             break;
         }
         case RepoRegError::ExtraneousText: {
-            *sw << "unexpected text after command\n";
+            *outs << "unexpected text after command\n";
             break;
         }
         case RepoRegError::OldCommandFormat: {
-            *sw << "please update to the new command format: // [ply ...]\n";
+            *outs << "please update to the new command format: // [ply ...]\n";
             break;
         }
         default: {
-            *sw << "error message not implemented!\n";
+            *outs << "error message not implemented!\n";
             break;
         }
     }
@@ -129,10 +129,10 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
     bool anyError = false;
 
     static PLY_INLINE cpp::LinearLocation getLinearLocation(const cpp::Token& token,
-                                                            const u8* curByte) {
-        PLY_ASSERT((const char*) curByte >= token.identifier.bytes);
-        PLY_ASSERT((const char*) curByte <= token.identifier.end());
-        return token.linearLoc + ((const char*) curByte - token.identifier.bytes);
+                                                            const char* curByte) {
+        PLY_ASSERT(curByte >= token.identifier.bytes);
+        PLY_ASSERT(curByte <= token.identifier.end());
+        return token.linearLoc + (curByte - token.identifier.bytes);
     }
 
     virtual void gotMacroOrComment(cpp::Token token) override {
@@ -142,7 +142,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                 StringView commentText = token.identifier.subStr(2).trim(isWhite);
                 if (commentText.startsWith("[") && commentText.endsWith("]")) {
                     // New command format: [ply ...]
-                    StringViewReader commentReader{commentText.subStr(1, commentText.numBytes - 2)};
+                    ViewInStream commentReader{commentText.subStr(1, commentText.numBytes - 2)};
                     StringView first = commentReader.readView<fmt::Identifier>();
                     if (first != "ply")
                         return;
@@ -150,7 +150,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                     if (this->cmd) {
                         this->parser->pp->errorHandler.call(
                             new RepoRegError{RepoRegError::AlreadyInsideCommand,
-                                             getLinearLocation(token, (const u8*) first.bytes),
+                                             getLinearLocation(token, first.bytes),
                                              this->cmd->macro.linearLoc});
                         this->cmd = nullptr;
                     }
@@ -161,7 +161,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         if (this->scopeStack.numItems() != 1) {
                             this->parser->pp->errorHandler.call(new RepoRegError{
                                 RepoRegError::MustBeAtFileScope,
-                                getLinearLocation(token, (const u8*) second.bytes)});
+                                getLinearLocation(token, second.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
@@ -197,7 +197,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         if (this->scopeStack.numItems() != 1) {
                             this->parser->pp->errorHandler.call(new RepoRegError{
                                 RepoRegError::MustBeAtFileScope,
-                                getLinearLocation(token, (const u8*) second.bytes)});
+                                getLinearLocation(token, second.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
@@ -221,7 +221,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         if (third != "provider") {
                             this->parser->pp->errorHandler.call(new RepoRegError{
                                 RepoRegError::ExpectedProviderKeyword,
-                                getLinearLocation(token, (const u8*) third.bytes)});
+                                getLinearLocation(token, third.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
@@ -257,13 +257,13 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                     } else {
                         this->parser->pp->errorHandler.call(
                             new RepoRegError{RepoRegError::UnrecognizedCommand,
-                                             getLinearLocation(token, (const u8*) second.bytes)});
+                                             getLinearLocation(token, second.bytes)});
                     }
                     return;
                 }
 
                 // FIXME: Delete this later
-                StringViewReader commentReader{commentText};
+                ViewInStream commentReader{commentText};
                 StringView first = commentReader.readView<fmt::NonWhitespace>();
                 commentReader.parse<fmt::Whitespace>();
                 if (first == "ply") {
@@ -312,9 +312,9 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
 
     virtual bool handleError(Owned<cpp::BaseError>&& err) override {
         this->anyError = true;
-        StringWriter sw;
-        err->writeMessage(&sw, this->parser->pp->visitedFiles);
-        StdErr::text() << sw.moveToString();
+        MemOutStream mout;
+        err->writeMessage(&mout, this->parser->pp->visitedFiles);
+        StdErr::text() << mout.moveToString();
         return true;
     }
 };

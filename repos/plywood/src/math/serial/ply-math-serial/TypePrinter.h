@@ -5,24 +5,24 @@
 #pragma once
 #include <ply-math/Core.h>
 #include <ply-math/Vector.h>
-#include <ply-runtime/io/text/StringWriter.h>
+#include <ply-runtime/io/OutStream.h>
 
 namespace ply {
 namespace fmt {
 
 template <>
 struct TypePrinter<Float2> {
-    static PLY_DLL_ENTRY void print(StringWriter* sw, const Float2& v);
+    static PLY_DLL_ENTRY void print(OutStream* outs, const Float2& v);
 };
 
 template <>
 struct TypePrinter<Float3> {
-    static PLY_DLL_ENTRY void print(StringWriter* sw, const Float3& v);
+    static PLY_DLL_ENTRY void print(OutStream* outs, const Float3& v);
 };
 
 template <>
 struct TypePrinter<Float4> {
-    static PLY_DLL_ENTRY void print(StringWriter* sw, const Float4& v);
+    static PLY_DLL_ENTRY void print(OutStream* outs, const Float4& v);
 };
 
 } // namespace fmt

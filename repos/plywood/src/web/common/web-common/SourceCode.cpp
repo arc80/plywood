@@ -13,27 +13,26 @@ PLY_NO_INLINE void SourceCode::serve(const SourceCode* params, StringView reques
     // FIXME: Use FileSystem_Virtual and make really, really sure an adversary can't read files
     // outside the rootDir
     String normRequestPath = NativePath::normalize(requestPath.ltrim(NativePath::isSepByte));
-    Owned<StringReader> sr =
+    Owned<InStream> ins =
         FileSystem::native()
             ->openTextForReadAutodetect(NativePath::join(params->rootDir, normRequestPath))
             .first;
-    if (!sr) {
+    if (!ins) {
         // file could not be loaded
         responseIface->respondGeneric(ResponseCode::NotFound);
         return;
     }
 
     OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
-    StringWriter* sw = outs->strWriter();
-    *sw << "Content-Type: text/html\r\n\r\n";
+    *outs << "Content-Type: text/html\r\n\r\n";
     responseIface->endResponseHeader();
-    sw->format(R"#(<!DOCTYPE html>
+    outs->format(R"#(<!DOCTYPE html>
 <html>
 <head>
 <title>{}</title>
 )#",
-               fmt::XMLEscape{NativePath::split(normRequestPath).second});
-    *sw << R"#(<link href="/static/stylesheet.css" rel="stylesheet" type="text/css" />
+                 fmt::XMLEscape{NativePath::split(normRequestPath).second});
+    *outs << R"#(<link href="/static/stylesheet.css" rel="stylesheet" type="text/css" />
 <script>
 var highlighted = null;
 function highlight(elementID) {
@@ -59,12 +58,12 @@ window.onhashchange = function() {
 <tbody>
 )#";
     u32 lineNumber = 1;
-    while (String line = sr->readString<fmt::Line>()) {
-        sw->format("<tr><td id=\"L{}\">{}</td><td id=\"LC{}\">{}</td></tr>", lineNumber, lineNumber,
-                   lineNumber, fmt::XMLEscape{line});
+    while (String line = ins->readString<fmt::Line>()) {
+        outs->format("<tr><td id=\"L{}\">{}</td><td id=\"LC{}\">{}</td></tr>", lineNumber,
+                     lineNumber, lineNumber, fmt::XMLEscape{line});
         lineNumber++;
     }
-    *sw << R"#(</tbody>
+    *outs << R"#(</tbody>
 </table>
 </div>
 </body>

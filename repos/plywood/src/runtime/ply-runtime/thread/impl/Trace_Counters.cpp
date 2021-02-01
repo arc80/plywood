@@ -28,10 +28,10 @@ void Trace_Counters::dumpStats() {
 }
 
 void TraceGroup::dump() {
-    StringWriter sw = StdOut::text();
-    sw.format("--------------- {}\n", m_name);
+    OutStream outs = StdOut::text();
+    outs.format("--------------- {}\n", m_name);
     for (ureg i = 0; i < m_numCounters; i++) {
-        sw.format("{}: {}\n", m_counters[i].count.load(ply::Relaxed), m_counters[i].str);
+        outs.format("{}: {}\n", m_counters[i].count.load(ply::Relaxed), m_counters[i].str);
     }
 }
 

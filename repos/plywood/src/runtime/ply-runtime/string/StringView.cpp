@@ -5,8 +5,8 @@
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/string/String.h>
 #include <ply-runtime/string/TextEncoding.h>
-#include <ply-runtime/memory/MemPage.h>
 #include <ply-runtime/io/OutStream.h>
+#include <ply-runtime/container/Array.h>
 
 namespace ply {
 
@@ -104,31 +104,14 @@ PLY_NO_INLINE String StringView::filterBytes(char (*filterFunc)(char)) const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::operator+(StringView other) const {
-    String result = String::allocate(this->numBytes + other.numBytes);
-    memcpy(result.bytes, this->bytes, this->numBytes);
-    memcpy(result.bytes + this->numBytes, other.bytes, other.numBytes);
-    return result;
-}
-
-PLY_NO_INLINE String StringView::operator*(u32 count) const {
-    String result = String::allocate(this->numBytes * count);
-    char* dst = result.bytes;
-    for (u32 i = 0; i < count; i++) {
-        memcpy(dst, this->bytes, this->numBytes);
-        dst += this->numBytes;
-    }
-    return result;
-}
-
 PLY_NO_INLINE String StringView::join(ArrayView<const StringView> comps) const {
     MemOutStream mout;
     bool first = true;
     for (StringView comp : comps) {
         if (!first) {
-            mout.write(this->bufferView());
+            mout.write(*this);
         }
-        mout.write(comp.bufferView());
+        mout.write(comp);
         first = false;
     }
     return mout.moveToString();
@@ -139,18 +122,18 @@ PLY_NO_INLINE String StringView::reversedUTF8() const {
     // That means, when dealing with bad UTF-8 strings, two calls to reversedUTF8() *might* not
     // return the same string.
     String result = String::allocate(this->numBytes);
-    BufferView dstBinView = result.bufferView();
-    ConstBufferView srcBinView = this->bufferView();
-    while (dstBinView.numBytes > 0) {
-        u32 bytesToCopy = UTF8::backNumBytes(srcBinView);
+    StringView srcView = *this;
+    MutableStringView dstView{result.bytes, result.numBytes};
+    while (dstView.numBytes > 0) {
+        u32 bytesToCopy = UTF8::backNumBytes(srcView);
         PLY_ASSERT(bytesToCopy > 0);
         for (u32 i = 0; i < bytesToCopy; i++) {
-            dstBinView.bytes[i] = (srcBinView.bytes + srcBinView.numBytes)[-(s32) bytesToCopy + i];
+            dstView.bytes[i] = srcView.bytes[srcView.numBytes - (s32) bytesToCopy + i];
         }
-        dstBinView.offsetHead(bytesToCopy);
-        srcBinView.offsetBack(-(s32) bytesToCopy);
+        dstView.offsetHead(bytesToCopy);
+        srcView.offsetBack(-(s32) bytesToCopy);
     }
-    PLY_ASSERT(srcBinView.numBytes == 0);
+    PLY_ASSERT(srcView.numBytes == 0);
     return result;
 }
 
@@ -171,14 +154,10 @@ PLY_NO_INLINE StringView StringView::withoutNullTerminator() const {
     return {this->bytes, this->numBytes - 1};
 }
 
-PLY_NO_INLINE s32 compare(StringView str0, StringView str1) {
-    // Returns:
-    // -1 if str0 < str1
-    // 0 if str0 == str1
-    // 1 if str0 > str1
-    u32 compareBytes = min(str0.numBytes, str1.numBytes);
-    const u8* u0 = (const u8*) str0.bytes;
-    const u8* u1 = (const u8*) str1.bytes;
+PLY_NO_INLINE s32 compare(StringView a, StringView b) {
+    u32 compareBytes = min(a.numBytes, b.numBytes);
+    const u8* u0 = (const u8*) a.bytes;
+    const u8* u1 = (const u8*) b.bytes;
     const u8* uEnd0 = u0 + compareBytes;
     while (u0 < uEnd0) {
         s32 diff = *u0 - *u1;
@@ -187,7 +166,24 @@ PLY_NO_INLINE s32 compare(StringView str0, StringView str1) {
         u0++;
         u1++;
     }
-    return str0.numBytes - str1.numBytes;
+    return a.numBytes - b.numBytes;
+}
+
+PLY_NO_INLINE String operator+(StringView a, StringView b) {
+    String result = String::allocate(a.numBytes + b.numBytes);
+    memcpy(result.bytes, a.bytes, a.numBytes);
+    memcpy(result.bytes + a.numBytes, b.bytes, b.numBytes);
+    return result;
+}
+
+PLY_NO_INLINE String operator*(StringView str, u32 count) {
+    String result = String::allocate(str.numBytes * count);
+    char* dst = result.bytes;
+    for (u32 i = 0; i < count; i++) {
+        memcpy(dst, str.bytes, str.numBytes);
+        dst += str.numBytes;
+    }
+    return result;
 }
 
 } // namespace ply

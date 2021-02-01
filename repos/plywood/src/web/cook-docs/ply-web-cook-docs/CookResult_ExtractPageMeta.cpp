@@ -46,26 +46,26 @@ void cook_ExtractPageMeta(cook::CookResult* cookResult_, TypedPtr jobArg) {
         extractPageMetaResult->markdownExists = true;
 
         String src = FileIOWrappers::loadTextAutodetect(std::move(ins)).first;
-        StringViewReader sr{src};
+        ViewInStream ins{src};
 
         // Extract liquid tags
-        StringWriter sw; // Note: This could be some kind of "null writer" if such a thing existed
-        extractLiquidTags(&sw, &sr, [&](StringView tag, StringView section) {
-            StringViewReader svr{section};
-            svr.parse<fmt::Whitespace>();
-            StringView command = svr.readView(fmt::Identifier{});
-            svr.parse<fmt::Whitespace>();
+        MemOutStream mout; // Note: This could be some kind of "null writer" if such a thing existed
+        extractLiquidTags(&mout, &ins, [&](StringView tag, StringView section) {
+            ViewInStream vins{section};
+            vins.parse<fmt::Whitespace>();
+            StringView command = vins.readView(fmt::Identifier{});
+            vins.parse<fmt::Whitespace>();
             if (command == "title") {
-                extractPageMetaResult->title = svr.parse(fmt::QuotedString{});
+                extractPageMetaResult->title = vins.parse(fmt::QuotedString{});
             } else if (command == "linkID") {
-                extractPageMetaResult->linkID = svr.viewAvailable().rtrim(isWhite);
+                extractPageMetaResult->linkID = vins.viewAvailable().rtrim(isWhite);
             } else if (command == "childOrder") {
                 // Override child page order
                 Array<Reference<cook::CookJob>> origOrder =
                     std::move(extractPageMetaResult->childPages);
                 for (;;) {
-                    svr.parse<fmt::Whitespace>();
-                    StringView childID = svr.readView(fmt::Identifier{});
+                    vins.parse<fmt::Whitespace>();
+                    StringView childID = vins.readView(fmt::Identifier{});
                     if (!childID)
                         break;
                     s32 childIndex = find(origOrder.view(), [&](const cook::CookJob* child) {
@@ -92,7 +92,7 @@ void cook_ExtractPageMeta(cook::CookResult* cookResult_, TypedPtr jobArg) {
                         StringView{", "}.join(Array<StringView>{childIDs.view()}.view())));
                 }
             } else if (command == "dumpExtractedMembers") {
-                String classFQID = svr.viewAvailable().trim(isWhite);
+                String classFQID = vins.viewAvailable().trim(isWhite);
                 Array<StringView> components = classFQID.splitByte(':');
                 SemaEntity* ent = wci->globalScope->lookupChain(components.view());
                 if (!ent)
@@ -103,7 +103,7 @@ void cook_ExtractPageMeta(cook::CookResult* cookResult_, TypedPtr jobArg) {
                 pair->addToIndex();
                 extractPageMetaResult->symbolPagePairs.append(std::move(pair));
             } else if (command == "synopsis") {
-                extractPageMetaResult->synopsis = svr.viewAvailable();
+                extractPageMetaResult->synopsis = vins.viewAvailable();
             }
         });
     }

@@ -11,10 +11,10 @@ namespace ply {
 namespace web {
 
 PLY_NO_INLINE void echo_serve(const void*, StringView requestPath, ResponseIface* responseIface) {
-    StringWriter* sw = responseIface->beginResponseHeader(ResponseCode::OK)->strWriter();
-    *sw << "Content-type: text/html\r\n\r\n";
+    OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
+    *outs << "Content-type: text/html\r\n\r\n";
     responseIface->endResponseHeader();
-    *sw << R"(<html>
+    *outs << R"(<html>
 <head><title>Echo</title></head>
 <body>
 <center><h1>Echo</h1></center>
@@ -22,27 +22,27 @@ PLY_NO_INLINE void echo_serve(const void*, StringView requestPath, ResponseIface
 
     // Write client IP
     const auto& req = responseIface->request;
-    sw->format("<p>Connection from: <code>{}:{}</code></p>", req.clientAddr.toString(),
+    outs->format("<p>Connection from: <code>{}:{}</code></p>", req.clientAddr.toString(),
                req.clientPort);
 
     // Write request header
-    *sw << "<p>Request header:</p>\n";
-    *sw << "<pre>\n";
-    sw->format("{} {} {}\n", fmt::XMLEscape{req.startLine.method},
+    *outs << "<p>Request header:</p>\n";
+    *outs << "<pre>\n";
+    outs->format("{} {} {}\n", fmt::XMLEscape{req.startLine.method},
                fmt::XMLEscape{req.startLine.uri}, fmt::XMLEscape{req.startLine.httpVersion});
     for (const Request::HeaderField& field : req.headerFields) {
-        sw->format("{}: {}\n", fmt::XMLEscape{field.name}, fmt::XMLEscape{field.value});
+        outs->format("{}: {}\n", fmt::XMLEscape{field.name}, fmt::XMLEscape{field.value});
     }
-    *sw << "</pre>\n";
+    *outs << "</pre>\n";
 
     // Write environment variables
-    *sw << "<p>Environment variables:</p>\n";
-    *sw << "<pre>\n";
+    *outs << "<p>Environment variables:</p>\n";
+    *outs << "<pre>\n";
     for (char** envp = environ; *envp != NULL; envp++) {
-        *sw << fmt::XMLEscape{*envp} << "\n";
+        *outs << fmt::XMLEscape{*envp} << "\n";
     }
-    *sw << "</pre>\n";
-    *sw << R"(</body>
+    *outs << "</pre>\n";
+    *outs << R"(</body>
 </html>
 )";
 }

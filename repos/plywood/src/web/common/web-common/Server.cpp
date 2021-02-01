@@ -45,11 +45,10 @@ struct ResponseIface_WebServer : ResponseIface {
         // FIXME: Handle ResponseCode::InternalError the same way we would handle a crash
         this->state = BeganResponse;
         Tuple<StringView, StringView> responseDesc = getResponseDescription(responseCode);
-        this->outs->strWriter()->format("HTTP/1.1 {} {}\r\n", responseDesc.first,
-                                        responseDesc.second);
+        this->outs->format("HTTP/1.1 {} {}\r\n", responseDesc.first, responseDesc.second);
         if (isChunked) {
-            *this->outs->strWriter() << "Transfer-Encoding: chunked\r\n"
-                                        "Connection: keep-alive\r\n";
+            *this->outs << "Transfer-Encoding: chunked\r\n"
+                           "Connection: keep-alive\r\n";
             outsChunked =
                 Owned<OutStream>::create(Owned<OutPipe_HTTPChunked>::create(borrow(this->outs)));
             return outsChunked;
@@ -80,9 +79,9 @@ struct ResponseIface_WebServer : ResponseIface {
 void ResponseIface::respondGeneric(ResponseCode responseCode) {
     OutStream* outs = this->beginResponseHeader(responseCode);
     Tuple<StringView, StringView> responseDesc = getResponseDescription(responseCode);
-    *outs->strWriter() << "Content-Type: text/html\r\n\r\n";
+    *outs << "Content-Type: text/html\r\n\r\n";
     this->endResponseHeader();
-    outs->strWriter()->format(R"(<html>
+    outs->format(R"(<html>
 <head><title>{} {}</title></head>
 <body>
 <center><h1>{} {}</h1></center>
@@ -90,8 +89,7 @@ void ResponseIface::respondGeneric(ResponseCode responseCode) {
 </body>
 </html>
 )",
-                              responseDesc.first, responseDesc.second, responseDesc.first,
-                              responseDesc.second);
+                 responseDesc.first, responseDesc.second, responseDesc.first, responseDesc.second);
 }
 
 void serverThreadEntry(const ThreadParams& params) {
@@ -109,7 +107,7 @@ void serverThreadEntry(const ThreadParams& params) {
         // down the server.
         Array<String> lines;
         for (;;) {
-            String line = ins.asStringReader()->readString<fmt::Line>();
+            String line = ins.readString<fmt::Line>();
             if (!line && ins.atEOF()) {
                 if (!lines.isEmpty()) {
                     // Ill-formed request
@@ -150,12 +148,12 @@ void serverThreadEntry(const ThreadParams& params) {
                  lines[i].subStr(colonPos + 1).trim(isWhite)});
         }
 
-        // FIXME: Decide isChunked/keep-alive based on HTTP request headers 
+        // FIXME: Decide isChunked/keep-alive based on HTTP request headers
         responseIface.isChunked = (responseIface.request.startLine.httpVersion == "HTTP/1.1");
 
         // Note: ins is still open, so in the future, we could continue reading past the HTTP
         // header to support POST requests and WebSockets.
-        
+
         // Invoke request handler
         params.reqHandler(tokens[1], &responseIface);
 

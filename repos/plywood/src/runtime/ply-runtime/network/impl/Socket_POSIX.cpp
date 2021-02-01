@@ -8,7 +8,7 @@
 
 #include <ply-runtime/network/impl/Socket_POSIX.h>
 #include <ply-runtime/thread/Thread.h>
-#include <ply-runtime/io/text/StringWriter.h>
+#include <ply-runtime/io/OutStream.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <errno.h>

@@ -52,7 +52,7 @@ struct CommandDescription {
 
 using CommandList = ArrayView<const CommandDescription>;
 
-void printUsage(StringWriter* sw, CommandList commands);
-void printUsage(StringWriter* sw, StringView command, CommandList commands = {});
+void printUsage(OutStream* outs, CommandList commands);
+void printUsage(OutStream* outs, StringView command, CommandList commands = {});
 
 } // namespace ply

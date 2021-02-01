@@ -98,9 +98,9 @@ PLY_NO_INLINE Tuple<bool, double> Node::numeric() const {
     if (this->type != (u64) Type::Text)
         return {false, 0.0};
 
-    StringViewReader svr{this->text_};
-    double value = svr.parse<double>();
-    return {!svr.anyParseError(), value};
+    ViewInStream vins{this->text_};
+    double value = vins.parse<double>();
+    return {!vins.anyParseError(), value};
 }
 
 PLY_NO_INLINE Borrowed<Node> Node::get(StringView key) {

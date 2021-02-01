@@ -5,9 +5,9 @@ Parsing and converting text to other types.
 
 Plywood provides the following template functions to parse and convert text to other types:
 
-* `StringReader::parse<...>()` returns a value whose type depends on its template argument.
-* `StringReader::readString<...>()` always returns a `String`.
-* `StringViewReader::readView<...>()` always returns a `StringView`.
+* `InStream::parse<...>()` returns a value whose type depends on its template argument.
+* `InStream::readString<...>()` always returns a `String`.
+* `ViewInStream::readView<...>()` always returns a `StringView`.
 
 Each of these functions requires a template argument that describes the expected string format. The template argument can either be a _direct type_ or a special _format class_.
 
@@ -20,11 +20,11 @@ When the template argument is a direct type, the `parse()` function returns that
 
 When such types are parsed, the template argument must always be specified explicitly, since the compiler has no way to deduce it:
 
-    u32 a = strReader.parse<u32>();
+    u32 a = ins.parse<u32>();
 
 Furthermore, when such types are parsed, each function accepts an optional formatting argument whose type depends on the template argument. For example, when parsing a numeric type, an optional `fmt::Radix` argument is accepted:
 
-    u32 b = strReader.parse<u32>(fmt::Radix{16});
+    u32 b = ins.parse<u32>(fmt::Radix{16});
 
 ### Adding Support for Direct Types
 
@@ -39,8 +39,8 @@ See the built-in `fmt::TypeParser` specializations for examples.
 
 When the template argument is a format class, the `parse()` function returns a value whose type depends on the format class. Plywood provides built-in support for the format classes listed below. When a format class is parsed, each function accepts an optional formatting argument whose type must match the format class. Therefore, if a formatting argument is passed to a parse function, the template argument doesn't need to be specified explicitly since the compiler can deduce it.
 
-    String a = strReader.readString<fmt::Identifier>(); // explicit template argument
-    String b = strReader.readString(fmt::Identifier{}); // template argument deduced
+    String a = ins.readString<fmt::Identifier>(); // explicit template argument
+    String b = ins.readString(fmt::Identifier{}); // template argument deduced
 
 <% member [strong fmt::Identifier](u32 flags = 0) %>
 

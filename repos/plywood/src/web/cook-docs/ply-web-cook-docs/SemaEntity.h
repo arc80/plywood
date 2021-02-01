@@ -100,18 +100,18 @@ struct SemaEntity : RefCounted<SemaEntity> {
         return this->singleDecl.dcor.prod && this->singleDecl.dcor.prod->function();
     }
     void setClassHash();
-    void appendToQualifiedID(StringWriter* sw) const;
+    void appendToQualifiedID(OutStream* outs) const;
     PLY_INLINE String getQualifiedID() const {
         PLY_ASSERT(this->type == SemaEntity::Class);
-        StringWriter sw;
-        this->appendToQualifiedID(&sw);
-        return sw.moveToString();
+        MemOutStream mout;
+        this->appendToQualifiedID(&mout);
+        return mout.moveToString();
     }
     SemaEntity* lookup(StringView name, bool checkParents = true);
     SemaEntity* lookupChain(ArrayView<const StringView> components);
 };
 
-void dumpSemaEnts(StringWriter* sw, SemaEntity* scope, u32 level = 0);
+void dumpSemaEnts(OutStream* outs, SemaEntity* scope, u32 level = 0);
 
 } // namespace docs
 } // namespace ply

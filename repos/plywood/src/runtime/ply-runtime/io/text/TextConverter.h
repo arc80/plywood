@@ -18,11 +18,11 @@ namespace ply {
 //-----------------------------------------------------------------------
 struct TextConverter {
     struct SmallBuffer {
-        u8 bytes[4] = {0};
+        char bytes[4] = {0};
         u8 numBytes = 0;
 
-        PLY_INLINE BufferView view() {
-            return {this->bytes, this->numBytes};
+        PLY_INLINE MutableStringView view() {
+            return {(char*) this->bytes, this->numBytes};
         }
         PLY_INLINE void popFront(u32 numBytesToPop) {
             PLY_ASSERT(numBytesToPop <= this->numBytes);
@@ -46,23 +46,22 @@ struct TextConverter {
     // Returns true if any work done (reading or writing)
     // When flush is true, consumes as much srcBuf as possible, even if it contains a partially
     // encoded point.
-    PLY_DLL_ENTRY bool convert(BufferView* dstBuf, ConstBufferView* srcBuf, bool flush);
+    PLY_DLL_ENTRY bool convert(MutableStringView* dstBuf, StringView* srcBuf, bool flush);
 
     // Read/write to a Stream
     // Returns true if any work done (reading or writing)
     // When flush is true, consumes as much srcBuf as possible, even if it contains a partially
     // encoded point.
-    PLY_DLL_ENTRY bool writeTo(OutStream* outs, ConstBufferView* srcBuf, bool flush);
-    PLY_DLL_ENTRY u32 readFrom(InStream* ins, BufferView* dstBuf);
+    PLY_DLL_ENTRY bool writeTo(OutStream* outs, StringView* srcBuf, bool flush);
+    PLY_DLL_ENTRY u32 readFrom(InStream* ins, MutableStringView* dstBuf);
 
     // Convert a string
-    PLY_DLL_ENTRY static Buffer convertInternal(const TextEncoding* dstEncoding,
+    PLY_DLL_ENTRY static String convertInternal(const TextEncoding* dstEncoding,
                                                 const TextEncoding* srcEncoding,
-                                                ConstBufferView srcText);
+                                                StringView srcText);
     template <typename DstEnc, typename SrcEnc>
-    PLY_INLINE static typename DstEnc::Container convert(typename SrcEnc::Container::View srcText) {
-        return DstEnc::Container::moveFromBuffer(convertInternal(
-            TextEncoding::get<DstEnc>(), TextEncoding::get<SrcEnc>(), srcText.bufferView()));
+    PLY_INLINE static String convert(StringView srcText) {
+        return convertInternal(TextEncoding::get<DstEnc>(), TextEncoding::get<SrcEnc>(), srcText);
     }
 };
 

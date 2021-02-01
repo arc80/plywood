@@ -132,7 +132,7 @@ PLY_NO_INLINE u32 InStream::tryMakeBytesAvailableInternal(u32 numRequestedBytes)
         PLY_ASSERT(!this->chunk->next); // We can only write to the end of the chunk list.
         // Read more data from the underlying pipe.
         u32 bytesRead = this->inPipe->readSome(
-            BufferView::fromRange(this->chunk->bytes + this->chunk->writePos, this->chunk->end()));
+            MutableStringView::fromRange(this->chunk->bytes + this->chunk->writePos, this->chunk->end()));
         if (bytesRead == 0) {
             // We encountered EOF. As a safeguard/courtesy, pad memory with zeros up to the number
             // of needed bytes, even though the caller should **NOT** read any of these...
@@ -177,7 +177,7 @@ PLY_NO_INLINE ChunkCursor InStream::getCursor() const {
     // View is not supported yet, but could be in the future:
     PLY_ASSERT(this->status.type != (u32) Type::View);
     PLY_ASSERT(!this->chunk || this->chunk->viewUsedBytes().contains(this->curByte));
-    return {this->chunk, this->curByte};
+    return {this->chunk, const_cast<char*>(this->curByte)};
 }
 
 PLY_NO_INLINE void InStream::rewind(ChunkCursor cursor) {
@@ -190,7 +190,7 @@ PLY_NO_INLINE void InStream::rewind(ChunkCursor cursor) {
     this->status.eof = cursor.chunk ? 0 : 1;
 }
 
-PLY_NO_INLINE bool InStream::readSlowPath(BufferView dst) {
+PLY_NO_INLINE bool InStream::readSlowPath(MutableStringView dst) {
     if (this->status.eof)
         return false;
 
@@ -208,7 +208,7 @@ PLY_NO_INLINE bool InStream::readSlowPath(BufferView dst) {
     return true;
 }
 
-PLY_NO_INLINE Buffer InStream::readRemainingContents() {
+PLY_NO_INLINE String InStream::readRemainingContents() {
     ChunkCursor startChunk = this->getCursor();
     while (this->tryMakeBytesAvailable()) {
         this->curByte = this->endByte;
@@ -217,7 +217,7 @@ PLY_NO_INLINE Buffer InStream::readRemainingContents() {
     this->chunk.clear();
     this->curByte = nullptr;
     this->endByte = nullptr;
-    return Buffer::fromChunks(std::move(startChunk));
+    return ChunkCursor::toString(std::move(startChunk));
 }
 
 } // namespace ply

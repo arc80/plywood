@@ -7,15 +7,15 @@
 
 namespace ply {
 
-PLY_NO_INLINE void fmt::TypePrinter<web::URLEscape>::print(StringWriter* sw,
+PLY_NO_INLINE void fmt::TypePrinter<web::URLEscape>::print(OutStream* outs,
                                                            const web::URLEscape& value) {
     for (u32 i = 0; i < value.view.numBytes; i++) {
         u8 c = value.view[i];
         if (isAsciiLetter(c) || isDecimalDigit(c) || c == '-' || c == '_' || c == '.' || c == '~') {
-            *sw << (char) c;
+            *outs << (char) c;
         } else {
             // FIXME: Improve format strings to make this simpler
-            *sw << '%' << String::format("0{}", fmt::Hex{c}).upperAsc().right(2);
+            *outs << '%' << String::format("0{}", fmt::Hex{c}).upperAsc().right(2);
         }
     }
 }

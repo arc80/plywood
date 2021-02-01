@@ -21,59 +21,59 @@ StringView UnqualifiedID::getCtorDtorName() const {
 }
 
 String QualifiedID::toString() const {
-    StringWriter sw;
+    MemOutStream mout;
 
     for (const grammar::NestedNameComponent& comp : this->nestedName) {
         if (auto ident = comp.type.identifierOrTemplated()) {
-            sw << ident->name.identifier;
+            mout << ident->name.identifier;
             if (ident->openAngled.isValid()) {
                 // FIXME: dump nested IDs/expressions
-                sw << "<>";
+                mout << "<>";
             }
         } else if (auto declType = comp.type.declType()) {
-            sw << "decltype()";
+            mout << "decltype()";
         } else {
             PLY_ASSERT(0);
         }
         PLY_ASSERT(comp.sep.isValid());
-        sw << "::";
+        mout << "::";
     }
 
     using ID = grammar::UnqualifiedID::ID;
     switch (this->unqual.id) {
         case ID::Identifier: {
-            sw << this->unqual.identifier()->name.identifier;
+            mout << this->unqual.identifier()->name.identifier;
             break;
         }
         case ID::TemplateID: {
             auto tid = this->unqual.templateID();
-            sw << tid->name.identifier << tid->openAngled.identifier;
+            mout << tid->name.identifier << tid->openAngled.identifier;
             // FIXME: dump nested IDs/expressions
-            sw << tid->closeAngled.identifier;
+            mout << tid->closeAngled.identifier;
             break;
         }
         case ID::DeclType: {
             // auto declType = this->unqual.declType();
-            sw << "decltype()";
+            mout << "decltype()";
             break;
         }
         case ID::Destructor: {
             auto dtor = this->unqual.destructor();
-            sw << dtor->tilde.identifier << dtor->name.identifier;
+            mout << dtor->tilde.identifier << dtor->name.identifier;
             break;
         }
         case ID::OperatorFunc: {
             auto opFunc = this->unqual.operatorFunc();
-            sw << opFunc->keyword.identifier << opFunc->punc.identifier << opFunc->punc2.identifier;
+            mout << opFunc->keyword.identifier << opFunc->punc.identifier << opFunc->punc2.identifier;
             break;
         }
         case ID::ConversionFunc: {
             // FIXME: improve this
-            sw << "(conversion)";
+            mout << "(conversion)";
             break;
         }
         case ID::Empty: {
-            sw << "(empty)";
+            mout << "(empty)";
             break;
         }
         default: {
@@ -82,7 +82,7 @@ String QualifiedID::toString() const {
         }
     }
 
-    return sw.moveToString();
+    return mout.moveToString();
 }
 
 Token NestedNameComponent::getFirstToken() const {

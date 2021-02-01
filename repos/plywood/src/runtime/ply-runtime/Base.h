@@ -6,7 +6,6 @@
 #include <ply-runtime/algorithm/Range.h>
 #include <ply-runtime/algorithm/Random.h>
 #include <ply-runtime/container/Array.h>
-#include <ply-runtime/container/Buffer.h>
 #include <ply-runtime/container/EnumIndexedArray.h>
 #include <ply-runtime/container/FixedArray.h>
 #include <ply-runtime/container/Functor.h>
@@ -31,8 +30,6 @@
 #include <ply-runtime/network/Socket.h>
 #include <ply-runtime/process/Subprocess.h>
 #include <ply-runtime/string/String.h>
-#include <ply-runtime/io/text/StringReader.h>
-#include <ply-runtime/io/text/StringWriter.h>
 #include <ply-runtime/thread/Atomic.h>
 #include <ply-runtime/thread/ConditionVariable.h>
 #include <ply-runtime/thread/Mutex.h>

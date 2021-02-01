@@ -11,28 +11,30 @@
 namespace ply {
 
 struct ViewInStream;
-struct StringReader;
-struct StringViewReader;
 
 //------------------------------------------------------------------------------------------------
 /*!
-`InStream` performs buffered input from an arbitrary input source. The underlying input can either
-come from an `InPipe` or from memory.
+`InStream` performs buffered input from an arbitrary input source.
 
 `InStream` is similar to `FILE` in C or `std::istream` in C++. It maintains an internal input buffer
 on the heap, and provides functions to quickly read small amounts of data incrementally, making it
 suitable for application-level parsing of text and binary formats. `InPipe`, on the other hand, is a
 lower-level class more akin to a Unix file descriptor.
 
+The `parse` and `readString` member functions are intended for reading text in an 8-bit format
+compatible with ASCII, such as UTF-8, ISO 8859-1 or Windows-1252. For more information, see
+[Parsing Text](ParsingText).
+
+Some `InStream` objects contain adapters that perform conversions. For example, the `InStream`
+returned by `FileSystem::openTextForRead` can normalize endings and convert from UTF-16 to UTF-8.
+For more information, see [Unicode Support](UnicodeSupport).
+
 If the `InStream`'s underlying input comes from an `InPipe`, the internal input buffer is managed by
 a `ChunkListNode`, and you can call `getCursor()` at any time to create a `ChunkCursor`. You can
 then rewind the `InStream` to an earlier point using `rewind()`, or copy some data between two
 `ChunkCursor`s into a single contiguous memory buffer.
 
-Every `InStream` is also a `StringReader`, and you can cast an `InStream` to a `StringReader` at any
-time by calling `strReader()`. The main reason why `InStream` and `StringReader` are separate
-classes is to help express intention in the code. `InStream` is mainly intended to read binary data
-and `StringReader` is mainly intended to read text, but the two classes are interchangeable.
+To create an `InStream` that reads from a contiguous memory block, use `ViewInStream`.
 */
 struct InStream {
     static const u32 DefaultChunkSizeExp = 12;
@@ -60,7 +62,7 @@ struct InStream {
     safe to read from the pointer. Use member functions such as `tryMakeBytesAvailable()` to ensure
     that this pointer can be read safely.
     */
-    u8* curByte = nullptr;
+    const char* curByte = nullptr;
 
     /*!
     A pointer to the last byte in the input buffer. This pointer does not necessarily represent the
@@ -68,10 +70,10 @@ struct InStream {
     underlying `InPipe`, or to advance to the next chunk in a `ChunkList`, by calling
     `tryMakeBytesAvailable()`.
     */
-    u8* endByte = nullptr;
+    const char* endByte = nullptr;
 
     union {
-        u8* startByte;                  // if Type::View
+        const char* startByte;          // if Type::View
         Reference<ChunkListNode> chunk; // if Type::Pipe or Type::Mem
     };
     union {
@@ -122,8 +124,7 @@ public:
     PLY_DLL_ENTRY void operator=(InStream&& other);
 
     /*!
-    Return `true` if the `InStream` is reading from a fixed memory buffer. Typically this means that
-    the `InStream` was created from a derived class such as `ViewInStream` or `StringViewReader`.
+    Return `true` if the `InStream` is a `ViewInStream`.
     */
     PLY_INLINE bool isView() const {
         return this->status.type == (u32) Type::View;
@@ -151,9 +152,9 @@ public:
     }
 
     /*!
-    Returns the memory region between `curByte` and `endByte` as a `ConstBufferView`.
+    Returns the memory region between `curByte` and `endByte` as a `StringView`.
     */
-    PLY_INLINE ConstBufferView viewAvailable() const {
+    PLY_INLINE StringView viewAvailable() const {
         return {this->curByte, safeDemote<u32>(this->endByte - this->curByte)};
     }
 
@@ -227,7 +228,7 @@ public:
         return *this->curByte++;
     }
 
-    PLY_DLL_ENTRY bool readSlowPath(BufferView dst);
+    PLY_DLL_ENTRY bool readSlowPath(MutableStringView dst);
 
     /*!
     Attempts to fill `dst` with data from the input stream. If the underlying `InPipe` is waiting
@@ -235,7 +236,7 @@ public:
     successfully. If EOF/error is encountered before `dst` can be filled, the remainder of `dst` is
     filled with zeros and `false` is returned.
     */
-    PLY_INLINE bool read(BufferView dst) {
+    PLY_INLINE bool read(MutableStringView dst) {
         if (dst.numBytes > safeDemote<u32>(this->endByte - this->curByte)) {
             return this->readSlowPath(dst);
         }
@@ -247,9 +248,9 @@ public:
     }
 
     /*!
-    Reads all the remaining data from the input stream and returns the contents as a `Buffer`.
+    Reads all the remaining data from the input stream and returns the contents as a `String`.
     */
-    PLY_DLL_ENTRY Buffer readRemainingContents();
+    PLY_DLL_ENTRY String readRemainingContents();
 
     /*!
     \beginGroup
@@ -258,11 +259,102 @@ public:
     */
     PLY_INLINE ViewInStream* asViewInStream();
     PLY_INLINE const ViewInStream* asViewInStream() const;
-    PLY_INLINE StringReader* asStringReader();
-    PLY_INLINE StringViewReader* asStringViewReader();
     /*!
     \endGroup
     */
+
+    /*!
+    A template function to parse the data type given by _`Type`_. It currently supports `s8`, `s16`,
+    `s32`, `s64`, `u8`, `u16`, `u32`, `u64`, `float` and `double`. You can extend it to support
+    additional types by specializing the `fmt::TypeParser` class template.
+
+        u32 a = ins.parse<u32>();         // parse an integer such as "123"
+        double b = ins.parse<double>();   // parse a floating-point number such as "-123.456"
+
+    This function accepts an optional argument `format` whose type depends on the data type being
+    parsed. For `s8`, `s16`, `s32`, `s64`, `u8`, `u16`, `u32`, `u64`, `float` and `double`, the
+    expected type of this argument is `fmt::Radix`.
+
+        u32 a = ins.parse<u32>(fmt::Radix{16});   // parse hex integer such as "badf00d"
+        u32 b = ins.parse<u32>(fmt::Radix{2});    // parse binary integer such as "1101101"
+
+    For more information, see [Parsing Text](ParsingText).
+    */
+    template <typename Type>
+    PLY_INLINE Type parse(const decltype(fmt::TypeParser<Type>::defaultFormat())& format =
+                              fmt::TypeParser<Type>::defaultFormat()) {
+        return fmt::TypeParser<Type>::parse(this, format);
+    }
+
+    /*!
+    A template function to parse text in the format specified by _`Format`_. The return type depends
+    on the format being parsed. It currently supports the following built-in formats:
+
+    * `fmt::QuotedString`
+    * `fmt::Identifier`
+    * `fmt::Line`
+    * `fmt::WhiteSpace`
+    * `fmt::NonWhiteSpace`
+
+    Example:
+
+        ins.parse<fmt::WhiteSpace>();     // returns nothing; whitespace is skipped
+
+    This function accepts an optional argument `format` of type _`Format`_. When this argument is
+    passed, you can leave out the function template argument and let the compiler deduce it from the
+    argument type:
+
+        bool success = ins.parse(fmt::QuotedString{fmt::AllowSingleQuote});
+
+    You can extend this function to support additional formats by specializing the
+    `fmt::FormatParser` class template.
+
+    For more information, see [Parsing Text](ParsingText).
+    */
+    template <typename Format, typename = void_t<decltype(fmt::FormatParser<Format>::parse)>>
+    PLY_INLINE auto parse(const Format& format = {}) {
+        return fmt::FormatParser<Format>::parse(this, format);
+    }
+
+    /*!
+    \beginGroup
+    These functions are similar to the family of `parse()` functions, except that they return a
+    `String` containing the input that was consumed by the parse operation. For example,
+    `readString<fmt::Line>()` returns a single line of text terminated by `'\n'`.
+
+        String line = ins.readString<fmt::Line>();
+
+    Internally, `readString()` uses `getCursor()` to return a new `String`. If you would like both
+    the `String` and the value returned by the parse function, you can use `getCursor()` yourself:
+
+        ChunkCursor startCursor = ins.getCursor();
+        u32 value = ins.parse<u32>();
+        String str = ChunkCursor::toString(std::move(startCursor), ins.getCursor());
+    */
+    template <typename Type>
+    PLY_INLINE String readString(const decltype(fmt::TypeParser<Type>::defaultFormat())& format =
+                                     fmt::TypeParser<Type>::defaultFormat()) {
+        ChunkCursor startCursor = this->getCursor();
+        fmt::TypeParser<Type>::parse(this, format); // ignore return value
+        return ChunkCursor::toString(std::move(startCursor), this->getCursor());
+    }
+
+    template <typename Format, typename = void_t<decltype(fmt::FormatParser<Format>::parse)>>
+    PLY_INLINE String readString(const Format& format = {}) {
+        ChunkCursor startCursor = this->getCursor();
+        fmt::FormatParser<Format>::parse(this, format); // ignore return value
+        return ChunkCursor::toString(std::move(startCursor), this->getCursor());
+    }
+    /*!
+    \endGroup
+    */
+
+    /*!
+    Returns `true` if an error occurred in a previously called parse function.
+    */
+    PLY_INLINE bool anyParseError() const {
+        return this->status.parseError != 0;
+    }
 };
 
 //------------------------------------------------------------------
@@ -271,10 +363,10 @@ public:
 struct ViewInStream : InStream {
     PLY_INLINE ViewInStream() = default;
 
-    PLY_INLINE ViewInStream(ConstBufferView view) : InStream{Type::View, 0} {
-        this->startByte = (u8*) view.bytes;
-        this->curByte = (u8*) view.bytes;
-        this->endByte = (u8*) view.bytes + view.numBytes;
+    PLY_INLINE ViewInStream(StringView view) : InStream{Type::View, 0} {
+        this->startByte = view.bytes;
+        this->curByte = view.bytes;
+        this->endByte = view.bytes + view.numBytes;
         this->reserved = nullptr;
     }
 
@@ -293,7 +385,7 @@ struct ViewInStream : InStream {
     }
 
     struct SavePoint {
-        u8* startByte = nullptr;
+        const char* startByte = nullptr;
 
         PLY_INLINE SavePoint(const InStream* ins) : startByte{ins->curByte} {
         }
@@ -304,11 +396,11 @@ struct ViewInStream : InStream {
         return {this};
     }
 
-    PLY_INLINE ConstBufferView getViewFrom(const SavePoint& savePoint) const {
+    PLY_INLINE StringView getViewFrom(const SavePoint& savePoint) const {
         PLY_ASSERT(this->isView());
         PLY_ASSERT(uptr(this->curByte - savePoint.startByte) <=
                    uptr(this->endByte - this->startByte));
-        return ConstBufferView::fromRange(savePoint.startByte, this->curByte);
+        return StringView::fromRange(savePoint.startByte, this->curByte);
     }
 
     PLY_INLINE void restore(const SavePoint& savePoint) {
@@ -318,10 +410,39 @@ struct ViewInStream : InStream {
         this->curByte = savePoint.startByte;
     }
 
-    PLY_INLINE const u8* getStartByte() const {
+    PLY_INLINE const char* getStartByte() const {
         PLY_ASSERT(this->isView());
         return this->startByte;
     }
+
+    /*!
+    \beginGroup
+    These functions are similar to `StringReader`'s family of `readString()` functions except that
+    they return a `StringView` into the existing memory buffer instead of copying data to a new
+    `String`. For example, `readView<fmt::Line>()` returns a `StringView` that contains a single
+    line of text terminated by `'\n'`.
+
+        StringView line = vins.readView<fmt::Line>();
+    */
+    template <typename Type>
+    PLY_INLINE StringView readView(const decltype(fmt::TypeParser<Type>::defaultFormat())& format =
+                                       fmt::TypeParser<Type>::defaultFormat()) {
+        PLY_ASSERT(this->isView()); // prevent bad casts
+        const char* startByte = (const char*) this->curByte;
+        fmt::TypeParser<Type>::parse(this, format); // ignore return value
+        return StringView::fromRange(startByte, (const char*) this->curByte);
+    }
+
+    template <typename Format, typename = void_t<decltype(fmt::FormatParser<Format>::parse)>>
+    PLY_INLINE StringView readView(const Format& format = {}) {
+        PLY_ASSERT(this->isView()); // prevent bad casts
+        const char* startByte = (const char*) this->curByte;
+        fmt::FormatParser<Format>::parse(this, format); // ignore return value
+        return StringView::fromRange(startByte, (const char*) this->curByte);
+    }
+    /*!
+    \endGroup
+    */
 };
 
 PLY_INLINE ViewInStream* InStream::asViewInStream() {
@@ -347,9 +468,21 @@ public:
     template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
     PLY_INLINE T read() {
         T value;
-        ins->read({&value, sizeof(value)});
+        ins->read({(char*) &value, sizeof(value)});
         return value;
     }
 };
 
+template <typename T>
+PLY_NO_INLINE T StringView::to(const T& defaultValue) const {
+    ViewInStream vins{this->trim(isWhite)};
+    T value = vins.parse<T>();
+    if (vins.atEOF() && !vins.anyParseError()) {
+        return value;
+    }
+    return defaultValue;
+}
+
 } // namespace ply
+
+#include <ply-runtime/io/impl/TypeParser.h>

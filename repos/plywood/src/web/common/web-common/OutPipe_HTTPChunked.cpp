@@ -11,19 +11,19 @@ namespace web {
 PLY_NO_INLINE void OutPipe_HTTPChunked_destroy(OutPipe* outPipe_) {
     OutPipe_HTTPChunked* outPipe = static_cast<OutPipe_HTTPChunked*>(outPipe_);
     // End of chunk stream
-    *outPipe->outs->strWriter() << "0\r\n\r\n";
+    *outPipe->outs << "0\r\n\r\n";
     outPipe->outs->flushMem();
 }
 
-PLY_NO_INLINE bool OutPipe_HTTPChunked_write(OutPipe* outPipe_, ConstBufferView srcBuf) {
+PLY_NO_INLINE bool OutPipe_HTTPChunked_write(OutPipe* outPipe_, StringView srcBuf) {
     OutPipe_HTTPChunked* outPipe = static_cast<OutPipe_HTTPChunked*>(outPipe_);
     if (outPipe->chunkMode) {
         PLY_ASSERT(srcBuf.numBytes > 0);
-        outPipe->outs->strWriter()->format("{}\r\n", fmt::Hex{srcBuf.numBytes, true});
+        outPipe->outs->format("{}\r\n", fmt::Hex{srcBuf.numBytes, true});
     }
     outPipe->outs->write(srcBuf);
     if (outPipe->chunkMode) {
-        *outPipe->outs->strWriter() << "\r\n";
+        *outPipe->outs << "\r\n";
     }
     return !outPipe->outs->atEOF();
 }

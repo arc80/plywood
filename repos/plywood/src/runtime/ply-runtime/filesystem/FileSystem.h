@@ -8,7 +8,6 @@
 #include <ply-runtime/string/String.h>
 #include <ply-runtime/filesystem/Path.h>
 #include <ply-runtime/container/Array.h>
-#include <ply-runtime/container/Buffer.h>
 #include <ply-runtime/container/Tuple.h>
 #include <ply-runtime/container/Owned.h>
 #include <ply-runtime/io/Pipe.h>
@@ -311,10 +310,10 @@ struct FileSystem {
 
     The following example outputs a list of non-directory files in the current directory:
 
-        StringWriter sw = StdOut::text();
+        OutStream outs = StdOut::text();
         for (const DirectoryEntry& entry : FileSystem::native()->listDir(".", 0)) {
             if (!entry.isDir) {
-                sw << entry.name << '\n';
+                outs << entry.name << '\n';
             }
         }
 
@@ -372,14 +371,14 @@ struct FileSystem {
     directory under the starting directory, except that it doesn't look under any subdirectory that
     starts with a dot `"."`:
 
-        StringWriter sw = StdOut::text();
+        OutStream outs = StdOut::text();
         for (WalkTriple& triple : fs->walk(".", FileSystem::WithSizes)) {
             // Calculate the number of bytes taken by non-directory files
             u64 sum = 0;
             for (const WalkTriple::FileInfo& file : triple.files) {
                 sum += file.fileSize;
             }
-            sw.format("{}: {} bytes\n", triple.dirPath, sum);
+            outs.format("{}: {} bytes\n", triple.dirPath, sum);
 
             // Prune subdirectories that start with "."
             for (u32 i = 0; i < triple.dirNames.numItems(); i++) {
@@ -519,8 +518,8 @@ struct FileSystem {
     PLY_DLL_ENTRY Owned<OutStream> openStreamForWrite(StringView path);
 
     /*!
-    Returns a `StringReader` that reads raw data from the specified text file and converts it to
-    UTF-8 with Unix-style newlines, or `nullptr` if the file could not be opened. The text file is
+    Returns an `InStream` that reads raw data from the specified text file and converts it to UTF-8
+    with Unix-style newlines, or `nullptr` if the file could not be opened. The text file is
     expected to have the file format described by `textFormat`. Any byte order mark (BOM) in the
     file is skipped. See `TextFormat` for more information on supported text file formats.
 
@@ -534,15 +533,14 @@ struct FileSystem {
             return nullptr;
         return textFormat.createImporter(std::move(ins));
     */
-    PLY_DLL_ENTRY Owned<StringReader> openTextForRead(StringView path,
-                                                      const TextFormat& textFormat);
+    PLY_DLL_ENTRY Owned<InStream> openTextForRead(StringView path, const TextFormat& textFormat);
 
     /*!
-    Returns a `Tuple`. The first tuple item is a `StringReader` that reads raw data from the
-    specified text file and converts it to UTF-8 with Unix-style newlines, or `nullptr` if the file
-    could not be opened. The text file format is detected automatically and returned as the second
-    tuple item. Any byte order mark (BOM) in the text file is skipped. See `TextFormat` for more
-    information on supported text file formats.
+    Returns a `Tuple`. The first tuple item is a `InStream` that reads raw data from the specified
+    text file and converts it to UTF-8 with Unix-style newlines, or `nullptr` if the file could not
+    be opened. The text file format is detected automatically and returned as the second tuple item.
+    Any byte order mark (BOM) in the text file is skipped. See `TextFormat` for more information on
+    supported text file formats.
 
     This function updates the internal result code. Expected result codes are `OK`, `NotFound`,
     `AccessDenied` or `Locked`.
@@ -555,16 +553,16 @@ struct FileSystem {
         TextFormat textFormat = TextFormat::autodetect(ins);
         return {textFormat.createImporter(std::move(ins)), textformat};
     */
-    PLY_DLL_ENTRY Tuple<Owned<StringReader>, TextFormat> openTextForReadAutodetect(StringView path);
+    PLY_DLL_ENTRY Tuple<Owned<InStream>, TextFormat> openTextForReadAutodetect(StringView path);
 
     /*!
-    Returns a `Buffer` containing the raw contents of the specified file, or an empty `Buffer` if
+    Returns a `String` containing the raw contents of the specified file, or an empty `String` if
     the file could not be opened.
 
     To check if the file was opened successfuly, call `lastResult()`. Expected result codes are
     `OK`, `NotFound`, `AccessDenied` or `Locked`.
     */
-    PLY_DLL_ENTRY Buffer loadBinary(StringView path);
+    PLY_DLL_ENTRY String loadBinary(StringView path);
 
     /*!
     Returns a `String` containing the contents of the specified text file converted to UTF-8 with
@@ -590,11 +588,11 @@ struct FileSystem {
     PLY_DLL_ENTRY Tuple<String, TextFormat> loadTextAutodetect(StringView path);
 
     /*!
-    Returns a `StringWriter` that writes text to the specified text file in the specified format, or
-    `nullptr` if the file could not be opened. The `StringWriter` expects UTF-8-encoded text. The
-    `StringWriter` accepts both Windows and Unix-style newlines; all newlines will be converted to
-    the format described by `textFormat`. See `TextFormat` for more information on supported text
-    file formats.
+    Returns an `OutStream` that writes text to the specified text file in the specified format, or
+    `nullptr` if the file could not be opened. The `OutStream` expects UTF-8-encoded text. The
+    `OutStream` accepts both Windows and Unix-style newlines; all newlines will be converted to the
+    format described by `textFormat`. See `TextFormat` for more information on supported text file
+    formats.
 
     This function updates the internal result code. Expected result codes are `OK`, `NotFound`,
     `AccessDenied` or `Locked`.
@@ -606,7 +604,7 @@ struct FileSystem {
             return nullptr;
         return TextFormat::createExporter(std::move(outs), textFormat);
     */
-    Owned<StringWriter> openTextForWrite(StringView path, const TextFormat& textFormat);
+    Owned<OutStream> openTextForWrite(StringView path, const TextFormat& textFormat);
 
     /*!
     First, this function tries to load the raw contents of the specified file. If the load succeeds
@@ -618,8 +616,7 @@ struct FileSystem {
     In all cases, this function updates the internal result code. The result code is also returned
     directly.
     */
-    PLY_DLL_ENTRY FSResult makeDirsAndSaveBinaryIfDifferent(StringView path,
-                                                            ConstBufferView contents);
+    PLY_DLL_ENTRY FSResult makeDirsAndSaveBinaryIfDifferent(StringView path, StringView contents);
 
     /*!
     First, this function converts `strContents` to a raw memory buffer using the text file format

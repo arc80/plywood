@@ -224,13 +224,14 @@ PLY_NO_INLINE Owned<Subprocess> Subprocess::execArgStr(StringView exePath, Strin
     }
 
     // Create command line
-    StringWriter cmdLine;
+    MemOutStream cmdLine;
     cmdLine << fmt::CmdLineArg_WinCrt{exePath};
     if (argStr) {
         cmdLine << ' ' << argStr;
     }
     cmdLine << '\0';
-    WString wCmdLine = TextConverter::convert<UTF16_Native, UTF8>(cmdLine.moveToString());
+    WString wCmdLine =
+        WString::moveFromString(TextConverter::convert<UTF16_Native, UTF8>(cmdLine.moveToString()));
 
     // Create the child process:
     WString win32Dir;
@@ -275,14 +276,14 @@ PLY_NO_INLINE Owned<Subprocess> Subprocess::exec(StringView exePath,
                                                  ArrayView<const StringView> args,
                                                  StringView initialDir, const Output& output,
                                                  const Input& input) {
-    StringWriter sw;
+    MemOutStream mout;
     for (StringView arg : args) {
-        if (sw.getSeekPos() > 0) {
-            sw << ' ';
+        if (mout.getSeekPos() > 0) {
+            mout << ' ';
         }
-        sw << fmt::CmdLineArg_WinCrt{arg};
+        mout << fmt::CmdLineArg_WinCrt{arg};
     }
-    return Subprocess::execArgStr(exePath, sw.moveToString(), initialDir, output, input);
+    return Subprocess::execArgStr(exePath, mout.moveToString(), initialDir, output, input);
 }
 
 } // namespace ply

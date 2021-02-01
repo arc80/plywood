@@ -219,17 +219,17 @@ PLY_NO_INLINE DependencyTree BuildFolder::buildDepTree() const {
 PLY_NO_INLINE u128 BuildFolder::currentBuildSystemSignature() const {
     Hash128 h;
     u128 mds = RepoRegistry::get()->moduleDefSignature;
-    h.append({&mds, sizeof(mds)});
-    h.append(this->solutionName.bufferView());
+    h.append({(const char*) &mds, sizeof(mds)});
+    h.append(this->solutionName);
     this->cmakeOptions.appendTo(h);
     for (StringView rt : this->rootTargets) {
-        h.append(rt.bufferView());
+        h.append(rt);
     }
     for (StringView ms : this->makeShared) {
-        h.append(ms.bufferView());
+        h.append(ms);
     }
     for (StringView es : this->externSelectors) {
-        h.append(es.bufferView());
+        h.append(es);
     }
     return h.get();
 }
@@ -266,11 +266,11 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
 
     String buildFolderPath = BuildFolderName::getFullPath(this->buildFolderName);
     {
-        StringWriter sw;
-        writeCMakeLists(&sw, this->solutionName, buildFolderPath, instResult, false);
+        MemOutStream mout;
+        writeCMakeLists(&mout, this->solutionName, buildFolderPath, instResult, false);
         String cmakeListsPath = NativePath::join(buildFolderPath, "CMakeLists.txt");
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-            cmakeListsPath, sw.moveToString(), TextFormat::platformPreference());
+            cmakeListsPath, mout.moveToString(), TextFormat::platformPreference());
         if (result != FSResult::OK && result != FSResult::Unchanged) {
             ErrorHandler::log(ErrorHandler::Error,
                               String::format("Can't write '{}'\n", cmakeListsPath));
@@ -323,9 +323,9 @@ PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
         u32 numUnselected = instResult.unselectedExterns.numItems();
         if (numUnselected > 0) {
             canGenerate = false;
-            StringWriter sw = StdOut::text();
+            OutStream outs = StdOut::text();
             for (const DependencySource* unselectedExtern : instResult.unselectedExterns) {
-                sw.format("Can't generate build system in folder '{}' because extern '{}' is not "
+                outs.format("Can't generate build system in folder '{}' because extern '{}' is not "
                           "selected.\n",
                           this->buildFolderName,
                           RepoRegistry::get()->getShortDepSourceName(unselectedExtern));
@@ -346,13 +346,13 @@ PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
                     }
                 }
                 if (candidates.isEmpty()) {
-                    sw.format("No compatible providers are available for extern '{}'.\n",
+                    outs.format("No compatible providers are available for extern '{}'.\n",
                               RepoRegistry::get()->getShortDepSourceName(unselectedExtern));
                 } else {
                     u32 n = candidates.numItems();
-                    sw.format("{} compatible provider{} available:\n", n, n == 1 ? " is" : "s are");
+                    outs.format("{} compatible provider{} available:\n", n, n == 1 ? " is" : "s are");
                     for (Tuple<const ExternProvider*, bool> pair : candidates) {
-                        sw.format("    {} ({})\n",
+                        outs.format("    {} ({})\n",
                                   RepoRegistry::get()->getShortProviderName(pair.first),
                                   pair.second ? "installed" : "not installed");
                     }
@@ -361,9 +361,9 @@ PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
         }
         if (instResult.uninstalledProviders.numItems() > 0) {
             canGenerate = false;
-            StringWriter sw = StdOut::text();
+            OutStream outs = StdOut::text();
             for (const ExternProvider* prov : instResult.uninstalledProviders) {
-                sw.format("Can't generate build system in folder '{}' because extern provider "
+                outs.format("Can't generate build system in folder '{}' because extern provider "
                           "'{}' is selected, but not installed.\n",
                           this->buildFolderName, RepoRegistry::get()->getShortProviderName(prov));
             }

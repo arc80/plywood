@@ -10,14 +10,14 @@ namespace ply {
 //-------------------------------------------------------------------
 // UTF8
 //-------------------------------------------------------------------
-PLY_NO_INLINE DecodeResult UTF8::decodePointSlowPath(ConstBufferView view) {
+PLY_NO_INLINE DecodeResult UTF8::decodePointSlowPath(StringView view) {
     if (view.numBytes == 0) {
         return {};
     }
 
     DecodeResult result; // Default status is Truncated
     u32 value = 0;
-    const u8* bytes = view.bytes;
+    const u8* bytes = (const u8*) view.bytes;
     u8 first = *bytes++;
     switch ((first >> 3) & 0xf) {
         case 0b1000:
@@ -84,7 +84,7 @@ consume1Byte:
     return result;
 }
 
-PLY_NO_INLINE u32 UTF8::backNumBytesSlowPath(ConstBufferView view) {
+PLY_NO_INLINE u32 UTF8::backNumBytesSlowPath(StringView view) {
     if (view.numBytes == 0) {
         return 0;
     }

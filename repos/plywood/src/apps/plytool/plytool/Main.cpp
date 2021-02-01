@@ -30,16 +30,16 @@ int main(int argc, char* argv[]) {
     using namespace ply;
 
     auto errorHandler = [](build::ErrorHandler::Level errorLevel, HybridString&& error) {
-        StringWriter sw;
+        Owned<OutStream> outs;
         if (errorLevel == build::ErrorHandler::Error || errorLevel == build::ErrorHandler::Fatal) {
-            sw = StdErr::text();
-            sw << "Error: ";
+            outs = new OutStream{StdErr::text()};
+            *outs << "Error: ";
         } else {
-            sw = StdOut::text();
+            outs = new OutStream{StdOut::text()};
         }
-        sw << error.view();
+        *outs << error.view();
         if (!error.view().endsWith("\n")) {
-            sw << '\n';
+            *outs << '\n';
         }
     };
     PLY_SET_IN_SCOPE(build::ErrorHandler::current, errorHandler);
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
     bool success = true;
     if (category.isEmpty()) {
         cl.finalize();
-        auto sw = StdErr::text();
+        auto outs = StdErr::text();
         const CommandList commands = {
             {"bootstrap", "bootstrap description"}, {"build", "build description"},
             {"cleanup", "cleanup description"},     {"codegen", "codegen description"},
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
             {"generate", "generate description"},   {"module", "module description"},
             {"target", "target description"},
         };
-        printUsage(&sw, commands);
+        printUsage(&outs, commands);
     } else if (category == "rpc") {
         command_rpc(&env);
     } else if (prefixMatch(category, "folder")) {

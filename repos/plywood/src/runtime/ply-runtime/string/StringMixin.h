@@ -22,8 +22,8 @@ struct StringMixin {
         StringView{""}.to<u32>();       // returns 0
         StringView{""}.to<s32>(-1);     // returns -1
 
-    This function uses `StringViewReader` internally. If you need to distinguish between a
-    successful parse and an unsuccessful one, create and use a `StringViewReader` object directly.
+    This function uses `ViewInStream` internally. If you need to distinguish between a successful
+    parse and an unsuccessful one, create and use a `ViewInStream` object directly.
     */
     template <typename T>
     PLY_INLINE T to(const T& defaultValue = subst::createDefault<T>()) const {
@@ -85,41 +85,6 @@ struct StringMixin {
     PLY_INLINE StringView right(u32 numBytes) const {
         return static_cast<const Derived*>(this)->view().right(numBytes);
     }
-
-    /*!
-    Returns:
-    * `-1` if `str0` precedes `str1` in sorted order
-    * `0` if the strings are equal
-    * `1` if `str0` follows `str1` in sorted order
-    Strings are sorted by comparing the unsigned value of each byte. If one of the strings contains
-    the other as a prefix, the shorter string comes first in sorted order.
-    */
-    PLY_DLL_ENTRY friend s32 compare(const Derived& str0, const Derived& str1) {
-        return compare(str0.view(), str1.view());
-    }
-
-    /*!
-    Returns `true` if the string precedes `other` in sorted order. Equivalent to `compare(*this,
-    other) < 0`.
-    */
-    PLY_INLINE bool operator<(StringView other) const {
-        return static_cast<const Derived*>(this)->view() < other;
-    }
-
-    /*!
-    \beginGroup
-    Returns `true` if the string contents are identical (or not identical) when compared
-    byte-for-byte.
-    */
-    PLY_INLINE bool operator==(StringView src) const {
-        return static_cast<const Derived*>(this)->view() == src;
-    }
-    PLY_INLINE bool operator!=(StringView src) const {
-        return static_cast<const Derived*>(this)->view() != src;
-    }
-    /*!
-    \endGroup
-    */
 
     /*!
     Returns a new `String` containing the concatenation of two `StringViews`.
@@ -221,7 +186,7 @@ struct StringMixin {
     /*!
     Returns a list of the words in the given string using `sep` as a delimiter byte.
     */
-    PLY_INLINE Array<StringView> splitByte(char sep) const {
+    PLY_INLINE auto splitByte(char sep) const {
         return static_cast<const Derived*>(this)->view().splitByte(sep);
     }
 
@@ -284,10 +249,5 @@ struct StringMixin {
         return static_cast<const Derived*>(this)->view().withoutNullTerminator();
     }
 };
-
-template <typename Derived>
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const StringMixin<Derived>& str) {
-    return hasher << static_cast<const Derived*>(&str)->view();
-}
 
 } // namespace ply

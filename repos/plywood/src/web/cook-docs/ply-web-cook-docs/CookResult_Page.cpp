@@ -91,7 +91,7 @@ String getLinkDestinationFromSpan(StringView codeSpanText, const LookupContext& 
             return getLinkDestination(foundSema);
         }
     }
-    {
+    if (lookupCtx.forClass) {
         // Try class itself last
         SemaEntity* foundSema = lookupCtx.forClass->lookupChain(nameComps.view());
         if (foundSema) {
@@ -160,14 +160,14 @@ Owned<markdown::Node> parseMarkdown(StringView markdown, const LookupContext& lo
 
 String convertMarkdownToHTML(StringView markdown, const LookupContext& lookupCtx) {
     Owned<markdown::Node> document = parseMarkdown(markdown, lookupCtx);
-    StringWriter sw;
+    MemOutStream mout;
     markdown::HTMLOptions options;
     options.childAnchors = true;
-    convertToHTML(&sw, document, options);
-    return sw.moveToString();
+    convertToHTML(&mout, document, options);
+    return mout.moveToString();
 }
 
-void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWriter,
+void dumpMemberTitle(const DocInfo::Entry::Title& title, OutStream& htmlWriter,
                      bool prependClassName, const LookupContext& lookupCtx) {
     const SemaEntity* templateParams = title.member->templateParams;
     const cpp::sema::SingleDeclaration* singleDecl = &title.member->singleDecl;
@@ -216,7 +216,7 @@ void dumpMemberTitle(const DocInfo::Entry::Title& title, StringWriter& htmlWrite
     htmlWriter << "</code>\n";
 }
 
-void dumpBaseClasses(StringWriter& htmlWriter, SemaEntity* classEnt,
+void dumpBaseClasses(OutStream& htmlWriter, SemaEntity* classEnt,
                      const LookupContext& lookupCtx) {
     // Dump base classes
     for (const cpp::sema::QualifiedID& qid : classEnt->baseClasses) {
@@ -246,7 +246,7 @@ void dumpBaseClasses(StringWriter& htmlWriter, SemaEntity* classEnt,
     }
 };
 
-void dumpExtractedMembers(StringWriter& htmlWriter, SemaEntity* classEnt) {
+void dumpExtractedMembers(OutStream& htmlWriter, SemaEntity* classEnt) {
     PLY_ASSERT(classEnt);
     PLY_ASSERT(classEnt->type == SemaEntity::Class);
     const DocInfo* docInfo = classEnt->docInfo;
@@ -403,11 +403,11 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
     }
     String src = FileIOWrappers::loadTextAutodetect(std::move(ins)).first;
     FileLocationMap srcFileLocMap = FileLocationMap::fromView(src);
-    StringViewReader sr{src};
+    ViewInStream srcVins{src};
 
     // Extract liquid tags
-    StringWriter sw;
-    StringWriter htmlWriter;
+    MemOutStream mout;
+    MemOutStream htmlWriter;
     Array<String> childPageNames;
     String classScopeText;
     // FIXME: don't hardcode classScope
@@ -415,15 +415,15 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
     SemaEntity* classScope = wci->globalScope->lookup({"ply"});
     bool inMembers = false;
     auto flushMarkdown = [&] {
-        String page = sw.moveToString();
+        String page = mout.moveToString();
         htmlWriter << convertMarkdownToHTML(page, {classScope, {}});
-        sw = StringWriter{};
+        mout = MemOutStream{};
     };
-    extractLiquidTags(&sw, &sr, [&](StringView tag, StringView section) {
-        StringViewReader svr{section};
-        svr.parse<fmt::Whitespace>();
-        StringView command = svr.readView(fmt::Identifier{});
-        svr.parse<fmt::Whitespace>();
+    extractLiquidTags(&mout, &srcVins, [&](StringView tag, StringView section) {
+        ViewInStream vins{section};
+        vins.parse<fmt::Whitespace>();
+        StringView command = vins.readView(fmt::Identifier{});
+        vins.parse<fmt::Whitespace>();
         if (command == "title" || command == "linkID" || command == "synopsis" ||
             command == "childOrder") {
             // Handled by CookResult_ExtractPageMeta
@@ -431,7 +431,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             flushMarkdown();
             htmlWriter
                 << "<div class=\"note\"><img src=\"/static/info-icon.svg\" class=\"icon\"/>\n";
-            htmlWriter << convertMarkdownToHTML(svr.viewAvailable(), {classScope, {}});
+            htmlWriter << convertMarkdownToHTML(vins.viewAvailable(), {classScope, {}});
             htmlWriter << "</div>\n";
         } else if (command == "member") {
             flushMarkdown();
@@ -443,7 +443,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             }
             htmlWriter << "<dt><code>";
             // FIXME: handle errors here
-            Array<TitleSpan> spans = parseTitle(svr.viewAvailable().rtrim(isWhite),
+            Array<TitleSpan> spans = parseTitle(vins.viewAvailable().rtrim(isWhite),
                                                 [](ParseTitleError, StringView, const char*) {});
             writeAltMemberTitle(htmlWriter, spans.view(), {classScope, {}},
                                 getLinkDestinationFromSpan);
@@ -459,7 +459,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
                 PLY_ASSERT(0); // FIXME: Handle gracefully
             }
         } else if (command == "setClassScope") {
-            classScopeText = svr.viewAvailable().trim(isWhite);
+            classScopeText = vins.viewAvailable().trim(isWhite);
             classScope = resolveClassScope(classScopeText);
             if (!classScope) {
                 FileLocation srcFileLoc =
@@ -475,7 +475,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             }
         } else if (command == "dumpExtractedMembers") {
             flushMarkdown();
-            String classFQID = svr.viewAvailable().trim(isWhite);
+            String classFQID = vins.viewAvailable().trim(isWhite);
             if (classFQID != classScopeText) {
                 FileLocation srcFileLoc =
                     srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));
@@ -505,7 +505,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             dumpExtractedMembers(htmlWriter, classEnt);
         } else if (command == "html") {
             flushMarkdown();
-            htmlWriter << svr.viewAvailable();
+            htmlWriter << vins.viewAvailable();
         } else {
             FileLocation srcFileLoc =
                 srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));

@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/BufferView.h>
+#include <ply-runtime/string/StringView.h>
 
 namespace ply {
 
@@ -65,6 +65,6 @@ PLY_INLINE Hasher& operator<<(Hasher& hasher, const T* value) {
     return hasher;
 };
 
-PLY_DLL_ENTRY Hasher& operator<<(Hasher& hasher, ConstBufferView buf);
+PLY_DLL_ENTRY Hasher& operator<<(Hasher& hasher, StringView buf);
 
 } // namespace ply

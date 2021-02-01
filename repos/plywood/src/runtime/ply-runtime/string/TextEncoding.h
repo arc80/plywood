@@ -4,16 +4,13 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/ArrayView.h>
+#include <ply-runtime/string/StringView.h>
 
 namespace ply {
 
-struct String;
-struct WString;
-
 struct DecodeResult {
     enum class Status : u8 {
-        Truncated, // Buffer wasn't long enough to read a valid point. A (invalid) point may be
+        Truncated, // StringView wasn't long enough to read a valid point. A (invalid) point may be
                    // available anyway, such as when flushing the last few bytes of a UTF-8 file.
         Invalid, // Invalid byte sequence was encountered. Such sequences are typically decoded one
                  // code unit at a time.
@@ -31,9 +28,7 @@ struct DecodeResult {
 // Enc_Bytes
 //-------------------------------------------------------------------
 struct Enc_Bytes {
-    using Container = String;
-
-    static PLY_INLINE DecodeResult decodePoint(ConstBufferView view) {
+    static PLY_INLINE DecodeResult decodePoint(StringView view) {
         if (view.numBytes == 0) {
             return {};
         } else {
@@ -41,7 +36,7 @@ struct Enc_Bytes {
         }
     }
 
-    static PLY_INLINE u32 backNumBytes(ConstBufferView view) {
+    static PLY_INLINE u32 backNumBytes(StringView view) {
         if (view.numBytes == 0) {
             return 0;
         } else {
@@ -53,9 +48,9 @@ struct Enc_Bytes {
         return 1;
     }
 
-    static PLY_INLINE u32 encodePoint(BufferView view, u32 point) {
+    static PLY_INLINE u32 encodePoint(MutableStringView view, u32 point) {
         if (view.numBytes > 0) {
-            view[0] = point < 256 ? (u8) point : 0x95;
+            view.bytes[0] = point < 256 ? (u8) point : 0x95;
             return 1;
         }
         PLY_ASSERT(false); // Passed buffer was too small
@@ -67,12 +62,9 @@ struct Enc_Bytes {
 // UTF8
 //-------------------------------------------------------------------
 struct UTF8 {
-    typedef u32 BadUnitHandler(u8 badUnit);
-    using Container = String;
+    static PLY_DLL_ENTRY DecodeResult decodePointSlowPath(StringView view);
 
-    static PLY_DLL_ENTRY DecodeResult decodePointSlowPath(ConstBufferView view);
-
-    static PLY_INLINE DecodeResult decodePoint(ConstBufferView view) {
+    static PLY_INLINE DecodeResult decodePoint(StringView view) {
         if (view.numBytes > 0) {
             u8 first = view.bytes[0];
             if (first < 0x80) {
@@ -82,9 +74,9 @@ struct UTF8 {
         return decodePointSlowPath(view);
     }
 
-    static PLY_DLL_ENTRY u32 backNumBytesSlowPath(ConstBufferView view);
+    static PLY_DLL_ENTRY u32 backNumBytesSlowPath(StringView view);
 
-    static PLY_INLINE u32 backNumBytes(ConstBufferView view) {
+    static PLY_INLINE u32 backNumBytes(StringView view) {
         if (view.numBytes > 0) {
             u8 last = view.bytes[view.numBytes - 1];
             if (last < 0x80) {
@@ -105,7 +97,7 @@ struct UTF8 {
             return 4;
     }
 
-    static PLY_INLINE u32 encodePoint(BufferView view, u32 point) {
+    static PLY_INLINE u32 encodePoint(MutableStringView view, u32 point) {
         if (point < 0x80) {
             if (view.numBytes >= 1) {
                 view.bytes[0] = u8(point);
@@ -143,17 +135,15 @@ struct UTF8 {
 //-------------------------------------------------------------------
 template <bool BigEndian>
 struct UTF16 {
-    using Container = WString;
-
-    static PLY_INLINE char16_t getUnit(const u8* src) {
+    static PLY_INLINE u16 getUnit(const char* src) {
         if (BigEndian) {
-            return (char16_t(src[0]) << 8) | src[1];
+            return (u16(u8(src[0])) << 8) | u8(src[1]);
         } else {
-            return (src[0] | char16_t(src[1]) << 8);
+            return u8(src[0]) | (u16(u8(src[1])) << 8);
         }
     }
 
-    static PLY_INLINE void putUnit(u8* src, char16_t u) {
+    static PLY_INLINE void putUnit(char* src, u16 u) {
         if (BigEndian) {
             src[0] = u8(u >> 8);
             src[1] = u8(u);
@@ -163,7 +153,7 @@ struct UTF16 {
         }
     }
 
-    static PLY_INLINE DecodeResult decodePoint(ConstBufferView view) {
+    static PLY_INLINE DecodeResult decodePoint(StringView view) {
         if (view.numBytes < 2) {
             return {};
         }
@@ -185,11 +175,11 @@ struct UTF16 {
         return {first, status, 2};
     }
 
-    static PLY_INLINE u32 backNumBytes(ConstBufferView view) {
+    static PLY_INLINE u32 backNumBytes(StringView view) {
         if (view.numBytes < 2) {
             return 0;
         }
-        const u8* tail = (const u8*) view.bytes + view.numBytes;
+        const char* tail = view.bytes + view.numBytes;
         if (view.numBytes >= 4) {
             u16 first = getUnit(tail - 4);
             u16 second = getUnit(tail - 2);
@@ -206,7 +196,7 @@ struct UTF16 {
             return 4;
     }
 
-    static PLY_INLINE u32 encodePoint(BufferView view, u32 point) {
+    static PLY_INLINE u32 encodePoint(MutableStringView view, u32 point) {
         if (point < 0x10000) {
             if (view.numBytes >= 2) {
                 putUnit(view.bytes, u16(point));
@@ -233,8 +223,8 @@ using UTF16_Native = UTF16<PLY_IS_BIG_ENDIAN>;
 // TextEncoding helper objects
 //-------------------------------------------------------------------
 struct TextEncoding {
-    DecodeResult (*decodePoint)(ConstBufferView view) = nullptr;
-    u32 (*encodePoint)(BufferView view, u32 point) = nullptr;
+    DecodeResult (*decodePoint)(StringView view) = nullptr;
+    u32 (*encodePoint)(MutableStringView view, u32 point) = nullptr;
     u32 unitSize = 0;
 
     template <typename>

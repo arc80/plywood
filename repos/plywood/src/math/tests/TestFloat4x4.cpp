@@ -166,14 +166,14 @@ PLY_TEST_CASE("Float4x4 perspective projection") {
     Float4x4 p = Float4x4::makeProjection(rectFromFov(Pi / 2, 16.f / 9), 1, 100);
     PLY_TEST_CHECK(isAlmostEqual(
         Float4x4{
-            {0.5625f, 0, 0, 0}, {0, 1.f, 0, 0}, {0, 0, -1.02020204f, -1}, {0, 0, -2.02020192, 0}},
+            {0.5625f, 0, 0, 0}, {0, 1.f, 0, 0}, {0, 0, -1.02020204f, -1}, {0, 0, -2.02020192f, 0}},
         p));
 }
 
 PLY_TEST_CASE("Float4x4 orthogonal projection") {
     Float4x4 o = Float4x4::makeOrtho(Rect::fromSize(-1.f, 1.f, 2.f, 2.f), 1, 100);
     PLY_TEST_CHECK(isAlmostEqual(
-        Float4x4{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -0.0202020202f, 0}, {0, -2, -1.02020204, 1}},
+        Float4x4{{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -0.0202020202f, 0}, {0, -2, -1.02020204f, 1}},
         o));
 }
 

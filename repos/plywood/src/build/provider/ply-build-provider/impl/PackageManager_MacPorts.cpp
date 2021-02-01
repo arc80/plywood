@@ -16,10 +16,10 @@ struct PackageManager_MacPorts : PackageManager {
                                                  Subprocess::Output::openMerged());
         if (!sub)
             return false;
-        Owned<StringReader> sr = TextFormat::platformPreference().createImporter(
+        Owned<InStream> ins = TextFormat::platformPreference().createImporter(
             Owned<InStream>::create(sub->readFromStdOut.borrow()));
         bool found = false;
-        while (String line = sr->readString<fmt::Line>()) {
+        while (String line = ins->readString<fmt::Line>()) {
             if (line.ltrim().startsWith(packageName))
                 found = true;
         }

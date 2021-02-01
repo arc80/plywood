@@ -72,9 +72,9 @@ void Trace_MemLog::dumpStats() {
 
 void Trace_MemLog::dumpEntireLog(const char* path, ureg startPage) {
     ply::LockGuard<ply::Mutex> lock(m_mutex);
-    Owned<StringWriter> sw =
+    Owned<OutStream> outs =
         FileSystem::native()->openTextForWrite(path, TextFormat::platformPreference());
-    if (!sw)
+    if (!outs)
         return;
     for (Page* page = m_head; page; page = page->next) {
         if (startPage > 0) {
@@ -84,7 +84,7 @@ void Trace_MemLog::dumpEntireLog(const char* path, ureg startPage) {
         ureg limit = ply::min<ureg>(EventsPerPage, page->index.load(ply::Relaxed));
         for (ureg i = 0; i < limit; i++) {
             const Event& evt = page->events[i];
-            sw->format("[{}] {} {} {}\n", (u64) evt.tid, evt.param1, evt.param2, evt.msg);
+            outs->format("[{}] {} {} {}\n", (u64) evt.tid, evt.param1, evt.param2, evt.msg);
         }
     }
 }

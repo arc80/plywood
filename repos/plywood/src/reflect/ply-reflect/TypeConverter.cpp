@@ -175,14 +175,14 @@ void createConversionRecipe(OutStream* outs, const TypeDescriptor_Struct* dstStr
 }
 
 template <class T>
-const T* safeCast(ConstBufferView view) {
+const T* safeCast(StringView view) {
     PLY_ASSERT(sizeof(T) <= view.numBytes);
     return (const T*) view.bytes;
 }
 
 void convert(ChunkCursor& cursor, void* dstPtr, ArrayView<void*> srcPtrs, void* srcPtr = nullptr) {
     for (;;) {
-        ConstBufferView view = cursor.viewAvailable();
+        StringView view = cursor.viewAvailable();
         switch (*safeCast<TypeConverter::Cmd>(view)) {
             case TypeConverter::Cmd::SetRootSourceIndex: {
                 // Note: Could add an assert here to ensure that we are at the "root"

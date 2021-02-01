@@ -17,8 +17,8 @@ void command_folder(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        auto sw = StdErr::text();
-        printUsage(&sw, "folder",
+        auto outs = StdErr::text();
+        printUsage(&outs, "folder",
                    {
                        {"list", "list description"},
                        {"create", "create description"},
@@ -33,12 +33,12 @@ void command_folder(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        StringWriter sw = StdOut::text();
-        sw << "Build folders found:\n";
+        OutStream outs = StdOut::text();
+        outs << "Build folders found:\n";
         for (const BuildFolder* bf : env->buildFolders) {
             PLY_ASSERT(!bf->buildFolderName.isEmpty());
             bool isActive = (bf->buildFolderName == env->workspace->currentBuildFolder);
-            sw.format("    {}{}\n", bf->buildFolderName, (isActive ? " (active)" : ""));
+            outs.format("    {}{}\n", bf->buildFolderName, (isActive ? " (active)" : ""));
         }
     } else if (prefixMatch(cmd, "create")) {
         StringView name = env->cl->readToken();

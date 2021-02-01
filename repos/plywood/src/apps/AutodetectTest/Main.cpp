@@ -47,28 +47,28 @@ Tuple<bool, TextFormat> extractFormatFromName(StringView name) {
 bool runTestSuite() {
     String testsFolder =
         NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/AutodetectTest/tests");
-    StringWriter sw = StdOut::text();
+    OutStream outs = StdOut::text();
     u32 succeeded = 0;
     u32 failed = 0;
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(testsFolder)) {
         // if (entry.name == "japanese.utf8.lf.bom.txt")
         //    PLY_DEBUG_BREAK();
         if (!entry.isDir && entry.name.endsWith(".txt")) {
-            sw << entry.name << "... ";
+            outs << entry.name << "... ";
             Tuple<bool, TextFormat> expected = extractFormatFromName(entry.name.shortenedBy(4));
             if (!expected.first) {
-                sw << "***can't parse filename***\n";
+                outs << "***can't parse filename***\n";
                 failed++;
-                sw.flush();
+                outs.flush();
                 continue;
             }
             auto contents =
                 FileSystem::native()
                     ->loadTextAutodetect(NativePath::join(testsFolder, entry.name));
             if (!(contents.second == expected.second)) {
-                sw << "***format detection failed***\n";
+                outs << "***format detection failed***\n";
                 failed++;
-                sw.flush();
+                outs.flush();
                 continue;
             }
 
@@ -76,19 +76,19 @@ bool runTestSuite() {
                 FileSystem::native()
                     ->loadTextAutodetect(NativePath::join(testsFolder, entry.name.splitByte('.')[0] + ".utf8.crlf.bom.txt"));
             if (contents.first != compareTo.first) {
-                sw << "***bad contents***\n";
+                outs << "***bad contents***\n";
                 failed++;
-                sw.flush();
+                outs.flush();
                 continue;
             }
 
-            sw << "OK\n";
-            sw.flush();
+            outs << "OK\n";
+            outs.flush();
             succeeded++;
         }
     }
-    sw << "----\n";
-    sw.format("{} succeeded, {} failed\n", succeeded, failed);
+    outs << "----\n";
+    outs.format("{} succeeded, {} failed\n", succeeded, failed);
     return failed == 0;
 }
 
