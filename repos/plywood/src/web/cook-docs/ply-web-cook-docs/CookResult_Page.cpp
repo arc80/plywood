@@ -321,7 +321,7 @@ void dumpExtractedMembers(OutStream& htmlWriter, SemaEntity* classEnt) {
     for (u32 c = 0; c < docInfo->categories.numItems(); c++) {
         wroteSectionHeader = false;
         for (const DocInfo::Entry& entry : docInfo->entries) {
-            if (entry.titles[0].member->isFunction() && entry.categoryIndex == c) {
+            if (entry.titles[0].member->isFunction() && entry.categoryIndex == (s32) c) {
                 if (!wroteSectionHeader) {
                     htmlWriter.format("<h2>{}</h2>\n", docInfo->categories[c].desc);
                     htmlWriter << "<dl>\n";

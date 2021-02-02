@@ -383,7 +383,8 @@ public:
     PLY_NO_INLINE T& insert(u32 pos, u32 count = 1) {
         PLY_ASSERT(pos <= this->numItems_);
         ((details::BaseArray&) *this).reserve(this->numItems_ + count, (u32) sizeof(T));
-        memmove(this->items + pos + count, this->items + pos,
+        memmove(static_cast<void*>(this->items + pos + count),
+                static_cast<const void*>(this->items + pos),
                 (this->numItems_ - pos) * sizeof(T)); // Underlying type is relocatable
         subst::constructArray(this->items + pos, count);
         this->numItems_ += count;
@@ -398,7 +399,8 @@ public:
     PLY_NO_INLINE void erase(u32 pos, u32 count = 1) {
         PLY_ASSERT(pos + count <= this->numItems_);
         subst::destructArray(this->items + pos, count);
-        memmove(this->items + pos, this->items + pos + count,
+        memmove(static_cast<void*>(this->items + pos),
+                static_cast<const void*>(this->items + pos + count),
                 (this->numItems_ - (pos + count)) * sizeof(T)); // Underlying type is relocatable
         this->numItems_ -= count;
     }
@@ -415,13 +417,15 @@ public:
     PLY_INLINE void eraseQuick(u32 pos) {
         PLY_ASSERT(pos < this->numItems_);
         this->items[pos].~T();
-        memcpy(this->items + pos, this->items + (this->numItems_ - 1), sizeof(T));
+        memcpy(static_cast<void*>(this->items + pos),
+               static_cast<const void*>(this->items + (this->numItems_ - 1)), sizeof(T));
         this->numItems_--;
     }
     PLY_NO_INLINE void eraseQuick(u32 pos, u32 count) {
         PLY_ASSERT(pos + count <= this->numItems_);
         subst::destructArray(this->items + pos, count);
-        memmove(this->items + this->numItems_ - count, this->items + pos,
+        memmove(static_cast<void*>(this->items + this->numItems_ - count),
+                static_cast<const void*>(this->items + pos),
                 count * sizeof(T)); // Underlying type is relocatable
         this->numItems_ -= count;
     }
