@@ -18,11 +18,6 @@ String convertWithOutPipe(StringView buf, const TextEncoding* srcEnc, const Text
     return mout.moveToString();
 }
 
-template <typename SrcEnc, typename DstEnc>
-PLY_INLINE String convert(StringView buf) {
-    return convert(TextEncoding<SrcEnc>::get(), TextEncoding<DstEnc>::get(), buf);
-}
-
 PLY_TEST_CASE("Decode truncated UTF-8") {
     // e3 80 82 is the valid UTF-8 encoding of U+3002
     // This is the truncated version of it
