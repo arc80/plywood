@@ -24,9 +24,17 @@ struct Tuple<T1, T2> {
     T2 second;
 
     Tuple() = default;
-    template <typename U1, typename U2>
-    Tuple(U1&& first, U2&& second)
-        : first{std::forward<U1>(first)}, second{std::forward<U2>(second)} {
+    // Note: We don't bother using SFINAE to conditionally disable constructors depending on whether
+    // types are actually copy-constructible or move-constructible.
+    // We also don't bother to support constructing from types other than const T& or T&&.
+    // May need to make some of these conditionally explicit, though.
+    Tuple(const T1& first, const T2& second) : first{first}, second{second} {
+    }
+    Tuple(const T1& first, T2&& second) : first{first}, second{std::move(second)} {
+    }
+    Tuple(T1&& first, const T2& second) : first{std::move(first)}, second{second} {
+    }
+    Tuple(T1&& first, T2&& second) : first{std::move(first)}, second{std::move(second)} {
     }
     template <typename U1, typename U2>
     Tuple(const Tuple<U1, U2>& other) : first{other.first}, second{other.second} {
@@ -49,12 +57,12 @@ struct Tuple<T1, T2> {
     }
     template <typename U1, typename U2,
               std::enable_if_t<IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>(), int> = 0>
-    operator Tuple<U1, U2> &() {
+    operator Tuple<U1, U2>&() {
         return reinterpret_cast<Tuple<U1, U2>&>(*this);
     }
     template <typename U1, typename U2,
               std::enable_if_t<IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>(), int> = 0>
-    operator const Tuple<U1, U2> &() const {
+    operator const Tuple<U1, U2>&() const {
         return reinterpret_cast<const Tuple<U1, U2>&>(*this);
     }
 };
@@ -69,10 +77,29 @@ struct Tuple<T1, T2, T3> {
     T3 third;
 
     Tuple() = default;
-    template <typename U1, typename U2, typename U3>
-    Tuple(U1&& first, U2&& second, U3&& third)
-        : first{std::forward<U1>(first)}, second{std::forward<U2>(second)}, third{std::forward<U3>(
-                                                                                third)} {
+    Tuple(const T1& first, const T2& second, const T3& third)
+        : first{first}, second{second}, third{third} {
+    }
+    Tuple(const T1& first, const T2& second, T3&& third)
+        : first{first}, second{second}, third{std::move(third)} {
+    }
+    Tuple(const T1& first, T2&& second, const T3& third)
+        : first{first}, second{std::move(second)}, third{third} {
+    }
+    Tuple(const T1& first, T2&& second, T3&& third)
+        : first{first}, second{std::move(second)}, third{std::move(third)} {
+    }
+    Tuple(T1&& first, const T2& second, const T3& third)
+        : first{std::move(first)}, second{second}, third{third} {
+    }
+    Tuple(T1&& first, const T2& second, T3&& third)
+        : first{std::move(first)}, second{second}, third{std::move(third)} {
+    }
+    Tuple(T1&& first, T2&& second, const T3& third)
+        : first{std::move(first)}, second{std::move(second)}, third{third} {
+    }
+    Tuple(T1&& first, T2&& second, T3&& third)
+        : first{std::move(first)}, second{std::move(second)}, third{std::move(third)} {
     }
     template <typename U1, typename U2, typename U3>
     Tuple(const Tuple<U1, U2, U3>& other)
@@ -102,14 +129,14 @@ struct Tuple<T1, T2, T3> {
         typename U1, typename U2, typename U3,
         std::enable_if_t<
             IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>() && IsSameOrConst<T3, U3>(), int> = 0>
-    operator Tuple<U1, U2, U3> &() {
+    operator Tuple<U1, U2, U3>&() {
         return reinterpret_cast<Tuple<U1, U2, U3>&>(*this);
     }
     template <
         typename U1, typename U2, typename U3,
         std::enable_if_t<
             IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>() && IsSameOrConst<T3, U3>(), int> = 0>
-    operator const Tuple<U1, U2, U3> &() const {
+    operator const Tuple<U1, U2, U3>&() const {
         return reinterpret_cast<const Tuple<U1, U2, U3>&>(*this);
     }
 };
