@@ -25,6 +25,7 @@ void cook_ExtractPageMeta(cook::CookResult* cookResult_, TypedPtr jobArg) {
     if (childPagesInFolder) {
         for (cook::CookJob* job : *childPagesInFolder) {
             PLY_ASSERT(job->castResult<CookResult_ExtractPageMeta>());
+            PLY_UNUSED(job);
         }
         extractPageMetaResult->childPages = std::move(*childPagesInFolder);
     }

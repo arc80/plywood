@@ -56,7 +56,7 @@ struct ResponseIface_WebServer : ResponseIface {
             return this->outs;
         }
     }
-    virtual void endResponseHeader() {
+    virtual void endResponseHeader() override {
         if (isChunked) {
             outsChunked->flushMem();
             outsChunked->outPipe->cast<OutPipe_HTTPChunked>()->setChunkMode(true);
