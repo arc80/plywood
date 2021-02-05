@@ -46,7 +46,7 @@ void writePNG(Image& im, ply::OutStream* out) {
         png_ptr, out,
         [](png_structp png_ptr, png_bytep buf, png_size_t size) {
             ply::OutStream* out = (ply::OutStream*) png_get_io_ptr(png_ptr);
-            out->write({buf, safeDemote<u32>(size)});
+            out->write({(const char*) buf, safeDemote<u32>(size)});
         },
         [](png_structp png_ptr) {
             ply::OutStream* out = (ply::OutStream*) png_get_io_ptr(png_ptr);
@@ -86,7 +86,7 @@ void writePNG(Image& im, ply::OutStream* out) {
 
     // Write data
     for (s32 y = 0; y < im.height; y++) {
-        png_write_row(png_ptr, im.getPixel(0, y));
+        png_write_row(png_ptr, (png_const_bytep) im.getPixel(0, y));
     }
     png_write_end(png_ptr, info_ptr);
 

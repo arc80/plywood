@@ -20,7 +20,7 @@ namespace audio {
     using the AssetBank.
 */
 struct Buffer {
-    u8* samples; //! Pointer to multichannel sample data
+    char* samples; //! Pointer to multichannel sample data
     PLY_REFLECT()
     u32 numSamples;   //! Number of multichannel samples in the data
     float sampleRate; //! Number of multichannel samples per second for realtime playback
@@ -29,7 +29,7 @@ struct Buffer {
 
     Buffer() {
     }
-    Buffer(u8* samples, u32 numSamples, float sampleRate, Format format)
+    Buffer(char* samples, u32 numSamples, float sampleRate, Format format)
         : samples(samples), numSamples(numSamples), sampleRate(sampleRate), format(format) {
     }
 
@@ -39,12 +39,12 @@ struct Buffer {
     };
 
     //! Return a pointer to a specific multichannel sample.
-    u8* getSampleAt(u32 samplePos) const {
+    char* getSampleAt(u32 samplePos) const {
         return samples + samplePos * format.stride;
     }
 
     //! Return a pointer to the end of the sample data.
-    u8* getEndPtr() const {
+    char* getEndPtr() const {
         return samples + getSizeBytes();
     }
 

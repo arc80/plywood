@@ -49,8 +49,9 @@ struct Surface {
     static PLY_INLINE Owned<Surface> create(image::Image& image) {
         PLY_ASSERT(image.format == RequiredFormat);
         PLY_ASSERT(image.bytespp == 4);
-        cairo_surface_t* surface = cairo_image_surface_create_for_data(
-            image.data, CAIRO_FORMAT_ARGB32, image.width, image.height, image.stride);
+        cairo_surface_t* surface =
+            cairo_image_surface_create_for_data((unsigned char*) image.data, CAIRO_FORMAT_ARGB32,
+                                                image.width, image.height, image.stride);
         PLY_ASSERT(cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS);
         return (Surface*) surface;
     }

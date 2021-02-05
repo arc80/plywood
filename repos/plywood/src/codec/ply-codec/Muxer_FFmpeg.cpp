@@ -205,7 +205,7 @@ public:
             return;
         }
 
-        rgbIm = image::Image{tmp_frame->data[0], tmp_frame->linesize[0], enc->width, enc->height,
+        rgbIm = image::Image{(char*) tmp_frame->data[0], tmp_frame->linesize[0], enc->width, enc->height,
                              image::Format::BGRA};
     }
 
@@ -460,7 +460,7 @@ public:
         tmp_frame->pts = next_pts;
         next_pts += tmp_frame->nb_samples;
         buffer = audio::Buffer{
-            tmp_frame->data[0], (u32) tmp_frame->nb_samples, (float) enc->sample_rate,
+            (char*) tmp_frame->data[0], (u32) tmp_frame->nb_samples, (float) enc->sample_rate,
             audio::Format::encode((u8) enc->channels, audio::Format::SampleType::S16)};
     }
 
@@ -601,7 +601,7 @@ public:
             return;
         }
         auto writePacket = [](void* opaque, uint8_t* buf, int len) -> int {
-            return reinterpret_cast<OutPipe*>(opaque)->write({buf, safeDemote<u32>(len)});
+            return reinterpret_cast<OutPipe*>(opaque)->write({(char*) buf, safeDemote<u32>(len)});
         };
         auto seek = [](void* opaque, int64_t offset, int whence) -> int64_t {
             SeekDir seekDir = SeekDir::Cur;

@@ -50,7 +50,7 @@ inline u32 toABGR(const Int4<u8>& color) {
 struct Image {
     static u8 FormatToBPP[];
 
-    u8* data = nullptr;
+    char* data = nullptr;
     s32 stride = 0;
     s32 width = 0;
     s32 height = 0;
@@ -58,8 +58,8 @@ struct Image {
     Format format = Format::Unknown;
 
     Image() = default;
-    Image(u8* data, s32 stride, s32 w, s32 h, Format fmt)
-        : data(data), stride(stride), width(w), height(h), format(fmt) {
+    Image(char* data, s32 stride, s32 w, s32 h, Format fmt)
+        : data{data}, stride{stride}, width{w}, height{h}, format{fmt} {
         PLY_ASSERT(fmt < Format::NumFormats);
         bytespp = FormatToBPP[(u8) fmt];
     }
@@ -121,12 +121,12 @@ struct Image {
         return {{0, 0}, {width, height}};
     }
 
-    u8* getPixel(s32 x, s32 y) {
+    char* getPixel(s32 x, s32 y) {
         PLY_ASSERT(getRect().contains(IntVec2{x, y}));
         return data + y * stride + x * bytespp;
     }
 
-    const u8* getPixel(s32 x, s32 y) const {
+    const char* getPixel(s32 x, s32 y) const {
         PLY_ASSERT(getRect().contains(IntVec2{x, y}));
         return data + y * stride + x * bytespp;
     }
@@ -162,7 +162,7 @@ struct OwnImage : Image {
         height = h;
         stride = width * bytespp;
         format = fmt;
-        data = (u8*) PLY_HEAP.alloc(stride * height);
+        data = (char*) PLY_HEAP.alloc(stride * height);
     }
 
     ~OwnImage() {
@@ -181,8 +181,8 @@ struct OwnImage : Image {
         other.release();
     }
 
-    u8* release() {
-        u8* result = data;
+    char* release() {
+        char* result = data;
         data = nullptr;
         stride = 0;
         width = 0;

@@ -37,13 +37,13 @@ void linearToSRGB(Image& dst, const Image& src) {
     PLY_ASSERT(src.stride >= src.width);
     PLY_ASSERT(dst.width == src.width);
     PLY_ASSERT(dst.height == src.height);
-    u8* dstRow = dst.data;
-    u8* dstRowEnd = dstRow + dst.stride * dst.height;
-    u8* srcRow = src.data;
+    char* dstRow = dst.data;
+    char* dstRowEnd = dstRow + dst.stride * dst.height;
+    char* srcRow = src.data;
     while (dstRow < dstRowEnd) {
         u32* d = (u32*) dstRow;
         u32* dEnd = d + dst.width;
-        u8* s = srcRow;
+        char* s = srcRow;
         while (d < dEnd) {
             float invGamma = powf(*s / 255.f, 1 / 2.2f);
             u32 value = u32(roundf(invGamma * 255.f));
@@ -69,8 +69,8 @@ OwnImage copy(const Image& im) {
 void clear(Image& image, u32 value) {
     PLY_ASSERT(image.bytespp == 4);
 
-    u8* dstRow = image.data;
-    u8* dstRowEnd = dstRow + image.height * image.stride;
+    char* dstRow = image.data;
+    char* dstRowEnd = dstRow + image.height * image.stride;
     while (dstRow < dstRowEnd) {
         u32* dst = (u32*) dstRow;
         u32* dstEnd = dst + image.width;
@@ -85,8 +85,8 @@ void clear(Image& image, u32 value) {
 void clear(Image& image, float value) {
     PLY_ASSERT(image.isFloat());
 
-    u8* dstRow = image.data;
-    u8* dstRowEnd = dstRow + image.height * image.stride;
+    char* dstRow = image.data;
+    char* dstRowEnd = dstRow + image.height * image.stride;
     while (dstRow < dstRowEnd) {
         float* dst = (float*) dstRow;
         float* dstEnd = dst + image.width;
@@ -101,8 +101,8 @@ void clear(Image& image, float value) {
 void clear(Image& image, const Float4& value) {
     PLY_ASSERT(image.isFloat4());
 
-    u8* dstRow = image.data;
-    u8* dstRowEnd = dstRow + image.height * image.stride;
+    char* dstRow = image.data;
+    char* dstRowEnd = dstRow + image.height * image.stride;
     while (dstRow < dstRowEnd) {
         Float4* dst = (Float4*) dstRow;
         Float4* dstEnd = dst + image.width;
@@ -118,8 +118,8 @@ void verticalFlip(Image& dst, const Image& src) {
     PLY_ASSERT(dst.format == src.format);
     PLY_ASSERT(sameDims(src, dst));
     for (s32 y = 0; y < dst.height; y++) {
-        u8* dstRow = dst.getPixel(0, y);
-        const u8* srcRow = src.getPixel(0, dst.height - 1 - y);
+        char* dstRow = dst.getPixel(0, y);
+        const char* srcRow = src.getPixel(0, dst.height - 1 - y);
         memcpy(dstRow, srcRow, image::Image::FormatToBPP[(u32) dst.format] * dst.width);
     }
 }

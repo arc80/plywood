@@ -12,7 +12,7 @@ namespace audio {
 struct OfflineClipNode {
     PLY_REFLECT()
     Buffer buffer;
-    ply::Buffer samples;
+    String samples;
     // ply reflect off
 
     static OfflineClipNode* create(u32 numSamples, float sampleRate, Format format) {

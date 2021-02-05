@@ -10,19 +10,19 @@ namespace ply {
 namespace audio {
 
 struct MixPitchedDirectParams {
-    u8* dst;
-    u8* dstEnd;
-    u8* src;
-    u8* srcEnd;
+    char* dst;
+    char* dstEnd;
+    char* src;
+    char* srcEnd;
     u32 sf16;
     u32 srcStep;
     s32 volume16;
 };
 
 struct MixLeveledDirectParams {
-    u8* dst;
-    u8* dstEnd;
-    u8* src;
+    char* dst;
+    char* dstEnd;
+    char* src;
     s32 level16;
 };
 
