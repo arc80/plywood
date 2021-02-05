@@ -40,7 +40,8 @@ String getSwitchInl(SwitchInfo* switch_) {
     // FIXME: Log an error if there are no states
     mout.format("SWITCH_FOOTER({}, {})\n", className, switch_->states[0]);
     for (StringView state : switch_->states) {
-        mout.format("SWITCH_ACCESSOR({}, {}{})\n", state, state.left(1).lowerAsc(), state.subStr(1));
+        mout.format("SWITCH_ACCESSOR({}, {}{})\n", state, state.left(1).lowerAsc(),
+                    state.subStr(1));
     }
     if (switch_->isReflected) {
         mout << "PLY_SWITCH_REFLECT()\n";
@@ -48,10 +49,10 @@ String getSwitchInl(SwitchInfo* switch_) {
     return mout.moveToString();
 }
 
-void writeSwitchInl(SwitchInfo* switch_) {
+void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
     String absInlPath = NativePath::join(PLY_WORKSPACE_FOLDER, "repos", switch_->inlineInlPath);
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-        absInlPath, getSwitchInl(switch_), TextFormat::platformPreference());
+        absInlPath, getSwitchInl(switch_), tff);
     OutStream stdOut = StdOut::text();
     if (result == FSResult::OK) {
         stdOut.format("Wrote {}\n", absInlPath);
@@ -79,13 +80,13 @@ String performSubsts(StringView absPath, ArrayView<Subst> substs) {
     return mout.moveToString();
 }
 
-void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs) {
+void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs, const TextFormat& tff) {
     // FIXME: Don't reload the file here!!!!!!!!!!
     // It may have changed, making the Substs invalid!!!!!!!!
     String srcWithSubst = performSubsts(absPath, substs);
     if (FileSystem::native()->lastResult() == FSResult::OK) {
-        FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-            absPath, srcWithSubst, TextFormat::platformPreference());
+        FSResult result =
+            FileSystem::native()->makeDirsAndSaveTextIfDifferent(absPath, srcWithSubst, tff);
         OutStream stdOut = StdOut::text();
         if (result == FSResult::OK) {
             stdOut.format("Wrote {}\n", absPath);
@@ -97,7 +98,7 @@ void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs) {
 
 } // namespace cpp
 
-void generateAllCppInls(cpp::ReflectionInfoAggregator* agg) {
+void generateAllCppInls(cpp::ReflectionInfoAggregator* agg, const TextFormat& tff) {
     struct CodeGenerator {
         virtual ~CodeGenerator() {
         }
@@ -140,7 +141,7 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg) {
             cpp::ReflectedEnum* enum_;
             virtual void write(OutStream* outs) override {
                 outs->format("PLY_ENUM_BEGIN({}, {})\n", this->enum_->namespacePrefix,
-                           this->enum_->enumName);
+                             this->enum_->enumName);
                 for (u32 i : range(this->enum_->enumerators.numItems())) {
                     StringView enumerator = this->enum_->enumerators[i];
                     if ((i != this->enum_->enumerators.numItems() - 1) || (enumerator != "Count")) {
@@ -189,8 +190,8 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg) {
         for (CodeGenerator* generator : item.sources) {
             generator->write(&mout);
         }
-        FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-            absPath, mout.moveToString(), TextFormat::platformPreference());
+        FSResult result =
+            FileSystem::native()->makeDirsAndSaveTextIfDifferent(absPath, mout.moveToString(), tff);
         OutStream stdOut = StdOut::text();
         if (result == FSResult::OK) {
             stdOut.format("Wrote {}\n", absPath);
@@ -246,10 +247,11 @@ void command_codegen(PlyToolCommandEnv* env) {
                         &agg, NativePath::join(triple.dirPath, file.name).view());
                     if (sfri.second) {
                         for (cpp::SwitchInfo* switch_ : sfri.first.switches) {
-                            writeSwitchInl(switch_);
+                            writeSwitchInl(switch_, env->workspace->getSourceTextFormat());
                         }
                         performSubstsAndSave(NativePath::join(triple.dirPath, file.name),
-                                             sfri.first.substsInParsedFile.view());
+                                             sfri.first.substsInParsedFile.view(),
+                                             env->workspace->getSourceTextFormat());
                     }
                 }
             skipIt:;
@@ -263,7 +265,7 @@ void command_codegen(PlyToolCommandEnv* env) {
         }
     }
 
-    generateAllCppInls(&agg);
+    generateAllCppInls(&agg, env->workspace->getSourceTextFormat());
 }
 
 } // namespace ply

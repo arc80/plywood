@@ -9,7 +9,7 @@
 
 namespace ply {
 
-void checkFileHeader(StringView srcPath, StringView desiredHeader) {
+void checkFileHeader(StringView srcPath, StringView desiredHeader, const TextFormat& tff) {
     String src = FileSystem::native()->loadTextAutodetect(srcPath).first;
     if (FileSystem::native()->lastResult() != FSResult::OK)
         return;
@@ -71,11 +71,11 @@ void checkFileHeader(StringView srcPath, StringView desiredHeader) {
     StringView restOfFile =
         StringView::fromRange(existingFileHeader.end(), srcFile.contents.view().end());
     String withHeader = desiredHeader + restOfFile;
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(srcPath, withHeader,
-                                                         TextFormat::platformPreference());
+    FileSystem::native()->makeDirsAndSaveTextIfDifferent(srcPath, withHeader, tff);
 }
 
-void cleanupRepo(StringView repoPath, StringView desiredHeader, StringView clangFormatPath = {}) {
+void cleanupRepo(StringView repoPath, StringView desiredHeader, StringView clangFormatPath,
+                 const TextFormat& tff) {
     for (WalkTriple& triple : FileSystem::native()->walk(repoPath)) {
         for (const WalkTriple::FileInfo& file : triple.files) {
             if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
@@ -90,7 +90,7 @@ void cleanupRepo(StringView repoPath, StringView desiredHeader, StringView clang
                 }
 
                 // Check file header
-                checkFileHeader(NativePath::join(triple.dirPath, file.name), desiredHeader);
+                checkFileHeader(NativePath::join(triple.dirPath, file.name), desiredHeader, tff);
             }
         }
     }
@@ -104,7 +104,8 @@ void command_cleanup(PlyToolCommandEnv* env) {
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 )";
-    cleanupRepo(NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src"), desiredHeader);
+    cleanupRepo(NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src"), desiredHeader, {},
+                env->workspace->getSourceTextFormat());
 }
 
 } // namespace ply

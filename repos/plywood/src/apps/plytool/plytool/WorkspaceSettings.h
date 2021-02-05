@@ -13,6 +13,7 @@ struct WorkspaceSettings {
     String currentBuildFolder;
     build::CMakeGeneratorOptions defaultCMakeOptions;
     String defaultConfig;
+    String sourceNewLines;
     // ply reflect off
 
     static String getPath() {
@@ -21,6 +22,8 @@ struct WorkspaceSettings {
 
     bool load();
     bool save() const;
+
+    TextFormat getSourceTextFormat() const;
 };
 
 } // namespace ply
