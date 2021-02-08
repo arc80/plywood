@@ -180,7 +180,7 @@ BuildFolder::instantiateAllTargets(bool isGenerating) const {
             instResult.isValid = false;
             return instResult;
         }
-        bool makeShared = findItem(this->makeShared.view(), targetName) >= 0;
+        bool makeShared = find(this->makeShared, targetName) >= 0;
         projInst.instantiate(targetInst, makeShared);
     }
 
@@ -210,7 +210,7 @@ PLY_NO_INLINE DependencyTree BuildFolder::buildDepTree() const {
             return instResult;
         }
         */
-        bool makeShared = findItem(this->makeShared.view(), targetName) >= 0;
+        bool makeShared = find(this->makeShared, targetName) >= 0;
         projInst.instantiate(targetInst, makeShared);
     }
     return depTree;

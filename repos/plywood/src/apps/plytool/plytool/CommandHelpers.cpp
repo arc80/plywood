@@ -19,11 +19,11 @@ void AddParams::extractOptions(CommandLine* cl) {
 
 bool AddParams::exec(build::BuildFolder* folder, StringView fullTargetName) {
     bool anyChange = false;
-    if (findItem(folder->rootTargets.view(), fullTargetName) < 0) {
+    if (find(folder->rootTargets, fullTargetName) < 0) {
         folder->rootTargets.append(fullTargetName);
         anyChange = true;
     }
-    if (this->makeShared && findItem(folder->makeShared.view(), fullTargetName) < 0) {
+    if (this->makeShared && find(folder->makeShared, fullTargetName) < 0) {
         folder->makeShared.append(fullTargetName);
         anyChange = true;
     }
@@ -90,18 +90,17 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
             }
             this->addParams.exec(newFolder, buildTargetInst->getFullyQualifiedName());
             newFolder->save();
-            StdOut::text().format(
-                "Created build folder '{}' with root target '{}' at: {}\n",
-                newFolder->buildFolderName,
-                RepoRegistry::get()->getShortDepSourceName(buildTargetInst),
-                newFolder->getAbsPath());
+            StdOut::text().format("Created build folder '{}' with root target '{}' at: {}\n",
+                                  newFolder->buildFolderName,
+                                  RepoRegistry::get()->getShortDepSourceName(buildTargetInst),
+                                  newFolder->getAbsPath());
             result->folder = newFolder;
             env->buildFolders.append(std::move(newFolder));
             if (env->workspace->currentBuildFolder != result->folder->buildFolderName) {
                 env->workspace->currentBuildFolder = result->folder->buildFolderName;
                 env->workspace->save();
                 StdOut::text().format("'{}' is now the current build folder.\n",
-                                                    result->folder->buildFolderName);
+                                      result->folder->buildFolderName);
             }
         } else if (matches.numItems() == 1) {
             result->folder = matches[0].first;
@@ -109,12 +108,12 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
                 env->workspace->currentBuildFolder = result->folder->buildFolderName;
                 env->workspace->save();
                 StdOut::text().format("'{}' is now the current build folder.\n",
-                                                    result->folder->buildFolderName);
+                                      result->folder->buildFolderName);
             }
         } else {
             MemOutStream mout;
             mout.format("Can't use --auto because target '{}' was found in {} build folders: ",
-                      this->targetName, matches.numItems());
+                        this->targetName, matches.numItems());
             for (u32 i = 0; i < matches.numItems(); i++) {
                 mout.format("'{}'", matches[i].first->buildFolderName);
                 if (i + 2 < matches.numItems()) {
@@ -153,10 +152,9 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
     if (!runTargetIdx.wasFound()) {
         if (this->doAdd) {
             this->addParams.exec(result->folder, result->runTargetInst->getFullyQualifiedName());
-            StdOut::text().format(
-                "Added target '{}' to folder '{}'.\n",
-                RepoRegistry::get()->getShortDepSourceName(result->runTargetInst),
-                result->folder->buildFolderName);
+            StdOut::text().format("Added target '{}' to folder '{}'.\n",
+                                  RepoRegistry::get()->getShortDepSourceName(result->runTargetInst),
+                                  result->folder->buildFolderName);
             result->folder->save();
 
             // Re-instantiate all targets

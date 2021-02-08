@@ -66,7 +66,7 @@ ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) 
         return {ExternResult::UnsupportedToolchain, "Target platform must be 'windows'"};
     }
     StringView arch = args->toolchain->get("arch")->text();
-    if (findItem(ArrayView<const StringView>{"x86", "x64"}, arch) < 0) {
+    if (find<StringView>({"x86", "x64"}, arch) < 0) {
         return {ExternResult::UnsupportedToolchain, "Target arch must be 'x86' or 'x64'"};
     }
     if (args->providerArgs) {
@@ -121,7 +121,7 @@ ExternResult extern_libpng_builtFromSource(ExternCommand cmd, ExternProviderArgs
         return {ExternResult::UnsupportedToolchain, "Target platform must be 'windows'"};
     }
     StringView arch = args->toolchain->get("arch")->text();
-    if (findItem(ArrayView<const StringView>{"x86", "x64"}, arch) < 0) {
+    if (find<StringView>({"x86", "x64"}, arch) < 0) {
         return {ExternResult::UnsupportedToolchain, "Target arch must be 'x86' or 'x64'"};
     }
     if (args->providerArgs) {

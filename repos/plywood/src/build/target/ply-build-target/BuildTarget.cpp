@@ -30,11 +30,11 @@ PLY_NO_INLINE void BuildTarget::addSourceFiles(StringView absSourcePath, bool re
             if (file.name.endsWith(".modules.cpp")) // Skip *.modules.cpp files
                 continue;
             String ext = NativePath::splitExt(file.name).second.lowerAsc();
-            bool isSourceFile = (findItem(sourceExts.view(), ext) >= 0);
+            bool isSourceFile = (find(sourceExts, ext) >= 0);
             if (isSourceFile) {
                 this->anySourceFiles = true;
             }
-            if (isSourceFile || (findItem(headerExts.view(), ext) >= 0)) {
+            if (isSourceFile || (find(headerExts, ext) >= 0)) {
                 String fullPath = NativePath::join(triple.dirPath, file.name);
                 relFiles.append(NativePath::makeRelative(absSourcePath, fullPath));
             }
@@ -43,7 +43,7 @@ PLY_NO_INLINE void BuildTarget::addSourceFiles(StringView absSourcePath, bool re
             break;
     }
     if (!relFiles.isEmpty()) {
-        sort(relFiles.view());
+        sort(relFiles);
         this->sourceFiles.append({absSourcePath, std::move(relFiles)});
     }
 }
@@ -54,7 +54,7 @@ PLY_NO_INLINE void BuildTarget::addSourceFilesWhenImported(StringView absSourceR
     Array<StringView> sourceExts = {".c", ".cpp"};
     for (StringView relPath : relPaths) {
         String ext = NativePath::splitExt(relPath).second.lowerAsc();
-        bool isSourceFile = (findItem(sourceExts.view(), ext) >= 0);
+        bool isSourceFile = (find(sourceExts, ext) >= 0);
         if (isSourceFile) {
             this->anySourceFiles = true;
         }
@@ -85,7 +85,7 @@ PLY_NO_INLINE bool BuildTarget::setPrecompiledHeader(StringView absGeneratorSour
 PLY_NO_INLINE bool BuildTarget::setPreprocessorDefinition(Visibility visibility, StringView key,
                                                           StringView value) {
     bool wasNotDefined = true;
-    s32 existingIndex = find(this->privateDefines.view(),
+    s32 existingIndex = find(this->privateDefines,
                              [&](const PreprocessorDefinition& ppDef) { return ppDef.key == key; });
     if (existingIndex >= 0) {
         wasNotDefined = false;
@@ -95,7 +95,7 @@ PLY_NO_INLINE bool BuildTarget::setPreprocessorDefinition(Visibility visibility,
     }
 
     if (visibility == Visibility::Public) {
-        existingIndex = find(this->dep->defines.view(),
+        existingIndex = find(this->dep->defines,
                              [&](const PreprocessorDefinition& ppDef) { return ppDef.key == key; });
         if (existingIndex >= 0) {
             PLY_ASSERT(this->dep->defines[existingIndex].value == value);

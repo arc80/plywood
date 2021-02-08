@@ -50,7 +50,7 @@ PLY_NO_INLINE void addDependency(ModuleArgs* targetArgs, const DependencySource*
         return; // unselected or uninstalled extern
 
     // Check if it's already a dependency
-    if (find(targetArgs->buildTarget->dep->dependencies.view(),
+    if (find(targetArgs->buildTarget->dep->dependencies,
              [&](const auto& p) { return p.second == dep; }) >= 0) {
         instantiatorError(
             String::format("{} '{}' is already a dependency",
@@ -64,7 +64,7 @@ PLY_NO_INLINE void addDependency(ModuleArgs* targetArgs, const DependencySource*
 
 PLY_NO_INLINE void ModuleArgs::addTarget(Visibility visibility, StringView targetName) {
     Array<StringView> ownComps = splitName(targetName, "target name");
-    ArrayView<StringView> comps = ownComps.view();
+    ArrayView<StringView> comps = ownComps;
     if (comps.isEmpty())
         return;
     const Repo* childRepo = this->targetInst->repo->findChildRepo(comps[0]);
@@ -101,7 +101,7 @@ PLY_NO_INLINE void ModuleArgs::addTarget(Visibility visibility, StringView targe
 
 PLY_NO_INLINE void ModuleArgs::addExtern(Visibility visibility, StringView externName) {
     Array<StringView> ownComps = splitName(externName, "extern name");
-    ArrayView<StringView> comps = ownComps.view();
+    ArrayView<StringView> comps = ownComps;
     if (comps.isEmpty())
         return;
 

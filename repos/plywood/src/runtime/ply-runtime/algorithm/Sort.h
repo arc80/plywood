@@ -15,7 +15,7 @@ PLY_INLINE bool defaultLess(const T& a, const T& b) {
 }
 } // namespace details
 
-template <typename T, typename IsLess = bool(const T&, const T&)>
+template <typename T, typename IsLess = decltype(details::defaultLess<T>)>
 PLY_NO_INLINE void sort(ArrayView<T> view, const IsLess& isLess = details::defaultLess<T>) {
     if (view.numItems <= 1)
         return;
@@ -65,6 +65,11 @@ PLY_NO_INLINE void sort(ArrayView<T> view, const IsLess& isLess = details::defau
             break;
         }
     }
+}
+
+template <typename Arr, typename IsLess = decltype(details::defaultLess<ArrayViewType<Arr>>)>
+PLY_INLINE void sort(Arr& arr, const IsLess& isLess = details::defaultLess<ArrayViewType<Arr>>) {
+    sort(arr.view(), isLess);
 }
 
 } // namespace ply

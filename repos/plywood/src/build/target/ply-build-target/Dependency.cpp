@@ -12,7 +12,7 @@ namespace build {
 
 PLY_NO_INLINE bool Dependency::addDependency(Visibility visibility, Dependency* dep) {
     // Check if it's already a dependency
-    s32 i = find(this->dependencies.view(), [&](const auto& p) { return p.second == dep; });
+    s32 i = find(this->dependencies, [&](const auto& p) { return p.second == dep; });
     if (i >= 0) {
         if (visibility == Visibility::Public) {
             this->dependencies[i].first = visibility;
@@ -27,7 +27,7 @@ PLY_NO_INLINE bool Dependency::addDependency(Visibility visibility, Dependency* 
 template <typename T>
 PLY_NO_INLINE void merge(Array<T>& dstItems, ArrayView<const T> srcItems) {
     for (const auto& srcItem : srcItems) {
-        if (findItem(dstItems.view(), srcItem) < 0) {
+        if (find(dstItems, srcItem) < 0) {
             dstItems.append(srcItem);
         }
     }
@@ -37,7 +37,7 @@ PLY_NO_INLINE void mergeDefines(Array<PreprocessorDefinition>& dstItems,
                                 ArrayView<const PreprocessorDefinition> srcItems) {
     for (const auto& srcItem : srcItems) {
         s32 foundIndex =
-            find(dstItems.view(), [&](const PreprocessorDefinition& ppDef) {
+            find(dstItems, [&](const PreprocessorDefinition& ppDef) {
                 return ppDef.key == srcItem.key;
             });
         if (foundIndex >= 0) {
@@ -64,22 +64,22 @@ PLY_NO_INLINE void propagateDependencyProperties(Dependency* dep) {
         propagateDependencyProperties(child.second);
 
         if (child.first == Visibility::Public) {
-            merge<Dependency*>(dep->visibleDeps, child.second->visibleDeps.view());
+            merge<Dependency*>(dep->visibleDeps, child.second->visibleDeps);
         }
-        merge<Dependency*>(buildDeps, child.second->visibleDeps.view());
+        merge<Dependency*>(buildDeps, child.second->visibleDeps);
 
         BuildTarget* childTarget = child.second->buildTarget;
 
         // Merge includes
         if (depTarget) {
-            merge<String>(depTarget->privateIncludeDirs, child.second->includeDirs.view());
-            mergeDefines(depTarget->privateDefines, child.second->defines.view());
-            merge<String>(depTarget->privateAbstractFlags, child.second->abstractFlags.view());
+            merge<String>(depTarget->privateIncludeDirs, child.second->includeDirs);
+            mergeDefines(depTarget->privateDefines, child.second->defines);
+            merge<String>(depTarget->privateAbstractFlags, child.second->abstractFlags);
         }
         if (child.first == Visibility::Public) {
-            merge<String>(dep->includeDirs, child.second->includeDirs.view());
-            mergeDefines(dep->defines, child.second->defines.view());
-            merge<String>(dep->abstractFlags, child.second->abstractFlags.view());
+            merge<String>(dep->includeDirs, child.second->includeDirs);
+            mergeDefines(dep->defines, child.second->defines);
+            merge<String>(dep->abstractFlags, child.second->abstractFlags);
         }
 
         bool staticLink = true;
@@ -89,9 +89,9 @@ PLY_NO_INLINE void propagateDependencyProperties(Dependency* dep) {
         }
 
         if (staticLink) {
-            merge<String>(dep->libs, child.second->libs.view());
-            merge<String>(dep->dlls, child.second->dlls.view());
-            merge<String>(dep->frameworks, child.second->frameworks.view());
+            merge<String>(dep->libs, child.second->libs);
+            merge<String>(dep->dlls, child.second->dlls);
+            merge<String>(dep->frameworks, child.second->frameworks);
 
             if (childTarget) {
                 if (childTarget->targetType != BuildTargetType::HeaderOnly) {
@@ -99,16 +99,16 @@ PLY_NO_INLINE void propagateDependencyProperties(Dependency* dep) {
                     if (childTarget->targetType == BuildTargetType::ObjectLib) {
                         depName = String::format("$<TARGET_OBJECTS:{}>", childTarget->name);
                     }
-                    if (findItem(dep->libs.view(), depName) < 0) {
+                    if (find(dep->libs, depName) < 0) {
                         dep->libs.append(std::move(depName));
                     }
                 }
             }
         } else {
             PLY_ASSERT(childTarget->sharedContainer); // FIXME: Report an error instead of asserting
-            HybridString ctrName = childTarget->sharedContainer->name.view();
-            if (findItem(dep->libs.view(), ctrName) < 0) {
-                dep->libs.append(ctrName.view());
+            HybridString ctrName = childTarget->sharedContainer->name;
+            if (find(dep->libs, ctrName) < 0) {
+                dep->libs.append(ctrName);
             }
         }
     }

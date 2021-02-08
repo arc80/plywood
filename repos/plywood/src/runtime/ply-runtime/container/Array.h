@@ -22,6 +22,9 @@ The array items must be relocatable; that is, it must always be possible to move
 address by calling `memmove` on the memory that contains them. Most Plywood containers, including
 `Array`, `Owned`, `HashMap` and `BTree`, are relocatable, so it's OK to create an `Array` of such
 types or structures of such types.
+
+`Array` is implicitly convertible to `ArrayView` and can be passed directly to any function that
+expects an `ArrayView`.
  */
 template <typename T_>
 class Array {
@@ -48,11 +51,11 @@ private:
     friend class Array;
 
 public:
-    //-----------------------------------
-    // Constructors
-    //-----------------------------------
     /*!
+    \category Constructors
     Constructs an empty `Array`.
+
+        Array<u32> arr;
     */
     PLY_INLINE Array() : items{nullptr}, numItems_{0}, allocated{0} {
     }
@@ -61,6 +64,8 @@ public:
     Copy constructor. This constructor is always defined because, in C++14, there is no way to
     conditionally disable it if `T` itself is not copy constructible. Instead, a runtime error
     occurs if this constructor is called when `T` is not copy constructible.
+
+        Array<u32> arr = other;
     */
     PLY_INLINE Array(const Array& other) {
         ((details::BaseArray&) *this).alloc(other.numItems_, (u32) sizeof(T));
@@ -69,6 +74,8 @@ public:
 
     /*!
     Move constructor. `other` is reset to an empty `Array`.
+
+        Array<u32> arr = std::move(other);
     */
     PLY_INLINE Array(Array&& other)
         : items{other.items}, numItems_{other.numItems_}, allocated{other.allocated} {
@@ -78,7 +85,20 @@ public:
     }
 
     /*!
+    Constructs an `Array` from a braced initializer list.
+
+        Array<u32> arr = {4, 5, 6};
+    */
+    PLY_INLINE Array(std::initializer_list<T> init) {
+        u32 initSize = safeDemote<u32>(init.size());
+        ((details::BaseArray&) *this).alloc(initSize, (u32) sizeof(T));
+        subst::constructArrayFrom(this->items, init.begin(), initSize);
+    }
+
+    /*!
     Construct an `Array` from an `ArrayView` of any type from which `T` can be constructed.
+
+        Array<u32> arr = ArrayView<u16>{4, 5, 6};
     */
     template <typename Other, std::enable_if_t<std::is_constructible<T, Other>::value, int> = 0>
     PLY_INLINE Array(ArrayView<Other> other) {
@@ -87,23 +107,20 @@ public:
     }
 
     /*!
-    Constructs an `Array` from a `std::initializer_list<T>`.
+    Construct an `Array` from any array-like object (such as `FixedArray`) of any type from which
+    `T` can be constructed. The other object must have a member function named `view()` that returns
+    an `ArrayView`.
+
+        FixedArray<u16, 3> fixed = {4, 5, 6};
+        Array<u32> arr = fixed;
     */
-    PLY_INLINE Array(std::initializer_list<T> init) {
-        ((details::BaseArray&) *this).alloc(safeDemote<u32>(init.size()), (u32) sizeof(T));
-        subst::constructArrayFrom(this->items, init.begin(), this->numItems_);
+    template <typename Other, typename = void_t<ArrayViewType<Other>>>
+    PLY_INLINE Array(const Other& other) : Array{other.view()} {
     }
 
     /*!
-    Constructs an `Array` from a `std::initializer_list` of any type from which `T` can be
-    constructed.
+    Destructor. Destructs all items and frees the memory associated with the `Array`.
     */
-    template <typename Other, std::enable_if_t<std::is_constructible<T, Other>::value, int> = 0>
-    PLY_INLINE Array(std::initializer_list<Other> init) {
-        ((details::BaseArray&) *this).alloc(safeDemote<u32>(init.size()), (u32) sizeof(T));
-        subst::constructArrayFrom(this->items, init.begin(), this->numItems_);
-    }
-
     PLY_INLINE ~Array() {
         PLY_STATIC_ASSERT(sizeof(Array) ==
                           sizeof(details::BaseArray)); // Sanity check binary compatibility
@@ -111,13 +128,13 @@ public:
         PLY_HEAP.free(this->items);
     }
 
-    //-----------------------------------
-    // Operators
-    //-----------------------------------
     /*!
+    \category Assignment Operators
     Copy assignment operator. This operator is always defined because, in C++14, there is no way to
     conditionally disable it if `T` itself is not copy assignable. Instead, a runtime error occurs
     if this operator is called when `T` is not copy assignable.
+
+        arr = other;
     */
     PLY_INLINE void operator=(const Array& other) {
         subst::destructArray(this->items, this->numItems_);
@@ -126,18 +143,9 @@ public:
     }
 
     /*!
-    Copy assignment from an `ArrayView` of any type from which `T` can be constructed.
-    */
-    template <typename Other,
-              typename std::enable_if_t<std::is_constructible<T, Other>::value, int> = 0>
-    PLY_INLINE void operator=(ArrayView<Other> other) {
-        subst::destructArray(this->items, this->numItems_);
-        ((details::BaseArray&) *this).realloc(other.numItems, (u32) sizeof(T));
-        subst::unsafeConstructArrayFrom(this->items, other.items, other.numItems);
-    }
+    Move assignment operator. `other` is reset to an empty `Array`.
 
-    /*!
-    Move assignment operator.
+        arr = std::move(other);
     */
     PLY_INLINE void operator=(Array&& other) {
         this->items = other.items;
@@ -149,23 +157,53 @@ public:
     }
 
     /*!
-    Returns the concatenation of two `Array`s. The array items are moved, not copied. Both `Array`
-    operands must be rvalue references, and both are reset to empty `Array`s.
+    Assignment from a braced initializer list.
+
+        Array<u32> arr;
+        arr = {4, 5, 6};
     */
-    PLY_INLINE Array operator+(Array&& other) && {
-        Array result;
-        ((details::BaseArray&) result).alloc(this->numItems_ + other.numItems_, (u32) sizeof(T));
-        subst::moveConstructArray(result.items, this->items, this->numItems_);
-        subst::moveConstructArray(result.items + this->numItems_, other.items, other.numItems_);
-        return result;
+    PLY_INLINE void operator=(std::initializer_list<T> init) {
+        subst::destructArray(this->items, this->numItems_);
+        u32 initSize = safeDemote<u32>(init.size());
+        ((details::BaseArray&) *this).realloc(initSize, (u32) sizeof(T));
+        subst::unsafeConstructArrayFrom(this->items, init.begin(), initSize);
     }
 
-    //-----------------------------------
-    // Lookup
-    //-----------------------------------
     /*!
+    Assignment from an `ArrayView` of any type from which `T` can be constructed.
+
+        Array<u32> arr;
+        arr = ArrayView<u16>{4, 5, 6};
+    */
+    template <typename Other,
+              typename std::enable_if_t<std::is_constructible<T, Other>::value, int> = 0>
+    PLY_INLINE void operator=(ArrayView<Other> other) {
+        subst::destructArray(this->items, this->numItems_);
+        ((details::BaseArray&) *this).realloc(other.numItems, (u32) sizeof(T));
+        subst::unsafeConstructArrayFrom(this->items, other.items, other.numItems);
+    }
+
+    /*!
+    Assignment from any array-like object (such as `FixedArray`) of any type from which `T` can be
+    constructed. The other object must have a member function named `view()` that returns an
+    `ArrayView`.
+
+        Array<u32> arr;
+        FixedArray<u16, 3> fixed = {4, 5, 6};
+        arr = fixed;
+    */
+    template <typename Other, typename = void_t<ArrayViewType<Other>>>
+    PLY_INLINE void operator=(const Other& other) {
+        *this = other.view();
+    }
+
+    /*!
+    \category Element Access
     \beginGroup
     Subscript operator with runtime bounds checking.
+
+        Array<u32> arr = {4, 5, 6};
+        arr[1];  // 5
     */
     PLY_INLINE T& operator[](u32 index) {
         PLY_ASSERT(index < this->numItems_);
@@ -193,6 +231,9 @@ public:
     \beginGroup
     Reverse subscript operator with runtime bound checking. Expects a negative index. `-1` returns
     the last item in the array; `-2` returns the second-last item, etc.
+
+        Array<u32> arr = {4, 5, 6};
+        arr.back();  // 6
     */
     PLY_INLINE T& back(s32 offset = -1) {
         PLY_ASSERT(offset < 0 && u32(-offset) <= this->numItems_);
@@ -207,10 +248,30 @@ public:
     */
 
     /*!
+    \beginGroup
+    Required functions to support range-for syntax. Allows you to iterate over all the items in the
+    array as follows:
+
+        for (const T& item : arr) {
+            ...
+        }
+    */
+    PLY_INLINE T* begin() const {
+        return this->items;
+    }
+    PLY_INLINE T* end() const {
+        return this->items + this->numItems_;
+    }
+    /*!
+    \endGroup
+    */
+
+    /*!
+    \category Capacity
     Explicit conversion to `bool`. Returns `true` if the array is not empty. Allows you to use an
     `Array` object inside an `if` condition.
 
-        if (array) {
+        if (arr) {
             ...
         }
     */
@@ -241,46 +302,17 @@ public:
     }
 
     /*!
-    \beginGroup
-    Explicitly create an `ArrayView` into the array. The `ArrayView` items are `const` or
-    non-`const` depending on whether the `Array` itself is const.
+    \category Modifiers
+    Destructs all items in the array and frees the internal memory block.
     */
-    PLY_INLINE ArrayView<T> view() { // FIXME: Try using implicit casts instead
-        return {this->items, this->numItems_};
+    PLY_NO_INLINE void clear() {
+        subst::destructArray(this->items, this->numItems_);
+        PLY_HEAP.free(this->items);
+        this->items = nullptr;
+        this->numItems_ = 0;
+        this->allocated = 0;
     }
-    PLY_INLINE ArrayView<const T> view() const {
-        return {this->items, this->numItems_};
-    }
-    /*!
-    \endGroup
-    */
 
-    /*!
-    \beginGroup
-    Returns a subview that starts at the offset given by `start`. The optional `numItems` argument
-    determines the number of items in the subview. If `numItems` is not specified, the subview
-    continues to the end of the view. The subview items are `const` or non-`const` depending on
-    whether the `Array` itself is const.
-    */
-    PLY_INLINE ArrayView<T> subView(u32 start) {
-        return view().subView(start);
-    }
-    PLY_INLINE ArrayView<const T> subView(u32 start) const {
-        return view().subView(start);
-    }
-    PLY_INLINE ArrayView<T> subView(u32 start, u32 numItems_) {
-        return view().subView(start, numItems_);
-    }
-    PLY_INLINE ArrayView<const T> subView(u32 start, u32 numItems_) const {
-        return view().subView(start, numItems_);
-    }
-    /*!
-    \endGroup
-    */
-
-    //-----------------------------------
-    // Modification
-    //-----------------------------------
     /*!
     Ensures the underlying memory block is large enough to accomodate the given number of items. If
     `numItems` is greater than the current capacity, the memory block is reallocated. No items are
@@ -351,21 +383,45 @@ public:
     */
 
     /*!
-    Appends multiple items to the array. The new array items are copy constructed from `view`.
+    Appends multiple items to the array. The new array items are copy constructed from the given
+    argument.
     */
-    PLY_NO_INLINE void extend(ArrayView<const T> view) {
+    PLY_INLINE void extend(std::initializer_list<T> init) {
+        u32 initSize = safeDemote<u32>(init.size());
+        ((details::BaseArray&) *this).reserve(this->numItems_ + initSize, (u32) sizeof(T));
+        subst::constructArrayFrom(this->items + this->numItems_, init.begin(), initSize);
+        this->numItems_ += initSize;
+    }
+    template <typename Other, std::enable_if_t<std::is_constructible<T, Other>::value, int> = 0>
+    PLY_INLINE void extend(ArrayView<Other> view) {
         ((details::BaseArray&) *this).reserve(this->numItems_ + view.numItems, (u32) sizeof(T));
         subst::constructArrayFrom(this->items + this->numItems_, view.items, view.numItems);
         this->numItems_ += view.numItems;
     }
+    template <typename Other, typename = void_t<ArrayViewType<Other>>>
+    PLY_INLINE void extend(const Other& arr) {
+        this->extend(arr.view());
+    }
 
     /*!
-    Appends multiple items to the array. The new array items are move constructed from `view`.
+    Appends multiple items by move-constructing them from `other`. `other` is reset to an empty
+    `Array`.
     */
-    PLY_NO_INLINE void moveExtend(ArrayView<T> view) {
-        ((details::BaseArray&) *this).reserve(this->numItems_ + view.numItems, (u32) sizeof(T));
-        subst::moveConstructArray(this->items + this->numItems_, view.items, view.numItems);
-        this->numItems_ += view.numItems;
+    PLY_NO_INLINE void extend(Array<T>&& other) {
+        ((details::BaseArray&) *this).reserve(this->numItems_ + other.numItems_, (u32) sizeof(T));
+        subst::moveConstructArray(this->items + this->numItems_, other.items, other.numItems_);
+        this->numItems_ += other.numItems_;
+        other.clear();
+    }
+
+    /*!
+    Appends multiple items to the `Array` from an `ArrayView`. The new array items are move
+    constructed from the items in `other`.
+    */
+    PLY_NO_INLINE void moveExtend(ArrayView<T> other) {
+        ((details::BaseArray&) *this).reserve(this->numItems_ + other.numItems, (u32) sizeof(T));
+        subst::moveConstructArray(this->items + this->numItems_, other.items, other.numItems);
+        this->numItems_ += other.numItems;
     }
 
     /*!
@@ -433,17 +489,6 @@ public:
     \endGroup
     */
 
-    /*!
-    Destructs all items in the array and frees the internal memory block.
-    */
-    PLY_NO_INLINE void clear() {
-        subst::destructArray(this->items, this->numItems_);
-        PLY_HEAP.free(this->items);
-        this->items = nullptr;
-        this->numItems_ = 0;
-        this->allocated = 0;
-    }
-
     // Undocumented function; used to move-assign an Array to a TypedArray.
     PLY_INLINE T* release() {
         T* items = this->items;
@@ -454,19 +499,77 @@ public:
     }
 
     /*!
-    \beginGroup
-    Required functions to support range-for syntax. Allows you to iterate over all the items in the
-    array as follows:
-
-        for (const T& item : array) {
-            ...
-        }
+    Returns the concatenation of two `Array`s. The array items are moved, not copied. Both `Array`
+    operands must be rvalue references, and both are reset to empty `Array`s.
     */
-    PLY_INLINE T* begin() const {
-        return this->items;
+    PLY_INLINE Array operator+(Array&& other) && {
+        Array result;
+        ((details::BaseArray&) result).alloc(this->numItems_ + other.numItems_, (u32) sizeof(T));
+        subst::moveConstructArray(result.items, this->items, this->numItems_);
+        subst::moveConstructArray(result.items + this->numItems_, other.items, other.numItems_);
+        return result;
     }
-    PLY_INLINE T* end() const {
-        return this->items + this->numItems_;
+
+    /*!
+    \category Convert to View
+    \beginGroup
+    Explicitly create an `ArrayView` into the array.
+    */
+    PLY_INLINE ArrayView<T> view() {
+        return {this->items, this->numItems_};
+    }
+    PLY_INLINE ArrayView<const T> view() const {
+        return {this->items, this->numItems_};
+    }
+    /*!
+    \endGroup
+    */
+    /*!
+    \beginGroup
+    Implicit conversion to `ArrayView`. Makes is possible to pass `Array` to any function that
+    expects an `ArrayView`.
+    */
+    PLY_INLINE operator ArrayView<T>() {
+        return {this->items, this->numItems_};
+    }
+    PLY_INLINE operator ArrayView<const T>() const {
+        return {this->items, this->numItems_};
+    }
+    /*!
+    \endGroup
+    */
+    /*!
+    \beginGroup
+    Explicitly creeate a `StringView` or `MutableStringView` into the array.
+    */
+    PLY_INLINE StringView stringView() const {
+        return {(const char*) this->items, safeDemote<u32>(this->numItems_ * sizeof(T))};
+    }
+    PLY_INLINE MutableStringView mutableStringView() const {
+        return {(char*) this->items, safeDemote<u32>(this->numItems_ * sizeof(T))};
+    }
+    /*!
+    \endGroup
+    */
+
+    /*!
+    \beginGroup
+    Returns a subview that starts at the offset given by `start`. The optional `numItems` argument
+    determines the number of items in the subview. If `numItems` is not specified, the subview
+    continues to the end of the view. The subview items are `const` or non-`const` depending on
+    whether the `Array` itself is const.
+    */
+    PLY_INLINE ArrayView<T> subView(u32 start) {
+        return view().subView(start);
+    }
+    PLY_INLINE ArrayView<const T> subView(u32 start) const {
+        return view().subView(start);
+    }
+    PLY_INLINE ArrayView<T> subView(u32 start, u32 numItems_) {
+        return view().subView(start, numItems_);
+    }
+    PLY_INLINE ArrayView<const T> subView(u32 start, u32 numItems_) const {
+        return view().subView(start, numItems_);
     }
     /*!
     \endGroup

@@ -48,7 +48,7 @@ void command_folder(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        if (find(env->buildFolders.view(),
+        if (find(env->buildFolders,
                  [&](const BuildFolder* bf) { return bf->buildFolderName == name; }) >= 0) {
             fatalError(String::format("Folder \"{}\" already exists", name));
         }
@@ -63,12 +63,11 @@ void command_folder(PlyToolCommandEnv* env) {
             info->activeConfig = env->workspace->defaultConfig;
         }
         info->save();
-        StdOut::text().format("Created build folder '{}' at: {}\n",
-                                            info->buildFolderName, info->getAbsPath());
+        StdOut::text().format("Created build folder '{}' at: {}\n", info->buildFolderName,
+                              info->getAbsPath());
         env->workspace->currentBuildFolder = name;
         env->workspace->save();
-        StdOut::text().format("'{}' is now the current build folder.\n",
-                                            info->buildFolderName);
+        StdOut::text().format("'{}' is now the current build folder.\n", info->buildFolderName);
     } else if (prefixMatch(cmd, "delete")) {
         StringView name = env->cl->readToken();
         if (name.isEmpty()) {
@@ -77,7 +76,7 @@ void command_folder(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        s32 index = find(env->buildFolders.view(),
+        s32 index = find(env->buildFolders,
                          [&](const BuildFolder* bf) { return bf->buildFolderName == name; });
         if (index < 0) {
             fatalError(String::format("Folder \"{}\" does not exist", name));
@@ -86,8 +85,7 @@ void command_folder(PlyToolCommandEnv* env) {
         // FIXME: Add confirmation prompt or -f/--force option
         BuildFolder* bf = env->buildFolders[index];
         if (FileSystem::native()->removeDirTree(bf->getAbsPath()) == FSResult::OK) {
-            StdOut::text().format("Deleted build folder '{}'.\n",
-                                                bf->buildFolderName);
+            StdOut::text().format("Deleted build folder '{}'.\n", bf->buildFolderName);
         } else {
             fatalError(String::format("Can't delete build folder '{}'.\n", bf->buildFolderName));
         }
@@ -99,7 +97,7 @@ void command_folder(PlyToolCommandEnv* env) {
         ensureTerminated(env->cl);
         env->cl->finalize();
 
-        if (find(env->buildFolders.view(),
+        if (find(env->buildFolders,
                  [&](const BuildFolder* bf) { return bf->buildFolderName == name; }) < 0) {
             fatalError(String::format("Folder \"{}\" does not exist", name));
         }

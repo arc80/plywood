@@ -24,7 +24,7 @@ PLY_BUILD_ENTRY void Repo::addTargetInstantiator(Owned<TargetInstantiator>&& tar
 PLY_NO_INLINE void Repo::addExternProvider(StringView externName, StringView providerName,
                                            ExternProvider::ExternFunc* externFunc) {
     Array<StringView> ownComps = splitName(externName, "extern name");
-    ArrayView<StringView> comps = ownComps.view();
+    ArrayView<StringView> comps = ownComps;
     if (comps.isEmpty()) {
         exit(1); // fatal, message was already logged
     }
@@ -36,9 +36,8 @@ PLY_NO_INLINE void Repo::addExternProvider(StringView externName, StringView pro
 
     if (!comps.isEmpty()) {
         // Does not return:
-        ErrorHandler::log(
-            ErrorHandler::Fatal,
-            String::format("Too many components in extern name '{}'\n", externName));
+        ErrorHandler::log(ErrorHandler::Fatal,
+                          String::format("Too many components in extern name '{}'\n", externName));
     }
 
     if (providerName.findByte('.') >= 0) {
@@ -64,7 +63,7 @@ struct RepoVisitor {
     }
 
     PLY_NO_INLINE void visit(const Repo* repo, const LambdaView<bool(const Repo*)>& callback) {
-        if (ply::findItem(this->checkedRepos.view(), repo) >= 0)
+        if (ply::find(this->checkedRepos, repo) >= 0)
             return;
         this->checkedRepos.append(repo);
         if (this->preChildren) {
@@ -93,7 +92,7 @@ const Repo* Repo::findChildRepo(StringView childName) const {
 }
 
 const DependencySource* Repo::findExternImm(StringView externName) const {
-    s32 i = find(this->externs.view(),
+    s32 i = find(this->externs,
                  [&](const DependencySource* depSrc) { return depSrc->name == externName; });
     if (i >= 0) {
         return this->externs[i];
@@ -105,7 +104,7 @@ const DependencySource* Repo::findExternRecursive(StringView externName) const {
     const DependencySource* extern_ = nullptr;
     bool conflict = false;
     RepoVisitor{}.visit(this, [&](const Repo* r) {
-        s32 i = find(r->externs.view(),
+        s32 i = find(r->externs,
                      [&](const DependencySource* depSrc) { return depSrc->name == externName; });
         if (i >= 0) {
             if (extern_) {

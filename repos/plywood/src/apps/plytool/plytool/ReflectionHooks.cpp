@@ -99,13 +99,13 @@ void ReflectionHookError::writeMessage(OutStream* outs, const PPVisitedFiles* vi
         case ReflectionHookError::CannotInjectCodeIntoMacro: {
             *outs << "can't inject code inside macro\n";
             outs->format("{}: note: for code injected by this command\n",
-                       expandFileLocation(visitedFiles, this->otherLoc).toString());
+                         expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case ReflectionHookError::DuplicateCommand: {
             *outs << "duplicate command\n";
             outs->format("{}: note: see previous command\n",
-                       expandFileLocation(visitedFiles, this->otherLoc).toString());
+                         expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope: {
@@ -321,8 +321,7 @@ struct ReflectionHooks : ParseSupervisor {
                 String fixed = String::format(
                     "// {}\n", StringView{" "}.join(commentReader.viewAvailable()
                                                         .rtrim([](char c) { return isWhite(c); })
-                                                        .splitByte(' ')
-                                                        .view()));
+                                                        .splitByte(' ')));
                 if (fixed == "// ply make switch\n" || fixed == "// ply make reflected switch\n") {
                     // This is a switch
                     if (!this->parser->atDeclarationScope) {

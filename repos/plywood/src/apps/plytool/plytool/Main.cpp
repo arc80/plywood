@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 
     // FIXME: Only call getBuildFolders when really needed
     env.buildFolders = build::BuildFolder::getList();
-    s32 defaultIndex = find(env.buildFolders.view(), [&](const build::BuildFolder* bf) {
+    s32 defaultIndex = find(env.buildFolders, [&](const build::BuildFolder* bf) {
         return bf->buildFolderName == workspace.currentBuildFolder;
     });
     if (defaultIndex >= 0) {

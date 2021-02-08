@@ -46,7 +46,7 @@ struct Stringifier {
                                                 bool forRootDeclarator);
     PLY_INLINE Array<Stringifier::Component> toStringComps(const SingleDeclaration& single,
                                                            bool forRootDeclarator) {
-        return this->toStringComps(single.declSpecifierSeq.view(), single.dcor.prod,
+        return this->toStringComps(single.declSpecifierSeq, single.dcor.prod,
                                    single.dcor.qid, single.init, forRootDeclarator);
     }
 };

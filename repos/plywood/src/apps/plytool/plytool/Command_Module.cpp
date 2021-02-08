@@ -42,7 +42,7 @@ void command_module(PlyToolCommandEnv* env) {
         for (const Repo* repo : RepoRegistry::get()->repos) {
             repos.append(repo);
         }
-        sort(repos.view(), [](const Repo* a, const Repo* b) { //
+        sort(repos, [](const Repo* a, const Repo* b) { //
             return a->repoName < b->repoName;
         });
         for (const Repo* repo : repos) {
@@ -51,7 +51,7 @@ void command_module(PlyToolCommandEnv* env) {
             for (TargetInstantiator* targetInst : repo->targetInstantiators) {
                 targetInsts.append(targetInst);
             }
-            sort(targetInsts.view(), [](const TargetInstantiator* a, const TargetInstantiator* b) {
+            sort(targetInsts, [](const TargetInstantiator* a, const TargetInstantiator* b) {
                 return a->name < b->name;
             });
             for (TargetInstantiator* targetInst : targetInsts) {

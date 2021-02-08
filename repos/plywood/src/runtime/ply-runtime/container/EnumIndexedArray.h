@@ -54,6 +54,24 @@ public:
     PLY_INLINE ArrayView<T> view() {
         return {m_items, (u32) EnumType::Count};
     }
+    PLY_INLINE operator ArrayView<const T>() const {
+        return {m_items, (u32) EnumType::Count};
+    }
+    PLY_INLINE operator ArrayView<T>() {
+        return {m_items, (u32) EnumType::Count};
+    }
+    PLY_INLINE T* begin() {
+        return m_items;
+    }
+    PLY_INLINE T* end() {
+        return m_items + (u32) EnumType::Count;
+    }
+    PLY_INLINE const T* begin() const {
+        return m_items;
+    }
+    PLY_INLINE const T* end() const {
+        return m_items + (u32) EnumType::Count;
+    }
 };
 
 } // namespace ply

@@ -113,11 +113,11 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
         this->result->dependencies.append(depSrc, nullptr);
 
         // Find a selector for this extern:
-        s32 i = find(this->env->externSelectors.view(),
+        s32 i = find(this->env->externSelectors,
                      [&](const ExternProvider* p) { return p->extern_ == depSrc; });
         if (i < 0) {
             // Not selected
-            if (findItem(this->result->unselectedExterns.view(), depSrc) < 0) {
+            if (find(this->result->unselectedExterns, depSrc) < 0) {
                 this->result->unselectedExterns.append(depSrc);
             }
             if (depTreeChild) {
@@ -140,7 +140,7 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
         args.dep = dep;
         ExternResult er = externProvider->externFunc(ExternCommand::Instantiate, &args);
         if (er.code != ExternResult::Instantiated) {
-            if (findItem(this->result->uninstalledProviders.view(), externProvider) < 0) {
+            if (find(this->result->uninstalledProviders, externProvider) < 0) {
                 this->result->uninstalledProviders.append(externProvider);
             }
             if (depTreeChild) {

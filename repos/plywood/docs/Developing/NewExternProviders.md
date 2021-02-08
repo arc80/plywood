@@ -14,7 +14,7 @@ For example, one of Plywood's built-in extern providers defined in [`repos/plywo
         if (args->toolchain->targetPlatform.name != "windows") {
             return {ExternResult::UnsupportedToolchain, "Target platform must be 'windows'"};
         }
-        if (findItem(ArrayView<const StringView>{"x86", "x64"}, args->toolchain->arch) < 0) {
+        if (find<StringView>({"x86", "x64"}, args->toolchain->arch) < 0) {
             return {ExternResult::UnsupportedToolchain, "Target arch must be 'x86' or 'x64'"};
         }
         if (args->providerArgs) {

@@ -31,7 +31,7 @@ struct Node {
             using Item = u32;
             using Context = Array<Object::Item>;
             static PLY_INLINE bool match(Item item, Key key, const Context& ctx) {
-                return ctx[item].key.view() == key;
+                return ctx[item].key == key;
             }
         };
 
@@ -116,7 +116,7 @@ struct Node {
 
     PLY_INLINE ArrayView<const Node* const> arrayView() const {
         if (this->type == (u64) Type::Array) {
-            return reinterpret_cast<const Array<const Node*>&>(this->array_).view();
+            return reinterpret_cast<const Array<const Node*>&>(this->array_);
         } else {
             return {};
         }

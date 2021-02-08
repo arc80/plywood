@@ -72,7 +72,7 @@ Array<String> getSourceFileKeys(StringView srcRoot) {
             }
         }
         for (StringView exclude : {"Shell_iOS", "opengl-support"}) {
-            s32 i = findItem(triple.dirNames.view(), exclude);
+            s32 i = find(triple.dirNames, exclude);
             if (i >= 0) {
                 triple.dirNames.erase(i);
             }
@@ -95,7 +95,7 @@ Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, Stri
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(absPath)) {
         allEntries.append(entry);
     }
-    sort(allEntries.view(),
+    sort(allEntries,
          [](const DirectoryEntry& a, const DirectoryEntry& b) { return a.name < b.name; });
 
     // Add child entries
@@ -160,22 +160,14 @@ int main() {
     Array<Reference<cook::CookJob>> rootRefs;
     Array<String> srcKeys = getSourceFileKeys(
         NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/io"));
-    srcKeys.extend(
-        getSourceFileKeys(NativePath::join(PLY_WORKSPACE_FOLDER,
-                                           "repos/plywood/src/runtime/ply-runtime/container"))
-            .view());
-    srcKeys.extend(
-        getSourceFileKeys(
-            NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/string"))
-            .view());
-    srcKeys.extend(
-        getSourceFileKeys(NativePath::join(PLY_WORKSPACE_FOLDER,
-                                           "repos/plywood/src/runtime/ply-runtime/filesystem"))
-            .view());
-    srcKeys.extend(
-        getSourceFileKeys(NativePath::join(PLY_WORKSPACE_FOLDER,
-                                           "repos/plywood/src/math/math/ply-math"))
-            .view());
+    srcKeys.extend(getSourceFileKeys(
+        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/container")));
+    srcKeys.extend(getSourceFileKeys(
+        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/string")));
+    srcKeys.extend(getSourceFileKeys(NativePath::join(
+        PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/filesystem")));
+    srcKeys.extend(getSourceFileKeys(
+        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/math/math/ply-math")));
     for (StringView srcKey : srcKeys) {
         rootRefs.append(ctx.cook({&ply::docs::CookJobType_ExtractAPI, srcKey}));
     }
@@ -197,7 +189,7 @@ int main() {
         web::Contents* home = contents.append(new web::Contents);
         home->title = "Home";
         home->linkDestination = "/";
-        contents.moveExtend(converted->children.view());
+        contents.moveExtend(converted->children);
     }
     {
         auto aRoot = pylon::exportObj(TypedPtr::bind(&contents));

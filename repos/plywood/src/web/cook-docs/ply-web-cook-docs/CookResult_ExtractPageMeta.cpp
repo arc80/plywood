@@ -69,7 +69,7 @@ void cook_ExtractPageMeta(cook::CookResult* cookResult_, TypedPtr jobArg) {
                     StringView childID = vins.readView(fmt::Identifier{});
                     if (!childID)
                         break;
-                    s32 childIndex = find(origOrder.view(), [&](const cook::CookJob* child) {
+                    s32 childIndex = find(origOrder, [&](const cook::CookJob* child) {
                         return child->castResult<CookResult_ExtractPageMeta>()->linkID == childID;
                     });
                     if (childIndex < 0) {
@@ -90,12 +90,12 @@ void cook_ExtractPageMeta(cook::CookResult* cookResult_, TypedPtr jobArg) {
                     }
                     extractPageMetaResult->addError(String::format(
                         "child pages not listed: {}",
-                        StringView{", "}.join(Array<StringView>{childIDs.view()}.view())));
+                        StringView{", "}.join(Array<StringView>{childIDs})));
                 }
             } else if (command == "dumpExtractedMembers") {
                 String classFQID = vins.viewAvailable().trim(isWhite);
                 Array<StringView> components = classFQID.splitByte(':');
-                SemaEntity* ent = wci->globalScope->lookupChain(components.view());
+                SemaEntity* ent = wci->globalScope->lookupChain(components);
                 if (!ent)
                     return; // Ignore here; error will be logged by CookResult_Page
                 auto pair = Owned<SymbolPagePair>::create();

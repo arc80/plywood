@@ -34,9 +34,9 @@ struct FixedArray {
 
     PLY_INLINE FixedArray() = default;
 
-    PLY_INLINE FixedArray(const std::initializer_list<T>& args) {
+    PLY_INLINE FixedArray(std::initializer_list<T> args) {
         PLY_ASSERT(Size == args.size());
-        subst::copyArray(this->items, args.begin(), Size);
+        subst::constructArrayFrom(this->items, args.begin(), Size);
     }
 
     template <typename... Args>
@@ -45,49 +45,57 @@ struct FixedArray {
         details::InitItems<T>::init(items, std::forward<Args>(args)...);
     }
 
-    constexpr u32 numItems() const {
+    PLY_INLINE constexpr u32 numItems() const {
         return Size;
     }
 
-    T& operator[](u32 i) {
+    PLY_INLINE T& operator[](u32 i) {
         PLY_ASSERT(i < Size);
         return items[i];
     }
 
-    const T& operator[](u32 i) const {
+    PLY_INLINE const T& operator[](u32 i) const {
         PLY_ASSERT(i < Size);
         return items[i];
     }
 
-    ArrayView<T> view() {
+    PLY_INLINE ArrayView<T> view() {
         return {items, Size};
     }
 
-    ArrayView<const T> view() const {
+    PLY_INLINE ArrayView<const T> view() const {
         return {items, Size};
     }
 
-    MutableStringView mutableStringView() {
+    PLY_INLINE operator ArrayView<T>() {
+        return {items, Size};
+    }
+
+    PLY_INLINE operator ArrayView<const T>() const {
+        return {items, Size};
+    }
+
+    PLY_INLINE MutableStringView mutableStringView() {
         return {reinterpret_cast<char*>(items), safeDemote<u32>(Size * sizeof(T))};
     }
 
-    StringView stringView() const {
+    PLY_INLINE StringView stringView() const {
         return {reinterpret_cast<const char*>(items), safeDemote<u32>(Size * sizeof(T))};
     }
 
-    T* begin() {
+    PLY_INLINE T* begin() {
         return items;
     }
 
-    T* end() {
+    PLY_INLINE T* end() {
         return items + Size;
     }
 
-    const T* begin() const {
+    PLY_INLINE const T* begin() const {
         return items;
     }
 
-    const T* end() const {
+    PLY_INLINE const T* end() const {
         return items + Size;
     }
 };

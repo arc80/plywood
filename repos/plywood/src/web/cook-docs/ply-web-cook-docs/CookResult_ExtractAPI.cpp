@@ -402,9 +402,10 @@ struct APIExtractor : cpp::ParseSupervisor {
                             forClass = scopeInfo.parentScope;
                         }
                         StringView categoryDesc = dr.viewAvailable().trim(isWhite);
-                        s32 categoryIndex = find(
-                            forClass->docInfo->categories.view(),
-                            [&](const DocInfo::Category& cat) { return cat.desc == categoryDesc; });
+                        s32 categoryIndex =
+                            find(forClass->docInfo->categories, [&](const DocInfo::Category& cat) {
+                                return cat.desc == categoryDesc;
+                            });
                         if (categoryIndex < 0) {
                             categoryIndex = forClass->docInfo->categories.numItems();
                             forClass->docInfo->categories.append(categoryDesc);
@@ -426,7 +427,7 @@ struct APIExtractor : cpp::ParseSupervisor {
                                 this->error(Error::UnexpectedAfterClassName, directive, lineLoc);
                             }
                             s32 i =
-                                find(this->extractAPIResult->extractedClasses.view(),
+                                find(this->extractAPIResult->extractedClasses,
                                      [&](const SemaEntity* ent) { return ent->name == className; });
                             if (i >= 0) {
                                 this->docState.addToClass =
@@ -516,12 +517,12 @@ struct APIExtractor : cpp::ParseSupervisor {
                 }
                 HybridString indexedName;
                 if (auto ident = semaDecl.dcor.qid.unqual.identifier()) {
-                    indexedName = ident->name.view();
+                    indexedName = ident->name;
                 }
                 Reference<SemaEntity> memberEnt = new SemaEntity;
                 memberEnt->setParent(scopeInfo.parentScope);
                 memberEnt->type = SemaEntity::Member;
-                memberEnt->name = indexedName.view();
+                memberEnt->name = indexedName;
                 if (scopeInfo.templateIdx >= 0) {
                     memberEnt->templateParams = this->semaScopeStack[scopeInfo.templateIdx];
                 }

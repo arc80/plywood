@@ -95,15 +95,20 @@ struct String : StringMixin<String> {
     Copy assignment operator. If this `String` already owns a memory block, it is destroyed. A new
     memory block is allocated on the heap and the contents of `other` are copied into it.
     */
-    PLY_INLINE void operator=(const String& other) {
+    template <typename = void>
+    PLY_INLINE void operator=(StringView other) {
         this->~String();
-        new (this) String{other.view()};
+        new (this) String{other};
     }
 
     /*!
     Move assignment operator. If this `String` already owns a memory block, it is destroyed. `other`
     is reset to an empty string.
     */
+    PLY_INLINE void operator=(const String& other) {
+        this->~String();
+        new (this) String{other.view()};
+    }
     PLY_INLINE void operator=(String&& other) {
         this->~String();
         new (this) String{std::move(other)};
@@ -316,6 +321,9 @@ struct HybridString : StringMixin<HybridString> {
     PLY_INLINE HybridString(StringView view)
         : bytes{const_cast<char*>(view.bytes)}, isOwner{0}, numBytes{view.numBytes} {
         PLY_ASSERT(view.numBytes < (1u << 30));
+    }
+
+    PLY_INLINE HybridString(const String& str) : HybridString{str.view()} {
     }
 
     /*!

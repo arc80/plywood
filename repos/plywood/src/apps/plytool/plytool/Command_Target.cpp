@@ -120,7 +120,7 @@ void command_target(PlyToolCommandEnv* env) {
         }
 
         String fullTargetName = targetInst->getFullyQualifiedName();
-        s32 j = findItem(env->currentBuildFolder->rootTargets.view(), fullTargetName);
+        s32 j = find(env->currentBuildFolder->rootTargets, fullTargetName);
         if (j < 0) {
             fatalError(String::format("Folder '{}' does not have root target '{}'",
                                       env->currentBuildFolder->buildFolderName,

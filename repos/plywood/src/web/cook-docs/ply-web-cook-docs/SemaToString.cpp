@@ -14,8 +14,7 @@ Array<Stringifier::Component> Stringifier::toStringComps(const TemplateArg::Type
     if (auto unknown = templateArgType.unknown()) {
         return {{Component::Other, unknown->expression, nullptr}};
     } else if (auto typeID = templateArgType.typeID()) {
-        return this->toStringComps(typeID->declSpecifierSeq.view(), typeID->abstractDcor, {}, {},
-                                   false);
+        return this->toStringComps(typeID->declSpecifierSeq, typeID->abstractDcor, {}, {}, false);
     } else {
         PLY_ASSERT(0);
         return {};
@@ -38,7 +37,7 @@ Array<Stringifier::Component> Stringifier::applyProductions(const DeclaratorProd
     };
     while (prod) {
         if (auto pointerTo = prod->pointerTo()) {
-            if (startsWithIdentifier(comps.view())) {
+            if (startsWithIdentifier(comps)) {
                 comps.insert(0) = {Component::Other, " ", nullptr};
             }
             comps.insert(0) = {Component::PointerOrReference,
@@ -53,7 +52,7 @@ Array<Stringifier::Component> Stringifier::applyProductions(const DeclaratorProd
                     comps.append({Component::Other, ", ", nullptr});
                 }
                 const SingleDeclaration& param = function->params[i];
-                comps.moveExtend(this->toStringComps(param, false).view());
+                comps.moveExtend(this->toStringComps(param, false));
             }
             comps.append({Component::Other, ")", nullptr});
             for (cpp::Token::Type qual : function->qualifiers) {
@@ -68,7 +67,7 @@ Array<Stringifier::Component> Stringifier::applyProductions(const DeclaratorProd
             }
             prod = function->target;
         } else if (auto qualifier = prod->qualifier()) {
-            if (startsWithIdentifier(comps.view())) {
+            if (startsWithIdentifier(comps)) {
                 comps.insert(0) = {Component::Other, " ", nullptr};
             }
             comps.insert(0) = {Component::KeywordOrIdentifier, qualifier->keyword, nullptr};
@@ -116,7 +115,7 @@ Array<Stringifier::Component> Stringifier::toStringComps(const QualifiedID& qid,
                     result.append({Component::Other, ", ", nullptr});
                 }
                 const TemplateArg& arg = templated->args[i];
-                result.moveExtend(this->toStringComps(arg.type).view());
+                result.moveExtend(this->toStringComps(arg.type));
             }
             result.append({Component::Other, ">::", nullptr});
         } else if (auto declType = nestedComp.declType()) {
@@ -152,7 +151,7 @@ Array<Stringifier::Component> Stringifier::toStringComps(const QualifiedID& qid,
                 result.append({Component::Other, ", ", nullptr});
             }
             const TemplateArg& arg = templateID->args[i];
-            result.moveExtend(this->toStringComps(arg.type).view());
+            result.moveExtend(this->toStringComps(arg.type));
         }
         result.append({Component::Other, ">", nullptr});
     } else if (auto declType = qid.unqual.declType()) {
@@ -170,9 +169,8 @@ Array<Stringifier::Component> Stringifier::toStringComps(const QualifiedID& qid,
     } else if (auto conversionFunc = qid.unqual.conversionFunc()) {
         result.append({Component::KeywordOrIdentifier, "operator", nullptr});
         result.append({Component::Other, " ", nullptr});
-        result.moveExtend(this->toStringComps(conversionFunc->declSpecifierSeq.view(),
-                                              conversionFunc->abstractDcor, {}, {}, false)
-                              .view());
+        result.moveExtend(this->toStringComps(conversionFunc->declSpecifierSeq,
+                                              conversionFunc->abstractDcor, {}, {}, false));
     }
     if (role == QIDRole::RootDeclarator) {
         result.append({Component::EndRootDeclarator, {}, nullptr});
@@ -198,7 +196,7 @@ Stringifier::toStringComps(ArrayView<const DeclSpecifier> declSpecifierSeq,
                 comps.append({Component::KeywordOrIdentifier, "typename", nullptr});
                 comps.append({Component::Other, " ", nullptr});
             }
-            comps.moveExtend(this->toStringComps(typeID->qid, QIDRole::TypeSpecifier).view());
+            comps.moveExtend(this->toStringComps(typeID->qid, QIDRole::TypeSpecifier));
         } else if (auto typeParam = declSpec.typeParam()) {
             comps.append({Component::KeywordOrIdentifier, "typename", nullptr});
         } else {
@@ -217,11 +215,11 @@ Stringifier::toStringComps(ArrayView<const DeclSpecifier> declSpecifierSeq,
     if (dcorComps && dcorComps[0].type != Component::PointerOrReference) {
         comps.append({Component::Other, " ", nullptr});
     }
-    comps.moveExtend(dcorComps.view());
+    comps.moveExtend(dcorComps);
 
     if (auto initAssign = init.assignment()) {
         comps.append({Component::Other, StringView{" = "}, nullptr});
-        comps.moveExtend(this->toStringComps(initAssign->type).view());
+        comps.moveExtend(this->toStringComps(initAssign->type));
     } else if (auto bitField = init.bitField()) {
         comps.append({Component::Other, StringView{" : "} + bitField->expression, nullptr});
     }

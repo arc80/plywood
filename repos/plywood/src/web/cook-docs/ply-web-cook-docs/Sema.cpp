@@ -31,7 +31,7 @@ String tempExtractInitializer(const PPVisitedFiles* visitedFiles, LinearLocation
     u32 startPos =
         safeDemote<u32>(startIter.getItem().offset + (startLoc - startIter.getItem().linearLoc));
     u32 endPos = safeDemote<u32>(endIter.getItem().offset + (endLoc - endIter.getItem().linearLoc));
-    return srcFile->contents.view().subStr(startPos, endPos - startPos);
+    return srcFile->contents.subStr(startPos, endPos - startPos);
 }
 
 struct SemaConverter {
@@ -42,7 +42,7 @@ struct SemaConverter {
         sema::TemplateArg sArg;
         if (auto gTypeID = gArg.type.typeID()) {
             auto sTypeID = sArg.type.typeID().switchTo();
-            sTypeID->declSpecifierSeq = this->toSema(gTypeID->declSpecifierSeq.view());
+            sTypeID->declSpecifierSeq = this->toSema(gTypeID->declSpecifierSeq);
             sTypeID->abstractDcor = this->toSema(gTypeID->abstractDcor);
         } else if (auto gUnknown = gArg.type.unknown()) {
             auto sUnknown = sArg.type.unknown();
@@ -104,8 +104,7 @@ struct SemaConverter {
             sOperatorFunc->punc2 = gOperatorFunc->punc2.type;
         } else if (auto gConversionFunc = gQID.unqual.conversionFunc()) {
             auto sConversionFunc = sQID.unqual.conversionFunc().switchTo();
-            sConversionFunc->declSpecifierSeq =
-                this->toSema(gConversionFunc->declSpecifierSeq.view());
+            sConversionFunc->declSpecifierSeq = this->toSema(gConversionFunc->declSpecifierSeq);
             sConversionFunc->abstractDcor = this->toSema(gConversionFunc->abstractDcor);
         }
         return sQID;
@@ -135,7 +134,7 @@ struct SemaConverter {
 
     PLY_NO_INLINE sema::SingleDeclaration toSema(const grammar::ParamDeclarationWithComma& gParam) {
         sema::SingleDeclaration sSingle;
-        sSingle.declSpecifierSeq = this->toSema(gParam.declSpecifierSeq.view());
+        sSingle.declSpecifierSeq = this->toSema(gParam.declSpecifierSeq);
         sSingle.dcor = this->toSema(gParam.dcor);
         if (auto gAssignment = gParam.init.assignment()) {
             auto sAssignment = sSingle.init.assignment().switchTo();
@@ -145,7 +144,7 @@ struct SemaConverter {
                     gExpression->end.linearLoc + gExpression->end.identifier.numBytes);
             } else if (auto gTypeID = gAssignment->type.typeID()) {
                 auto sTypeID = sAssignment->type.typeID().switchTo();
-                sTypeID->declSpecifierSeq = this->toSema(gTypeID->declSpecifierSeq.view());
+                sTypeID->declSpecifierSeq = this->toSema(gTypeID->declSpecifierSeq);
                 sTypeID->abstractDcor = this->toSema(gTypeID->abstractDcor);
             } else {
                 this->anyError = true;
@@ -196,7 +195,7 @@ struct SemaConverter {
         Array<sema::SingleDeclaration> sSingles;
         for (const grammar::InitDeclaratorWithComma& gInitDcor : gSimple.initDeclarators) {
             sema::SingleDeclaration& sSingle = sSingles.append();
-            sSingle.declSpecifierSeq = this->toSema(gSimple.declSpecifierSeq.view());
+            sSingle.declSpecifierSeq = this->toSema(gSimple.declSpecifierSeq);
             sSingle.dcor = this->toSema(gInitDcor.dcor);
             if (auto bitField = gInitDcor.init.bitField()) {
                 sSingle.init.bitField().switchTo()->expression =

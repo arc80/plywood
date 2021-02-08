@@ -278,7 +278,7 @@ public:
     PLY_NO_INLINE void format(StringView fmt, const Args&... args) {
         FixedArray<Arg, sizeof...(args)> argList;
         prepareArgList(argList.items, args...);
-        this->formatInternal(fmt, argList.view());
+        this->formatInternal(fmt, argList);
     }
 
     /*!

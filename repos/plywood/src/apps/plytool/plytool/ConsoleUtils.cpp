@@ -38,7 +38,7 @@ StringView CommandLine::readToken() {
 }
 
 StringView CommandLine::checkForSkippedOpt(const LambdaView<bool(StringView)>& matcher) {
-    s32 i = find(this->skippedOpts.view(), matcher);
+    s32 i = find(this->skippedOpts, matcher);
     if (i >= 0) {
         StringView matched = this->skippedOpts[i];
         this->skippedOpts.erase(i);

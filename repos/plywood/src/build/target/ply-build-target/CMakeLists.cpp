@@ -17,7 +17,7 @@ void writeCMakeLists(OutStream* outs, CMakeBuildFolder* cbf) {
     PLY_ASSERT(NativePath::isNormalized(cbf->absPath));
     PLY_ASSERT(NativePath::endsWithSep(cbf->absPath));
 
-    HybridString sourceFolderPrefix = cbf->sourceFolderPrefix.view();
+    HybridString sourceFolderPrefix = cbf->sourceFolderPrefix;
     if (!sourceFolderPrefix) {
         sourceFolderPrefix = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/");
     }
@@ -73,10 +73,10 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
         // Define a CMake variable for each group of source files (usually, there's just one
         // group)
         Array<String> sourceVarNames;
-        ArrayView<const BuildTarget::SourceFilesPair> sourceFiles = buildTarget->sourceFiles.view();
+        ArrayView<const BuildTarget::SourceFilesPair> sourceFiles = buildTarget->sourceFiles;
         /* FIXME
         if (buildTarget->key.dynLinkage == DynamicLinkage::Import) {
-            sourceFiles = buildTarget->sourceFilesWhenImported.view();
+            sourceFiles = buildTarget->sourceFilesWhenImported;
         }
         */
         for (const BuildTarget::SourceFilesPair& sfPair : sourceFiles) {
@@ -150,7 +150,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
         // Enable/disable C++ execptions
         if (targetType != BuildTargetType::HeaderOnly) {
             bool enableExceptions =
-                (findItem(buildTarget->privateAbstractFlags.view(), StringView{"exceptions"}) >= 0);
+                (find(buildTarget->privateAbstractFlags, StringView{"exceptions"}) >= 0);
             outs->format("EnableCppExceptions({} {})\n", uniqueTargetName,
                        enableExceptions ? "TRUE" : "FALSE");
         }
@@ -299,7 +299,7 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
         args.append(String::format("-DCMAKE_BUILD_TYPE={}", config));
     }
     args.extend({"-DCMAKE_C_COMPILER_FORCED=1", "-DCMAKE_CXX_COMPILER_FORCED=1"});
-    Owned<Subprocess> sub = Subprocess::exec(PLY_CMAKE_PATH, Array<StringView>{args.view()}.view(),
+    Owned<Subprocess> sub = Subprocess::exec(PLY_CMAKE_PATH, Array<StringView>{args},
                                              buildFolder, Subprocess::Output::openMerged());
     String output = TextFormat::platformPreference()
                         .createImporter(Owned<InStream>::create(sub->readFromStdOut.borrow()))
@@ -337,7 +337,7 @@ PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
         if (targetName) {
             args.append(targetName);
         }
-        sub = Subprocess::exec("make", Array<StringView>{args.view()}.view(), buildFolder,
+        sub = Subprocess::exec("make", Array<StringView>{args}, buildFolder,
                                outputType);
     } else {
         Array<StringView> args = {"--build", "."};
@@ -347,7 +347,7 @@ PLY_NO_INLINE Tuple<s32, String> buildCMakeProject(StringView cmakeListsFolder,
         if (targetName) {
             args.extend({"--target", targetName});
         }
-        sub = Subprocess::exec(PLY_CMAKE_PATH, args.view(), buildFolder, outputType);
+        sub = Subprocess::exec(PLY_CMAKE_PATH, args, buildFolder, outputType);
     }
     String output;
     if (captureOutput) {
@@ -397,7 +397,7 @@ String getTargetOutputPath(BuildTargetType targetType, StringView targetName,
     Array<StringView> pathComponents = {buildFolderPath, "build", config};
     String fullName = filePrefix + targetName + fileExtension;
     pathComponents.append(fullName);
-    return NativePath::format().joinAndNormalize(Array<StringView>{pathComponents.view()}.view());
+    return NativePath::format().joinAndNormalize(Array<StringView>{pathComponents});
 }
 
 } // namespace build

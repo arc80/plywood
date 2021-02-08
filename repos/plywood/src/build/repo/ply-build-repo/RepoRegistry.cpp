@@ -72,7 +72,7 @@ struct RepoInstantiator {
             // importInto(TypedPtr::bind(this), aRoot);
             for (const pylon::Node* dependency : parseResult.root->get("dependsOn")->arrayView()) {
                 StringView depRepoName = dependency->text();
-                s32 j = find(this->idlls.dlls.view(),
+                s32 j = find(this->idlls.dlls,
                              [&](const InstantiatedDLL& d) { return d.repoName == depRepoName; });
                 if (j < 0) {
                     FileLocation loc = parseResult.fileLocMap.getFileLocation(dependency->fileOfs);
@@ -86,7 +86,7 @@ struct RepoInstantiator {
                 if (!childRepo) {
                     return nullptr;
                 }
-                if (findItem(repo->childRepos.view(), childRepo) >= 0) {
+                if (find(repo->childRepos, childRepo) >= 0) {
                     FileLocation loc = parseResult.fileLocMap.getFileLocation(dependency->fileOfs);
                     ErrorHandler::log(
                         ErrorHandler::Fatal,
@@ -283,7 +283,7 @@ PLY_NO_INLINE const DependencySource* RepoRegistry::findExtern(StringView extern
     Array<StringView> compsOwner = splitName(externName, "extern name");
     if (!compsOwner)
         return nullptr;
-    ArrayView<const StringView> comps = compsOwner.view();
+    ArrayView<const StringView> comps = compsOwner;
     const DependencySource* extern_ = findExternInternal(this, comps);
     if (!extern_)
         return nullptr;
@@ -299,7 +299,7 @@ RepoRegistry::getExternProvider(StringView qualifiedName) const {
     Array<StringView> compsOwner = splitName(qualifiedName, "extern provider name");
     if (!compsOwner)
         return nullptr;
-    ArrayView<const StringView> comps = compsOwner.view();
+    ArrayView<const StringView> comps = compsOwner;
     const DependencySource* extern_ = findExternInternal(this, comps);
     if (!extern_)
         return nullptr;
@@ -319,7 +319,7 @@ RepoRegistry::getExternProvider(StringView qualifiedName) const {
                                              (*repoCursor)->repoName));
             return nullptr;
         }
-        s32 j = find((*repoCursor)->externProviders.view(), [&](const ExternProvider* p) {
+        s32 j = find((*repoCursor)->externProviders, [&](const ExternProvider* p) {
             return p->extern_ == extern_ && p->providerName == comps[0];
         });
         if (j < 0) {
@@ -347,7 +347,7 @@ RepoRegistry::getExternProvider(StringView qualifiedName) const {
         const ExternProvider* provider = nullptr;
         bool conflict = false;
         for (const Repo* repo : this->repos) {
-            s32 j = find(repo->externProviders.view(), [&](const ExternProvider* p) {
+            s32 j = find(repo->externProviders, [&](const ExternProvider* p) {
                 return p->extern_ == extern_ && p->providerName == comps[0];
             });
             if (j >= 0) {
@@ -389,8 +389,8 @@ PLY_NO_INLINE String RepoRegistry::getShortDepSourceName(const DependencySource*
     for (const Repo* repo : this->repos) {
         if (repo == depSrc->repo)
             continue;
-        s32 index = find(repo->externs.view(),
-                         [&](const DependencySource* d) { return d->name == depSrc->name; });
+        s32 index =
+            find(repo->externs, [&](const DependencySource* d) { return d->name == depSrc->name; });
         if (index >= 0) {
             // Extern name is defined by multiple repos, so qualify it:
             return String::format("{}.{}", depSrc->repo->repoName, depSrc->name);
@@ -405,7 +405,7 @@ RepoRegistry::getShortProviderName(const ExternProvider* externProvider) const {
     for (const Repo* repo : this->repos) {
         if (repo == externProvider->repo)
             continue;
-        s32 index = find(repo->externProviders.view(), [&](const ExternProvider* p) {
+        s32 index = find(repo->externProviders, [&](const ExternProvider* p) {
             return p->extern_ == externProvider->extern_ &&
                    p->providerName == externProvider->providerName;
         });

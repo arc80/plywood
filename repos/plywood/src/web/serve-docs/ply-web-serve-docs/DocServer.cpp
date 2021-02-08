@@ -47,7 +47,8 @@ void dumpContents(OutStream* outs, const Contents* node, ArrayView<const Content
         *outs << "</a>";
     }
     if (node->children) {
-        outs->format("<ul class=\"nested{}\">\n", isExpanded ? StringView{" active"} : StringView{});
+        outs->format("<ul class=\"nested{}\">\n",
+                     isExpanded ? StringView{" active"} : StringView{});
         for (const Contents* child : node->children) {
             dumpContents(outs, child, expandTo);
         }
@@ -113,7 +114,8 @@ String getPageSource(DocServer* ds, StringView requestPath, ResponseIface* respo
     } else {
         absPath += ".html";
     }
-    String pageHtml = fs->loadText(NativePath::join(ds->dataRoot, "pages", absPath), TextFormat::unixUTF8());
+    String pageHtml =
+        fs->loadText(NativePath::join(ds->dataRoot, "pages", absPath), TextFormat::unixUTF8());
     if (!pageHtml) {
         responseIface->respondGeneric(ResponseCode::NotFound);
         return {};
@@ -173,7 +175,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 )#",
-               pageTitle);
+                 pageTitle);
     *outs << R"#(<link href="/static/stylesheet.css?1" rel="stylesheet" type="text/css" />
 <link rel="icon" href="/static/favicon@32x32.png" sizes="32x32" />
 <script src="/static/docs.js"></script>
@@ -200,7 +202,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
         <ul>
 )#";
     for (const Contents* node : this->contents) {
-        dumpContents(outs, node, expandTo.view());
+        dumpContents(outs, node, expandTo);
     }
     outs->format(R"(
         </ul>
@@ -210,7 +212,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
   <article class="content" id="article">
 <h1>{}</h1>
 )",
-               pageTitle);
+                 pageTitle);
     *outs << vins.viewAvailable();
     *outs << R"(
   </article>

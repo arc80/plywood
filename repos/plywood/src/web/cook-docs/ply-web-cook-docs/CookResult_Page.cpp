@@ -28,7 +28,7 @@ SemaEntity* resolveClassScope(StringView classScopeText) {
     cook::CookContext* ctx = cook::CookContext::current();
     WebCookerIndex* wci = ctx->depTracker->userData.safeCast<WebCookerIndex>();
     Array<StringView> comps = classScopeText.splitByte(':');
-    return wci->globalScope->lookupChain(comps.view());
+    return wci->globalScope->lookupChain(comps);
 }
 
 String getLinkDestination(const SemaEntity* targetSema) {
@@ -84,7 +84,7 @@ String getLinkDestinationFromSpan(StringView codeSpanText, const LookupContext& 
         return {};
     PLY_ASSERT(!codeSpanText.startsWith(":")); // Not supported yet
     for (SemaEntity* fromSema : lookupCtx.semaGroup) {
-        SemaEntity* foundSema = fromSema->lookupChain(nameComps.view());
+        SemaEntity* foundSema = fromSema->lookupChain(nameComps);
         if (foundSema) {
             if (!lookupCtx.shouldShowLink(foundSema))
                 return {};
@@ -93,7 +93,7 @@ String getLinkDestinationFromSpan(StringView codeSpanText, const LookupContext& 
     }
     if (lookupCtx.forClass) {
         // Try class itself last
-        SemaEntity* foundSema = lookupCtx.forClass->lookupChain(nameComps.view());
+        SemaEntity* foundSema = lookupCtx.forClass->lookupChain(nameComps);
         if (foundSema) {
             if (!lookupCtx.shouldShowLink(foundSema))
                 return {};
@@ -131,7 +131,7 @@ Owned<markdown::Node> parseMarkdown(StringView markdown, const LookupContext& lo
             if (!linkDestination)
                 return false;
             Node* parent = node->parent;
-            s32 i = findItem(parent->children.view(), node);
+            s32 i = find(parent->children, node);
             PLY_ASSERT(i >= 0);
             Owned<Node> movedNode = std::move(parent->children[i]);
             PLY_ASSERT(movedNode == node);
@@ -221,7 +221,7 @@ void dumpBaseClasses(OutStream& htmlWriter, SemaEntity* classEnt,
     // Dump base classes
     for (const cpp::sema::QualifiedID& qid : classEnt->baseClasses) {
         Array<StringView> comps = qid.getSimplifiedComponents();
-        SemaEntity* baseEnt = classEnt->lookupChain(comps.view());
+        SemaEntity* baseEnt = classEnt->lookupChain(comps);
         if (!baseEnt)
             continue;
         if (!baseEnt->docInfo)
@@ -257,7 +257,7 @@ void dumpExtractedMembers(OutStream& htmlWriter, SemaEntity* classEnt) {
         for (const DocInfo::Entry::Title& title : entry.titles) {
             semaGroup.append(title.member);
         }
-        LookupContext lookupCtx{classEnt, semaGroup.view()};
+        LookupContext lookupCtx{classEnt, semaGroup};
 
         htmlWriter << "<dt>";
         for (const DocInfo::Entry::Title& title : entry.titles) {
@@ -356,7 +356,7 @@ void dumpExtractedMembers(OutStream& htmlWriter, SemaEntity* classEnt) {
 u128 getClassHash(StringView classFQID) {
     cook::DependencyTracker* depTracker = cook::DependencyTracker::current();
     WebCookerIndex* wci = depTracker->userData.cast<WebCookerIndex>();
-    SemaEntity* classEnt = wci->globalScope->lookupChain(classFQID.splitByte(':').view());
+    SemaEntity* classEnt = wci->globalScope->lookupChain(classFQID.splitByte(':'));
     if (!classEnt || classEnt->type != SemaEntity::Class)
         return {};
     return classEnt->hash;
@@ -445,7 +445,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
             // FIXME: handle errors here
             Array<TitleSpan> spans = parseTitle(vins.viewAvailable().rtrim(isWhite),
                                                 [](ParseTitleError, StringView, const char*) {});
-            writeAltMemberTitle(htmlWriter, spans.view(), {classScope, {}},
+            writeAltMemberTitle(htmlWriter, spans, {classScope, {}},
                                 getLinkDestinationFromSpan);
             htmlWriter << "</code></dt>\n";
             htmlWriter << "<dd>\n";
@@ -486,7 +486,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
                                    classFQID, classScopeText));
             }
             pageResult->dependencies.append(new Dependency_ExtractedClassAPI{classFQID});
-            SemaEntity* classEnt = wci->globalScope->lookupChain(classFQID.splitByte(':').view());
+            SemaEntity* classEnt = wci->globalScope->lookupChain(classFQID.splitByte(':'));
             if (!classEnt) {
                 // FIXME: It would be cool to set the columnNumber to the exact location of the
                 // class name within the liquid tag, but that will require a way to map offsets

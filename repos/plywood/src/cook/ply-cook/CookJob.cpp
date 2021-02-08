@@ -110,7 +110,7 @@ void CookResult::addReference(const CookJobID& jobID) {
     CookContext* ctx = CookContext::current();
     PLY_ASSERT(ctx->depTracker == DependencyTracker::current());
     Reference<CookJob> refJob = ctx->depTracker->getOrCreateCookJob(jobID);
-    PLY_ASSERT(findItem(this->references.view(), refJob) < 0);
+    PLY_ASSERT(find(this->references, refJob) < 0);
     this->references.append(refJob);
     if (!ctx->checkedJobs.find(refJob).wasFound()) {
         ctx->deferredJobs.insertOrFind(refJob);
@@ -149,7 +149,7 @@ Reference<CookJob> DependencyTracker::getOrCreateCookJob(const CookJobID& id) {
     // FIXME: Implement safe cast that recognizes base classes
     //    Reference<CookJob> cookJob = TypedPtr::create(id.type->resultType).cast<CookJob>();
     Reference<CookJob> cookJob = new CookJob;
-    cookJob->id = std::move(id);
+    cookJob->id = id;
     this->allCookJobs.insert(cookJob.get());
     return cookJob;
 }

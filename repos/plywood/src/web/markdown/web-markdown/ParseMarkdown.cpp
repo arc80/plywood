@@ -621,16 +621,16 @@ Array<Owned<Node>> processEmphasis(Array<Delimiter>& delimiters, u32 bottomPos) 
                     Owned<Node> elem =
                         new Node{nullptr, spanLength >= 2 ? Node::Strong : Node::Emphasis};
                     elem->addChildren(
-                        convertToInlineElems(delimiters.subView(j + 1, pos - j - 1)).view());
+                        convertToInlineElems(delimiters.subView(j + 1, pos - j - 1)));
                     u32 delimsToSubtract = min(spanLength, 2u);
                     delimiters[j].text.numBytes -= delimsToSubtract;
                     delimiters[pos].text.numBytes -= delimsToSubtract;
                     // We're going to delete from j to pos inclusive, so leave remaining delimiters
                     // if any
-                    if (!delimiters[j].text.view().isEmpty()) {
+                    if (!delimiters[j].text.isEmpty()) {
                         j++;
                     }
-                    if (!delimiters[pos].text.view().isEmpty()) {
+                    if (!delimiters[pos].text.isEmpty()) {
                         pos--;
                     }
                     delimiters.erase(j, pos + 1 - j);
@@ -732,7 +732,7 @@ Array<Owned<Node>> expandInlineElements(ArrayView<const String> rawLines) {
             ic.i++;
 
             // Look for preceding OpenLink delimiter
-            s32 openLink = rfind(delimiters.view(), [](const Delimiter& delim) {
+            s32 openLink = rfind(delimiters, [](const Delimiter& delim) {
                 return delim.type == Delimiter::OpenLink;
             });
             if (openLink < 0)
@@ -751,7 +751,7 @@ Array<Owned<Node>> expandInlineElements(ArrayView<const String> rawLines) {
             // Successfully parsed link destination
             Owned<Node> elem = new Node{nullptr, Node::Link};
             elem->text = std::move(linkDest.second);
-            elem->addChildren(processEmphasis(delimiters, openLink + 1).view());
+            elem->addChildren(processEmphasis(delimiters, openLink + 1));
             delimiters.resize(openLink);
             delimiters.append(std::move(elem));
             flushedIndex = ic.i;
@@ -772,7 +772,7 @@ static PLY_NO_INLINE void doInlines(Node* node) {
     } else {
         PLY_ASSERT(node->isLeafBlock());
         if (node->type != Node::CodeBlock) {
-            node->addChildren(expandInlineElements(node->rawLines.view()).view());
+            node->addChildren(expandInlineElements(node->rawLines));
             node->rawLines.clear();
         }
     }

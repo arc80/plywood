@@ -211,13 +211,13 @@ void command_codegen(PlyToolCommandEnv* env) {
     for (WalkTriple& triple :
          FileSystem::native()->walk(NativePath::join(PLY_WORKSPACE_FOLDER, "repos"))) {
         // Sort child directories and filenames so that files are visited in a deterministic order:
-        sort(triple.dirNames.view());
-        sort(triple.files.view(), [](const WalkTriple::FileInfo& a, const WalkTriple::FileInfo& b) {
+        sort(triple.dirNames);
+        sort(triple.files, [](const WalkTriple::FileInfo& a, const WalkTriple::FileInfo& b) {
             return a.name < b.name;
         });
 
-        if (find(triple.files.view(),
-                 [](const auto& fileInfo) { return fileInfo.name == "nocodegen"; }) >= 0) {
+        if (find(triple.files, [](const auto& fileInfo) { return fileInfo.name == "nocodegen"; }) >=
+            0) {
             triple.dirNames.clear();
             continue;
         }
@@ -243,14 +243,14 @@ void command_codegen(PlyToolCommandEnv* env) {
                 {
                     fileNum++;
 
-                    Tuple<cpp::SingleFileReflectionInfo, bool> sfri = cpp::extractReflection(
-                        &agg, NativePath::join(triple.dirPath, file.name).view());
+                    Tuple<cpp::SingleFileReflectionInfo, bool> sfri =
+                        cpp::extractReflection(&agg, NativePath::join(triple.dirPath, file.name));
                     if (sfri.second) {
                         for (cpp::SwitchInfo* switch_ : sfri.first.switches) {
                             writeSwitchInl(switch_, env->workspace->getSourceTextFormat());
                         }
                         performSubstsAndSave(NativePath::join(triple.dirPath, file.name),
-                                             sfri.first.substsInParsedFile.view(),
+                                             sfri.first.substsInParsedFile,
                                              env->workspace->getSourceTextFormat());
                     }
                 }
@@ -258,7 +258,7 @@ void command_codegen(PlyToolCommandEnv* env) {
             }
         }
         for (StringView exclude : {"Shell_iOS", "opengl-support"}) {
-            s32 i = findItem(triple.dirNames.view(), exclude);
+            s32 i = find(triple.dirNames, exclude);
             if (i >= 0) {
                 triple.dirNames.erase(i);
             }

@@ -61,13 +61,13 @@ struct PathFormat {
     PLY_INLINE String join(StringViews&&... pathComponentArgs) const {
         FixedArray<StringView, sizeof...(StringViews)> components{
             std::forward<StringViews>(pathComponentArgs)...};
-        return joinAndNormalize(components.view());
+        return joinAndNormalize(components);
     }
     template <typename... StringViews>
     PLY_INLINE String normalize(StringViews&&... pathComponentArgs) const {
         FixedArray<StringView, sizeof...(StringViews)> components{
             std::forward<StringViews>(pathComponentArgs)...};
-        return joinAndNormalize(components.view());
+        return joinAndNormalize(components);
     }
     PLY_DLL_ENTRY String makeRelative(StringView ancestor, StringView descendant) const;
     PLY_DLL_ENTRY HybridString from(const PathFormat& srcFormat, StringView srcPath) const;
@@ -110,7 +110,7 @@ struct Path {
     static PLY_INLINE String join(StringViews&&... pathComponentArgs) {
         FixedArray<StringView, sizeof...(StringViews)> components{
             std::forward<StringViews>(pathComponentArgs)...};
-        return PathFormat{IsWindows}.joinAndNormalize(components.view());
+        return PathFormat{IsWindows}.joinAndNormalize(components);
     }
     static PLY_INLINE String makeRelative(StringView ancestor, StringView descendant) {
         return PathFormat{IsWindows}.makeRelative(ancestor, descendant);
@@ -119,7 +119,7 @@ struct Path {
     static PLY_INLINE String normalize(StringViews&&... pathComponentArgs) {
         FixedArray<StringView, sizeof...(StringViews)> components{
             std::forward<StringViews>(pathComponentArgs)...};
-        return PathFormat{IsWindows}.joinAndNormalize(components.view());
+        return PathFormat{IsWindows}.joinAndNormalize(components);
     }
     static PLY_INLINE bool isNormalized(StringView path) {
         return path == normalize(path);

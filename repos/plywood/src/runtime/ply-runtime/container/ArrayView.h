@@ -69,8 +69,11 @@ struct ArrayView {
     /*!
     Conversion operator. Makes `ArrayView<T>` implicitly convertible to `ArrayView<const T>`.
     */
-    PLY_INLINE operator const ArrayView<const T>&() const {
-        return reinterpret_cast<const ArrayView<const T>&>(*this);
+    PLY_INLINE operator ArrayView<const T>() const {
+        return {this->items, this->numItems};
+    }
+    PLY_INLINE ArrayView<const T> view() const {
+        return {this->items, this->numItems};
     }
 
     /*!
@@ -210,6 +213,11 @@ struct ArrayView {
     \endGroup
     */
 };
+
+// If ArrayViewType<Arr> is well-formed, that means Arr can be converted to an ArrayView by calling
+// its view() member function, and ArrayViewType<Arr> resolves to the ArrayView's template argument.
+template <typename Arr>
+using ArrayViewType = std::remove_pointer_t<decltype(std::declval<Arr>().view().items)>;
 
 #define PLY_ALLOC_STACK_ARRAY(T, count) \
     ArrayView<T> { \
