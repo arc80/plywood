@@ -48,7 +48,7 @@ struct ArrayView {
     }
 
     /*!
-    Constructs an `ArrayView` from a `std::initializer_list<T>`. Lets you pass an initializer list
+    Constructs an `ArrayView` from a braced initializer list. Lets you pass an initializer list
     to any function expecting an `ArrayView`, as in the following:
 
         void foo(ArrayView<u32>);
@@ -56,8 +56,8 @@ struct ArrayView {
             foo({1, 2, 3, 4, 5});
         }
 
-    Use this carefully; the `std::initializer_list` is a temporary object that only exists for the
-    lifetime of the statement using it.
+    Use this carefully; the underlying array only exists for the lifetime of the statement calling
+    this constructor.
     */
     PLY_INLINE ArrayView(std::initializer_list<T> init)
         : items{init.begin()}, numItems{safeDemote<u32>(init.size())} {
@@ -72,8 +72,8 @@ struct ArrayView {
     PLY_INLINE operator ArrayView<const T>() const {
         return {this->items, this->numItems};
     }
-    PLY_INLINE ArrayView<const T> view() const {
-        return {this->items, this->numItems};
+    PLY_INLINE ArrayView<T> view() const {
+        return *this;
     }
 
     /*!
@@ -214,10 +214,58 @@ struct ArrayView {
     */
 };
 
+namespace details {
+
 // If ArrayViewType<Arr> is well-formed, that means Arr can be converted to an ArrayView by calling
 // its view() member function, and ArrayViewType<Arr> resolves to the ArrayView's template argument.
 template <typename Arr>
 using ArrayViewType = std::remove_pointer_t<decltype(std::declval<Arr>().view().items)>;
+
+template <typename Arr>
+struct CanMoveFromArrayLike : std::false_type {};
+
+// If the second argument is an rvalue reference, Arr will be deduced as non-reference.
+// Otherwise, Arr will be deduced as a reference, and IsArrayOwner<Arr> will always be false.
+// Therefore, the moving version of this function will only be called if the second argument is an
+// rvalue reference to an array-like class that owns its elements, which is appropriate.
+template <typename T, typename Arr, std::enable_if_t<CanMoveFromArrayLike<Arr>::value, int> = 0>
+PLY_INLINE void moveOrCopyConstruct(T* dst, Arr&& src) {
+    ArrayView<ArrayViewType<Arr>> srcView = src.view();
+    subst::moveConstructArray(dst, srcView.items, srcView.numItems);
+}
+template <typename T, typename Arr, std::enable_if_t<!CanMoveFromArrayLike<Arr>::value, int> = 0>
+PLY_INLINE void moveOrCopyConstruct(T* dst, Arr&& src) {
+    ArrayView<ArrayViewType<Arr>> srcView = src.view();
+    subst::constructArrayFrom(dst, srcView.items, srcView.numItems);
+}
+
+} // namespace details
+
+/*!
+\addToClass ArrayView
+\beginGroup
+Compares two array-like objects. `a` and `b` can have different item types. Returns `true` if and
+only if `a` and `b` have the same number of items and `a[i] == b[i]` evaluates to `true` at every
+index `i`.
+*/
+template <typename T0, typename T1>
+PLY_NO_INLINE bool operator==(ArrayView<T0> a, ArrayView<T1> b) {
+    if (a.numItems != b.numItems)
+        return false;
+    for (u32 i = 0; i < a.numItems; i++) {
+        if (!(a[i] == b[i]))
+            return false;
+    }
+    return true;
+}
+template <typename Arr0, typename Arr1, typename = details::ArrayViewType<Arr0>,
+          typename = details::ArrayViewType<Arr1>>
+PLY_INLINE bool operator==(const Arr0& a, const Arr1& b) {
+    return a.view() == b.view();
+}
+/*!
+\endGroup
+*/
 
 #define PLY_ALLOC_STACK_ARRAY(T, count) \
     ArrayView<T> { \

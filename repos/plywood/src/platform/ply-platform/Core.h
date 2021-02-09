@@ -153,6 +153,21 @@ PLY_INLINE constexpr u16 reverseBytes(u16 v) {
 #endif
 
 //---------------------------------------------
+// InitList
+//---------------------------------------------
+#include <initializer_list>
+namespace ply {
+namespace details {
+template <typename T>
+struct InitListType {
+    using Type = T;
+};
+} // namespace details
+template <typename T>
+using InitList = std::initializer_list<typename details::InitListType<T>::Type>;
+} // namespace ply
+
+//---------------------------------------------
 // PLY_PUN_SCOPE
 //---------------------------------------------
 struct PunScope {

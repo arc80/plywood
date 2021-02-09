@@ -67,8 +67,10 @@ PLY_NO_INLINE void sort(ArrayView<T> view, const IsLess& isLess = details::defau
     }
 }
 
-template <typename Arr, typename IsLess = decltype(details::defaultLess<ArrayViewType<Arr>>)>
-PLY_INLINE void sort(Arr& arr, const IsLess& isLess = details::defaultLess<ArrayViewType<Arr>>) {
+template <typename Arr,
+          typename IsLess = decltype(details::defaultLess<details::ArrayViewType<Arr>>)>
+PLY_INLINE void sort(Arr& arr,
+                     const IsLess& isLess = details::defaultLess<details::ArrayViewType<Arr>>) {
     sort(arr.view(), isLess);
 }
 

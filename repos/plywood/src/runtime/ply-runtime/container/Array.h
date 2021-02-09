@@ -25,16 +25,16 @@ types or structures of such types.
 
 `Array` is implicitly convertible to `ArrayView` and can be passed directly to any function that
 expects an `ArrayView`.
- */
-template <typename T_>
+*/
+template <typename T>
 class Array {
-public:
-    using T = T_;
-
 private:
     T* items;
     u32 numItems_;
     u32 allocated;
+
+    // T cannot be const
+    PLY_STATIC_ASSERT(!std::is_const<T>::value);
 
     // ply::Arrays of C-style arrays such as Array<int[2]> are not allowed.
     // One reason is that placement new doesn't work (to copy/move/construct new items).
@@ -89,33 +89,31 @@ public:
 
         Array<u32> arr = {4, 5, 6};
     */
-    PLY_INLINE Array(std::initializer_list<T> init) {
+    PLY_NO_INLINE Array(InitList<T> init) {
         u32 initSize = safeDemote<u32>(init.size());
         ((details::BaseArray&) *this).alloc(initSize, (u32) sizeof(T));
         subst::constructArrayFrom(this->items, init.begin(), initSize);
     }
 
     /*!
-    Construct an `Array` from an `ArrayView` of any type from which `T` can be constructed.
-
-        Array<u32> arr = ArrayView<u16>{4, 5, 6};
-    */
-    template <typename Other, std::enable_if_t<std::is_constructible<T, Other>::value, int> = 0>
-    PLY_INLINE Array(ArrayView<Other> other) {
-        ((details::BaseArray&) *this).alloc(other.numItems, (u32) sizeof(T));
-        subst::constructArrayFrom(this->items, other.items, this->numItems_);
-    }
-
-    /*!
-    Construct an `Array` from any array-like object (such as `FixedArray`) of any type from which
-    `T` can be constructed. The other object must have a member function named `view()` that returns
-    an `ArrayView`.
+    Construct an `Array` from any array-like object (ie. `Array`, `ArrayView`, `FixedArray`, etc.)
+    of any type from which `T` can be constructed. The other object must have a member function
+    named `view()` that returns an `ArrayView`.
 
         FixedArray<u16, 3> fixed = {4, 5, 6};
         Array<u32> arr = fixed;
+
+    Move semantics are used when the source object owns its items and can be moved from. In the
+    following example, the right-hand side is a temporary `Array<String>` that can be moved from,
+    so each `HybridString` in the result is constructed by moving from each `String` in the
+    temporary object.
+
+        Array<HybridString> arr = Array<String>{"hello", "there"};
     */
-    template <typename Other, typename = void_t<ArrayViewType<Other>>>
-    PLY_INLINE Array(const Other& other) : Array{other.view()} {
+    template <typename Other, typename = details::ArrayViewType<Other>>
+    PLY_INLINE Array(Other&& other) {
+        ((details::BaseArray&) *this).alloc(other.view().numItems, (u32) sizeof(T));
+        details::moveOrCopyConstruct(this->items, std::forward<Other>(other));
     }
 
     /*!
@@ -162,7 +160,7 @@ public:
         Array<u32> arr;
         arr = {4, 5, 6};
     */
-    PLY_INLINE void operator=(std::initializer_list<T> init) {
+    PLY_INLINE void operator=(InitList<T> init) {
         subst::destructArray(this->items, this->numItems_);
         u32 initSize = safeDemote<u32>(init.size());
         ((details::BaseArray&) *this).realloc(initSize, (u32) sizeof(T));
@@ -170,31 +168,27 @@ public:
     }
 
     /*!
-    Assignment from an `ArrayView` of any type from which `T` can be constructed.
-
-        Array<u32> arr;
-        arr = ArrayView<u16>{4, 5, 6};
-    */
-    template <typename Other,
-              typename std::enable_if_t<std::is_constructible<T, Other>::value, int> = 0>
-    PLY_INLINE void operator=(ArrayView<Other> other) {
-        subst::destructArray(this->items, this->numItems_);
-        ((details::BaseArray&) *this).realloc(other.numItems, (u32) sizeof(T));
-        subst::unsafeConstructArrayFrom(this->items, other.items, other.numItems);
-    }
-
-    /*!
-    Assignment from any array-like object (such as `FixedArray`) of any type from which `T` can be
-    constructed. The other object must have a member function named `view()` that returns an
-    `ArrayView`.
+    Construct an `Array` from any array-like object (ie. `Array`, `ArrayView`, `FixedArray`, etc.)
+    of any type from which `T` can be constructed. The other object must have a member function
+    named `view()` that returns an `ArrayView`.
 
         Array<u32> arr;
         FixedArray<u16, 3> fixed = {4, 5, 6};
         arr = fixed;
+
+    Move semantics are used when the source object owns its items and can be moved from. In the
+    following example, the right-hand side is a temporary `Array<String>` that can be moved from,
+    so each `HybridString` in the result is constructed by moving from each `String` in the
+    temporary object.
+
+        Array<HybridString> arr;
+        arr = Array<String>{"hello", "there"}; // uses move semantics
     */
-    template <typename Other, typename = void_t<ArrayViewType<Other>>>
-    PLY_INLINE void operator=(const Other& other) {
-        *this = other.view();
+    template <typename Other, typename = details::ArrayViewType<Other>>
+    PLY_INLINE void operator=(Other&& other) {
+        subst::destructArray(this->items, this->numItems_);
+        ((details::BaseArray&) *this).realloc(other.view().numItems, (u32) sizeof(T));
+        details::moveOrCopyConstruct(this->items, std::forward<Other>(other));
     }
 
     /*!
@@ -383,36 +377,39 @@ public:
     */
 
     /*!
-    Appends multiple items to the array. The new array items are copy constructed from the given
-    argument.
+    \beginGroup
+    Appends multiple items to the array. The argument can be a braced initializer list or an
+    array-like object (ie. `Array`, `ArrayView`, `FixedArray`, etc.) of any type from which `T` can
+    be constructed.
+
+        Array<String> arr;
+        arr.extend({"hello", "there"});
+        arr.extend(ArrayView<const StringView>{"my", "friend"});
+
+    Move semantics are used when the source object owns its items and can be moved from. In the
+    following example, the argument to `extend` is a temporary `Array<String>` that can be moved
+    from, so each `HybridString` in the result is appended by moving from each `String` in the
+    temporary object.
+
+        Array<HybridString> arr;
+        arr.extend(Array<String>{"hello", "there"}); // uses move semantics
     */
-    PLY_INLINE void extend(std::initializer_list<T> init) {
+    PLY_INLINE void extend(InitList<T> init) {
         u32 initSize = safeDemote<u32>(init.size());
         ((details::BaseArray&) *this).reserve(this->numItems_ + initSize, (u32) sizeof(T));
         subst::constructArrayFrom(this->items + this->numItems_, init.begin(), initSize);
         this->numItems_ += initSize;
     }
-    template <typename Other, std::enable_if_t<std::is_constructible<T, Other>::value, int> = 0>
-    PLY_INLINE void extend(ArrayView<Other> view) {
-        ((details::BaseArray&) *this).reserve(this->numItems_ + view.numItems, (u32) sizeof(T));
-        subst::constructArrayFrom(this->items + this->numItems_, view.items, view.numItems);
-        this->numItems_ += view.numItems;
+    template <typename Other, typename = details::ArrayViewType<Other>>
+    PLY_INLINE void extend(Other&& arr) {
+        u32 numOtherItems = arr.view().numItems;
+        ((details::BaseArray&) *this).reserve(this->numItems_ + numOtherItems, (u32) sizeof(T));
+        details::moveOrCopyConstruct(this->items + this->numItems_, std::forward<Other>(arr));
+        this->numItems_ += numOtherItems;
     }
-    template <typename Other, typename = void_t<ArrayViewType<Other>>>
-    PLY_INLINE void extend(const Other& arr) {
-        this->extend(arr.view());
-    }
-
     /*!
-    Appends multiple items by move-constructing them from `other`. `other` is reset to an empty
-    `Array`.
+    \endGroup
     */
-    PLY_NO_INLINE void extend(Array<T>&& other) {
-        ((details::BaseArray&) *this).reserve(this->numItems_ + other.numItems_, (u32) sizeof(T));
-        subst::moveConstructArray(this->items + this->numItems_, other.items, other.numItems_);
-        this->numItems_ += other.numItems_;
-        other.clear();
-    }
 
     /*!
     Appends multiple items to the `Array` from an `ArrayView`. The new array items are move
@@ -480,8 +477,8 @@ public:
     PLY_NO_INLINE void eraseQuick(u32 pos, u32 count) {
         PLY_ASSERT(pos + count <= this->numItems_);
         subst::destructArray(this->items + pos, count);
-        memmove(static_cast<void*>(this->items + this->numItems_ - count),
-                static_cast<const void*>(this->items + pos),
+        memmove(static_cast<void*>(this->items + pos),
+                static_cast<const void*>(this->items + this->numItems_ - count),
                 count * sizeof(T)); // Underlying type is relocatable
         this->numItems_ -= count;
     }
@@ -498,17 +495,8 @@ public:
         return items;
     }
 
-    /*!
-    Returns the concatenation of two `Array`s. The array items are moved, not copied. Both `Array`
-    operands must be rvalue references, and both are reset to empty `Array`s.
-    */
-    PLY_INLINE Array operator+(Array&& other) && {
-        Array result;
-        ((details::BaseArray&) result).alloc(this->numItems_ + other.numItems_, (u32) sizeof(T));
-        subst::moveConstructArray(result.items, this->items, this->numItems_);
-        subst::moveConstructArray(result.items + this->numItems_, other.items, other.numItems_);
-        return result;
-    }
+    template <typename Arr0, typename Arr1, typename, typename>
+    friend PLY_INLINE auto operator+(Arr0&& a, Arr1&& b);
 
     /*!
     \category Convert to View
@@ -575,5 +563,39 @@ public:
     \endGroup
     */
 };
+
+namespace details {
+template <typename T>
+struct InitListType<Array<T>> {
+    using Type = ArrayView<const T>;
+};
+
+template <typename T>
+struct CanMoveFromArrayLike<Array<T>> : std::true_type {};
+} // namespace details
+
+/*!
+\addToClass Array
+\category Modifiers
+Returns the concatenation of two array-like objects `a` and `b`. The arguments can be instances of
+`Array`, `ArrayView`, `FixedArray` or any class that has a member function named `view()` returning
+an `ArrayView`. The returned `Array` has the same item type as `a`, and `b`'s items must be
+convertible to this type.
+
+Move semantics are used when either operand owns its items and can be moved from.
+*/
+template <typename Arr0, typename Arr1, typename = details::ArrayViewType<Arr0>,
+          typename = details::ArrayViewType<Arr1>>
+PLY_INLINE auto operator+(Arr0&& a, Arr1&& b) {
+    u32 numItemsA = a.view().numItems;
+    u32 numItemsB = b.view().numItems;
+
+    using T = details::ArrayViewType<Arr0>;
+    Array<std::remove_const_t<T>> result;
+    ((details::BaseArray&) result).alloc(numItemsA + numItemsB, (u32) sizeof(T));
+    details::moveOrCopyConstruct(result.items, std::forward<Arr0>(a));
+    details::moveOrCopyConstruct(result.items + numItemsA, std::forward<Arr1>(b));
+    return result;
+}
 
 } // namespace ply

@@ -34,7 +34,7 @@ struct FixedArray {
 
     PLY_INLINE FixedArray() = default;
 
-    PLY_INLINE FixedArray(std::initializer_list<T> args) {
+    PLY_INLINE FixedArray(InitList<T> args) {
         PLY_ASSERT(Size == args.size());
         subst::constructArrayFrom(this->items, args.begin(), Size);
     }
@@ -99,5 +99,15 @@ struct FixedArray {
         return items + Size;
     }
 };
+
+namespace details {
+template <typename T, u32 Size>
+struct InitListType<FixedArray<T, Size>> {
+    using Type = ArrayView<const T>;
+};
+
+template <typename T, u32 Size>
+struct CanMoveFromArrayLike<FixedArray<T, Size>> : std::true_type {};
+} // namespace details
 
 } // namespace ply

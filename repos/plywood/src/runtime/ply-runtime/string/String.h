@@ -242,6 +242,13 @@ struct String : StringMixin<String> {
     */
 };
 
+namespace details {
+template <>
+struct InitListType<String> {
+    using Type = StringView;
+};
+} // namespace details
+
 template <typename Derived>
 PLY_INLINE String StringMixin<Derived>::operator+(StringView other) const {
     return static_cast<const Derived*>(this)->view() + other;

@@ -23,7 +23,7 @@ public:
             m_items[i] = item;
         }
     }
-    PLY_INLINE EnumIndexedArray(std::initializer_list<T> items) {
+    PLY_INLINE EnumIndexedArray(InitList<T> items) {
         PLY_ASSERT(items.size() == (u32) EnumType::Count);
         for (u32 i = 0; i < (u32) EnumType::Count; i++) {
             m_items[i] = items[i];
@@ -73,5 +73,15 @@ public:
         return m_items + (u32) EnumType::Count;
     }
 };
+
+namespace details {
+template <typename T, typename EnumType>
+struct InitListType<EnumIndexedArray<T, EnumType>> {
+    using Type = ArrayView<const T>;
+};
+
+template <typename T, typename EnumType>
+struct CanMoveFromArrayLike<EnumIndexedArray<T, EnumType>> : std::true_type {};
+} // namespace details
 
 } // namespace ply
