@@ -71,7 +71,8 @@ template <typename Arr,
           typename IsLess = decltype(details::defaultLess<details::ArrayViewType<Arr>>)>
 PLY_INLINE void sort(Arr& arr,
                      const IsLess& isLess = details::defaultLess<details::ArrayViewType<Arr>>) {
-    sort(arr.view(), isLess);
+    using T = details::ArrayViewType<Arr>;
+    sort(ArrayView<T>{arr}, isLess);
 }
 
 } // namespace ply

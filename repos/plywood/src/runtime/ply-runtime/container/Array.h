@@ -110,9 +110,9 @@ public:
 
         Array<HybridString> arr = Array<String>{"hello", "there"};
     */
-    template <typename Other, typename = details::ArrayViewType<Other>>
+    template <typename Other, typename U = details::ArrayViewType<Other>>
     PLY_INLINE Array(Other&& other) {
-        ((details::BaseArray&) *this).alloc(other.view().numItems, (u32) sizeof(T));
+        ((details::BaseArray&) *this).alloc(ArrayView<U>{other}.numItems, (u32) sizeof(T));
         details::moveOrCopyConstruct(this->items, std::forward<Other>(other));
     }
 
@@ -184,10 +184,10 @@ public:
         Array<HybridString> arr;
         arr = Array<String>{"hello", "there"}; // uses move semantics
     */
-    template <typename Other, typename = details::ArrayViewType<Other>>
+    template <typename Other, typename U = details::ArrayViewType<Other>>
     PLY_INLINE void operator=(Other&& other) {
         subst::destructArray(this->items, this->numItems_);
-        ((details::BaseArray&) *this).realloc(other.view().numItems, (u32) sizeof(T));
+        ((details::BaseArray&) *this).realloc(ArrayView<U>{other}.numItems, (u32) sizeof(T));
         details::moveOrCopyConstruct(this->items, std::forward<Other>(other));
     }
 
@@ -400,11 +400,11 @@ public:
         subst::constructArrayFrom(this->items + this->numItems_, init.begin(), initSize);
         this->numItems_ += initSize;
     }
-    template <typename Other, typename = details::ArrayViewType<Other>>
-    PLY_INLINE void extend(Other&& arr) {
-        u32 numOtherItems = arr.view().numItems;
+    template <typename Other, typename U = details::ArrayViewType<Other>>
+    PLY_INLINE void extend(Other&& other) {
+        u32 numOtherItems = ArrayView<U>{other}.numItems;
         ((details::BaseArray&) *this).reserve(this->numItems_ + numOtherItems, (u32) sizeof(T));
-        details::moveOrCopyConstruct(this->items + this->numItems_, std::forward<Other>(arr));
+        details::moveOrCopyConstruct(this->items + this->numItems_, std::forward<Other>(other));
         this->numItems_ += numOtherItems;
     }
     /*!
@@ -571,7 +571,10 @@ struct InitListType<Array<T>> {
 };
 
 template <typename T>
-struct CanMoveFromArrayLike<Array<T>> : std::true_type {};
+struct ArrayTraits<Array<T>> {
+    using ItemType = T;
+    static constexpr bool IsOwner = true;
+};
 } // namespace details
 
 /*!
@@ -584,15 +587,14 @@ convertible to this type.
 
 Move semantics are used when either operand owns its items and can be moved from.
 */
-template <typename Arr0, typename Arr1, typename = details::ArrayViewType<Arr0>,
-          typename = details::ArrayViewType<Arr1>>
+template <typename Arr0, typename Arr1, typename T0 = details::ArrayViewType<Arr0>,
+          typename T1 = details::ArrayViewType<Arr1>>
 PLY_INLINE auto operator+(Arr0&& a, Arr1&& b) {
-    u32 numItemsA = a.view().numItems;
-    u32 numItemsB = b.view().numItems;
+    u32 numItemsA = ArrayView<T0>{a}.numItems;
+    u32 numItemsB = ArrayView<T1>{b}.numItems;
 
-    using T = details::ArrayViewType<Arr0>;
-    Array<std::remove_const_t<T>> result;
-    ((details::BaseArray&) result).alloc(numItemsA + numItemsB, (u32) sizeof(T));
+    Array<std::remove_const_t<T0>> result;
+    ((details::BaseArray&) result).alloc(numItemsA + numItemsB, (u32) sizeof(T0));
     details::moveOrCopyConstruct(result.items, std::forward<Arr0>(a));
     details::moveOrCopyConstruct(result.items + numItemsA, std::forward<Arr1>(b));
     return result;

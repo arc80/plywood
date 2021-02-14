@@ -72,9 +72,6 @@ struct ArrayView {
     PLY_INLINE operator ArrayView<const T>() const {
         return {this->items, this->numItems};
     }
-    PLY_INLINE ArrayView<T> view() const {
-        return *this;
-    }
 
     /*!
     \beginGroup
@@ -216,26 +213,34 @@ struct ArrayView {
 
 namespace details {
 
-// If ArrayViewType<Arr> is well-formed, that means Arr can be converted to an ArrayView by calling
-// its view() member function, and ArrayViewType<Arr> resolves to the ArrayView's template argument.
+// There's an ArrayTraits specialization for each array-like class template in this library.
+// If ArrayTraits<Arr>::ItemType is well-formed, Arr is convertible to ArrayView of that type.
+// If ArrayTraits<Arr>::IsOwner is true, Arr is considered the owner of its elements.
+template <typename>
+struct ArrayTraits {
+    static constexpr bool IsOwner = false;
+};
+template <typename T>
+struct ArrayTraits<ArrayView<T>> {
+    using ItemType = T;
+    static constexpr bool IsOwner = false;
+};
 template <typename Arr>
-using ArrayViewType = std::remove_pointer_t<decltype(std::declval<Arr>().view().items)>;
-
-template <typename Arr>
-struct CanMoveFromArrayLike : std::false_type {};
+using ArrayViewType = typename ArrayTraits<std::decay_t<Arr>>::ItemType;
 
 // If the second argument is an rvalue reference, Arr will be deduced as non-reference.
-// Otherwise, Arr will be deduced as a reference, and IsArrayOwner<Arr> will always be false.
-// Therefore, the moving version of this function will only be called if the second argument is an
-// rvalue reference to an array-like class that owns its elements, which is appropriate.
-template <typename T, typename Arr, std::enable_if_t<CanMoveFromArrayLike<Arr>::value, int> = 0>
+// Otherwise, Arr will be deduced as a reference, and ArrayTraits<Arr>::IsOwner will be false.
+// Therefore, the "moving" version of this function will only be called if the second argument is an
+// rvalue reference to an array-like class for which ArrayTraits<Arr>::IsOwner is true, which is
+// what we want.
+template <typename T, typename Arr, std::enable_if_t<ArrayTraits<Arr>::IsOwner, int> = 0>
 PLY_INLINE void moveOrCopyConstruct(T* dst, Arr&& src) {
-    ArrayView<ArrayViewType<Arr>> srcView = src.view();
+    ArrayView<ArrayViewType<Arr>> srcView{src};
     subst::moveConstructArray(dst, srcView.items, srcView.numItems);
 }
-template <typename T, typename Arr, std::enable_if_t<!CanMoveFromArrayLike<Arr>::value, int> = 0>
+template <typename T, typename Arr, std::enable_if_t<!ArrayTraits<Arr>::IsOwner, int> = 0>
 PLY_INLINE void moveOrCopyConstruct(T* dst, Arr&& src) {
-    ArrayView<ArrayViewType<Arr>> srcView = src.view();
+    ArrayView<ArrayViewType<Arr>> srcView{src};
     subst::constructArrayFrom(dst, srcView.items, srcView.numItems);
 }
 
@@ -258,10 +263,10 @@ PLY_NO_INLINE bool operator==(ArrayView<T0> a, ArrayView<T1> b) {
     }
     return true;
 }
-template <typename Arr0, typename Arr1, typename = details::ArrayViewType<Arr0>,
-          typename = details::ArrayViewType<Arr1>>
-PLY_INLINE bool operator==(const Arr0& a, const Arr1& b) {
-    return a.view() == b.view();
+template <typename Arr0, typename Arr1, typename T0 = details::ArrayViewType<Arr0>,
+          typename T1 = details::ArrayViewType<Arr1>>
+PLY_INLINE bool operator==(Arr0&& a, Arr1&& b) {
+    return ArrayView<T0>{a} == ArrayView<T1>{b};
 }
 /*!
 \endGroup

@@ -81,7 +81,10 @@ struct InitListType<EnumIndexedArray<T, EnumType>> {
 };
 
 template <typename T, typename EnumType>
-struct CanMoveFromArrayLike<EnumIndexedArray<T, EnumType>> : std::true_type {};
+struct ArrayTraits<EnumIndexedArray<T, EnumType>> {
+    using ItemType = T;
+    static constexpr bool IsOwner = true;
+};
 } // namespace details
 
 } // namespace ply

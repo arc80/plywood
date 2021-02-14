@@ -107,7 +107,10 @@ struct InitListType<FixedArray<T, Size>> {
 };
 
 template <typename T, u32 Size>
-struct CanMoveFromArrayLike<FixedArray<T, Size>> : std::true_type {};
+struct ArrayTraits<FixedArray<T, Size>> {
+    using ItemType = T;
+    static constexpr bool IsOwner = true;
+};
 } // namespace details
 
 } // namespace ply
