@@ -13,38 +13,39 @@ namespace ply {
 
 class Thread_CPP11 {
 protected:
-    std::thread m_thread;
+    std::thread thread;
 
 public:
     typedef void* ReturnType;
     typedef void* (*StartRoutine)(void*);
 
-    Thread_CPP11() {
+    PLY_INLINE Thread_CPP11() = default;
+
+    template <typename Callable>
+    PLY_INLINE Thread_CPP11(Callable&& callable) : thread{std::forward<Callable>(callable)} {
     }
 
-    Thread_CPP11(StartRoutine startRoutine, void* arg = NULL) : m_thread(startRoutine, arg) {
+    PLY_INLINE ~Thread_CPP11() {
+        if (this->thread.joinable())
+            this->thread.detach();
     }
 
-    ~Thread_CPP11() {
-        if (m_thread.joinable())
-            m_thread.detach();
+    PLY_INLINE bool isValid() const {
+        return this->thread.joinable();
     }
 
-    bool isValid() const {
-        return m_thread.joinable();
+    PLY_INLINE void join() {
+        this->thread.join();
     }
 
-    void join() {
-        m_thread.join();
+    template <typename Callable>
+    PLY_INLINE void run(Callable&& callable) {
+        if (this->thread.joinable())
+            this->thread.detach();
+        this->thread = std::thread(std::forward<Callable>(callable));
     }
 
-    void run(StartRoutine startRoutine, void* arg = NULL) {
-        if (m_thread.joinable())
-            m_thread.detach();
-        m_thread = std::thread(startRoutine, arg);
-    }
-
-    static void sleepMillis(ureg millis) {
+    static PLY_INLINE void sleepMillis(ureg millis) {
         std::this_thread::sleep_for(std::chrono::milliseconds(millis));
     }
 };
