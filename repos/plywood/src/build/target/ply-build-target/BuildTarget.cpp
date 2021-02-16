@@ -22,14 +22,20 @@ PLY_NO_INLINE void BuildTarget::addSourceFiles(StringView absSourcePath, bool re
     PLY_ASSERT(NativePath::isAbsolute(absSourcePath) && NativePath::isNormalized(absSourcePath));
     Array<StringView> sourceExts = {".c", ".cpp"};
     Array<StringView> headerExts = {".h"};
+    Array<StringView> nonParticipatingExts = {".natvis"};
 
     Array<String> relFiles;
+    Array<String> relNonParticipatingFiles;
     for (const WalkTriple& triple : FileSystem::native()->walk(absSourcePath)) {
-        static Array<StringView> extensions = {".c", ".cpp", ".h"};
         for (const WalkTriple::FileInfo& file : triple.files) {
-            if (file.name.endsWith(".modules.cpp")) // Skip *.modules.cpp files
-                continue;
             String ext = NativePath::splitExt(file.name).second.lowerAsc();
+
+            // Filter out *.modules.cpp files and other files that do not participate in the build.
+            if (file.name.endsWith(".modules.cpp") || find(nonParticipatingExts, ext) >= 0) {
+                String fullPath = NativePath::join(triple.dirPath, file.name);
+                relNonParticipatingFiles.append(NativePath::makeRelative(absSourcePath, fullPath));
+                continue;
+            }
             bool isSourceFile = (find(sourceExts, ext) >= 0);
             if (isSourceFile) {
                 this->anySourceFiles = true;
@@ -46,6 +52,10 @@ PLY_NO_INLINE void BuildTarget::addSourceFiles(StringView absSourcePath, bool re
         sort(relFiles);
         this->sourceFiles.append({absSourcePath, std::move(relFiles)});
     }
+    if (!relNonParticipatingFiles.isEmpty()) {
+        sort(relNonParticipatingFiles);
+        this->nonParticipatingFiles.append({absSourcePath, std::move(relNonParticipatingFiles)});
+    }
 }
 
 PLY_NO_INLINE void BuildTarget::addSourceFilesWhenImported(StringView absSourceRoot,
@@ -60,6 +70,12 @@ PLY_NO_INLINE void BuildTarget::addSourceFilesWhenImported(StringView absSourceR
         }
     }
     this->sourceFilesWhenImported.append({absSourceRoot, Array<String>{relPaths}});
+}
+
+PLY_BUILD_ENTRY void BuildTarget::addNonParticipatingFiles(StringView absSourceRoot,
+                                                           ArrayView<const StringView> relPaths) {
+    PLY_ASSERT(NativePath::isAbsolute(absSourceRoot) && NativePath::isNormalized(absSourceRoot));
+    this->nonParticipatingFiles.append({absSourceRoot, Array<String>{relPaths}});
 }
 
 PLY_NO_INLINE bool BuildTarget::setPrecompiledHeader(StringView absGeneratorSource,

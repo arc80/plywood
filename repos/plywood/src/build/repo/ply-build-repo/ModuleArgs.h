@@ -24,6 +24,8 @@ struct ModuleArgs {
     PLY_BUILD_ENTRY void addSourceFiles(StringView sourcePath, bool recursive = true);
     PLY_BUILD_ENTRY void addSourceFilesWhenImported(StringView sourceRoot,
                                                     ArrayView<const StringView> relPaths);
+    PLY_BUILD_ENTRY void addNonParticipatingFiles(StringView sourceRoot,
+                                                  ArrayView<const StringView> relPaths);
     PLY_BUILD_ENTRY void setPrecompiledHeader(StringView generatorSource, StringView pchInclude);
     PLY_BUILD_ENTRY void addTarget(Visibility visibility, StringView targetName);
     PLY_BUILD_ENTRY void addExtern(Visibility visibility, StringView externName);

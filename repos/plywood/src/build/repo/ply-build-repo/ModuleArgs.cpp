@@ -29,6 +29,12 @@ PLY_NO_INLINE void ModuleArgs::addSourceFilesWhenImported(StringView sourceRoot,
     this->buildTarget->addSourceFilesWhenImported(absSourceRoot, relPaths);
 }
 
+PLY_BUILD_ENTRY void ModuleArgs::addNonParticipatingFiles(StringView sourceRoot,
+                                                          ArrayView<const StringView> relPaths) {
+    String absSourceRoot = NativePath::join(this->targetInst->instantiatorPath, sourceRoot);
+    this->buildTarget->addNonParticipatingFiles(absSourceRoot, relPaths);
+}
+
 PLY_NO_INLINE void ModuleArgs::setPrecompiledHeader(StringView generatorSource,
                                                     StringView pchInclude) {
     String absGeneratorSource =
