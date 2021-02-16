@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="ply::Float2">
+    <DisplayString>{{{x,g}, {y,g}}}</DisplayString>
+  </Type>
+
+  <Type Name="ply::Float3">
+    <DisplayString>{{{x,g}, {y,g}, {z,g}}}</DisplayString>
+  </Type>
+
+  <Type Name="ply::Float4">
+    <DisplayString>{{{x,f}, {y,f}, {z,f}, {w,f}}}</DisplayString>
+  </Type>
+
+  <Type Name="ply::Quaternion">
+    <DisplayString>{{{x,g}, {y,g}, {z,g}, {w,g}}}</DisplayString>
+  </Type>
+
+  <Type Name="ply::Int2&lt;*&gt;">
+    <DisplayString>{{{x}, {y}}}</DisplayString>
+  </Type>
+
+  <Type Name="ply::Float3x3">
+    <DisplayString>col[2]={col[2]}</DisplayString>
+    <Expand>
+      <ExpandedItem>col</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="ply::Float3x4">
+    <DisplayString>col[3]={col[3]}</DisplayString>
+    <Expand>
+      <ExpandedItem>col</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="ply::Float4x4">
+    <DisplayString>col[3]={col[3]}</DisplayString>
+    <Expand>
+      <ExpandedItem>col</ExpandedItem>
+    </Expand>
+  </Type>
+</AutoVisualizer>
