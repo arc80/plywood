@@ -225,8 +225,15 @@ struct ArrayTraits<ArrayView<T>> {
     using ItemType = T;
     static constexpr bool IsOwner = false;
 };
+// ArrayViewType<Arr> is a convenience template that returns the item type of an array-like class
+// Arr, even if Arr is const or a reference. If Arr is const (or const&) and owns its elements, the
+// resulting item type will be const.
+// For example: ArrayViewType<const Array<u32>&> evaluates to const u32.
 template <typename Arr>
-using ArrayViewType = typename ArrayTraits<std::decay_t<Arr>>::ItemType;
+using ArrayViewType = std::conditional_t<ArrayTraits<std::decay_t<Arr>>::IsOwner &&
+                                             std::is_const<std::remove_reference_t<Arr>>::value,
+                                         const typename ArrayTraits<std::decay_t<Arr>>::ItemType,
+                                         typename ArrayTraits<std::decay_t<Arr>>::ItemType>;
 
 // If the second argument is an rvalue reference, Arr will be deduced as non-reference.
 // Otherwise, Arr will be deduced as a reference, and ArrayTraits<Arr>::IsOwner will be false.
