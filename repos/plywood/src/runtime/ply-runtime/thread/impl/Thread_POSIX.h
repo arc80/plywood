@@ -17,38 +17,35 @@ private:
     pthread_t m_handle;
     bool m_attached = false;
 
-    template <typename Invocable>
-    struct EntryPoint {
-        Invocable inv;
+    template <typename Callable>
+    struct Wrapper {
+        Callable callable;
 
         // POSIX thread entry point
         static PLY_NO_INLINE void* start(void* param) {
-            EntryPoint* te = (EntryPoint*) param;
-            te->inv();
-            delete te;
+            Wrapper* wrapper = (Wrapper*) param;
+            wrapper->callable();
+            delete wrapper;
             return nullptr;
         }
     };
 
 public:
-    typedef void* ReturnType;
-    typedef void* (*StartRoutine)(void*);
-
     PLY_INLINE Thread_POSIX() {
         memset(&m_handle, 0, sizeof(m_handle));
     }
 
-    template <typename Invocable>
-    PLY_INLINE void run(Invocable&& inv) {
+    template <typename Callable>
+    PLY_INLINE void run(Callable&& callable) {
         PLY_ASSERT(!m_attached);
-        EntryPoint<Invocable>* te = new EntryPoint<Invocable>{std::forward<Invocable>(inv)};
-        pthread_create(&m_handle, NULL, EntryPoint<Invocable>::start, te);
+        Wrapper<Callable>* wrapper = new Wrapper<Callable>{std::forward<Callable>(callable)};
+        pthread_create(&m_handle, NULL, Wrapper<Callable>::start, wrapper);
         m_attached = true;
     }
 
-    template <typename Invocable>
-    PLY_INLINE Thread_POSIX(Invocable&& inv) {
-        run(std::forward<Invocable>(inv));
+    template <typename Callable>
+    PLY_INLINE Thread_POSIX(Callable&& callable) {
+        run(std::forward<Callable>(callable));
     }
 
     PLY_INLINE ~Thread_POSIX() {

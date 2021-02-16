@@ -9,17 +9,17 @@ namespace ply {
 
 class Thread_Win32 {
 private:
-    HANDLE m_handle = INVALID_HANDLE_VALUE;
+    HANDLE handle = INVALID_HANDLE_VALUE;
 
-    template <typename Invocable>
-    struct EntryPoint {
-        Invocable inv;
+    template <typename Callable>
+    struct Wrapper {
+        Callable callable;
 
         // Win32 thread entry point
         static PLY_NO_INLINE DWORD WINAPI start(LPVOID param) {
-            EntryPoint* te = (EntryPoint*) param;
-            te->inv();
-            delete te;
+            Wrapper* wrapper = (Wrapper*) param;
+            wrapper->callable();
+            delete wrapper;
             return 0;
         }
     };
@@ -27,33 +27,33 @@ private:
 public:
     PLY_INLINE Thread_Win32() = default;
 
-    template <typename Invocable>
-    PLY_INLINE void run(Invocable&& inv) {
-        PLY_ASSERT(m_handle == INVALID_HANDLE_VALUE);
-        EntryPoint<Invocable>* te = new EntryPoint<Invocable>{std::forward<Invocable>(inv)};
-        m_handle = CreateThread(NULL, 0, EntryPoint<Invocable>::start, te, 0, NULL);
+    template <typename Callable>
+    PLY_INLINE void run(Callable&& callable) {
+        PLY_ASSERT(this->handle == INVALID_HANDLE_VALUE);
+        Wrapper<Callable>* wrapper = new Wrapper<Callable>{std::forward<Callable>(callable)};
+        this->handle = CreateThread(NULL, 0, Wrapper<Callable>::start, wrapper, 0, NULL);
     }
 
-    template <typename Invocable>
-    PLY_INLINE Thread_Win32(Invocable&& inv) {
-        run(std::forward<Invocable>(inv));
+    template <typename Callable>
+    PLY_INLINE Thread_Win32(Callable&& callable) {
+        run(std::forward<Callable>(callable));
     }
 
     PLY_INLINE ~Thread_Win32() {
-        if (m_handle != INVALID_HANDLE_VALUE) {
-            CloseHandle(m_handle);
+        if (this->handle != INVALID_HANDLE_VALUE) {
+            CloseHandle(this->handle);
         }
     }
 
     PLY_INLINE bool isValid() const {
-        return m_handle != INVALID_HANDLE_VALUE;
+        return this->handle != INVALID_HANDLE_VALUE;
     }
 
     PLY_INLINE void join() {
-        PLY_ASSERT(m_handle != INVALID_HANDLE_VALUE);
-        WaitForSingleObject(m_handle, INFINITE);
-        CloseHandle(m_handle);
-        m_handle = INVALID_HANDLE_VALUE;
+        PLY_ASSERT(this->handle != INVALID_HANDLE_VALUE);
+        WaitForSingleObject(this->handle, INFINITE);
+        CloseHandle(this->handle);
+        this->handle = INVALID_HANDLE_VALUE;
     }
 
     static PLY_INLINE void sleepMillis(ureg millis) {
