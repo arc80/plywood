@@ -100,6 +100,30 @@ macro(SetSourceFolders varName root)
     endforeach()
 endmacro()
 
+macro(SetNonParticipatingFiles varName root)
+    foreach(relFile ${ARGN})
+        set(absFile "${root}/${relFile}")
+        get_filename_component(fileExt "${absFile}" EXT)
+        # Skip natvis files on platforms that don't support them.
+        if(fileExt STREQUAL ".natvis")
+            if (NOT MSVC)
+                continue()
+            endif()
+        endif()
+
+        list(APPEND "${varName}" "${absFile}")
+        get_filename_component(folder "${relFile}" PATH)
+        string(REPLACE / \\ folder "${folder}")
+        source_group("${folder}" FILES "${absFile}")
+
+        # Make sure c/cpp files are not compiled.
+        set(CPP_EXTENSIONS .c .cpp)
+        if(NOT fileExt STREQUAL ".natvis")
+            set_source_files_properties("${absFile}" PROPERTIES HEADER_FILE_ONLY TRUE)
+        endif()
+    endforeach()
+endmacro()
+
 macro(SetPrecompiledHeader targetName sourceListVarName generatorSource pchHeader pchFile)
     if(MSVC)
         foreach(absFile ${${sourceListVarName}})

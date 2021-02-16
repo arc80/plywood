@@ -73,6 +73,7 @@ struct BuildTarget {
     String dynamicLinkPrefix;
     Array<SourceFilesPair> sourceFiles;
     Array<SourceFilesPair> sourceFilesWhenImported;
+    Array<SourceFilesPair> nonParticipatingFiles;
     Array<String> privateIncludeDirs;
     Array<PreprocessorDefinition> privateDefines;
     Array<String> privateAbstractFlags;
@@ -85,6 +86,8 @@ struct BuildTarget {
     PLY_BUILD_ENTRY void addSourceFiles(StringView absSourcePath, bool recursive = true);
     PLY_BUILD_ENTRY void addSourceFilesWhenImported(StringView absSourceRoot,
                                                   ArrayView<const StringView> relPaths);
+    PLY_BUILD_ENTRY void addNonParticipatingFiles(StringView absSourceRoot, ArrayView<const StringView> relPaths);
+
     // Returns false if absGeneratorSource is not a source file:
     PLY_BUILD_ENTRY bool setPrecompiledHeader(StringView absGeneratorSource, StringView pchInclude);
     PLY_BUILD_ENTRY bool setPreprocessorDefinition(Visibility visibility, StringView key,

@@ -90,6 +90,19 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
             *outs << ")\n";
         }
 
+        for (const BuildTarget::SourceFilesPair& sfPair : buildTarget->nonParticipatingFiles) {
+            String varName = uniqueTargetName.upperAsc() + "_SOURCES";
+            if (find(sourceVarNames, varName) < 0)
+                sourceVarNames.append(varName);
+
+            outs->format("SetNonParticipatingFiles({} \"{}\"\n", varName,
+                         fmt::EscapedString(filterPath(sfPair.root)));
+            for (StringView relPath : sfPair.relFiles) {
+                outs->format("    \"{}\"\n", fmt::EscapedString(filterPath(relPath)));
+            }
+            *outs << ")\n";
+        }
+
         // Add this target
         BuildTargetType targetType = buildTarget->targetType;
         switch (targetType) {

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="ply::TypedPtr">
+    <DisplayString>{{ptr={ptr} type={*type}}}</DisplayString>
+  </Type>
+
+  <Type Name="ply::TypeDescriptor">
+    <DisplayString Condition="typeKey == &amp;ply::TypeKey_Struct">[TypeDescriptor_Struct] {((ply::TypeDescriptor_Struct*) this)->name}</DisplayString>
+    <DisplayString Condition="typeKey != &amp;ply::TypeKey_Struct">{(void*) typeKey}</DisplayString>
+    <Expand>
+      <ExpandedItem Condition="typeKey == &amp;ply::TypeKey_Struct">(ply::TypeDescriptor_Struct*) this,!</ExpandedItem>
+      <ExpandedItem Condition="typeKey != &amp;ply::TypeKey_Struct">this</ExpandedItem>
+    </Expand>
+  </Type>
+</AutoVisualizer>

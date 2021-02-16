@@ -175,19 +175,6 @@
     </Expand>
   </Type>
 
-  <Type Name="ply::TypedPtr">
-    <DisplayString>{{ptr={ptr} type={*type}}}</DisplayString>
-  </Type>
-
-  <Type Name="ply::TypeDescriptor">
-    <DisplayString Condition="typeKey == &amp;ply::TypeKey_Struct">[TypeDescriptor_Struct] {((ply::TypeDescriptor_Struct*) this)->name}</DisplayString>
-    <DisplayString Condition="typeKey != &amp;ply::TypeKey_Struct">{(void*) typeKey}</DisplayString>
-    <Expand>
-      <ExpandedItem Condition="typeKey == &amp;ply::TypeKey_Struct">(ply::TypeDescriptor_Struct*) this,!</ExpandedItem>
-      <ExpandedItem Condition="typeKey != &amp;ply::TypeKey_Struct">this</ExpandedItem>
-    </Expand>
-  </Type>
-
   <Type Name="ply::BTree&lt;*&gt;::Node">
     <DisplayString>size={size} isLeaf={isLeaf}</DisplayString>
     <Expand>
@@ -225,77 +212,10 @@
     </Expand>
   </Type>
 
-  <Type Name="session::SessionDescriptor">
-    <DisplayString>{name,s}</DisplayString>
-  </Type>
-
-  <Type Name="session::Session">
-    <DisplayString>{{ptr={ptr} desc={*desc}}}</DisplayString>
-  </Type>
-
   <Type Name="ply::Reference&lt;*&gt;">
     <DisplayString>{m_ptr}</DisplayString>
     <Expand>
       <ExpandedItem>m_ptr</ExpandedItem>
     </Expand>
-  </Type>
-
-  <Type Name="ply::Float2">
-    <DisplayString>{{{x,g}, {y,g}}}</DisplayString>
-  </Type>
-
-  <Type Name="ply::Float3">
-    <DisplayString>{{{x,g}, {y,g}, {z,g}}}</DisplayString>
-  </Type>
-
-  <Type Name="ply::Float4">
-    <DisplayString>{{{x,f}, {y,f}, {z,f}, {w,f}}}</DisplayString>
-  </Type>
-
-  <Type Name="ply::Quaternion">
-    <DisplayString>{{{x,g}, {y,g}, {z,g}, {w,g}}}</DisplayString>
-  </Type>
-
-  <Type Name="ply::Int2&lt;*&gt;">
-    <DisplayString>{{{x}, {y}}}</DisplayString>
-  </Type>
-
-  <Type Name="ply::Float3x3">
-    <DisplayString>col[2]={col[2]}</DisplayString>
-    <Expand>
-      <ExpandedItem>col</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <Type Name="ply::Float3x4">
-    <DisplayString>col[3]={col[3]}</DisplayString>
-    <Expand>
-      <ExpandedItem>col</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <Type Name="ply::Float4x4">
-    <DisplayString>col[3]={col[3]}</DisplayString>
-    <Expand>
-      <ExpandedItem>col</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <Type Name="alton::Node">
-    <DisplayString Condition="type.id == alton::Node::Type::ID::Object">Object [{((alton::Node::Type::Object*) type.buf)->map.m_population,d} items]</DisplayString>
-    <DisplayString Condition="type.id == alton::Node::Type::ID::Text">Text {((alton::Node::Type::Text*) type.buf)->str}</DisplayString>
-    <DisplayString Condition="type.id == alton::Node::Type::ID::Array">Array [{((alton::Node::Type::Array*) type.buf)->arr.numItems_,d} items]</DisplayString>
-    <Expand>
-      <ExpandedItem Condition="type.id == alton::Node::Type::ID::Object">((alton::Node::Type::Object*) type.buf)->map</ExpandedItem>
-      <ExpandedItem Condition="type.id == alton::Node::Type::ID::Array">((alton::Node::Type::Array*) type.buf)->arr</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <Type Name="ply::DependencyKey">
-    <DisplayString>{repo->repoName} {depType,en} {name} {dllBeh}</DisplayString>
-  </Type>
-
-  <Type Name="ply::Dependency">
-    <DisplayString>{key}</DisplayString>
   </Type>
 </AutoVisualizer>
