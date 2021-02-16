@@ -94,7 +94,7 @@ struct APIExtractor : cpp::ParseSupervisor {
     DocState docState;
 
     PLY_NO_INLINE void error(Error::Type type, StringView arg, cpp::LinearLocation linearLoc) {
-        this->parser->pp->errorHandler.call(new Error{type, arg, linearLoc});
+        this->parser->pp->errorHandler(new Error{type, arg, linearLoc});
     }
 
     struct ScopeInfo {

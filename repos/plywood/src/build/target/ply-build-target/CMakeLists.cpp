@@ -279,7 +279,7 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
     FSResult result = FileSystem::native()->makeDirs(buildFolder);
     if (result != FSResult::OK && result != FSResult::AlreadyExists) {
         if (errorCallback) {
-            errorCallback.call(String::format("Can't create folder '{}'\n", buildFolder));
+            errorCallback(String::format("Can't create folder '{}'\n", buildFolder));
         }
         return {-1, ""};
     }
@@ -307,7 +307,7 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
     s32 rc = sub->join();
     if (rc != 0) {
         if (errorCallback) {
-            errorCallback.call(String::format(
+            errorCallback(String::format(
                 "Error generating build system using CMake for folder '{}'\n", buildFolder));
         }
     }

@@ -75,7 +75,7 @@ struct Preprocessor {
     HiddenArgFunctor<void(StringView directive)> includeCallback;
 
     PLY_INLINE void error(Error&& err) {
-        this->errorHandler.call(new Error{std::move(err)});
+        this->errorHandler(new Error{std::move(err)});
     }
 };
 PLY_REFLECT_ENUM(, Preprocessor::Error::Type)

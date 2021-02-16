@@ -34,7 +34,7 @@ PLY_NO_INLINE void myCallback(ConstFSEventStreamRef streamRef, void* clientCallB
             mustRecurse = true;
         }
         // FIXME: check kFSEventStreamEventFlagEventIdsWrapped
-        watcher->m_callback.call(p, mustRecurse);
+        watcher->m_callback(p, mustRecurse);
     }
 }
 

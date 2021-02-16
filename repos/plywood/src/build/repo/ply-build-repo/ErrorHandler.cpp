@@ -12,7 +12,7 @@ thread_local Functor<void(ErrorHandler::Level, HybridString&&)> ErrorHandler::cu
 
 void ErrorHandler::log(ErrorHandler::Level errorLevel, HybridString&& error) {
     if (ErrorHandler::current) {
-        ErrorHandler::current.call(errorLevel, std::move(error));
+        ErrorHandler::current(errorLevel, std::move(error));
     }
     if (errorLevel == ErrorHandler::Fatal) {
         exit(1);

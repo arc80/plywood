@@ -60,10 +60,10 @@ PLY_NO_INLINE void DirectoryWatcher_Win32::runWatcher() {
             if (isDirectory) {
                 if (r->Action == FILE_ACTION_REMOVED || r->Action == FILE_ACTION_RENAMED_OLD_NAME ||
                     r->Action == FILE_ACTION_RENAMED_NEW_NAME) {
-                    m_callback.call(path, true);
+                    m_callback(path, true);
                 }
             } else {
-                m_callback.call(path, false);
+                m_callback(path, false);
             }
             if (r->NextEntryOffset == 0)
                 break;

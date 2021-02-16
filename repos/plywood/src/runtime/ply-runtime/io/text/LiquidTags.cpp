@@ -67,9 +67,7 @@ PLY_NO_INLINE void extractLiquidTags(OutStream* outs, ViewInStream* vins,
                     }
                 }
 
-                tagHandler.call(
-                    StringView::fromRange(startByte, vins->curByte),
-                    mout.moveToString());
+                tagHandler(StringView::fromRange(startByte, vins->curByte), mout.moveToString());
 
                 if (vins->atEOF()) {
                     // EOF encountered immediately after closing tag

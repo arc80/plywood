@@ -15,7 +15,7 @@ PLY_NO_INLINE void Parser::error(bool beginMuting, ParseError&& err) {
 
     // Only invoke error handler if not muted:
     if (!this->muteErrors) {
-        this->pp->errorHandler.call(new ParseError{std::move(err)});
+        this->pp->errorHandler(new ParseError{std::move(err)});
     }
 
     if (beginMuting) {

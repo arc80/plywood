@@ -148,7 +148,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         return;
 
                     if (this->cmd) {
-                        this->parser->pp->errorHandler.call(
+                        this->parser->pp->errorHandler(
                             new RepoRegError{RepoRegError::AlreadyInsideCommand,
                                              getLinearLocation(token, first.bytes),
                                              this->cmd->macro.linearLoc});
@@ -159,14 +159,14 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                     StringView second = commentReader.readView<fmt::Identifier>();
                     if (second == "module") {
                         if (this->scopeStack.numItems() != 1) {
-                            this->parser->pp->errorHandler.call(new RepoRegError{
+                            this->parser->pp->errorHandler(new RepoRegError{
                                 RepoRegError::MustBeAtFileScope,
                                 getLinearLocation(token, second.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
                         if (!commentReader.viewAvailable().startsWith("=")) {
-                            this->parser->pp->errorHandler.call(
+                            this->parser->pp->errorHandler(
                                 new RepoRegError{RepoRegError::ExpectedEqualSign,
                                                  getLinearLocation(token, commentReader.curByte)});
                             return;
@@ -175,14 +175,14 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         commentReader.parse<fmt::Whitespace>();
                         String moduleName = commentReader.parse<fmt::QuotedString>();
                         if (moduleName.isEmpty()) {
-                            this->parser->pp->errorHandler.call(
+                            this->parser->pp->errorHandler(
                                 new RepoRegError{RepoRegError::ExpectedModuleName,
                                                  getLinearLocation(token, commentReader.curByte)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
                         if (commentReader.numBytesAvailable() > 0) {
-                            this->parser->pp->errorHandler.call(
+                            this->parser->pp->errorHandler(
                                 new RepoRegError{RepoRegError::ExtraneousText,
                                                  getLinearLocation(token, commentReader.curByte)});
                             return;
@@ -195,14 +195,14 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         moduleCmd->moduleName = moduleName;
                     } else if (second == "extern") {
                         if (this->scopeStack.numItems() != 1) {
-                            this->parser->pp->errorHandler.call(new RepoRegError{
+                            this->parser->pp->errorHandler(new RepoRegError{
                                 RepoRegError::MustBeAtFileScope,
                                 getLinearLocation(token, second.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
                         if (!commentReader.viewAvailable().startsWith("=")) {
-                            this->parser->pp->errorHandler.call(
+                            this->parser->pp->errorHandler(
                                 new RepoRegError{RepoRegError::ExpectedEqualSign,
                                                  getLinearLocation(token, commentReader.curByte)});
                             return;
@@ -211,7 +211,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         commentReader.parse<fmt::Whitespace>();
                         String externName = commentReader.parse<fmt::QuotedString>();
                         if (externName.isEmpty()) {
-                            this->parser->pp->errorHandler.call(
+                            this->parser->pp->errorHandler(
                                 new RepoRegError{RepoRegError::ExpectedExternName,
                                                  getLinearLocation(token, commentReader.curByte)});
                             return;
@@ -219,14 +219,14 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         commentReader.parse<fmt::Whitespace>();
                         StringView third = commentReader.readView<fmt::Identifier>();
                         if (third != "provider") {
-                            this->parser->pp->errorHandler.call(new RepoRegError{
+                            this->parser->pp->errorHandler(new RepoRegError{
                                 RepoRegError::ExpectedProviderKeyword,
                                 getLinearLocation(token, third.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
                         if (!commentReader.viewAvailable().startsWith("=")) {
-                            this->parser->pp->errorHandler.call(
+                            this->parser->pp->errorHandler(
                                 new RepoRegError{RepoRegError::ExpectedEqualSign,
                                                  getLinearLocation(token, commentReader.curByte)});
                             return;
@@ -235,14 +235,14 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         commentReader.parse<fmt::Whitespace>();
                         String providerName = commentReader.parse<fmt::QuotedString>();
                         if (providerName.isEmpty()) {
-                            this->parser->pp->errorHandler.call(
+                            this->parser->pp->errorHandler(
                                 new RepoRegError{RepoRegError::ExpectedProviderName,
                                                  getLinearLocation(token, commentReader.curByte)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
                         if (commentReader.numBytesAvailable() > 0) {
-                            this->parser->pp->errorHandler.call(
+                            this->parser->pp->errorHandler(
                                 new RepoRegError{RepoRegError::ExtraneousText,
                                                  getLinearLocation(token, commentReader.curByte)});
                             return;
@@ -255,7 +255,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         externCmd->externName = externName;
                         externCmd->providerName = providerName;
                     } else {
-                        this->parser->pp->errorHandler.call(
+                        this->parser->pp->errorHandler(
                             new RepoRegError{RepoRegError::UnrecognizedCommand,
                                              getLinearLocation(token, second.bytes)});
                     }
@@ -267,7 +267,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                 StringView first = commentReader.readView<fmt::NonWhitespace>();
                 commentReader.parse<fmt::Whitespace>();
                 if (first == "ply") {
-                    this->parser->pp->errorHandler.call(
+                    this->parser->pp->errorHandler(
                         new RepoRegError{RepoRegError::OldCommandFormat, token.linearLoc});
                 }
             }
@@ -303,7 +303,7 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                 }
             }
             if (!appliedCommand) {
-                this->parser->pp->errorHandler.call(new RepoRegError{
+                this->parser->pp->errorHandler(new RepoRegError{
                     RepoRegError::CouldNotApplyCommand, this->cmd->macro.linearLoc});
                 this->cmd = nullptr;
             }

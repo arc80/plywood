@@ -45,7 +45,7 @@ void Parser::dumpError(const ParseError& error, OutStream& outs) const {
 void Parser::error(u32 fileOfs, HybridString&& message) {
     if (this->errorCallback) {
         ParseError err{fileOfs, std::move(message), context};
-        this->errorCallback.call(err);
+        this->errorCallback(err);
     }
     this->anyError_ = true;
 }

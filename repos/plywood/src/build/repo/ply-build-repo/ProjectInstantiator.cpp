@@ -67,7 +67,7 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
         args.projInst = this;
         args.targetInst = targetInst;
         args.buildTarget = buildTarget;
-        targetInst->moduleFunc.call(&args);
+        targetInst->moduleFunc(&args);
         if (buildTarget->targetType == BuildTargetType::Lib) {
             if (isSharedRoot) {
                 buildTarget->targetType = BuildTargetType::DLL;

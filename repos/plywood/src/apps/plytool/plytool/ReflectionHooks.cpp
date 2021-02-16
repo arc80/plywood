@@ -162,7 +162,7 @@ struct ReflectionHooks : ParseSupervisor {
             if (parentState.switch_) {
                 auto* record = node.safeCast<grammar::DeclSpecifier::Record>();
                 if (!record || record->classKey.identifier == "union") {
-                    this->parser->pp->errorHandler.call(
+                    this->parser->pp->errorHandler(
                         new ReflectionHookError{ReflectionHookError::SwitchMayOnlyContainStructs,
                                                 parentState.switch_->macro.linearLoc});
                     return;
@@ -176,7 +176,7 @@ struct ReflectionHooks : ParseSupervisor {
     virtual void exit(TypedPtr node) override {
         State& state = this->stack.back();
         if (state.captureMembersToken.isValid()) {
-            this->parser->pp->errorHandler.call(
+            this->parser->pp->errorHandler(
                 new ReflectionHookError{ReflectionHookError::MissingReflectOffCommand,
                                         state.captureMembersToken.linearLoc});
         }
@@ -196,7 +196,7 @@ struct ReflectionHooks : ParseSupervisor {
                 const PPVisitedFiles::IncludeChain& chain =
                     vf->includeChains[lmItem.includeChainIdx];
                 if (chain.isMacroExpansion) {
-                    this->parser->pp->errorHandler.call(new ReflectionHookError{
+                    this->parser->pp->errorHandler(new ReflectionHookError{
                         ReflectionHookError::CannotInjectCodeIntoMacro,
                         record->closeCurly.linearLoc, state.switch_->macro.linearLoc});
                 } else {
@@ -268,7 +268,7 @@ struct ReflectionHooks : ParseSupervisor {
         State& state = this->stack.back();
         if (state.clazz) {
             // Already have a PLY_REFLECT macro
-            this->parser->pp->errorHandler.call(
+            this->parser->pp->errorHandler(
                 new ReflectionHookError{ReflectionHookError::DuplicateCommand, token.linearLoc,
                                         state.captureMembersToken.linearLoc});
             return;
@@ -285,14 +285,14 @@ struct ReflectionHooks : ParseSupervisor {
         if (token.type == Token::Macro) {
             if (token.identifier == "PLY_STATE_REFLECT" || token.identifier == "PLY_REFLECT") {
                 if (!this->parser->atDeclarationScope) {
-                    this->parser->pp->errorHandler.call(new ReflectionHookError{
+                    this->parser->pp->errorHandler(new ReflectionHookError{
                         ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope,
                         token.linearLoc});
                     return;
                 }
                 auto* record = this->scopeStack.back().safeCast<grammar::DeclSpecifier::Record>();
                 if (!record || record->classKey.identifier == "union") {
-                    this->parser->pp->errorHandler.call(new ReflectionHookError{
+                    this->parser->pp->errorHandler(new ReflectionHookError{
                         ReflectionHookError::CommandCanOnlyBeUsedInClassOrStruct, token.linearLoc});
                     return;
                 }
@@ -325,7 +325,7 @@ struct ReflectionHooks : ParseSupervisor {
                 if (fixed == "// ply make switch\n" || fixed == "// ply make reflected switch\n") {
                     // This is a switch
                     if (!this->parser->atDeclarationScope) {
-                        this->parser->pp->errorHandler.call(new ReflectionHookError{
+                        this->parser->pp->errorHandler(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope,
                             token.linearLoc});
                         return;
@@ -333,14 +333,14 @@ struct ReflectionHooks : ParseSupervisor {
                     auto* record =
                         this->scopeStack.back().safeCast<grammar::DeclSpecifier::Record>();
                     if (!record || record->classKey.identifier == "union") {
-                        this->parser->pp->errorHandler.call(new ReflectionHookError{
+                        this->parser->pp->errorHandler(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedInClassOrStruct,
                             token.linearLoc});
                         return;
                     }
                     State& state = this->stack.back();
                     if (state.switch_) {
-                        this->parser->pp->errorHandler.call(new ReflectionHookError{
+                        this->parser->pp->errorHandler(new ReflectionHookError{
                             ReflectionHookError::DuplicateCommand, token.linearLoc,
                             state.switch_->macro.linearLoc});
                         return;
@@ -355,14 +355,14 @@ struct ReflectionHooks : ParseSupervisor {
                     }
                 } else if (fixed == "// ply reflect off\n") {
                     if (!this->parser->atDeclarationScope) {
-                        this->parser->pp->errorHandler.call(new ReflectionHookError{
+                        this->parser->pp->errorHandler(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope,
                             token.linearLoc});
                         return;
                     }
                     State& state = this->stack.back();
                     if (!state.captureMembersToken.isValid()) {
-                        this->parser->pp->errorHandler.call(new ReflectionHookError{
+                        this->parser->pp->errorHandler(new ReflectionHookError{
                             ReflectionHookError::UnexpectedReflectOffCommand, token.linearLoc});
                         return;
                     }
@@ -370,20 +370,20 @@ struct ReflectionHooks : ParseSupervisor {
                 } else if (fixed == "// ply reflect enum\n") {
                     auto* enum_ = this->scopeStack.back().safeCast<grammar::DeclSpecifier::Enum_>();
                     if (!enum_) {
-                        this->parser->pp->errorHandler.call(new ReflectionHookError{
+                        this->parser->pp->errorHandler(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedInsideEnum, token.linearLoc});
                         return;
                     }
                     State& state = this->stack.back();
                     if (state.keepReflectedEnumToken.isValid()) {
-                        this->parser->pp->errorHandler.call(new ReflectionHookError{
+                        this->parser->pp->errorHandler(new ReflectionHookError{
                             ReflectionHookError::DuplicateCommand, token.linearLoc,
                             state.keepReflectedEnumToken.linearLoc});
                         return;
                     }
                     state.keepReflectedEnumToken = token;
                 } else {
-                    this->parser->pp->errorHandler.call(new ReflectionHookError{
+                    this->parser->pp->errorHandler(new ReflectionHookError{
                         ReflectionHookError::UnrecognizedCommand, token.linearLoc});
                     return;
                 }

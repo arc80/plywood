@@ -14,18 +14,19 @@ template <typename Return, typename... Args>
 struct Functor<Return(Args...)> {
 private:
     struct BaseWrapper {
-        Return (*call)(BaseWrapper* wrapper, Args... args) = nullptr;
+        Return (*thunk)(BaseWrapper* wrapper, Args... args) = nullptr;
     };
 
-    template <typename Invocable>
+    template <typename Callable>
     struct Wrapper : BaseWrapper {
-        std::decay_t<Invocable> inv;
+        std::decay_t<Callable> callable;
 
-        static PLY_NO_INLINE Return call(BaseWrapper* wrapper, Args... args) {
-            return static_cast<Wrapper*>(wrapper)->inv(std::forward<Args>(args)...);
+        static PLY_NO_INLINE Return thunk(BaseWrapper* wrapper, Args... args) {
+            return static_cast<Wrapper*>(wrapper)->callable(std::forward<Args>(args)...);
         }
         template <typename I>
-        PLY_INLINE Wrapper(I&& inv) : BaseWrapper{&call}, inv{std::forward<I>(inv)} {
+        PLY_INLINE Wrapper(I&& callable)
+            : BaseWrapper{&thunk}, callable{std::forward<I>(callable)} {
         }
     };
 
@@ -36,11 +37,10 @@ public:
     PLY_INLINE Functor(Functor&& other) : wrapper{other.wrapper} {
         other.wrapper = nullptr;
     }
-    PLY_INLINE bool isValid() const {
-        return this->wrapper != nullptr;
-    }
-    PLY_INLINE explicit operator bool() const {
-        return this->wrapper != nullptr;
+    template <typename Callable,
+              typename = void_t<decltype(std::declval<Callable>()(std::declval<Args>()...))>>
+    PLY_INLINE Functor(Callable&& callable)
+        : wrapper{new Wrapper<Callable>{std::forward<Callable>(callable)}} {
     }
     PLY_INLINE ~Functor() {
         if (this->wrapper) {
@@ -51,11 +51,14 @@ public:
         this->wrapper = other.wrapper;
         other.wrapper = nullptr;
     }
-    PLY_INLINE Return call(Args... args) const {
-        return this->wrapper->call(this->wrapper, std::forward<Args>(args)...);
+    PLY_INLINE bool isValid() const {
+        return this->wrapper != nullptr;
     }
-    template <typename I, typename = void_t<decltype(std::declval<I>()(std::declval<Args>()...))>>
-    PLY_INLINE Functor(I&& inv) : wrapper{new Wrapper<I>{std::forward<I>(inv)}} {
+    PLY_INLINE explicit operator bool() const {
+        return this->wrapper != nullptr;
+    }
+    PLY_INLINE Return operator()(Args... args) const {
+        return this->wrapper->thunk(this->wrapper, std::forward<Args>(args)...);
     }
 };
 

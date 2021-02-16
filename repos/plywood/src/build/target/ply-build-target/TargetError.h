@@ -13,7 +13,7 @@ struct TargetError {
 
     static PLY_INLINE void log(StringView msg) {
         if (callback_) {
-            callback_.call(msg);
+            callback_(msg);
         }
     }
 };
