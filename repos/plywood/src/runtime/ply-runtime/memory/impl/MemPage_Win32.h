@@ -8,49 +8,21 @@
 
 namespace ply {
 
-class MemPage_Win32 {
-public:
+struct MemPage_Win32 {
     struct Info {
-        ureg allocationGranularity;
-        ureg pageSize;
+        uptr allocationGranularity;
+        uptr pageSize;
     };
 
-    static Info getInfoInternal() {
-        SYSTEM_INFO sysInfo;
-        GetSystemInfo(&sysInfo);
-        PLY_ASSERT(isPowerOf2(sysInfo.dwAllocationGranularity));
-        PLY_ASSERT(isPowerOf2(sysInfo.dwPageSize));
-        return {sysInfo.dwAllocationGranularity, sysInfo.dwPageSize};
-    }
+    static const Info& getInfo();
 
-    static const Info& getInfo() {
-        static Info info = getInfoInternal();
-        return info;
-    }
-
-    static bool alloc(void*& result, ureg size, bool topDownHint = false) {
-        DWORD type = MEM_RESERVE | MEM_COMMIT;
-        if (topDownHint)
-            type |= MEM_TOP_DOWN;
-        result = VirtualAlloc(0, (SIZE_T) size, type, PAGE_READWRITE);
-        return (result != NULL);
-    }
-
-    static bool free(void* ptr, ureg size) {
-        MEMORY_BASIC_INFORMATION minfo;
-        while (sreg(size) > 0) {
-            if (VirtualQuery((LPCVOID) ptr, &minfo, sizeof(minfo)) == 0)
-                return false;
-            if (minfo.BaseAddress != ptr || minfo.AllocationBase != ptr ||
-                minfo.State != MEM_COMMIT || minfo.RegionSize > size)
-                return false;
-            if (VirtualFree(ptr, 0, MEM_RELEASE) == 0)
-                return false;
-            ptr = PLY_PTR_OFFSET(ptr, minfo.RegionSize);
-            size -= minfo.RegionSize;
-        }
-        return true;
-    }
+    static bool alloc(char*& baseAddr, uptr numBytes);
+    static bool reserve(char*& baseAddr, uptr numBytes);
+    static void commit(char* addr, uptr numBytes);
+    static void decommit(char* addr, uptr numBytes);
+    // Note that unlike MemPage_POSIX, MemPage_Win32::free() is only able to free a single entire
+    // region returned by alloc() or reserve(). For this reason, Heap_DL doesn't use MemPage_Win32.
+    static void free(char* baseAddr, uptr numBytes);
 };
 
 } // namespace ply

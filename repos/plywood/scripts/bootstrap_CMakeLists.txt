@@ -160,6 +160,9 @@ SetSourceFolders(BUILD-TARGET_SOURCES "${SRC_FOLDER}build/target/ply-build-targe
     "TargetError.cpp"
     "TargetError.h"
 )
+SetNonParticipatingFiles(BUILD-TARGET_SOURCES "${SRC_FOLDER}build/target/ply-build-target"
+    "ply-build-target.natvis"
+)
 add_library(build-target OBJECT
     ${BUILD-TARGET_SOURCES}
 )
@@ -221,6 +224,9 @@ SetSourceFolders(REFLECT_SOURCES "${SRC_FOLDER}reflect/ply-reflect"
     "TypedArray.cpp"
     "TypedArray.h"
     "TypedPtr.h"
+)
+SetNonParticipatingFiles(REFLECT_SOURCES "${SRC_FOLDER}reflect/ply-reflect"
+    "ply-reflect.natvis"
 )
 add_library(reflect OBJECT
     ${REFLECT_SOURCES}
@@ -347,7 +353,9 @@ SetSourceFolders(RUNTIME_SOURCES "${SRC_FOLDER}runtime/ply-runtime"
     "memory/impl/Heap_DL.cpp"
     "memory/impl/Heap_DL.h"
     "memory/impl/MemPage_POSIX.h"
+    "memory/impl/MemPage_POSIX.cpp"
     "memory/impl/MemPage_Win32.h"
+    "memory/impl/MemPage_Win32.cpp"
     "network/IPAddress.cpp"
     "network/IPAddress.h"
     "network/Socket.h"
@@ -429,6 +437,9 @@ SetSourceFolders(RUNTIME_SOURCES "${SRC_FOLDER}runtime/ply-runtime"
     "time/impl/CPUTimer_Mach.h"
     "time/impl/CPUTimer_POSIX.h"
     "time/impl/CPUTimer_Win32.h"
+)
+SetNonParticipatingFiles(RUNTIME_SOURCES "${SRC_FOLDER}runtime/ply-runtime"
+    "ply-runtime.natvis"
 )
 add_library(runtime OBJECT
     ${RUNTIME_SOURCES}

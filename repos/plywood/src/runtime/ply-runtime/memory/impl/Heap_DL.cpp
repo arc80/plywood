@@ -184,25 +184,59 @@ unsigned char _BitScanReverse(unsigned long *index, unsigned long mask);
 #define MFAIL                ((void*)(MAX_SIZE_T))
 #define CMFAIL               ((char*)(MFAIL)) /* defined for convenience */
 
-static PLY_INLINE void* ply_mmap(size_t size) {
-  void* ptr;
-  return ply::MemPage::alloc(ptr, size) ? ptr : MFAIL;
-}
+#ifndef WIN32
 
-/* For direct MMAP, use MEM_TOP_DOWN to minimize interference */
-static PLY_INLINE void* ply_direct_mmap(size_t size) {
-  void* ptr;
-  return ply::MemPage::alloc(ptr, size, true) ? ptr : MFAIL;
+static PLY_INLINE void* ply_mmap(size_t size) {
+  char* ptr;
+  return ply::MemPage::alloc(ptr, size) ? ptr : MFAIL;
 }
 
 /* This function supports releasing coalesed segments */
 static PLY_INLINE int ply_munmap(void* ptr, size_t size) {
-  return ply::MemPage::free(ptr, size) ? 0 : -1;
+  return ply::MemPage::freeForDLMalloc((char*) ptr, size) ? 0 : -1;
 }
 
 #define MMAP_DEFAULT(s)             ply_mmap(s)
 #define MUNMAP_DEFAULT(a, s)        ply_munmap((a), (s))
-#define DIRECT_MMAP_DEFAULT(s)      ply_direct_mmap(s)
+#define DIRECT_MMAP_DEFAULT(s)      ply_mmap(s)
+
+#else /* WIN32 */
+
+/* Win32 MMAP via VirtualAlloc */
+static FORCEINLINE void* win32mmap(size_t size) {
+  void* ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+  return (ptr != 0)? ptr: MFAIL;
+}
+
+/* For direct MMAP, use MEM_TOP_DOWN to minimize interference */
+static FORCEINLINE void* win32direct_mmap(size_t size) {
+  void* ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT|MEM_TOP_DOWN,
+                           PAGE_READWRITE);
+  return (ptr != 0)? ptr: MFAIL;
+}
+
+/* This function supports releasing coalesed segments */
+static FORCEINLINE int win32munmap(void* ptr, size_t size) {
+  MEMORY_BASIC_INFORMATION minfo;
+  char* cptr = (char*)ptr;
+  while (size) {
+    if (VirtualQuery(cptr, &minfo, sizeof(minfo)) == 0)
+      return -1;
+    if (minfo.BaseAddress != cptr || minfo.AllocationBase != cptr ||
+        minfo.State != MEM_COMMIT || minfo.RegionSize > size)
+      return -1;
+    if (VirtualFree(cptr, 0, MEM_RELEASE) == 0)
+      return -1;
+    cptr += minfo.RegionSize;
+    size -= minfo.RegionSize;
+  }
+  return 0;
+}
+
+#define MMAP_DEFAULT(s)             win32mmap(s)
+#define MUNMAP_DEFAULT(a, s)        win32munmap((a), (s))
+#define DIRECT_MMAP_DEFAULT(s)      win32direct_mmap(s)
+#endif /* WIN32 */
 
 #if HAVE_MREMAP
 #ifndef WIN32
