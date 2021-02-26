@@ -193,7 +193,8 @@ static PLY_INLINE void* ply_mmap(size_t size) {
 
 /* This function supports releasing coalesed segments */
 static PLY_INLINE int ply_munmap(void* ptr, size_t size) {
-  return ply::MemPage::freeForDLMalloc((char*) ptr, size) ? 0 : -1;
+  ply::MemPage::free((char*) ptr, size);
+  return 0;
 }
 
 #define MMAP_DEFAULT(s)             ply_mmap(s)
