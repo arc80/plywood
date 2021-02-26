@@ -379,9 +379,8 @@ struct StringView {
 
     // FIXME: Make sure this documentation string is OK
     /*!
-    Returns a new `String` with UTF-8 characters reversed. For example,
-    `StringView{"`&#x1f60b;&#x1f37a;&#x1f355;`"}.reversedUTF8()` returns
-    `"`&#x1f355;&#x1f37a;&#x1f60b;`"`.
+    Returns a new `String` with UTF-8 characters reversed. For example, if `s` contains the string
+    `"😋🍺🍕"` encoded as UTF-8, `s.reversedUTF8()` returns the string `"🍕🍺😋"` encoded as UTF-8.
     */
     PLY_DLL_ENTRY String reversedUTF8() const;
 
