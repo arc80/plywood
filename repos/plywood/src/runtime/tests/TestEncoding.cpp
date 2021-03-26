@@ -2,8 +2,8 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-runtime/io/text/TextConverter.h>
 #include <ply-test/TestSuite.h>
+#include <ply-runtime/io/text/TextConverter.h>
 
 namespace ply {
 namespace tests {
