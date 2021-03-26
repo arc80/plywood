@@ -30,8 +30,9 @@ struct ItemTypeImpl<
     T, std::enable_if_t<!std::is_array<T>::value && !HasBeginMember<T> && HasBeginADL<T>>> {
     using Type = decltype(*begin(std::declval<T>()));
 };
+
 template <typename T>
-using ItemType = typename ItemTypeImpl<T, void>::Type;
+using ItemType = std::decay_t<typename ItemTypeImpl<std::remove_reference_t<T>, void>::Type>;
 
 } // namespace details
 } // namespace ply

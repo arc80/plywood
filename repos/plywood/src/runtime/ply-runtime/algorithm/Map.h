@@ -10,8 +10,8 @@
 namespace ply {
 
 template <typename Iterable, typename MapFunc,
-          typename MappedItemType = std::decay_t<decltype(std::declval<MapFunc>()(
-              std::declval<details::ItemType<std::remove_reference_t<Iterable>>>()))>>
+          typename MappedItemType = std::decay_t<
+              decltype(std::declval<MapFunc>()(std::declval<details::ItemType<Iterable>>()))>>
 Array<MappedItemType> map(Iterable&& iterable, MapFunc&& mapFunc) {
     Array<MappedItemType> result;
     // FIXME: Reserve memory for result when possible. Otherwise, use a typed ChunkBuffer.
