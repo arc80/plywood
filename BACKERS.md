@@ -8,11 +8,12 @@ A heartfelt thanks goes out to these generous [supporters on Patreon](https://ww
 
 ### Power Backers
 
+* Genma
 * Peterson Onyeukwu
-* lorqq
 
 ### Backers
 
+* jeremy laumon
 * cm chang
 * Kamen Lilov
 * Tom
