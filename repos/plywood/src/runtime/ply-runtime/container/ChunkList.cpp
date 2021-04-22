@@ -13,10 +13,9 @@ namespace ply {
 // ChunkListNode
 //-------------------------------------------------
 PLY_NO_INLINE Reference<ChunkListNode> ChunkListNode::allocate(u64 fileOffset, u32 numBytes) {
-    u32 alignment = ChunkListNode::DefaultAlignment;
-    u32 alignedNumBytes = alignPowerOf2(numBytes, alignment);
-    u32 allocSize = alignedNumBytes + ChunkListNode::getAlignedSize();
-    char* bytes = (char*) PLY_HEAP.allocAligned(allocSize, alignment);
+    u32 alignedNumBytes = alignPowerOf2(numBytes, (u32) alignof(ChunkListNode));
+    u32 allocSize = alignedNumBytes + sizeof(ChunkListNode);
+    char* bytes = (char*) PLY_HEAP.alloc(allocSize);
     ChunkListNode* chunk = (ChunkListNode*) (bytes + alignedNumBytes);
     new (chunk) ChunkListNode;
     chunk->fileOffset = fileOffset;
@@ -49,7 +48,7 @@ PLY_NO_INLINE void ChunkListNode::decRef() {
         if (node->refCount > 0)
             break;
         ChunkListNode* n = node->next;
-        PLY_HEAP.freeAligned(node->bytes);
+        PLY_HEAP.free(node->bytes);
         node = n;
     }
 }
@@ -63,8 +62,7 @@ PLY_NO_INLINE void ChunkCursor::iterateOverViews(LambdaView<void(StringView)> ca
         callback(StringView::fromRange(this->curByte, end.curByte));
     } else {
         PLY_ASSERT(this->chunk->viewUsedBytes().contains(this->curByte));
-        callback(
-            StringView::fromRange(this->curByte, this->chunk->bytes + this->chunk->writePos));
+        callback(StringView::fromRange(this->curByte, this->chunk->bytes + this->chunk->writePos));
         const ChunkListNode* chunk = this->chunk->next;
         while (chunk != end.chunk) {
             callback(chunk->viewUsedBytes());

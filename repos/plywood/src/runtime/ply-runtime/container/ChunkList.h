@@ -19,7 +19,6 @@ struct OutStream;
 // together.
 //-----------------------------------------------------------------
 struct ChunkListNode {
-    static const u32 DefaultAlignment = 16;
     static const u32 DefaultChunkSize = 2048;
 
     u64 fileOffset = 0; // Offset of the first byte in this chunk relative to underlying file
@@ -29,10 +28,6 @@ struct ChunkListNode {
     u32 writePos = 0;            // Write position within this chunk
     u32 offsetIntoNextChunk = 0; // Where to continue in the next chunk
     mutable s32 refCount = 0;
-
-    static PLY_INLINE u32 getAlignedSize() {
-        return alignPowerOf2((u32) sizeof(ChunkListNode), DefaultAlignment);
-    }
 
     PLY_INLINE MutableStringView viewAll() {
         return {this->bytes, this->numBytes};
