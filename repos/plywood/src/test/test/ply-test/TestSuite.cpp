@@ -41,7 +41,17 @@ bool run() {
     for (u32 i = 0; i < testCases.numItems(); i++) {
         StdOut::text().format("[{}/{}] {}... ", (i + 1), testCases.numItems(), testCases[i].name);
         gTestState.success = true;
+#if PLY_USE_DLMALLOC
+        auto beginStats = PLY_HEAP.getStats();
+#endif
         testCases[i].func();
+#if PLY_USE_DLMALLOC
+        // Check for memory leaks
+        auto endStats = PLY_HEAP.getStats();
+        if (beginStats.inUseBytes != endStats.inUseBytes) {
+            gTestState.success = false;
+        }
+#endif
         StdOut::text() << (gTestState.success ? StringView{"success\n"} : "***FAIL***\n");
         if (gTestState.success) {
             numPassed++;

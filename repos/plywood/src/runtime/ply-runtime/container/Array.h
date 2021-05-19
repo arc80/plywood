@@ -146,12 +146,8 @@ public:
         arr = std::move(other);
     */
     PLY_INLINE void operator=(Array&& other) {
-        this->items = other.items;
-        this->numItems_ = other.numItems_;
-        this->allocated = other.allocated;
-        other.items = nullptr;
-        other.numItems_ = 0;
-        other.allocated = 0;
+        this->~Array();
+        new (this) Array{std::move(other)};
     }
 
     /*!
