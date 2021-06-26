@@ -39,7 +39,8 @@ public:
     PLY_INLINE TypedList() = default;
 
     /*!
-    Move constructor. `other` is reset to an empty `TypedList`.
+    Move constructor. `other` is left in an unusable state and cannot be modified after this
+    operation.
 
         TypedList<String> arr = std::move(other);
     */
@@ -55,7 +56,8 @@ public:
 
     /*!
     \category Assignment
-    Move assignment operator. `other` is reset to an empty `TypedList`.
+    Move assignment operator. `other` is left in an unusable state and cannot be modified after this
+    operation.
 
         arr = std::move(other);
     */
@@ -152,7 +154,8 @@ public:
     \endGroup
     */
     /*!
-    Destructs all items in the list and frees the internal chunk list.
+    Destructs all items in the list and frees any associated memory. The `TypedList` is left in an
+    empty state.
     */
     PLY_INLINE void clear() {
         *this = TypedList{};
@@ -160,9 +163,10 @@ public:
 
     /*!
     \category Conversion
-    Converts the list of items to an `Array` and resets the `TypedList` to an empty state. When the
-    number of items fits in a single chunk, the chunk is truncated and directly adopted by the
-    `Array`, avoiding unnecessary memory reallocation or copying.
+    Converts the list of items to an `Array`. When the number of items fits in a single chunk, the
+    chunk is truncated and directly adopted by the `Array`, avoiding unnecessary memory reallocation
+    or copying. The `TypedList` is left in an unusable state and cannot be modified after this
+    operation.
 
         TypedList<String> list;
         list.append("Hello");
