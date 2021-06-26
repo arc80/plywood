@@ -15,8 +15,6 @@ A heartfelt thanks goes out to these generous [supporters on Patreon](https://ww
 
 * jeremy laumon
 * cm chang
-* Kamen Lilov
 * Tom
-* Seth Brown
 * Liu Xiang
 * Steven Hepting
