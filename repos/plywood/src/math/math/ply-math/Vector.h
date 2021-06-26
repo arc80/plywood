@@ -49,7 +49,7 @@ struct Float2 {
     PLY_INLINE Float2(float x, float y) : x{x}, y{y} {
     }
     /*!
-    \category Assignment Operator
+    \category Assignment
     Copy assignment. Declared with an [lvalue
     ref-qualifier](https://en.cppreference.com/w/cpp/language/member_functions#ref-qualified_member_functions)
     so that it's an error to assign to an rvalue.
@@ -419,7 +419,7 @@ struct Float3 {
     PLY_INLINE Float3(const Float2& v, float z) : x{v.x}, y{v.y}, z{z} {
     }
     /*!
-    \category Assignment Operator
+    \category Assignment
     Copy assignment. Declared with an [lvalue
     ref-qualifier](https://en.cppreference.com/w/cpp/language/member_functions#ref-qualified_member_functions)
     so that it's an error to assign to an rvalue.
@@ -817,7 +817,7 @@ struct Float4 {
     PLY_INLINE Float4(const Float2& v, float z, float w) : x{v.x}, y{v.y}, z{z}, w{w} {
     }
     /*!
-    \category Assignment Operator
+    \category Assignment
     Copy assignment. Declared with an [lvalue
     ref-qualifier](https://en.cppreference.com/w/cpp/language/member_functions#ref-qualified_member_functions)
     so that it's an error to assign to an rvalue.

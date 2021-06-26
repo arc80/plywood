@@ -75,6 +75,16 @@ struct ArrayView {
 
     /*!
     \beginGroup
+    Explicitly create an `ArrayView` from a `StringView` or `MutableStringView`.
+    */
+    static PLY_INLINE ArrayView<const T> from(StringView view);
+    static PLY_INLINE ArrayView<T> from(MutableStringView view);
+    /*!
+    \endGroup
+    */
+
+    /*!
+    \beginGroup
     Explicitly convert the `ArrayView` to a `StringView` or `MutableStringView`.
     */
     PLY_INLINE StringView stringView() const;

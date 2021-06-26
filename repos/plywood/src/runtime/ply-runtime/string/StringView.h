@@ -524,6 +524,18 @@ struct MutableStringView {
 };
 
 template <typename T>
+PLY_INLINE ArrayView<const T> ArrayView<T>::from(StringView view) {
+    u32 numItems = view.numBytes / sizeof(T); // Divide by constant is fast
+    return {(const T*) view.bytes, numItems};
+}
+
+template <typename T>
+PLY_INLINE ArrayView<T> ArrayView<T>::from(MutableStringView view) {
+    u32 numItems = view.numBytes / sizeof(T); // Divide by constant is fast
+    return {(T*) view.bytes, numItems};
+}
+
+template <typename T>
 PLY_INLINE StringView ArrayView<T>::stringView() const {
     return {(const char*) items, safeDemote<u32>(numItems * sizeof(T))};
 }

@@ -41,6 +41,13 @@ struct ChunkListNode {
     PLY_INLINE MutableStringView viewRemainingBytes() {
         return {this->bytes + this->writePos, this->numBytes - this->writePos};
     }
+    PLY_INLINE u32 numRemainingBytes() {
+        PLY_ASSERT(this->writePos <= this->numBytes);
+        return this->numBytes - this->writePos;
+    }
+    PLY_INLINE char* curByte() {
+        return this->bytes + this->writePos;
+    }
     PLY_INLINE char* end() {
         return this->bytes + this->numBytes;
     }

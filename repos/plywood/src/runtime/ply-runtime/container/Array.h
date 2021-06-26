@@ -50,6 +50,10 @@ private:
     template <typename>
     friend class Array;
 
+    PLY_INLINE Array(T* items, u32 numItems, u32 allocator)
+        : items{items}, numItems_{numItems}, allocated{allocated} {
+    }
+
 public:
     /*!
     \category Constructors
@@ -127,7 +131,7 @@ public:
     }
 
     /*!
-    \category Assignment Operators
+    \category Assignment
     Copy assignment operator. This operator is always defined because, in C++14, there is no way to
     conditionally disable it if `T` itself is not copy assignable. Instead, a runtime error occurs
     if this operator is called when `T` is not copy assignable.
@@ -240,7 +244,7 @@ public:
     /*!
     \beginGroup
     Required functions to support range-for syntax. Allows you to iterate over all the items in the
-    array as follows:
+    array.
 
         for (const T& item : arr) {
             ...
@@ -292,7 +296,7 @@ public:
     }
 
     /*!
-    \category Modifiers
+    \category Modification
     Destructs all items in the array and frees the internal memory block.
     */
     PLY_NO_INLINE void clear() {
@@ -482,6 +486,11 @@ public:
     \endGroup
     */
 
+    // Undocumented function; used by TypedList.
+    static PLY_INLINE Array adopt(T* items, u32 numItems) {
+        return {items, numItems, numItems};
+    }
+
     // Undocumented function; used to move-assign an Array to a TypedArray.
     PLY_INLINE T* release() {
         T* items = this->items;
@@ -575,7 +584,7 @@ struct ArrayTraits<Array<T>> {
 
 /*!
 \addToClass Array
-\category Modifiers
+\category Modification
 Returns the concatenation of two array-like objects `a` and `b`. The arguments can be instances of
 `Array`, `ArrayView`, `FixedArray` or any class that has a member function named `view()` returning
 an `ArrayView`. The returned `Array` has the same item type as `a`, and `b`'s items must be
