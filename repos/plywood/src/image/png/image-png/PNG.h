@@ -11,7 +11,7 @@ namespace ply {
 namespace image {
 
 OwnImage readPNG(ply::InStream* in);
-void writePNG(Image& im, ply::OutStream* out);
+void writePNG(const Image& im, ply::OutStream* out);
 
 } // namespace image
 } // namespace ply

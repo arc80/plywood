@@ -13,7 +13,7 @@ OwnImage readPNG(ply::InStream* in) {
     return {0, 0, Format::Unknown};
 }
 
-void writePNG(Image& im, ply::OutStream* out) {
+void writePNG(const Image& im, ply::OutStream* out) {
     // Create png_ptr
     png_structp png_ptr = png_create_write_struct(
         PNG_LIBPNG_VER_STRING, nullptr,

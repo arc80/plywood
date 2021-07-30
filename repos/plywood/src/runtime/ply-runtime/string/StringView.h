@@ -333,12 +333,12 @@ struct StringView {
     `ltrim()` trims leading bytes only, `rtrim()` trims trailing bytes only, and `trim()` trims both
     leading and trailing bytes.
     */
-    PLY_DLL_ENTRY StringView trim(bool (*matchFunc)(char), bool left = true,
+    PLY_DLL_ENTRY StringView trim(bool (*matchFunc)(char) = isWhite, bool left = true,
                                   bool right = true) const;
-    PLY_INLINE StringView ltrim(bool (*matchFunc)(char)) const {
+    PLY_INLINE StringView ltrim(bool (*matchFunc)(char) = isWhite) const {
         return this->trim(matchFunc, true, false);
     }
-    PLY_INLINE StringView rtrim(bool (*matchFunc)(char)) const {
+    PLY_INLINE StringView rtrim(bool (*matchFunc)(char) = isWhite) const {
         return this->trim(matchFunc, false, true);
     }
     /*!

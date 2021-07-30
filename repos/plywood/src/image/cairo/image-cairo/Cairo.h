@@ -106,6 +106,9 @@ struct Context {
     PLY_INLINE void arc(const Float2& p, float radius, float startRad, float endRad) {
         cairo_arc((cairo_t*) this, p.x, p.y, radius, startRad, endRad);
     }
+    PLY_INLINE void arcNegative(const Float2& p, float radius, float startRad, float endRad) {
+        cairo_arc_negative((cairo_t*) this, p.x, p.y, radius, startRad, endRad);
+    }
     PLY_INLINE void circle(const Float2& p, float radius) {
         cairo_arc((cairo_t*) this, p.x, p.y, radius, 0, 2 * Pi);
     }
@@ -157,6 +160,9 @@ struct Context {
     }
     PLY_INLINE void translate(const Float2& t) {
         cairo_translate((cairo_t*) this, t.x, t.y);
+    }
+    PLY_INLINE void rotate(float angle) {
+        cairo_rotate((cairo_t*) this, angle);
     }
     PLY_INLINE Scope save() {
         return {this};
