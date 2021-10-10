@@ -21,7 +21,7 @@ struct SizedInt<8> {
 };
 
 template <typename I>
-PLY_INLINE std::enable_if_t<std::is_integral<I>::value, bool> isPowerOf2(I v) {
+constexpr PLY_INLINE std::enable_if_t<std::is_integral<I>::value, bool> isPowerOf2(I v) {
     return (v & (v - 1)) == 0;
 }
 
