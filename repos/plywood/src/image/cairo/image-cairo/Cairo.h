@@ -74,6 +74,9 @@ struct Context {
     PLY_INLINE void setSourceRGB(const Float3& c) {
         cairo_set_source_rgb((cairo_t*) this, c.r(), c.g(), c.b());
     }
+    PLY_INLINE void setSourceRGBA(const Float4& c) {
+        cairo_set_source_rgba((cairo_t*) this, c.r(), c.g(), c.b(), c.a());
+    }
     PLY_INLINE void setLineWidth(float w) {
         cairo_set_line_width((cairo_t*) this, w);
     }
@@ -163,6 +166,9 @@ struct Context {
     }
     PLY_INLINE void rotate(float angle) {
         cairo_rotate((cairo_t*) this, angle);
+    }
+    PLY_INLINE void clip() {
+        cairo_clip((cairo_t*) this);
     }
     PLY_INLINE Scope save() {
         return {this};
