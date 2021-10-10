@@ -141,6 +141,8 @@ public:
         }
 
         PLY_NO_INLINE void free(void* ptr) {
+            if (!ptr)
+                return;
             LockGuard<Mutex_LazyInit> guard(m_mem.m_mutex);
             return memory_dl::dlfree(ptr, &m_mem.m_mstate);
         }
