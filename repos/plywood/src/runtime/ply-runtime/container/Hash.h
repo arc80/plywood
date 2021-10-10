@@ -31,6 +31,20 @@ struct Hasher {
         h << obj;
         return h.result();
     }
+
+    // Special case hash functions
+    static PLY_INLINE u32 hash(u64 obj) {
+        return (u32) avalanche(obj);
+    }
+    static PLY_INLINE u32 hash(u32 obj) {
+        return avalanche(obj);
+    }
+    static PLY_INLINE u32 hash(s64 obj) {
+        return (u32) avalanche((u64) obj);
+    }
+    static PLY_INLINE u32 hash(s32 obj) {
+        return avalanche((u32) obj);
+    }
 };
 
 //------------------------------------------
