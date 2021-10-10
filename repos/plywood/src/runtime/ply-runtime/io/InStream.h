@@ -204,7 +204,7 @@ public:
         }
     */
     PLY_INLINE char peekByte(u32 index = 0) const {
-        PLY_ASSERT(index < (uptr)(this->endByte - this->curByte));
+        PLY_ASSERT(index < (uptr) (this->endByte - this->curByte));
         return this->curByte[index];
     }
 
@@ -214,7 +214,7 @@ public:
     buffer by calling `tryMakeBytesAvailable()` beforehand.
     */
     PLY_INLINE void advanceByte(u32 numBytes = 1) {
-        PLY_ASSERT(numBytes <= (uptr)(this->endByte - this->curByte));
+        PLY_ASSERT(numBytes <= (uptr) (this->endByte - this->curByte));
         this->curByte += numBytes;
     }
 
@@ -244,6 +244,22 @@ public:
         // implement memcpy() as a MOV:
         memcpy(dst.bytes, this->curByte, dst.numBytes);
         this->curByte += dst.numBytes;
+        return this->status.eof == 0;
+    }
+
+    PLY_DLL_ENTRY bool skipSlowPath(u32 numBytes);
+
+    /*!
+    Attempts to skip `numBytes` bytes the input stream. If the underlying `InPipe` is waiting for
+    data, this function will block until the specified number of bytes arrive. Returns `true` if
+    successful. Returns `false` if EOF/error is encountered before the specified number of bytes are
+    skipped.
+    */
+    PLY_INLINE bool skip(u32 numBytes) {
+        if (numBytes > safeDemote<u32>(this->endByte - this->curByte)) {
+            return this->skipSlowPath(numBytes);
+        }
+        this->curByte += numBytes;
         return this->status.eof == 0;
     }
 

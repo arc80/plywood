@@ -208,6 +208,22 @@ PLY_NO_INLINE bool InStream::readSlowPath(MutableStringView dst) {
     return true;
 }
 
+PLY_NO_INLINE bool InStream::skipSlowPath(u32 numBytes) {
+    if (this->status.eof)
+        return false;
+
+    while (numBytes > 0) {
+        if (!this->tryMakeBytesAvailable()) {
+            return false;
+        }
+        u32 toSkip = min<u32>(numBytes, this->numBytesAvailable());
+        this->curByte += toSkip;
+        numBytes -= toSkip;
+    }
+
+    return true;
+}
+
 PLY_NO_INLINE String InStream::readRemainingContents() {
     ChunkCursor startChunk = this->getCursor();
     while (this->tryMakeBytesAvailable()) {
