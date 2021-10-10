@@ -4,7 +4,7 @@
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/algorithm/Random.h>
-#include <ply-runtime/time/UTCTime.h>
+#include <ply-runtime/time/DateTime.h>
 #include <ply-runtime/time/CPUTimer.h>
 #include <ply-platform/Util.h>
 #include <ply-runtime/thread/TID.h>
@@ -13,7 +13,7 @@ namespace ply {
 
 PLY_NO_INLINE Random::Random() {
     // Seed using misc. information from the environment
-    u64 t = getCurrentUTCTime();
+    u64 t = DateTime::getCurrentEpochMicroseconds();
     t = avalanche(t);
     s[0] = avalanche(t | 1);
 
