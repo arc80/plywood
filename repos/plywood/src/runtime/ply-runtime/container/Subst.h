@@ -67,16 +67,24 @@ PLY_INLINE T* createByMember() {
 //-------------------------------------------------------------
 // destroyByMember
 //-------------------------------------------------------------
-PLY_SFINAE_EXPR_1(HasDestroy, std::declval<T0>().destroy())
+PLY_SFINAE_EXPR_1(HasDestroyMember, std::declval<T0>().destroy())
+PLY_SFINAE_EXPR_1(HasNamespaceDestroy, destroy((T0*) nullptr))
 
-template <typename T, std::enable_if_t<HasDestroy<T>, int> = 0>
+template <typename T, std::enable_if_t<HasDestroyMember<T>, int> = 0>
 PLY_INLINE void destroyByMember(T* obj) {
     if (obj) {
         obj->destroy();
     }
 }
 
-template <typename T, std::enable_if_t<!HasDestroy<T>, int> = 0>
+template <typename T, std::enable_if_t<!HasDestroyMember<T> && HasNamespaceDestroy<T>, int> = 0>
+PLY_INLINE void destroyByMember(T* obj) {
+    if (obj) {
+        destroy(obj);
+    }
+}
+
+template <typename T, std::enable_if_t<!HasDestroyMember<T> && !HasNamespaceDestroy<T>, int> = 0>
 PLY_INLINE void destroyByMember(T* obj) {
     delete obj; // Passing nullptr to delete is allowed
 }
