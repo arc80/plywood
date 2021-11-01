@@ -189,7 +189,6 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
     <div class="scroller">
       <div class="inner">
         <ul>
-            <a href="https://www.patreon.com/preshing"><li><img src="/static/patron-button.svg" /> <span>Become a Supporter</span></li></a>
             <a href="https://discord.gg/WnQhuVF"><li><img src="/static/discord-button.svg" /> <span>Join the Discord Server</span></li></a>
             <a href="https://github.com/arc80/plywood"><li><img src="/static/github-button.svg" /> <span>View on GitHub</span></li></a>
         </ul>
