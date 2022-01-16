@@ -129,8 +129,8 @@ struct StringMixin {
     }
     template <typename MatchFuncOrChar>
     PLY_INLINE s32 rfindByte(const MatchFuncOrChar& matchFuncOrByte) const {
-        return static_cast<const Derived*>(this)->view().rfindByte(matchFuncOrByte,
-                                                                   this->numBytes - 1);
+        return static_cast<const Derived*>(this)->view().rfindByte(
+            matchFuncOrByte, static_cast<const Derived*>(this)->numBytes - 1);
     }
     /*!
     \endGroup
