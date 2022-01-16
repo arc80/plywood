@@ -383,9 +383,7 @@ PoolIndex<T, Index> Pool<T>::newItem(Args&&... args) {
     PLY_ASSERT(m_numReaders == 0);
 #endif
     u32 index = baseAlloc(sizeof(T));
-    if (!std::is_trivially_constructible<T, Args...>::value) {
-        new (static_cast<T*>(m_items) + index) T{std::forward<Args>(args)...};
-    }
+    new (static_cast<T*>(m_items) + index) T{std::forward<Args>(args)...};
     return index;
 }
 
