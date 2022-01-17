@@ -394,9 +394,7 @@ void Pool<T>::delItem(PoolIndex<T, Index> index) {
     // There must not be any Iterators or Ptrs when modifying the pool!
     PLY_ASSERT(m_numReaders == 0);
 #endif
-    if (!std::is_trivially_destructible<T>::value) {
-        static_cast<T*>(m_items)[index.idx].~T();
-    }
+    static_cast<T*>(m_items)[index.idx].~T();
     baseFree(index.idx, sizeof(T));
 }
 
