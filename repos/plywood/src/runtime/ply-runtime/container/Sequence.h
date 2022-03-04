@@ -5,52 +5,54 @@
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/container/Array.h>
-#include <ply-runtime/container/details/TypedListImpl.h>
+#include <ply-runtime/container/details/SequenceImpl.h>
 
 namespace ply {
 
 template <typename T>
-class TypedListReader;
+class SequenceReader;
 
 template <typename T>
-class TypedListIterator;
+class SequenceIterator;
 
 //------------------------------------------------------------------------------------------------
 /*!
-A `TypedList` object contains a list of typed items. `TypedList` is built on top of `BlockList` and
-offers an alternative to `Array` that can grow to an arbitrary number of items without ever
-reallocating memory. Once an item is added to a `TypedList`, the item's address never changes. The
-items are destructed and freed when the `TypedList` is destroyed.
+A `Sequence` object contains a sequence of items. You can add items to the end and remove items from
+the beginning or the end. These operations let you use a `Sequence` as a stack or a queue.
+`Sequence` is built on top of `BlockList` and offers an alternative to `Array` that can grow to an
+arbitrary number of items without ever reallocating memory. Once an item is added to a `Sequence`,
+the item's address never changes. The items are destructed and freed when the `Sequence` is
+destroyed.
 */
 template <typename T>
-class TypedList {
+class Sequence {
 private:
-    details::TypedListImpl impl;
-    friend class TypedListReader<T>;
+    details::SequenceImpl impl;
+    friend class SequenceReader<T>;
 
 public:
     /*!
     \category Constructors
-    Constructs an empty `TypedList`.
+    Constructs an empty `Sequence`.
 
-        TypedList<String> list;
+        Sequence<String> list;
     */
-    PLY_INLINE TypedList() = default;
+    PLY_INLINE Sequence() = default;
 
     /*!
     Move constructor. `other` is left in an unusable state and cannot be modified after this
     operation.
 
-        TypedList<String> arr = std::move(other);
+        Sequence<String> arr = std::move(other);
     */
-    PLY_INLINE TypedList(TypedList&& other) : impl{std::move(other.impl)} {
+    PLY_INLINE Sequence(Sequence&& other) : impl{std::move(other.impl)} {
     }
 
     /*!
-    Destructor. Destructs all items and frees the memory associated with the `TypedList`.
+    Destructor. Destructs all items and frees the memory associated with the `Sequence`.
     */
-    PLY_INLINE ~TypedList() {
-        details::destructTypedList<T>(this->impl.head);
+    PLY_INLINE ~Sequence() {
+        details::destructSequence<T>(this->impl.head);
     }
 
     /*!
@@ -60,8 +62,8 @@ public:
 
         arr = std::move(other);
     */
-    PLY_INLINE void operator=(TypedList&& other) {
-        details::destructTypedList<T>(this->impl.head);
+    PLY_INLINE void operator=(Sequence&& other) {
+        details::destructSequence<T>(this->impl.head);
         this->impl = std::move(other.impl);
     }
 
@@ -122,10 +124,10 @@ public:
     /*!
     \beginGroup
     Appends a single item to the list and returns a reference to it. The arguments are forwarded
-    directly to the item's constructor. The returned reference remains valid until the `TypedList`
+    directly to the item's constructor. The returned reference remains valid until the `Sequence`
     is destroyed or `moveToArray` is called.
 
-        TypedList<String> list;
+        Sequence<String> list;
         list.append("Hello");
     */
     PLY_INLINE T& append(const T& item) {
@@ -154,21 +156,21 @@ public:
     \endGroup
     */
     /*!
-    Destructs all items in the list and frees any associated memory. The `TypedList` is left in an
+    Destructs all items in the list and frees any associated memory. The `Sequence` is left in an
     empty state.
     */
     PLY_INLINE void clear() {
-        *this = TypedList{};
+        *this = Sequence{};
     }
 
     /*!
     \category Conversion
     Converts the list of items to an `Array`. When the number of items fits in a single chunk, the
     chunk is truncated and directly adopted by the `Array`, avoiding unnecessary memory reallocation
-    or copying. The `TypedList` is left in an unusable state and cannot be modified after this
+    or copying. The `Sequence` is left in an unusable state and cannot be modified after this
     operation.
 
-        TypedList<String> list;
+        Sequence<String> list;
         list.append("Hello");
         Array<String> arr = list.moveToArray();
     */
@@ -188,26 +190,26 @@ public:
             ...
         }
     */
-    TypedListIterator<T> begin() const;
-    TypedListIterator<T> end() const;
+    SequenceIterator<T> begin() const;
+    SequenceIterator<T> end() const;
     /*!
     \endGroup
     */
 };
 
 //-----------------------------------------------------------
-// TypedListReader
+// SequenceReader
 //-----------------------------------------------------------
 template <typename T>
-class TypedListReader {
+class SequenceReader {
 private:
-    details::TypedListReaderImpl impl;
-    friend class TypedListIterator<T>;
+    details::SequenceReaderImpl impl;
+    friend class SequenceIterator<T>;
 
-    PLY_INLINE TypedListReader() = default;
+    PLY_INLINE SequenceReader() = default;
 
 public:
-    PLY_INLINE TypedListReader(const TypedList<T>& src) : impl{src.impl} {
+    PLY_INLINE SequenceReader(const Sequence<T>& src) : impl{src.impl} {
     }
 
     // FIXME: Move ctor/assignment
@@ -221,7 +223,7 @@ public:
 
     // beginRead() should only be called when you know !atEOF()
     // It's safe to call beginRead() repeatedly before endRead(), as might happen when using
-    // TypedListIterator
+    // SequenceIterator
     PLY_INLINE const T& beginRead() {
         u32 numBytes = this->impl.tryMakeBytesAvailable(sizeof(T));
         PLY_ASSERT(numBytes >= sizeof(T));
@@ -248,22 +250,22 @@ public:
 };
 
 //-----------------------------------------------------------
-// TypedListIterator
+// SequenceIterator
 //-----------------------------------------------------------
 template <typename T>
-class TypedListIterator {
+class SequenceIterator {
 private:
-    TypedListReader<T> reader;
-    friend class TypedList<T>;
-    friend class TypedList<typename std::remove_const<T>::type>;
+    SequenceReader<T> reader;
+    friend class Sequence<T>;
+    friend class Sequence<typename std::remove_const<T>::type>;
 
-    PLY_INLINE TypedListIterator(const TypedList<T>& src) : reader{src} {
+    PLY_INLINE SequenceIterator(const Sequence<T>& src) : reader{src} {
     }
-    PLY_INLINE TypedListIterator() {
+    PLY_INLINE SequenceIterator() {
     }
 
 public:
-    PLY_INLINE bool operator!=(const TypedListIterator&) const {
+    PLY_INLINE bool operator!=(const SequenceIterator&) const {
         return !this->reader.atEOF();
     }
 
@@ -284,12 +286,12 @@ public:
 // Member functions
 //-----------------------------------------------------------
 template <typename T>
-PLY_INLINE TypedListIterator<T> TypedList<T>::begin() const {
+PLY_INLINE SequenceIterator<T> Sequence<T>::begin() const {
     return *this;
 }
 
 template <typename T>
-PLY_INLINE TypedListIterator<T> TypedList<T>::end() const {
+PLY_INLINE SequenceIterator<T> Sequence<T>::end() const {
     return {};
 }
 

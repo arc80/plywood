@@ -9,14 +9,14 @@
 namespace ply {
 namespace details {
 
-struct TypedListImpl {
+struct SequenceImpl {
     Reference<BlockList::Footer> head;
     BlockList::Footer* tail;
 
-    TypedListImpl();
-    TypedListImpl(TypedListImpl&& other);
-    ~TypedListImpl();
-    void operator=(TypedListImpl&& other);
+    SequenceImpl();
+    SequenceImpl(SequenceImpl&& other);
+    ~SequenceImpl();
+    void operator=(SequenceImpl&& other);
     char* beginWriteInternal(u32 numRequestedBytes);
     String moveToString();
 
@@ -25,29 +25,29 @@ struct TypedListImpl {
     }
 };
 
-void destructTypedListInternal(BlockList::Footer* block, void (*dtor)(void*), u32 itemSize);
+void destructSequenceInternal(BlockList::Footer* block, void (*dtor)(void*), u32 itemSize);
 
 template <typename T, std::enable_if_t<std::is_trivially_destructible<T>::value, int> = 0>
-PLY_INLINE void destructTypedList(BlockList::Footer*) {
+PLY_INLINE void destructSequence(BlockList::Footer*) {
     // Trivially destructible
 }
 
 template <typename T, std::enable_if_t<!std::is_trivially_destructible<T>::value, int> = 0>
-PLY_INLINE void destructTypedList(BlockList::Footer* block) {
+PLY_INLINE void destructSequence(BlockList::Footer* block) {
     // Explicitly destructble
     auto dtor = [](void* item) { //
         reinterpret_cast<T*>(item)->~T();
     };
-    destructTypedListInternal(block, dtor, safeDemote<u32>(sizeof(T)));
+    destructSequenceInternal(block, dtor, safeDemote<u32>(sizeof(T)));
 }
 
-struct TypedListReaderImpl {
+struct SequenceReaderImpl {
     char *curByte = nullptr;
     char* endByte = nullptr;
     Reference<BlockList::Footer> block;
 
-    PLY_INLINE TypedListReaderImpl() = default;
-    TypedListReaderImpl(const TypedListImpl& tb);
+    PLY_INLINE SequenceReaderImpl() = default;
+    SequenceReaderImpl(const SequenceImpl& tb);
     PLY_INLINE bool atEOF() const {
         return (this->curByte >= this->endByte) && !this->block->nextBlock;
     }

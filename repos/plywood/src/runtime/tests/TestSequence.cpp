@@ -2,13 +2,13 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-runtime/container/TypedList.h>
+#include <ply-runtime/container/Sequence.h>
 #include <ply-test/TestSuite.h>
 
 namespace ply {
 namespace tests {
 
-#define PLY_TEST_CASE_PREFIX TypedList_
+#define PLY_TEST_CASE_PREFIX Sequence_
 
 struct Fibonacci {
     u32 a = 0;
@@ -21,8 +21,8 @@ struct Fibonacci {
     }
 };
 
-void TypedList_testBeginWriteView(u32 num) {
-    TypedList<u32> list;
+void Sequence_testBeginWriteView(u32 num) {
+    Sequence<u32> list;
     u32 lastFib = 0;
     {
         Fibonacci fib;
@@ -47,16 +47,16 @@ void TypedList_testBeginWriteView(u32 num) {
     }
 }
 
-PLY_TEST_CASE("TypedList beginWriteView small loop") {
-    TypedList_testBeginWriteView(10);
+PLY_TEST_CASE("Sequence beginWriteView small loop") {
+    Sequence_testBeginWriteView(10);
 }
 
-PLY_TEST_CASE("TypedList beginWriteView big loop") {
-    TypedList_testBeginWriteView(10000);
+PLY_TEST_CASE("Sequence beginWriteView big loop") {
+    Sequence_testBeginWriteView(10000);
 }
 
-void TypedList_testAppend(u32 num) {
-    TypedList<u32> list;
+void Sequence_testAppend(u32 num) {
+    Sequence<u32> list;
     u32 lastFib = 0;
     {
         Fibonacci fib;
@@ -75,16 +75,16 @@ void TypedList_testAppend(u32 num) {
     }
 }
 
-PLY_TEST_CASE("TypedList append small loop") {
-    TypedList_testAppend(10);
+PLY_TEST_CASE("Sequence append small loop") {
+    Sequence_testAppend(10);
 }
 
-PLY_TEST_CASE("TypedList append big loop") {
-    TypedList_testAppend(10000);
+PLY_TEST_CASE("Sequence append big loop") {
+    Sequence_testAppend(10000);
 }
 
-void TypedList_testToArray(u32 num) {
-    TypedList<u32> list;
+void Sequence_testToArray(u32 num) {
+    Sequence<u32> list;
     u32 lastFib = 0;
     {
         Fibonacci fib;
@@ -104,12 +104,12 @@ void TypedList_testToArray(u32 num) {
     }
 }
 
-PLY_TEST_CASE("TypedList to small array") {
-    TypedList_testToArray(10);
+PLY_TEST_CASE("Sequence to small array") {
+    Sequence_testToArray(10);
 }
 
-PLY_TEST_CASE("TypedList to big array") {
-    TypedList_testToArray(10000);
+PLY_TEST_CASE("Sequence to big array") {
+    Sequence_testToArray(10000);
 }
 
 void TestBuffer_testDestructors(u32 num, bool move) {
@@ -124,7 +124,7 @@ void TestBuffer_testDestructors(u32 num, bool move) {
     {
         Array<Dtor> arr;
         {
-            TypedList<Dtor> list;
+            Sequence<Dtor> list;
             for (u32 i = 0; i < num; i++) {
                 list.append(&counter);
             }
@@ -137,19 +137,19 @@ void TestBuffer_testDestructors(u32 num, bool move) {
     PLY_TEST_CHECK(counter == num);
 }
 
-PLY_TEST_CASE("TypedList small destructors") {
+PLY_TEST_CASE("Sequence small destructors") {
     TestBuffer_testDestructors(10, false);
 }
 
-PLY_TEST_CASE("TypedList big destructors") {
+PLY_TEST_CASE("Sequence big destructors") {
     TestBuffer_testDestructors(10000, false);
 }
 
-PLY_TEST_CASE("TypedList move small destructors") {
+PLY_TEST_CASE("Sequence move small destructors") {
     TestBuffer_testDestructors(10, true);
 }
 
-PLY_TEST_CASE("TypedList move big destructors") {
+PLY_TEST_CASE("Sequence move big destructors") {
     TestBuffer_testDestructors(10000, true);
 }
 
