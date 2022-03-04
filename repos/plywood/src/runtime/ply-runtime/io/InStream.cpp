@@ -24,21 +24,21 @@ PLY_NO_INLINE InStream::InStream(InStream&& other) : status{other.status} {
     other.status.eof = 1;
 }
 
-PLY_NO_INLINE InStream::InStream(OptionallyOwned<InPipe>&& inPipe, u32 chunkSizeExp)
-    : status{Type::Pipe, chunkSizeExp} {
+PLY_NO_INLINE InStream::InStream(OptionallyOwned<InPipe>&& inPipe, u32 blockSizeExp)
+    : status{Type::Pipe, blockSizeExp} {
     PLY_ASSERT(inPipe);
     this->status.isPipeOwner = inPipe.isOwned() ? 1 : 0;
     this->inPipe = inPipe.release();
-    // Init first chunk
-    u32 chunkSize = this->getChunkSize();
-    new (&this->chunk) Reference<ChunkListNode>{ChunkListNode::allocate(0, chunkSize)};
-    this->curByte = this->chunk->bytes;
-    this->endByte = this->chunk->bytes;
+    // Init first block
+    u32 blockSize = this->getBlockSize();
+    new (&this->block) Reference<BlockList::Footer>{BlockList::createBlock(blockSize)};
+    this->curByte = this->block->bytes;
+    this->endByte = this->block->bytes;
 }
 
 PLY_NO_INLINE void InStream::destructInternal() {
     PLY_ASSERT(this->status.type != (u32) Type::View);
-    destruct(this->chunk);
+    destruct(this->block);
     if (this->status.type == (u32) Type::Pipe) {
         if (this->status.isPipeOwner) {
             delete this->inPipe;
@@ -59,107 +59,104 @@ PLY_NO_INLINE u32 InStream::tryMakeBytesAvailableInternal(u32 numRequestedBytes)
         return numBytes;
     }
 
-    if (!this->chunk) {
+    if (!this->block) {
         // Can reach here if InStream was moved from or readRemainingContents() was called
         PLY_ASSERT(this->status.eof);
         return 0;
     }
 
-    Reference<ChunkListNode> tempChunk;
+    Reference<BlockList::Footer> overlayBlock;
     u32 numBytesNeededToCompleteRequest = numRequestedBytes;
     for (;;) {
-        // this->curByte points to the read position in the current chunk
-        // this->endByte points to the write position in the current chunk
-        PLY_ASSERT(this->chunk->viewUsedBytes().contains(this->curByte));
-        PLY_ASSERT(this->endByte == this->chunk->bytes + this->chunk->writePos);
+        // this->curByte points to the read position in the current block.
+        // this->endByte points to the write position in the current block.
+        PLY_ASSERT(this->block->viewUsedBytes().contains(this->curByte));
+        PLY_ASSERT(this->endByte == this->block->end());
 
-        u32 unreadDataInCurrentChunk =
-            safeDemote<u32>(this->chunk->bytes + this->chunk->writePos - this->curByte);
-        if (numBytesNeededToCompleteRequest <= unreadDataInCurrentChunk)
-            break; // Current chunk has enough data to fulfill the remainder of the request.
+        u32 numUnreadBytesInCurrentBlock = safeDemote<u32>(this->block->end() - this->curByte);
+        if (numBytesNeededToCompleteRequest <= numUnreadBytesInCurrentBlock)
+            break; // Current block has enough data to fulfill the remainder of the request.
 
-        if (this->chunk->next) {
-            // Another chunk follows this one in the list, and we already know, from the previous
-            // check, that this chunk doesn't contain enough unread data to fulfill the rest of the
+        if (this->block->nextBlock) {
+            // Another block follows this one in the list, and we already know, from the previous
+            // check, that this block doesn't contain enough unread data to fulfill the rest of the
             // request.
-            PLY_ASSERT(unreadDataInCurrentChunk < numBytesNeededToCompleteRequest);
-            if (unreadDataInCurrentChunk > 0) {
-                // Copy unread data to tempChunk (creating tempChunk first, if needed).
-                if (!tempChunk) {
+            PLY_ASSERT(numUnreadBytesInCurrentBlock < numBytesNeededToCompleteRequest);
+            if (numUnreadBytesInCurrentBlock > 0) {
+                // Copy unread data to overlayBlock (creating overlayBlock first, if needed).
+                if (!overlayBlock) {
                     PLY_ASSERT(numBytesNeededToCompleteRequest == numRequestedBytes);
-                    tempChunk = ChunkListNode::allocate(this->chunk->fileOffset +
-                                                            (this->curByte - this->chunk->bytes),
-                                                        numRequestedBytes);
+                    overlayBlock = BlockList::createOverlayBlock({this->block, this->block->bytes},
+                                                                 numRequestedBytes);
                 }
-                if (tempChunk) {
-                    memcpy(tempChunk->bytes + numRequestedBytes - numBytesNeededToCompleteRequest,
-                           this->curByte, unreadDataInCurrentChunk);
+                if (overlayBlock) {
+                    memcpy(overlayBlock->bytes + numRequestedBytes -
+                               numBytesNeededToCompleteRequest,
+                           this->curByte, numUnreadBytesInCurrentBlock);
                 }
-                numBytesNeededToCompleteRequest -= unreadDataInCurrentChunk;
+                numBytesNeededToCompleteRequest -= numUnreadBytesInCurrentBlock;
             }
-            // Advance to next chunk.
-            u32 offsetIntoNextChunk = this->chunk->offsetIntoNextChunk;
-            this->chunk = this->chunk->next;
-            PLY_ASSERT(offsetIntoNextChunk <= this->chunk->writePos);
-            this->curByte = this->chunk->bytes + offsetIntoNextChunk;
-            this->endByte = this->chunk->bytes + this->chunk->writePos;
+            // Advance to next block.
+            BlockList::Footer* nextBlock = this->block->nextBlock;
+            u32 offsetIntoNextBlock =
+                this->block->numBytesUsed -
+                safeDemote<u32>(nextBlock->fileOffset - this->block->fileOffset);
+            this->block = nextBlock;
+            PLY_ASSERT(offsetIntoNextBlock <= nextBlock->numBytesUsed);
+            this->curByte = nextBlock->bytes + offsetIntoNextBlock;
+            this->endByte = nextBlock->bytes + nextBlock->numBytesUsed;
         } else {
-            u32 unreadStorageInCurrentChunk = safeDemote<u32>(this->chunk->end() - this->curByte);
-            if (unreadStorageInCurrentChunk < numBytesNeededToCompleteRequest) {
-                // Append a new chunk
-                PLY_ASSERT(this->chunk->offsetIntoNextChunk == 0);
-                ChunkListNode::addChunkToTail(
-                    this->chunk, max(numBytesNeededToCompleteRequest, this->getChunkSize()));
-                this->curByte = this->chunk->bytes;
-                this->endByte = this->chunk->bytes; // nothing written to this chunk yet
+            u32 unreadStorageInCurrentBlock = safeDemote<u32>(this->block->end() - this->curByte);
+            if (unreadStorageInCurrentBlock < numBytesNeededToCompleteRequest) {
+                // Append a new block
+                BlockList::appendBlock(this->block, max(numBytesNeededToCompleteRequest, this->getBlockSize()));
+                this->curByte = this->block->bytes;
+                this->endByte = this->block->bytes; // nothing written to this block yet
             }
-            // Current chunk has enough storage to fulfill the remainder of the request.
+            // Current block has enough storage to fulfill the remainder of the request.
             break;
         }
     }
 
-    // Current chunk has enough storage to fulfill the remainder of the request, but we still might
+    // Current block has enough storage to fulfill the remainder of the request, but we still might
     // need to fill it with data from the underlying pipe.
     PLY_ASSERT(numBytesNeededToCompleteRequest <=
-               safeDemote<u32>(this->chunk->end() - this->curByte));
-    u32 numBytesAvailableToReadInChunk;
+               safeDemote<u32>(this->block->end() - this->curByte));
+    u32 numBytesAvailableToReadInBlock;
     for (;;) {
-        numBytesAvailableToReadInChunk =
-            safeDemote<u32>((this->chunk->bytes + this->chunk->writePos) - this->curByte);
-        if (numBytesAvailableToReadInChunk >= numBytesNeededToCompleteRequest)
-            break; // Current chunk has enough data to fulfill remainder of request.
+        numBytesAvailableToReadInBlock =
+            safeDemote<u32>((this->block->bytes + this->block->numBytesUsed) - this->curByte);
+        if (numBytesAvailableToReadInBlock >= numBytesNeededToCompleteRequest)
+            break; // Current block has enough data to fulfill remainder of request.
 
-        PLY_ASSERT(!this->chunk->next); // We can only write to the end of the chunk list.
+        PLY_ASSERT(!this->block->nextBlock); // We can only write to the end of the block list.
         // Read more data from the underlying pipe.
-        u32 bytesRead = this->inPipe->readSome(
-            MutableStringView::fromRange(this->chunk->bytes + this->chunk->writePos, this->chunk->end()));
+        u32 bytesRead = this->inPipe->readSome(MutableStringView::fromRange(
+            this->block->bytes + this->block->numBytesUsed, this->block->end()));
         if (bytesRead == 0) {
             // We encountered EOF. As a safeguard/courtesy, pad memory with zeros up to the number
             // of needed bytes, even though the caller should **NOT** read any of these...
-            memset(this->chunk->bytes + this->chunk->writePos, 0,
-                   numBytesNeededToCompleteRequest - numBytesAvailableToReadInChunk);
+            memset(this->block->bytes + this->block->numBytesUsed, 0,
+                   numBytesNeededToCompleteRequest - numBytesAvailableToReadInBlock);
             this->status.eof = 1;
             break;
         }
-        this->chunk->writePos += bytesRead;
+        this->block->numBytesUsed += bytesRead;
         this->endByte += bytesRead;
-        PLY_ASSERT(this->endByte == this->chunk->bytes + this->chunk->writePos);
+        PLY_ASSERT(this->endByte == this->block->bytes + this->block->numBytesUsed);
     }
 
     u32 numBytesToReturn =
-        numRequestedBytes - numBytesNeededToCompleteRequest + numBytesAvailableToReadInChunk;
+        numRequestedBytes - numBytesNeededToCompleteRequest + numBytesAvailableToReadInBlock;
 
-    // If we created a tempChunk, finish copying data to it now, and expose the tempChunk to the
-    // caller.
-    if (tempChunk) {
+    // If we created a overlayBlock, finish copying data to it now, and expose the overlayBlock to
+    // the caller.
+    if (overlayBlock) {
         PLY_ASSERT(numBytesNeededToCompleteRequest > 0);
-        memcpy(tempChunk->bytes + numRequestedBytes - numBytesNeededToCompleteRequest,
+        memcpy(overlayBlock->bytes + numRequestedBytes - numBytesNeededToCompleteRequest,
                this->curByte, numBytesNeededToCompleteRequest);
-        tempChunk->offsetIntoNextChunk =
-            safeDemote<u32>((this->curByte + numBytesAvailableToReadInChunk) - this->chunk->bytes);
-        PLY_ASSERT(tempChunk->offsetIntoNextChunk <= this->chunk->writePos);
-        this->curByte = tempChunk->bytes;
-        this->endByte = tempChunk->bytes + numBytesToReturn;
+        this->curByte = overlayBlock->bytes;
+        this->endByte = overlayBlock->bytes + numBytesToReturn;
     }
 
     return numBytesToReturn;
@@ -169,25 +166,25 @@ PLY_NO_INLINE u64 InStream::getSeekPos() const {
     if (this->status.type == (u32) Type::View) {
         return safeDemote<u64>(this->curByte - this->startByte);
     } else {
-        return this->chunk->fileOffset + safeDemote<u64>(this->curByte - this->chunk->bytes);
+        return this->block->fileOffset + safeDemote<u64>(this->curByte - this->block->bytes);
     }
 }
 
-PLY_NO_INLINE ChunkCursor InStream::getCursor() const {
+PLY_NO_INLINE BlockList::Ref InStream::getBlockRef() const {
     // View is not supported yet, but could be in the future:
     PLY_ASSERT(this->status.type != (u32) Type::View);
-    PLY_ASSERT(!this->chunk || this->chunk->viewUsedBytes().contains(this->curByte));
-    return {this->chunk, const_cast<char*>(this->curByte)};
+    PLY_ASSERT(!this->block || this->block->viewUsedBytes().contains(this->curByte));
+    return {this->block, const_cast<char*>(this->curByte)};
 }
 
-PLY_NO_INLINE void InStream::rewind(ChunkCursor cursor) {
+PLY_NO_INLINE void InStream::rewind(const BlockList::WeakRef& pos) {
     // View is not supported yet, but could be in the future:
     PLY_ASSERT(this->status.type != (u32) Type::View);
-    PLY_ASSERT(cursor.chunk->viewUsedBytes().contains(cursor.curByte));
-    this->chunk = cursor.chunk;
-    this->curByte = cursor.curByte;
-    this->endByte = cursor.chunk->bytes + cursor.chunk->writePos;
-    this->status.eof = cursor.chunk ? 0 : 1;
+    PLY_ASSERT(pos.block->viewUsedBytes().contains(pos.byte));
+    this->block = pos.block;
+    this->curByte = pos.byte;
+    this->endByte = pos.block->bytes + pos.block->numBytesUsed;
+    this->status.eof = pos.block ? 0 : 1;
 }
 
 PLY_NO_INLINE bool InStream::readSlowPath(MutableStringView dst) {
@@ -225,15 +222,15 @@ PLY_NO_INLINE bool InStream::skipSlowPath(u32 numBytes) {
 }
 
 PLY_NO_INLINE String InStream::readRemainingContents() {
-    ChunkCursor startChunk = this->getCursor();
+    BlockList::Ref startPos = this->getBlockRef();
     while (this->tryMakeBytesAvailable()) {
         this->curByte = this->endByte;
     }
     PLY_ASSERT(this->status.eof);
-    this->chunk.clear();
+    this->block.clear();
     this->curByte = nullptr;
     this->endByte = nullptr;
-    return ChunkCursor::toString(std::move(startChunk));
+    return BlockList::toString(std::move(startPos));
 }
 
 } // namespace ply

@@ -10,11 +10,11 @@ namespace ply {
 //------------------------------------------------------------------
 // OutStream
 //------------------------------------------------------------------
-PLY_NO_INLINE void OutStream::initFirstChunk() {
-    u32 chunkSize = this->getChunkSize();
-    new (&this->chunk) Reference<ChunkListNode>{ChunkListNode::allocate(0, chunkSize)};
-    this->curByte = this->chunk->bytes;
-    this->endByte = this->chunk->end();
+PLY_NO_INLINE void OutStream::initFirstBlock() {
+    u32 blockSize = this->getBlockSize();
+    new (&this->block) Reference<BlockList::Footer>{BlockList::createBlock(blockSize)};
+    this->curByte = this->block->bytes;
+    this->endByte = this->block->end();
 }
 
 PLY_NO_INLINE void makeNull(OutStream* outs) {
@@ -33,25 +33,25 @@ PLY_NO_INLINE OutStream::OutStream(OutStream&& other) : status{other.status} {
     makeNull(&other);
 }
 
-PLY_NO_INLINE OutStream::OutStream(OptionallyOwned<OutPipe>&& outPipe, u32 chunkSizeExp)
-    : status{Type::Pipe, chunkSizeExp} {
+PLY_NO_INLINE OutStream::OutStream(OptionallyOwned<OutPipe>&& outPipe, u32 blockSizeExp)
+    : status{Type::Pipe, blockSizeExp} {
     PLY_ASSERT(outPipe);
     this->status.isPipeOwner = outPipe.isOwned() ? 1 : 0;
     this->outPipe = outPipe.release();
-    this->initFirstChunk();
+    this->initFirstBlock();
 }
 
 PLY_NO_INLINE void OutStream::destructInternal() {
     PLY_ASSERT(this->status.type != (u32) Type::View);
     this->flushMem();
-    destruct(this->chunk);
+    destruct(this->block);
     if (this->status.type == (u32) Type::Pipe) {
         if (this->status.isPipeOwner) {
             delete this->outPipe;
         }
     } else {
         PLY_ASSERT(this->status.type == (u32) Type::Mem);
-        destruct(this->headChunk);
+        destruct(this->headBlock);
     }
 }
 
@@ -59,19 +59,19 @@ PLY_NO_INLINE bool OutStream::flushInternal() {
     if (this->status.type == (u32) Type::View)
         return true;
 
-    // this->chunk->writePos is the last flushed offset
-    PLY_ASSERT(this->endByte == this->chunk->bytes + this->chunk->numBytes);
-    u32 newWritePos = safeDemote<u32>(this->curByte - this->chunk->bytes);
-    PLY_ASSERT(newWritePos >= this->chunk->writePos);
-    PLY_ASSERT(newWritePos <= this->chunk->numBytes);
-    if (newWritePos > this->chunk->writePos) {
+    // this->block->numBytesUsed is the last flushed offset
+    PLY_ASSERT(this->endByte == this->block->bytes + this->block->blockSize);
+    u32 newWritePos = safeDemote<u32>(this->curByte - this->block->bytes);
+    PLY_ASSERT(newWritePos >= this->block->numBytesUsed);
+    PLY_ASSERT(newWritePos <= this->block->blockSize);
+    if (newWritePos > this->block->numBytesUsed) {
         if (this->status.type == (u32) Type::Pipe && this->status.eof == 0) {
-            if (!this->outPipe->write({this->chunk->bytes + this->chunk->writePos,
-                                       newWritePos - this->chunk->writePos})) {
+            if (!this->outPipe->write({this->block->bytes + this->block->numBytesUsed,
+                                       newWritePos - this->block->numBytesUsed})) {
                 this->status.eof = 1;
             }
         }
-        this->chunk->writePos = newWritePos;
+        this->block->numBytesUsed = newWritePos;
     }
 
     return this->status.eof == 0;
@@ -90,7 +90,7 @@ PLY_NO_INLINE u64 OutStream::getSeekPos() const {
     if (this->status.type == (u32) Type::View) {
         return safeDemote<u64>(this->curByte - this->startByte);
     } else {
-        return this->chunk->fileOffset + safeDemote<u64>(this->curByte - this->chunk->bytes);
+        return this->block->fileOffset + safeDemote<u64>(this->curByte - this->block->bytes);
     }
 }
 
@@ -123,11 +123,11 @@ PLY_NO_INLINE u32 OutStream::tryMakeBytesAvailableInternal(s32 numBytes) {
         return 0;
     }
 
-    // Get a new chunk to write to
-    ChunkListNode::addChunkToTail(this->chunk, max(this->getChunkSize(), (u32) abs(numBytes)));
-    this->curByte = this->chunk->bytes;
-    this->endByte = this->chunk->bytes + this->chunk->numBytes;
-    return this->chunk->numBytes;
+    // Get a new block to write to
+    BlockList::appendBlockWithRecycle(this->block, max(this->getBlockSize(), (u32) abs(numBytes)));
+    this->curByte = this->block->bytes;
+    this->endByte = this->block->bytes + this->block->blockSize;
+    return this->block->blockSize;
 }
 
 PLY_NO_INLINE bool OutStream::writeSlowPath(StringView src) {
@@ -149,26 +149,25 @@ PLY_NO_INLINE bool OutStream::writeSlowPath(StringView src) {
 //------------------------------------------------------------------
 // MemOutStream
 //------------------------------------------------------------------
-PLY_NO_INLINE MemOutStream::MemOutStream(u32 chunkSizeExp) : OutStream{Type::Mem, chunkSizeExp} {
-    this->initFirstChunk();
-    new (&this->headChunk) Reference<ChunkListNode>{this->chunk};
+PLY_NO_INLINE MemOutStream::MemOutStream(u32 blockSizeExp) : OutStream{Type::Mem, blockSizeExp} {
+    this->initFirstBlock();
+    new (&this->headBlock) Reference<BlockList::Footer>{this->block};
 }
 
 PLY_NO_INLINE String MemOutStream::moveToString() {
     PLY_ASSERT(this->status.type == (u32) Type::Mem);
 
-    // Flush writePos
-    u32 newWritePos = safeDemote<u32>(this->curByte - this->chunk->bytes);
-    PLY_ASSERT(newWritePos >= this->chunk->writePos);
-    PLY_ASSERT(newWritePos <= this->chunk->numBytes);
-    this->chunk->writePos = newWritePos;
+    // "Flush" the current write position to the block's numBytesUsed.
+    u32 newWritePos = safeDemote<u32>(this->curByte - this->block->bytes);
+    PLY_ASSERT(newWritePos >= this->block->numBytesUsed);
+    PLY_ASSERT(newWritePos <= this->block->blockSize);
+    this->block->numBytesUsed = newWritePos;
 
-    // Release chunk references and create String. Releasing the references allows
-    // binaryFromChunks() to optimize in the case where there's only one chunk: Chunk memory gets
-    // trimmed and returned immediately, avoiding a memcpy.
-    this->chunk = nullptr;
-    char* bytes = this->headChunk->bytes;
-    String result = ChunkCursor::toString({std::move(this->headChunk), bytes});
+    // Release block references and create the String. Releasing the references allows
+    // BlockList::toString() to optimize the case where there's only one block.
+    this->block = nullptr;
+    char* bytes = this->headBlock->bytes;
+    String result = BlockList::toString({std::move(this->headBlock), bytes});
 
     // Leave this stream in the state of a null ViewOutStream
     makeNull(this);

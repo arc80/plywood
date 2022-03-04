@@ -17,11 +17,10 @@ class TypedListIterator;
 
 //------------------------------------------------------------------------------------------------
 /*!
-A `TypedList` object contains a list of typed items. Internally, a `TypedList` maintains a linked
-list of chunks, with the items stored contiguously in memory within each chunk. `TypedList` offers
-an alternative to `Array` that can grow to an arbitrary number of items without ever reallocating
-memory. Once an item is added to a `TypedList`, the item's address never changes. The items are
-destructed and freed when the `TypedList` is destroyed.
+A `TypedList` object contains a list of typed items. `TypedList` is built on top of `BlockList` and
+offers an alternative to `Array` that can grow to an arbitrary number of items without ever
+reallocating memory. Once an item is added to a `TypedList`, the item's address never changes. The
+items are destructed and freed when the `TypedList` is destroyed.
 */
 template <typename T>
 class TypedList {
@@ -51,7 +50,7 @@ public:
     Destructor. Destructs all items and frees the memory associated with the `TypedList`.
     */
     PLY_INLINE ~TypedList() {
-        details::destructTypedList<T>(this->impl.headChunk);
+        details::destructTypedList<T>(this->impl.head);
     }
 
     /*!
@@ -62,7 +61,7 @@ public:
         arr = std::move(other);
     */
     PLY_INLINE void operator=(TypedList&& other) {
-        details::destructTypedList<T>(this->impl.headChunk);
+        details::destructTypedList<T>(this->impl.head);
         this->impl = std::move(other.impl);
     }
 
@@ -87,10 +86,10 @@ public:
         list.endWrite(view.numItems);
     */
     PLY_INLINE ArrayView<T> beginWriteViewNoConstruct() {
-        if (this->impl.tailChunk->numRemainingBytes() < sizeof(T)) {
+        if ((this->impl.tail->blockSize - this->impl.tail->numBytesUsed) < sizeof(T)) {
             this->impl.beginWriteInternal(sizeof(T));
         }
-        return ArrayView<T>::from(this->impl.tailChunk->viewRemainingBytes());
+        return ArrayView<T>::from(this->impl.tail->viewUnusedBytes());
     }
 
     /*!
@@ -102,10 +101,10 @@ public:
         list.endWrite();
     */
     PLY_INLINE T* beginWriteNoConstruct() {
-        if (this->impl.tailChunk->numRemainingBytes() < sizeof(T)) {
+        if (this->impl.tail->viewUnusedBytes().numBytes < sizeof(T)) {
             return (T*) this->impl.beginWriteInternal(sizeof(T));
         } else {
-            return (T*) this->impl.tailChunk->curByte();
+            return (T*) this->impl.tail->unused();
         }
     }
 
@@ -115,8 +114,9 @@ public:
     available for read.
     */
     PLY_INLINE void endWrite(u32 numItems = 1) {
-        PLY_ASSERT(sizeof(T) * numItems <= this->impl.tailChunk->numRemainingBytes());
-        this->impl.tailChunk->writePos += sizeof(T) * numItems;
+        PLY_ASSERT(sizeof(T) * numItems <=
+                   this->impl.tail->blockSize - this->impl.tail->numBytesUsed);
+        this->impl.tail->numBytesUsed += sizeof(T) * numItems;
     }
 
     /*!

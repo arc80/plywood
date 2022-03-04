@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/ChunkList.h>
+#include <ply-runtime/container/BlockList.h>
 #include <ply-runtime/io/Pipe.h>
 #include <ply-runtime/container/Owned.h>
 
@@ -30,14 +30,13 @@ returned by `FileSystem::openTextForRead` can normalize endings and convert from
 For more information, see [Unicode Support](UnicodeSupport).
 
 If the `InStream`'s underlying input comes from an `InPipe`, the internal input buffer is managed by
-a `ChunkListNode`, and you can call `getCursor()` at any time to create a `ChunkCursor`. You can
-then rewind the `InStream` to an earlier point using `rewind()`, or copy some data between two
-`ChunkCursor`s into a single contiguous memory buffer.
+a `BlockList::Footer`, and you can call `getBlockRef()` at any time to create a `BlockList::Ref`.
+You can then rewind the `InStream` to an earlier point using `rewind()`.
 
 To create an `InStream` that reads from a contiguous memory block, use `ViewInStream`.
 */
 struct InStream {
-    static const u32 DefaultChunkSizeExp = 12;
+    static const u32 DefaultBlockSizeExp = 12;
 
     enum class Type : u32 {
         View = 0,
@@ -46,14 +45,14 @@ struct InStream {
     };
 
     struct Status {
-        u32 chunkSizeExp : 27;
+        u32 blockSizeExp : 27;
         u32 type : 2;
         u32 isPipeOwner : 1;
         u32 eof : 1;
         u32 parseError : 1;
 
-        PLY_INLINE Status(Type type, u32 chunkSizeExp = InStream::DefaultChunkSizeExp)
-            : chunkSizeExp{chunkSizeExp}, type{(u32) type}, isPipeOwner{0}, eof{0}, parseError{0} {
+        PLY_INLINE Status(Type type, u32 blockSizeExp = InStream::DefaultBlockSizeExp)
+            : blockSizeExp{blockSizeExp}, type{(u32) type}, isPipeOwner{0}, eof{0}, parseError{0} {
         }
     };
 
@@ -67,14 +66,14 @@ struct InStream {
     /*!
     A pointer to the last byte in the input buffer. This pointer does not necessarily represent the
     end of the input stream; for example, it still might be possible to read more data from the
-    underlying `InPipe`, or to advance to the next chunk in a `ChunkList`, by calling
+    underlying `InPipe`, or to advance to the next block in a `BlockList`, by calling
     `tryMakeBytesAvailable()`.
     */
     const char* endByte = nullptr;
 
     union {
-        const char* startByte;          // if Type::View
-        Reference<ChunkListNode> chunk; // if Type::Pipe or Type::Mem
+        const char* startByte;              // if Type::View
+        Reference<BlockList::Footer> block; // if Type::Pipe or Type::Mem
     };
     union {
         InPipe* inPipe; // only if Type::Pipe
@@ -86,8 +85,8 @@ protected:
     PLY_DLL_ENTRY void destructInternal();
     PLY_DLL_ENTRY u32 tryMakeBytesAvailableInternal(u32 numBytes);
 
-    PLY_INLINE InStream(Type type, u32 chunkSizeExp = DefaultChunkSizeExp)
-        : status{type, chunkSizeExp} {
+    PLY_INLINE InStream(Type type, u32 blockSizeExp = DefaultBlockSizeExp)
+        : status{type, blockSizeExp} {
     }
 
 public:
@@ -110,7 +109,7 @@ public:
     `InPipe`.
     */
     PLY_DLL_ENTRY InStream(OptionallyOwned<InPipe>&& inPipe,
-                           u32 chunkSizeExp = DefaultChunkSizeExp);
+                           u32 blockSizeExp = DefaultBlockSizeExp);
 
     PLY_INLINE ~InStream() {
         if (this->status.type != (u32) Type::View) {
@@ -130,8 +129,8 @@ public:
         return this->status.type == (u32) Type::View;
     }
 
-    PLY_INLINE u32 getChunkSize() {
-        return 1 << this->status.chunkSizeExp;
+    PLY_INLINE u32 getBlockSize() {
+        return 1 << this->status.blockSizeExp;
     }
 
     /*!
@@ -165,20 +164,20 @@ public:
     PLY_DLL_ENTRY u64 getSeekPos() const;
 
     /*!
-    Returns a `ChunkCursor` at the current input position. The `ChunkCursor` increments the
-    reference count of the `InStream`'s internal `ChunkListNode`, preventing it from being destroyed
-    when reading past the end of the chunk. This function is used internally by
-    `StringReader::readString` in order to copy some region of the input to a `String`. In
-    particular, `StringReader::readString<fmt::Line>` returns a single line of input as a `String`
-    even if it originally spanned multiple `ChunkListNode`s.
+    Returns a `BlockList::Ref` at the current input position. The `BlockList::Ref` increments the
+    reference count of the `InStream`'s internal block, preventing it from being destroyed
+    when reading past the end of the block. This function is used internally by
+    `StringReader::readString` in order to copy some region of the input to a `String`. For example,
+    `StringReader::readString<fmt::Line>` returns a single line of input as a `String` even if it
+    originally spanned multiple blocks.
     */
-    PLY_DLL_ENTRY ChunkCursor getCursor() const;
+    PLY_DLL_ENTRY BlockList::Ref getBlockRef() const;
 
     /*!
     Rewinds the `InStream` back to a previously saved position. This also clears the `InStream`'s
     end-of-file status.
     */
-    PLY_DLL_ENTRY void rewind(ChunkCursor cursor);
+    PLY_DLL_ENTRY void rewind(const BlockList::WeakRef& pos);
 
     /*!
     Attempts to make at least `numBytes` available to read contiguously at `curByte`. Returns the
@@ -340,26 +339,26 @@ public:
 
         String line = ins.readString<fmt::Line>();
 
-    Internally, `readString()` uses `getCursor()` to return a new `String`. If you would like both
-    the `String` and the value returned by the parse function, you can use `getCursor()` yourself:
+    Internally, `readString()` uses `getBlockRef()` to return a new `String`. If you would like both
+    the `String` and the value returned by the parse function, you can use `getBlockRef()` yourself:
 
-        ChunkCursor startCursor = ins.getCursor();
+        BlockList::Ref startPos = ins.getBlockRef();
         u32 value = ins.parse<u32>();
-        String str = ChunkCursor::toString(std::move(startCursor), ins.getCursor());
+        String str = BlockList::toString(std::move(startPos), ins.getBlockRef());
     */
     template <typename Type>
     PLY_INLINE String readString(const decltype(fmt::TypeParser<Type>::defaultFormat())& format =
                                      fmt::TypeParser<Type>::defaultFormat()) {
-        ChunkCursor startCursor = this->getCursor();
+        BlockList::Ref startPos = this->getBlockRef();
         fmt::TypeParser<Type>::parse(this, format); // ignore return value
-        return ChunkCursor::toString(std::move(startCursor), this->getCursor());
+        return BlockList::toString(std::move(startPos), this->getBlockRef());
     }
 
     template <typename Format, typename = void_t<decltype(fmt::FormatParser<Format>::parse)>>
     PLY_INLINE String readString(const Format& format = {}) {
-        ChunkCursor startCursor = this->getCursor();
+        BlockList::Ref startPos = this->getBlockRef();
         fmt::FormatParser<Format>::parse(this, format); // ignore return value
-        return ChunkCursor::toString(std::move(startCursor), this->getCursor());
+        return BlockList::toString(std::move(startPos), this->getBlockRef());
     }
     /*!
     \endGroup

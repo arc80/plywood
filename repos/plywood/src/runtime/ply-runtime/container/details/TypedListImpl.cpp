@@ -10,76 +10,77 @@ namespace ply {
 namespace details {
 
 PLY_NO_INLINE TypedListImpl::TypedListImpl() {
-    u32 chunkSize = ChunkListNode::DefaultChunkSize; // FIXME make configurable?
-    this->tailChunk = ChunkListNode::allocate(0, chunkSize);
-    this->headChunk = this->tailChunk;
+    u32 chunkSize = BlockList::DefaultBlockSize;
+    this->head = BlockList::createBlock(chunkSize);
+    this->tail = this->head;
 }
 
 PLY_NO_INLINE TypedListImpl::TypedListImpl(TypedListImpl&& other)
-    : tailChunk{std::move(other.tailChunk)}, headChunk{std::move(other.headChunk)} {
+    : head{std::move(other.head)}, tail{other.tail} {
 }
 
 PLY_NO_INLINE TypedListImpl::~TypedListImpl() {
 }
 
 PLY_NO_INLINE void TypedListImpl::operator=(TypedListImpl&& other) {
-    this->tailChunk = std::move(other.tailChunk);
-    this->headChunk = std::move(other.headChunk);
+    this->head = std::move(other.head);
+    this->tail = other.tail;
 }
 
 PLY_NO_INLINE char* TypedListImpl::beginWriteInternal(u32 numRequestedBytes) {
-    PLY_ASSERT(this->tailChunk->numRemainingBytes() < numRequestedBytes);
+    // numRequestedBytes should not fit inside the remaining space of the current block.
+    PLY_ASSERT(numRequestedBytes > (this->tail->blockSize - this->tail->numBytesUsed));
 
-    // Get a new chunk to write to
-    u32 minChunkSize = ChunkListNode::DefaultChunkSize; // FIXME make configurable?
-    ChunkListNode::addChunkToTail(this->tailChunk, max(numRequestedBytes, minChunkSize));
-    return this->tailChunk->bytes;
+    // Get a new chunk to write to.
+    u32 minChunkSize = BlockList::DefaultBlockSize;
+    this->tail = BlockList::appendBlock(this->tail, max(numRequestedBytes, minChunkSize));
+    return this->tail->bytes;
 }
 
 PLY_NO_INLINE String TypedListImpl::moveToString() {
-    char* bytes = this->headChunk->bytes;
-    String result = ChunkCursor::toString({std::move(this->headChunk), bytes});
-    PLY_ASSERT(this->headChunk == nullptr);
-    this->tailChunk = nullptr;
+    char *startByte = this->head->bytes;
+    String result = BlockList::toString({std::move(this->head), startByte});
+    this->head.clear();
+    this->tail = nullptr;
     return result;
 }
 
-PLY_NO_INLINE void destructTypedListInternal(ChunkListNode* chunk, void (*dtor)(void*),
-                                               u32 itemSize) {
-    while (chunk) {
-        char* curItem = chunk->bytes;
-        char* endItem = curItem + chunk->writePos;
+PLY_NO_INLINE void destructTypedListInternal(BlockList::Footer* block, void (*dtor)(void*),
+                                             u32 itemSize) {
+    while (block) {
+        char* curItem = block->bytes;
+        char* endItem = curItem + block->numBytesUsed;
         while (curItem < endItem) {
             dtor(curItem);
             curItem += itemSize;
         }
         PLY_ASSERT(curItem == endItem);
-        chunk = chunk->next;
+        block = block->nextBlock;
     }
 }
 
-PLY_NO_INLINE TypedListReaderImpl::TypedListReaderImpl(const TypedListImpl& tb)
-    : chunk{tb.headChunk} {
-    this->curByte = this->chunk->bytes;
-    this->endByte = this->chunk->curByte();
+PLY_NO_INLINE TypedListReaderImpl::TypedListReaderImpl(const TypedListImpl& tb) : block{tb.head} {
+    this->curByte = this->block->bytes;
+    this->endByte = this->block->unused();
 }
 
 PLY_NO_INLINE u32 TypedListReaderImpl::tryMakeBytesAvailableInternal(u32 numRequestedBytes) {
     // Could we factor out common code between this and InStream::tryMakeBytesAvailableInternal?
     PLY_ASSERT(numRequestedBytes > 0);
+
     // For now, we assume chunks were written by a TypedListWriter. We don't do splicing like
     // InStream::tryMakeBytesAvailableInternal:
     PLY_ASSERT(this->numBytesAvailable() == 0);
-    if (!this->chunk->next)
+    if (!this->block->nextBlock)
         return 0;
 
-    // Again, we assume chunks were written by a TypedListWriter:
-    PLY_ASSERT(this->chunk->offsetIntoNextChunk == 0);
-    this->chunk = this->chunk->next;
-    PLY_ASSERT(this->chunk->writePos >= numRequestedBytes);
-    this->curByte = this->chunk->bytes;
-    this->endByte = this->chunk->bytes + this->chunk->writePos;
-    return this->chunk->writePos;
+    // Again, we assume blocks were written by a TypedListWriter.
+    this->block = this->block->nextBlock;
+    PLY_ASSERT(this->block->numBytesUsed >=
+               numRequestedBytes); // This is the line that relies on the assumption.
+    this->curByte = this->block->bytes;
+    this->endByte = this->block->bytes + this->block->numBytesUsed;
+    return this->block->numBytesUsed;
 }
 
 } // namespace details

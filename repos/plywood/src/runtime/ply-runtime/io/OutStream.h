@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/ChunkList.h>
+#include <ply-runtime/container/BlockList.h>
 #include <ply-runtime/io/Pipe.h>
 #include <ply-runtime/container/Owned.h>
 #include <ply-runtime/string/String.h>
@@ -37,7 +37,7 @@ to other formats such as UTF-16. For more information, see [Unicode Support](Uni
 To create an `OutStream` that writes to memory, use `MemOutStream`.
 */
 struct OutStream {
-    static constexpr u32 DefaultChunkSizeExp = 12;
+    static constexpr u32 DefaultBlockSizeExp = 12;
 
     enum class Type : u32 {
         View = 0,
@@ -46,13 +46,13 @@ struct OutStream {
     };
 
     struct Status {
-        u32 chunkSizeExp : 28;
+        u32 blockSizeExp : 28;
         u32 type : 2;
         u32 isPipeOwner : 1;
         u32 eof : 1;
 
-        PLY_INLINE Status(Type type, u32 chunkSizeExp = DefaultChunkSizeExp)
-            : chunkSizeExp{chunkSizeExp}, type{(u32) type}, isPipeOwner{0}, eof{0} {
+        PLY_INLINE Status(Type type, u32 blockSizeExp = DefaultBlockSizeExp)
+            : blockSizeExp{blockSizeExp}, type{(u32) type}, isPipeOwner{0}, eof{0} {
         }
     };
 
@@ -66,29 +66,29 @@ struct OutStream {
     /*!
     A pointer to the last byte in the output buffer. This pointer does not necessarily represent the
     end of the output stream; for example, it still might be possible to write more data to the
-    underlying `OutPipe`, or to allocate a new chunk in a `ChunkList`, by calling
+    underlying `OutPipe`, or to allocate a new block in a `BlockList`, by calling
     `tryMakeBytesAvailable()`.
     */
     char* endByte = nullptr;
     union {
-        char* startByte;                // if Type::View
-        Reference<ChunkListNode> chunk; // if Type::Pipe or Type::Mem
+        char* startByte;                    // if Type::View
+        Reference<BlockList::Footer> block; // if Type::Pipe or Type::Mem
     };
     union {
-        OutPipe* outPipe;                   // only if Type::Pipe
-        Reference<ChunkListNode> headChunk; // only if Type::Mem
-        void* reserved;                     // only if Type::View
+        OutPipe* outPipe;                       // only if Type::Pipe
+        Reference<BlockList::Footer> headBlock; // only if Type::Mem
+        void* reserved;                         // only if Type::View
     };
     Status status;
 
 protected:
-    void initFirstChunk();
+    void initFirstBlock();
     PLY_DLL_ENTRY void destructInternal();
     PLY_DLL_ENTRY u32 tryMakeBytesAvailableInternal(s32 numBytes);
     bool flushInternal();
 
-    PLY_INLINE OutStream(Type type, u32 chunkSizeExp = DefaultChunkSizeExp)
-        : status{type, chunkSizeExp} {
+    PLY_INLINE OutStream(Type type, u32 blockSizeExp = DefaultBlockSizeExp)
+        : status{type, blockSizeExp} {
     }
 
 public:
@@ -105,13 +105,13 @@ public:
     `OutPipe`. See `OptionallyOwned`.
     */
     PLY_DLL_ENTRY OutStream(OptionallyOwned<OutPipe>&& outPipe,
-                            u32 chunkSizeExp = DefaultChunkSizeExp);
+                            u32 blockSizeExp = DefaultBlockSizeExp);
 
     /*!
     Destructor. `flushMem()` is called before the `OutStream` is destroyed. If the `OutStream` owns
     an `OutPipe`, the `OutPipe` is also destroyed. If the `OutStream` borrows an `OutPipe` but does
-    not own it, the `OutPipe` is not destroyed. If the `OutStream` writes to a chunk list in memory,
-    the chunk list is destroyed.
+    not own it, the `OutPipe` is not destroyed. If the `OutStream` writes to a block list in memory,
+    the block list is destroyed.
     */
     PLY_INLINE ~OutStream() {
         if (this->status.type != (u32) Type::View) {
@@ -128,8 +128,8 @@ public:
         new (this) OutStream{std::move(other)};
     }
 
-    PLY_INLINE u32 getChunkSize() {
-        return 1 << this->status.chunkSizeExp;
+    PLY_INLINE u32 getBlockSize() {
+        return 1 << this->status.blockSizeExp;
     }
 
     /*!
@@ -180,7 +180,7 @@ public:
     PLY_DLL_ENTRY bool flush(bool toDevice = true);
 
     /*!
-    Flushes the internal memory buffer to the underlying `OutPipe` or chunk list. If writing to an
+    Flushes the internal memory buffer to the underlying `OutPipe` or block list. If writing to an
     `OutPipe`, also flushes any application-level memory buffers maintained by the `OutPipe`, such
     as when the `OutPipe` is a conversion, compression or encryption filter.
     */
@@ -213,7 +213,7 @@ public:
 
     /*!
     Writes a single byte to the output buffer in memory. If the output buffer is full, this function
-    flushes the internal memory buffer to the underlying `OutPipe` or chunk list first. Returns
+    flushes the internal memory buffer to the underlying `OutPipe` or block list first. Returns
     `true` if the write was successful. The return value of this function is equivalent to
     `!atEOF()`.
     */
@@ -308,7 +308,7 @@ public:
 A `MemOutStream` object is an `OutStream` that writes to a memory.
 
 The amount of data that can be written to `MemOutStream` is unbounded. Internally, the data is
-stored in a list of `ChunkListNode`s. As each `ChunkListNode` fills up, a new one is allocated and
+stored in a list of `BlockListNode`s. As each `BlockListNode` fills up, a new one is allocated and
 added to the end of the list.
 
 Once you've finished writing data to a `MemOutStream`, you can convert it to a single contiguous
@@ -318,25 +318,25 @@ struct MemOutStream : OutStream {
     /*!
     Constructs a new `MemOutStream` object.
     */
-    PLY_DLL_ENTRY MemOutStream(u32 chunkSizeExp = DefaultChunkSizeExp);
+    PLY_DLL_ENTRY MemOutStream(u32 blockSizeExp = DefaultBlockSizeExp);
 
     /*!
-    Returns a `ChunkCursor` to the start of the internal list of `ChunkListNode`s. It's safe to call
+    Returns a `BlockCursor` to the start of the internal list of `BlockListNode`s. It's safe to call
     this function even before data is written to the `MemOutStream`.
     */
-    PLY_INLINE ChunkCursor getHeadCursor() {
+    PLY_INLINE BlockList::Ref getHeadRef() {
         PLY_ASSERT(this->status.type == (u32) Type::Mem);
-        PLY_ASSERT(this->headChunk);
-        return {this->headChunk, this->headChunk->bytes};
+        PLY_ASSERT(this->headBlock);
+        return {this->headBlock, 0u};
     }
 
     /*!
     Returns a `String` containing all the data that was written. The `MemOutStream` is reset to a
     null stream as result of this call, which means that no further data can be written.
 
-    If all the data written fits in a single `ChunkListNode` (default fewer than 4096 bytes), no new
+    If all the data written fits in a single `BlockListNode` (default fewer than 4096 bytes), no new
     memory is allocated and no data is copied as a result of this call; instead, the memory
-    allocation containing the `ChunkListNode` is resized and the returned `String` takes ownership
+    allocation containing the `BlockListNode` is resized and the returned `String` takes ownership
     of it directly.
     */
     PLY_DLL_ENTRY String moveToString();

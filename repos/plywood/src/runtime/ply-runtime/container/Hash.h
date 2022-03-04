@@ -57,7 +57,7 @@ PLY_INLINE Hasher& operator<<(Hasher& hasher, float value) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
-    hasher << (value == 0 ? (u32) 0 : *reinterpret_cast<u32*>(&value));
+    hasher << (value == 0 ? 0u : *reinterpret_cast<u32*>(&value));
 #if PLY_COMPILER_GCC
 #pragma GCC diagnostic pop
 #endif

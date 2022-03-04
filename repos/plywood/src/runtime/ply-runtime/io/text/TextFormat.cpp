@@ -122,7 +122,7 @@ PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream* ins, const TextEn
 
 PLY_NO_INLINE TextFormat guessFileEncoding(InStream* ins) {
     TextFileStats stats8;
-    ChunkCursor start = ins->getCursor();
+    BlockList::Ref start = ins->getBlockRef();
 
     // Try UTF8 first:
     u32 numBytesRead =
@@ -181,7 +181,7 @@ PLY_NO_INLINE TextFormat guessFileEncoding(InStream* ins) {
 
 PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream* ins) {
     TextFormat tff;
-    ChunkCursor start = ins->getCursor();
+    BlockList::Ref start = ins->getBlockRef();
     u8 h[3] = {0};
     h[0] = ins->readByte();
     h[1] = ins->readByte();
@@ -203,7 +203,7 @@ PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream* ins) {
         return guessFileEncoding(ins);
     } else {
         // Detect LF or CRLF
-        ChunkCursor start = ins->getCursor();
+        BlockList::Ref start = ins->getBlockRef();
         TextFileStats stats;
         scanTextFile(&stats, ins, encodingFromEnum(tff.encoding), NumBytesForAutodetect);
         ins->rewind(start);
@@ -217,7 +217,7 @@ PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream* ins) {
 PLY_NO_INLINE Owned<InStream> TextFormat::createImporter(OptionallyOwned<InStream>&& ins) const {
     using Enc = TextFormat::Encoding;
     if (this->bom) {
-        ChunkCursor start = ins->getCursor();
+        BlockList::Ref start = ins->getBlockRef();
         bool gotBom = false;
         switch (this->encoding) {
             case Enc::Bytes: {
