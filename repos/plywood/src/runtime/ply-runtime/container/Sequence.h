@@ -163,6 +163,10 @@ public:
         *this = Sequence{};
     }
 
+    PLY_INLINE T& last() {
+        return *(T*) this->impl.last(sizeof(T));
+    }
+
     /*!
     \category Conversion
     Converts the list of items to an `Array`. When the number of items fits in a single chunk, the

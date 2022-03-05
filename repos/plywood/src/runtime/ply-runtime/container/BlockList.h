@@ -178,12 +178,12 @@ struct BlockList {
     // BlockList
     //--------------------------------------
     Reference<Footer> firstBlock;
-    Reference<Footer> lastBlock;
+    Footer* lastBlock = nullptr;
     u32 blockSize = DefaultBlockSize;
 
     PLY_DLL_ENTRY BlockList();
-    static PLY_DLL_ENTRY Footer* appendBlock(u32 numBytes = 0);
-    static PLY_DLL_ENTRY Reference<Footer> popLastBlock();
+    PLY_DLL_ENTRY void* appendBytes(u32 numBytes);
+    PLY_DLL_ENTRY void popBytes(u32 numBytes);
 };
 
 } // namespace ply

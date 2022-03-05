@@ -108,4 +108,26 @@ PLY_NO_INLINE String BlockList::toString(Ref&& start, const WeakRef& end) {
     return result;
 }
 
+//-------------------------------------------------
+// BlockList member functions
+//-------------------------------------------------
+PLY_NO_INLINE BlockList::BlockList() {
+    this->firstBlock = createBlock(this->blockSize);
+    this->lastBlock = this->firstBlock;
+}
+
+PLY_NO_INLINE void* BlockList::appendBytes(u32 numBytes) {
+    if (this->lastBlock->viewUnusedBytes().numBytes < numBytes) {
+        this->lastBlock = BlockList::appendBlock(this->lastBlock, max(numBytes, this->blockSize));
+    }
+    void* ptr = this->lastBlock->unused();
+    this->lastBlock->numBytesUsed += numBytes;
+    return ptr;
+}
+
+PLY_NO_INLINE void BlockList::popBytes(u32 numBytes) {
+    PLY_ASSERT(this->lastBlock->numBytesUsed >= numBytes);
+    this->lastBlock->numBytesUsed -= numBytes;
+}
+
 } // namespace ply

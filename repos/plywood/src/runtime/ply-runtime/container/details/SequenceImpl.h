@@ -23,6 +23,10 @@ struct SequenceImpl {
     PLY_INLINE bool isEmpty() {
         return (this->head == this->tail) && (this->head->numBytesUsed == 0);
     }
+    PLY_INLINE void* last(u32 itemSize) {
+        PLY_ASSERT(this->tail->numBytesUsed >= itemSize);
+        return this->tail->unused() - itemSize;
+    }
 };
 
 void destructSequenceInternal(BlockList::Footer* block, void (*dtor)(void*), u32 itemSize);
