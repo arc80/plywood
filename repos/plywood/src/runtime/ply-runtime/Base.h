@@ -16,6 +16,7 @@
 #include <ply-runtime/container/Owned.h>
 #include <ply-runtime/container/Pool.h>
 #include <ply-runtime/container/Reference.h>
+#include <ply-runtime/container/Sequence.h>
 #include <ply-runtime/container/SetInScope.h>
 #include <ply-runtime/container/Switch.h>
 #include <ply-runtime/container/Tuple.h>

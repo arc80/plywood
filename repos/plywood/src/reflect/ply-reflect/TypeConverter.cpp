@@ -180,22 +180,35 @@ const T* safeCast(StringView view) {
     return (const T*) view.bytes;
 }
 
-void convert(ChunkCursor& cursor, void* dstPtr, ArrayView<void*> srcPtrs, void* srcPtr = nullptr) {
+void convert(BlockList::WeakRef cursor, void* dstPtr, ArrayView<void*> srcPtrs, void* srcPtr = nullptr) {
+    // FIXME: Implement MessageSequence and use that instead.
+
+    BlockList::Footer* viewBlock = nullptr;
+    StringView view;
     for (;;) {
-        StringView view = cursor.viewAvailable();
+        if (view.isEmpty()) {
+            viewBlock = cursor.block;
+            if (!viewBlock)
+                break;
+            PLY_ASSERT(viewBlock->viewUsedBytes().contains(cursor.byte));
+            view = {cursor.byte, safeDemote<u32>(viewBlock->end() - cursor.byte)};
+            PLY_ASSERT(!view.isEmpty());
+            cursor = cursor.block->weakRefToNext();
+        }
+
         switch (*safeCast<TypeConverter::Cmd>(view)) {
             case TypeConverter::Cmd::SetRootSourceIndex: {
                 // Note: Could add an assert here to ensure that we are at the "root"
                 // convert(), but that would require passing an additional depth parameter
                 auto* cmd = safeCast<TypeConverter::SetRootSourceIndex>(view);
                 srcPtr = srcPtrs[cmd->sourceIndex];
-                cursor.advanceBytes(sizeof(TypeConverter::SetRootSourceIndex));
+                view.offsetHead(sizeof(TypeConverter::SetRootSourceIndex));
                 break;
             }
 
             case TypeConverter::Cmd::IterateArrayToFixedArray: {
                 auto cmd = *safeCast<TypeConverter::IterateArrayToFixedArray>(view);
-                cursor.advanceBytes(sizeof(TypeConverter::IterateArrayToFixedArray));
+                view.offsetHead(sizeof(TypeConverter::IterateArrayToFixedArray));
 
                 details::BaseArray* baseArr =
                     (details::BaseArray*) PLY_PTR_OFFSET(srcPtr, cmd.srcOffset);
@@ -204,7 +217,7 @@ void convert(ChunkCursor& cursor, void* dstPtr, ArrayView<void*> srcPtrs, void* 
                 void* childDstPtr = PLY_PTR_OFFSET(dstPtr, cmd.dstOffset);
                 void* childSrcPtr = baseArr->m_items;
                 while (itemsToCopy) {
-                    ChunkCursor childCursor = cursor; // Copy child cursor
+                    BlockList::WeakRef childCursor = cursor; // Copy child cursor
                     convert(childCursor, childDstPtr, srcPtrs, childSrcPtr);
                     childDstPtr = PLY_PTR_OFFSET(childDstPtr, cmd.dstStride);
                     childSrcPtr = PLY_PTR_OFFSET(childSrcPtr, cmd.srcStride);
@@ -219,7 +232,7 @@ void convert(ChunkCursor& cursor, void* dstPtr, ArrayView<void*> srcPtrs, void* 
                 auto* cmd = safeCast<TypeConverter::BaseCmd>(view);
                 *(u32*) PLY_PTR_OFFSET(dstPtr, cmd->dstOffset) =
                     *(u32*) PLY_PTR_OFFSET(srcPtr, cmd->srcOffset);
-                cursor.advanceBytes(sizeof(TypeConverter::BaseCmd));
+                view.offsetHead(sizeof(TypeConverter::BaseCmd));
                 break;
             }
 
@@ -231,12 +244,12 @@ void convert(ChunkCursor& cursor, void* dstPtr, ArrayView<void*> srcPtrs, void* 
                 while (dst < dstEnd) {
                     *dst++ = *src++;
                 }
-                cursor.advanceBytes(sizeof(TypeConverter::Copy32Range));
+                view.offsetHead(sizeof(TypeConverter::Copy32Range));
                 break;
             }
 
             case TypeConverter::Cmd::EndScope: {
-                cursor.advanceBytes(sizeof(TypeConverter::Cmd));
+                view.offsetHead(sizeof(TypeConverter::Cmd));
                 return;
             }
 
@@ -247,7 +260,7 @@ void convert(ChunkCursor& cursor, void* dstPtr, ArrayView<void*> srcPtrs, void* 
     }
 }
 
-void applyConversionRecipe(ChunkCursor recipe, void* dstPtr, ArrayView<void*> srcPtrs) {
+void applyConversionRecipe(const BlockList::WeakRef& recipe, void* dstPtr, ArrayView<void*> srcPtrs) {
     convert(recipe, dstPtr, srcPtrs);
 }
 

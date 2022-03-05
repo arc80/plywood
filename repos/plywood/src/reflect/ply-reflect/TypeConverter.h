@@ -12,6 +12,6 @@ namespace ply {
 
 void createConversionRecipe(OutStream* outs, const TypeDescriptor_Struct* dstStruct,
                             const ArrayView<TypeDescriptor_Struct*>& srcStructs);
-void applyConversionRecipe(ChunkCursor recipe, void* dstPtr, ArrayView<void*> srcPtrs);
+void applyConversionRecipe(const BlockList::Footer* recipe, void* dstPtr, ArrayView<void*> srcPtrs);
 
 } // namespace ply
