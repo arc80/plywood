@@ -13,10 +13,21 @@ namespace ply {
 // BlockList::Footer
 //--------------------------------------
 PLY_NO_INLINE void BlockList::Footer::onRefCountZero() {
-    Reference<Footer> nextBlock = std::move(this->nextBlock);
-    // The destructor of this->nextBlock is now trivial, so we can skip it, and when we free the
-    // block data from the heap, it also frees the footer.
-    PLY_HEAP.free(this->bytes);
+    PLY_ASSERT(!this->prevBlock);
+    BlockList::Footer *blockToFree = this;
+    while (blockToFree) {
+        BlockList::Footer* nextBlock = blockToFree->nextBlock.release();
+        // The destructor of this->nextBlock is now trivial, so we can skip it, and when we free the
+        // block data from the heap, it also frees the footer.
+        PLY_HEAP.free(blockToFree->bytes);
+        if (nextBlock) {
+            nextBlock->prevBlock = nullptr;
+            PLY_ASSERT(nextBlock->refCount > 0);
+            if (--nextBlock->refCount != 0)
+                break;
+        }
+        blockToFree = nextBlock;
+    }
 }
 
 PLY_NO_INLINE BlockList::WeakRef BlockList::Footer::weakRefToNext() const {
@@ -35,17 +46,19 @@ PLY_NO_INLINE BlockList::WeakRef BlockList::Footer::weakRefToNext() const {
 // BlockList static member functions
 //-------------------------------------------------
 PLY_NO_INLINE Reference<BlockList::Footer> BlockList::createBlock(u32 numBytes) {
+    PLY_ASSERT(numBytes > 100);
     u32 alignedNumBytes = alignPowerOf2(numBytes, (u32) alignof(BlockList::Footer));
     u32 allocSize = alignedNumBytes + sizeof(BlockList::Footer);
     char* bytes = (char*) PLY_HEAP.alloc(allocSize);
     BlockList::Footer* block = (BlockList::Footer*) (bytes + alignedNumBytes);
     new (block) BlockList::Footer; // Construct in-place
     block->bytes = bytes;
-    block->blockSize = alignedNumBytes;
+    block->blockSize = numBytes;
     return block;
 }
 
-PLY_DLL_ENTRY Reference<BlockList::Footer> BlockList::createOverlayBlock(const WeakRef& pos, u32 numBytes) {
+PLY_DLL_ENTRY Reference<BlockList::Footer> BlockList::createOverlayBlock(const WeakRef& pos,
+                                                                         u32 numBytes) {
     Reference<Footer> newBlock = createBlock(numBytes);
     newBlock->fileOffset = pos.block->fileOffset + pos.block->offsetOf(pos.byte);
     newBlock->nextBlock = pos.block->nextBlock;
@@ -57,6 +70,7 @@ PLY_NO_INLINE BlockList::Footer* BlockList::appendBlock(Footer* block, u32 numBy
 
     block->nextBlock = createBlock(numBytes);
     block->nextBlock->fileOffset = block->fileOffset + block->numBytesUsed;
+    block->nextBlock->prevBlock = block;
     return block->nextBlock;
 }
 
@@ -71,9 +85,28 @@ PLY_NO_INLINE void BlockList::appendBlockWithRecycle(Reference<Footer>& block, u
     }
 
     Reference<Footer> newBlock = createBlock(numBytes);
-    newBlock->fileOffset = block->fileOffset + block->numBytesUsed;
     block->nextBlock = newBlock;
+    newBlock->fileOffset = block->fileOffset + block->numBytesUsed;
+    newBlock->prevBlock = block;
     block = std::move(newBlock);
+}
+
+PLY_NO_INLINE u32 BlockList::jumpToNextBlock(WeakRef* weakRef) {
+    PLY_ASSERT(weakRef->byte = weakRef->block->unused());
+    if (!weakRef->block->nextBlock)
+        return 0;
+    weakRef->block = weakRef->block->nextBlock;
+    weakRef->byte = weakRef->block->start();
+    return weakRef->block->viewUsedBytes().numBytes;
+}
+
+PLY_NO_INLINE u32 BlockList::jumpToPrevBlock(WeakRef* weakRef) {
+    PLY_ASSERT(weakRef->byte = weakRef->block->start());
+    if (!weakRef->block->prevBlock)
+        return 0;
+    weakRef->block = weakRef->block->prevBlock;
+    weakRef->byte = weakRef->block->unused();
+    return weakRef->block->viewUsedBytes().numBytes;
 }
 
 PLY_NO_INLINE String BlockList::toString(Ref&& start, const WeakRef& end) {
@@ -81,12 +114,12 @@ PLY_NO_INLINE String BlockList::toString(Ref&& start, const WeakRef& end) {
 
     // Check for special case: When there is only one block and only one reference to the block,
     // we can truncate this block and return it as a String directly.
-    if (!start.block->nextBlock && start.block->refCount == 1 &&
-        start.block->bytes == start.byte) {
+    if (!start.block->nextBlock && start.block->refCount == 1 && start.block->bytes == start.byte) {
         u32 numBytes = start.block->numBytesUsed;
         char* bytes = (char*) PLY_HEAP.realloc(start.byte, numBytes);
         String result = String::adopt(bytes, numBytes);
-        start = {};
+        start.block.release();
+        start.byte = nullptr;
         return result;
     }
 
@@ -106,28 +139,6 @@ PLY_NO_INLINE String BlockList::toString(Ref&& start, const WeakRef& end) {
         offset += view.numBytes;
     }
     return result;
-}
-
-//-------------------------------------------------
-// BlockList member functions
-//-------------------------------------------------
-PLY_NO_INLINE BlockList::BlockList() {
-    this->firstBlock = createBlock(this->blockSize);
-    this->lastBlock = this->firstBlock;
-}
-
-PLY_NO_INLINE void* BlockList::appendBytes(u32 numBytes) {
-    if (this->lastBlock->viewUnusedBytes().numBytes < numBytes) {
-        this->lastBlock = BlockList::appendBlock(this->lastBlock, max(numBytes, this->blockSize));
-    }
-    void* ptr = this->lastBlock->unused();
-    this->lastBlock->numBytesUsed += numBytes;
-    return ptr;
-}
-
-PLY_NO_INLINE void BlockList::popBytes(u32 numBytes) {
-    PLY_ASSERT(this->lastBlock->numBytesUsed >= numBytes);
-    this->lastBlock->numBytesUsed -= numBytes;
 }
 
 } // namespace ply

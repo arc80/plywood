@@ -21,15 +21,29 @@ struct BlockList {
     // Blocks are allocated on the heap, and the block footer is located contiguously in memory
     // immediately following the block data.
     //--------------------------------------
-    struct Footer : RefCounted<Footer> {
+    struct Footer {
         u64 fileOffset = 0; // Total number of bytes used in all preceding blocks
-        char* bytes = nullptr;
         Reference<Footer> nextBlock;
-        u32 blockSize = 0;    // Total number of bytes allocated for this block
+        Footer* prevBlock = nullptr;
+        char* bytes = nullptr;
+        u32 startOffset = 0;
         u32 numBytesUsed = 0; // Number of bytes in this block that contain valid data
+        u32 blockSize = 0;    // Total number of bytes allocated for this block
         mutable s32 refCount = 0;
 
         PLY_DLL_ENTRY void onRefCountZero();
+        PLY_INLINE void incRef() {
+            this->refCount++;
+        }
+        PLY_INLINE void decRef() {
+            PLY_ASSERT(this->refCount > 0);
+            if (--this->refCount == 0) {
+                this->onRefCountZero();
+            }
+        }
+        PLY_INLINE char* start() const {
+            return this->bytes + this->startOffset;
+        }
         PLY_INLINE char* unused() const {
             return this->bytes + this->numBytesUsed;
         }
@@ -42,7 +56,7 @@ struct BlockList {
             return (u32) ofs;
         }
         PLY_INLINE StringView viewUsedBytes() const {
-            return {this->bytes, this->numBytesUsed};
+            return {this->start(), this->numBytesUsed - this->startOffset};
         }
         PLY_INLINE MutableStringView viewUnusedBytes() {
             return {this->unused(), this->blockSize - this->numBytesUsed};
@@ -158,14 +172,16 @@ struct BlockList {
                                                         const WeakRef& end = {}) {
         return {start, end};
     }
+    static PLY_DLL_ENTRY u32 jumpToNextBlock(WeakRef* weakRef);
+    static PLY_DLL_ENTRY u32 jumpToPrevBlock(WeakRef* weakRef);
+
     /*!
     Returns a `String` that owns a newly allocated block of memory containing a copy of the data
     contained in some (possible multiple) blocks between the `start` and `end` cursors. If `end`
     is not specified, the returned string contains a copy of the data from `start` up to the end
     of the block list.
 
-    The first argument must be an rvalue reference to a `Ref` which might be moved from
-    (reset to an empty state) as a result of this call. This requirement enables an
+    The first argument will be reset to an empty `Ref` as a result of this call. This enables an
     optimization: If `start` is the sole reference to the start of a single `Footer`, no
     data is copied; instead, the block's memory block is truncated and ownership is passed
     directly to the `String`.
@@ -173,17 +189,6 @@ struct BlockList {
     This function is used internally by `StringOutStream::moveToString()`.
     */
     static PLY_DLL_ENTRY String toString(Ref&& start, const WeakRef& end = {});
-
-    //--------------------------------------
-    // BlockList
-    //--------------------------------------
-    Reference<Footer> firstBlock;
-    Footer* lastBlock = nullptr;
-    u32 blockSize = DefaultBlockSize;
-
-    PLY_DLL_ENTRY BlockList();
-    PLY_DLL_ENTRY void* appendBytes(u32 numBytes);
-    PLY_DLL_ENTRY void popBytes(u32 numBytes);
 };
 
 } // namespace ply

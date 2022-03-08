@@ -545,4 +545,11 @@ PLY_INLINE MutableStringView ArrayView<T>::mutableStringView() {
     return {(char*) items, safeDemote<u32>(numItems * sizeof(T))};
 }
 
+namespace subst {
+template <typename T>
+PLY_INLINE void destructViewAs(StringView view) {
+    subst::destructArray<T>((T*) view.bytes, view.numBytes / (u32) sizeof(T));
+}
+} // namespace subst
+
 } // namespace ply

@@ -75,14 +75,14 @@ PLY_INLINE std::enable_if_t<std::is_integral<I>::value, u32> countSetBits(I mask
 }
 
 template <typename Dst, typename Src>
-PLY_INLINE std::enable_if_t<std::is_unsigned<Src>::value, Dst> safeDemote(Src src) {
+PLY_INLINE constexpr std::enable_if_t<std::is_unsigned<Src>::value, Dst> safeDemote(Src src) {
     // src is unsigned
     PLY_ASSERT(src <= (typename std::make_unsigned_t<Dst>) Limits<Dst>::Max);
     return (Dst) src;
 }
 
 template <typename Dst, typename Src>
-PLY_INLINE std::enable_if_t<std::is_signed<Src>::value && std::is_signed<Dst>::value, Dst>
+PLY_INLINE constexpr std::enable_if_t<std::is_signed<Src>::value && std::is_signed<Dst>::value, Dst>
 safeDemote(Src src) {
     // src and dst are both signed
     PLY_ASSERT(src >= Limits<Dst>::Min);
@@ -91,7 +91,7 @@ safeDemote(Src src) {
 }
 
 template <typename Dst, typename Src>
-PLY_INLINE std::enable_if_t<std::is_signed<Src>::value && std::is_unsigned<Dst>::value, Dst>
+PLY_INLINE constexpr std::enable_if_t<std::is_signed<Src>::value && std::is_unsigned<Dst>::value, Dst>
 safeDemote(Src src) {
     // src is signed, dst is unsigned
     PLY_ASSERT(src >= 0);

@@ -155,7 +155,7 @@ PLY_INLINE void constructArray(T* items, s32 size) {
 }
 
 template <typename T, std::enable_if_t<!std::is_trivially_default_constructible<T>::value, int> = 0>
-PLY_NO_INLINE void constructArray(T* items, s32 size) {
+PLY_INLINE void constructArray(T* items, s32 size) {
     // Explicitly constructble
     while (size-- > 0) {
         new (items++) T;
@@ -171,7 +171,7 @@ PLY_INLINE void destructArray(T* items, s32 size) {
 }
 
 template <typename T, std::enable_if_t<!std::is_trivially_destructible<T>::value, int> = 0>
-PLY_NO_INLINE void destructArray(T* items, s32 size) {
+PLY_INLINE void destructArray(T* items, s32 size) {
     // Explicitly destructble
     while (size-- > 0) {
         (items++)->~T();
@@ -189,7 +189,7 @@ PLY_INLINE void constructArrayFrom(T* dst, const T* src, s32 size) {
 
 template <typename T, typename U,
           std::enable_if_t<std::is_constructible<T, const U&>::value, int> = 0>
-PLY_NO_INLINE void constructArrayFrom(T* dst, const U* src, s32 size) {
+PLY_INLINE void constructArrayFrom(T* dst, const U* src, s32 size) {
     // Invoke constructor explicitly on each item
     while (size-- > 0) {
         // Use parentheses instead of curly braces to avoid narrowing conversion errors.
@@ -222,7 +222,7 @@ PLY_INLINE void moveConstructArray(T* dst, const T* src, s32 size) {
 }
 
 template <typename T, typename U, std::enable_if_t<std::is_constructible<T, U&&>::value, int> = 0>
-PLY_NO_INLINE void moveConstructArray(T* dst, U* src, s32 size) {
+PLY_INLINE void moveConstructArray(T* dst, U* src, s32 size) {
     // Explicitly move constructible
     while (size-- > 0) {
         new (dst++) T{std::move(*src++)};
@@ -239,7 +239,7 @@ PLY_INLINE void copyArray(T* dst, const T* src, s32 size) {
 }
 
 template <typename T, std::enable_if_t<!std::is_trivially_copy_assignable<T>::value, int> = 0>
-PLY_NO_INLINE void copyArray(T* dst, const T* src, s32 size) {
+PLY_INLINE void copyArray(T* dst, const T* src, s32 size) {
     // Explicitly copy assignable
     while (size-- > 0) {
         *dst++ = *src++;
@@ -256,7 +256,7 @@ PLY_INLINE void moveArray(T* dst, const T* src, s32 size) {
 }
 
 template <typename T, std::enable_if_t<!std::is_trivially_move_assignable<T>::value, int> = 0>
-PLY_NO_INLINE void moveArray(T* dst, T* src, s32 size) {
+PLY_INLINE void moveArray(T* dst, T* src, s32 size) {
     // Explicitly move assignable
     while (size-- > 0) {
         *dst++ = std::move(*src++);

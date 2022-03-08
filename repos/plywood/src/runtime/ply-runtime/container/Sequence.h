@@ -4,16 +4,15 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/Array.h>
-#include <ply-runtime/container/details/SequenceImpl.h>
+#include <ply-runtime/container/BlockList.h>
 
 namespace ply {
 
-template <typename T>
-class SequenceReader;
-
-template <typename T>
-class SequenceIterator;
+namespace details {
+PLY_DLL_ENTRY void destructSequence(Reference<BlockList::Footer>* headRef,
+                                    void (*destructViewAs)(StringView));
+PLY_DLL_ENTRY void beginWriteInternal(BlockList::Footer** tail, u32 numBytes);
+}
 
 //------------------------------------------------------------------------------------------------
 /*!
@@ -27,8 +26,8 @@ destroyed.
 template <typename T>
 class Sequence {
 private:
-    details::SequenceImpl impl;
-    friend class SequenceReader<T>;
+    Reference<BlockList::Footer> head;
+    BlockList::Footer* tail = nullptr;
 
 public:
     /*!
@@ -37,7 +36,8 @@ public:
 
         Sequence<String> list;
     */
-    PLY_INLINE Sequence() = default;
+    PLY_INLINE Sequence() : head{BlockList::createBlock()}, tail{head} {
+    }
 
     /*!
     Move constructor. `other` is left in an unusable state and cannot be modified after this
@@ -45,14 +45,14 @@ public:
 
         Sequence<String> arr = std::move(other);
     */
-    PLY_INLINE Sequence(Sequence&& other) : impl{std::move(other.impl)} {
+    PLY_INLINE Sequence(Sequence&& other) : head{std::move(other.head)}, tail{other.tail} {
     }
 
     /*!
     Destructor. Destructs all items and frees the memory associated with the `Sequence`.
     */
     PLY_INLINE ~Sequence() {
-        details::destructSequence<T>(this->impl.head);
+        details::destructSequence(&head, subst::destructViewAs<T>);
     }
 
     /*!
@@ -63,16 +63,16 @@ public:
         arr = std::move(other);
     */
     PLY_INLINE void operator=(Sequence&& other) {
-        details::destructSequence<T>(this->impl.head);
-        this->impl = std::move(other.impl);
+        details::destructSequence(&head, subst::destructViewAs<T>);
+        new (this) Sequence{std::move(other)};
     }
 
     /*!
-    \category Capacity
-    Returns `true` if the list is empty.
+    Returns `true` if the sequence is empty.
     */
     PLY_INLINE bool isEmpty() const {
-        return this->impl.isEmpty();
+        // Only an empty sequence can have an empty head block.
+        return this->head->viewUsedBytes().isEmpty();
     }
 
     /*!
@@ -88,10 +88,10 @@ public:
         list.endWrite(view.numItems);
     */
     PLY_INLINE ArrayView<T> beginWriteViewNoConstruct() {
-        if ((this->impl.tail->blockSize - this->impl.tail->numBytesUsed) < sizeof(T)) {
-            this->impl.beginWriteInternal(sizeof(T));
+        if (this->tail->viewUnusedBytes().numBytes < sizeof(T)) {
+            details::beginWriteInternal(&this->tail, sizeof(T));
         }
-        return ArrayView<T>::from(this->impl.tail->viewUnusedBytes());
+        return ArrayView<T>::from(this->tail->viewUnusedBytes());
     }
 
     /*!
@@ -103,11 +103,10 @@ public:
         list.endWrite();
     */
     PLY_INLINE T* beginWriteNoConstruct() {
-        if (this->impl.tail->viewUnusedBytes().numBytes < sizeof(T)) {
-            return (T*) this->impl.beginWriteInternal(sizeof(T));
-        } else {
-            return (T*) this->impl.tail->unused();
+        if (this->tail->viewUnusedBytes().numBytes < sizeof(T)) {
+            details::beginWriteInternal(&this->tail, sizeof(T));
         }
+        return (T*) this->tail->unused();
     }
 
     /*!
@@ -116,9 +115,8 @@ public:
     available for read.
     */
     PLY_INLINE void endWrite(u32 numItems = 1) {
-        PLY_ASSERT(sizeof(T) * numItems <=
-                   this->impl.tail->blockSize - this->impl.tail->numBytesUsed);
-        this->impl.tail->numBytesUsed += sizeof(T) * numItems;
+        PLY_ASSERT(sizeof(T) * numItems <= this->tail->viewUnusedBytes().numBytes);
+        this->tail->numBytesUsed += sizeof(T) * numItems;
     }
 
     /*!
@@ -136,14 +134,12 @@ public:
         endWrite();
         return *result;
     }
-
     PLY_INLINE T& append(T&& item) {
         T* result = beginWriteNoConstruct();
         new (result) T{std::move(item)};
         endWrite();
         return *result;
     }
-
     template <typename... Args>
     PLY_INLINE T& append(Args&&... args) {
         T* result = beginWriteNoConstruct();
@@ -164,7 +160,9 @@ public:
     }
 
     PLY_INLINE T& last() {
-        return *(T*) this->impl.last(sizeof(T));
+        // It is illegal to call last() on an empty sequence.
+        PLY_ASSERT(this->byte - this->block->start() >= sizeof(T));
+        return ((T*) this->byte)[-1];
     }
 
     /*!
@@ -179,124 +177,92 @@ public:
         Array<String> arr = list.moveToArray();
     */
     PLY_INLINE Array<T> moveToArray() {
-        String str = this->impl.moveToString();
+        char* startByte = this->head->start();
+        String str = BlockList::toString({std::move(this->head), startByte});
         u32 numItems = str.numBytes / sizeof(T); // Divide by constant is fast
         return Array<T>::adopt((T*) str.release(), numItems);
     }
 
+    //-----------------------------------------------------------
+    // WeakRef
+    //-----------------------------------------------------------
+    class WeakConstRef {
+    private:
+        BlockList::WeakRef impl;
+        friend class Sequence<T>;
+
+        PLY_INLINE WeakConstRef(const BlockList::WeakRef& impl) : impl{impl} {
+        }
+
+    public:
+        PLY_INLINE ArrayView<const T> beginRead() {
+            sptr numBytesAvailable = this->impl.block->unused() - this->impl.byte;
+            if (numBytesAvailable == 0) {
+                numBytesAvailable = BlockList::jumpToNextBlock(&impl);
+            } else {
+                // numBytesAvailable should always be a multiple of sizeof(T).
+                PLY_ASSERT(numBytesAvailable >= sizeof(T));
+            }
+            return ArrayView<T>::from(StringView{this.impl.byte, numBytesAvailable});
+        }
+        PLY_INLINE void endRead(u32 numItems) {
+            PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T) * numItems);
+            this->impl.byte += sizeof(T) * numItems;
+        }
+
+        // Range for support.
+        PLY_INLINE const T& operator*() const {
+            // It is illegal to call operator* at the end of the sequence.
+            PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T));
+            return *(const T*) this->impl.byte;
+        }
+        PLY_INLINE void operator++() {
+            sptr numBytesAvailable = this->impl.block->unused() - this->impl.byte;
+            // It is illegal to call operator++ at the end of the sequence.
+            PLY_ASSERT(numBytesAvailable >= sizeof(T));
+            this->impl.byte += sizeof(T);
+            numBytesAvailable -= sizeof(T);
+            if (numBytesAvailable == 0) {
+                numBytesAvailable = BlockList::jumpToNextBlock(&impl);
+                // We might now be at the end of the sequence.
+            } else {
+                // numBytesAvailable should always be a multiple of sizeof(T).
+                PLY_ASSERT(numBytesAvailable >= sizeof(T));
+            }
+        }
+        PLY_INLINE void operator--() {
+            sptr numBytesPreceding = this->impl.byte - this->impl.block->start();
+            if (numBytesPreceding == 0) {
+                numBytesPreceding = BlockList::jumpToPrevBlock(&impl);
+            }
+            // It is illegal to call operator-- at the start of the sequence.
+            PLY_ASSERT(numBytesPreceding >= sizeof(T));
+            this->impl.byte -= sizeof(T);
+        }
+        PLY_INLINE bool operator!=(const WeakConstRef& other) const {
+            return this->impl.byte != other.impl.byte;
+        }
+    };
+
     /*!
     \beginGroup
     \category Iteration
-    Required functions to support range-for syntax. Allows you to iterate over all the items in the
-    list.
+    Required functions to support range-for syntax. Allows you to iterate over all the items in
+    the list.
 
         for (const T& item : list) {
             ...
         }
     */
-    SequenceIterator<T> begin() const;
-    SequenceIterator<T> end() const;
+    WeakConstRef begin() const {
+        return BlockList::WeakRef{this->head, this->head->bytes + this->head->startOffset};
+    }
+    WeakConstRef end() const {
+        return BlockList::WeakRef{this->tail, this->tail->unused()};
+    }
     /*!
     \endGroup
     */
 };
-
-//-----------------------------------------------------------
-// SequenceReader
-//-----------------------------------------------------------
-template <typename T>
-class SequenceReader {
-private:
-    details::SequenceReaderImpl impl;
-    friend class SequenceIterator<T>;
-
-    PLY_INLINE SequenceReader() = default;
-
-public:
-    PLY_INLINE SequenceReader(const Sequence<T>& src) : impl{src.impl} {
-    }
-
-    // FIXME: Move ctor/assignment
-
-    PLY_INLINE ArrayView<const T> beginReadView() {
-        u32 numBytes = this->impl.tryMakeBytesAvailable(sizeof(T));
-        u32 numItems = numBytes / safeDemote<u32>(sizeof(T)); // Divide by constant is fast
-        PLY_ASSERT(numItems * sizeof(T) == numBytes);
-        return {(T*) this->impl.curByte, numItems};
-    }
-
-    // beginRead() should only be called when you know !atEOF()
-    // It's safe to call beginRead() repeatedly before endRead(), as might happen when using
-    // SequenceIterator
-    PLY_INLINE const T& beginRead() {
-        u32 numBytes = this->impl.tryMakeBytesAvailable(sizeof(T));
-        PLY_ASSERT(numBytes >= sizeof(T));
-        return *(T*) this->impl.curByte;
-    }
-
-    PLY_INLINE void endRead(u32 numItems) {
-        PLY_ASSERT(this->impl.numBytesAvailable() >= sizeof(T) * numItems);
-        // FIXME: Eliminate safeDemote everywhere in this file, also make it constexpr
-        this->impl.curByte += safeDemote<u32>(sizeof(T)) * numItems;
-    }
-
-    // Unlike InStream::atEOF, this returns true before the caller attempts to read the last item
-    PLY_INLINE bool atEOF() const {
-        return this->impl.atEOF();
-    }
-
-    // Memory remains valid until the next call to read/beginRead
-    PLY_INLINE const T& read() {
-        const T& item = this->beginRead();
-        this->endRead(1);
-        return item;
-    }
-};
-
-//-----------------------------------------------------------
-// SequenceIterator
-//-----------------------------------------------------------
-template <typename T>
-class SequenceIterator {
-private:
-    SequenceReader<T> reader;
-    friend class Sequence<T>;
-    friend class Sequence<typename std::remove_const<T>::type>;
-
-    PLY_INLINE SequenceIterator(const Sequence<T>& src) : reader{src} {
-    }
-    PLY_INLINE SequenceIterator() {
-    }
-
-public:
-    PLY_INLINE bool operator!=(const SequenceIterator&) const {
-        return !this->reader.atEOF();
-    }
-
-    PLY_INLINE void operator++() {
-        this->reader.endRead(1);
-    }
-
-    PLY_INLINE const T& operator*() {
-        return this->reader.beginRead();
-    }
-
-    PLY_INLINE const T& operator->() {
-        return this->reader.beginRead();
-    }
-};
-
-//-----------------------------------------------------------
-// Member functions
-//-----------------------------------------------------------
-template <typename T>
-PLY_INLINE SequenceIterator<T> Sequence<T>::begin() const {
-    return *this;
-}
-
-template <typename T>
-PLY_INLINE SequenceIterator<T> Sequence<T>::end() const {
-    return {};
-}
 
 } // namespace ply
