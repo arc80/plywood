@@ -28,5 +28,24 @@ PLY_NO_INLINE void beginWriteInternal(BlockList::Footer** tail, u32 numBytes) {
     *tail = BlockList::appendBlock(*tail, max(BlockList::DefaultBlockSize, numBytes));
 }
 
+PLY_NO_INLINE void popTail(BlockList::Footer** tail, u32 numBytes, void (*destructViewAs)(StringView)) {
+    BlockList::Footer* block = *tail;
+    while (numBytes > 0) {
+        u32 bytesToPop = min(numBytes, block->viewUsedBytes().numBytes);
+        // It is illegal to attempt to pop more items than the sequence contains.
+        PLY_ASSERT(bytesToPop > 0);
+        destructViewAs({block->unused() - bytesToPop, bytesToPop});
+        block->numBytesUsed -= bytesToPop;
+        numBytes -= bytesToPop;
+        if (block->viewUsedBytes().numBytes > 0) {
+            PLY_ASSERT(numBytes == 0);
+            break;
+        }
+        block = block->prevBlock;
+        *tail = block;
+        block->nextBlock.clear();
+    }
+}
+
 } // namespace details
 } // namespace ply

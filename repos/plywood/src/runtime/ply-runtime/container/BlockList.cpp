@@ -13,7 +13,6 @@ namespace ply {
 // BlockList::Footer
 //--------------------------------------
 PLY_NO_INLINE void BlockList::Footer::onRefCountZero() {
-    PLY_ASSERT(!this->prevBlock);
     BlockList::Footer *blockToFree = this;
     while (blockToFree) {
         BlockList::Footer* nextBlock = blockToFree->nextBlock.release();

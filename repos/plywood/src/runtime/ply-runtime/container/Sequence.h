@@ -12,7 +12,73 @@ namespace details {
 PLY_DLL_ENTRY void destructSequence(Reference<BlockList::Footer>* headRef,
                                     void (*destructViewAs)(StringView));
 PLY_DLL_ENTRY void beginWriteInternal(BlockList::Footer** tail, u32 numBytes);
+PLY_DLL_ENTRY void popTail(BlockList::Footer** tail, u32 numBytes, void (*destructViewAs)(StringView));
 }
+
+template <typename T>
+class Sequence;
+
+//-----------------------------------------------------------
+// WeakSequenceRef
+//-----------------------------------------------------------
+template <typename T>
+class WeakSequenceRef {
+private:
+    BlockList::WeakRef impl;
+    friend class Sequence<T>;
+
+    PLY_INLINE WeakSequenceRef(const BlockList::WeakRef& impl) : impl{impl} {
+    }
+
+public:
+    PLY_INLINE ArrayView<T> beginRead() {
+        sptr numBytesAvailable = this->impl.block->unused() - this->impl.byte;
+        if (numBytesAvailable == 0) {
+            numBytesAvailable = BlockList::jumpToNextBlock(&impl);
+        } else {
+            // numBytesAvailable should always be a multiple of sizeof(T).
+            PLY_ASSERT(numBytesAvailable >= sizeof(T));
+        }
+        return ArrayView<T>::from(StringView{this.impl.byte, numBytesAvailable});
+    }
+    PLY_INLINE void endRead(u32 numItems) {
+        PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T) * numItems);
+        this->impl.byte += sizeof(T) * numItems;
+    }
+
+    // Range for support.
+    PLY_INLINE T& operator*() const {
+        // It is illegal to call operator* at the end of the sequence.
+        PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T));
+        return *(T*) this->impl.byte;
+    }
+    PLY_INLINE void operator++() {
+        sptr numBytesAvailable = this->impl.block->unused() - this->impl.byte;
+        // It is illegal to call operator++ at the end of the sequence.
+        PLY_ASSERT(numBytesAvailable >= sizeof(T));
+        this->impl.byte += sizeof(T);
+        numBytesAvailable -= sizeof(T);
+        if (numBytesAvailable == 0) {
+            numBytesAvailable = BlockList::jumpToNextBlock(&impl);
+            // We might now be at the end of the sequence.
+        } else {
+            // numBytesAvailable should always be a multiple of sizeof(T).
+            PLY_ASSERT(numBytesAvailable >= sizeof(T));
+        }
+    }
+    PLY_INLINE void operator--() {
+        sptr numBytesPreceding = this->impl.byte - this->impl.block->start();
+        if (numBytesPreceding == 0) {
+            numBytesPreceding = BlockList::jumpToPrevBlock(&impl);
+        }
+        // It is illegal to call operator-- at the start of the sequence.
+        PLY_ASSERT(numBytesPreceding >= sizeof(T));
+        this->impl.byte -= sizeof(T);
+    }
+    PLY_INLINE bool operator!=(const WeakSequenceRef& other) const {
+        return this->impl.byte != other.impl.byte;
+    }
+};
 
 //------------------------------------------------------------------------------------------------
 /*!
@@ -68,7 +134,18 @@ public:
     }
 
     /*!
+    \category Element Access
     Returns `true` if the sequence is empty.
+    */
+    PLY_INLINE T& last() {
+        // It is illegal to call last() on an empty sequence.
+        PLY_ASSERT(this->byte - this->block->start() >= sizeof(T));
+        return ((T*) this->byte)[-1];
+    }
+
+    /*!
+    \category Capacity
+    Returns the last item in the sequence. The sequence must not be empty.
     */
     PLY_INLINE bool isEmpty() const {
         // Only an empty sequence can have an empty head block.
@@ -147,22 +224,23 @@ public:
         endWrite();
         return *result;
     }
-
     /*!
     \endGroup
     */
+
+    /*!
+    Deletes the last `numItems` items from the sequence.
+    */
+    PLY_INLINE void popTail(u32 numItems) {
+        details::popTail(&this->tail, numItems * (u32) sizeof(T), subst::destructViewAs<T>);
+    }
+
     /*!
     Destructs all items in the list and frees any associated memory. The `Sequence` is left in an
     empty state.
     */
     PLY_INLINE void clear() {
         *this = Sequence{};
-    }
-
-    PLY_INLINE T& last() {
-        // It is illegal to call last() on an empty sequence.
-        PLY_ASSERT(this->byte - this->block->start() >= sizeof(T));
-        return ((T*) this->byte)[-1];
     }
 
     /*!
@@ -183,67 +261,6 @@ public:
         return Array<T>::adopt((T*) str.release(), numItems);
     }
 
-    //-----------------------------------------------------------
-    // WeakRef
-    //-----------------------------------------------------------
-    class WeakConstRef {
-    private:
-        BlockList::WeakRef impl;
-        friend class Sequence<T>;
-
-        PLY_INLINE WeakConstRef(const BlockList::WeakRef& impl) : impl{impl} {
-        }
-
-    public:
-        PLY_INLINE ArrayView<const T> beginRead() {
-            sptr numBytesAvailable = this->impl.block->unused() - this->impl.byte;
-            if (numBytesAvailable == 0) {
-                numBytesAvailable = BlockList::jumpToNextBlock(&impl);
-            } else {
-                // numBytesAvailable should always be a multiple of sizeof(T).
-                PLY_ASSERT(numBytesAvailable >= sizeof(T));
-            }
-            return ArrayView<T>::from(StringView{this.impl.byte, numBytesAvailable});
-        }
-        PLY_INLINE void endRead(u32 numItems) {
-            PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T) * numItems);
-            this->impl.byte += sizeof(T) * numItems;
-        }
-
-        // Range for support.
-        PLY_INLINE const T& operator*() const {
-            // It is illegal to call operator* at the end of the sequence.
-            PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T));
-            return *(const T*) this->impl.byte;
-        }
-        PLY_INLINE void operator++() {
-            sptr numBytesAvailable = this->impl.block->unused() - this->impl.byte;
-            // It is illegal to call operator++ at the end of the sequence.
-            PLY_ASSERT(numBytesAvailable >= sizeof(T));
-            this->impl.byte += sizeof(T);
-            numBytesAvailable -= sizeof(T);
-            if (numBytesAvailable == 0) {
-                numBytesAvailable = BlockList::jumpToNextBlock(&impl);
-                // We might now be at the end of the sequence.
-            } else {
-                // numBytesAvailable should always be a multiple of sizeof(T).
-                PLY_ASSERT(numBytesAvailable >= sizeof(T));
-            }
-        }
-        PLY_INLINE void operator--() {
-            sptr numBytesPreceding = this->impl.byte - this->impl.block->start();
-            if (numBytesPreceding == 0) {
-                numBytesPreceding = BlockList::jumpToPrevBlock(&impl);
-            }
-            // It is illegal to call operator-- at the start of the sequence.
-            PLY_ASSERT(numBytesPreceding >= sizeof(T));
-            this->impl.byte -= sizeof(T);
-        }
-        PLY_INLINE bool operator!=(const WeakConstRef& other) const {
-            return this->impl.byte != other.impl.byte;
-        }
-    };
-
     /*!
     \beginGroup
     \category Iteration
@@ -254,10 +271,16 @@ public:
             ...
         }
     */
-    WeakConstRef begin() const {
+    WeakSequenceRef<T> begin() {
         return BlockList::WeakRef{this->head, this->head->bytes + this->head->startOffset};
     }
-    WeakConstRef end() const {
+    WeakSequenceRef<T> end() {
+        return BlockList::WeakRef{this->tail, this->tail->unused()};
+    }
+    WeakSequenceRef<const T> begin() const {
+        return BlockList::WeakRef{this->head, this->head->bytes + this->head->startOffset};
+    }
+    WeakSequenceRef<const T> end() const {
         return BlockList::WeakRef{this->tail, this->tail->unused()};
     }
     /*!

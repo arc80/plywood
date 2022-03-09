@@ -22,17 +22,17 @@ struct Fibonacci {
 };
 
 void Sequence_testBeginWriteView(u32 num) {
-    Sequence<u32> list;
+    Sequence<u32> seq;
     u32 lastFib = 0;
     {
         Fibonacci fib;
         while (num > 0) {
-            ArrayView<u32> view = list.beginWriteViewNoConstruct();
+            ArrayView<u32> view = seq.beginWriteViewNoConstruct();
             u32 itemsToWrite = min(num, view.numItems);
             for (u32 i = 0; i < itemsToWrite; i++) {
                 view[i] = fib.next();
             }
-            list.endWrite(itemsToWrite);
+            seq.endWrite(itemsToWrite);
             num -= itemsToWrite;
         }
         lastFib = fib.next();
@@ -40,7 +40,7 @@ void Sequence_testBeginWriteView(u32 num) {
 
     {
         Fibonacci fib;
-        for (u32 v : list) {
+        for (u32 v : seq) {
             PLY_TEST_CHECK(v == fib.next());
         }
         PLY_TEST_CHECK(lastFib == fib.next());
@@ -56,19 +56,19 @@ PLY_TEST_CASE("Sequence beginWriteView big loop") {
 }
 
 void Sequence_testAppend(u32 num) {
-    Sequence<u32> list;
+    Sequence<u32> seq;
     u32 lastFib = 0;
     {
         Fibonacci fib;
         for (u32 i = 0; i < num; i++) {
-            list.append(fib.next());
+            seq.append(fib.next());
         }
         lastFib = fib.next();
     }
 
     {
         Fibonacci fib;
-        for (u32 v : list) {
+        for (u32 v : seq) {
             PLY_TEST_CHECK(v == fib.next());
         }
         PLY_TEST_CHECK(lastFib == fib.next());
@@ -84,18 +84,18 @@ PLY_TEST_CASE("Sequence append big loop") {
 }
 
 void Sequence_testToArray(u32 num) {
-    Sequence<u32> list;
+    Sequence<u32> seq;
     u32 lastFib = 0;
     {
         Fibonacci fib;
         for (u32 i = 0; i < num; i++) {
-            list.append(fib.next());
+            seq.append(fib.next());
         }
         lastFib = fib.next();
     }
 
     {
-        Array<u32> arr = list.moveToArray();
+        Array<u32> arr = seq.moveToArray();
         Fibonacci fib;
         for (u32 v : arr) {
             PLY_TEST_CHECK(v == fib.next());
@@ -112,7 +112,7 @@ PLY_TEST_CASE("Sequence to big array") {
     Sequence_testToArray(10000);
 }
 
-void TestBuffer_testDestructors(u32 num, bool move) {
+void Sequence_testDestructors(u32 num, bool move) {
     struct Dtor {
         u32* counter = nullptr;
         ~Dtor() {
@@ -124,12 +124,12 @@ void TestBuffer_testDestructors(u32 num, bool move) {
     {
         Array<Dtor> arr;
         {
-            Sequence<Dtor> list;
+            Sequence<Dtor> seq;
             for (u32 i = 0; i < num; i++) {
-                list.append(&counter);
+                seq.append(&counter);
             }
             if (move) {
-                arr = list.moveToArray();
+                arr = seq.moveToArray();
             }
         }
         PLY_TEST_CHECK(counter == (move ? 0 : num));
@@ -138,19 +138,47 @@ void TestBuffer_testDestructors(u32 num, bool move) {
 }
 
 PLY_TEST_CASE("Sequence small destructors") {
-    TestBuffer_testDestructors(10, false);
+    Sequence_testDestructors(10, false);
 }
 
 PLY_TEST_CASE("Sequence big destructors") {
-    TestBuffer_testDestructors(10000, false);
+    Sequence_testDestructors(10000, false);
 }
 
 PLY_TEST_CASE("Sequence move small destructors") {
-    TestBuffer_testDestructors(10, true);
+    Sequence_testDestructors(10, true);
 }
 
 PLY_TEST_CASE("Sequence move big destructors") {
-    TestBuffer_testDestructors(10000, true);
+    Sequence_testDestructors(10000, true);
+}
+
+void Sequence_testPopTail(u32 numItems, u32 numToPop) {
+    struct Dtor {
+        u32* counter = nullptr;
+        ~Dtor() {
+            *this->counter += 1;
+        }
+    };
+
+    u32 counter = 0;
+    {
+        Sequence<Dtor> seq;
+        for (u32 i = 0; i < numItems; i++) {
+            seq.append(&counter);
+        }
+        seq.popTail(numToPop);
+        PLY_TEST_CHECK(counter == numToPop);
+    }
+    PLY_TEST_CHECK(counter == numItems);
+}
+
+PLY_TEST_CASE("Sequence small popTail") {
+    Sequence_testPopTail(10, 1);
+}
+
+PLY_TEST_CASE("Sequence big popTail") {
+    Sequence_testPopTail(10000, 5000);
 }
 
 } // namespace tests
