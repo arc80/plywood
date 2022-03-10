@@ -47,5 +47,30 @@ PLY_NO_INLINE void popTail(BlockList::Footer** tail, u32 numBytes, void (*destru
     }
 }
 
+PLY_NO_INLINE u32 getTotalNumBytes(BlockList::Footer* head) {
+    u32 numBytes = 0;
+    while (head) {
+        numBytes += head->viewUsedBytes().numBytes;
+    }
+    return numBytes;
+}
+
+PLY_NO_INLINE char* read(BlockList::WeakRef* weakRef, u32 itemSize) {
+    sptr numBytesAvailable = weakRef->block->unused() - weakRef->byte;
+    // It's illegal to call this function at the end of a sequence.
+    PLY_ASSERT(numBytesAvailable >= itemSize);
+    char* result = weakRef->byte;
+    weakRef->byte += itemSize;
+    numBytesAvailable -= itemSize;
+    if (numBytesAvailable == 0) {
+        numBytesAvailable = BlockList::jumpToNextBlock(weakRef);
+        // We might now be at the end of the sequence.
+    } else {
+        // numBytesAvailable should always be a multiple of the item size.
+        PLY_ASSERT(numBytesAvailable >= itemSize);
+    }
+    return result;
+}
+
 } // namespace details
 } // namespace ply

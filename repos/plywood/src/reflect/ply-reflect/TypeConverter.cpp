@@ -180,7 +180,8 @@ const T* safeCast(StringView view) {
     return (const T*) view.bytes;
 }
 
-void convert(BlockList::WeakRef cursor, void* dstPtr, ArrayView<void*> srcPtrs, void* srcPtr = nullptr) {
+void convert(BlockList::WeakRef cursor, void* dstPtr, ArrayView<void*> srcPtrs,
+             void* srcPtr = nullptr) {
     // FIXME: Implement MessageSequence and use that instead.
 
     BlockList::Footer* viewBlock = nullptr;
@@ -260,8 +261,9 @@ void convert(BlockList::WeakRef cursor, void* dstPtr, ArrayView<void*> srcPtrs, 
     }
 }
 
-void applyConversionRecipe(const BlockList::WeakRef& recipe, void* dstPtr, ArrayView<void*> srcPtrs) {
-    convert(recipe, dstPtr, srcPtrs);
+void applyConversionRecipe(const BlockList::Footer* recipe, void* dstPtr,
+                           ArrayView<void*> srcPtrs) {
+    convert({const_cast<BlockList::Footer*>(recipe), recipe->start()}, dstPtr, srcPtrs);
 }
 
 } // namespace ply

@@ -12,8 +12,11 @@ namespace details {
 PLY_DLL_ENTRY void destructSequence(Reference<BlockList::Footer>* headRef,
                                     void (*destructViewAs)(StringView));
 PLY_DLL_ENTRY void beginWriteInternal(BlockList::Footer** tail, u32 numBytes);
-PLY_DLL_ENTRY void popTail(BlockList::Footer** tail, u32 numBytes, void (*destructViewAs)(StringView));
-}
+PLY_DLL_ENTRY void popTail(BlockList::Footer** tail, u32 numBytes,
+                           void (*destructViewAs)(StringView));
+PLY_DLL_ENTRY u32 getTotalNumBytes(BlockList::Footer* head);
+PLY_DLL_ENTRY char* read(BlockList::WeakRef* weakRef, u32 itemSize);
+} // namespace details
 
 template <typename T>
 class Sequence;
@@ -25,7 +28,8 @@ template <typename T>
 class WeakSequenceRef {
 private:
     BlockList::WeakRef impl;
-    friend class Sequence<T>;
+    template <typename>
+    friend class Sequence;
 
     PLY_INLINE WeakSequenceRef(const BlockList::WeakRef& impl) : impl{impl} {
     }
@@ -77,6 +81,12 @@ public:
     }
     PLY_INLINE bool operator!=(const WeakSequenceRef& other) const {
         return this->impl.byte != other.impl.byte;
+    }
+
+    // The reference returned here remains valid as long as item continues to exist in the
+    // underlying sequence.
+    PLY_INLINE T& read() {
+        return *(T*) details::read(&impl, sizeof(T));
     }
 };
 
@@ -150,6 +160,10 @@ public:
     PLY_INLINE bool isEmpty() const {
         // Only an empty sequence can have an empty head block.
         return this->head->viewUsedBytes().isEmpty();
+    }
+    PLY_INLINE u32 numItems() const {
+        return details::getTotalNumBytes(this->head) /
+               sizeof(T); // Fast division by integer constant.
     }
 
     /*!
