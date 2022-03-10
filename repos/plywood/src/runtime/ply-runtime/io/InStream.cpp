@@ -71,9 +71,9 @@ PLY_NO_INLINE u32 InStream::tryMakeBytesAvailableInternal(u32 numRequestedBytes)
         // this->curByte points to the read position in the current block.
         // this->endByte points to the write position in the current block.
         PLY_ASSERT(this->block->viewUsedBytes().contains(this->curByte));
-        PLY_ASSERT(this->endByte == this->block->end());
+        PLY_ASSERT(this->endByte == this->block->unused());
 
-        u32 numUnreadBytesInCurrentBlock = safeDemote<u32>(this->block->end() - this->curByte);
+        u32 numUnreadBytesInCurrentBlock = safeDemote<u32>(this->block->unused() - this->curByte);
         if (numBytesNeededToCompleteRequest <= numUnreadBytesInCurrentBlock)
             break; // Current block has enough data to fulfill the remainder of the request.
 
@@ -109,7 +109,7 @@ PLY_NO_INLINE u32 InStream::tryMakeBytesAvailableInternal(u32 numRequestedBytes)
             u32 unreadStorageInCurrentBlock = safeDemote<u32>(this->block->end() - this->curByte);
             if (unreadStorageInCurrentBlock < numBytesNeededToCompleteRequest) {
                 // Append a new block
-                BlockList::appendBlock(this->block, max(numBytesNeededToCompleteRequest, this->getBlockSize()));
+                BlockList::appendBlockWithRecycle(this->block, max(numBytesNeededToCompleteRequest, this->getBlockSize()));
                 this->curByte = this->block->bytes;
                 this->endByte = this->block->bytes; // nothing written to this block yet
             }
@@ -125,25 +125,20 @@ PLY_NO_INLINE u32 InStream::tryMakeBytesAvailableInternal(u32 numRequestedBytes)
     u32 numBytesAvailableToReadInBlock;
     for (;;) {
         numBytesAvailableToReadInBlock =
-            safeDemote<u32>((this->block->bytes + this->block->numBytesUsed) - this->curByte);
+            safeDemote<u32>(this->block->unused() - this->curByte);
         if (numBytesAvailableToReadInBlock >= numBytesNeededToCompleteRequest)
             break; // Current block has enough data to fulfill remainder of request.
 
         PLY_ASSERT(!this->block->nextBlock); // We can only write to the end of the block list.
         // Read more data from the underlying pipe.
-        u32 bytesRead = this->inPipe->readSome(MutableStringView::fromRange(
-            this->block->bytes + this->block->numBytesUsed, this->block->end()));
+        u32 bytesRead = this->inPipe->readSome(this->block->viewUnusedBytes());
         if (bytesRead == 0) {
-            // We encountered EOF. As a safeguard/courtesy, pad memory with zeros up to the number
-            // of needed bytes, even though the caller should **NOT** read any of these...
-            memset(this->block->bytes + this->block->numBytesUsed, 0,
-                   numBytesNeededToCompleteRequest - numBytesAvailableToReadInBlock);
             this->status.eof = 1;
             break;
         }
         this->block->numBytesUsed += bytesRead;
         this->endByte += bytesRead;
-        PLY_ASSERT(this->endByte == this->block->bytes + this->block->numBytesUsed);
+        PLY_ASSERT(this->endByte == this->block->unused());
     }
 
     u32 numBytesToReturn =

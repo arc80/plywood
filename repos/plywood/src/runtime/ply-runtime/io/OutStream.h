@@ -327,7 +327,7 @@ struct MemOutStream : OutStream {
     PLY_INLINE BlockList::Ref getHeadRef() {
         PLY_ASSERT(this->status.type == (u32) Type::Mem);
         PLY_ASSERT(this->headBlock);
-        return {this->headBlock, 0u};
+        return {this->headBlock, this->headBlock->start()};
     }
 
     /*!

@@ -51,6 +51,7 @@ PLY_NO_INLINE u32 getTotalNumBytes(BlockList::Footer* head) {
     u32 numBytes = 0;
     while (head) {
         numBytes += head->viewUsedBytes().numBytes;
+        head = head->nextBlock;
     }
     return numBytes;
 }
