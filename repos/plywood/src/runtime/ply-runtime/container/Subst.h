@@ -43,7 +43,7 @@ PLY_INLINE void unsafeConstruct(T* obj) {
 //-------------------------------------------------------------
 // createByMember
 //-------------------------------------------------------------
-PLY_SFINAE_EXPR_1(HasCreate, T0::create())
+PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasCreate, T0::create())
 
 template <typename T, std::enable_if_t<HasCreate<T>, int> = 0>
 PLY_INLINE T* createByMember() {
@@ -67,8 +67,8 @@ PLY_INLINE T* createByMember() {
 //-------------------------------------------------------------
 // destroyByMember
 //-------------------------------------------------------------
-PLY_SFINAE_EXPR_1(HasDestroyMember, std::declval<T0>().destroy())
-PLY_SFINAE_EXPR_1(HasNamespaceDestroy, destroy((T0*) nullptr))
+PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasDestroyMember, std::declval<T0>().destroy())
+PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasNamespaceDestroy, destroy((T0*) nullptr))
 
 template <typename T, std::enable_if_t<HasDestroyMember<T>, int> = 0>
 PLY_INLINE void destroyByMember(T* obj) {
@@ -92,7 +92,7 @@ PLY_INLINE void destroyByMember(T* obj) {
 //-------------------------------------------------------------
 // destructByMember
 //-------------------------------------------------------------
-PLY_SFINAE_EXPR_1(HasDestruct, std::declval<T0>().destruct())
+PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasDestruct, std::declval<T0>().destruct())
 
 template <typename T, std::enable_if_t<HasDestruct<T>, int> = 0>
 PLY_INLINE void destructByMember(T* obj) {

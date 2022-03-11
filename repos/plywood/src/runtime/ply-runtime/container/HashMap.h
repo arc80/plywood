@@ -51,9 +51,9 @@ struct HashMap {
         bool (*match)(const void* item, const void* key, const void* context) = nullptr;
     };
 
-    PLY_SFINAE_EXPR_1(HasConstruct, &T0::construct);
-    PLY_SFINAE_EXPR_1(HasHash, &T0::hash);
-    PLY_SFINAE_EXPR_1(HasContext, (typename T0::Context*) nullptr);
+    PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasConstruct, &T0::construct);
+    PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasHash, &T0::hash);
+    PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasContext, (typename T0::Context*) nullptr);
 
     template <class, class = void>
     struct Context {

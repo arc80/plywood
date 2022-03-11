@@ -138,13 +138,6 @@ inline u64 deavalanche(u64 h) {
     return h;
 }
 
-template <typename... Ts>
-struct make_void {
-    typedef void type;
-};
-template <typename... Ts>
-using void_t = typename make_void<Ts...>::type;
-
 template <typename T>
 PLY_INLINE void destruct(T& obj) {
     obj.~T();

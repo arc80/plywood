@@ -125,15 +125,27 @@ struct Empty {};
     #define PLY_ASSERT(cond) do {} while (0)
 #endif
 
-#define PLY_SFINAE_EXPR_1(name, expr) \
-    template <typename T0> static u32 Check##name(std::decay_t<decltype(expr)>*); \
-    template <typename T0> static u8 Check##name(...); \
-    template <typename T0> static constexpr bool name = (sizeof(Check##name<T0>(nullptr)) == 4);
+namespace ply {
+// Walter E. Brown's void_t alias template. Evaluates to void only if all template arguments are well-formed.
+// Can be used to eliminate template specializations by causing template argument substitution to fail.
+template <typename... Ts>
+struct make_void {
+    typedef void type;
+};
+template <typename... Ts>
+using void_t = typename make_void<Ts...>::type;
+} // namespace ply
 
-#define PLY_SFINAE_EXPR_2(name, expr) \
-    template <typename T0, typename T1> static u32 Check##name(std::decay_t<decltype(expr)>*); \
-    template <typename T0, typename T1> static u8 Check##name(...); \
-    template <typename T0, typename T1> static constexpr bool name = (sizeof(Check##name<T0, T1>(nullptr)) == 4);
+// Defines a constexpr variable template that evaluates to true when the given expression is well-formed.
+// The expression should be dependent on a type named T0.
+#define PLY_MAKE_WELL_FORMEDNESS_CHECK_1(name, expr) \
+    template <typename, typename = void> static constexpr bool name = false; \
+    template <typename T0> static constexpr bool name<T0, ::ply::void_t<decltype(expr)>> = true;
+
+// The expression should be dependent on a types named T0 and T1.
+#define PLY_MAKE_WELL_FORMEDNESS_CHECK_2(name, expr) \
+    template <typename, typename, typename = void> static constexpr bool name = false; \
+    template <typename T0, typename T1> static constexpr bool name<T0, T1, ::ply::void_t<decltype(expr)>> = true;
 
 namespace ply {
 PLY_INLINE constexpr u32 reverseBytes(u32 v) {

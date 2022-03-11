@@ -8,8 +8,8 @@
 
 namespace ply {
 
-PLY_SFINAE_EXPR_2(IsComparable, std::declval<T0>() == std::declval<T1>());
-PLY_SFINAE_EXPR_2(IsCallable, std::declval<T0>()(std::declval<T1>()));
+PLY_MAKE_WELL_FORMEDNESS_CHECK_2(IsComparable, std::declval<T0>() == std::declval<T1>());
+PLY_MAKE_WELL_FORMEDNESS_CHECK_2(IsCallable, std::declval<T0>()(std::declval<T1>()));
 
 // find
 template <typename T, typename U, std::enable_if_t<IsComparable<T, U>, int> = 0>

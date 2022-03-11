@@ -87,8 +87,8 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
     addPPDef(&pp, "PLY_DECL_ALIGNED", "", true);
     addPPDef(&pp, "WINAPI", "", false);
     addPPDef(&pp, "APIENTRY", "", false);
-    addPPDef(&pp, "PLY_SFINAE_EXPR_1", "", true);
-    addPPDef(&pp, "PLY_SFINAE_EXPR_2", "", true);
+    addPPDef(&pp, "PLY_MAKE_WELL_FORMEDNESS_CHECK_1", "", true);
+    addPPDef(&pp, "PLY_MAKE_WELL_FORMEDNESS_CHECK_2", "", true);
     addPPDef(&pp, "PLY_BIND_METHOD", "", true);
     addPPDef(&pp, "PLY_DECLARE_TYPE_DESCRIPTOR", "", true);
     addPPDef(&pp, "SWITCH_FOOTER", "", true);   // temporary

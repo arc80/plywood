@@ -12,8 +12,8 @@
 namespace ply {
 namespace details {
 
-PLY_SFINAE_EXPR_1(HasBeginMember, std::declval<T0>().begin())
-PLY_SFINAE_EXPR_1(HasBeginADL, begin(std::declval<T0>()))
+PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasBeginMember, std::declval<T0>().begin())
+PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasBeginADL, begin(std::declval<T0>()))
 
 template <typename, typename>
 struct ItemTypeImpl;

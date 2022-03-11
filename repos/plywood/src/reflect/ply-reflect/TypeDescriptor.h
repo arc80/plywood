@@ -19,8 +19,8 @@ struct FormatDescriptor;
 //--------------------------------------------------------
 template <typename T>
 struct TypeResolver {
-    PLY_SFINAE_EXPR_1(HasReflectionMember, T0::getReflection())
-    PLY_SFINAE_EXPR_1(HasReflectionFriend, getReflection((T0*) nullptr))
+    PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasReflectionMember, T0::getReflection())
+    PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasReflectionFriend, getReflection((T0*) nullptr))
 
     template <typename U = T, std::enable_if_t<HasReflectionMember<U>, int> = 0>
     static PLY_INLINE auto* get() {
