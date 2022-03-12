@@ -79,7 +79,7 @@ struct ReflectionHookError : BaseError {
     }
     virtual void writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const override;
 };
-PLY_REFLECT_ENUM(, ReflectionHookError::Type)
+PLY_DECLARE_TYPE_DESCRIPTOR(ReflectionHookError::Type)
 
 void ReflectionHookError::writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const {
     outs->format("{}: error: ", expandFileLocation(visitedFiles, this->linearLoc).toString());

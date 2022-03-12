@@ -52,7 +52,7 @@ struct TypeOwnerResolver {
         if (owner.getRefCount() == 0) {
             owner.incRef(); // Never deleted
             PLY_ASSERT(!owner.getRootType());
-            owner.setRootType(TypeResolver<T>::get());
+            owner.setRootType(getTypeDescriptor<T>());
         }
         return &owner;
     }

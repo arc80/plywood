@@ -15,27 +15,31 @@ class SchemaSaver;
 struct FormatDescriptor;
 
 //--------------------------------------------------------
-// TypeResolver
+// TypeDescriptors are created for non-aggregate C++ types using the
+// PLY_DECLARE/DEFINE_TYPE_DESCRIPTOR() macros. Each time getTypeDescriptor<>() is instantiated for
+// a specific type during the compilation process, a TypeDescriptor corresponding to that type will
+// be made available at runtime.
 //--------------------------------------------------------
 template <typename T>
-struct TypeResolver {
-    PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasReflectionMember, T0::getReflection())
-    PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasReflectionFriend, getReflection((T0*) nullptr))
-
-    template <typename U = T, std::enable_if_t<HasReflectionMember<U>, int> = 0>
-    static PLY_INLINE auto* get() {
-        return T::getReflection();
-    }
-    template <typename U = T, std::enable_if_t<HasReflectionFriend<U>, int> = 0>
-    static PLY_INLINE auto* get() {
-        return getReflection((U*) nullptr);
+struct TypeDescriptorSpecializer {
+    static PLY_INLINE TypeDescriptor* get() {
+        return T::bindTypeDescriptor();
     }
 };
 
-#define PLY_REFLECT_ENUM(linkage, name) linkage ::ply::TypeDescriptor_Enum* getReflection(name*);
+template <typename T>
+PLY_INLINE TypeDescriptor* getTypeDescriptor(T* = nullptr) {
+    return TypeDescriptorSpecializer<T>::get();
+}
 
-#define PLY_DECLARE_TYPE_DESCRIPTOR(linkage, suffix, name) \
-    linkage ::ply::TypeDescriptor##suffix* getReflection(name*);
+#define PLY_DECLARE_TYPE_DESCRIPTOR(typeName, ...) \
+    template <> \
+    struct ply::TypeDescriptorSpecializer<typeName> { \
+        static __VA_ARGS__ ply::TypeDescriptor* get(); \
+    };
+
+#define PLY_DEFINE_TYPE_DESCRIPTOR(typeName) \
+    PLY_NO_INLINE ply::TypeDescriptor* ply::TypeDescriptorSpecializer<typeName>::get()
 
 //-----------------------------------------------------------------------
 // TypeKey
@@ -59,7 +63,7 @@ PLY_DLL_ENTRY extern TypeKey TypeKey_Reference;
 PLY_DLL_ENTRY extern TypeKey TypeKey_Struct;
 PLY_DLL_ENTRY extern TypeKey TypeKey_Switch;
 PLY_DLL_ENTRY extern TypeKey TypeKey_Enum;
-PLY_DLL_ENTRY extern TypeKey TypeKey_WeakPtr;
+PLY_DLL_ENTRY extern TypeKey TypeKey_RawPtr;
 PLY_DLL_ENTRY extern TypeKey TypeKey_EnumIndexedArray;
 PLY_DLL_ENTRY extern TypeKey TypeKey_TypedArray;
 PLY_DLL_ENTRY extern TypeKey TypeKey_SavedTypedPtr;
@@ -80,34 +84,34 @@ struct NativeBindings {
         return {
             // create
             [](TypeDescriptor* typeDesc) -> TypedPtr {
-                PLY_ASSERT(typeDesc == TypeResolver<T>::get());
+                PLY_ASSERT(typeDesc == TypeDescriptorSpecializer<T>::get());
                 return {subst::createByMember<T>(), typeDesc};
             },
             // destroy
             [](TypedPtr obj) {
-                PLY_ASSERT(obj.type == TypeResolver<T>::get());
+                PLY_ASSERT(obj.type == TypeDescriptorSpecializer<T>::get());
                 subst::destroyByMember((T*) obj.ptr);
             },
             // construct
             [](TypedPtr obj) {
-                PLY_ASSERT(obj.type == TypeResolver<T>::get());
+                PLY_ASSERT(obj.type == TypeDescriptorSpecializer<T>::get());
                 subst::unsafeConstruct((T*) obj.ptr);
             },
             // destruct
             [](TypedPtr obj) {
-                PLY_ASSERT(obj.type == TypeResolver<T>::get());
+                PLY_ASSERT(obj.type == TypeDescriptorSpecializer<T>::get());
                 subst::destructByMember((T*) obj.ptr);
             },
             // move
             [](TypedPtr dst, TypedPtr src) {
-                PLY_ASSERT(dst.type == TypeResolver<T>::get());
-                PLY_ASSERT(src.type == TypeResolver<T>::get());
+                PLY_ASSERT(dst.type == TypeDescriptorSpecializer<T>::get());
+                PLY_ASSERT(src.type == TypeDescriptorSpecializer<T>::get());
                 subst::unsafeMove((T*) dst.ptr, (T*) src.ptr);
             },
             // copy
             [](TypedPtr dst, const TypedPtr src) {
-                PLY_ASSERT(dst.type == TypeResolver<T>::get());
-                PLY_ASSERT(src.type == TypeResolver<T>::get());
+                PLY_ASSERT(dst.type == TypeDescriptorSpecializer<T>::get());
+                PLY_ASSERT(src.type == TypeDescriptorSpecializer<T>::get());
                 subst::unsafeCopy((T*) dst.ptr, (const T*) src.ptr);
             },
         };
@@ -164,82 +168,46 @@ PLY_INLINE Hasher& operator<<(Hasher& hasher, const TypeDescriptor* typeDesc) {
 //-----------------------------------------------------------------------
 // Built-in TypeDescriptors
 //-----------------------------------------------------------------------
-template <>
-struct TypeResolver<bool> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<s8> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<s16> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<s32> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<s64> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<u8> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<u16> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<u32> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<u64> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<float> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<double> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
-template <>
-struct TypeResolver<String> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
+PLY_DECLARE_TYPE_DESCRIPTOR(bool, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(s8, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(s16, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(s32, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(s64, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(u8, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(u16, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(u32, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(u64, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(float, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(double, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(String, PLY_DLL_ENTRY)
 
 //-----------------------------------------------------------------------
-// Strip const qualifiers
+// TypeDescriptorSpecializer for const types
 //-----------------------------------------------------------------------
 template <typename T>
-struct TypeResolver<const T> {
-    static TypeDescriptor* get() {
-        return TypeResolver<T>::get();
+struct TypeDescriptorSpecializer<const T> {
+    static PLY_INLINE auto* get() {
+        return TypeDescriptorSpecializer<T>::get();
     }
 };
 
 //-----------------------------------------------------------------------
-// C-style arrays
+// TypeDescriptorSpecializer for C-style arrays
 //-----------------------------------------------------------------------
 PLY_DLL_ENTRY NativeBindings& getNativeBindings_FixedArray();
 
 struct TypeDescriptor_FixedArray : TypeDescriptor {
-    PLY_DLL_ENTRY static TypeKey* typeKey; // FIXME: Make these all constexpr
+    PLY_DLL_ENTRY static TypeKey* typeKey;
     TypeDescriptor* itemType;
     u32 numItems;
     u32 stride;
 
-    TypeDescriptor_FixedArray(TypeDescriptor* itemType, u32 numItems)
+    PLY_INLINE TypeDescriptor_FixedArray(TypeDescriptor* itemType, u32 numItems)
         : TypeDescriptor{&TypeKey_FixedArray, itemType->fixedSize * numItems,
                          getNativeBindings_FixedArray()},
           itemType{itemType}, numItems{numItems}, stride{itemType->fixedSize} {
     }
-    TypeDescriptor_FixedArray(TypeDescriptor* itemType, u32 numItems, u32 stride)
+    PLY_INLINE TypeDescriptor_FixedArray(TypeDescriptor* itemType, u32 numItems, u32 stride)
         : TypeDescriptor{&TypeKey_FixedArray, stride * numItems, getNativeBindings_FixedArray()},
           itemType{itemType}, numItems{numItems}, stride{stride} {
         PLY_ASSERT(stride >= itemType->fixedSize);
@@ -247,26 +215,26 @@ struct TypeDescriptor_FixedArray : TypeDescriptor {
 };
 
 template <typename T, int numItems>
-struct TypeResolver<T[numItems]> {
-    static TypeDescriptor* get() {
-        static TypeDescriptor_FixedArray typeDesc{TypeResolver<T>::get(), u32(numItems)};
+struct TypeDescriptorSpecializer<T[numItems]> {
+    static PLY_NO_INLINE TypeDescriptor_FixedArray* get() {
+        static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<T>(), u32(numItems)};
         return &typeDesc;
     }
 };
 
 //-----------------------------------------------------------------------
-// FixedArray<*>
+// TypeDescriptorSpecializer for FixedArray
 //-----------------------------------------------------------------------
 template <typename T, u32 Size>
-struct TypeResolver<FixedArray<T, Size>> {
-    static TypeDescriptor* get() {
-        static TypeDescriptor_FixedArray typeDesc{TypeResolver<T>::get(), Size};
+struct TypeDescriptorSpecializer<FixedArray<T, Size>> {
+    static PLY_NO_INLINE TypeDescriptor_FixedArray* get() {
+        static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<T>(), Size};
         return &typeDesc;
     }
 };
 
 //-----------------------------------------------------------------------
-// Array<*>
+// TypeDescriptorSpecializer for Array
 //-----------------------------------------------------------------------
 PLY_DLL_ENTRY NativeBindings& getNativeBindings_Array();
 
@@ -274,16 +242,16 @@ struct TypeDescriptor_Array : TypeDescriptor {
     PLY_DLL_ENTRY static TypeKey* typeKey;
     TypeDescriptor* itemType;
 
-    TypeDescriptor_Array(TypeDescriptor* itemType)
+    PLY_INLINE TypeDescriptor_Array(TypeDescriptor* itemType)
         : TypeDescriptor{&TypeKey_Array, sizeof(details::BaseArray), getNativeBindings_Array()},
           itemType{itemType} {
     }
 };
 
 template <typename T>
-struct TypeResolver<Array<T>> {
-    static TypeDescriptor* get() {
-        static TypeDescriptor_Array typeDesc{TypeResolver<T>::get()};
+struct TypeDescriptorSpecializer<Array<T>> {
+    static PLY_NO_INLINE TypeDescriptor_Array* get() {
+        static TypeDescriptor_Array typeDesc{getTypeDescriptor<T>()};
         return &typeDesc;
     }
 };
@@ -313,7 +281,7 @@ struct TypedPtr_Array {
 };
 
 //-----------------------------------------------------------------------
-// Owned<*>
+// TypeDescriptorSpecializer for Owned
 //-----------------------------------------------------------------------
 PLY_DLL_ENTRY NativeBindings& getNativeBindings_Owned();
 
@@ -323,9 +291,9 @@ struct TypeDescriptor_Owned : TypeDescriptor {
     void (*assignRawPtr)(TypedPtr ownedPtr, TypedPtr target) = nullptr;
 
     template <typename T>
-    TypeDescriptor_Owned(T*)
+    PLY_INLINE TypeDescriptor_Owned(T*)
         : TypeDescriptor{&TypeKey_Owned, sizeof(void*), getNativeBindings_Owned()},
-          targetType{TypeResolver<T>::get()} {
+          targetType{getTypeDescriptor<T>()} {
         assignRawPtr = [](TypedPtr ownedPtr, TypedPtr target) {
             // FIXME: Check that the target type is compatible
             // If the target uses multiple inheritance, may need to adjust its pointer value to
@@ -336,8 +304,8 @@ struct TypeDescriptor_Owned : TypeDescriptor {
 };
 
 template <typename T>
-struct TypeResolver<Owned<T>> {
-    static TypeDescriptor* get() {
+struct TypeDescriptorSpecializer<Owned<T>> {
+    static PLY_NO_INLINE TypeDescriptor_Owned* get() {
         static TypeDescriptor_Owned typeDesc{(T*) nullptr};
         return &typeDesc;
     }
@@ -361,13 +329,13 @@ struct TypedPtr_Owned {
     }
     template <typename T>
     T* get() const {
-        PLY_ASSERT(type->targetType->isEquivalentTo(TypeResolver<T>::get()));
+        PLY_ASSERT(type->targetType->isEquivalentTo(TypeDescriptorSpecializer<T>::get()));
         return reinterpret_cast<Owned<T>*>(ptr)->get();
     }
 };
 
 //-----------------------------------------------------------------------
-// Reference<*>
+// TypeDescriptorSpecializer for Reference
 //-----------------------------------------------------------------------
 PLY_DLL_ENTRY NativeBindings& getNativeBindings_Reference();
 
@@ -378,9 +346,9 @@ struct TypeDescriptor_Reference : TypeDescriptor {
     void (*decRef)(void* target) = nullptr;
 
     template <typename T>
-    TypeDescriptor_Reference(T*)
+    PLY_INLINE TypeDescriptor_Reference(T*)
         : TypeDescriptor{&TypeKey_Reference, sizeof(void*), getNativeBindings_Reference()},
-          targetType{TypeResolver<T>::get()} {
+          targetType{getTypeDescriptor<T>()} {
         this->incRef = [](void* target) { //
             ((T*) target)->incRef();
         };
@@ -391,15 +359,15 @@ struct TypeDescriptor_Reference : TypeDescriptor {
 };
 
 template <typename T>
-struct TypeResolver<Reference<T>> {
-    static TypeDescriptor* get() {
+struct TypeDescriptorSpecializer<Reference<T>> {
+    static PLY_NO_INLINE TypeDescriptor_Reference* get() {
         static TypeDescriptor_Reference typeDesc{(T*) nullptr};
         return &typeDesc;
     }
 };
 
 //-----------------------------------------------------------------------
-// struct
+// PLY_REFLECT() macro for structs
 //-----------------------------------------------------------------------
 PLY_DLL_ENTRY NativeBindings& getNativeBindings_SynthesizedStruct();
 
@@ -421,33 +389,34 @@ struct TypeDescriptor_Struct : TypeDescriptor {
 
     // Use expression SFINAE to invoke the object's onPostSerialize() function, if present:
     template <class T>
-    static auto invokePostSerialize(T* obj) -> decltype(obj->onPostSerialize()) {
+    static PLY_INLINE auto invokePostSerialize(T* obj) -> decltype(obj->onPostSerialize()) {
         return obj->onPostSerialize();
     }
-    inline static void invokePostSerialize(...) {
+    static PLY_INLINE void invokePostSerialize(...) {
     }
     void (*onPostSerialize)(void* ptr) = [](void*) {};
 
     // Constructor for synthesized TypeDescriptor_Struct:
-    TypeDescriptor_Struct(u32 fixedSize, StringView name)
+    PLY_INLINE TypeDescriptor_Struct(u32 fixedSize, StringView name)
         : TypeDescriptor{&TypeKey_Struct, fixedSize, getNativeBindings_SynthesizedStruct()},
           name{name} {
     }
     // Constructor for TypeDescriptor_Struct of an existing C++ class:
     template <class T>
-    TypeDescriptor_Struct(T*, StringView name, std::initializer_list<Member> members = {})
+    PLY_INLINE TypeDescriptor_Struct(T*, StringView name,
+                                     std::initializer_list<Member> members = {})
         : TypeDescriptor{&TypeKey_Struct, sizeof(T), NativeBindings::make<T>()}, name{name},
           members{members} {
         onPostSerialize = [](void* ptr) { invokePostSerialize((T*) ptr); };
     }
 
-    void appendMember(StringView name, TypeDescriptor* type) {
+    PLY_INLINE void appendMember(StringView name, TypeDescriptor* type) {
         // FIXME: Handle alignment
         members.append({name, fixedSize, type});
         fixedSize += type->fixedSize;
     }
 
-    const Member* findMember(StringView name) const {
+    PLY_NO_INLINE const Member* findMember(StringView name) const {
         for (const Member& member : members) {
             if (member.name == name)
                 return &member;
@@ -480,51 +449,54 @@ struct Initializer {
     }
 };
 
+// clang-format off
 #define PLY_REFLECT(...) \
-    template <typename> \
-    friend struct ply::TypeResolver; \
-    static __VA_ARGS__ ply::TypeDescriptor_Struct* getReflection(); \
-    static ply::Initializer initReflectionObj; \
-    static void initReflectionMembers();
+    template <typename> friend struct ply::TypeDescriptorSpecializer; \
+    static __VA_ARGS__ ply::TypeDescriptor* bindTypeDescriptor(); \
+    static ply::Initializer initTypeDescriptor; \
+    static void initTypeDescriptorMembers();
 
 #define PLY_STATE_REFLECT(name) \
     PLY_STATE(name) \
     PLY_REFLECT()
 
 #define PLY_STRUCT_BEGIN(type) \
-    PLY_NO_INLINE ply::TypeDescriptor_Struct* type::getReflection() { \
+    PLY_NO_INLINE ply::TypeDescriptor* type::bindTypeDescriptor() { \
         static ply::TypeDescriptor_Struct typeDesc{(type*) nullptr, #type}; \
         return &typeDesc; \
     } \
-    ply::Initializer type::initReflectionObj{type::initReflectionMembers}; \
-    void type::initReflectionMembers() { \
+    ply::Initializer type::initTypeDescriptor{type::initTypeDescriptorMembers}; \
+    void type::initTypeDescriptorMembers() { \
         using T = type; \
         PLY_UNUSED((T*) nullptr); \
-        getReflection()->members = {
+        T::bindTypeDescriptor()->cast<ply::TypeDescriptor_Struct>()->members = {
 
 #define PLY_STRUCT_MEMBER(name) \
-    {#name, PLY_MEMBER_OFFSET(T, name), ply::TypeResolver<decltype(T::name)>::get()},
+            {#name, PLY_MEMBER_OFFSET(T, name), ply::getTypeDescriptor<decltype(T::name)>()},
 
 #define PLY_STRUCT_END() \
-    } \
-    ; \
+        }; \
     }
 
 #define PLY_STRUCT_BEGIN_PRIM(type) \
-    PLY_NO_INLINE ply::TypeDescriptor_Struct* getReflection(type*) { \
+    PLY_DEFINE_TYPE_DESCRIPTOR(type) { \
+        static ply::TypeDescriptor_Struct typeDesc{(type*) nullptr, #type}; \
+        return &typeDesc; \
+    } \
+    static void PLY_UNIQUE_VARIABLE(initTypeDescriptor_)(); \
+    ply::Initializer PLY_UNIQUE_VARIABLE(initTypeDescriptorCaller_){PLY_UNIQUE_VARIABLE(initTypeDescriptor_)}; \
+    static void PLY_UNIQUE_VARIABLE(initTypeDescriptor_)() { \
         using T = type; \
-        static ply::TypeDescriptor_Struct typeDesc { \
-            (type*) nullptr, #type, {
+        PLY_UNUSED((T*) nullptr); \
+        ply::getTypeDescriptor<T>()->cast<ply::TypeDescriptor_Struct>()->members = {
 
 #define PLY_STRUCT_END_PRIM() \
-    } \
-    } \
-    ; \
-    return &typeDesc; \
+        }; \
     }
+// clang-format on
 
 //-----------------------------------------------------------------------
-// enum
+// enums
 //-----------------------------------------------------------------------
 PLY_DLL_ENTRY NativeBindings& getNativeBindings_Enum();
 
@@ -538,13 +510,13 @@ struct TypeDescriptor_Enum : TypeDescriptor {
     String name;
     Array<Identifier> identifiers;
 
-    TypeDescriptor_Enum(u32 fixedSize, const char* name,
-                        std::initializer_list<Identifier> identifiers)
+    PLY_INLINE TypeDescriptor_Enum(u32 fixedSize, const char* name,
+                                   std::initializer_list<Identifier> identifiers)
         : TypeDescriptor{&TypeKey_Enum, fixedSize, getNativeBindings_Enum()}, name{name},
           identifiers{identifiers} {
     }
 
-    const Identifier* findIdentifier(StringView name) const {
+    PLY_NO_INLINE const Identifier* findIdentifier(StringView name) const {
         for (const Identifier& identifier : identifiers) {
             if (identifier.name == name)
                 return &identifier;
@@ -552,7 +524,7 @@ struct TypeDescriptor_Enum : TypeDescriptor {
         return nullptr;
     }
 
-    PLY_INLINE const Identifier* findValue(u32 value) const {
+    PLY_NO_INLINE const Identifier* findValue(u32 value) const {
         for (const Identifier& identifier : identifiers) {
             if (identifier.value == value)
                 return &identifier;
@@ -561,46 +533,48 @@ struct TypeDescriptor_Enum : TypeDescriptor {
     }
 };
 
+// clang-format off
 #define PLY_ENUM_BEGIN(ns, type) \
-    PLY_NO_INLINE ply::TypeDescriptor_Enum* ns getReflection(type*) { \
-        using T = type; \
-        static ply::TypeDescriptor_Enum typeDesc { \
+    PLY_DEFINE_TYPE_DESCRIPTOR(ns type) { \
+        using T = ns type; \
+        static ply::TypeDescriptor_Enum typeDesc{ \
             sizeof(T), #type, {
 
-#define PLY_ENUM_IDENTIFIER(name) {#name, ply::u32(T::name)},
+#define PLY_ENUM_IDENTIFIER(name) \
+                {#name, ply::u32(T::name)},
 
 #define PLY_ENUM_END() \
-    } \
-    } \
-    ; \
-    return &typeDesc; \
+            } \
+        }; \
+        return &typeDesc; \
     }
+// clang-format on
 
 //-----------------------------------------------------------------------
-// Raw pointers
+// TypeDescriptorSpecializer for raw pointers
 //-----------------------------------------------------------------------
-PLY_DLL_ENTRY NativeBindings& getNativeBindings_WeakPtr();
+PLY_DLL_ENTRY NativeBindings& getNativeBindings_RawPtr();
 
-struct TypeDescriptor_WeakPtr : TypeDescriptor {
+struct TypeDescriptor_RawPtr : TypeDescriptor {
     PLY_DLL_ENTRY static TypeKey* typeKey;
     TypeDescriptor* targetType;
 
-    TypeDescriptor_WeakPtr(TypeDescriptor* targetType)
-        : TypeDescriptor{&TypeKey_WeakPtr, sizeof(void*), getNativeBindings_WeakPtr()},
+    TypeDescriptor_RawPtr(TypeDescriptor* targetType)
+        : TypeDescriptor{&TypeKey_RawPtr, sizeof(void*), getNativeBindings_RawPtr()},
           targetType{targetType} {
     }
 };
 
 template <typename T>
-struct TypeResolver<T*> {
-    static TypeDescriptor* get() {
-        static TypeDescriptor_WeakPtr typeDesc{TypeResolver<T>::get()};
+struct TypeDescriptorSpecializer<T*> {
+    static PLY_NO_INLINE TypeDescriptor_RawPtr* get() {
+        static TypeDescriptor_RawPtr typeDesc{getTypeDescriptor<T>()};
         return &typeDesc;
     }
 };
 
 //-----------------------------------------------------------------------
-// Enum-indexed arrays
+// TypeDescriptorSpecializer for EnumIndexedArray
 //-----------------------------------------------------------------------
 PLY_DLL_ENTRY NativeBindings& getNativeBindings_EnumIndexedArray();
 
@@ -610,11 +584,11 @@ struct TypeDescriptor_EnumIndexedArray : TypeDescriptor {
     TypeDescriptor_Enum* enumType;
 
     template <typename T, typename EnumType>
-    TypeDescriptor_EnumIndexedArray(T*, EnumType*)
+    PLY_INLINE TypeDescriptor_EnumIndexedArray(T*, EnumType*)
         : TypeDescriptor{&TypeKey_EnumIndexedArray, sizeof(EnumIndexedArray<T, EnumType>),
                          getNativeBindings_EnumIndexedArray()} {
-        itemType = TypeResolver<T>::get();
-        enumType = TypeResolver<EnumType>::get()->template cast<TypeDescriptor_Enum>();
+        itemType = getTypeDescriptor<T>();
+        enumType = TypeDescriptorSpecializer<EnumType>::get()->template cast<TypeDescriptor_Enum>();
         PLY_ASSERT(fixedSize == itemType->fixedSize * enumType->identifiers.numItems());
 #if PLY_WITH_ASSERTS
         // The enum type must meet the following requirements:
@@ -631,8 +605,8 @@ struct TypeDescriptor_EnumIndexedArray : TypeDescriptor {
 };
 
 template <typename T, typename EnumType>
-struct TypeResolver<EnumIndexedArray<T, EnumType>> {
-    static TypeDescriptor* get() {
+struct TypeDescriptorSpecializer<EnumIndexedArray<T, EnumType>> {
+    static PLY_NO_INLINE TypeDescriptor_EnumIndexedArray* get() {
         static TypeDescriptor_EnumIndexedArray typeDesc{(T*) nullptr, (EnumType*) nullptr};
         return &typeDesc;
     }
@@ -674,40 +648,41 @@ struct TypeDescriptor_Switch : TypeDescriptor {
     }
 };
 
+// clang-format off
 #define PLY_SWITCH_REFLECT(...) \
-    template <typename> \
-    friend struct ply::TypeResolver; \
-    static __VA_ARGS__ ply::TypeDescriptor_Switch* getReflection(); \
-    static ply::Initializer initReflectionObj; \
-    static void initReflectionStates();
+    template <typename> friend struct ply::TypeDescriptorSpecializer; \
+    static __VA_ARGS__ ply::TypeDescriptor* bindTypeDescriptor(); \
+    static ply::Initializer initTypeDescriptor; \
+    static void initTypeDescriptorStates();
 
 #define PLY_SWITCH_BEGIN(type) \
-    PLY_NO_INLINE ply::TypeDescriptor_Switch* type::getReflection() { \
+    PLY_NO_INLINE ply::TypeDescriptor* type::bindTypeDescriptor() { \
         static ply::TypeDescriptor_Switch typeDesc{(type*) nullptr, #type}; \
         return &typeDesc; \
     } \
-    ply::Initializer type::initReflectionObj{type::initReflectionStates}; \
-    void type::initReflectionStates() { \
+    ply::Initializer type::initTypeDescriptor{type::initTypeDescriptorStates}; \
+    void type::initTypeDescriptorStates() { \
         using T = type; \
         PLY_UNUSED((T*) nullptr); \
-        ply::TypeDescriptor_Switch* switchType = ply::TypeResolver<T>::get(); \
+        auto* switchType = T::bindTypeDescriptor()->cast<ply::TypeDescriptor_Switch>(); \
         switchType->states = {
 
 #if PLY_WITH_ASSERTS
 #define PLY_SWITCH_MEMBER(id) \
-    {#id, (u16) T::ID::id, ply::TypeResolver<T::id>::get()->cast<TypeDescriptor_Struct>()},
+            {#id, (u16) T::ID::id, ply::getTypeDescriptor<T::id>()->cast<ply::TypeDescriptor_Struct>()},
 #else
-#define PLY_SWITCH_MEMBER(id) {#id, ply::TypeResolver<T::id>::get()->cast<TypeDescriptor_Struct>()},
+#define PLY_SWITCH_MEMBER(id) \
+            {#id, ply::getTypeDescriptor<T::id>()},
 #endif
 
 #define PLY_SWITCH_END() \
-    } \
-    ; \
-    PLY_ASSERT(switchType->states.numItems() == (u32) T::ID::Count); \
-    for (u32 i = 0; i < switchType->states.numItems(); i++) { \
-        PLY_ASSERT(switchType->states[i].id == i); \
-    } \
+        }; \
+        PLY_ASSERT(switchType->states.numItems() == (u32) T::ID::Count); \
+        for (u32 i = 0; i < switchType->states.numItems(); i++) { \
+            PLY_ASSERT(switchType->states[i].id == i); \
+        } \
     }
+// clang-format on
 
 //-----------------------------------------------------------------------
 // OwnTypedPtr
@@ -742,13 +717,13 @@ struct OwnTypedPtr : TypedPtr {
     void assign(Owned<T>&& other) {
         destroy();
         ptr = other.release();
-        type = TypeResolver<T>::get();
+        type = getTypeDescriptor<T>();
     }
     template <typename T>
     static OwnTypedPtr bind(T* ptr) {
         // FIXME: Find a better way to handle cases where this function is passed a pointer to
         // const.
-        return OwnTypedPtr{(void*) ptr, TypeResolver<T>::get()};
+        return OwnTypedPtr{(void*) ptr, TypeDescriptorSpecializer<T>::get()};
     }
     template <typename T, typename... Args>
     static OwnTypedPtr create(Args&&... args) {
@@ -759,7 +734,7 @@ struct OwnTypedPtr : TypedPtr {
 };
 
 template <>
-struct TypeResolver<OwnTypedPtr> {
+struct TypeDescriptorSpecializer<OwnTypedPtr> {
     static PLY_DLL_ENTRY ply::TypeDescriptor* get();
 };
 
@@ -770,12 +745,12 @@ template <typename T>
 TypedPtr TypedPtr::bind(T* ptr) {
     // FIXME: Find a better way to handle cases where this function is passed a pointer to
     // const.
-    return TypedPtr{(void*) ptr, TypeResolver<T>::get()};
+    return TypedPtr{(void*) ptr, TypeDescriptorSpecializer<T>::get()};
 }
 
 template <class T>
 bool TypedPtr::is() const {
-    return TypeResolver<T>::get()->isEquivalentTo(type);
+    return TypeDescriptorSpecializer<T>::get()->isEquivalentTo(type);
 }
 
 template <class T>
@@ -784,13 +759,13 @@ T* TypedPtr::cast() const {
     // pointer to any target type, regardless of src type (even if src type is null). This
     // extra flexibility was added to simplify callers of readObject(), such as
     // CookCommandReader(), when an unexpected EOF is encountered:
-    PLY_ASSERT(!ptr || TypeResolver<T>::get()->isEquivalentTo(type));
+    PLY_ASSERT(!ptr || TypeDescriptorSpecializer<T>::get()->isEquivalentTo(type));
     return (T*) ptr;
 }
 
 template <class T>
 T* TypedPtr::safeCast() const {
-    return (TypeResolver<T>::get() == this->type) ? (T*) ptr : nullptr;
+    return (TypeDescriptorSpecializer<T>::get() == this->type) ? (T*) ptr : nullptr;
 }
 
 template <class S>
@@ -831,7 +806,7 @@ inline void TypedPtr::copy(const TypedPtr other) {
 
 template <typename T>
 PLY_INLINE T* OwnTypedPtr::release() {
-    PLY_ASSERT(type->isEquivalentTo(TypeResolver<T>::get()));
+    PLY_ASSERT(type->isEquivalentTo(TypeDescriptorSpecializer<T>::get()));
     T* r = (T*) ptr;
     ptr = nullptr;
     type = nullptr;

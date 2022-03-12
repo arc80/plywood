@@ -20,20 +20,20 @@ struct BuiltInPair {
 };
 Array<BuiltInPair> BuiltInTypeDescs = {{FormatKey::None, nullptr},
                                        {FormatKey::Indirect, nullptr},
-                                       {FormatKey::Bool, TypeResolver<bool>::get()},
-                                       {FormatKey::S8, TypeResolver<s8>::get()},
-                                       {FormatKey::S16, TypeResolver<s16>::get()},
-                                       {FormatKey::S32, TypeResolver<s32>::get()},
-                                       {FormatKey::S64, TypeResolver<s64>::get()},
-                                       {FormatKey::U8, TypeResolver<u8>::get()},
-                                       {FormatKey::U16, TypeResolver<u16>::get()},
-                                       {FormatKey::U32, TypeResolver<u32>::get()},
-                                       {FormatKey::U64, TypeResolver<u64>::get()},
-                                       {FormatKey::Float, TypeResolver<float>::get()},
-                                       {FormatKey::Double, TypeResolver<double>::get()},
-                                       {FormatKey::String, TypeResolver<String>::get()},
-                                       {FormatKey::TypedArray, TypeResolver<TypedArray>::get()},
-                                       {FormatKey::Typed, TypeResolver<SavedTypedPtr>::get()}};
+                                       {FormatKey::Bool, getTypeDescriptor<bool>()},
+                                       {FormatKey::S8, getTypeDescriptor<s8>()},
+                                       {FormatKey::S16, getTypeDescriptor<s16>()},
+                                       {FormatKey::S32, getTypeDescriptor<s32>()},
+                                       {FormatKey::S64, getTypeDescriptor<s64>()},
+                                       {FormatKey::U8, getTypeDescriptor<u8>()},
+                                       {FormatKey::U16, getTypeDescriptor<u16>()},
+                                       {FormatKey::U32, getTypeDescriptor<u32>()},
+                                       {FormatKey::U64, getTypeDescriptor<u64>()},
+                                       {FormatKey::Float, getTypeDescriptor<float>()},
+                                       {FormatKey::Double, getTypeDescriptor<double>()},
+                                       {FormatKey::String, getTypeDescriptor<String>()},
+                                       {FormatKey::TypedArray, getTypeDescriptor<TypedArray>()},
+                                       {FormatKey::Typed, getTypeDescriptor<SavedTypedPtr>()}};
 
 u32 WriteFormatContext::addFormatDesc(TypeDescriptor* typeDesc) {
     PLY_ASSERT(m_typeToFormatID.find(typeDesc) == m_typeToFormatID.end());
@@ -112,8 +112,8 @@ void WriteFormatContext::writeOwned(TypeDescriptor* targetType) {
     writeChildFormatDesc(targetType);
 }
 
-void WriteFormatContext::writeWeakPtr(TypeDescriptor* targetType) {
-    m_out.write<u8>((u8) FormatKey::WeakPtr);
+void WriteFormatContext::writeRawPtr(TypeDescriptor* targetType) {
+    m_out.write<u8>((u8) FormatKey::RawPtr);
     writeChildFormatDesc(targetType);
 }
 

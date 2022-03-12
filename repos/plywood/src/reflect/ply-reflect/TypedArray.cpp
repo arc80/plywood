@@ -150,7 +150,7 @@ TypeKey TypeKey_TypedArray{
     TypeKey::alwaysEqualDescriptors,
 };
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<TypedArray>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(TypedArray) {
     static TypeDescriptor typeDesc{&TypeKey_TypedArray, sizeof(TypedArray),
                                    NativeBindings::make<TypedArray>()};
     return &typeDesc;

@@ -7,9 +7,7 @@
 #include <image/Image.h>
 
 namespace ply {
-namespace image {
 
-PLY_REFLECT_ENUM(, Format)
+PLY_DECLARE_TYPE_DESCRIPTOR(image::Format)
 
-} // namespace image
 } // namespace ply

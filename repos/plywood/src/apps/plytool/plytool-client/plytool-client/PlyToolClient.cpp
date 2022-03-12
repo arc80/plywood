@@ -23,7 +23,7 @@ PLY_NO_INLINE void PlyToolClient::remoteRun(ArrayView<String> sourceFiles,
     OutStream outs{plyTool->writeToStdIn.borrow()};
 
     WriteFormatContext writeFormatContext{&outs};
-    writeFormatContext.addOrGetFormatID(TypeResolver<tool::Command>::get());
+    writeFormatContext.addOrGetFormatID(getTypeDescriptor<tool::Command>());
     writeFormatContext.endSchema();
     outs.flushMem();
 

@@ -15,7 +15,6 @@ struct Command {
             Target,
             External,
         };
-        PLY_REFLECT_ENUM(friend, Type)
 
         PLY_REFLECT()
         String repoName;
@@ -39,7 +38,8 @@ struct Command {
     Type type;
     // ply reflect off
 };
-PLY_REFLECT_ENUM(, Command::Dependency::Type)
+
+PLY_DECLARE_TYPE_DESCRIPTOR(Command::Dependency::Type)
 
 } // namespace tool
 } // namespace ply

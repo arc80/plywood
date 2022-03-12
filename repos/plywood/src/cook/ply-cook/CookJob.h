@@ -111,7 +111,7 @@ struct CookJob : RefCounted<CookJob> {
     }
     template <typename T>
     T* castResult() const {
-        if (!TypeResolver<T>::get()->isEquivalentTo(this->id.type->resultType))
+        if (!getTypeDescriptor<T>()->isEquivalentTo(this->id.type->resultType))
             return nullptr;
         return static_cast<T*>(this->result.get());
     }

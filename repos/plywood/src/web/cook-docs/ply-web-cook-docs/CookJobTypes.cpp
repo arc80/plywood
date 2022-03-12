@@ -22,7 +22,7 @@ void initCookJobTypes() {
         pv.ptrValues.append(jobType);
     }
 
-    TypeDescriptor_StaticPtr* staticPtrType = TypeResolver<StaticPtr<cook::CookJobType>>::get();
+    TypeDescriptor_StaticPtr* staticPtrType = getTypeDescriptor<StaticPtr<cook::CookJobType>>();
     PLY_ASSERT(!staticPtrType->possibleValues);
     staticPtrType->possibleValues = &pv;
 }

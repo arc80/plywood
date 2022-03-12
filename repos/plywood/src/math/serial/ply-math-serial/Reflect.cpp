@@ -11,73 +11,73 @@
 
 namespace ply {
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Float2*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<float>::get(), 2};
+PLY_DEFINE_TYPE_DESCRIPTOR(Float2) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<float>(), 2};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Float3*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<float>::get(), 3};
+PLY_DEFINE_TYPE_DESCRIPTOR(Float3) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<float>(), 3};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Float4*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<float>::get(), 4};
+PLY_DEFINE_TYPE_DESCRIPTOR(Float4) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<float>(), 4};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Quaternion*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<float>::get(), 4};
+PLY_DEFINE_TYPE_DESCRIPTOR(Quaternion) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<float>(), 4};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Float2x2*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<Float2>::get(), 2};
+PLY_DEFINE_TYPE_DESCRIPTOR(Float2x2) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<Float2>(), 2};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Float3x3*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<Float3>::get(), 3};
+PLY_DEFINE_TYPE_DESCRIPTOR(Float3x3) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<Float3>(), 3};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Float3x4*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<Float3>::get(), 4};
+PLY_DEFINE_TYPE_DESCRIPTOR(Float3x4) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<Float3>(), 4};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Float4x4*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<Float4>::get(), 4};
+PLY_DEFINE_TYPE_DESCRIPTOR(Float4x4) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<Float4>(), 4};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Box<Int2<u16>>*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<Int2<u16>>::get(), 2};
+PLY_DEFINE_TYPE_DESCRIPTOR(Box<Int2<u16>>) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<Int2<u16>>(), 2};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Box<Float2>*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<Float2>::get(), 2};
+PLY_DEFINE_TYPE_DESCRIPTOR(Box<Float2>) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<Float2>(), 2};
     return &typeDesc;
 };
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Box<Int2<s16>>*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<Int2<s16>>::get(), 2};
+PLY_DEFINE_TYPE_DESCRIPTOR(Box<Int2<s16>>) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<Int2<s16>>(), 2};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Int2<u16>*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<u16>::get(), 2};
+PLY_DEFINE_TYPE_DESCRIPTOR(Int2<u16>) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<u16>(), 2};
     return &typeDesc;
 };
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Int2<s16>*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<s16>::get(), 2};
+PLY_DEFINE_TYPE_DESCRIPTOR(Int2<s16>) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<s16>(), 2};
     return &typeDesc;
 };
 
-PLY_NO_INLINE TypeDescriptor* getReflection(Int3<u8>*) {
-    static TypeDescriptor_FixedArray typeDesc{TypeResolver<u8>::get(), 3};
+PLY_DEFINE_TYPE_DESCRIPTOR(Int3<u8>) {
+    static TypeDescriptor_FixedArray typeDesc{getTypeDescriptor<u8>(), 3};
     return &typeDesc;
 };
 

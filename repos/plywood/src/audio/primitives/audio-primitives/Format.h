@@ -47,7 +47,8 @@ struct Format {
     }
 };
 
-PLY_REFLECT_ENUM(, audio::Format::SampleType)
-
 } // namespace audio
+
+PLY_DECLARE_TYPE_DESCRIPTOR(audio::Format::SampleType)
+
 } // namespace ply

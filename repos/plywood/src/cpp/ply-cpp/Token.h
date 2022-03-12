@@ -64,7 +64,6 @@ struct Token {
         NumericLiteral,
         EndOfFile,
     };
-    PLY_REFLECT_ENUM(friend, Type)
 
     LinearLocation linearLoc = -1;
     StringView identifier; // FIXME: Rename to text
@@ -91,7 +90,7 @@ struct Token {
     }
     HybridString toString() const;
 };
-PLY_REFLECT_ENUM(, Token::Type)
+PLY_DECLARE_TYPE_DESCRIPTOR(Token::Type)
 
 StringView getPunctuationString(Token::Type tok);
 

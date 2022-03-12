@@ -38,7 +38,7 @@ public:
     void writeFixedArray(u32 numItems, TypeDescriptor* itemType);
     void writeArray(TypeDescriptor* itemType);
     void writeOwned(TypeDescriptor* itemType);
-    void writeWeakPtr(TypeDescriptor* itemType);
+    void writeRawPtr(TypeDescriptor* itemType);
     void beginStruct(const String& name, u32 numTemplateParams, u32 numMembers);
     void writeTemplateParam(const String& name, TypeDescriptor* typeDesc);
     void writeMember(const String& name, TypeDescriptor* typeDesc);

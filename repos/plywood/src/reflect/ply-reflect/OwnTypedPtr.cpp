@@ -69,7 +69,7 @@ TypeKey TypeKey_OwnTypedPtr{
     TypeKey::alwaysEqualDescriptors,
 };
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<OwnTypedPtr>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(OwnTypedPtr) {
     static TypeDescriptor typeDesc{&TypeKey_OwnTypedPtr, sizeof(OwnTypedPtr),
                                    NativeBindings::make<OwnTypedPtr>()};
     return &typeDesc;

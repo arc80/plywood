@@ -164,7 +164,7 @@ TypeKey TypeKey_String{[](TypedPtr obj, WriteObjectContext* context) {
                            context->writePrimitive(FormatKey::String);
                        },
                        [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
-                           PLY_ASSERT(obj.type == TypeResolver<String>::get());
+                           PLY_ASSERT(obj.type == getTypeDescriptor<String>());
                            if ((FormatKey) formatDesc->formatKey == FormatKey::String) {
                                *(String*) obj.ptr = Boxed<String>::read(context->in);
                            } else {
@@ -643,12 +643,12 @@ TypeKey TypeKey_Enum{
 TypeKey* TypeDescriptor_Enum::typeKey = &TypeKey_Enum;
 
 //-----------------------------------------------------------------
-// TypeKey_WeakPtr
+// TypeKey_RawPtr
 //
-TypeKey TypeKey_WeakPtr{
+TypeKey TypeKey_RawPtr{
     // write
     [](TypedPtr obj, WriteObjectContext* context) {
-        TypeDescriptor_WeakPtr* weakPtrType = obj.type->cast<TypeDescriptor_WeakPtr>();
+        TypeDescriptor_RawPtr* weakPtrType = obj.type->cast<TypeDescriptor_RawPtr>();
         TypedPtr targetPtr = TypedPtr{*(void**) obj.ptr, weakPtrType->targetType};
 
         // Save info needed to resolve this weak pointer
@@ -662,19 +662,19 @@ TypeKey TypeKey_WeakPtr{
     },
     // writeFormat
     [](TypeDescriptor* typeDesc, WriteFormatContext* context) {
-        TypeDescriptor_WeakPtr* weakPtrType = typeDesc->cast<TypeDescriptor_WeakPtr>();
-        context->writeWeakPtr(weakPtrType->targetType);
+        TypeDescriptor_RawPtr* weakPtrType = typeDesc->cast<TypeDescriptor_RawPtr>();
+        context->writeRawPtr(weakPtrType->targetType);
     },
     // read
     [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
-        TypeDescriptor_WeakPtr* weakPtrType = obj.type->cast<TypeDescriptor_WeakPtr>();
-        LoadPtrResolver::WeakPtr* weakPtr = (LoadPtrResolver::WeakPtr*) obj.ptr;
+        TypeDescriptor_RawPtr* weakPtrType = obj.type->cast<TypeDescriptor_RawPtr>();
+        LoadPtrResolver::RawPtr* weakPtr = (LoadPtrResolver::RawPtr*) obj.ptr;
 
         u32 linkIndex = context->in.read<u32>();
         // FIXME: Handle bad data gracefully
         PLY_ASSERT(linkIndex < context->ptrResolver.linkTable.numItems());
         weakPtr->linkIndex = linkIndex;
-        LoadPtrResolver::WeakPtrToResolve& weakInfo =
+        LoadPtrResolver::RawPtrToResolve& weakInfo =
             context->ptrResolver.weakPtrsToResolve.append();
         weakInfo.weakPtr = weakPtr;
 #if PLY_VALIDATE_RESOLVED_PTR_TYPES
@@ -683,18 +683,18 @@ TypeKey TypeKey_WeakPtr{
     },
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {
-        const auto* weakPtrType = typeDesc->cast<const TypeDescriptor_WeakPtr>();
+        const auto* weakPtrType = typeDesc->cast<const TypeDescriptor_RawPtr>();
         hasher << weakPtrType->targetType;
     },
     // equalDescriptors
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
-        const auto* weakPtrType0 = type0->cast<const TypeDescriptor_WeakPtr>();
-        const auto* weakPtrType1 = type1->cast<const TypeDescriptor_WeakPtr>();
+        const auto* weakPtrType0 = type0->cast<const TypeDescriptor_RawPtr>();
+        const auto* weakPtrType1 = type1->cast<const TypeDescriptor_RawPtr>();
         return weakPtrType0->targetType->isEquivalentTo(weakPtrType1->targetType);
     },
 };
 
-TypeKey* TypeDescriptor_WeakPtr::typeKey = &TypeKey_WeakPtr;
+TypeKey* TypeDescriptor_RawPtr::typeKey = &TypeKey_RawPtr;
 
 //-----------------------------------------------------------------
 // TypeKey_EnumIndexedArray

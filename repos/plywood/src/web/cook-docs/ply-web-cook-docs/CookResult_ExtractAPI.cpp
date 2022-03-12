@@ -610,7 +610,7 @@ struct APIExtractor : cpp::ParseSupervisor {
         return true;
     }
 };
-PLY_REFLECT_ENUM(, APIExtractor::Error::Type)
+PLY_DECLARE_TYPE_DESCRIPTOR(APIExtractor::Error::Type)
 
 void APIExtractor::Error::writeMessage(OutStream* outs,
                                        const cpp::PPVisitedFiles* visitedFiles) const {
@@ -733,7 +733,7 @@ void ExtractAPI_cook(cook::CookResult* cookResult_, TypedPtr) {
 
 cook::CookJobType CookJobType_ExtractAPI = {
     "extractAPI",
-    TypeResolver<CookResult_ExtractAPI>::get(),
+    getTypeDescriptor<CookResult_ExtractAPI>(),
     nullptr,
     ExtractAPI_cook,
 };

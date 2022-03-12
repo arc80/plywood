@@ -69,13 +69,13 @@ public:
 
     template <typename T>
     PLY_INLINE const T* get() const {
-        PLY_ASSERT(TypeResolver<T>::get()->isEquivalentTo(m_typeOwner->getRootType()));
+        PLY_ASSERT(getTypeDescriptor<T>()->isEquivalentTo(m_typeOwner->getRootType()));
         return (T*) m_array.m_items;
     }
 
     template <typename T>
     PLY_INLINE ArrayView<T> getView() const {
-        PLY_ASSERT(TypeResolver<T>::get()->isEquivalentTo(m_typeOwner->getRootType()));
+        PLY_ASSERT(getTypeDescriptor<T>()->isEquivalentTo(m_typeOwner->getRootType()));
         return {(T*) m_array.m_items, m_array.m_numItems};
     }
 
@@ -104,7 +104,7 @@ public:
 };
 
 template <>
-struct TypeResolver<TypedArray> {
+struct TypeDescriptorSpecializer<TypedArray> {
     static PLY_DLL_ENTRY ply::TypeDescriptor* get();
 };
 

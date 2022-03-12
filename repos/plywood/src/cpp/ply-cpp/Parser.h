@@ -89,7 +89,7 @@ enum class ExpectedToken {
     TypeSpecifier,
     ClassKeyword,
 };
-PLY_REFLECT_ENUM(, ExpectedToken)
+PLY_DECLARE_TYPE_DESCRIPTOR(ExpectedToken)
 
 struct ParseError : BaseError {
     enum Type {
@@ -110,7 +110,6 @@ struct ParseError : BaseError {
         MissingDeclaration,
         DuplicateVirtSpecifier,
     };
-    PLY_REFLECT_ENUM(friend, Type)
 
     PLY_REFLECT()
     Type type = Invalid;
@@ -126,7 +125,7 @@ struct ParseError : BaseError {
     }
     virtual void writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const override;
 };
-PLY_REFLECT_ENUM(, ParseError::Type)
+PLY_DECLARE_TYPE_DESCRIPTOR(ParseError::Type)
 
 struct Parser {
     static constexpr u32 AcceptOpenCurly = 0x1;

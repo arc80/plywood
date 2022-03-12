@@ -37,7 +37,7 @@ enum class FormatKey {
     FixedArray = StartUserKeyRange,
     Array,
     Owned,
-    WeakPtr,
+    RawPtr,
     Struct,
     Enum,
     EnumIndexedArray,
@@ -100,13 +100,13 @@ struct FormatDescriptor_Owned : FormatDescriptor {
     }
 };
 
-struct FormatDescriptor_WeakPtr : FormatDescriptor {
+struct FormatDescriptor_RawPtr : FormatDescriptor {
     FormatDescriptor* childFormat;
 
-    FormatDescriptor_WeakPtr(FormatDescriptor* childFormat)
-        : FormatDescriptor((u32) FormatKey::WeakPtr), childFormat(childFormat) {
+    FormatDescriptor_RawPtr(FormatDescriptor* childFormat)
+        : FormatDescriptor((u32) FormatKey::RawPtr), childFormat(childFormat) {
     }
-    virtual ~FormatDescriptor_WeakPtr() override {
+    virtual ~FormatDescriptor_RawPtr() override {
     }
 };
 

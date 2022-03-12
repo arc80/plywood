@@ -33,7 +33,6 @@ struct RepoRegError : cpp::BaseError {
         ExtraneousText,
         OldCommandFormat,
     };
-    PLY_REFLECT_ENUM(friend, Type)
 
     PLY_REFLECT()
     Type type = Unknown;
@@ -48,7 +47,7 @@ struct RepoRegError : cpp::BaseError {
     virtual void writeMessage(OutStream* outs,
                               const cpp::PPVisitedFiles* visitedFiles) const override;
 };
-PLY_REFLECT_ENUM(, RepoRegError::Type)
+PLY_DECLARE_TYPE_DESCRIPTOR(RepoRegError::Type)
 
 void RepoRegError::writeMessage(OutStream* outs, const cpp::PPVisitedFiles* visitedFiles) const {
     outs->format("{}: error: ", cpp::expandFileLocation(visitedFiles, this->linearLoc).toString());

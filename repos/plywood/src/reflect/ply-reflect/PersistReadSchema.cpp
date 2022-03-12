@@ -82,9 +82,9 @@ public:
         } else if (formatKey == (u8) FormatKey::Owned) {
             FormatDescriptor* childFormat = readFormatDescriptor();
             newFormat = new FormatDescriptor_Owned{childFormat};
-        } else if (formatKey == (u8) FormatKey::WeakPtr) {
+        } else if (formatKey == (u8) FormatKey::RawPtr) {
             FormatDescriptor* childFormat = readFormatDescriptor();
-            newFormat = new FormatDescriptor_WeakPtr{childFormat};
+            newFormat = new FormatDescriptor_RawPtr{childFormat};
         } else if (formatKey == (u8) FormatKey::Struct) {
             FormatDescriptor_Struct* structFormat = new FormatDescriptor_Struct;
             structFormat->name = Boxed<String>::read(m_in);

@@ -28,7 +28,6 @@ struct Preprocessor {
             DirectiveNotAtStartOfLine,
             GarbageCharacters,
         };
-        PLY_REFLECT_ENUM(friend, Type)
 
         PLY_REFLECT()
         Type type = Unknown;
@@ -78,7 +77,7 @@ struct Preprocessor {
         this->errorHandler(new Error{std::move(err)});
     }
 };
-PLY_REFLECT_ENUM(, Preprocessor::Error::Type)
+PLY_DECLARE_TYPE_DESCRIPTOR(Preprocessor::Error::Type)
 
 Token readToken(Preprocessor* pp);
 void addPPDef(Preprocessor* pp, StringView identifier, StringView expansion,

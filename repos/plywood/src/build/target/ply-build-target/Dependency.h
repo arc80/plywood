@@ -21,7 +21,7 @@ enum class DynamicLinkage : u8 {
     Import,
     Export,
 };
-PLY_REFLECT_ENUM(, DynamicLinkage)
+PLY_DECLARE_TYPE_DESCRIPTOR(DynamicLinkage)
 
 struct PreprocessorDefinition {
     String key;

@@ -68,7 +68,7 @@ TypeKey TypeKey_SavedTypedPtr{
     TypeKey::alwaysEqualDescriptors,
 };
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<SavedTypedPtr>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(SavedTypedPtr) {
     static TypeDescriptor typeDesc{&TypeKey_SavedTypedPtr, sizeof(SavedTypedPtr),
                                    NativeBindings::make<SavedTypedPtr>()};
     return &typeDesc;

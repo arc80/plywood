@@ -166,7 +166,7 @@ void resolveLinks(LoadPtrResolver* ptrResolver) {
         ptrResolver->linkTableIndex++;
     }
 
-    for (const LoadPtrResolver::WeakPtrToResolve& weakInfo : ptrResolver->weakPtrsToResolve) {
+    for (const LoadPtrResolver::RawPtrToResolve& weakInfo : ptrResolver->weakPtrsToResolve) {
         u32 linkIndex = weakInfo.weakPtr->linkIndex;
         // FIXME: handle bad data gracefully
         PLY_ASSERT(linkIndex < ptrResolver->linkTable.numItems());

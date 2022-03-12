@@ -47,7 +47,7 @@ void writeTypeSignature(BinaryBuffer& sig, const TypeDescriptor* typeDesc) {
             sig.append(safeDemote<u16>(member.offset));
             writeTypeSignature(sig, member.type);
         }
-    } else if (typeDesc->typeKey == &TypeKey_WeakPtr || typeDesc->typeKey == &assetBank::TypeKey_AssetRef) {
+    } else if (typeDesc->typeKey == &TypeKey_RawPtr || typeDesc->typeKey == &assetBank::TypeKey_AssetRef) {
         // FIXME: Need to remove textures from the uniform objects
     } else {
         PLY_FORCE_CRASH();     // unsupported destination typeDesc

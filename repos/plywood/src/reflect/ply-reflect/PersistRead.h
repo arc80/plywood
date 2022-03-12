@@ -44,13 +44,13 @@ struct LoadPtrResolver {
         }
     };
 
-    union WeakPtr {
+    union RawPtr {
         u32 linkIndex;
         void* ptr;
     };
 
-    struct WeakPtrToResolve {
-        WeakPtr* weakPtr = nullptr;
+    struct RawPtrToResolve {
+        RawPtr* weakPtr = nullptr;
 #if PLY_VALIDATE_RESOLVED_PTR_TYPES
         TypeDescriptor* typeDesc = nullptr;
 #endif
@@ -58,7 +58,7 @@ struct LoadPtrResolver {
 
     Array<LinkTableEntry> linkTable;
     u32 linkTableIndex = 0;
-    Array<WeakPtrToResolve> weakPtrsToResolve;
+    Array<RawPtrToResolve> weakPtrsToResolve;
     u32 objDataOffset = 0;
 };
 

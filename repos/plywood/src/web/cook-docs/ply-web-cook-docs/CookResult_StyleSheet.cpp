@@ -36,7 +36,7 @@ void StyleSheet_cook(cook::CookResult* cookResult, TypedPtr) {
 
 cook::CookJobType CookJobType_StyleSheetID = {
     "stylesheet",
-    TypeResolver<cook::CookResult>::get(),
+    getTypeDescriptor<cook::CookResult>(),
     nullptr,
     StyleSheet_cook,
 };

@@ -528,7 +528,7 @@ void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
 
 cook::CookJobType CookJobType_Page = {
     "page",
-    TypeResolver<CookResult_Page>::get(),
+    getTypeDescriptor<CookResult_Page>(),
     nullptr,
     Page_cook,
 };

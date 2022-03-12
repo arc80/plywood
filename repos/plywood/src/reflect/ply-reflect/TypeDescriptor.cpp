@@ -261,7 +261,7 @@ NativeBindings& getNativeBindings_Enum() {
     return bindings;
 }
 
-NativeBindings& getNativeBindings_WeakPtr() {
+NativeBindings& getNativeBindings_RawPtr() {
     static NativeBindings bindings{
         // create
         [](TypeDescriptor*) -> TypedPtr {
@@ -392,62 +392,62 @@ NativeBindings& getNativeBindings_SynthesizedStruct() {
     return bindings;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<bool>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(bool) {
     static TypeDescriptor typeDesc{&TypeKey_Bool, sizeof(bool), NativeBindings::make<bool>()};
     return &typeDesc;
-}
+};
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<s8>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(s8) {
     static TypeDescriptor typeDesc{&TypeKey_S8, sizeof(s8), NativeBindings::make<s8>()};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<s16>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(s16) {
     static TypeDescriptor typeDesc{&TypeKey_S16, sizeof(s16), NativeBindings::make<s16>()};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<s32>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(s32) {
     static TypeDescriptor typeDesc{&TypeKey_S32, sizeof(s32), NativeBindings::make<s32>()};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<s64>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(s64) {
     static TypeDescriptor typeDesc{&TypeKey_S64, sizeof(s64), NativeBindings::make<s64>()};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<u8>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(u8) {
     static TypeDescriptor typeDesc{&TypeKey_U8, sizeof(u8), NativeBindings::make<u8>()};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<u16>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(u16) {
     static TypeDescriptor typeDesc{&TypeKey_U16, sizeof(u16), NativeBindings::make<u16>()};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<u32>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(u32) {
     static TypeDescriptor typeDesc{&TypeKey_U32, sizeof(u32), NativeBindings::make<u32>()};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<u64>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(u64) {
     static TypeDescriptor typeDesc{&TypeKey_U64, sizeof(u64), NativeBindings::make<u64>()};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<float>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(float) {
     static TypeDescriptor typeDesc{&TypeKey_Float, sizeof(float), NativeBindings::make<float>()};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<double>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(double) {
     static TypeDescriptor typeDesc{&TypeKey_Double, sizeof(double), NativeBindings::make<double>()};
     return &typeDesc;
 }
 
-PLY_NO_INLINE TypeDescriptor* TypeResolver<String>::get() {
+PLY_DEFINE_TYPE_DESCRIPTOR(String) {
     static TypeDescriptor typeDesc{&TypeKey_String, sizeof(String), NativeBindings::make<String>()};
     return &typeDesc;
 }

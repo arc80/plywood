@@ -59,7 +59,7 @@ void cook_CopyStatic(cook::CookResult* cookResult, TypedPtr) {
 
 cook::CookJobType CookJobType_CopyStatic = {
     "copyStatic",
-    TypeResolver<cook::CookResult>::get(),
+    getTypeDescriptor<cook::CookResult>(),
     nullptr,
     cook_CopyStatic,
 };

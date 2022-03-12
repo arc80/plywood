@@ -31,9 +31,6 @@ struct SavedTypedPtr {
     }
 };
 
-template <>
-struct TypeResolver<SavedTypedPtr> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
-};
+PLY_DECLARE_TYPE_DESCRIPTOR(SavedTypedPtr, PLY_DLL_ENTRY)
 
 } // namespace ply

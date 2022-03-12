@@ -39,7 +39,7 @@ inline TypedPtr readExpectedAsset(InStream* in, TypeDescriptor* expected) {
 
 template <typename T>
 inline TypedPtr readExpectedAsset(InStream* in) {
-    return readExpectedAsset(in, TypeResolver<T>::get());
+    return readExpectedAsset(in, getTypeDescriptor<T>());
 }
 
 // FIXME: This was added to support wire protocols (eg. between RemoteCooker and CookEXE).

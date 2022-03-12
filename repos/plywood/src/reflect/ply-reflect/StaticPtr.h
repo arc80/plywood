@@ -61,7 +61,7 @@ struct TypeDescriptor_StaticPtr : TypeDescriptor {
 };
 
 template <typename T>
-struct TypeResolver<StaticPtr<T>> {
+struct TypeDescriptorSpecializer<StaticPtr<T>> {
     static TypeDescriptor_StaticPtr* get() {
         static TypeDescriptor_StaticPtr typeDesc;
         return &typeDesc;

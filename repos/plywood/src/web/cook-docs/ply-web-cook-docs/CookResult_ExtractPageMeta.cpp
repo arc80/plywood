@@ -115,8 +115,8 @@ void cook_ExtractPageMeta(cook::CookResult* cookResult_, TypedPtr jobArg) {
 
 cook::CookJobType CookJobType_ExtractPageMeta = {
     "extractPageMeta",
-    TypeResolver<CookResult_ExtractPageMeta>::get(),
-    TypeResolver<Array<Reference<cook::CookJob>>>::get(),
+    getTypeDescriptor<CookResult_ExtractPageMeta>(),
+    getTypeDescriptor<Array<Reference<cook::CookJob>>>(),
     cook_ExtractPageMeta,
 };
 

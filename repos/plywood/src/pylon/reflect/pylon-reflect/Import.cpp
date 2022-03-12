@@ -25,15 +25,15 @@ struct PylonTypeImporter {
             // ever want them to resolve built-in types.
             StringView str = aNode->text();
             if (str == "u16") {
-                return TypeResolver<u16>::get();
+                return getTypeDescriptor<u16>();
             } else if (str == "u16_2") {
-                return TypeResolver<u16[2]>::get();
+                return getTypeDescriptor<u16[2]>();
             } else if (str == "u16_3") {
-                return TypeResolver<u16[3]>::get();
+                return getTypeDescriptor<u16[3]>();
             } else if (str == "u16_4") {
-                return TypeResolver<u16[4]>::get();
+                return getTypeDescriptor<u16[4]>();
             } else if (str == "float") {
-                return TypeResolver<float>::get();
+                return getTypeDescriptor<float>();
             } else {
                 TypeDescriptor* typeDesc = nullptr;
                 if (typeFromName.isValid()) {
@@ -60,7 +60,7 @@ struct PylonTypeImporter {
                     u32 alignment = structType->fixedSize % 4;
                     if (alignment > 0) {
                         PLY_ASSERT(alignment == 2); // only case currently handled
-                        structType->appendMember("padding", TypeResolver<u16>::get());
+                        structType->appendMember("padding", getTypeDescriptor<u16>());
                     }
                 };
                 const Node* aMembers = aNode->get("members");
