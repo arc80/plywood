@@ -8,7 +8,7 @@
 namespace ply {
 namespace docs {
 
-void cook_CopyStatic(cook::CookResult* cookResult, TypedPtr) {
+void cook_CopyStatic(cook::CookResult* cookResult, AnyObject) {
     PLY_ASSERT(!cookResult->job->id.desc.isEmpty());
 
     // Create destination folder(s) if missing

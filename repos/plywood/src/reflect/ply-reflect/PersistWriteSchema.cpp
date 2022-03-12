@@ -7,7 +7,7 @@
 #include <ply-reflect/PersistWrite.h>
 #include <ply-reflect/FormatDescriptor.h>
 #include <ply-reflect/TypedArray.h>
-#include <ply-reflect/SavedTypedPtr.h>
+#include <ply-reflect/AnySavedObject.h>
 #include <ply-runtime/algorithm/Range.h>
 #include <ply-runtime/container/Boxed.h>
 #include <map>
@@ -33,7 +33,7 @@ Array<BuiltInPair> BuiltInTypeDescs = {{FormatKey::None, nullptr},
                                        {FormatKey::Double, getTypeDescriptor<double>()},
                                        {FormatKey::String, getTypeDescriptor<String>()},
                                        {FormatKey::TypedArray, getTypeDescriptor<TypedArray>()},
-                                       {FormatKey::Typed, getTypeDescriptor<SavedTypedPtr>()}};
+                                       {FormatKey::Typed, getTypeDescriptor<AnySavedObject>()}};
 
 u32 WriteFormatContext::addFormatDesc(TypeDescriptor* typeDesc) {
     PLY_ASSERT(m_typeToFormatID.find(typeDesc) == m_typeToFormatID.end());

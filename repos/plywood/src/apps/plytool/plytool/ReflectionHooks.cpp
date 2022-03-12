@@ -145,7 +145,7 @@ struct ReflectionHooks : ParseSupervisor {
     SingleFileReflectionInfo* sfri = nullptr;
     bool anyError = false;
 
-    virtual void enter(TypedPtr node) override {
+    virtual void enter(AnyObject node) override {
         State& state = this->stack.append();
 
         if (node.is<grammar::DeclSpecifier::Enum_>()) {
@@ -173,7 +173,7 @@ struct ReflectionHooks : ParseSupervisor {
         }
     }
 
-    virtual void exit(TypedPtr node) override {
+    virtual void exit(AnyObject node) override {
         State& state = this->stack.back();
         if (state.captureMembersToken.isValid()) {
             this->parser->pp->errorHandler(

@@ -72,47 +72,47 @@ PLY_DLL_ENTRY extern TypeKey TypeKey_SavedTypedPtr;
 // NativeBindings
 //-----------------------------------------------------------------------
 struct NativeBindings {
-    TypedPtr (*create)(TypeDescriptor* typeDesc);
-    void (*destroy)(TypedPtr obj);
-    void (*construct)(TypedPtr obj);
-    void (*destruct)(TypedPtr obj);
-    void (*move)(TypedPtr dst, TypedPtr src);
-    void (*copy)(TypedPtr dst, const TypedPtr src);
+    AnyObject (*create)(TypeDescriptor* typeDesc);
+    void (*destroy)(AnyObject obj);
+    void (*construct)(AnyObject obj);
+    void (*destruct)(AnyObject obj);
+    void (*move)(AnyObject dst, AnyObject src);
+    void (*copy)(AnyObject dst, const AnyObject src);
 
     template <typename T>
     static NativeBindings make() {
         return {
             // create
-            [](TypeDescriptor* typeDesc) -> TypedPtr {
+            [](TypeDescriptor* typeDesc) -> AnyObject {
                 PLY_ASSERT(typeDesc == TypeDescriptorSpecializer<T>::get());
                 return {subst::createByMember<T>(), typeDesc};
             },
             // destroy
-            [](TypedPtr obj) {
+            [](AnyObject obj) {
                 PLY_ASSERT(obj.type == TypeDescriptorSpecializer<T>::get());
-                subst::destroyByMember((T*) obj.ptr);
+                subst::destroyByMember((T*) obj.data);
             },
             // construct
-            [](TypedPtr obj) {
+            [](AnyObject obj) {
                 PLY_ASSERT(obj.type == TypeDescriptorSpecializer<T>::get());
-                subst::unsafeConstruct((T*) obj.ptr);
+                subst::unsafeConstruct((T*) obj.data);
             },
             // destruct
-            [](TypedPtr obj) {
+            [](AnyObject obj) {
                 PLY_ASSERT(obj.type == TypeDescriptorSpecializer<T>::get());
-                subst::destructByMember((T*) obj.ptr);
+                subst::destructByMember((T*) obj.data);
             },
             // move
-            [](TypedPtr dst, TypedPtr src) {
+            [](AnyObject dst, AnyObject src) {
                 PLY_ASSERT(dst.type == TypeDescriptorSpecializer<T>::get());
                 PLY_ASSERT(src.type == TypeDescriptorSpecializer<T>::get());
-                subst::unsafeMove((T*) dst.ptr, (T*) src.ptr);
+                subst::unsafeMove((T*) dst.data, (T*) src.data);
             },
             // copy
-            [](TypedPtr dst, const TypedPtr src) {
+            [](AnyObject dst, const AnyObject src) {
                 PLY_ASSERT(dst.type == TypeDescriptorSpecializer<T>::get());
                 PLY_ASSERT(src.type == TypeDescriptorSpecializer<T>::get());
-                subst::unsafeCopy((T*) dst.ptr, (const T*) src.ptr);
+                subst::unsafeCopy((T*) dst.data, (const T*) src.data);
             },
         };
     }
@@ -256,30 +256,6 @@ struct TypeDescriptorSpecializer<Array<T>> {
     }
 };
 
-struct TypedPtr_Array {
-    typedef TypeDescriptor_Array TypeDescriptor;
-
-    void* ptr = nullptr;
-    TypeDescriptor_Array* type = nullptr;
-
-    TypedPtr_Array() {
-    }
-    TypedPtr_Array(void* ptr, TypeDescriptor_Array* type) : ptr{ptr}, type{type} {
-    }
-    operator TypedPtr() const {
-        return {ptr, type};
-    }
-    u32 numItems() const {
-        return reinterpret_cast<details::BaseArray*>(ptr)->m_numItems;
-    }
-    void resize(u32 newSize);
-    TypedPtr getItem(u32 index) {
-        details::BaseArray* arr = reinterpret_cast<details::BaseArray*>(ptr);
-        PLY_ASSERT(index < arr->m_numItems);
-        return {PLY_PTR_OFFSET(arr->m_items, type->itemType->fixedSize * index), type->itemType};
-    }
-};
-
 //-----------------------------------------------------------------------
 // TypeDescriptorSpecializer for Owned
 //-----------------------------------------------------------------------
@@ -288,17 +264,17 @@ PLY_DLL_ENTRY NativeBindings& getNativeBindings_Owned();
 struct TypeDescriptor_Owned : TypeDescriptor {
     PLY_DLL_ENTRY static TypeKey* typeKey;
     TypeDescriptor* targetType;
-    void (*assignRawPtr)(TypedPtr ownedPtr, TypedPtr target) = nullptr;
+    void (*assignRawPtr)(AnyObject ownedPtr, AnyObject target) = nullptr;
 
     template <typename T>
     PLY_INLINE TypeDescriptor_Owned(T*)
         : TypeDescriptor{&TypeKey_Owned, sizeof(void*), getNativeBindings_Owned()},
           targetType{getTypeDescriptor<T>()} {
-        assignRawPtr = [](TypedPtr ownedPtr, TypedPtr target) {
+        assignRawPtr = [](AnyObject ownedPtr, AnyObject target) {
             // FIXME: Check that the target type is compatible
             // If the target uses multiple inheritance, may need to adjust its pointer value to
             // store as a base class object!
-            *reinterpret_cast<Owned<T>*>(ownedPtr.ptr) = (T*) target.ptr;
+            *reinterpret_cast<Owned<T>*>(ownedPtr.data) = (T*) target.data;
         };
     }
 };
@@ -308,29 +284,6 @@ struct TypeDescriptorSpecializer<Owned<T>> {
     static PLY_NO_INLINE TypeDescriptor_Owned* get() {
         static TypeDescriptor_Owned typeDesc{(T*) nullptr};
         return &typeDesc;
-    }
-};
-
-struct TypedPtr_Owned {
-    typedef TypeDescriptor_Owned TypeDescriptor;
-
-    void* ptr = nullptr;
-    TypeDescriptor_Owned* type = nullptr;
-
-    TypedPtr_Owned() {
-    }
-    TypedPtr_Owned(void* ptr, TypeDescriptor_Owned* type) : ptr{ptr}, type{type} {
-    }
-    operator TypedPtr() const {
-        return {ptr, type};
-    }
-    void assign(TypedPtr target) {
-        type->assignRawPtr(*this, target);
-    }
-    template <typename T>
-    T* get() const {
-        PLY_ASSERT(type->targetType->isEquivalentTo(TypeDescriptorSpecializer<T>::get()));
-        return reinterpret_cast<Owned<T>*>(ptr)->get();
     }
 };
 
@@ -394,7 +347,7 @@ struct TypeDescriptor_Struct : TypeDescriptor {
     }
     static PLY_INLINE void invokePostSerialize(...) {
     }
-    void (*onPostSerialize)(void* ptr) = [](void*) {};
+    void (*onPostSerialize)(void* data) = [](void*) {};
 
     // Constructor for synthesized TypeDescriptor_Struct:
     PLY_INLINE TypeDescriptor_Struct(u32 fixedSize, StringView name)
@@ -407,7 +360,7 @@ struct TypeDescriptor_Struct : TypeDescriptor {
                                      std::initializer_list<Member> members = {})
         : TypeDescriptor{&TypeKey_Struct, sizeof(T), NativeBindings::make<T>()}, name{name},
           members{members} {
-        onPostSerialize = [](void* ptr) { invokePostSerialize((T*) ptr); };
+        onPostSerialize = [](void* data) { invokePostSerialize((T*) data); };
     }
 
     PLY_INLINE void appendMember(StringView name, TypeDescriptor* type) {
@@ -422,24 +375,6 @@ struct TypeDescriptor_Struct : TypeDescriptor {
                 return &member;
         }
         return nullptr;
-    }
-};
-
-struct TypedPtr_Struct : TypedPtr {
-    typedef TypeDescriptor_Struct TypeDescriptor;
-
-    TypedPtr_Struct(void* ptr, TypeDescriptor_Struct* structType) : TypedPtr{ptr, structType} {
-    }
-    TypeDescriptor_Struct* structType() const {
-        return (TypeDescriptor_Struct*) type;
-    }
-    TypedPtr getMember(const TypeDescriptor_Struct::Member& member) const {
-#if PLY_WITH_ASSERTS
-        const TypeDescriptor_Struct::Member* firstMember = &structType()->members[0];
-        PLY_ASSERT(&member >= firstMember &&
-                   &member < firstMember + structType()->members.numItems());
-#endif
-        return {PLY_PTR_OFFSET(ptr, member.offset), member.type};
     }
 };
 
@@ -636,14 +571,14 @@ struct TypeDescriptor_Switch : TypeDescriptor {
         : TypeDescriptor{&TypeKey_Switch, sizeof(T), NativeBindings::make<T>()}, name{name},
           storageOffset{PLY_MEMBER_OFFSET(T, storage)}, states{states} {
     }
-    void ensureStateIs(TypedPtr obj, u16 stateID) {
+    void ensureStateIs(AnyObject obj, u16 stateID) {
         PLY_ASSERT(obj.type == this);
-        u16 oldStateID = *(u16*) obj.ptr;
+        u16 oldStateID = *(u16*) obj.data;
         if (oldStateID != stateID) {
-            void* storage = PLY_PTR_OFFSET(obj.ptr, storageOffset);
-            TypedPtr{storage, states[oldStateID].structType}.destruct();
-            *(u16*) obj.ptr = stateID;
-            TypedPtr{storage, states[stateID].structType}.construct();
+            void* storage = PLY_PTR_OFFSET(obj.data, storageOffset);
+            AnyObject{storage, states[oldStateID].structType}.destruct();
+            *(u16*) obj.data = stateID;
+            AnyObject{storage, states[stateID].structType}.construct();
         }
     }
 };
@@ -685,48 +620,48 @@ struct TypeDescriptor_Switch : TypeDescriptor {
 // clang-format on
 
 //-----------------------------------------------------------------------
-// OwnTypedPtr
+// AnyOwnedObject
 //-----------------------------------------------------------------------
-struct OwnTypedPtr : TypedPtr {
-    OwnTypedPtr() {
+struct AnyOwnedObject : AnyObject {
+    AnyOwnedObject() {
     }
-    OwnTypedPtr(void* ptr, TypeDescriptor* type) : TypedPtr{ptr, type} {
+    AnyOwnedObject(void* data, TypeDescriptor* type) : AnyObject{data, type} {
     }
-    OwnTypedPtr(TypedPtr&& other) : TypedPtr{other.ptr, other.type} {
+    AnyOwnedObject(AnyObject&& other) : AnyObject{other.data, other.type} {
     }
-    OwnTypedPtr(OwnTypedPtr&& other) : TypedPtr{other.ptr, other.type} {
-        other.ptr = nullptr;
+    AnyOwnedObject(AnyOwnedObject&& other) : AnyObject{other.data, other.type} {
+        other.data = nullptr;
         other.type = nullptr;
     }
-    void operator=(TypedPtr&& other) {
+    void operator=(AnyObject&& other) {
         destroy();
-        ptr = other.ptr;
+        data = other.data;
         type = other.type;
     }
-    void operator=(OwnTypedPtr&& other) {
+    void operator=(AnyOwnedObject&& other) {
         destroy();
-        ptr = other.ptr;
+        data = other.data;
         type = other.type;
-        other.ptr = nullptr;
+        other.data = nullptr;
         other.type = nullptr;
     }
-    ~OwnTypedPtr() {
+    ~AnyOwnedObject() {
         destroy();
     }
     template <typename T>
     void assign(Owned<T>&& other) {
         destroy();
-        ptr = other.release();
+        data = other.release();
         type = getTypeDescriptor<T>();
     }
     template <typename T>
-    static OwnTypedPtr bind(T* ptr) {
+    static AnyOwnedObject bind(T* data) {
         // FIXME: Find a better way to handle cases where this function is passed a pointer to
         // const.
-        return OwnTypedPtr{(void*) ptr, TypeDescriptorSpecializer<T>::get()};
+        return AnyOwnedObject{(void*) data, TypeDescriptorSpecializer<T>::get()};
     }
     template <typename T, typename... Args>
-    static OwnTypedPtr create(Args&&... args) {
+    static AnyOwnedObject create(Args&&... args) {
         return bind(new T{std::forward<Args>(args)...});
     }
     template <typename T>
@@ -734,81 +669,81 @@ struct OwnTypedPtr : TypedPtr {
 };
 
 template <>
-struct TypeDescriptorSpecializer<OwnTypedPtr> {
+struct TypeDescriptorSpecializer<AnyOwnedObject> {
     static PLY_DLL_ENTRY ply::TypeDescriptor* get();
 };
 
 //-----------------------------------------------------------------------
-// TypedPtr member functions
+// AnyObject member functions
 //-----------------------------------------------------------------------
 template <typename T>
-TypedPtr TypedPtr::bind(T* ptr) {
+AnyObject AnyObject::bind(T* data) {
     // FIXME: Find a better way to handle cases where this function is passed a pointer to
     // const.
-    return TypedPtr{(void*) ptr, TypeDescriptorSpecializer<T>::get()};
+    return AnyObject{(void*) data, TypeDescriptorSpecializer<T>::get()};
 }
 
 template <class T>
-bool TypedPtr::is() const {
+bool AnyObject::is() const {
     return TypeDescriptorSpecializer<T>::get()->isEquivalentTo(type);
 }
 
 template <class T>
-T* TypedPtr::cast() const {
+T* AnyObject::cast() const {
     // Not sure if this is a good general strategy, but for now, it's valid to cast a null
     // pointer to any target type, regardless of src type (even if src type is null). This
     // extra flexibility was added to simplify callers of readObject(), such as
     // CookCommandReader(), when an unexpected EOF is encountered:
-    PLY_ASSERT(!ptr || TypeDescriptorSpecializer<T>::get()->isEquivalentTo(type));
-    return (T*) ptr;
+    PLY_ASSERT(!data || TypeDescriptorSpecializer<T>::get()->isEquivalentTo(type));
+    return (T*) data;
 }
 
 template <class T>
-T* TypedPtr::safeCast() const {
-    return (TypeDescriptorSpecializer<T>::get() == this->type) ? (T*) ptr : nullptr;
+T* AnyObject::safeCast() const {
+    return (TypeDescriptorSpecializer<T>::get() == this->type) ? (T*) data : nullptr;
 }
 
 template <class S>
-const S& TypedPtr::refine() const {
+const S& AnyObject::refine() const {
     PLY_ASSERT(type->typeKey == S::TypeDescriptor::typeKey);
     return (const S&) *this;
 }
 
-inline TypedPtr TypedPtr::create(TypeDescriptor* typeDesc) {
+inline AnyObject AnyObject::create(TypeDescriptor* typeDesc) {
     return typeDesc->bindings.create(typeDesc);
 }
 
-inline void TypedPtr::destroy() {
-    if (ptr) {
+inline void AnyObject::destroy() {
+    if (data) {
         type->bindings.destroy(*this);
-        ptr = nullptr;
+        data = nullptr;
         type = nullptr;
     }
 }
 
-inline void TypedPtr::construct() {
+inline void AnyObject::construct() {
     type->bindings.construct(*this);
 }
 
-inline void TypedPtr::destruct() {
+inline void AnyObject::destruct() {
     type->bindings.destruct(*this);
-    ptr = nullptr;
+    data = nullptr;
     type = nullptr;
 }
 
-inline void TypedPtr::move(TypedPtr other) {
+inline void AnyObject::move(AnyObject other) {
     type->bindings.move(*this, other);
 }
 
-inline void TypedPtr::copy(const TypedPtr other) {
+inline void AnyObject::copy(const AnyObject other) {
     type->bindings.copy(*this, other);
 }
 
 template <typename T>
-PLY_INLINE T* OwnTypedPtr::release() {
+PLY_INLINE T* AnyOwnedObject::release() {
     PLY_ASSERT(type->isEquivalentTo(TypeDescriptorSpecializer<T>::get()));
-    T* r = (T*) ptr;
-    ptr = nullptr;
+    T* r = (T*) data;
+    data = nullptr;
     type = nullptr;
     return r;
 }

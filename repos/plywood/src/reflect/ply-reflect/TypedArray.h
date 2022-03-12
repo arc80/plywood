@@ -59,7 +59,7 @@ public:
     PLY_DLL_ENTRY void destroy();
     PLY_DLL_ENTRY void create(TypeDescriptorOwner* typeOwner, u32 numItems);
     PLY_DLL_ENTRY void assign(TypeDescriptorOwner* typeOwner, void* items, u32 numItems);
-    PLY_DLL_ENTRY TypedPtr append();
+    PLY_DLL_ENTRY AnyObject append();
 
     template <typename T>
     PLY_INLINE void operator=(Array<T>&& arr) {
@@ -92,7 +92,7 @@ public:
         return m_array.m_numItems;
     }
 
-    PLY_INLINE TypedPtr getItem(u32 i) const {
+    PLY_INLINE AnyObject getItem(u32 i) const {
         PLY_ASSERT(i < m_array.m_numItems);
         return {PLY_PTR_OFFSET(m_array.m_items, m_typeOwner->getRootType()->fixedSize * i),
                 m_typeOwner->getRootType()};

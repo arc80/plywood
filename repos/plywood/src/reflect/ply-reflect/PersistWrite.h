@@ -54,12 +54,12 @@ public:
 
 struct SavedPtrResolver {
     struct WeakPointerToResolve {
-        TypedPtr ptr;
+        AnyObject obj;
         u32 fileOffset = 0;
     };
 
     struct SavedOwnedPtr {
-        TypedPtr ptr;
+        AnyObject obj;
         u32 fileOffset = 0;
         s32 linkIndex = -1;
     };
@@ -74,7 +74,7 @@ struct SavedPtrResolver {
         using Item = u32;
         using Context = Array<SavedOwnedPtr>;
         static PLY_INLINE bool match(Item item, Key key, const Context& ctx) {
-            return ctx[item].ptr.ptr == key;
+            return ctx[item].obj.data == key;
         }
     };
 
@@ -93,7 +93,7 @@ struct WriteObjectContext {
 // Write
 //
 
-void writeObject(TypedPtr obj, WriteObjectContext* context);
+void writeObject(AnyObject obj, WriteObjectContext* context);
 void resolveLinksAndWriteLinkTable(MutableStringView view, OutStream* outs,
                                    SavedPtrResolver* ptrResolver);
 

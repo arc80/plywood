@@ -28,11 +28,11 @@ struct ParseSupervisor {
     //  - grammar::Declaration::Namespace_
     //  - grammar::Declaration::Template_
     //  - grammar::Declaration::Simple (must be a function with a body!)
-    Array<TypedPtr> scopeStack;
+    Array<AnyObject> scopeStack;
 
-    virtual void enter(TypedPtr node) {
+    virtual void enter(AnyObject node) {
     }
-    virtual void exit(TypedPtr node) {
+    virtual void exit(AnyObject node) {
     }
     virtual void onGotDeclaration(const grammar::Declaration& decl) {
     }
@@ -46,11 +46,11 @@ struct ParseSupervisor {
         return false;
     }
 
-    PLY_INLINE void doEnter(TypedPtr node) {
+    PLY_INLINE void doEnter(AnyObject node) {
         this->scopeStack.append(node);
         this->enter(node);
     }
-    void doExit(TypedPtr node);
+    void doExit(AnyObject node);
     void gotDeclaration(grammar::Declaration&& decl);
 
     String getClassName(StringView withSep = "::", bool withNameSpace = true) const;
@@ -197,7 +197,7 @@ Tuple<Token, Token> parseExpression(Parser* parser, bool optional = false);
 // Misc
 void parseEnumBody(Parser* parser, grammar::DeclSpecifier::Enum_* en);
 
-void dumpParseTree(OutStream* outs, TypedPtr any, u32 indent = 0,
+void dumpParseTree(OutStream* outs, AnyObject any, u32 indent = 0,
                    const PPVisitedFiles* visitedFiles = nullptr);
 bool closeScope(Parser* parser, Token* outCloseToken, const Token& openToken);
 

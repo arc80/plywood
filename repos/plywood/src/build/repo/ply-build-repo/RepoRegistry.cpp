@@ -69,7 +69,7 @@ struct RepoInstantiator {
             }
 
             // FIXME: Use reflection
-            // importInto(TypedPtr::bind(this), aRoot);
+            // importInto(AnyObject::bind(this), aRoot);
             for (const pylon::Node* dependency : parseResult.root->get("dependsOn")->arrayView()) {
                 StringView depRepoName = dependency->text();
                 s32 j = find(this->idlls.dlls,

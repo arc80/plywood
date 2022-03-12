@@ -4,7 +4,7 @@
 ------------------------------------*/
 #include <ply-reflect/Core.h>
 #include <ply-reflect/TypeKey.h>
-#include <ply-reflect/SavedTypedPtr.h>
+#include <ply-reflect/AnySavedObject.h>
 #include <ply-reflect/TypeSynthesizer.h>
 #include <ply-reflect/PersistRead.h>
 #include <ply-reflect/PersistWrite.h>
@@ -15,8 +15,8 @@ SLOG_DECLARE_CHANNEL(Load)
 
 TypeKey TypeKey_SavedTypedPtr{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
-        SavedTypedPtr* savedTypedPtr = (SavedTypedPtr*) obj.ptr;
+    [](AnyObject obj, WriteObjectContext* context) {
+        AnySavedObject* savedTypedPtr = (AnySavedObject*) obj.data;
         TypeDescriptor* targetType = savedTypedPtr->owned.type;
 
         // Make sure the target's TypeDescriptor is written as part of the schema.
@@ -34,9 +34,9 @@ TypeKey TypeKey_SavedTypedPtr{
     },
 
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         if ((FormatKey) formatDesc->formatKey != FormatKey::Typed) {
-            SLOG(Load, "Can't load SavedTypedPtr");
+            SLOG(Load, "Can't load AnySavedObject");
             skip(context, formatDesc);
             return;
         }
@@ -55,8 +55,8 @@ TypeKey TypeKey_SavedTypedPtr{
         TypeDescriptor* targetType = targetTypeOwner->getRootType();
 
         // Read the target
-        SavedTypedPtr* savedTypedPtr = (SavedTypedPtr*) obj.ptr;
-        savedTypedPtr->owned = TypedPtr::create(targetType);
+        AnySavedObject* savedTypedPtr = (AnySavedObject*) obj.data;
+        savedTypedPtr->owned = AnyObject::create(targetType);
         savedTypedPtr->typeOwner = targetTypeOwner;
         targetType->typeKey->read(savedTypedPtr->owned, context, targetFormat);
     },
@@ -68,9 +68,9 @@ TypeKey TypeKey_SavedTypedPtr{
     TypeKey::alwaysEqualDescriptors,
 };
 
-PLY_DEFINE_TYPE_DESCRIPTOR(SavedTypedPtr) {
-    static TypeDescriptor typeDesc{&TypeKey_SavedTypedPtr, sizeof(SavedTypedPtr),
-                                   NativeBindings::make<SavedTypedPtr>()};
+PLY_DEFINE_TYPE_DESCRIPTOR(AnySavedObject) {
+    static TypeDescriptor typeDesc{&TypeKey_SavedTypedPtr, sizeof(AnySavedObject),
+                                   NativeBindings::make<AnySavedObject>()};
     return &typeDesc;
 }
 

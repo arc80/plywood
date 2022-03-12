@@ -20,7 +20,7 @@ PLY_NO_INLINE bool WorkspaceSettings::load() {
     if (!aRoot->isValid())
         return false;
 
-    importInto(TypedPtr::bind(this), aRoot);
+    importInto(AnyObject::bind(this), aRoot);
     if (!this->sourceNewLines) {
         this->sourceNewLines =
             (TextFormat::platformPreference().newLine == TextFormat::NewLine::CRLF ? "crlf" : "lf");
@@ -29,7 +29,7 @@ PLY_NO_INLINE bool WorkspaceSettings::load() {
 }
 
 PLY_NO_INLINE bool WorkspaceSettings::save() const {
-    auto aRoot = pylon::exportObj(TypedPtr::bind(this));
+    auto aRoot = pylon::exportObj(AnyObject::bind(this));
     String strContents = pylon::toString(aRoot);
     // FIXME: makeDirsAndSaveTextIfDifferent should write to temp file with atomic rename
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(getPath(), strContents,

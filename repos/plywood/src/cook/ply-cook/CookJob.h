@@ -28,7 +28,7 @@ struct CookJobType {
     String name;
     TypeDescriptor* resultType = nullptr;
     TypeDescriptor* argType = nullptr;
-    void (*cook)(CookResult* result, TypedPtr jobArg) = nullptr;
+    void (*cook)(CookResult* result, AnyObject jobArg) = nullptr;
 };
 
 struct CookJobID {
@@ -58,7 +58,7 @@ struct CookJobID {
 struct Dependency;
 
 struct DependencyType {
-    bool (*hasChanged)(Dependency* dep, CookResult* job, TypedPtr jobArg) = nullptr;
+    bool (*hasChanged)(Dependency* dep, CookResult* job, AnyObject jobArg) = nullptr;
 };
 
 struct Dependency {
@@ -140,7 +140,7 @@ struct DependencyTracker {
     BTree<AllCookJobsTraits> allCookJobs;
 
     // FIXME: Serialize userData
-    OwnTypedPtr userData;
+    AnyOwnedObject userData;
 
     void setRootReferences(Array<Reference<CookJob>>&& rootRefs);
     Reference<CookJob> getOrCreateCookJob(const CookJobID& id);
@@ -195,12 +195,12 @@ struct CookContext {
     ~CookContext();
     void beginCook();
     void endCook();
-    void ensureCooked(CookJob* job, TypedPtr jobArg = {});
+    void ensureCooked(CookJob* job, AnyObject jobArg = {});
     void cookDeferred();
     CookResult* getAlreadyCookedResult(const CookJobID& id);
     bool isCooked(CookJob* job);
 
-    PLY_INLINE Reference<CookJob> cook(const CookJobID& id, TypedPtr jobArg = {}) {
+    PLY_INLINE Reference<CookJob> cook(const CookJobID& id, AnyObject jobArg = {}) {
         PLY_ASSERT(CookContext::current() == this);
         Reference<CookJob> cookJob = this->depTracker->getOrCreateCookJob(id);
         this->ensureCooked(cookJob, jobArg);

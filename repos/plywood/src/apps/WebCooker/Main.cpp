@@ -109,7 +109,7 @@ Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, Stri
         }
     }
 
-    ctx->ensureCooked(pageMetaJob, TypedPtr::bind(&childJobs));
+    ctx->ensureCooked(pageMetaJob, AnyObject::bind(&childJobs));
     return pageMetaJob;
 }
 
@@ -145,7 +145,7 @@ int main() {
     cook::DependencyTracker db;
     docs::WebCookerIndex* wci = new docs::WebCookerIndex;
     wci->globalScope = new docs::SemaEntity;
-    db.userData = OwnTypedPtr::bind(wci);
+    db.userData = AnyOwnedObject::bind(wci);
     // String dbPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/docsite-cache/depTracker.db");
 
     cook::CookContext ctx;
@@ -192,7 +192,7 @@ int main() {
         contents.moveExtend(converted->children);
     }
     {
-        auto aRoot = pylon::exportObj(TypedPtr::bind(&contents));
+        auto aRoot = pylon::exportObj(AnyObject::bind(&contents));
         MemOutStream mout;
         pylon::write(&mout, aRoot);
         FileSystem::native()->makeDirsAndSaveTextIfDifferent(

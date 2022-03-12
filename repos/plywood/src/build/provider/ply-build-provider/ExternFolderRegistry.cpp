@@ -30,7 +30,7 @@ PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
 }
 
 PLY_NO_INLINE bool ExternFolder::save() const {
-    auto aRoot = pylon::exportObj(TypedPtr::bind(this));
+    auto aRoot = pylon::exportObj(AnyObject::bind(this));
     String strContents = pylon::toString(aRoot);
     String infoPath = NativePath::join(this->path, "info.pylon");
     FSResult rc = FileSystem::native()->makeDirsAndSaveTextIfDifferent(

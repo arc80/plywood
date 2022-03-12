@@ -147,9 +147,9 @@ PLY_NO_INLINE bool parseDeclaration(Parser* parser, StringView enclosingClassNam
                     //      }
                     rp.cancel();
                     linkage.openCurly = token;
-                    parser->visor->doEnter(TypedPtr::bind(&linkage));
+                    parser->visor->doEnter(AnyObject::bind(&linkage));
                     parseDeclarationList(parser, &linkage.closeCurly, {});
-                    parser->visor->doExit(TypedPtr::bind(&linkage));
+                    parser->visor->doExit(AnyObject::bind(&linkage));
                     parser->visor->gotDeclaration(std::move(linkage));
                 } else {
                     // It's a linkage specifier for the current declaration, such as
@@ -210,9 +210,9 @@ PLY_NO_INLINE bool parseDeclaration(Parser* parser, StringView enclosingClassNam
 
             if (token.type == Token::OpenCurly) {
                 ns.openCurly = token;
-                parser->visor->doEnter(TypedPtr::bind(&ns));
+                parser->visor->doEnter(AnyObject::bind(&ns));
                 parseDeclarationList(parser, &ns.closeCurly, {});
-                parser->visor->doExit(TypedPtr::bind(&ns));
+                parser->visor->doExit(AnyObject::bind(&ns));
             } else {
                 // expected {
                 parser->error(true, {ParseError::Expected, token, ExpectedToken::OpenCurly});
@@ -234,9 +234,9 @@ PLY_NO_INLINE bool parseDeclaration(Parser* parser, StringView enclosingClassNam
             } else {
                 pushBackToken(parser, token2);
             }
-            parser->visor->doEnter(TypedPtr::bind(&tmpl));
+            parser->visor->doEnter(AnyObject::bind(&tmpl));
             parseDeclaration(parser, enclosingClassName);
-            parser->visor->doExit(TypedPtr::bind(&tmpl));
+            parser->visor->doExit(AnyObject::bind(&tmpl));
             parser->visor->gotDeclaration(grammar::Declaration{std::move(tmpl)});
         } else if (token.identifier == "using") {
             // using directive or type alias
@@ -324,12 +324,12 @@ void parseDeclarationList(Parser* parser, Token* outCloseCurly, StringView enclo
 
 grammar::TranslationUnit parseTranslationUnit(Parser* parser) {
     grammar::TranslationUnit tu;
-    parser->visor->doEnter(TypedPtr::bind(&tu));
+    parser->visor->doEnter(AnyObject::bind(&tu));
     parseDeclarationList(parser, nullptr, {});
     Token eofTok = readToken(parser);
     PLY_ASSERT(eofTok.type == Token::EndOfFile); // EOF is the only possible token here
     PLY_UNUSED(eofTok);
-    parser->visor->doExit(TypedPtr::bind(&tu));
+    parser->visor->doExit(AnyObject::bind(&tu));
     return tu;
 }
 

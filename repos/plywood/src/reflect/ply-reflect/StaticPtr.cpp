@@ -15,26 +15,26 @@ SLOG_DECLARE_CHANNEL(Load)
 NativeBindings& getNativeBindings_StaticPtr() {
     static NativeBindings bindings{
         // create
-        [](TypeDescriptor*) -> TypedPtr {
+        [](TypeDescriptor*) -> AnyObject {
             PLY_ASSERT(0); // Not supported
             return {};
         },
         // destroy
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             PLY_ASSERT(0); // Not supported
         },
         // construct
-        [](TypedPtr obj) { //
-            new (obj.ptr) StaticPtr<void>;
+        [](AnyObject obj) { //
+            new (obj.data) StaticPtr<void>;
         },
         // destruct
-        [](TypedPtr obj) {},
+        [](AnyObject obj) {},
         // move
-        [](TypedPtr dst, TypedPtr src) {
+        [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
         // copy
-        [](TypedPtr dst, const TypedPtr src) {
+        [](AnyObject dst, const AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
     };
@@ -43,10 +43,10 @@ NativeBindings& getNativeBindings_StaticPtr() {
 
 TypeKey TypeKey_StaticPtr = {
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
+    [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_StaticPtr* staticPtrType = obj.type->cast<TypeDescriptor_StaticPtr>();
         const BaseStaticPtr::PossibleValues* pvals = staticPtrType->possibleValues;
-        void* staticPtrValue = *(void**) obj.ptr;
+        void* staticPtrValue = *(void**) obj.data;
         // Note: This could be optimized using a hash map. Not sure whether to add hashmap to
         // TypeDescriptor_StaticPtr, or to generate one at serialization time.
         u32 serializedValue = 0;
@@ -73,7 +73,7 @@ TypeKey TypeKey_StaticPtr = {
     },
 
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         NativeEndianReader& in = context->in;
         FormatDescriptor_Enum* enumFormat = (FormatDescriptor_Enum*) formatDesc;
         TypeDescriptor_StaticPtr* staticPtrType = obj.type->cast<TypeDescriptor_StaticPtr>();
@@ -90,7 +90,7 @@ TypeKey TypeKey_StaticPtr = {
         StringView serializedName = enumFormat->identifiers[serializedValue];
         for (u32 i = 0; i < pvals->enumeratorNames.numItems(); i++) {
             if (pvals->enumeratorNames[i] == serializedName) {
-                *(void**) obj.ptr = pvals->ptrValues[i];
+                *(void**) obj.data = pvals->ptrValues[i];
                 return; // Success
             }
         }

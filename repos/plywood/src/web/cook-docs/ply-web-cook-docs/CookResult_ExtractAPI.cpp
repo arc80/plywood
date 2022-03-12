@@ -123,7 +123,7 @@ struct APIExtractor : cpp::ParseSupervisor {
         return scopeInfo;
     }
 
-    virtual void enter(TypedPtr node) override {
+    virtual void enter(AnyObject node) override {
         if (node.safeCast<cpp::grammar::TranslationUnit>()) {
             PLY_ASSERT(this->semaScopeStack.numItems() == 1);
             PLY_ASSERT(this->semaScopeStack[0]);
@@ -256,7 +256,7 @@ struct APIExtractor : cpp::ParseSupervisor {
         }
     }
 
-    virtual void exit(TypedPtr node) override {
+    virtual void exit(AnyObject node) override {
         if (node.safeCast<cpp::grammar::DeclSpecifier::Record>() ||
             node.safeCast<cpp::grammar::Declaration::Namespace_>()) {
             if (this->docState.markdownLoc >= 0) {
@@ -713,7 +713,7 @@ void APIExtractor::Error::writeMessage(OutStream* outs,
     }
 }
 
-void ExtractAPI_cook(cook::CookResult* cookResult_, TypedPtr) {
+void ExtractAPI_cook(cook::CookResult* cookResult_, AnyObject) {
     cook::DependencyTracker* depTracker = cook::DependencyTracker::current();
     WebCookerIndex* userData = depTracker->userData.cast<WebCookerIndex>();
     PLY_ASSERT(userData->globalScope);

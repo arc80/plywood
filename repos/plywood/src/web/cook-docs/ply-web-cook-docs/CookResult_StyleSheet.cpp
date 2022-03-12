@@ -9,7 +9,7 @@
 namespace ply {
 namespace docs {
 
-void StyleSheet_cook(cook::CookResult* cookResult, TypedPtr) {
+void StyleSheet_cook(cook::CookResult* cookResult, AnyObject) {
     PLY_ASSERT(cookResult->job->id.desc.isEmpty());
 
     // Add dependency

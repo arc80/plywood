@@ -9,12 +9,12 @@
 namespace ply {
 namespace cpp {
 
-void ParseSupervisor::doExit(TypedPtr node) {
+void ParseSupervisor::doExit(AnyObject node) {
     if (auto* tmpl = node.safeCast<grammar::Declaration::Template_>()) {
         PLY_ASSERT(tmpl->visor_decl); // Should have gotten declaration
         PLY_UNUSED(tmpl);
     }
-    const TypedPtr& scope = scopeStack.back();
+    const AnyObject& scope = scopeStack.back();
     PLY_ASSERT(scope == node);
     PLY_UNUSED(scope);
     this->exit(node);
@@ -23,7 +23,7 @@ void ParseSupervisor::doExit(TypedPtr node) {
 
 void ParseSupervisor::gotDeclaration(grammar::Declaration&& decl) {
     this->onGotDeclaration(decl);
-    const TypedPtr& scope = scopeStack.back();
+    const AnyObject& scope = scopeStack.back();
     if (auto* ns = scope.safeCast<grammar::Declaration::Namespace_>()) {
         ns->visor_decls.append(std::move(decl));
     } else if (auto* tmpl = scope.safeCast<grammar::Declaration::Template_>()) {
@@ -45,7 +45,7 @@ String ParseSupervisor::getClassName(StringView withSep, bool withNameSpace) con
     PLY_ASSERT(this->scopeStack[0].is<grammar::TranslationUnit>());
     StringView sep = "";
     for (u32 i : range(1, this->scopeStack.numItems())) {
-        const TypedPtr& scope = scopeStack[i];
+        const AnyObject& scope = scopeStack[i];
         if (auto ns = scope.safeCast<grammar::Declaration::Namespace_>()) {
             if (withNameSpace) {
                 mout << sep << ns->qid.getClassName();
@@ -66,7 +66,7 @@ String ParseSupervisor::getNamespacePrefix() const {
     MemOutStream mout;
     PLY_ASSERT(this->scopeStack[0].is<grammar::TranslationUnit>());
     for (u32 i : range(1, this->scopeStack.numItems())) {
-        const TypedPtr& scope = scopeStack[i];
+        const AnyObject& scope = scopeStack[i];
         auto ns = scope.safeCast<grammar::Declaration::Namespace_>();
         if (!ns)
             break;

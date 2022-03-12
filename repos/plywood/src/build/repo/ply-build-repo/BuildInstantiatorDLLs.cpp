@@ -44,12 +44,12 @@ struct DLLSignature {
         if (!aRoot->isValid())
             return false;
 
-        pylon::importInto(TypedPtr::bind(this), aRoot);
+        pylon::importInto(AnyObject::bind(this), aRoot);
         return true;
     }
 
     PLY_NO_INLINE bool save(StringView absPath) const {
-        auto aRoot = pylon::exportObj(TypedPtr::bind(this));
+        auto aRoot = pylon::exportObj(AnyObject::bind(this));
         String strContents = pylon::toString(aRoot);
         FSResult rc = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
             absPath, strContents, TextFormat::platformPreference());

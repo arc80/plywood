@@ -93,7 +93,7 @@ void DocServer::reloadContents() {
         return;
     }
 
-    pylon::importInto(TypedPtr::bind(&this->contents), aRoot);
+    pylon::importInto(AnyObject::bind(&this->contents), aRoot);
 
     this->pathToContents = HashMap<ContentsTraits>{};
     for (Contents* node : this->contents) {

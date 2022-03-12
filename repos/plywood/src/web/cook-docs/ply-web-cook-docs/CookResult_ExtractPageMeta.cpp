@@ -13,7 +13,7 @@ namespace docs {
 
 extern cook::CookJobType CookJobType_ExtractPageMeta;
 
-void cook_ExtractPageMeta(cook::CookResult* cookResult_, TypedPtr jobArg) {
+void cook_ExtractPageMeta(cook::CookResult* cookResult_, AnyObject jobArg) {
     cook::CookContext* ctx = cook::CookContext::current();
     WebCookerIndex* wci = ctx->depTracker->userData.safeCast<WebCookerIndex>();
     PLY_ASSERT(cookResult_->job->id.type == &CookJobType_ExtractPageMeta);

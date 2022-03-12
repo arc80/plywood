@@ -14,7 +14,7 @@ namespace ply {
 
 SLOG_CHANNEL(Load, "Load")
 
-void readNumeric(TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+void readNumeric(AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
     NativeEndianReader& in = context->in;
     Numeric value;
     switch ((FormatKey) formatDesc->formatKey) {
@@ -64,27 +64,27 @@ void readNumeric(TypedPtr obj, ReadObjectContext* context, FormatDescriptor* for
         u32 temp = value.cast<u32>(precise);
         bool value = (temp != 0);
         precise = precise && ((u32) value == temp);
-        *((bool*) obj.ptr) = value;
+        *((bool*) obj.data) = value;
     } else if (typeKey == &TypeKey_S8) {
-        *((s8*) obj.ptr) = value.cast<s8>(precise);
+        *((s8*) obj.data) = value.cast<s8>(precise);
     } else if (typeKey == &TypeKey_S16) {
-        *((s16*) obj.ptr) = value.cast<s16>(precise);
+        *((s16*) obj.data) = value.cast<s16>(precise);
     } else if (typeKey == &TypeKey_S32) {
-        *((s32*) obj.ptr) = value.cast<s32>(precise);
+        *((s32*) obj.data) = value.cast<s32>(precise);
     } else if (typeKey == &TypeKey_S64) {
-        *((s64*) obj.ptr) = value.cast<s64>(precise);
+        *((s64*) obj.data) = value.cast<s64>(precise);
     } else if (typeKey == &TypeKey_U8) {
-        *((u8*) obj.ptr) = value.cast<u8>(precise);
+        *((u8*) obj.data) = value.cast<u8>(precise);
     } else if (typeKey == &TypeKey_U16) {
-        *((u16*) obj.ptr) = value.cast<u16>(precise);
+        *((u16*) obj.data) = value.cast<u16>(precise);
     } else if (typeKey == &TypeKey_U32) {
-        *((u32*) obj.ptr) = value.cast<u32>(precise);
+        *((u32*) obj.data) = value.cast<u32>(precise);
     } else if (typeKey == &TypeKey_U64) {
-        *((u64*) obj.ptr) = value.cast<u64>(precise);
+        *((u64*) obj.data) = value.cast<u64>(precise);
     } else if (typeKey == &TypeKey_Float) {
-        *((float*) obj.ptr) = value.cast<float>(precise);
+        *((float*) obj.data) = value.cast<float>(precise);
     } else if (typeKey == &TypeKey_Double) {
-        *((double*) obj.ptr) = value.cast<double>(precise);
+        *((double*) obj.data) = value.cast<double>(precise);
     } else {
         PLY_ASSERT(0);
     }
@@ -99,74 +99,74 @@ void readNumeric(TypedPtr obj, ReadObjectContext* context, FormatDescriptor* for
 // Primitive TypeKeys
 //
 TypeKey TypeKey_Bool{
-    [](TypedPtr obj, WriteObjectContext* context) { context->out.write<bool>(*(bool*) obj.ptr); },
+    [](AnyObject obj, WriteObjectContext* context) { context->out.write<bool>(*(bool*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::Bool); },
     readNumeric, // FIXME
     TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
 TypeKey TypeKey_S8{
-    [](TypedPtr obj, WriteObjectContext* context) { context->out.write<s8>(*(s8*) obj.ptr); },
+    [](AnyObject obj, WriteObjectContext* context) { context->out.write<s8>(*(s8*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::S8); },
     readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
 TypeKey TypeKey_S16{
-    [](TypedPtr obj, WriteObjectContext* context) { context->out.write<s16>(*(s16*) obj.ptr); },
+    [](AnyObject obj, WriteObjectContext* context) { context->out.write<s16>(*(s16*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::S16); },
     readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
 TypeKey TypeKey_S32{
-    [](TypedPtr obj, WriteObjectContext* context) { context->out.write<s32>(*(s32*) obj.ptr); },
+    [](AnyObject obj, WriteObjectContext* context) { context->out.write<s32>(*(s32*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::S32); },
     readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
 TypeKey TypeKey_S64{
-    [](TypedPtr obj, WriteObjectContext* context) { context->out.write<s64>(*(s64*) obj.ptr); },
+    [](AnyObject obj, WriteObjectContext* context) { context->out.write<s64>(*(s64*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::S64); },
     readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
 TypeKey TypeKey_U8{
-    [](TypedPtr obj, WriteObjectContext* context) { context->out.write<u8>(*(u8*) obj.ptr); },
+    [](AnyObject obj, WriteObjectContext* context) { context->out.write<u8>(*(u8*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::U8); },
     readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
 TypeKey TypeKey_U16{
-    [](TypedPtr obj, WriteObjectContext* context) { context->out.write<u16>(*(u16*) obj.ptr); },
+    [](AnyObject obj, WriteObjectContext* context) { context->out.write<u16>(*(u16*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::U16); },
     readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
 TypeKey TypeKey_U32{
-    [](TypedPtr obj, WriteObjectContext* context) { context->out.write<u32>(*(u32*) obj.ptr); },
+    [](AnyObject obj, WriteObjectContext* context) { context->out.write<u32>(*(u32*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::U32); },
     readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
 TypeKey TypeKey_U64{
-    [](TypedPtr obj, WriteObjectContext* context) { context->out.write<u64>(*(u64*) obj.ptr); },
+    [](AnyObject obj, WriteObjectContext* context) { context->out.write<u64>(*(u64*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::U64); },
     readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
 TypeKey TypeKey_Float{
-    [](TypedPtr obj, WriteObjectContext* context) { context->out.write<float>(*(float*) obj.ptr); },
+    [](AnyObject obj, WriteObjectContext* context) { context->out.write<float>(*(float*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::Float); },
     readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
-TypeKey TypeKey_Double{[](TypedPtr obj, WriteObjectContext* context) {
-                           context->out.write<double>(*(double*) obj.ptr);
+TypeKey TypeKey_Double{[](AnyObject obj, WriteObjectContext* context) {
+                           context->out.write<double>(*(double*) obj.data);
                        },
                        [](TypeDescriptor*, WriteFormatContext* context) {
                            context->writePrimitive(FormatKey::Double);
                        },
                        readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
 
-TypeKey TypeKey_String{[](TypedPtr obj, WriteObjectContext* context) {
-                           Boxed<String>::write(context->out, *(String*) obj.ptr);
+TypeKey TypeKey_String{[](AnyObject obj, WriteObjectContext* context) {
+                           Boxed<String>::write(context->out, *(String*) obj.data);
                        },
                        [](TypeDescriptor*, WriteFormatContext* context) {
                            context->writePrimitive(FormatKey::String);
                        },
-                       [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+                       [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
                            PLY_ASSERT(obj.type == getTypeDescriptor<String>());
                            if ((FormatKey) formatDesc->formatKey == FormatKey::String) {
-                               *(String*) obj.ptr = Boxed<String>::read(context->in);
+                               *(String*) obj.data = Boxed<String>::read(context->in);
                            } else {
                                SLOG(Load, "Can't convert to string");
                                skip(context, formatDesc);
@@ -179,14 +179,14 @@ TypeKey TypeKey_String{[](TypedPtr obj, WriteObjectContext* context) {
 //
 TypeKey TypeKey_FixedArray{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
+    [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_FixedArray* fixedArrayType = obj.type->cast<TypeDescriptor_FixedArray>();
         TypeDescriptor* itemType = fixedArrayType->itemType;
         u32 itemSize = itemType->fixedSize;
-        void* item = obj.ptr;
+        void* item = obj.data;
         for (u32 i : range(fixedArrayType->numItems)) {
             PLY_UNUSED(i);
-            itemType->typeKey->write(TypedPtr{item, itemType}, context);
+            itemType->typeKey->write(AnyObject{item, itemType}, context);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
     },
@@ -196,7 +196,7 @@ TypeKey TypeKey_FixedArray{
         context->writeFixedArray(fixedArrayType->numItems, fixedArrayType->itemType);
     },
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         if ((FormatKey) formatDesc->formatKey != FormatKey::FixedArray) {
             // FIXME: More detailed message
             SLOG(Load, "Can't convert to FixedArray");
@@ -214,10 +214,10 @@ TypeKey TypeKey_FixedArray{
         FormatDescriptor* itemFormat = fixedFormat->itemFormat;
         TypeDescriptor* itemType = fixedArrayType->itemType;
         u32 itemSize = itemType->fixedSize;
-        void* item = obj.ptr;
+        void* item = obj.data;
         for (u32 i : range(fixedArrayType->numItems)) {
             PLY_UNUSED(i);
-            itemType->typeKey->read(TypedPtr{item, itemType}, context, itemFormat);
+            itemType->typeKey->read(AnyObject{item, itemType}, context, itemFormat);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
     },
@@ -245,17 +245,17 @@ TypeKey* TypeDescriptor_FixedArray::typeKey = &TypeKey_FixedArray;
 //
 TypeKey TypeKey_Array{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
+    [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Array* arrayType = obj.type->cast<TypeDescriptor_Array>();
         TypeDescriptor* itemType = arrayType->itemType;
         u32 itemSize = itemType->fixedSize;
-        details::BaseArray* arr = (details::BaseArray*) obj.ptr;
+        details::BaseArray* arr = (details::BaseArray*) obj.data;
         void* item = arr->m_items;
         PLY_ASSERT(arr->m_numItems <= UINT32_MAX);
         context->out.write<u32>((u32) arr->m_numItems);
         for (u32 i : range(arr->m_numItems)) {
             PLY_UNUSED(i);
-            itemType->typeKey->write(TypedPtr{item, itemType}, context);
+            itemType->typeKey->write(AnyObject{item, itemType}, context);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
     },
@@ -265,7 +265,7 @@ TypeKey TypeKey_Array{
         context->writeArray(arrayType->itemType);
     },
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         if ((FormatKey) formatDesc->formatKey != FormatKey::Array) {
             // FIXME: More detailed message
             // FIXME: Could probably accept FixedArrays
@@ -280,13 +280,13 @@ TypeKey TypeKey_Array{
         u32 itemSize = itemType->fixedSize;
         u32 arrSize = context->in.read<u32>();
         PLY_ASSERT(arrSize < 10000000);
-        details::BaseArray* arr = (details::BaseArray*) obj.ptr;
+        details::BaseArray* arr = (details::BaseArray*) obj.data;
         // FIXME: Destruct existing elements if array not empty
         arr->realloc(arrSize, itemSize);
         void* item = arr->m_items;
         for (u32 i : range((u32) arrSize)) {
             PLY_UNUSED(i);
-            TypedPtr typedItem{item, itemType};
+            AnyObject typedItem{item, itemType};
             itemType->bindings.construct(typedItem);
             itemType->typeKey->read(typedItem, context, itemFormat);
             item = PLY_PTR_OFFSET(item, itemSize);
@@ -307,49 +307,27 @@ TypeKey TypeKey_Array{
 
 TypeKey* TypeDescriptor_Array::typeKey = &TypeKey_Array;
 
-void TypedPtr_Array::resize(
-    u32 newSize) { // FIXME: Move this to a .cpp? Don't want it inlined really
-    details::BaseArray* arr = (details::BaseArray*) ptr;
-    u32 oldSize = arr->m_numItems;
-    u32 itemSize = type->itemType->fixedSize;
-    // Invoke destructors
-    // FIXME: Skip if trivial destructor
-    TypedPtr itemPtr{PLY_PTR_OFFSET(arr->m_items, itemSize * arr->m_numItems), type->itemType};
-    for (u32 i = newSize; i < oldSize; i++) {
-        itemPtr.destruct();
-        itemPtr.ptr = PLY_PTR_OFFSET(itemPtr.ptr, itemSize);
-    }
-    arr->realloc(newSize, itemSize);
-    itemPtr.ptr = arr->m_items;
-    // Invoke constructors
-    // FIXME: Skip if trivial
-    for (u32 i = oldSize; i < newSize; i++) {
-        itemPtr.construct();
-        itemPtr.ptr = PLY_PTR_OFFSET(itemPtr.ptr, itemSize);
-    }
-}
-
 //-----------------------------------------------------------------
 // TypeKey_Owned
 //
 TypeKey TypeKey_Owned{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
+    [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Owned* ownedType = obj.type->cast<TypeDescriptor_Owned>();
-        TypedPtr targetPtr = TypedPtr{*(void**) obj.ptr, ownedType->targetType};
+        AnyObject targetObj = AnyObject{*(void**) obj.data, ownedType->targetType};
 
         // Save info needed to resolve weak pointers to this object
         u32 savedOwnedPtrIdx = context->ptrResolver.savedOwnedPtrs.numItems();
         SavedPtrResolver::SavedOwnedPtr& savedInfo = context->ptrResolver.savedOwnedPtrs.append();
-        savedInfo.ptr = targetPtr;
+        savedInfo.obj = targetObj;
         savedInfo.fileOffset = safeDemote<u32>(context->out.outs->getSeekPos());
         auto cursor = context->ptrResolver.addrToSaveInfo.insertOrFind(
-            targetPtr.ptr, &context->ptrResolver.savedOwnedPtrs);
+            targetObj.data, &context->ptrResolver.savedOwnedPtrs);
         PLY_ASSERT(!cursor.wasFound());
         *cursor = savedOwnedPtrIdx;
 
         // Serialize the owned object
-        targetPtr.type->typeKey->write(targetPtr, context);
+        targetObj.type->typeKey->write(targetObj, context);
     },
     // writeFormat
     [](TypeDescriptor* typeDesc, WriteFormatContext* context) {
@@ -357,7 +335,7 @@ TypeKey TypeKey_Owned{
         context->writeOwned(ownedType->targetType);
     },
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         if ((FormatKey) formatDesc->formatKey != FormatKey::Owned) {
             // FIXME: More detailed message
             // FIXME: Could probably accept non-owned as long as the format is compatible with
@@ -368,7 +346,7 @@ TypeKey TypeKey_Owned{
         }
         FormatDescriptor_Owned* ownedFormat = (FormatDescriptor_Owned*) formatDesc;
         TypeDescriptor_Owned* ownedType = obj.type->cast<TypeDescriptor_Owned>();
-        TypedPtr targetPtr = TypedPtr::create(ownedType->targetType);
+        AnyObject targetObj = AnyObject::create(ownedType->targetType);
 
         // Save info needed to resolve weak pointers to this object
         while (context->ptrResolver.linkTableIndex < context->ptrResolver.linkTable.numItems()) {
@@ -381,9 +359,9 @@ TypeKey TypeKey_Owned{
 
             context->ptrResolver.linkTableIndex++;
             if (linkEntry.fileOffset == seekPos) {
-                linkEntry.ptr = targetPtr.ptr;
+                linkEntry.ptr = targetObj.data;
 #if PLY_VALIDATE_RESOLVED_PTR_TYPES
-                linkEntry.typeDesc = targetPtr.type;
+                linkEntry.typeDesc = targetObj.type;
 #endif
                 break;
             } else {
@@ -392,11 +370,11 @@ TypeKey TypeKey_Owned{
             }
         }
 
-        targetPtr.type->typeKey->read(targetPtr, context, ownedFormat->childFormat);
-        TypedPtr ownedSrcPtr = {&targetPtr.ptr, obj.type};
+        targetObj.type->typeKey->read(targetObj, context, ownedFormat->childFormat);
+        AnyObject ownedSrcPtr = {&targetObj.data, obj.type};
         obj.move(ownedSrcPtr);
         // Should have been moved so there's no need to destruct:
-        PLY_ASSERT(targetPtr.ptr == nullptr);
+        PLY_ASSERT(targetObj.data == nullptr);
     },
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {
@@ -418,10 +396,10 @@ TypeKey* TypeDescriptor_Owned::typeKey = &TypeKey_Owned;
 //
 TypeKey TypeKey_Reference{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
+    [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Reference* referencedType = obj.type->cast<TypeDescriptor_Reference>();
-        TypedPtr targetPtr = TypedPtr{*(void**) obj.ptr, referencedType->targetType};
-        PLY_UNUSED(targetPtr);
+        AnyObject targetObj = AnyObject{*(void**) obj.data, referencedType->targetType};
+        PLY_UNUSED(targetObj);
         PLY_FORCE_CRASH(); // FIXME
     },
     // writeFormat
@@ -431,7 +409,7 @@ TypeKey TypeKey_Reference{
         PLY_FORCE_CRASH(); // FIXME
     },
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         PLY_FORCE_CRASH(); // FIXME
     },
     // hashDescriptor
@@ -464,10 +442,10 @@ TypeDescriptor_Struct::Member* findMember(TypeDescriptor_Struct* structType, con
 
 TypeKey TypeKey_Struct{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
+    [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Struct* structType = obj.type->cast<TypeDescriptor_Struct>();
         for (const TypeDescriptor_Struct::Member& member : structType->members) {
-            TypedPtr typedMember{PLY_PTR_OFFSET(obj.ptr, member.offset), member.type};
+            AnyObject typedMember{PLY_PTR_OFFSET(obj.data, member.offset), member.type};
             member.type->typeKey->write(typedMember, context);
         }
     },
@@ -486,7 +464,7 @@ TypeKey TypeKey_Struct{
         context->endStruct();
     },
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         if ((FormatKey) formatDesc->formatKey != FormatKey::Struct) {
             SLOG(Load, "Can't convert to Struct");
             skip(context, formatDesc);
@@ -503,11 +481,11 @@ TypeKey TypeKey_Struct{
                 skip(context, member.formatDesc);
                 continue;
             }
-            TypedPtr typedMember{PLY_PTR_OFFSET(obj.ptr, dstMember->offset), dstMember->type};
+            AnyObject typedMember{PLY_PTR_OFFSET(obj.data, dstMember->offset), dstMember->type};
             dstMember->type->typeKey->read(typedMember, context, member.formatDesc);
         }
         // FIXME: Identify any members of the structType that *weren't* serialized.
-        structType->onPostSerialize(obj.ptr);
+        structType->onPostSerialize(obj.data);
     },
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {
@@ -543,15 +521,15 @@ TypeKey* TypeDescriptor_Struct::typeKey = &TypeKey_Struct;
 //
 TypeKey TypeKey_Enum{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
+    [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Enum* enumType = obj.type->cast<TypeDescriptor_Enum>();
         u32 runTimeValue = 0;
         if (enumType->fixedSize == 1) {
-            runTimeValue = *(u8*) obj.ptr;
+            runTimeValue = *(u8*) obj.data;
         } else if (enumType->fixedSize == 2) {
-            runTimeValue = *(u16*) obj.ptr;
+            runTimeValue = *(u16*) obj.data;
         } else if (enumType->fixedSize == 4) {
-            runTimeValue = *(u32*) obj.ptr;
+            runTimeValue = *(u32*) obj.data;
         } else {
             PLY_ASSERT(0);
         }
@@ -588,7 +566,7 @@ TypeKey TypeKey_Enum{
         context->endEnum();
     },
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         NativeEndianReader& in = context->in;
         FormatDescriptor_Enum* enumFormat = (FormatDescriptor_Enum*) formatDesc;
         TypeDescriptor_Enum* enumType = obj.type->cast<TypeDescriptor_Enum>();
@@ -623,13 +601,13 @@ TypeKey TypeKey_Enum{
     found:
         if (enumType->fixedSize == 1) {
             PLY_ASSERT(runTimeValue <= UINT8_MAX);
-            *(u8*) obj.ptr = (u8) runTimeValue;
+            *(u8*) obj.data = (u8) runTimeValue;
         } else if (enumType->fixedSize == 2) {
             PLY_ASSERT(runTimeValue <= UINT16_MAX);
-            *(u16*) obj.ptr = (u16) runTimeValue;
+            *(u16*) obj.data = (u16) runTimeValue;
         } else if (enumType->fixedSize == 4) {
             PLY_ASSERT(runTimeValue <= UINT32_MAX);
-            *(u32*) obj.ptr = (u32) runTimeValue;
+            *(u32*) obj.data = (u32) runTimeValue;
         } else {
             PLY_ASSERT(0);
         }
@@ -647,14 +625,14 @@ TypeKey* TypeDescriptor_Enum::typeKey = &TypeKey_Enum;
 //
 TypeKey TypeKey_RawPtr{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
+    [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_RawPtr* weakPtrType = obj.type->cast<TypeDescriptor_RawPtr>();
-        TypedPtr targetPtr = TypedPtr{*(void**) obj.ptr, weakPtrType->targetType};
+        AnyObject targetObj = AnyObject{*(void**) obj.data, weakPtrType->targetType};
 
         // Save info needed to resolve this weak pointer
         SavedPtrResolver::WeakPointerToResolve& weakInfo =
             context->ptrResolver.weakPtrsToResolve.append();
-        weakInfo.ptr = targetPtr;
+        weakInfo.obj = targetObj;
         weakInfo.fileOffset = safeDemote<u32>(context->out.outs->getSeekPos());
 
         // Serialize temporary placeholder value
@@ -666,9 +644,9 @@ TypeKey TypeKey_RawPtr{
         context->writeRawPtr(weakPtrType->targetType);
     },
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         TypeDescriptor_RawPtr* weakPtrType = obj.type->cast<TypeDescriptor_RawPtr>();
-        LoadPtrResolver::RawPtr* weakPtr = (LoadPtrResolver::RawPtr*) obj.ptr;
+        LoadPtrResolver::RawPtr* weakPtr = (LoadPtrResolver::RawPtr*) obj.data;
 
         u32 linkIndex = context->in.read<u32>();
         // FIXME: Handle bad data gracefully
@@ -701,15 +679,15 @@ TypeKey* TypeDescriptor_RawPtr::typeKey = &TypeKey_RawPtr;
 //
 TypeKey TypeKey_EnumIndexedArray{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
+    [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_EnumIndexedArray* arrayType =
             obj.type->cast<TypeDescriptor_EnumIndexedArray>();
         TypeDescriptor* itemType = arrayType->itemType;
         u32 itemSize = itemType->fixedSize;
         u32 count = arrayType->enumType->identifiers.numItems();
-        void* item = obj.ptr;
+        void* item = obj.data;
         for (u32 i = 0; i < count; i++) {
-            itemType->typeKey->write(TypedPtr{item, itemType}, context);
+            itemType->typeKey->write(AnyObject{item, itemType}, context);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
     },
@@ -720,7 +698,7 @@ TypeKey TypeKey_EnumIndexedArray{
         context->writeEnumIndexedArray(arrayType->itemType, arrayType->enumType);
     },
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         if ((FormatKey) formatDesc->formatKey != FormatKey::EnumIndexedArray) {
             SLOG(Load, "Can't convert to EnumIndexedArray");
             skip(context, formatDesc);
@@ -736,7 +714,7 @@ TypeKey TypeKey_EnumIndexedArray{
         TypeDescriptor* itemType = arrayType->itemType;
         TypeDescriptor_Enum* enumType = arrayType->enumType;
         PLY_ASSERT(arrayType->fixedSize == itemType->fixedSize * enumType->identifiers.numItems());
-        void* items = obj.ptr;
+        void* items = obj.data;
         for (u32 i = 0; i < enumFormatCount; i++) {
             const auto& enumFormatName = enumFormat->identifiers[i];
             // FIXME: Improve this by building a conversion table ahead of time, in a separate
@@ -745,7 +723,7 @@ TypeKey TypeKey_EnumIndexedArray{
                 if (identifier.name == enumFormatName) {
                     PLY_ASSERT(identifier.value < enumType->identifiers.numItems());
                     itemType->typeKey->read(
-                        TypedPtr{PLY_PTR_OFFSET(items, itemType->fixedSize * identifier.value),
+                        AnyObject{PLY_PTR_OFFSET(items, itemType->fixedSize * identifier.value),
                                  itemType},
                         context, itemFormat);
                     goto found;
@@ -770,11 +748,11 @@ TypeKey* TypeDescriptor_EnumIndexedArray::typeKey = &TypeKey_EnumIndexedArray;
 //
 TypeKey TypeKey_Switch{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
+    [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Switch* switchType = obj.type->cast<TypeDescriptor_Switch>();
-        u16 id = *(u16*) obj.ptr;
+        u16 id = *(u16*) obj.data;
         context->out.write<u16>(id);
-        TypedPtr typedState{PLY_PTR_OFFSET(obj.ptr, switchType->storageOffset),
+        AnyObject typedState{PLY_PTR_OFFSET(obj.data, switchType->storageOffset),
                             switchType->states[id].structType};
         typedState.type->typeKey->write(typedState, context);
     },
@@ -788,7 +766,7 @@ TypeKey TypeKey_Switch{
         context->endSwitch();
     },
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         TypeDescriptor_Switch* switchType = obj.type->cast<TypeDescriptor_Switch>();
         if ((FormatKey) formatDesc->formatKey != FormatKey::Switch) {
             SLOG(Load, "Can't convert to switch \"{}\"", switchType->name);
@@ -809,13 +787,13 @@ TypeKey TypeKey_Switch{
             skip(context, switchFormat->states[formatStateID].structFormat);
             return;
         }
-        TypedPtr newTypedState{PLY_PTR_OFFSET(obj.ptr, switchType->storageOffset),
+        AnyObject newTypedState{PLY_PTR_OFFSET(obj.data, switchType->storageOffset),
                                switchType->states[newID].structType};
-        u16 oldID = *(u16*) obj.ptr;
+        u16 oldID = *(u16*) obj.data;
         if (oldID != newID) {
-            TypedPtr oldTypedState{newTypedState.ptr, switchType->states[oldID].structType};
+            AnyObject oldTypedState{newTypedState.data, switchType->states[oldID].structType};
             oldTypedState.destruct();
-            *(u16*) obj.ptr = newID;
+            *(u16*) obj.data = newID;
             newTypedState.construct();
         }
         newTypedState.type->typeKey->read(newTypedState, context,

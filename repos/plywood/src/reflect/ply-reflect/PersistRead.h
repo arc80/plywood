@@ -74,7 +74,7 @@ struct ReadObjectContext {
 };
 
 void readLinkTable(NativeEndianReader* in, LoadPtrResolver* ptrResolver);
-TypedPtr readObject(ReadObjectContext* context);
+AnyObject readObject(ReadObjectContext* context);
 void resolveLinks(LoadPtrResolver* ptrResolver);
 void skip(ReadObjectContext* context, FormatDescriptor* formatDesc);
 

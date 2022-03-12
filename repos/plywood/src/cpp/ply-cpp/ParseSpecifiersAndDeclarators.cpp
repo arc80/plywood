@@ -459,14 +459,14 @@ PLY_NO_INLINE void parseOptionalFunctionBody(Parser* parser, grammar::Initialize
         token = readToken(parser);
     }
     if (token.type == Token::OpenCurly) {
-        parser->visor->doEnter(TypedPtr::bind(&simple));
+        parser->visor->doEnter(AnyObject::bind(&simple));
         auto fnBody = result.functionBody();
         if (!fnBody) {
             fnBody.switchTo();
         }
         fnBody->openCurly = token;
         skipAnyScope(parser, &fnBody->closeCurly, token);
-        parser->visor->doExit(TypedPtr::bind(&simple));
+        parser->visor->doExit(AnyObject::bind(&simple));
     } else {
         pushBackToken(parser, token);
     }
@@ -759,9 +759,9 @@ void parseSpecifiersAndDeclarators(Parser* parser, grammar::Declaration::Simple&
 
                 if (token.type == Token::OpenCurly) {
                     record.openCurly = token;
-                    parser->visor->doEnter(TypedPtr::bind(&record));
+                    parser->visor->doEnter(AnyObject::bind(&record));
                     parseDeclarationList(parser, &record.closeCurly, record.qid.getClassName());
-                    parser->visor->doExit(TypedPtr::bind(&record));
+                    parser->visor->doExit(AnyObject::bind(&record));
                 } else {
                     pushBackToken(parser, token);
                 }
@@ -803,9 +803,9 @@ void parseSpecifiersAndDeclarators(Parser* parser, grammar::Declaration::Simple&
                 Token token3 = readToken(parser);
                 if (token3.type == Token::OpenCurly) {
                     en.openCurly = token3;
-                    parser->visor->doEnter(TypedPtr::bind(&en));
+                    parser->visor->doEnter(AnyObject::bind(&en));
                     parseEnumBody(parser, &en);
-                    parser->visor->doExit(TypedPtr::bind(&en));
+                    parser->visor->doExit(AnyObject::bind(&en));
                 } else {
                     pushBackToken(parser, token3);
                 }

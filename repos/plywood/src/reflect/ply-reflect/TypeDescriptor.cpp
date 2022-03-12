@@ -11,20 +11,20 @@ namespace ply {
 NativeBindings& getNativeBindings_FixedArray() {
     static NativeBindings bindings{
         // create
-        [](TypeDescriptor*) -> TypedPtr {
+        [](TypeDescriptor*) -> AnyObject {
             PLY_ASSERT(0); // Not supported
             return {};
         },
         // destroy
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             PLY_ASSERT(0); // Not supported
         },
         // construct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             TypeDescriptor_FixedArray* arrType = obj.type->cast<TypeDescriptor_FixedArray>();
             TypeDescriptor* itemType = arrType->itemType;
             u32 itemSize = itemType->fixedSize;
-            void* item = obj.ptr;
+            void* item = obj.data;
             for (u32 i : range(arrType->numItems)) {
                 PLY_UNUSED(i);
                 itemType->bindings.construct({item, itemType});
@@ -32,11 +32,11 @@ NativeBindings& getNativeBindings_FixedArray() {
             }
         },
         // destruct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             TypeDescriptor_FixedArray* arrType = obj.type->cast<TypeDescriptor_FixedArray>();
             TypeDescriptor* itemType = arrType->itemType;
             u32 itemSize = itemType->fixedSize;
-            void* item = obj.ptr;
+            void* item = obj.data;
             for (u32 i : range(arrType->numItems)) {
                 PLY_UNUSED(i);
                 itemType->bindings.destruct({item, itemType});
@@ -44,11 +44,11 @@ NativeBindings& getNativeBindings_FixedArray() {
             }
         },
         // move
-        [](TypedPtr dst, TypedPtr src) {
+        [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
         // copy
-        [](TypedPtr dst, const TypedPtr src) {
+        [](AnyObject dst, const AnyObject src) {
             TypeDescriptor_FixedArray* dstArrType = dst.type->cast<TypeDescriptor_FixedArray>();
             TypeDescriptor* dstItemType = dstArrType->itemType;
             if (src.type->typeKey == &TypeKey_FixedArray) {
@@ -57,28 +57,28 @@ NativeBindings& getNativeBindings_FixedArray() {
                 TypeDescriptor* srcItemType = srcArrType->itemType;
                 // FIXME: Warn about size mismatch
                 u32 itemsToCopy = min<u32>(dstArrType->numItems, srcArrType->numItems);
-                TypedPtr dstItem = {dst.ptr, dstItemType};
-                TypedPtr srcItem = {src.ptr, srcItemType};
+                AnyObject dstItem = {dst.data, dstItemType};
+                AnyObject srcItem = {src.data, srcItemType};
                 while (itemsToCopy--) {
                     dstItem.copy(srcItem);
                     // FIXME: Support different strides
-                    dstItem.ptr = PLY_PTR_OFFSET(dstItem.ptr, dstArrType->stride);
-                    srcItem.ptr = PLY_PTR_OFFSET(srcItem.ptr, srcArrType->stride);
+                    dstItem.data = PLY_PTR_OFFSET(dstItem.data, dstArrType->stride);
+                    srcItem.data = PLY_PTR_OFFSET(srcItem.data, srcArrType->stride);
                 }
             } else if (src.type->typeKey == &TypeKey_Array) {
                 const TypeDescriptor_Array* srcArrType = src.type->cast<TypeDescriptor_Array>();
                 const details::BaseArray* baseSrcArray =
-                    reinterpret_cast<details::BaseArray*>(src.ptr);
+                    reinterpret_cast<details::BaseArray*>(src.data);
                 TypeDescriptor* srcItemType = srcArrType->itemType;
                 // FIXME: Warn about size mismatch
                 u32 itemsToCopy = min<u32>(dstArrType->numItems, baseSrcArray->m_numItems);
-                TypedPtr dstItem = {dst.ptr, dstItemType};
-                TypedPtr srcItem = {baseSrcArray->m_items, srcItemType};
+                AnyObject dstItem = {dst.data, dstItemType};
+                AnyObject srcItem = {baseSrcArray->m_items, srcItemType};
                 while (itemsToCopy--) {
                     dstItem.copy(srcItem);
                     // FIXME: Support different strides
-                    dstItem.ptr = PLY_PTR_OFFSET(dstItem.ptr, dstArrType->stride);
-                    srcItem.ptr = PLY_PTR_OFFSET(srcItem.ptr, srcItemType->fixedSize);
+                    dstItem.data = PLY_PTR_OFFSET(dstItem.data, dstArrType->stride);
+                    srcItem.data = PLY_PTR_OFFSET(srcItem.data, srcItemType->fixedSize);
                 }
             } else {
                 PLY_ASSERT(0); // Not implemented yet
@@ -91,21 +91,21 @@ NativeBindings& getNativeBindings_FixedArray() {
 NativeBindings& getNativeBindings_Array() {
     static NativeBindings bindings{
         // create
-        [](TypeDescriptor*) -> TypedPtr {
+        [](TypeDescriptor*) -> AnyObject {
             PLY_ASSERT(0); // Not supported
             return {};
         },
         // destroy
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             PLY_ASSERT(0); // Not supported
         },
         // construct
-        [](TypedPtr obj) { new (obj.ptr) details::BaseArray; },
+        [](AnyObject obj) { new (obj.data) details::BaseArray; },
         // destruct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             TypeDescriptor_Array* arrayType = obj.type->cast<TypeDescriptor_Array>();
             TypeDescriptor* itemType = arrayType->itemType;
-            details::BaseArray* arr = (details::BaseArray*) obj.ptr;
+            details::BaseArray* arr = (details::BaseArray*) obj.data;
             void* item = arr->m_items;
             u32 itemSize = itemType->fixedSize;
             // FIXME: Skip this loop if itemType is trivially
@@ -118,11 +118,11 @@ NativeBindings& getNativeBindings_Array() {
             arr->~BaseArray();
         },
         // move
-        [](TypedPtr dst, TypedPtr src) {
+        [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
         // copy
-        [](TypedPtr dst, const TypedPtr src) {
+        [](AnyObject dst, const AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
     };
@@ -132,40 +132,40 @@ NativeBindings& getNativeBindings_Array() {
 NativeBindings& getNativeBindings_Owned() {
     static NativeBindings bindings{
         // create
-        [](TypeDescriptor*) -> TypedPtr {
+        [](TypeDescriptor*) -> AnyObject {
             PLY_ASSERT(0); // Not supported
             return {};
         },
         // destroy
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             PLY_ASSERT(0); // Not supported
         },
         // construct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             // Note: This is type punning Owned<T> with void*
-            *(void**) obj.ptr = nullptr;
+            *(void**) obj.data = nullptr;
         },
         // destruct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             TypeDescriptor_Owned* ownedType = obj.type->cast<TypeDescriptor_Owned>();
             // Note: This is type punning Owned<T> with void*
-            TypedPtr targetPtr = TypedPtr{*(void**) obj.ptr, ownedType->targetType};
-            targetPtr.destroy(); // Note: This assumes operator new() uses PLY_HEAP.alloc
+            AnyObject targetObj = AnyObject{*(void**) obj.data, ownedType->targetType};
+            targetObj.destroy(); // Note: This assumes operator new() uses PLY_HEAP.alloc
         },
         // move
-        [](TypedPtr dst, TypedPtr src) {
+        [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(dst.type->typeKey == &TypeKey_Owned);
             PLY_ASSERT(dst.type->isEquivalentTo(src.type));
             // Note: This is type punning AppOwned<T> with void*
-            if (*(void**) dst.ptr) {
+            if (*(void**) dst.data) {
                 // Must destroy existing object
                 PLY_FORCE_CRASH(); // Unimplemented
             }
-            *(void**) dst.ptr = *(void**) src.ptr;
-            *(void**) src.ptr = nullptr;
+            *(void**) dst.data = *(void**) src.data;
+            *(void**) src.data = nullptr;
         },
         // copy
-        [](TypedPtr dst, const TypedPtr src) {
+        [](AnyObject dst, const AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
     };
@@ -175,48 +175,48 @@ NativeBindings& getNativeBindings_Owned() {
 NativeBindings& getNativeBindings_Reference() {
     static NativeBindings bindings{
         // create
-        [](TypeDescriptor*) -> TypedPtr {
+        [](TypeDescriptor*) -> AnyObject {
             PLY_ASSERT(0); // Not supported
             return {};
         },
         // destroy
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             TypeDescriptor_Reference* referenceType = obj.type->cast<TypeDescriptor_Reference>();
             // Note: This is type punning Reference<T> with void*
-            void* target = *(void**) obj.ptr;
+            void* target = *(void**) obj.data;
             if (target) {
                 referenceType->decRef(target);
             }
-            PLY_HEAP.free(obj.ptr);
+            PLY_HEAP.free(obj.data);
         },
         // construct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             // Note: This is type punning Reference<T> with void*
-            *(void**) obj.ptr = nullptr;
+            *(void**) obj.data = nullptr;
         },
         // destruct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             TypeDescriptor_Reference* referenceType = obj.type->cast<TypeDescriptor_Reference>();
             // Note: This is type punning Reference<T> with void*
-            void* target = *(void**) obj.ptr;
+            void* target = *(void**) obj.data;
             if (target) {
                 referenceType->decRef(target);
             }
         },
         // move
-        [](TypedPtr dst, TypedPtr src) {
+        [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(dst.type->isEquivalentTo(src.type));
             TypeDescriptor_Reference* referenceType = dst.type->cast<TypeDescriptor_Reference>();
             // Note: This is type punning Reference<T> with void*
-            void* prevTarget = *(void**) dst.ptr;
+            void* prevTarget = *(void**) dst.data;
             if (prevTarget) {
                 referenceType->decRef(prevTarget);
             }
-            *(void**) dst.ptr = *(void**) src.ptr;
-            *(void**) src.ptr = nullptr;
+            *(void**) dst.data = *(void**) src.data;
+            *(void**) src.data = nullptr;
         },
         // copy
-        [](TypedPtr dst, const TypedPtr src) {
+        [](AnyObject dst, const AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
     };
@@ -226,35 +226,35 @@ NativeBindings& getNativeBindings_Reference() {
 NativeBindings& getNativeBindings_Enum() {
     static NativeBindings bindings{
         // create
-        [](TypeDescriptor*) -> TypedPtr {
+        [](TypeDescriptor*) -> AnyObject {
             PLY_ASSERT(0); // Not supported
             return {};
         },
         // destroy
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             PLY_ASSERT(0); // Not supported
         },
         // construct
-        [](TypedPtr obj) {},
+        [](AnyObject obj) {},
         // destruct
-        [](TypedPtr obj) {},
+        [](AnyObject obj) {},
         // move
-        [](TypedPtr dst, TypedPtr src) {
+        [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(dst.type->typeKey == &TypeKey_Enum);
             PLY_ASSERT(dst.type->isEquivalentTo(src.type));
             TypeDescriptor_Enum* enumType = dst.type->cast<TypeDescriptor_Enum>();
             if (enumType->fixedSize == 1) {
-                *(u8*) dst.ptr = *(u8*) src.ptr;
+                *(u8*) dst.data = *(u8*) src.data;
             } else if (enumType->fixedSize == 2) {
-                *(u16*) dst.ptr = *(u16*) src.ptr;
+                *(u16*) dst.data = *(u16*) src.data;
             } else if (enumType->fixedSize == 4) {
-                *(u32*) dst.ptr = *(u32*) src.ptr;
+                *(u32*) dst.data = *(u32*) src.data;
             } else {
                 PLY_ASSERT(0);
             }
         },
         // copy
-        [](TypedPtr dst, const TypedPtr src) {
+        [](AnyObject dst, const AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
     };
@@ -264,24 +264,24 @@ NativeBindings& getNativeBindings_Enum() {
 NativeBindings& getNativeBindings_RawPtr() {
     static NativeBindings bindings{
         // create
-        [](TypeDescriptor*) -> TypedPtr {
+        [](TypeDescriptor*) -> AnyObject {
             PLY_ASSERT(0); // Not supported
             return {};
         },
         // destroy
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             PLY_ASSERT(0); // Not supported
         },
         // construct
-        [](TypedPtr obj) { *(void**) obj.ptr = nullptr; },
+        [](AnyObject obj) { *(void**) obj.data = nullptr; },
         // destruct
-        [](TypedPtr obj) {},
+        [](AnyObject obj) {},
         // move
-        [](TypedPtr dst, TypedPtr src) {
+        [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
         // copy
-        [](TypedPtr dst, const TypedPtr src) {
+        [](AnyObject dst, const AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
     };
@@ -291,23 +291,23 @@ NativeBindings& getNativeBindings_RawPtr() {
 NativeBindings& getNativeBindings_EnumIndexedArray() {
     static NativeBindings bindings{
         // create
-        [](TypeDescriptor*) -> TypedPtr {
+        [](TypeDescriptor*) -> AnyObject {
             PLY_ASSERT(0); // Not supported
             return {};
         },
         // destroy
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             PLY_ASSERT(0); // Not supported
         },
         // construct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             TypeDescriptor_EnumIndexedArray* arrType =
                 obj.type->cast<TypeDescriptor_EnumIndexedArray>();
             TypeDescriptor* itemType = arrType->itemType;
             u32 itemSize = itemType->fixedSize;
             u32 count = arrType->enumType->identifiers.numItems();
             PLY_ASSERT(itemSize * count == arrType->fixedSize);
-            void* item = obj.ptr;
+            void* item = obj.data;
             for (u32 i = 0; i < count; i++) {
                 PLY_UNUSED(i);
                 itemType->bindings.construct({item, itemType});
@@ -315,14 +315,14 @@ NativeBindings& getNativeBindings_EnumIndexedArray() {
             }
         },
         // destruct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             TypeDescriptor_EnumIndexedArray* arrType =
                 obj.type->cast<TypeDescriptor_EnumIndexedArray>();
             TypeDescriptor* itemType = arrType->itemType;
             u32 itemSize = itemType->fixedSize;
             u32 count = arrType->enumType->identifiers.numItems();
             PLY_ASSERT(itemSize * count == arrType->fixedSize);
-            void* item = obj.ptr;
+            void* item = obj.data;
             for (u32 i = 0; i < count; i++) {
                 PLY_UNUSED(i);
                 itemType->bindings.destruct({item, itemType});
@@ -330,11 +330,11 @@ NativeBindings& getNativeBindings_EnumIndexedArray() {
             }
         },
         // move
-        [](TypedPtr dst, TypedPtr src) {
+        [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
         // copy
-        [](TypedPtr dst, const TypedPtr src) {
+        [](AnyObject dst, const AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
     };
@@ -344,48 +344,48 @@ NativeBindings& getNativeBindings_EnumIndexedArray() {
 NativeBindings& getNativeBindings_SynthesizedStruct() {
     static NativeBindings bindings{
         // create
-        [](TypeDescriptor* typeDesc) -> TypedPtr {
-            void* ptr = PLY_HEAP.alloc(typeDesc->fixedSize);
-            TypedPtr obj{ptr, typeDesc};
+        [](TypeDescriptor* typeDesc) -> AnyObject {
+            void* data = PLY_HEAP.alloc(typeDesc->fixedSize);
+            AnyObject obj{data, typeDesc};
             obj.construct();
             return obj;
         },
         // destroy
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             obj.destruct();
-            PLY_HEAP.free(obj.ptr);
+            PLY_HEAP.free(obj.data);
         },
         // construct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             TypeDescriptor_Struct* structType = (TypeDescriptor_Struct*) obj.type;
             // Zero-initialize the struct before calling the constructors of any members.
             // I'm not sure this is always what we want, but it will help set the padding to
             // zero when exporting synthesized vertex attributes:
-            memset(obj.ptr, 0, structType->fixedSize);
+            memset(obj.data, 0, structType->fixedSize);
             for (TypeDescriptor_Struct::Member& member : structType->members) {
                 member.type->bindings.construct(
-                    {PLY_PTR_OFFSET(obj.ptr, member.offset), member.type});
+                    {PLY_PTR_OFFSET(obj.data, member.offset), member.type});
             }
         },
         // destruct
-        [](TypedPtr obj) {
+        [](AnyObject obj) {
             TypeDescriptor_Struct* structType = (TypeDescriptor_Struct*) obj.type;
             for (TypeDescriptor_Struct::Member& member : structType->members) {
                 member.type->bindings.destruct(
-                    {PLY_PTR_OFFSET(obj.ptr, member.offset), member.type});
+                    {PLY_PTR_OFFSET(obj.data, member.offset), member.type});
             }
         },
         // move
-        [](TypedPtr dst, TypedPtr src) {
+        [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(0); // Not implemented yet
         },
         // copy
-        [](TypedPtr dst, const TypedPtr src) {
+        [](AnyObject dst, const AnyObject src) {
             PLY_ASSERT(dst.type->isEquivalentTo(src.type));
             TypeDescriptor_Struct* structType = (TypeDescriptor_Struct*) dst.type;
             for (TypeDescriptor_Struct::Member& member : structType->members) {
-                member.type->bindings.copy({PLY_PTR_OFFSET(dst.ptr, member.offset), member.type},
-                                           {PLY_PTR_OFFSET(src.ptr, member.offset), member.type});
+                member.type->bindings.copy({PLY_PTR_OFFSET(dst.data, member.offset), member.type},
+                                           {PLY_PTR_OFFSET(src.data, member.offset), member.type});
             }
         },
     };

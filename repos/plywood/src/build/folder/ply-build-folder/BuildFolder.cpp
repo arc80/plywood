@@ -88,7 +88,7 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::load(StringView buildFolderName) {
 }
 
 PLY_NO_INLINE bool BuildFolder::save() const {
-    Owned<pylon::Node> aRoot = pylon::exportObj(TypedPtr::bind(this));
+    Owned<pylon::Node> aRoot = pylon::exportObj(AnyObject::bind(this));
     aRoot->set("buildSystemSignature", this->buildSystemSignature->copy());
     String strContents = pylon::toString(aRoot);
     String infoPath = BuildFolderName::getInfoPath(this->buildFolderName);

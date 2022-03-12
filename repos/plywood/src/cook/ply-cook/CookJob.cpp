@@ -52,7 +52,7 @@ struct Dependency_File : Dependency {
 
 DependencyType DependencyType_File = {
     // hasChanged
-    [](Dependency* dep_, CookResult* result, TypedPtr) -> bool { //
+    [](Dependency* dep_, CookResult* result, AnyObject) -> bool { //
         // FIXME: Use a safe cast once reflection supports derived classes
         Dependency_File* depFile = static_cast<Dependency_File*>(dep_);
         FileStatus stat = FileSystem::native()->getFileStatus(depFile->path);
@@ -147,7 +147,7 @@ Reference<CookJob> DependencyTracker::getOrCreateCookJob(const CookJobID& id) {
         return iter.getItem();
     }
     // FIXME: Implement safe cast that recognizes base classes
-    //    Reference<CookJob> cookJob = TypedPtr::create(id.type->resultType).cast<CookJob>();
+    //    Reference<CookJob> cookJob = AnyObject::create(id.type->resultType).cast<CookJob>();
     Reference<CookJob> cookJob = new CookJob;
     cookJob->id = id;
     this->allCookJobs.insert(cookJob.get());
@@ -186,7 +186,7 @@ void CookContext::endCook() {
     DependencyTracker::current_ = nullptr;
 }
 
-void CookContext::ensureCooked(CookJob* job, TypedPtr jobArg) {
+void CookContext::ensureCooked(CookJob* job, AnyObject jobArg) {
     PLY_ASSERT(CookContext::current());
 
     {
@@ -219,7 +219,7 @@ void CookContext::ensureCooked(CookJob* job, TypedPtr jobArg) {
             job->result->unlinkFromDatabase();
         }
         Owned<CookResult> oldResult = std::move(job->result);
-        job->result = (CookResult*) TypedPtr::create(job->id.type->resultType).ptr;
+        job->result = (CookResult*) AnyObject::create(job->id.type->resultType).ptr;
         job->result->job = job;
         job->id.type->cook(job->result, jobArg);
     } else {

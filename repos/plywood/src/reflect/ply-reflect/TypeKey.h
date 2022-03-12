@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-reflect/Core.h>
-#include <ply-reflect/TypedPtr.h>
+#include <ply-reflect/AnyObject.h>
 
 namespace ply {
 
@@ -22,9 +22,9 @@ struct FormatDescriptor;
 // time -- instead of hardcoding a bunch of system-specific function pointers here.
 //
 struct TypeKey {
-    void (*write)(TypedPtr obj, WriteObjectContext* context);
+    void (*write)(AnyObject obj, WriteObjectContext* context);
     void (*writeFormat)(TypeDescriptor* typeDesc, WriteFormatContext* context);
-    void (*read)(TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc);
+    void (*read)(AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc);
     void (*hashDescriptor)(Hasher& hasher, const TypeDescriptor* typeDesc);
     bool (*equalDescriptors)(const TypeDescriptor* type0, const TypeDescriptor* type1);
 

@@ -10,18 +10,18 @@ namespace ply {
 struct TypeDescriptor;
 
 //-----------------------------------------------------------------------
-//  TypedPtr
+//  AnyObject
 //-----------------------------------------------------------------------
-struct TypedPtr {
-    void* ptr = nullptr;
+struct AnyObject {
+    void* data = nullptr;
     TypeDescriptor* type = nullptr;
 
-    TypedPtr() = default;
-    TypedPtr(void* ptr, TypeDescriptor* type) : ptr{ptr}, type{type} {
+    AnyObject() = default;
+    AnyObject(void* data, TypeDescriptor* type) : data{data}, type{type} {
     }
 
     template <typename T>
-    static TypedPtr bind(T* ptr);
+    static AnyObject bind(T* data);
     template <class T>
     bool is() const;
     template <class T>
@@ -31,15 +31,15 @@ struct TypedPtr {
     template <class S>
     const S& refine() const;
 
-    static TypedPtr create(TypeDescriptor* typeDesc);
+    static AnyObject create(TypeDescriptor* typeDesc);
     void destroy();
     void construct();
     void destruct();
-    void move(TypedPtr other);
-    void copy(const TypedPtr other);
+    void move(AnyObject other);
+    void copy(const AnyObject other);
 
-    PLY_INLINE bool operator==(const TypedPtr& other) const {
-        return this->ptr == other.ptr && this->type == other.type;
+    PLY_INLINE bool operator==(const AnyObject& other) const {
+        return this->data == other.data && this->type == other.type;
     }
 };
 

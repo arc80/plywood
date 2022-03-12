@@ -59,18 +59,18 @@ struct TypeOwnerResolver {
 };
 
 struct TypeOwnerPtr {
-    void* ptr = nullptr;
+    void* data = nullptr;
     TypeDescriptorOwner* typeOwner = nullptr;
 
     TypeOwnerPtr() = default;
-    TypeOwnerPtr(void* ptr, TypeDescriptorOwner* typeOwner) : ptr{ptr}, typeOwner{typeOwner} {
+    TypeOwnerPtr(void* data, TypeDescriptorOwner* typeOwner) : data{data}, typeOwner{typeOwner} {
     }
 
     template <typename T>
-    static TypeOwnerPtr bind(T* ptr) {
+    static TypeOwnerPtr bind(T* data) {
         // FIXME: Find a better way to handle cases where this function is passed a pointer to
         // const.
-        return {(void*) ptr, TypeOwnerResolver<T>::get()};
+        return {(void*) data, TypeOwnerResolver<T>::get()};
     }
 };
 

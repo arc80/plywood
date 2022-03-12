@@ -35,7 +35,7 @@ PLY_NO_INLINE void PlyToolClient::remoteRun(ArrayView<String> sourceFiles,
 
     // Serialize and send to CookEXE over m_subprocess.stdinWr
     WriteObjectContext writeObjectContext{&outs, &writeFormatContext};
-    TypedPtr obj = TypedPtr::bind(&cmd);
+    AnyObject obj = AnyObject::bind(&cmd);
 
     // Write formatID (FIXME: This seems redundant)
     u32 formatID = writeFormatContext.getFormatID(obj.type);

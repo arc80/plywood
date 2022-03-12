@@ -11,4 +11,4 @@
 #include <ply-reflect/TypeKey.h>
 #include <ply-reflect/TypeSynthesizer.h>
 #include <ply-reflect/TypedArray.h>
-#include <ply-reflect/SavedTypedPtr.h>
+#include <ply-reflect/AnySavedObject.h>

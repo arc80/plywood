@@ -11,10 +11,10 @@ namespace ply {
 
 SLOG_DECLARE_CHANNEL(Load)
 
-TypeKey TypeKey_OwnTypedPtr{
+TypeKey TypeKey_AnyOwnedObject{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
-        OwnTypedPtr* ownTypedPtr = (OwnTypedPtr*) obj.ptr;
+    [](AnyObject obj, WriteObjectContext* context) {
+        AnyOwnedObject* ownTypedPtr = (AnyOwnedObject*) obj.data;
         TypeDescriptor* targetType = ownTypedPtr->type;
 
         // Make sure the target's TypeDescriptor is written as part of the schema.
@@ -37,19 +37,19 @@ TypeKey TypeKey_OwnTypedPtr{
     },
 
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         if ((FormatKey) formatDesc->formatKey != FormatKey::Typed) {
-            SLOG(Load, "Can't load OwnTypedPtr");
+            SLOG(Load, "Can't load AnyOwnedObject");
             skip(context, formatDesc);
             return;
         }
 
-        OwnTypedPtr* ownTypedPtr = (OwnTypedPtr*) obj.ptr;
+        AnyOwnedObject* ownTypedPtr = (AnyOwnedObject*) obj.data;
 
         // Read formatID and look up the corresponding FormatDescriptor of the target.
         u32 targetFormatID = context->in.read<u32>();
         if (targetFormatID == (u32) FormatKey::None) {
-            *ownTypedPtr = OwnTypedPtr{};
+            *ownTypedPtr = AnyOwnedObject{};
         } else {
             FormatDescriptor* targetFormat = context->schema->getFormatDesc(targetFormatID);
 
@@ -57,7 +57,7 @@ TypeKey TypeKey_OwnTypedPtr{
             TypeDescriptor* targetType = context->typeResolver->getType(targetFormat);
 
             // Read the target
-            *ownTypedPtr = TypedPtr::create(targetType);
+            *ownTypedPtr = AnyObject::create(targetType);
             targetType->typeKey->read(*ownTypedPtr, context, targetFormat);
         }
     },
@@ -69,9 +69,9 @@ TypeKey TypeKey_OwnTypedPtr{
     TypeKey::alwaysEqualDescriptors,
 };
 
-PLY_DEFINE_TYPE_DESCRIPTOR(OwnTypedPtr) {
-    static TypeDescriptor typeDesc{&TypeKey_OwnTypedPtr, sizeof(OwnTypedPtr),
-                                   NativeBindings::make<OwnTypedPtr>()};
+PLY_DEFINE_TYPE_DESCRIPTOR(AnyOwnedObject) {
+    static TypeDescriptor typeDesc{&TypeKey_AnyOwnedObject, sizeof(AnyOwnedObject),
+                                   NativeBindings::make<AnyOwnedObject>()};
     return &typeDesc;
 }
 

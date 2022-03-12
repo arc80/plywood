@@ -7,7 +7,7 @@
 
 namespace pylon {
 
-PLY_NO_INLINE Owned<pylon::Node> exportObj(TypedPtr obj, const FilterFunc& filter) {
+PLY_NO_INLINE Owned<pylon::Node> exportObj(AnyObject obj, const FilterFunc& filter) {
     if (filter) {
         if (Owned<Node> result = filter(obj))
             return result;
@@ -18,17 +18,17 @@ PLY_NO_INLINE Owned<pylon::Node> exportObj(TypedPtr obj, const FilterFunc& filte
         Owned<Node> objNode = Node::createObject();
         for (const TypeDescriptor_Struct::Member& member : structType->members) {
             objNode->set(member.name.view(),
-                         exportObj({PLY_PTR_OFFSET(obj.ptr, member.offset), member.type}, filter));
+                         exportObj({PLY_PTR_OFFSET(obj.data, member.offset), member.type}, filter));
         }
         return objNode;
     } else if (obj.type->typeKey == &TypeKey_String) {
-        return Node::createText(((String*) obj.ptr)->view());
+        return Node::createText(((String*) obj.data)->view());
     } else if (obj.type->typeKey == &TypeKey_Array) {
         Owned<Node> arrNode = Node::createArray();
         const TypeDescriptor_Array* arrayType = obj.type->cast<TypeDescriptor_Array>();
         TypeDescriptor* itemType = arrayType->itemType;
         u32 itemSize = itemType->fixedSize;
-        details::BaseArray* arr = (details::BaseArray*) obj.ptr;
+        details::BaseArray* arr = (details::BaseArray*) obj.data;
         Array<Owned<Node>>& childNodes = arrNode->array();
         childNodes.resize(arr->m_numItems);
         for (u32 i : range(arr->m_numItems)) {
@@ -38,31 +38,31 @@ PLY_NO_INLINE Owned<pylon::Node> exportObj(TypedPtr obj, const FilterFunc& filte
         return arrNode;
     } else if (obj.type->typeKey == &TypeKey_Switch) {
         const TypeDescriptor_Switch* switchType = obj.type->cast<TypeDescriptor_Switch>();
-        u16 id = *(u16*) obj.ptr;
+        u16 id = *(u16*) obj.data;
         Owned<Node> objNode = Node::createObject();
-        TypedPtr typedState{PLY_PTR_OFFSET(obj.ptr, switchType->storageOffset),
+        AnyObject typedState{PLY_PTR_OFFSET(obj.data, switchType->storageOffset),
                             switchType->states[id].structType};
         objNode->set(switchType->states[id].name.view(), exportObj(typedState, filter));
         return objNode;
     } else if (obj.type->typeKey == &TypeKey_Bool) {
-        return Node::createText(*(bool*) obj.ptr ? "true" : "false");
+        return Node::createText(*(bool*) obj.data ? "true" : "false");
     } else if (obj.type->typeKey == &TypeKey_Enum) {
         const TypeDescriptor_Enum* enumType = obj.type->cast<TypeDescriptor_Enum>();
         // FIXME: Make this a function
         u32 enumValue = 0;
         if (enumType->fixedSize == 1) {
-            enumValue = *(u8*) obj.ptr;
+            enumValue = *(u8*) obj.data;
         } else if (enumType->fixedSize == 2) {
-            enumValue = *(u16*) obj.ptr;
+            enumValue = *(u16*) obj.data;
         } else if (enumType->fixedSize == 4) {
-            enumValue = *(u32*) obj.ptr;
+            enumValue = *(u32*) obj.data;
         } else {
             PLY_ASSERT(0);
         }
         return Node::createText(enumType->findValue(enumValue)->name.view());
     } else if (obj.type->typeKey == &TypeKey_Owned) {
         auto* ownedDesc = obj.type->cast<TypeDescriptor_Owned>();
-        TypedPtr child{*(void**) obj.ptr, ownedDesc->targetType};
+        AnyObject child{*(void**) obj.data, ownedDesc->targetType};
         return exportObj(child, filter);
     } else {
         PLY_ASSERT(0); // Unsupported

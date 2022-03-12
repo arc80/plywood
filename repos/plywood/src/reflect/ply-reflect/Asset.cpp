@@ -12,7 +12,7 @@ namespace ply {
 // Write
 //
 
-void writeAsset(OutStream* out, TypedPtr obj) {
+void writeAsset(OutStream* out, AnyObject obj) {
     WriteFormatContext writeFormatContext{out};
     MemOutStream memOut;
     WriteObjectContext writeObjectContext{&memOut, &writeFormatContext};
@@ -31,13 +31,13 @@ void writeAsset(OutStream* out, TypedPtr obj) {
 // Read
 //
 
-TypedPtr readAsset(InStream* ins, PersistentTypeResolver* resolver) {
+AnyObject readAsset(InStream* ins, PersistentTypeResolver* resolver) {
     Schema schema;
     readSchema(schema, ins);
     ReadObjectContext context{&schema, ins, resolver};
     readLinkTable(&context.in, &context.ptrResolver);
     context.ptrResolver.objDataOffset = safeDemote<u32>(ins->getSeekPos());
-    TypedPtr obj = readObject(&context);
+    AnyObject obj = readObject(&context);
     resolveLinks(&context.ptrResolver);
     return obj;
 }

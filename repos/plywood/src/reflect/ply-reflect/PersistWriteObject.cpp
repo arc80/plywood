@@ -8,7 +8,7 @@
 
 namespace ply {
 
-void writeObject(TypedPtr obj, WriteObjectContext* writeObjectContext) {
+void writeObject(AnyObject obj, WriteObjectContext* writeObjectContext) {
     // Write formatID
     u32 formatID = writeObjectContext->writeFormatContext->addOrGetFormatID(obj.type);
     writeObjectContext->out.write<u32>(formatID);
@@ -23,10 +23,10 @@ void resolveLinksAndWriteLinkTable(MutableStringView view, OutStream* outs,
     for (const SavedPtrResolver::WeakPointerToResolve& weakInfo : ptrResolver->weakPtrsToResolve) {
         PLY_ASSERT(weakInfo.fileOffset + 4 <= view.numBytes);
         auto cursor =
-            ptrResolver->addrToSaveInfo.find(weakInfo.ptr.ptr, &ptrResolver->savedOwnedPtrs);
+            ptrResolver->addrToSaveInfo.find(weakInfo.obj.data, &ptrResolver->savedOwnedPtrs);
         if (cursor.wasFound()) {
             SavedPtrResolver::SavedOwnedPtr& savedOwnedPtr = ptrResolver->savedOwnedPtrs[*cursor];
-            PLY_ASSERT(savedOwnedPtr.ptr == weakInfo.ptr); // Sanity check
+            PLY_ASSERT(savedOwnedPtr.obj == weakInfo.obj); // Sanity check
             if (savedOwnedPtr.linkIndex < 0) {
                 savedOwnedPtr.linkIndex = linkIndex;
                 linkIndex++;

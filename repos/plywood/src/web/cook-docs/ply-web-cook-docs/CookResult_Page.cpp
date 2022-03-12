@@ -375,7 +375,7 @@ struct Dependency_ExtractedClassAPI : cook::Dependency {
 
 cook::DependencyType DependencyType_ExtractedClassAPI{
     // hasChanged
-    [](cook::Dependency* dep_, cook::CookResult*, TypedPtr) -> bool { //
+    [](cook::Dependency* dep_, cook::CookResult*, AnyObject) -> bool { //
         // FIXME: Implement safe cast
         Dependency_ExtractedClassAPI* depECA = static_cast<Dependency_ExtractedClassAPI*>(dep_);
         return depECA->classHash != getClassHash(depECA->classFQID);
@@ -384,7 +384,7 @@ cook::DependencyType DependencyType_ExtractedClassAPI{
 
 //---------------------------
 
-void Page_cook(cook::CookResult* cookResult_, TypedPtr) {
+void Page_cook(cook::CookResult* cookResult_, AnyObject) {
     cook::CookContext* ctx = cook::CookContext::current();
     PLY_ASSERT(cookResult_->job->id.type == &CookJobType_Page);
     auto pageResult = static_cast<CookResult_Page*>(cookResult_);

@@ -137,8 +137,8 @@ void readLinkTable(NativeEndianReader* in, LoadPtrResolver* ptrResolver) {
     }
 }
 
-TypedPtr readObject(ReadObjectContext* context) {
-    TypedPtr obj; // Zero-initialized
+AnyObject readObject(ReadObjectContext* context) {
+    AnyObject obj; // Zero-initialized
 
     // Read formatID
     u32 formatID = context->in.read<u32>();
@@ -149,7 +149,7 @@ TypedPtr readObject(ReadObjectContext* context) {
         TypeDescriptor* typeDesc = context->typeResolver->getType(formatDesc);
 
         // Instantiate object
-        obj = TypedPtr::create(typeDesc);
+        obj = AnyObject::create(typeDesc);
 
         // Load into the object
         obj.type->typeKey->read(obj, context, formatDesc);

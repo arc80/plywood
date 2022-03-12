@@ -73,7 +73,7 @@ PLY_NO_INLINE void command_rpc(PlyToolCommandEnv*) {
 
     for (;;) {
         ReadObjectContext context{&schema, &ins, &resolver};
-        OwnTypedPtr obj = readObject(&context);
+        AnyOwnedObject obj = readObject(&context);
         if (!obj.ptr)
             break; // Pipe was closed
 

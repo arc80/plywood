@@ -14,22 +14,22 @@ namespace ply {
 SLOG_DECLARE_CHANNEL(Load)
 
 PLY_NO_INLINE void TypedArrayView::constructSlow(TypedArrayView view) {
-    TypedPtr typedItem{view.items, view.itemTypeOwner->getRootType()};
-    u32 stride = typedItem.type->fixedSize;
-    auto ctor = typedItem.type->bindings.construct;
+    AnyObject anyItem{view.items, view.itemTypeOwner->getRootType()};
+    u32 stride = anyItem.type->fixedSize;
+    auto ctor = anyItem.type->bindings.construct;
     for (u32 numItems = view.numItems; numItems > 0; numItems--) {
-        ctor(typedItem);
-        typedItem.ptr = PLY_PTR_OFFSET(typedItem.ptr, stride);
+        ctor(anyItem);
+        anyItem.data = PLY_PTR_OFFSET(anyItem.data, stride);
     }
 }
 
 PLY_NO_INLINE void TypedArrayView::destructSlow(TypedArrayView view) {
-    TypedPtr typedItem{view.items, view.itemTypeOwner->getRootType()};
-    u32 stride = typedItem.type->fixedSize;
-    auto dtor = typedItem.type->bindings.destruct;
+    AnyObject anyItem{view.items, view.itemTypeOwner->getRootType()};
+    u32 stride = anyItem.type->fixedSize;
+    auto dtor = anyItem.type->bindings.destruct;
     for (u32 numItems = view.numItems; numItems > 0; numItems--) {
-        dtor(typedItem);
-        typedItem.ptr = PLY_PTR_OFFSET(typedItem.ptr, stride);
+        dtor(anyItem);
+        anyItem.data = PLY_PTR_OFFSET(anyItem.data, stride);
     }
 }
 
@@ -74,18 +74,18 @@ PLY_NO_INLINE void TypedArray::assign(TypeDescriptorOwner* typeOwner, void* item
     m_array.m_allocated = numItems;
 }
 
-PLY_NO_INLINE TypedPtr TypedArray::append() {
+PLY_NO_INLINE AnyObject TypedArray::append() {
     u32 i = m_array.m_numItems++;
     m_array.reserve(m_array.m_numItems, m_typeOwner->getRootType()->fixedSize);
-    TypedPtr result = getItem(i);
+    AnyObject result = getItem(i);
     result.construct();
     return result;
 }
 
 TypeKey TypeKey_TypedArray{
     // write
-    [](TypedPtr obj, WriteObjectContext* context) {
-        TypedArray* arr = (TypedArray*) obj.ptr;
+    [](AnyObject obj, WriteObjectContext* context) {
+        TypedArray* arr = (TypedArray*) obj.data;
         TypeDescriptor* itemType = arr->getItemType();
         PLY_ASSERT(itemType);
 
@@ -101,7 +101,7 @@ TypeKey TypeKey_TypedArray{
         context->out.write<u32>((u32) arr->m_array.m_numItems);
         for (u32 i : range(arr->m_array.m_numItems)) {
             PLY_UNUSED(i);
-            itemType->typeKey->write(TypedPtr{item, itemType}, context);
+            itemType->typeKey->write(AnyObject{item, itemType}, context);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
     },
@@ -112,7 +112,7 @@ TypeKey TypeKey_TypedArray{
     },
 
     // read
-    [](TypedPtr obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
         if ((FormatKey) formatDesc->formatKey != FormatKey::TypedArray) {
             // FIXME: More detailed message
             // FIXME: Could probably accept Arrays, TypedArrays
@@ -131,15 +131,15 @@ TypeKey TypeKey_TypedArray{
         TypeDescriptor* itemType = itemTypeOwner->getRootType();
 
         // Read all array items
-        TypedArray* arr = (TypedArray*) obj.ptr;
+        TypedArray* arr = (TypedArray*) obj.data;
         u32 itemSize = itemType->fixedSize;
         u32 arrSize = context->in.read<u32>();
         arr->create(itemTypeOwner, arrSize);
-        TypedPtr typedItem{arr->m_array.m_items, itemType};
+        AnyObject anyItem{arr->m_array.m_items, itemType};
         for (u32 i : range((u32) arrSize)) {
             PLY_UNUSED(i);
-            itemType->typeKey->read(typedItem, context, itemFormat);
-            typedItem.ptr = PLY_PTR_OFFSET(typedItem.ptr, itemSize);
+            itemType->typeKey->read(anyItem, context, itemFormat);
+            anyItem.data = PLY_PTR_OFFSET(anyItem.data, itemSize);
         }
     },
 

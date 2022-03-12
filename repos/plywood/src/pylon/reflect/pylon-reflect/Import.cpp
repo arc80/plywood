@@ -4,7 +4,7 @@
 ------------------------------------*/
 #include <pylon-reflect/Core.h>
 #include <pylon-reflect/Import.h>
-#include <ply-reflect/SavedTypedPtr.h>
+#include <ply-reflect/AnySavedObject.h>
 #include <ply-reflect/TypeDescriptorOwner.h>
 #include <ply-reflect/TypedArray.h>
 
@@ -99,7 +99,7 @@ PLY_NO_INLINE TypeDescriptorOwner* convertTypeFrom(const Node* aNode,
     return importer.typeOwner;
 }
 
-PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node* aNode,
+PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
                                const Functor<TypeFromName>& typeFromName) {
     auto error = [&] {}; // FIXME: Decide where these go
 
@@ -112,43 +112,43 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node* aNode,
         for (const TypeDescriptor_Struct::Member& member : structDesc->members) {
             const Node* aMember = aNode->get(member.name);
             if (aMember->isValid()) {
-                TypedPtr m{PLY_PTR_OFFSET(obj.ptr, member.offset), member.type};
+                AnyObject m{PLY_PTR_OFFSET(obj.data, member.offset), member.type};
                 convertFrom(m, aMember, typeFromName);
             }
         }
     } else if (obj.type->typeKey == &TypeKey_Float) {
         Tuple<bool, double> pair = aNode->numeric();
         PLY_ASSERT(pair.first);
-        *(float*) obj.ptr = (float) pair.second;
+        *(float*) obj.data = (float) pair.second;
     } else if (obj.type->typeKey == &TypeKey_U8) {
         Tuple<bool, double> pair = aNode->numeric();
         PLY_ASSERT(pair.first);
-        *(u8*) obj.ptr = (u8) pair.second;
+        *(u8*) obj.data = (u8) pair.second;
     } else if (obj.type->typeKey == &TypeKey_U16) {
         Tuple<bool, double> pair = aNode->numeric();
         PLY_ASSERT(pair.first);
-        *(u16*) obj.ptr = (u16) pair.second;
+        *(u16*) obj.data = (u16) pair.second;
     } else if (obj.type->typeKey == &TypeKey_Bool) {
-        *(bool*) obj.ptr = aNode->text() == "true";
+        *(bool*) obj.data = aNode->text() == "true";
     } else if (obj.type->typeKey == &TypeKey_U32) {
         Tuple<bool, double> pair = aNode->numeric();
         PLY_ASSERT(pair.first);
-        *(u32*) obj.ptr = (u32) pair.second;
+        *(u32*) obj.data = (u32) pair.second;
     } else if (obj.type->typeKey == &TypeKey_S32) {
         Tuple<bool, double> pair = aNode->numeric();
         PLY_ASSERT(pair.first);
-        *(s32*) obj.ptr = (s32) pair.second;
+        *(s32*) obj.data = (s32) pair.second;
     } else if (obj.type->typeKey == &TypeKey_FixedArray) {
         PLY_ASSERT(aNode->isArray());
         auto* fixedArrType = obj.type->cast<TypeDescriptor_FixedArray>();
         u32 itemSize = fixedArrType->itemType->fixedSize;
         for (u32 i = 0; i < fixedArrType->numItems; i++) {
-            TypedPtr elem{PLY_PTR_OFFSET(obj.ptr, itemSize * i), fixedArrType->itemType};
+            AnyObject elem{PLY_PTR_OFFSET(obj.data, itemSize * i), fixedArrType->itemType};
             convertFrom(elem, aNode->get(i), typeFromName);
         }
     } else if (obj.type->typeKey == &TypeKey_String) {
         if (aNode->isText()) {
-            *(String*) obj.ptr = aNode->text();
+            *(String*) obj.data = aNode->text();
         } else {
             error();
         }
@@ -156,19 +156,19 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node* aNode,
         PLY_ASSERT(aNode->isArray());
         ArrayView<const Node* const> aNodeArr = aNode->arrayView();
         auto* arrType = static_cast<TypeDescriptor_Array*>(obj.type);
-        details::BaseArray* arr = (details::BaseArray*) obj.ptr;
+        details::BaseArray* arr = (details::BaseArray*) obj.data;
         u32 oldArrSize = arr->m_numItems;
         u32 newArrSize = aNodeArr.numItems;
         u32 itemSize = arrType->itemType->fixedSize;
         for (u32 i = newArrSize; i < oldArrSize; i++) {
-            TypedPtr{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType}.destruct();
+            AnyObject{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType}.destruct();
         }
         arr->realloc(newArrSize, itemSize);
         for (u32 i = oldArrSize; i < newArrSize; i++) {
-            TypedPtr{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType}.construct();
+            AnyObject{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType}.construct();
         }
         for (u32 i = 0; i < newArrSize; i++) {
-            TypedPtr elem{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType};
+            AnyObject elem{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType};
             convertFrom(elem, aNodeArr[i], typeFromName);
         }
     } else if (obj.type->typeKey == &TypeKey_EnumIndexedArray) {
@@ -177,8 +177,8 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node* aNode,
         for (const TypeDescriptor_Enum::Identifier& identifier : arrayDesc->enumType->identifiers) {
             const Node* aMember = aNode->get(identifier.name);
             if (aMember->isValid()) {
-                TypedPtr m{
-                    PLY_PTR_OFFSET(obj.ptr, arrayDesc->itemType->fixedSize * identifier.value),
+                AnyObject m{
+                    PLY_PTR_OFFSET(obj.data, arrayDesc->itemType->fixedSize * identifier.value),
                     arrayDesc->itemType};
                 convertFrom(m, aMember, typeFromName);
             }
@@ -191,12 +191,12 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node* aNode,
             if (identifier.name == aNode->text()) {
                 if (enumDesc->fixedSize == 1) {
                     PLY_ASSERT(identifier.value <= UINT8_MAX);
-                    *(u8*) obj.ptr = (u8) identifier.value;
+                    *(u8*) obj.data = (u8) identifier.value;
                 } else if (enumDesc->fixedSize == 2) {
                     PLY_ASSERT(identifier.value <= UINT16_MAX);
-                    *(u16*) obj.ptr = (u16) identifier.value;
+                    *(u16*) obj.data = (u16) identifier.value;
                 } else if (enumDesc->fixedSize == 4) {
-                    *(u32*) obj.ptr = identifier.value;
+                    *(u32*) obj.data = identifier.value;
                 } else {
                     PLY_ASSERT(0);
                 }
@@ -209,21 +209,21 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node* aNode,
     } else if (obj.type->typeKey == &TypeKey_SavedTypedPtr) {
         PLY_ASSERT(aNode->isObject());
         TypeDescriptorOwner* targetTypeOwner = convertTypeFrom(aNode->get("type"), typeFromName);
-        SavedTypedPtr* savedTypedPtr = (SavedTypedPtr*) obj.ptr;
+        AnySavedObject* savedTypedPtr = (AnySavedObject*) obj.data;
         savedTypedPtr->typeOwner = targetTypeOwner;
-        savedTypedPtr->owned = TypedPtr::create(targetTypeOwner->getRootType());
+        savedTypedPtr->owned = AnyObject::create(targetTypeOwner->getRootType());
         convertFrom(savedTypedPtr->owned, aNode->get("value"), typeFromName);
     } else if (obj.type->typeKey == &TypeKey_TypedArray) {
         PLY_ASSERT(aNode->isObject());
         TypeDescriptorOwner* itemTypeOwner = convertTypeFrom(aNode->get("type"), typeFromName);
         const pylon::Node* aData = aNode->get("data");
         ArrayView<const pylon::Node* const> aDataArr = aData->arrayView();
-        TypedArray* arr = (TypedArray*) obj.ptr;
+        TypedArray* arr = (TypedArray*) obj.data;
         arr->create(itemTypeOwner, aDataArr.numItems);
-        TypedPtr item = {arr->m_array.m_items, itemTypeOwner->getRootType()};
+        AnyObject item = {arr->m_array.m_items, itemTypeOwner->getRootType()};
         for (u32 i = 0; i < aDataArr.numItems; i++) {
             convertFrom(item, aDataArr[i], typeFromName);
-            item.ptr = PLY_PTR_OFFSET(item.ptr, itemTypeOwner->getRootType()->fixedSize);
+            item.data = PLY_PTR_OFFSET(item.data, itemTypeOwner->getRootType()->fixedSize);
         }
     } else if (obj.type->typeKey == &TypeKey_Switch) {
         PLY_ASSERT(aNode->isObject());
@@ -236,7 +236,7 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node* aNode,
             const TypeDescriptor_Switch::State& state = switchDesc->states[i];
             if (state.name == stateName) {
                 switchDesc->ensureStateIs(obj, (u16) i);
-                TypedPtr m{PLY_PTR_OFFSET(obj.ptr, switchDesc->storageOffset), state.structType};
+                AnyObject m{PLY_PTR_OFFSET(obj.data, switchDesc->storageOffset), state.structType};
                 convertFrom(m, iter->value, typeFromName);
                 found = true;
                 break;
@@ -246,22 +246,22 @@ PLY_NO_INLINE void convertFrom(TypedPtr obj, const Node* aNode,
         PLY_UNUSED(found);
     } else if (obj.type->typeKey == &TypeKey_Owned) {
         auto* ownedDesc = obj.type->cast<TypeDescriptor_Owned>();
-        TypedPtr created = TypedPtr::create(ownedDesc->targetType);
-        *(void**) obj.ptr = created.ptr;
+        AnyObject created = AnyObject::create(ownedDesc->targetType);
+        *(void**) obj.data = created.data;
         convertFrom(created, aNode, typeFromName);
     } else {
         PLY_ASSERT(0); // Unsupported member type
     }
 }
 
-PLY_NO_INLINE OwnTypedPtr import(TypeDescriptor* typeDesc, const Node* aRoot,
+PLY_NO_INLINE AnyOwnedObject import(TypeDescriptor* typeDesc, const Node* aRoot,
                                  const Functor<TypeFromName>& typeFromName) {
-    OwnTypedPtr result = TypedPtr::create(typeDesc);
+    AnyOwnedObject result = AnyObject::create(typeDesc);
     convertFrom(result, aRoot, typeFromName);
     return result;
 }
 
-PLY_NO_INLINE void importInto(TypedPtr obj, const Node* aRoot,
+PLY_NO_INLINE void importInto(AnyObject obj, const Node* aRoot,
                               const Functor<TypeFromName>& typeFromName) {
     convertFrom(obj, aRoot, typeFromName);
 }

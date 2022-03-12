@@ -10,7 +10,7 @@
 namespace ply {
 namespace cpp {
 
-void dumpParseTree(OutStream* outs, TypedPtr any, u32 indent, const PPVisitedFiles* visitedFiles) {
+void dumpParseTree(OutStream* outs, AnyObject any, u32 indent, const PPVisitedFiles* visitedFiles) {
     auto doIndent = [&]() {
         for (u32 i = 0; i < indent; i++) {
             *outs << "  ";
@@ -34,7 +34,7 @@ void dumpParseTree(OutStream* outs, TypedPtr any, u32 indent, const PPVisitedFil
             for (const TypeDescriptor_Struct::Member& member : structType->members) {
                 doIndent();
                 outs->format("{}: ", member.name);
-                TypedPtr anyMember{PLY_PTR_OFFSET(any.ptr, member.offset), member.type};
+                AnyObject anyMember{PLY_PTR_OFFSET(any.ptr, member.offset), member.type};
                 dumpParseTree(outs, anyMember, indent, visitedFiles);
             }
         }
@@ -60,20 +60,20 @@ void dumpParseTree(OutStream* outs, TypedPtr any, u32 indent, const PPVisitedFil
         for (u32 i = 0; i < arr->m_numItems; i++) {
             doIndent();
             outs->format("[{}] ", i);
-            dumpParseTree(outs, TypedPtr{item, itemType}, indent, visitedFiles);
+            dumpParseTree(outs, AnyObject{item, itemType}, indent, visitedFiles);
             item = PLY_PTR_OFFSET(item, itemType->fixedSize);
         }
     } else if (typeKey == TypeDescriptor_Switch::typeKey) {
         TypeDescriptor_Switch* switchType = any.type->cast<TypeDescriptor_Switch>();
         u16 id = *(u16*) any.ptr;
         void* buf = PLY_PTR_OFFSET(any.ptr, switchType->storageOffset);
-        dumpParseTree(outs, TypedPtr{buf, switchType->states[id].structType}, indent - 1,
+        dumpParseTree(outs, AnyObject{buf, switchType->states[id].structType}, indent - 1,
                       visitedFiles);
     } else if (typeKey == TypeDescriptor_Owned::typeKey) {
         TypeDescriptor_Owned* ownedType = any.type->cast<TypeDescriptor_Owned>();
-        TypedPtr targetPtr = TypedPtr{*(void**) any.ptr, ownedType->targetType};
-        if (targetPtr.ptr) {
-            dumpParseTree(outs, targetPtr, indent - 1, visitedFiles);
+        AnyObject targetObj = AnyObject{*(void**) any.ptr, ownedType->targetType};
+        if (targetObj.ptr) {
+            dumpParseTree(outs, targetObj, indent - 1, visitedFiles);
         } else {
             *outs << "(null)\n";
         }
