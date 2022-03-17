@@ -189,6 +189,23 @@ struct BlockList {
     This function is used internally by `StringOutStream::moveToString()`.
     */
     static PLY_DLL_ENTRY String toString(Ref&& start, const WeakRef& end = {});
+
+    //--------------------------------------
+    // BlockList object
+    //--------------------------------------
+    Reference<BlockList::Footer> head;
+    BlockList::Footer* tail = nullptr;
+
+    PLY_DLL_ENTRY void appendBytesInternal(u32 numBytes);
+    PLY_INLINE char* appendBytes(u32 numBytes) {
+        if (this->tail->viewUnusedBytes().numBytes < numBytes) {
+            this->appendBytesInternal(numBytes);
+            PLY_ASSERT(this->tail->viewUnusedBytes().numBytes >= numBytes);
+        }
+        char* result = this->tail->unused();
+        this->tail->numBytesUsed += numBytes;
+        return result;
+    }
 };
 
 } // namespace ply

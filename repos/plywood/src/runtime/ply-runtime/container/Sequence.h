@@ -149,8 +149,8 @@ public:
     */
     PLY_INLINE T& last() {
         // It is illegal to call last() on an empty sequence.
-        PLY_ASSERT(this->byte - this->block->start() >= sizeof(T));
-        return ((T*) this->byte)[-1];
+        PLY_ASSERT(this->tail->viewUsedBytes().numBytes >= sizeof(T));
+        return ((T*) this->tail->unused())[-1];
     }
 
     /*!

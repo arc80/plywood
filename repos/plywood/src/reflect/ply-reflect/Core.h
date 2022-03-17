@@ -4,3 +4,5 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Base.h>
+
+#define PLY_WITH_METHOD_TABLES 1

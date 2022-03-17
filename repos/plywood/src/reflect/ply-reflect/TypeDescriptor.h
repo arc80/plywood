@@ -6,6 +6,10 @@
 #include <ply-reflect/Core.h>
 #include <ply-reflect/TypeKey.h>
 
+#if PLY_WITH_METHOD_TABLES
+#include <ply-reflect/methods/MethodTable.h>
+#endif // PLY_WITH_METHOD_TABLES
+
 namespace ply {
 
 struct TypeDescriptor;
@@ -125,7 +129,9 @@ struct TypeDescriptor {
     TypeKey* typeKey;
     u32 fixedSize;
     NativeBindings bindings;
-    // FIXME: Add getAlignment(), make sure it's enforced by all dynamic allocations
+#if PLY_WITH_METHOD_TABLES
+    MethodTable methods;
+#endif // PLY_WITH_METHOD_TABLES
 
     TypeDescriptor(TypeKey* typeKey, u32 fixedSize, const NativeBindings& bindings)
         : typeKey(typeKey), fixedSize(fixedSize), bindings(bindings) {
