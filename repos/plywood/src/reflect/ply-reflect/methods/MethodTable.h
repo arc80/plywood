@@ -7,12 +7,11 @@
 
 #if PLY_WITH_METHOD_TABLES
 
-#include <ply-runtime/io/OutStream.h>
-#include <ply-reflect/methods/ObjectStack.h>
-
 namespace ply {
 
+struct ObjectStack;
 struct AnyObject;
+struct OutStream;
 
 struct MethodTable {
     enum class UnaryOp {

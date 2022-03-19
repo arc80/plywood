@@ -3,9 +3,10 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-reflect/Core.h>
-#include <ply-reflect/TypeDescriptor.h>
+#include <ply-reflect/TypeDescriptor_Def.h>
 #include <ply-reflect/PersistRead.h>
 #include <ply-reflect/PersistWrite.h>
+#include <ply-reflect/AnyOwnedObject.h>
 
 namespace ply {
 
@@ -71,7 +72,8 @@ TypeKey TypeKey_AnyOwnedObject{
 
 PLY_DEFINE_TYPE_DESCRIPTOR(AnyOwnedObject) {
     static TypeDescriptor typeDesc{&TypeKey_AnyOwnedObject, sizeof(AnyOwnedObject),
-                                   NativeBindings::make<AnyOwnedObject>()};
+                                   NativeBindings::make<AnyOwnedObject>()
+                                       PLY_METHOD_TABLES_ONLY(, {})};
     return &typeDesc;
 }
 

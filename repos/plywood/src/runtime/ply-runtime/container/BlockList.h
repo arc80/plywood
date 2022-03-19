@@ -196,6 +196,8 @@ struct BlockList {
     Reference<BlockList::Footer> head;
     BlockList::Footer* tail = nullptr;
 
+    PLY_DLL_ENTRY BlockList();
+    PLY_DLL_ENTRY ~BlockList();
     PLY_DLL_ENTRY void appendBytesInternal(u32 numBytes);
     PLY_INLINE char* appendBytes(u32 numBytes) {
         if (this->tail->viewUnusedBytes().numBytes < numBytes) {

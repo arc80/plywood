@@ -8,6 +8,8 @@
 
 namespace ply {
 
+PLY_DLL_ENTRY extern TypeKey TypeKey_TypedArray;
+
 struct TypedArrayView {
     void* items;
     u32 numItems;

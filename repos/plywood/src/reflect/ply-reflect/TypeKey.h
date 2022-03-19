@@ -4,10 +4,11 @@
 ------------------------------------*/
 #pragma once
 #include <ply-reflect/Core.h>
-#include <ply-reflect/AnyObject.h>
 
 namespace ply {
 
+struct AnyObject;
+struct TypeDescriptor;
 class WriteFormatContext;
 struct WriteObjectContext;
 struct ReadObjectContext;

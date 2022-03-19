@@ -13,7 +13,7 @@ namespace ply {
 // BlockList::Footer
 //--------------------------------------
 PLY_NO_INLINE void BlockList::Footer::onRefCountZero() {
-    BlockList::Footer *blockToFree = this;
+    BlockList::Footer* blockToFree = this;
     while (blockToFree) {
         BlockList::Footer* nextBlock = blockToFree->nextBlock.release();
         // The destructor of this->nextBlock is now trivial, so we can skip it, and when we free the
@@ -138,6 +138,21 @@ PLY_NO_INLINE String BlockList::toString(Ref&& start, const WeakRef& end) {
         offset += view.numBytes;
     }
     return result;
+}
+
+//--------------------------------------
+// BlockList object
+//--------------------------------------
+PLY_NO_INLINE BlockList::BlockList() {
+    this->head = BlockList::createBlock();
+    this->tail = this->head;
+}
+
+PLY_NO_INLINE BlockList::~BlockList() {
+}
+
+PLY_NO_INLINE void BlockList::appendBytesInternal(u32 numBytes) {
+    PLY_ASSERT(0);
 }
 
 } // namespace ply

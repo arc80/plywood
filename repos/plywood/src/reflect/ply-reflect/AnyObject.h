@@ -4,43 +4,72 @@
 ------------------------------------*/
 #pragma once
 #include <ply-reflect/Core.h>
+#include <ply-reflect/AnyObject_Def.h>
+#include <ply-reflect/TypeDescriptor_Def.h>
 
 namespace ply {
 
-struct TypeDescriptor;
+template <typename T>
+AnyObject AnyObject::bind(T* data) {
+    // FIXME: Find a better way to handle cases where this function is passed a pointer to
+    // const.
+    return AnyObject{(void*) data, TypeDescriptorSpecializer<T>::get()};
+}
 
-//-----------------------------------------------------------------------
-//  AnyObject
-//-----------------------------------------------------------------------
-struct AnyObject {
-    void* data = nullptr;
-    TypeDescriptor* type = nullptr;
+template <class T>
+bool AnyObject::is() const {
+    return TypeDescriptorSpecializer<T>::get()->isEquivalentTo(type);
+}
 
-    AnyObject() = default;
-    AnyObject(void* data, TypeDescriptor* type) : data{data}, type{type} {
+template <class T>
+T* AnyObject::cast() const {
+    // Not sure if this is a good general strategy, but for now, it's valid to cast a null
+    // pointer to any target type, regardless of src type (even if src type is null). This
+    // extra flexibility was added to simplify callers of readObject(), such as
+    // CookCommandReader(), when an unexpected EOF is encountered:
+    PLY_ASSERT(!data || TypeDescriptorSpecializer<T>::get()->isEquivalentTo(type));
+    return (T*) data;
+}
+
+template <class T>
+T* AnyObject::safeCast() const {
+    return (TypeDescriptorSpecializer<T>::get() == this->type) ? (T*) data : nullptr;
+}
+
+template <class S>
+const S& AnyObject::refine() const {
+    PLY_ASSERT(type->typeKey == S::TypeDescriptor::typeKey);
+    return (const S&) *this;
+}
+
+inline AnyObject AnyObject::create(TypeDescriptor* typeDesc) {
+    return typeDesc->bindings.create(typeDesc);
+}
+
+inline void AnyObject::destroy() {
+    if (data) {
+        type->bindings.destroy(*this);
+        data = nullptr;
+        type = nullptr;
     }
+}
 
-    template <typename T>
-    static AnyObject bind(T* data);
-    template <class T>
-    bool is() const;
-    template <class T>
-    T* cast() const;
-    template <class T>
-    T* safeCast() const;
-    template <class S>
-    const S& refine() const;
+inline void AnyObject::construct() {
+    type->bindings.construct(*this);
+}
 
-    static AnyObject create(TypeDescriptor* typeDesc);
-    void destroy();
-    void construct();
-    void destruct();
-    void move(AnyObject other);
-    void copy(const AnyObject other);
+inline void AnyObject::destruct() {
+    type->bindings.destruct(*this);
+    data = nullptr;
+    type = nullptr;
+}
 
-    PLY_INLINE bool operator==(const AnyObject& other) const {
-        return this->data == other.data && this->type == other.type;
-    }
-};
+inline void AnyObject::move(AnyObject other) {
+    type->bindings.move(*this, other);
+}
+
+inline void AnyObject::copy(const AnyObject other) {
+    type->bindings.copy(*this, other);
+}
 
 } // namespace ply

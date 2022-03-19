@@ -8,11 +8,6 @@
 
 namespace ply {
 
-struct EmptyType {
-    PLY_REFLECT(PLY_DLL_ENTRY)
-    // ply reflect off
-};
-
 // This class exists to support ply::TypedArray and gpu::ArrayBuffer.
 // In general, it can manage the lifetime of any TypeDescriptor, including all its child
 // TypeDescriptors. The entire set of TypeDescriptors will be destroyed as a group. Future
@@ -43,6 +38,11 @@ public:
     TypeDescriptor* getRootType() const {
         return m_rootType;
     }
+};
+
+struct EmptyType {
+    PLY_REFLECT(PLY_DLL_ENTRY)
+    // ply reflect off
 };
 
 template <typename T>

@@ -5,8 +5,11 @@
 #pragma once
 #include <ply-reflect/Core.h>
 #include <ply-reflect/TypeDescriptorOwner.h>
+#include <ply-reflect/AnyOwnedObject.h>
 
 namespace ply {
+
+PLY_DLL_ENTRY extern TypeKey TypeKey_AnySavedObject;
 
 struct AnySavedObject {
     AnyOwnedObject owned;

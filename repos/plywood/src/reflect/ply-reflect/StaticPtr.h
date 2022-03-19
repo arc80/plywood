@@ -56,7 +56,7 @@ struct TypeDescriptor_StaticPtr : TypeDescriptor {
 
     TypeDescriptor_StaticPtr()
         : TypeDescriptor{&TypeKey_StaticPtr, sizeof(StaticPtr<void>),
-                         getNativeBindings_StaticPtr()} {
+                         getNativeBindings_StaticPtr() PLY_METHOD_TABLES_ONLY(, {})} {
     }
 };
 

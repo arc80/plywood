@@ -2,15 +2,14 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
+#pragma once
 #include <ply-reflect/Core.h>
-#include <ply-reflect/methods/ObjectStack.h>
 #include <ply-reflect/TypeDescriptor_Def.h>
 
 namespace ply {
 
-AnyObject* ObjectStack::appendObject(TypeDescriptor* type) {
-    void* data = this->storage.appendBytes(type->fixedSize);
-    return &this->items.append(data, type);
-}
+PLY_DLL_ENTRY extern TypeKey TypeKey_String;
 
-} // namespace crowbar
+PLY_DECLARE_TYPE_DESCRIPTOR(String, PLY_DLL_ENTRY)
+
+} // namespace ply
