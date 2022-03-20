@@ -198,16 +198,8 @@ struct BlockList {
 
     PLY_DLL_ENTRY BlockList();
     PLY_DLL_ENTRY ~BlockList();
-    PLY_DLL_ENTRY void appendBytesInternal(u32 numBytes);
-    PLY_INLINE char* appendBytes(u32 numBytes) {
-        if (this->tail->viewUnusedBytes().numBytes < numBytes) {
-            this->appendBytesInternal(numBytes);
-            PLY_ASSERT(this->tail->viewUnusedBytes().numBytes >= numBytes);
-        }
-        char* result = this->tail->unused();
-        this->tail->numBytesUsed += numBytes;
-        return result;
-    }
+    PLY_DLL_ENTRY char* appendBytes(u32 numBytes);
+    PLY_DLL_ENTRY void popLastBytes(u32 numBytes);
 };
 
 } // namespace ply

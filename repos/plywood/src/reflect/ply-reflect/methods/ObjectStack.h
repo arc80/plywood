@@ -19,6 +19,7 @@ struct ObjectStack {
     Sequence<AnyObject> items;
 
     AnyObject* appendObject(TypeDescriptor* type);
+    void popLastObject();
 };
 
 } // namespace ply

@@ -151,8 +151,22 @@ PLY_NO_INLINE BlockList::BlockList() {
 PLY_NO_INLINE BlockList::~BlockList() {
 }
 
-PLY_NO_INLINE void BlockList::appendBytesInternal(u32 numBytes) {
-    PLY_ASSERT(0);
+PLY_NO_INLINE char* BlockList::appendBytes(u32 numBytes) {
+    if (this->tail->viewUnusedBytes().numBytes < numBytes) {
+        this->tail = BlockList::appendBlock(this->tail, max(numBytes, BlockList::DefaultBlockSize));
+        PLY_ASSERT(this->tail->viewUnusedBytes().numBytes >= numBytes);
+    }
+    char* result = this->tail->unused();
+    this->tail->numBytesUsed += numBytes;
+    return result;
+}
+
+PLY_INLINE void BlockList::popLastBytes(u32 numBytes) {
+    PLY_ASSERT(this->tail->numBytesUsed >= numBytes);
+    this->tail->numBytesUsed -= numBytes;
+    if ((this->tail->numBytesUsed == 0) && (this->head != this->tail)) {
+        this->tail->prevBlock->nextBlock.clear();
+    }
 }
 
 } // namespace ply

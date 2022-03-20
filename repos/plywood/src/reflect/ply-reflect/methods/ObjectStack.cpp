@@ -13,4 +13,11 @@ AnyObject* ObjectStack::appendObject(TypeDescriptor* type) {
     return &this->items.append(data, type);
 }
 
-} // namespace crowbar
+void ObjectStack::popLastObject() {
+    AnyObject* lastObj = &this->items.last();
+    lastObj->destruct();
+    PLY_ASSERT(PLY_PTR_OFFSET(lastObj->data, lastObj->type->fixedSize) ==
+               this->storage.tail->unused());
+}
+
+} // namespace ply
