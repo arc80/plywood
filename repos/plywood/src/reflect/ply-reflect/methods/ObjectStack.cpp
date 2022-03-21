@@ -14,10 +14,12 @@ AnyObject* ObjectStack::appendObject(TypeDescriptor* type) {
 }
 
 void ObjectStack::popLastObject() {
-    AnyObject* lastObj = &this->items.last();
-    lastObj->destruct();
+    AnyObject* lastObj = &this->items.tail();
     PLY_ASSERT(PLY_PTR_OFFSET(lastObj->data, lastObj->type->fixedSize) ==
                this->storage.tail->unused());
+    lastObj->destruct();
+    this->storage.popLastBytes(lastObj->type->fixedSize);
+    this->items.popTail();
 }
 
 } // namespace ply

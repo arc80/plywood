@@ -35,6 +35,7 @@ private:
     }
 
 public:
+    PLY_INLINE WeakSequenceRef() = default;
     PLY_INLINE ArrayView<T> beginRead() {
         sptr numBytesAvailable = this->impl.block->unused() - this->impl.byte;
         if (numBytesAvailable == 0) {
@@ -55,6 +56,11 @@ public:
         // It is illegal to call operator* at the end of the sequence.
         PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T));
         return *(T*) this->impl.byte;
+    }
+    PLY_INLINE T* operator->() const {
+        // It is illegal to call operator-> at the end of the sequence.
+        PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T));
+        return (T*) this->impl.byte;
     }
     PLY_INLINE void operator++() {
         sptr numBytesAvailable = this->impl.block->unused() - this->impl.byte;
@@ -102,8 +108,8 @@ destroyed.
 template <typename T>
 class Sequence {
 private:
-    Reference<BlockList::Footer> head;
-    BlockList::Footer* tail = nullptr;
+    Reference<BlockList::Footer> headBlock;
+    BlockList::Footer* tailBlock = nullptr;
 
 public:
     /*!
@@ -112,7 +118,7 @@ public:
 
         Sequence<String> list;
     */
-    PLY_INLINE Sequence() : head{BlockList::createBlock()}, tail{head} {
+    PLY_INLINE Sequence() : headBlock{BlockList::createBlock()}, tailBlock{headBlock} {
     }
 
     /*!
@@ -121,14 +127,14 @@ public:
 
         Sequence<String> arr = std::move(other);
     */
-    PLY_INLINE Sequence(Sequence&& other) : head{std::move(other.head)}, tail{other.tail} {
+    PLY_INLINE Sequence(Sequence&& other) : headBlock{std::move(other.headBlock)}, tailBlock{other.tailBlock} {
     }
 
     /*!
     Destructor. Destructs all items and frees the memory associated with the `Sequence`.
     */
     PLY_INLINE ~Sequence() {
-        details::destructSequence(&head, subst::destructViewAs<T>);
+        details::destructSequence(&headBlock, subst::destructViewAs<T>);
     }
 
     /*!
@@ -139,31 +145,36 @@ public:
         arr = std::move(other);
     */
     PLY_INLINE void operator=(Sequence&& other) {
-        details::destructSequence(&head, subst::destructViewAs<T>);
+        details::destructSequence(&headBlock, subst::destructViewAs<T>);
         new (this) Sequence{std::move(other)};
     }
 
     /*!
     \category Element Access
-    Returns `true` if the sequence is empty.
+    Returns the last item in the sequence. The sequence must not be empty.
     */
-    PLY_INLINE T& last() {
-        // It is illegal to call last() on an empty sequence.
-        PLY_ASSERT(this->tail->viewUsedBytes().numBytes >= sizeof(T));
-        return ((T*) this->tail->unused())[-1];
+    PLY_INLINE T& head() {
+        // It is illegal to call head() on an empty sequence.
+        PLY_ASSERT(this->headBlock->viewUsedBytes().numBytes >= sizeof(T));
+        return *(T*) this->headBlock->start();
+    }
+    PLY_INLINE T& tail() {
+        // It is illegal to call tail() on an empty sequence.
+        PLY_ASSERT(this->tailBlock->viewUsedBytes().numBytes >= sizeof(T));
+        return ((T*) this->tailBlock->unused())[-1];
     }
 
     /*!
     \category Capacity
-    Returns the last item in the sequence. The sequence must not be empty.
+    Returns `true` if the sequence is empty.
     */
     PLY_INLINE bool isEmpty() const {
         // Only an empty sequence can have an empty head block.
-        return this->head->viewUsedBytes().isEmpty();
+        return this->headBlock->viewUsedBytes().isEmpty();
     }
     PLY_INLINE u32 numItems() const {
-        return details::getTotalNumBytes(this->head) /
-               sizeof(T); // Fast division by integer constant.
+        // Fast division by integer constant.
+        return details::getTotalNumBytes(this->headBlock) / sizeof(T);
     }
 
     /*!
@@ -179,10 +190,10 @@ public:
         list.endWrite(view.numItems);
     */
     PLY_INLINE ArrayView<T> beginWriteViewNoConstruct() {
-        if (this->tail->viewUnusedBytes().numBytes < sizeof(T)) {
-            details::beginWriteInternal(&this->tail, sizeof(T));
+        if (this->tailBlock->viewUnusedBytes().numBytes < sizeof(T)) {
+            details::beginWriteInternal(&this->tailBlock, sizeof(T));
         }
-        return ArrayView<T>::from(this->tail->viewUnusedBytes());
+        return ArrayView<T>::from(this->tailBlock->viewUnusedBytes());
     }
 
     /*!
@@ -194,10 +205,10 @@ public:
         list.endWrite();
     */
     PLY_INLINE T* beginWriteNoConstruct() {
-        if (this->tail->viewUnusedBytes().numBytes < sizeof(T)) {
-            details::beginWriteInternal(&this->tail, sizeof(T));
+        if (this->tailBlock->viewUnusedBytes().numBytes < sizeof(T)) {
+            details::beginWriteInternal(&this->tailBlock, sizeof(T));
         }
-        return (T*) this->tail->unused();
+        return (T*) this->tailBlock->unused();
     }
 
     /*!
@@ -206,8 +217,8 @@ public:
     available for read.
     */
     PLY_INLINE void endWrite(u32 numItems = 1) {
-        PLY_ASSERT(sizeof(T) * numItems <= this->tail->viewUnusedBytes().numBytes);
-        this->tail->numBytesUsed += sizeof(T) * numItems;
+        PLY_ASSERT(sizeof(T) * numItems <= this->tailBlock->viewUnusedBytes().numBytes);
+        this->tailBlock->numBytesUsed += sizeof(T) * numItems;
     }
 
     /*!
@@ -245,8 +256,8 @@ public:
     /*!
     Deletes the last `numItems` items from the sequence.
     */
-    PLY_INLINE void popTail(u32 numItems) {
-        details::popTail(&this->tail, numItems * (u32) sizeof(T), subst::destructViewAs<T>);
+    PLY_INLINE void popTail(u32 numItems = 1) {
+        details::popTail(&this->tailBlock, numItems * (u32) sizeof(T), subst::destructViewAs<T>);
     }
 
     /*!
@@ -269,8 +280,8 @@ public:
         Array<String> arr = list.moveToArray();
     */
     PLY_INLINE Array<T> moveToArray() {
-        char* startByte = this->head->start();
-        String str = BlockList::toString({std::move(this->head), startByte});
+        char* startByte = this->headBlock->start();
+        String str = BlockList::toString({std::move(this->headBlock), startByte});
         u32 numItems = str.numBytes / sizeof(T); // Divide by constant is fast
         return Array<T>::adopt((T*) str.release(), numItems);
     }
@@ -286,16 +297,16 @@ public:
         }
     */
     WeakSequenceRef<T> begin() {
-        return BlockList::WeakRef{this->head, this->head->bytes + this->head->startOffset};
+        return BlockList::WeakRef{this->headBlock, this->headBlock->start()};
     }
     WeakSequenceRef<T> end() {
-        return BlockList::WeakRef{this->tail, this->tail->unused()};
+        return BlockList::WeakRef{this->tailBlock, this->tailBlock->unused()};
     }
     WeakSequenceRef<const T> begin() const {
-        return BlockList::WeakRef{this->head, this->head->bytes + this->head->startOffset};
+        return BlockList::WeakRef{this->headBlock, this->headBlock->start()};
     }
     WeakSequenceRef<const T> end() const {
-        return BlockList::WeakRef{this->tail, this->tail->unused()};
+        return BlockList::WeakRef{this->tailBlock, this->tailBlock->unused()};
     }
     /*!
     \endGroup

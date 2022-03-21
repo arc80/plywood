@@ -42,6 +42,8 @@ PLY_NO_INLINE void popTail(BlockList::Footer** tail, u32 numBytes, void (*destru
             break;
         }
         block = block->prevBlock;
+        if (!block)
+            break;
         *tail = block;
         block->nextBlock.clear();
     }

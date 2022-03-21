@@ -49,8 +49,6 @@ inline AnyObject AnyObject::create(TypeDescriptor* typeDesc) {
 inline void AnyObject::destroy() {
     if (data) {
         type->bindings.destroy(*this);
-        data = nullptr;
-        type = nullptr;
     }
 }
 
@@ -60,8 +58,6 @@ inline void AnyObject::construct() {
 
 inline void AnyObject::destruct() {
     type->bindings.destruct(*this);
-    data = nullptr;
-    type = nullptr;
 }
 
 inline void AnyObject::move(AnyObject other) {

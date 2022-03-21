@@ -161,11 +161,12 @@ PLY_NO_INLINE char* BlockList::appendBytes(u32 numBytes) {
     return result;
 }
 
-PLY_INLINE void BlockList::popLastBytes(u32 numBytes) {
+PLY_NO_INLINE void BlockList::popLastBytes(u32 numBytes) {
     PLY_ASSERT(this->tail->numBytesUsed >= numBytes);
     this->tail->numBytesUsed -= numBytes;
     if ((this->tail->numBytesUsed == 0) && (this->head != this->tail)) {
-        this->tail->prevBlock->nextBlock.clear();
+        this->tail = this->tail->prevBlock;
+        this->tail->nextBlock.clear();
     }
 }
 
