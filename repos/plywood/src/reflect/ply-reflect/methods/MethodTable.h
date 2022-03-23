@@ -39,15 +39,15 @@ struct MethodTable {
         Modulo,
     };
 
-    void (*unaryOp)(ObjectStack* stack, UnaryOp op, const AnyObject& obj) = nullptr;
-    void (*binaryOp)(ObjectStack* stack, BinaryOp op, const AnyObject& first,
+    AnyObject (*unaryOp)(ObjectStack* stack, UnaryOp op, const AnyObject& obj) = nullptr;
+    AnyObject (*binaryOp)(ObjectStack* stack, BinaryOp op, const AnyObject& first,
                      const AnyObject& second) = nullptr;
-    void (*propertyLookup)(ObjectStack* stack, const AnyObject& obj,
+    AnyObject (*propertyLookup)(ObjectStack* stack, const AnyObject& obj,
                            StringView propertyName) = nullptr;
-    void (*subscript)(ObjectStack* stack, const AnyObject& obj, u32 index) = nullptr;
+    AnyObject (*subscript)(ObjectStack* stack, const AnyObject& obj, u32 index) = nullptr;
     void (*print)(ObjectStack* stack, OutStream* outs, StringView formatSpec,
                   const AnyObject& obj) = nullptr;
-    void (*call)(ObjectStack* stack, const AnyObject& obj) = nullptr;
+    AnyObject (*call)(ObjectStack* stack, const AnyObject& obj) = nullptr;
 
     MethodTable();
 };

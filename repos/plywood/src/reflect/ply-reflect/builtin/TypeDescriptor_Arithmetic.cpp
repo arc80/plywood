@@ -41,6 +41,7 @@ struct IntegerMethodTable {
                     PLY_ASSERT(0);
                     break;
             }
+            return *obj;
         };
         return methods;
     }

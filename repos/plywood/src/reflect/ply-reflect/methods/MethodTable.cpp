@@ -4,24 +4,29 @@
 ------------------------------------*/
 #include <ply-reflect/Core.h>
 #include <ply-reflect/methods/MethodTable.h>
+#include <ply-reflect/AnyObject.h>
 
 namespace ply {
 
-void defaultUnaryOp(ObjectStack* stack, MethodTable::UnaryOp op, const AnyObject& obj) {
+AnyObject defaultUnaryOp(ObjectStack* stack, MethodTable::UnaryOp op, const AnyObject& obj) {
     PLY_ASSERT(0);
+    return {};
 }
 
-void defaultBinaryOp(ObjectStack* stack, MethodTable::BinaryOp op, const AnyObject& first,
+AnyObject defaultBinaryOp(ObjectStack* stack, MethodTable::BinaryOp op, const AnyObject& first,
                      const AnyObject& second) {
     PLY_ASSERT(0);
+    return {};
 }
 
-void defaultPropertyLookup(ObjectStack* stack, const AnyObject& obj, StringView propertyName) {
+AnyObject defaultPropertyLookup(ObjectStack* stack, const AnyObject& obj, StringView propertyName) {
     PLY_ASSERT(0);
+    return {};
 }
 
-void defaultSubscript(ObjectStack* stack, const AnyObject& obj, u32 index) {
+AnyObject defaultSubscript(ObjectStack* stack, const AnyObject& obj, u32 index) {
     PLY_ASSERT(0);
+    return {};
 }
 
 void defaultPrint(ObjectStack* stack, OutStream* outs, StringView formatSpec,
@@ -29,8 +34,9 @@ void defaultPrint(ObjectStack* stack, OutStream* outs, StringView formatSpec,
     PLY_ASSERT(0);
 }
 
-void defaultCall(ObjectStack* stack, const AnyObject& obj) {
+AnyObject defaultCall(ObjectStack* stack, const AnyObject& obj) {
     PLY_ASSERT(0);
+    return {};
 }
 
 PLY_NO_INLINE MethodTable::MethodTable()
