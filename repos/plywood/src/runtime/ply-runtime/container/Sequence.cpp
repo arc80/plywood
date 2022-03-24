@@ -49,6 +49,16 @@ PLY_NO_INLINE void popTail(BlockList::Footer** tail, u32 numBytes, void (*destru
     }
 }
 
+PLY_NO_INLINE void truncate(BlockList::Footer** tail, const BlockList::WeakRef& to) {
+    if (to.byte == to.block->start() && to.block->prevBlock) {
+        *tail = to.block->prevBlock;
+    } else  {
+        *tail = to.block;
+        to.block->numBytesUsed = to.block->offsetOf(to.byte);
+    }
+    (*tail)->nextBlock.clear();
+}
+
 PLY_NO_INLINE u32 getTotalNumBytes(BlockList::Footer* head) {
     u32 numBytes = 0;
     while (head) {

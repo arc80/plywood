@@ -91,6 +91,12 @@ struct BlockList {
         PLY_INLINE bool operator!=(const WeakRef& other) const {
             return this->block != other.block || this->byte != other.byte;
         }
+        PLY_INLINE WeakRef normalized() const {
+            if (this->block->nextBlock && (this->byte == this->block->unused())) {
+                return {this->block->nextBlock, this->block->start()};
+            }
+            return *this;
+        }
     };
 
     //--------------------------------------
@@ -193,13 +199,16 @@ struct BlockList {
     //--------------------------------------
     // BlockList object
     //--------------------------------------
-    Reference<BlockList::Footer> head;
-    BlockList::Footer* tail = nullptr;
+    Reference<Footer> head;
+    Footer* tail = nullptr;
 
     PLY_DLL_ENTRY BlockList();
     PLY_DLL_ENTRY ~BlockList();
     PLY_DLL_ENTRY char* appendBytes(u32 numBytes);
     PLY_DLL_ENTRY void popLastBytes(u32 numBytes);
+    PLY_INLINE WeakRef end() const {
+        return {tail, tail->unused()};
+    }
 };
 
 } // namespace ply

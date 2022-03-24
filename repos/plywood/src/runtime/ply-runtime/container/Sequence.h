@@ -14,6 +14,7 @@ PLY_DLL_ENTRY void destructSequence(Reference<BlockList::Footer>* headRef,
 PLY_DLL_ENTRY void beginWriteInternal(BlockList::Footer** tail, u32 numBytes);
 PLY_DLL_ENTRY void popTail(BlockList::Footer** tail, u32 numBytes,
                            void (*destructViewAs)(StringView));
+PLY_DLL_ENTRY void truncate(BlockList::Footer** tail, const BlockList::WeakRef& to);
 PLY_DLL_ENTRY u32 getTotalNumBytes(BlockList::Footer* head);
 PLY_DLL_ENTRY char* read(BlockList::WeakRef* weakRef, u32 itemSize);
 } // namespace details
@@ -49,6 +50,9 @@ public:
     PLY_INLINE void endRead(u32 numItems) {
         PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T) * numItems);
         this->impl.byte += sizeof(T) * numItems;
+    }
+    PLY_INLINE WeakSequenceRef normalized() const {
+        return this->impl.normalized();
     }
 
     // Range for support.
@@ -93,6 +97,9 @@ public:
     // underlying sequence.
     PLY_INLINE T& read() {
         return *(T*) details::read(&impl, sizeof(T));
+    }
+    PLY_INLINE void* byte() const {
+        return this->impl.byte;
     }
 };
 
@@ -258,6 +265,9 @@ public:
     */
     PLY_INLINE void popTail(u32 numItems = 1) {
         details::popTail(&this->tailBlock, numItems * (u32) sizeof(T), subst::destructViewAs<T>);
+    }
+    PLY_INLINE void truncate(const WeakSequenceRef<T>& to) {
+        details::truncate(&this->tailBlock, to.impl);
     }
 
     /*!

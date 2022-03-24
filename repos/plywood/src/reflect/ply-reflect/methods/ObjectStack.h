@@ -15,11 +15,20 @@ namespace ply {
 struct TypeDescriptor;
 
 struct ObjectStack {
+    struct Boundary {
+        BlockList::WeakRef storage;
+        WeakSequenceRef<AnyObject> item;
+    };
+
     BlockList storage;
     Sequence<AnyObject> items;
 
     AnyObject* appendObject(TypeDescriptor* type);
     void popLastObject();
+    void deleteRange(const Boundary& from, const WeakSequenceRef<AnyObject>& to);
+    PLY_INLINE Boundary end() {
+        return {this->storage.end(), this->items.end()};
+    }
 };
 
 } // namespace ply
