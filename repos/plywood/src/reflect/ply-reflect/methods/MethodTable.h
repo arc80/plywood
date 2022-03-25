@@ -32,11 +32,13 @@ struct MethodTable {
     };
 
     enum class BinaryOp {
-        Add,
-        Subtract,
-        Multiply,
+        // C operator precedence level 3
+        Multiply = 0,
         Divide,
         Modulo,
+        // C operator precedence level 4
+        Add,
+        Subtract,
     };
 
     AnyObject (*unaryOp)(ObjectStack* stack, UnaryOp op, const AnyObject& obj) = nullptr;
