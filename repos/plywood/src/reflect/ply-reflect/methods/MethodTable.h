@@ -39,6 +39,8 @@ struct MethodTable {
         // C operator precedence level 4
         Add,
         Subtract,
+        // C operator precedence level 7
+        DoubleEqual,
     };
 
     AnyObject (*unaryOp)(ObjectStack* stack, UnaryOp op, const AnyObject& obj) = nullptr;

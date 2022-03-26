@@ -107,7 +107,8 @@ struct TypeDescriptor {
           bindings(bindings) PLY_METHOD_TABLES_ONLY(, methods{methods}) {
     }
     TypeDescriptor(TypeDescriptor&& other)
-        : typeKey(other.typeKey), fixedSize(other.fixedSize), bindings(other.bindings) {
+        : typeKey{other.typeKey}, fixedSize{other.fixedSize},
+          bindings{other.bindings} PLY_METHOD_TABLES_ONLY(, methods{other.methods}) {
     }
     // Built-in TypeDescriptors exist for the entire process lifetime, including those defined
     // by PLY_STRUCT_BEGIN. The only TypeDescriptors that ever get destroyed are ones that are
@@ -152,4 +153,3 @@ struct TypeDescriptorSpecializer<const T> {
 };
 
 } // namespace ply
-
