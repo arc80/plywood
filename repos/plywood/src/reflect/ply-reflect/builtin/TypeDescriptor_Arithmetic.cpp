@@ -22,12 +22,6 @@ struct IntegerMethodTable {
                               const AnyObject& second) {
             AnyObject* obj = stack->appendObject(getTypeDescriptor<T>());
             switch (op) {
-                case MethodTable::BinaryOp::Add:
-                    *obj->cast<T>() = *first.cast<T>() + *second.cast<T>();
-                    break;
-                case MethodTable::BinaryOp::Subtract:
-                    *obj->cast<T>() = *first.cast<T>() - *second.cast<T>();
-                    break;
                 case MethodTable::BinaryOp::Multiply:
                     *obj->cast<T>() = *first.cast<T>() * *second.cast<T>();
                     break;
@@ -36,6 +30,15 @@ struct IntegerMethodTable {
                     break;
                 case MethodTable::BinaryOp::Modulo:
                     *obj->cast<T>() = *first.cast<T>() % *second.cast<T>();
+                    break;
+                case MethodTable::BinaryOp::Add:
+                    *obj->cast<T>() = *first.cast<T>() + *second.cast<T>();
+                    break;
+                case MethodTable::BinaryOp::Subtract:
+                    *obj->cast<T>() = *first.cast<T>() - *second.cast<T>();
+                    break;
+                case MethodTable::BinaryOp::DoubleEqual:
+                    *obj->cast<T>() = (*first.cast<T>() == *second.cast<T>());
                     break;
                 default:
                     PLY_ASSERT(0);
