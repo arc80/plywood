@@ -91,6 +91,8 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
     addPPDef(&pp, "PLY_MAKE_WELL_FORMEDNESS_CHECK_2", "", true);
     addPPDef(&pp, "PLY_BIND_METHOD", "", true);
     addPPDef(&pp, "PLY_DECLARE_TYPE_DESCRIPTOR", "", true);
+    addPPDef(&pp, "PLY_DEFINE_TYPE_DESCRIPTOR", "void foo", false);
+    addPPDef(&pp, "PLY_METHOD_TABLES_ONLY", "", true);
     addPPDef(&pp, "SWITCH_FOOTER", "", true);   // temporary
     addPPDef(&pp, "SWITCH_ACCESSOR", "", true); // temporary
     Parser parser;
