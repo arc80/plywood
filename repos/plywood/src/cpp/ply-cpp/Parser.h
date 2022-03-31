@@ -89,7 +89,6 @@ enum class ExpectedToken {
     TypeSpecifier,
     ClassKeyword,
 };
-PLY_DECLARE_TYPE_DESCRIPTOR(ExpectedToken)
 
 struct ParseError : BaseError {
     enum Type {
@@ -125,7 +124,6 @@ struct ParseError : BaseError {
     }
     virtual void writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const override;
 };
-PLY_DECLARE_TYPE_DESCRIPTOR(ParseError::Type)
 
 struct Parser {
     static constexpr u32 AcceptOpenCurly = 0x1;
@@ -202,4 +200,8 @@ void dumpParseTree(OutStream* outs, AnyObject any, u32 indent = 0,
 bool closeScope(Parser* parser, Token* outCloseToken, const Token& openToken);
 
 } // namespace cpp
+
+PLY_DECLARE_TYPE_DESCRIPTOR(cpp::ExpectedToken)
+PLY_DECLARE_TYPE_DESCRIPTOR(cpp::ParseError::Type)
+
 } // namespace ply

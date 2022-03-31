@@ -30,8 +30,9 @@ struct TypeDescriptor_Switch : TypeDescriptor {
     // Constructor for TypeDescriptor_Switch of an existing C++ class:
     template <class T>
     TypeDescriptor_Switch(T*, StringView name, std::initializer_list<State> states = {})
-        : TypeDescriptor{&TypeKey_Switch, sizeof(T), NativeBindings::make<T>()}, name{name},
-          storageOffset{PLY_MEMBER_OFFSET(T, storage)}, states{states} {
+        : TypeDescriptor{&TypeKey_Switch, sizeof(T),
+                         NativeBindings::make<T>() PLY_METHOD_TABLES_ONLY(, {})},
+          name{name}, storageOffset{PLY_MEMBER_OFFSET(T, storage)}, states{states} {
     }
     void ensureStateIs(AnyObject obj, u16 stateID) {
         PLY_ASSERT(obj.type == this);
@@ -69,7 +70,7 @@ struct TypeDescriptor_Switch : TypeDescriptor {
             {#id, (u16) T::ID::id, ply::getTypeDescriptor<T::id>()->cast<ply::TypeDescriptor_Struct>()},
 #else
 #define PLY_SWITCH_MEMBER(id) \
-            {#id, ply::getTypeDescriptor<T::id>()},
+            {#id, ply::getTypeDescriptor<T::id>()->cast<ply::TypeDescriptor_Struct>()},
 #endif
 
 #define PLY_SWITCH_END() \

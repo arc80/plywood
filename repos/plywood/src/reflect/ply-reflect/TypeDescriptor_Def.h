@@ -5,6 +5,7 @@
 #pragma once
 #include <ply-reflect/Core.h>
 #include <ply-reflect/TypeKey.h>
+#include <ply-reflect/AnyObject_Def.h>
 
 #if PLY_WITH_METHOD_TABLES
 #include <ply-reflect/methods/MethodTable.h>

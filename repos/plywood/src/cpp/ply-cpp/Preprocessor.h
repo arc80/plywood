@@ -77,11 +77,13 @@ struct Preprocessor {
         this->errorHandler(new Error{std::move(err)});
     }
 };
-PLY_DECLARE_TYPE_DESCRIPTOR(Preprocessor::Error::Type)
 
 Token readToken(Preprocessor* pp);
 void addPPDef(Preprocessor* pp, StringView identifier, StringView expansion,
               bool takesArgs = false);
 
 } // namespace cpp
+
+PLY_DECLARE_TYPE_DESCRIPTOR(cpp::Preprocessor::Error::Type)
+
 } // namespace ply

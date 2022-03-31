@@ -47,7 +47,6 @@ struct RepoRegError : cpp::BaseError {
     virtual void writeMessage(OutStream* outs,
                               const cpp::PPVisitedFiles* visitedFiles) const override;
 };
-PLY_DECLARE_TYPE_DESCRIPTOR(RepoRegError::Type)
 
 void RepoRegError::writeMessage(OutStream* outs, const cpp::PPVisitedFiles* visitedFiles) const {
     outs->format("{}: error: ", cpp::expandFileLocation(visitedFiles, this->linearLoc).toString());
@@ -55,7 +54,7 @@ void RepoRegError::writeMessage(OutStream* outs, const cpp::PPVisitedFiles* visi
         case RepoRegError::AlreadyInsideCommand: {
             *outs << "already inside command\n";
             outs->format("{}: note: previous command started here\n",
-                       expandFileLocation(visitedFiles, this->otherLoc).toString());
+                         expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case RepoRegError::ExpectedModuleName: {
@@ -147,10 +146,9 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         return;
 
                     if (this->cmd) {
-                        this->parser->pp->errorHandler(
-                            new RepoRegError{RepoRegError::AlreadyInsideCommand,
-                                             getLinearLocation(token, first.bytes),
-                                             this->cmd->macro.linearLoc});
+                        this->parser->pp->errorHandler(new RepoRegError{
+                            RepoRegError::AlreadyInsideCommand,
+                            getLinearLocation(token, first.bytes), this->cmd->macro.linearLoc});
                         this->cmd = nullptr;
                     }
 
@@ -158,9 +156,9 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                     StringView second = commentReader.readView<fmt::Identifier>();
                     if (second == "module") {
                         if (this->scopeStack.numItems() != 1) {
-                            this->parser->pp->errorHandler(new RepoRegError{
-                                RepoRegError::MustBeAtFileScope,
-                                getLinearLocation(token, second.bytes)});
+                            this->parser->pp->errorHandler(
+                                new RepoRegError{RepoRegError::MustBeAtFileScope,
+                                                 getLinearLocation(token, second.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
@@ -194,9 +192,9 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         moduleCmd->moduleName = moduleName;
                     } else if (second == "extern") {
                         if (this->scopeStack.numItems() != 1) {
-                            this->parser->pp->errorHandler(new RepoRegError{
-                                RepoRegError::MustBeAtFileScope,
-                                getLinearLocation(token, second.bytes)});
+                            this->parser->pp->errorHandler(
+                                new RepoRegError{RepoRegError::MustBeAtFileScope,
+                                                 getLinearLocation(token, second.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
@@ -218,9 +216,9 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                         commentReader.parse<fmt::Whitespace>();
                         StringView third = commentReader.readView<fmt::Identifier>();
                         if (third != "provider") {
-                            this->parser->pp->errorHandler(new RepoRegError{
-                                RepoRegError::ExpectedProviderKeyword,
-                                getLinearLocation(token, third.bytes)});
+                            this->parser->pp->errorHandler(
+                                new RepoRegError{RepoRegError::ExpectedProviderKeyword,
+                                                 getLinearLocation(token, third.bytes)});
                             return;
                         }
                         commentReader.parse<fmt::Whitespace>();
@@ -302,8 +300,8 @@ struct InstantiatorHooks : cpp::ParseSupervisor {
                 }
             }
             if (!appliedCommand) {
-                this->parser->pp->errorHandler(new RepoRegError{
-                    RepoRegError::CouldNotApplyCommand, this->cmd->macro.linearLoc});
+                this->parser->pp->errorHandler(new RepoRegError{RepoRegError::CouldNotApplyCommand,
+                                                                this->cmd->macro.linearLoc});
                 this->cmd = nullptr;
             }
         }
@@ -329,6 +327,13 @@ bool extractInstantiatorFunctions(ModuleDefinitionFile* modDefFile) {
 }
 
 } // namespace build
+
+// PLY_DECLARE_TYPE_DESCRIPTOR(ply::build::RepoRegError::Type)
+template <>
+struct ply::TypeDescriptorSpecializer<ply::build::RepoRegError::Type> {
+    static ply::TypeDescriptor* get();
+};
+
 } // namespace ply
 
 #include "codegen/ExtractModuleFunctions.inl" //%%

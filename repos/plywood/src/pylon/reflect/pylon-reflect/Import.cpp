@@ -206,7 +206,7 @@ PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
         }
         PLY_ASSERT(found);
         PLY_UNUSED(found);
-    } else if (obj.type->typeKey == &TypeKey_SavedTypedPtr) {
+    } else if (obj.type->typeKey == &TypeKey_AnySavedObject) {
         PLY_ASSERT(aNode->isObject());
         TypeDescriptorOwner* targetTypeOwner = convertTypeFrom(aNode->get("type"), typeFromName);
         AnySavedObject* savedTypedPtr = (AnySavedObject*) obj.data;

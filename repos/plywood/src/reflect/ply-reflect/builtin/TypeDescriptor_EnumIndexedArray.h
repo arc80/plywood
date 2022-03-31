@@ -20,7 +20,7 @@ struct TypeDescriptor_EnumIndexedArray : TypeDescriptor {
     template <typename T, typename EnumType>
     PLY_INLINE TypeDescriptor_EnumIndexedArray(T*, EnumType*)
         : TypeDescriptor{&TypeKey_EnumIndexedArray, sizeof(EnumIndexedArray<T, EnumType>),
-                         getNativeBindings_EnumIndexedArray()} {
+                         getNativeBindings_EnumIndexedArray() PLY_METHOD_TABLES_ONLY(, {})} {
         itemType = getTypeDescriptor<T>();
         enumType = TypeDescriptorSpecializer<EnumType>::get()->template cast<TypeDescriptor_Enum>();
         PLY_ASSERT(fixedSize == itemType->fixedSize * enumType->identifiers.numItems());

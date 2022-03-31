@@ -176,7 +176,7 @@ struct InitListType {
 };
 } // namespace details
 template <typename T>
-using InitList = std::initializer_list<typename details::InitListType<T>::Type>;
+using InitList = std::initializer_list<T>;
 } // namespace ply
 
 //---------------------------------------------

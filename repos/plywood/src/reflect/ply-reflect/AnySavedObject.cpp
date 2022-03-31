@@ -13,7 +13,7 @@ namespace ply {
 
 SLOG_DECLARE_CHANNEL(Load)
 
-TypeKey TypeKey_SavedTypedPtr{
+TypeKey TypeKey_AnySavedObject{
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         AnySavedObject* savedTypedPtr = (AnySavedObject*) obj.data;
@@ -69,7 +69,7 @@ TypeKey TypeKey_SavedTypedPtr{
 };
 
 PLY_DEFINE_TYPE_DESCRIPTOR(AnySavedObject) {
-    static TypeDescriptor typeDesc{&TypeKey_SavedTypedPtr, sizeof(AnySavedObject),
+    static TypeDescriptor typeDesc{&TypeKey_AnySavedObject, sizeof(AnySavedObject),
                                    NativeBindings::make<AnySavedObject>()
                                        PLY_METHOD_TABLES_ONLY(, {})};
     return &typeDesc;

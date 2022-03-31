@@ -45,7 +45,7 @@ public:
             // numBytesAvailable should always be a multiple of sizeof(T).
             PLY_ASSERT(numBytesAvailable >= sizeof(T));
         }
-        return ArrayView<T>::from(StringView{this.impl.byte, numBytesAvailable});
+        return ArrayView<T>::from(StringView{this->impl.byte, numBytesAvailable});
     }
     PLY_INLINE void endRead(u32 numItems) {
         PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T) * numItems);

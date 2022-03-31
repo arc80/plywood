@@ -19,7 +19,8 @@ struct TypeDescriptor_Owned : TypeDescriptor {
 
     template <typename T>
     PLY_INLINE TypeDescriptor_Owned(T*)
-        : TypeDescriptor{&TypeKey_Owned, sizeof(void*), getNativeBindings_Owned()},
+        : TypeDescriptor{&TypeKey_Owned, sizeof(void*),
+                         getNativeBindings_Owned() PLY_METHOD_TABLES_ONLY(, {})},
           targetType{getTypeDescriptor<T>()} {
         assignRawPtr = [](AnyObject ownedPtr, AnyObject target) {
             // FIXME: Check that the target type is compatible

@@ -160,7 +160,7 @@ public:
         Array<u32> arr;
         arr = {4, 5, 6};
     */
-    PLY_INLINE void operator=(InitList<T> init) {
+    PLY_INLINE void operator=(std::initializer_list<T> init) {
         subst::destructArray(this->items, this->numItems_);
         u32 initSize = safeDemote<u32>(init.size());
         ((details::BaseArray&) *this).realloc(initSize, (u32) sizeof(T));

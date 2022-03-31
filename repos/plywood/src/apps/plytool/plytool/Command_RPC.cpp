@@ -74,7 +74,7 @@ PLY_NO_INLINE void command_rpc(PlyToolCommandEnv*) {
     for (;;) {
         ReadObjectContext context{&schema, &ins, &resolver};
         AnyOwnedObject obj = readObject(&context);
-        if (!obj.ptr)
+        if (!obj.data)
             break; // Pipe was closed
 
         tool::Command* cmd = obj.cast<tool::Command>();

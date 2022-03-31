@@ -90,9 +90,11 @@ struct Token {
     }
     HybridString toString() const;
 };
-PLY_DECLARE_TYPE_DESCRIPTOR(Token::Type)
 
 StringView getPunctuationString(Token::Type tok);
 
 } // namespace cpp
+
+PLY_DECLARE_TYPE_DESCRIPTOR(cpp::Token::Type)
+
 } // namespace ply

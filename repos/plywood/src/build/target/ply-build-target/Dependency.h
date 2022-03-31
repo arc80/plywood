@@ -21,7 +21,6 @@ enum class DynamicLinkage : u8 {
     Import,
     Export,
 };
-PLY_DECLARE_TYPE_DESCRIPTOR(DynamicLinkage)
 
 struct PreprocessorDefinition {
     String key;
@@ -95,4 +94,7 @@ struct BuildTarget {
 };
 
 } // namespace build
+
+PLY_DECLARE_TYPE_DESCRIPTOR(build::DynamicLinkage)
+
 } // namespace ply

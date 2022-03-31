@@ -39,7 +39,8 @@ struct Command {
     // ply reflect off
 };
 
-PLY_DECLARE_TYPE_DESCRIPTOR(Command::Dependency::Type)
-
 } // namespace tool
+
+PLY_DECLARE_TYPE_DESCRIPTOR(tool::Command::Dependency::Type)
+
 } // namespace ply
