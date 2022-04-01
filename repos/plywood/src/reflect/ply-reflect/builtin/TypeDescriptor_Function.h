@@ -40,7 +40,7 @@ struct FunctionCallThunk<Param0> {
         PLY_ASSERT(callee.type->isEquivalentTo(getTypeDescriptor<FunctionType>()));
         const AnyObject& arg = stack->items.tail();
         PLY_ASSERT(arg.type->isEquivalentTo(getTypeDescriptor<Param0>()));
-        return static_cast<FunctionType*>(callee.data)(stack, *(Param0*) arg.data);
+        return reinterpret_cast<FunctionType*>(callee.data)(stack, *(Param0*) arg.data);
     }
 };
 
