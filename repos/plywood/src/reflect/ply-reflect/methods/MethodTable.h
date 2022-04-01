@@ -39,6 +39,11 @@ struct MethodTable {
         // C operator precedence level 4
         Add,
         Subtract,
+        // C operator precedence level 6
+        LessThan,
+        LessThanOrEqual,
+        GreaterThan,
+        GreaterThanOrEqual,
         // C operator precedence level 7
         DoubleEqual,
     };

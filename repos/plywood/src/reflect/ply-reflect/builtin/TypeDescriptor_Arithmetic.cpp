@@ -40,6 +40,18 @@ struct IntegerMethodTable {
                 case MethodTable::BinaryOp::DoubleEqual:
                     *obj->cast<T>() = (*first.cast<T>() == *second.cast<T>());
                     break;
+                case MethodTable::BinaryOp::LessThan:
+                    *obj->cast<T>() = (*first.cast<T>() < *second.cast<T>());
+                    break;
+                case MethodTable::BinaryOp::LessThanOrEqual:
+                    *obj->cast<T>() = (*first.cast<T>() <= *second.cast<T>());
+                    break;
+                case MethodTable::BinaryOp::GreaterThan:
+                    *obj->cast<T>() = (*first.cast<T>() > *second.cast<T>());
+                    break;
+                case MethodTable::BinaryOp::GreaterThanOrEqual:
+                    *obj->cast<T>() = (*first.cast<T>() >= *second.cast<T>());
+                    break;
                 default:
                     PLY_ASSERT(0);
                     break;
