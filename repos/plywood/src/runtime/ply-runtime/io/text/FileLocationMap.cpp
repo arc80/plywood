@@ -47,7 +47,7 @@ FileLocationMap FileLocationMap::fromView(StringView src) {
 }
 
 FileLocation FileLocationMap::getFileLocation(u32 offset) const {
-    PLY_ASSERT(offset < this->view.numBytes);
+    PLY_ASSERT(offset <= this->view.numBytes);
     const FileLocation& fileLoc = this->table[offset >> 8];
     u32 chunkOfs = offset & ~0xff;
     const char* lineStart = this->view.bytes + (chunkOfs - fileLoc.numBytesIntoLine);
