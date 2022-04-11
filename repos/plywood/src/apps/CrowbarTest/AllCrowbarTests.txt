@@ -1,0 +1,181 @@
+------------------------------------------------------------
+fn test() {
+    a = 1
+    b = 1
+    while a < 100 {
+        print(a)
+        t = a
+        a = b
+        b = b + t
+    }
+}
+
+result:
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+
+------------------------------------------------------------
+fn gcd(a, b) {
+    if a % b == 0
+        return b
+    else
+        return gcd(b, a % b)
+}
+
+fn test() {
+    print(gcd(36, 96))
+}
+
+result:
+12
+
+------------------------------------------------------------
+{
+
+result:
+(1, 1) error: unexpected '{'
+
+------------------------------------------------------------
+<
+fn foo() {
+} >
+
+result:
+(1, 1) error: unexpected '<'
+(3, 3) error: unexpected '>'
+
+------------------------------------------------------------
+fn () {
+}
+
+result:
+(1, 4) error: expected function name after 'fn'; got '('
+
+------------------------------------------------------------
+fn % () {
+}
+fn foo() {
+}
++
+
+result:
+(1, 4) error: expected function name after 'fn'; got '%'
+(5, 1) error: unexpected '+'
+
+------------------------------------------------------------
+fn foo {
+}
+
+result:
+(1, 8) error: expected '(' after function name 'foo'; got '{'
+
+------------------------------------------------------------
+fn foo
+
+result:
+(2, 1) error: expected '(' after function name 'foo'; got end-of-file
+
+------------------------------------------------------------
+fn foo %
+fn bar $
+
+result:
+(1, 8) error: expected '(' after function name 'foo'; got '%'
+(2, 8) error: expected '(' after function name 'bar'; got '$'
+
+------------------------------------------------------------
+fn foo(%) {
+}
+
+result:
+(1, 8) error: expected function parameter; got '%'
+
+------------------------------------------------------------
+fn foo(% {
+}
+fn bar($) {
+}
+
+result:
+(1, 8) error: expected function parameter; got '%'
+(3, 8) error: expected function parameter; got '$'
+
+------------------------------------------------------------
+fn foo(a b) {
+}
+
+result:
+(1, 10) error: expected ',' or ')' after parameter 'a'; got 'b'
+
+------------------------------------------------------------
+fn foo(a {
+}
+fn bar(a b {
+}
+
+result:
+(1, 10) error: expected ',' or ')' after parameter 'a'; got '{'
+
+------------------------------------------------------------
+fn foo(a)
+
+result:
+(2, 1) error: expected '{' after parameter list; got end-of-file
+
+------------------------------------------------------------
+fn foo()
+fn bar() {
+}
++
+
+result:
+(2, 1) error: expected '{' after parameter list; got 'fn'
+(4, 1) error: unexpected '+'
+
+------------------------------------------------------------
+fn foo(a) {
+
+result:
+(2, 1) error: unexpected end-of-file inside function
+
+------------------------------------------------------------
+fn foo() {
+    if 1 {
+
+result:
+(3, 1) error: unexpected end-of-file inside if-statement
+
+------------------------------------------------------------
+fn foo() {
+    if 1
+        x = 3
+}
+
+result:
+(3, 9) error: body of if-statement must be enclosed in curly braces unless it's a break, continue or return statement
+
+------------------------------------------------------------
+fn foo() {
+    while 1 {
+
+result:
+(3, 1) error: unexpected end-of-file inside while-loop
+
+------------------------------------------------------------
+fn foo() {
+    while 1
+        x = 3
+}
+
+result:
+(3, 9) error: body of while-loop must be enclosed in curly braces unless it's a break, continue or return statement
+
