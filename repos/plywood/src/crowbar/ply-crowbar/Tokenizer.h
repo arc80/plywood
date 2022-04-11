@@ -47,6 +47,11 @@ enum class TokenType {
     Slash,
     Percent,
 
+    VerticalBar,
+    DoubleVerticalBar,
+    Ampersand,
+    DoubleAmpersand,
+
     Count,
 };
 

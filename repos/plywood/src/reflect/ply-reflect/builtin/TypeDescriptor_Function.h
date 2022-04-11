@@ -43,6 +43,15 @@ struct FunctionCallThunk<Param0> {
         return reinterpret_cast<FunctionType*>(callee.data)(stack, *(Param0*) arg.data);
     }
 };
+template <>
+struct FunctionCallThunk<const AnyObject&> {
+    static PLY_NO_INLINE AnyObject call(ObjectStack* stack, const AnyObject& callee) {
+        using FunctionType = AnyObject(ObjectStack*, const AnyObject&);
+        PLY_ASSERT(callee.type->isEquivalentTo(getTypeDescriptor<FunctionType>()));
+        const AnyObject& arg = stack->items.tail();
+        return reinterpret_cast<FunctionType*>(callee.data)(stack, arg);
+    }
+};
 
 #endif // PLY_WITH_METHOD_TABLES
 
@@ -55,6 +64,13 @@ template <typename Param, typename... Rest>
 struct ParameterAdder<Param, Rest...> {
     static PLY_INLINE void add(TypeDescriptor_Function* functionType) {
         functionType->paramTypes.append(getTypeDescriptor<Param>());
+        ParameterAdder<Rest...>::add(functionType);
+    }
+};
+template <typename... Rest>
+struct ParameterAdder<const AnyObject&, Rest...> {
+    static PLY_INLINE void add(TypeDescriptor_Function* functionType) {
+        functionType->paramTypes.append(nullptr);
         ParameterAdder<Rest...>::add(functionType);
     }
 };

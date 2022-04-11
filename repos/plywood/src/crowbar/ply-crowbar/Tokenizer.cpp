@@ -19,8 +19,9 @@ PLY_NO_INLINE void Tokenizer::setSourceInput(StringView src) {
 }
 
 StringView tokenRepr[] = {
-    "",  "",  "",  "",  "",   "",  "",   "",  "{",  "}",  "(", ")", "[", "]", ":",
-    ";", ".", ",", "=", "/=", "<", "<=", ">", ">=", "==", "+", "-", "*", "/", "%"};
+    "",  "",  "",   "",  "",   "",  "",   "",   "{", "}", "(", ")", "[", "]", ":",  ";", ".",
+    ",", "=", "/=", "<", "<=", ">", ">=", "==", "+", "-", "*", "/", "%", "|", "||", "&", "&&",
+};
 PLY_STATIC_ASSERT(PLY_STATIC_ARRAY_SIZE(tokenRepr) == (u32) TokenType::Count);
 
 String ExpandedToken::desc() const {
@@ -358,6 +359,30 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
                     }
                 }
                 expToken.type = TokenType::GreaterThan;
+                goto result;
+            }
+
+            case '|': {
+                if (!this->vin.atEOF()) {
+                    if (this->vin.peek() == '|') {
+                        this->vin.next();
+                        expToken.type = TokenType::DoubleVerticalBar;
+                        goto result;
+                    }
+                }
+                expToken.type = TokenType::VerticalBar;
+                goto result;
+            }
+
+            case '&': {
+                if (!this->vin.atEOF()) {
+                    if (this->vin.peek() == '&') {
+                        this->vin.next();
+                        expToken.type = TokenType::DoubleAmpersand;
+                        goto result;
+                    }
+                }
+                expToken.type = TokenType::Ampersand;
                 goto result;
             }
 

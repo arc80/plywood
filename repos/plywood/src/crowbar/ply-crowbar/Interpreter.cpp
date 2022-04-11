@@ -60,9 +60,8 @@ StepStatus startExpression(Interpreter* interp, const Expression* expr) {
                 }
             }
 
-            // FIXME: Reverse iterate over outerNameSpaces.
-            HashMap<VariableMapTraits>* ns = interp->outerNameSpaces.back();
-            {
+            for (s32 i = interp->outerNameSpaces.numItems() - 1; i >= 0; i--) {
+                const HashMap<VariableMapTraits>* ns = interp->outerNameSpaces[i];
                 auto cursor = ns->find(name);
                 if (cursor.wasFound()) {
                     interp->returnValue = cursor->obj;
@@ -277,7 +276,7 @@ StepStatus stepIf(Interpreter* interp, Breadcrumb::DoIf* ifCrumb) {
                 return StepStatus::Completed;
         } else if (s == 1) {
             // FIXME: Do implicit conversion to bool
-            bool wasTrue = (*interp->returnValue.cast<u32>() != 0);
+            bool wasTrue = (*interp->returnValue.cast<bool>() != 0);
             interp->returnValue = {};
             const StatementBlock* block = (wasTrue ? if_->trueBlock : if_->falseBlock);
             if (block) {
@@ -303,7 +302,7 @@ StepStatus stepWhile(Interpreter* interp, Breadcrumb::DoWhile* whileCrumb) {
         } else {
             PLY_ASSERT(s == 1);
             // FIXME: Do implicit conversion to bool
-            bool wasTrue = (*interp->returnValue.cast<u32>() != 0);
+            bool wasTrue = (*interp->returnValue.cast<bool>() != 0);
             interp->returnValue = {};
             if (!wasTrue) {
                 PLY_ASSERT(interp->stackFrames.back().location.tail().doWhile().get() ==

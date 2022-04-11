@@ -41,6 +41,8 @@ u32 BinaryOpPrecedence[] = {
     6, // GreaterThan
     6, // GreaterThanOrEqual
     7, // DoubleEqual
+    11, // LogicalAnd
+    12, // LogicalOr
 };
 
 Owned<Expression> Parser::parseExpression(bool required, u32 outerPrecendenceLevel) {
@@ -129,6 +131,16 @@ Owned<Expression> Parser::parseExpression(bool required, u32 outerPrecendenceLev
             }
             case TokenType::Percent: {
                 if (!extendBinaryOp(MethodTable::BinaryOp::Modulo))
+                    goto recover;
+                break;
+            }
+            case TokenType::DoubleVerticalBar: {
+                if (!extendBinaryOp(MethodTable::BinaryOp::LogicalOr))
+                    goto recover;
+                break;
+            }
+            case TokenType::DoubleAmpersand: {
+                if (!extendBinaryOp(MethodTable::BinaryOp::LogicalAnd))
                     goto recover;
                 break;
             }

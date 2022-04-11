@@ -46,6 +46,10 @@ struct MethodTable {
         GreaterThanOrEqual,
         // C operator precedence level 7
         DoubleEqual,
+        // C operator precedence level 11
+        LogicalAnd,
+        // C operator precedence level 12
+        LogicalOr,
     };
 
     AnyObject (*unaryOp)(ObjectStack* stack, UnaryOp op, const AnyObject& obj) = nullptr;

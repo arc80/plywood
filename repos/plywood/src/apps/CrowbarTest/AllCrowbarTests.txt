@@ -149,14 +149,14 @@ result:
 
 ------------------------------------------------------------
 fn foo() {
-    if 1 {
+    if true {
 
 result:
 (3, 1) error: unexpected end-of-file inside if-statement
 
 ------------------------------------------------------------
 fn foo() {
-    if 1
+    if true
         x = 3
 }
 
@@ -165,17 +165,29 @@ result:
 
 ------------------------------------------------------------
 fn foo() {
-    while 1 {
+    while true {
 
 result:
 (3, 1) error: unexpected end-of-file inside while-loop
 
 ------------------------------------------------------------
 fn foo() {
-    while 1
+    while true
         x = 3
 }
 
 result:
 (3, 9) error: body of while-loop must be enclosed in curly braces unless it's a break, continue or return statement
+
+------------------------------------------------------------
+fn test() {
+    print(1 > 2)
+    print(true || false)
+    print(true && false)
+}
+
+result:
+false
+true
+false
 

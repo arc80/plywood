@@ -11,9 +11,24 @@ using namespace ply::crowbar;
 
 OutStream* doPrintTarget = nullptr;
 
-AnyObject doPrint(ObjectStack* stack, u32 x) {
-    *doPrintTarget << x << '\n';
+AnyObject doPrint(ObjectStack* stack, const AnyObject& arg) {
+    if (arg.is<u32>()) {
+        *doPrintTarget << *arg.cast<u32>() << '\n';
+    } else if (arg.is<bool>()) {
+        *doPrintTarget << *arg.cast<bool>() << '\n';
+    }
     return {};
+}
+
+// FIXME: Move this to the crowbar module:
+void addBuiltIns(InternedStrings& internedStrings, HashMap<VariableMapTraits>& ns) {
+    getTypeDescriptor(doPrint);
+    ns.insertOrFind(internedStrings.findOrInsertKey("print"))->obj = AnyObject::bind(doPrint);
+
+    static bool true_ = true;
+    static bool false_ = false;
+    ns.insertOrFind(internedStrings.findOrInsertKey("true"))->obj = AnyObject::bind(&true_);
+    ns.insertOrFind(internedStrings.findOrInsertKey("false"))->obj = AnyObject::bind(&false_);
 }
 
 String runTestCase(StringView src) {
@@ -49,6 +64,10 @@ String runTestCase(StringView src) {
     if (hooks.errorCount > 0) {
         output = errorOut.moveToString();
     } else {
+        // Create built-in namespace
+        HashMap<VariableMapTraits> builtIns;
+        addBuiltIns(internedStrings, builtIns);
+
         // Put functions in a namespace
         Sequence<AnyObject> fnObjs;
         HashMap<VariableMapTraits> ns;
@@ -68,6 +87,7 @@ String runTestCase(StringView src) {
             // Create interpreter
             Interpreter interp;
             interp.internedStrings = &internedStrings;
+            interp.outerNameSpaces.append(&builtIns);
             interp.outerNameSpaces.append(&ns);
 
             // Invoke function
