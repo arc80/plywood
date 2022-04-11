@@ -16,66 +16,6 @@ AnyObject doPrint(ObjectStack* stack, u32 x) {
     return {};
 }
 
-void testParser() {
-    // String to evaluate
-    StringView source = R"(
-fn gcd(a, b) {
-    if a % b == 0
-        return b
-    else
-        return gcd(b, a % b)
-}
-
-fn fibo(limit) {
-    a = 1
-    b = 1
-    while a < limit {
-        print(a)
-        t = a
-        a = b
-        b = b + t
-    }
-}
-
-fn test() {
-    fibo(1000000)
-}
-)";
-
-    // Create tokenizer
-    Tokenizer tkr;
-    InternedStrings internedStrings;
-    tkr.internedStrings = &internedStrings;
-    tkr.setSourceInput(source);
-
-    // Create parser
-    Parser parser;
-    parser.tkr = &tkr;
-
-    // Parse the expression
-    Owned<File> file = parser.parseFile();
-
-    // Put functions in a namespace
-    Sequence<AnyObject> fnObjs;
-    HashMap<VariableMapTraits> ns;
-    for (const FunctionDefinition* fnDef : file->functions) {
-        const AnyObject& fnObj = fnObjs.append(AnyObject::bind(fnDef));
-        ns.insertOrFind(fnDef->name)->obj = fnObj;
-    }
-    getTypeDescriptor(doPrint);
-    ns.insertOrFind(internedStrings.findOrInsertKey("print"))->obj = AnyObject::bind(doPrint);
-
-    // Create interpreter
-    Interpreter interp;
-    interp.internedStrings = &internedStrings;
-    interp.outerNameSpaces.append(&ns);
-
-    // Invoke function "test"
-    const AnyObject& testObj = ns.find(internedStrings.findOrInsertKey("test"))->obj;
-    interp.startStackFrame(testObj.cast<FunctionDefinition>()->body);
-    interp.finish();
-}
-
 String runTestCase(StringView src) {
     // Create tokenizer
     Tokenizer tkr;
