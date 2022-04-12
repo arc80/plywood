@@ -191,3 +191,31 @@ false
 true
 false
 
+------------------------------------------------------------
+fn foo() {
+    return &&
+}
+
+result:
+(2, 12) error: expected an expression; got '&&'
+
+------------------------------------------------------------
+fn foo() {
+    bar(a b)
+    bar(a, , b)
+}
+
+result:
+(2, 11) error: expected ',' or ')' after argument; got 'b'
+(3, 12) error: expected an expression; got ','
+
+------------------------------------------------------------
+fn foo() {
+    /
+    a = 0 $
+}
+
+result:
+(2, 5) error: expected an expression; got '/'
+(3, 11) error: expected an expression; got '$'
+

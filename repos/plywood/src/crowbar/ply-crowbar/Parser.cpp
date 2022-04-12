@@ -31,19 +31,86 @@ PLY_INLINE bool error(Parser* parser, const ExpandedToken& errorToken, ErrorToke
 }
 
 u32 BinaryOpPrecedence[] = {
-    3, // Multiply
-    3, // Divide
-    3, // Modulo
-    4, // Add
-    4, // Subtract
-    6, // LessThan
-    6, // LessThanOrEqual
-    6, // GreaterThan
-    6, // GreaterThanOrEqual
-    7, // DoubleEqual
+    0,  // Invalid
+    3,  // Multiply
+    3,  // Divide
+    3,  // Modulo
+    4,  // Add
+    4,  // Subtract
+    6,  // LessThan
+    6,  // LessThanOrEqual
+    6,  // GreaterThan
+    6,  // GreaterThanOrEqual
+    7,  // DoubleEqual
     11, // LogicalAnd
     12, // LogicalOr
 };
+
+Owned<Expression> parseArgumentList(Parser* parser, Owned<Expression>&& callable) {
+    PLY_SET_IN_SCOPE(parser->recovery.outerAcceptFlags,
+                     parser->recovery.outerAcceptFlags | Parser::RecoveryState::AcceptCloseParen);
+    PLY_SET_IN_SCOPE(parser->tkr->tokenizeNewLine, false);
+    auto callExpr = Owned<Expression>::create();
+    auto call = callExpr->call().switchTo();
+    call->callable = std::move(callable);
+
+    // Parse argument list.
+    ExpandedToken token = parser->tkr->readToken();
+    if (token.type == TokenType::CloseParen)
+        return callExpr; // Empty argument list.
+
+    parser->tkr->rewindTo(token.tokenIdx);
+    for (;;) {
+        Owned<Expression> arg = parser->parseExpression();
+        if (arg) {
+            call->args.append(std::move(arg));
+        }
+        token = parser->tkr->readToken();
+        if (token.type == TokenType::CloseParen) {
+            // Got end of argument list
+            parser->recovery.muteErrors = false;
+            return callExpr;
+        } else if (token.type == TokenType::Comma) {
+            // Got comma
+            parser->recovery.muteErrors = false;
+        } else {
+            if (!error(parser, token, ErrorTokenAction::HandleUnexpected,
+                       String::format("expected ',' or ')' after argument; got {}", token.desc())))
+                return callExpr;
+        }
+    }
+}
+
+MethodTable::BinaryOp tokenToBinaryOp(TokenType tokenType) {
+    switch (tokenType) {
+        case TokenType::LessThan:
+            return MethodTable::BinaryOp::LessThan;
+        case TokenType::LessThanOrEqual:
+            return MethodTable::BinaryOp::LessThanOrEqual;
+        case TokenType::GreaterThan:
+            return MethodTable::BinaryOp::GreaterThan;
+        case TokenType::GreaterThanOrEqual:
+            return MethodTable::BinaryOp::GreaterThanOrEqual;
+        case TokenType::DoubleEqual:
+            return MethodTable::BinaryOp::DoubleEqual;
+        case TokenType::Plus:
+            return MethodTable::BinaryOp::Add;
+        case TokenType::Minus:
+            return MethodTable::BinaryOp::Subtract;
+        case TokenType::Asterisk:
+            return MethodTable::BinaryOp::Multiply;
+        case TokenType::Slash:
+            return MethodTable::BinaryOp::Divide;
+        case TokenType::Percent:
+            return MethodTable::BinaryOp::Modulo;
+        case TokenType::DoubleVerticalBar:
+            return MethodTable::BinaryOp::LogicalOr;
+        case TokenType::DoubleAmpersand:
+            return MethodTable::BinaryOp::LogicalAnd;
+        default:
+            return MethodTable::BinaryOp::Invalid;
+    }
+}
 
 Owned<Expression> Parser::parseExpression(bool required, u32 outerPrecendenceLevel) {
     Owned<Expression> expr;
@@ -61,120 +128,48 @@ Owned<Expression> Parser::parseExpression(bool required, u32 outerPrecendenceLev
             break;
         }
         default: {
-            PLY_ASSERT(0);
-            goto recover;
+            error(this, token, ErrorTokenAction::PushBack,
+                  String::format("expected an expression; got {}", token.desc()));
+            return {};
         }
     }
+    this->recovery.muteErrors = false; // Got a valid expression
 
+    // Try to extend the expression by consuming tokens to the right (eg. binary operators and
+    // function call arguments).
     for (;;) {
         token = this->tkr->readToken();
-        auto extendBinaryOp = [&](MethodTable::BinaryOp op) {
+
+        if (token.type == TokenType::OpenParen) {
+            expr = parseArgumentList(this, std::move(expr));
+            continue;
+        }
+
+        MethodTable::BinaryOp op = tokenToBinaryOp(token.type);
+        if (op != MethodTable::BinaryOp::Invalid) {
             u32 opPrecedence = BinaryOpPrecedence[(u32) op];
             if (opPrecedence >= outerPrecendenceLevel) {
                 this->tkr->rewindTo(token.tokenIdx);
-                return false;
+                return expr;
             }
+
+            Owned<Expression> rhs = this->parseExpression(true, opPrecedence);
+            if (!rhs)
+                return expr; // an error occurred
 
             auto binaryOpExpr = Owned<crowbar::Expression>::create();
             auto binaryOp = binaryOpExpr->binaryOp().switchTo();
             binaryOp->op = op;
             binaryOp->left = std::move(expr);
-            binaryOp->right = this->parseExpression(true, opPrecedence);
+            binaryOp->right = std::move(rhs);
             expr = std::move(binaryOpExpr);
-            return true;
-        };
-        switch (token.type) {
-            case TokenType::LessThan: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::LessThan))
-                    goto recover;
-                break;
-            }
-            case TokenType::LessThanOrEqual: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::LessThanOrEqual))
-                    goto recover;
-                break;
-            }
-            case TokenType::GreaterThan: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::GreaterThan))
-                    goto recover;
-                break;
-            }
-            case TokenType::GreaterThanOrEqual: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::GreaterThanOrEqual))
-                    goto recover;
-                break;
-            }
-            case TokenType::DoubleEqual: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::DoubleEqual))
-                    goto recover;
-                break;
-            }
-            case TokenType::Plus: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::Add))
-                    goto recover;
-                break;
-            }
-            case TokenType::Minus: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::Subtract))
-                    goto recover;
-                break;
-            }
-            case TokenType::Asterisk: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::Multiply))
-                    goto recover;
-                break;
-            }
-            case TokenType::Slash: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::Divide))
-                    goto recover;
-                break;
-            }
-            case TokenType::Percent: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::Modulo))
-                    goto recover;
-                break;
-            }
-            case TokenType::DoubleVerticalBar: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::LogicalOr))
-                    goto recover;
-                break;
-            }
-            case TokenType::DoubleAmpersand: {
-                if (!extendBinaryOp(MethodTable::BinaryOp::LogicalAnd))
-                    goto recover;
-                break;
-            }
-            case TokenType::OpenParen: {
-                PLY_SET_IN_SCOPE(this->tkr->tokenizeNewLine, false);
-                auto callExpr = Owned<crowbar::Expression>::create();
-                auto call = callExpr->call().switchTo();
-                call->callable = std::move(expr);
-
-                // Parse argument list.
-                token = this->tkr->readToken();
-                if (token.type != TokenType::CloseParen) {
-                    this->tkr->rewindTo(token.tokenIdx);
-                    for (;;) {
-                        call->args.append(this->parseExpression());
-                        token = this->tkr->readToken();
-                        if (token.type == TokenType::CloseParen)
-                            break;
-                        PLY_ASSERT(token.type == TokenType::Comma);
-                    }
-                }
-
-                expr = std::move(callExpr);
-                break;
-            }
-            default: {
-                this->tkr->rewindTo(token.tokenIdx);
-                goto recover;
-            }
+            continue;
         }
-    }
 
-recover:;
-    return expr;
+        // Can't extend this expression any further.
+        this->tkr->rewindTo(token.tokenIdx);
+        return expr;
+    }
 }
 
 Owned<Statement> Parser::parseStatement() {

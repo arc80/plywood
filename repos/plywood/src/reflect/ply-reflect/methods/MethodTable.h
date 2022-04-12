@@ -32,8 +32,9 @@ struct MethodTable {
     };
 
     enum class BinaryOp {
+        Invalid = 0,
         // C operator precedence level 3
-        Multiply = 0,
+        Multiply,
         Divide,
         Modulo,
         // C operator precedence level 4
