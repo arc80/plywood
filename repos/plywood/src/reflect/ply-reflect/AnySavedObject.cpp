@@ -69,7 +69,7 @@ TypeKey TypeKey_AnySavedObject{
 };
 
 PLY_DEFINE_TYPE_DESCRIPTOR(AnySavedObject) {
-    static TypeDescriptor typeDesc{&TypeKey_AnySavedObject, sizeof(AnySavedObject),
+    static TypeDescriptor typeDesc{&TypeKey_AnySavedObject, (AnySavedObject*) nullptr,
                                    NativeBindings::make<AnySavedObject>()
                                        PLY_METHOD_TABLES_ONLY(, {})};
     return &typeDesc;

@@ -22,7 +22,7 @@ struct TypeDescriptor_Function : TypeDescriptor {
     Array<TypeDescriptor*> paramTypes;
 
     PLY_INLINE TypeDescriptor_Function()
-        : TypeDescriptor{&TypeKey_Function, sizeof(void*),
+        : TypeDescriptor{&TypeKey_Function, (void**) nullptr,
                          getNativeBindings_Function() PLY_METHOD_TABLES_ONLY(, {})} {
     }
 };

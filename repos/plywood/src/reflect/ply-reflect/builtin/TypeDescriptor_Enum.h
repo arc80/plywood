@@ -22,9 +22,10 @@ struct TypeDescriptor_Enum : TypeDescriptor {
     String name;
     Array<Identifier> identifiers;
 
-    PLY_INLINE TypeDescriptor_Enum(u32 fixedSize, const char* name,
+    template <typename T>
+    PLY_INLINE TypeDescriptor_Enum(T* typedArg, const char* name,
                                    std::initializer_list<Identifier> identifiers)
-        : TypeDescriptor{&TypeKey_Enum, fixedSize,
+        : TypeDescriptor{&TypeKey_Enum, typedArg,
                          getNativeBindings_Enum() PLY_METHOD_TABLES_ONLY(, {})},
           name{name}, identifiers{identifiers} {
     }

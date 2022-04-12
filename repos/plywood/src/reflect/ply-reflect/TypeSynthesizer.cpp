@@ -70,16 +70,17 @@ TypeDescriptor* synthesize(TypeSynthesizer* synth, FormatDescriptor* formatDesc)
             } else {
                 // Synthesize a struct
                 TypeDescriptor_Struct* structType =
-                    new TypeDescriptor_Struct{0, structFormat->name};
+                    new TypeDescriptor_Struct{0, 0, structFormat->name};
                 u32 memberOffset = 0;
+                u32 alignment = 1;
                 for (const FormatDescriptor_Struct::Member& member : structFormat->members) {
                     TypeDescriptor* memberType = synthesize(synth, member.formatDesc);
                     structType->members.append({member.name, memberOffset, memberType});
-                    // FIXME: Deal with alignment here
                     memberOffset += memberType->fixedSize;
+                    alignment = max(alignment, memberType->alignment);
                 }
-                // FIXME: Deal with alignment here
                 structType->fixedSize = memberOffset;
+                structType->alignment = alignment;
                 typeDesc = structType;
                 synth->m_typeDescOwner->adoptType(typeDesc);
             }

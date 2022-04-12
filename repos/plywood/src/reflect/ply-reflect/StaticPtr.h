@@ -55,7 +55,7 @@ struct TypeDescriptor_StaticPtr : TypeDescriptor {
     BaseStaticPtr::PossibleValues* possibleValues = nullptr;
 
     TypeDescriptor_StaticPtr()
-        : TypeDescriptor{&TypeKey_StaticPtr, sizeof(StaticPtr<void>),
+        : TypeDescriptor{&TypeKey_StaticPtr, (StaticPtr<void>*) nullptr,
                          getNativeBindings_StaticPtr() PLY_METHOD_TABLES_ONLY(, {})} {
     }
 };

@@ -151,7 +151,7 @@ TypeKey TypeKey_TypedArray{
 };
 
 PLY_DEFINE_TYPE_DESCRIPTOR(TypedArray) {
-    static TypeDescriptor typeDesc{&TypeKey_TypedArray, sizeof(TypedArray),
+    static TypeDescriptor typeDesc{&TypeKey_TypedArray, (TypedArray*) nullptr,
                                    NativeBindings::make<TypedArray>() PLY_METHOD_TABLES_ONLY(, {})};
     return &typeDesc;
 }

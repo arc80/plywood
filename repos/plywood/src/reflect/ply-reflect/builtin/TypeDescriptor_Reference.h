@@ -20,7 +20,7 @@ struct TypeDescriptor_Reference : TypeDescriptor {
 
     template <typename T>
     PLY_INLINE TypeDescriptor_Reference(T*)
-        : TypeDescriptor{&TypeKey_Reference, sizeof(void*),
+        : TypeDescriptor{&TypeKey_Reference, (void**) nullptr,
                          getNativeBindings_Reference() PLY_METHOD_TABLES_ONLY(, {})},
           targetType{getTypeDescriptor<T>()} {
         this->incRef = [](void* target) { //

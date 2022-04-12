@@ -17,7 +17,7 @@ struct TypeDescriptor_RawPtr : TypeDescriptor {
     TypeDescriptor* targetType;
 
     TypeDescriptor_RawPtr(TypeDescriptor* targetType)
-        : TypeDescriptor{&TypeKey_RawPtr, sizeof(void*),
+        : TypeDescriptor{&TypeKey_RawPtr, (void**) nullptr,
                          getNativeBindings_RawPtr() PLY_METHOD_TABLES_ONLY(, {})},
           targetType{targetType} {
     }

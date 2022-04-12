@@ -38,16 +38,16 @@ struct TypeDescriptor_Struct : TypeDescriptor {
     void (*onPostSerialize)(void* data) = [](void*) {};
 
     // Constructor for synthesized TypeDescriptor_Struct:
-    PLY_INLINE TypeDescriptor_Struct(u32 fixedSize, StringView name)
-        : TypeDescriptor{&TypeKey_Struct, fixedSize,
+    PLY_INLINE TypeDescriptor_Struct(u32 fixedSize, u32 alignment, StringView name)
+        : TypeDescriptor{&TypeKey_Struct, fixedSize, alignment,
                          getNativeBindings_SynthesizedStruct() PLY_METHOD_TABLES_ONLY(, {})},
           name{name} {
     }
     // Constructor for TypeDescriptor_Struct of an existing C++ class:
     template <class T>
-    PLY_INLINE TypeDescriptor_Struct(T*, StringView name,
+    PLY_INLINE TypeDescriptor_Struct(T* typedArg, StringView name,
                                      std::initializer_list<Member> members = {})
-        : TypeDescriptor{&TypeKey_Struct, sizeof(T),
+        : TypeDescriptor{&TypeKey_Struct, typedArg,
                          NativeBindings::make<T>() PLY_METHOD_TABLES_ONLY(, {})},
           name{name}, members{members} {
         onPostSerialize = [](void* data) { invokePostSerialize((T*) data); };

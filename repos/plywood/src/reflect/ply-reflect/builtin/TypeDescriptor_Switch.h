@@ -29,8 +29,8 @@ struct TypeDescriptor_Switch : TypeDescriptor {
 
     // Constructor for TypeDescriptor_Switch of an existing C++ class:
     template <class T>
-    TypeDescriptor_Switch(T*, StringView name, std::initializer_list<State> states = {})
-        : TypeDescriptor{&TypeKey_Switch, sizeof(T),
+    TypeDescriptor_Switch(T* typedArg, StringView name, std::initializer_list<State> states = {})
+        : TypeDescriptor{&TypeKey_Switch, typedArg,
                          NativeBindings::make<T>() PLY_METHOD_TABLES_ONLY(, {})},
           name{name}, storageOffset{PLY_MEMBER_OFFSET(T, storage)}, states{states} {
     }

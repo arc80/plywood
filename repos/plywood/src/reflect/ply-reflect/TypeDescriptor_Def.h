@@ -98,17 +98,25 @@ struct NativeBindings {
 struct TypeDescriptor {
     TypeKey* typeKey;
     u32 fixedSize;
+    u32 alignment;
     NativeBindings bindings;
     PLY_METHOD_TABLES_ONLY(MethodTable methods;)
 
-    TypeDescriptor(TypeKey* typeKey, u32 fixedSize,
+    template <typename T>
+    TypeDescriptor(TypeKey* typeKey, T*,
                    const NativeBindings& bindings
                        PLY_METHOD_TABLES_ONLY(, const MethodTable& methods))
-        : typeKey(typeKey), fixedSize(fixedSize),
-          bindings(bindings) PLY_METHOD_TABLES_ONLY(, methods{methods}) {
+        : typeKey{typeKey}, fixedSize{sizeof(T)}, alignment{alignof(T)},
+          bindings{bindings} PLY_METHOD_TABLES_ONLY(, methods{methods}) {
+    }
+    TypeDescriptor(TypeKey* typeKey, u32 fixedSize, u32 alignment,
+                   const NativeBindings& bindings
+                       PLY_METHOD_TABLES_ONLY(, const MethodTable& methods))
+        : typeKey{typeKey}, fixedSize{fixedSize}, alignment{alignment},
+          bindings{bindings} PLY_METHOD_TABLES_ONLY(, methods{methods}) {
     }
     TypeDescriptor(TypeDescriptor&& other)
-        : typeKey{other.typeKey}, fixedSize{other.fixedSize},
+        : typeKey{other.typeKey}, fixedSize{other.fixedSize}, alignment{other.alignment},
           bindings{other.bindings} PLY_METHOD_TABLES_ONLY(, methods{other.methods}) {
     }
     // Built-in TypeDescriptors exist for the entire process lifetime, including those defined

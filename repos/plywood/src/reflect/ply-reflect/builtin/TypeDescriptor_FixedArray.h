@@ -19,12 +19,12 @@ struct TypeDescriptor_FixedArray : TypeDescriptor {
     u32 stride;
 
     PLY_INLINE TypeDescriptor_FixedArray(TypeDescriptor* itemType, u32 numItems)
-        : TypeDescriptor{&TypeKey_FixedArray, itemType->fixedSize * numItems,
+        : TypeDescriptor{&TypeKey_FixedArray, itemType->fixedSize * numItems, itemType->alignment,
                          getNativeBindings_FixedArray() PLY_METHOD_TABLES_ONLY(, {})},
           itemType{itemType}, numItems{numItems}, stride{itemType->fixedSize} {
     }
     PLY_INLINE TypeDescriptor_FixedArray(TypeDescriptor* itemType, u32 numItems, u32 stride)
-        : TypeDescriptor{&TypeKey_FixedArray, stride * numItems,
+        : TypeDescriptor{&TypeKey_FixedArray, stride * numItems, itemType->alignment,
                          getNativeBindings_FixedArray() PLY_METHOD_TABLES_ONLY(, {})},
           itemType{itemType}, numItems{numItems}, stride{stride} {
         PLY_ASSERT(stride >= itemType->fixedSize);

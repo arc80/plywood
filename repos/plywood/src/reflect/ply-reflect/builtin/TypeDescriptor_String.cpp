@@ -10,7 +10,7 @@ namespace ply {
 
 PLY_DEFINE_TYPE_DESCRIPTOR(String) {
     static TypeDescriptor typeDesc{
-        &TypeKey_String, sizeof(String), NativeBindings::make<String>(), {}};
+        &TypeKey_String, (String*) nullptr, NativeBindings::make<String>(), {}};
     return &typeDesc;
 }
 

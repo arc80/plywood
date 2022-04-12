@@ -50,7 +50,7 @@ struct BoolMethodTable {
 #endif // PLY_WITH_METHOD_TABLES
 
 PLY_DEFINE_TYPE_DESCRIPTOR(bool) {
-    static TypeDescriptor typeDesc{&TypeKey_Bool, sizeof(bool),
+    static TypeDescriptor typeDesc{&TypeKey_Bool, (bool*) nullptr,
                                    NativeBindings::make<bool>()
                                        PLY_METHOD_TABLES_ONLY(, BoolMethodTable::make())};
     return &typeDesc;
