@@ -29,6 +29,9 @@ String ExpandedToken::desc() const {
         case TokenType::EndOfFile: {
             return "end-of-file";
         }
+        case TokenType::NewLine: {
+            return "end-of-line";
+        }
         default: {
             return String::format("'{}'", this->text);
         }
@@ -113,9 +116,10 @@ ExpandedToken Tokenizer::expandToken(u32 tokenIdx) {
 PLY_NO_INLINE void skipLineComment(Tokenizer* tkr) {
     tkr->vin.next();
     while (!tkr->vin.atEOF()) {
-        char c = tkr->vin.next();
+        char c = tkr->vin.peek();
         if (c == '\n')
             return; // End of line comment
+        tkr->vin.next();
     }
 }
 

@@ -11,12 +11,16 @@ namespace crowbar {
 
 enum class ErrorTokenAction { DoNothing, PushBack, HandleUnexpected };
 
-PLY_INLINE bool error(Parser* parser, const ExpandedToken& errorToken, ErrorTokenAction tokenAction,
-                      StringView message) {
+PLY_NO_INLINE String getLocation(Parser* parser, const ExpandedToken& token) {
+    FileLocation fileLoc = parser->tkr->fileLocationMap.getFileLocation(token.fileOffset);
+    return String::format("({}, {})", fileLoc.lineNumber, fileLoc.columnNumber);
+}
+
+PLY_NO_INLINE bool error(Parser* parser, const ExpandedToken& errorToken,
+                         ErrorTokenAction tokenAction, StringView message) {
     if (!parser->recovery.muteErrors) {
         MemOutStream msg;
-        FileLocation fileLoc = parser->tkr->fileLocationMap.getFileLocation(errorToken.fileOffset);
-        msg.format("({}, {}) error: {}\n", fileLoc.lineNumber, fileLoc.columnNumber, message);
+        msg.format("{} error: {}\n", getLocation(parser, errorToken), message);
         parser->hooks->onError(msg.moveToString());
     }
 
@@ -112,7 +116,7 @@ MethodTable::BinaryOp tokenToBinaryOp(TokenType tokenType) {
     }
 }
 
-Owned<Expression> Parser::parseExpression(bool required, u32 outerPrecendenceLevel) {
+Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
     Owned<Expression> expr;
 
     ExpandedToken token = this->tkr->readToken();
@@ -125,6 +129,22 @@ Owned<Expression> Parser::parseExpression(bool required, u32 outerPrecendenceLev
         case TokenType::NumericLiteral: {
             expr = Owned<crowbar::Expression>::create();
             expr->integerLiteral().switchTo()->value = token.text.to<u32>();
+            break;
+        }
+        case TokenType::OpenParen: {
+            PLY_SET_IN_SCOPE(this->recovery.outerAcceptFlags,
+                             this->recovery.outerAcceptFlags |
+                                 Parser::RecoveryState::AcceptCloseParen);
+            PLY_SET_IN_SCOPE(this->tkr->tokenizeNewLine, false);
+            expr = this->parseExpression();
+            ExpandedToken closingToken = this->tkr->readToken();
+            if (closingToken.type != TokenType::CloseParen) {
+                error(this, token, ErrorTokenAction::PushBack,
+                      String::format("expected ')' to match the '(' at {}; got {}",
+                                     getLocation(this, token), closingToken.desc()));
+                return {};
+            }
+            this->recovery.muteErrors = false;
             break;
         }
         default: {
@@ -153,7 +173,7 @@ Owned<Expression> Parser::parseExpression(bool required, u32 outerPrecendenceLev
                 return expr;
             }
 
-            Owned<Expression> rhs = this->parseExpression(true, opPrecedence);
+            Owned<Expression> rhs = this->parseExpression(opPrecedence);
             if (!rhs)
                 return expr; // an error occurred
 
@@ -204,7 +224,7 @@ Owned<Statement> Parser::parseStatement() {
         this->tkr->rewindTo(token.tokenIdx);
     }
 
-    Owned<Expression> expr = this->parseExpression(false);
+    Owned<Expression> expr = this->parseExpression();
     token = this->tkr->readToken();
     switch (token.type) {
         case TokenType::Equal: {

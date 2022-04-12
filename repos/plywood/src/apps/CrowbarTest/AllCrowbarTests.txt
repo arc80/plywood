@@ -219,3 +219,34 @@ result:
 (2, 5) error: expected an expression; got '/'
 (3, 11) error: expected an expression; got '$'
 
+------------------------------------------------------------
+fn test() {
+    print(1 + 2 * 3)
+    print((1 + 2) * 3)
+    print(1 + (2 * 3))
+    print(2 * (1 + ((5 + 4) / 3)))
+}
+
+result:
+7
+9
+7
+8
+
+------------------------------------------------------------
+fn foo() {
+    // Line breaks are significant outside parentheses, so this is an error:
+    return 1 +
+           2
+}
+
+result:
+(3, 15) error: expected an expression; got end-of-line
+
+------------------------------------------------------------
+fn foo() {
+    // Line breaks are ignored inside parentheses, so this is OK:
+    return (1 +
+            2)
+}
+

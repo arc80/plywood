@@ -36,8 +36,7 @@ struct Parser {
     };
     RecoveryState recovery;
 
-    Owned<Expression> parseExpression(bool required = true,
-                                      u32 outerPrecendenceLevel = Limits<u32>::Max);
+    Owned<Expression> parseExpression(u32 outerPrecendenceLevel = Limits<u32>::Max);
     Owned<Statement> parseStatement();
     Owned<StatementBlock> parseStatementBlock();
     Owned<StatementBlock> parseNestedBlock(StringView forStatementType);
