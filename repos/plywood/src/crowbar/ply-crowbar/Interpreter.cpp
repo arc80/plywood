@@ -15,6 +15,7 @@ enum class StepStatus {
 
 StepStatus stepBinaryOp(Interpreter* interp, Breadcrumb::DoBinaryOp* binaryOpCrumb);
 StepStatus stepCall(Interpreter* interp, Breadcrumb::DoCall* callCrumb);
+StepStatus stepString(Interpreter* interp, Breadcrumb::DoString* stringCrumb);
 
 void destroyStackFrame(Interpreter* interp, bool withReturn = false) {
     Interpreter::FunctionStackFrame& stackFrame = interp->stackFrames.back();
@@ -76,6 +77,12 @@ StepStatus startExpression(Interpreter* interp, const Expression* expr) {
         case Expression::ID::IntegerLiteral: {
             interp->returnValue = AnyObject::bind(&expr->integerLiteral()->value);
             return StepStatus::Continue;
+        }
+
+        case Expression::ID::InterpolatedString: {
+            auto stringCrumb = interp->stackFrames.back().location.append().doString().switchTo();
+            stringCrumb->string = expr->interpolatedString().get();
+            return stepString(interp, stringCrumb.get());
         }
 
         case Expression::ID::BinaryOp: {
@@ -194,6 +201,50 @@ StepStatus stepBinaryOp(Interpreter* interp, Breadcrumb::DoBinaryOp* binaryOpCru
                 interp->returnValue);
             PLY_ASSERT(interp->stackFrames.back().location.tail().doBinaryOp().get() ==
                        binaryOpCrumb);
+            return popTailLocation(interp);
+        }
+    }
+}
+
+void write(OutStream& outs, const AnyObject& arg) {
+    if (arg.is<u32>()) {
+        outs << *arg.cast<u32>();
+    } else if (arg.is<bool>()) {
+        outs << *arg.cast<bool>();
+    } else if (arg.is<String>()) {
+        outs << *arg.cast<String>();
+    } else {
+        PLY_ASSERT(0);
+    }
+}
+
+StepStatus stepString(Interpreter* interp, Breadcrumb::DoString* stringCrumb) {
+    const Expression::InterpolatedString* stringExp = stringCrumb->string;
+    for (;;) {
+        u32 s = stringCrumb->stage++;
+
+        u32 argIndex = (s >> 1);
+        bool starting = ((s & 1) == 0);
+        if (argIndex < stringExp->pieces.numItems()) {
+            const auto& piece = stringExp->pieces[argIndex];
+            if (starting) {
+                stringCrumb->mout << piece.literal;
+                if (piece.embed) {
+                    if (startExpression(interp, piece.embed) == StepStatus::Completed)
+                        return StepStatus::Completed;
+                }
+            } else {
+                if (piece.embed) {
+                    write(stringCrumb->mout, interp->returnValue);
+                    interp->returnValue = {};
+                }
+            }
+        } else {
+            AnyObject* stringObj =
+                interp->localVariableStorage.appendObject(getTypeDescriptor<String>());
+            *stringObj->cast<String>() = stringCrumb->mout.moveToString();
+            interp->returnValue = *stringObj;
+            PLY_ASSERT(interp->stackFrames.back().location.tail().doString().get() == stringCrumb);
             return popTailLocation(interp);
         }
     }

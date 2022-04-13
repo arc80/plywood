@@ -54,11 +54,10 @@ PLY_NO_INLINE u32 tokenTypeToAcceptCloseFlag(TokenType tokenType) {
     return 0;
 }
 
-bool skipAnyScope(Parser* parser, ExpandedToken* outCloseToken, const ExpandedToken& openToken) {
+bool skipAnyScope(Parser* parser, ExpandedToken* outCloseToken, TokenType openTokenType) {
     PLY_SET_IN_SCOPE(parser->recovery.outerAcceptFlags,
-                     parser->recovery.outerAcceptFlags |
-                         tokenTypeToAcceptCloseFlag(openToken.type));
-    TokenType closePunc = (TokenType)((u32) openToken.type + 1);
+                     parser->recovery.outerAcceptFlags | tokenTypeToAcceptCloseFlag(openTokenType));
+    TokenType closePunc = (TokenType)((u32) openTokenType + 1);
     for (;;) {
         ExpandedToken token = parser->tkr->readToken();
         if (token.type == closePunc) {
@@ -77,7 +76,7 @@ bool skipAnyScope(Parser* parser, ExpandedToken* outCloseToken, const ExpandedTo
             case TokenType::OpenCurly:
             case TokenType::OpenParen:
             case TokenType::OpenSquare: {
-                skipAnyScope(parser, nullptr, token);
+                skipAnyScope(parser, nullptr, token.type);
                 break;
             }
             default: {
@@ -101,7 +100,7 @@ PLY_NO_INLINE bool handleUnexpectedToken(Parser* parser, ExpandedToken* outClose
         case TokenType::OpenCurly:
         case TokenType::OpenParen:
         case TokenType::OpenSquare: {
-            skipAnyScope(parser, outCloseToken, unexpected);
+            skipAnyScope(parser, outCloseToken, unexpected.type);
             // Ignore the return value of skipAnyScope. If it's false, that means some token
             // canceled the inner scope and was pushed back. We want the caller to read that token
             // next.

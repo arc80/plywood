@@ -19,7 +19,10 @@ enum class TokenType {
 
     Identifier,
     NumericLiteral,
+    BeginString,
     StringLiteral,
+    BeginStringEmbed, // Closed by CloseCurly
+    EndString,
 
     OpenCurly,
     CloseCurly,
@@ -102,8 +105,12 @@ struct Tokenizer {
     // InternedStrings lets us compare identifiers just by comparing their 32-bit keys.
     InternedStrings* internedStrings = nullptr;
 
-    // tokenizeNewLine can be changed on the fly.
-    bool tokenizeNewLine = false;
+    // Behavior that can be changed on the fly by the parser.
+    struct Behavior {
+        bool tokenizeNewLine = false;
+        bool insideString = false;
+    };
+    Behavior behavior;
 
     Tokenizer();
     void setSourceInput(StringView src);

@@ -266,3 +266,37 @@ fn foo() {
 result:
 (2, 15) error: expected ')' to match the '(' at (2, 12); got '2'
 
+------------------------------------------------------------
+fn test() {
+    print("Hello world!")
+}
+
+result:
+Hello world!
+
+------------------------------------------------------------
+fn test() {
+    left = "Yeah, well, that's just, like, "
+    right = "your opinion, man."
+    print(left + right)
+    print("/" * 20)
+}
+
+result:
+Yeah, well, that's just, like, your opinion, man.
+////////////////////
+
+------------------------------------------------------------
+fn test() {
+    color = "red"
+    print("Roses are ${color}.")
+
+    action = "evaluate"
+    kind = "complex"
+    print("You can ${action + " ${kind} expressions"} inside string literals.")
+}
+
+result:
+Roses are red.
+You can evaluate complex expressions inside string literals.
+

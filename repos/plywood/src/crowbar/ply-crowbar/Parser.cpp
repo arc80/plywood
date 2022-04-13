@@ -53,7 +53,7 @@ u32 BinaryOpPrecedence[] = {
 Owned<Expression> parseArgumentList(Parser* parser, Owned<Expression>&& callable) {
     PLY_SET_IN_SCOPE(parser->recovery.outerAcceptFlags,
                      parser->recovery.outerAcceptFlags | Parser::RecoveryState::AcceptCloseParen);
-    PLY_SET_IN_SCOPE(parser->tkr->tokenizeNewLine, false);
+    PLY_SET_IN_SCOPE(parser->tkr->behavior.tokenizeNewLine, false);
     auto callExpr = Owned<Expression>::create();
     auto call = callExpr->call().switchTo();
     call->callable = std::move(callable);
@@ -116,6 +116,46 @@ MethodTable::BinaryOp tokenToBinaryOp(TokenType tokenType) {
     }
 }
 
+Owned<Expression> parseInterpolatedString(Parser* parser) {
+    auto expr = Owned<crowbar::Expression>::create();
+    auto& pieces = expr->interpolatedString().switchTo()->pieces;
+
+    PLY_SET_IN_SCOPE(parser->tkr->behavior.insideString, true);
+    for (;;) {
+        ExpandedToken token = parser->tkr->readToken();
+        switch (token.type) {
+            case TokenType::StringLiteral: {
+                pieces.append(token.text);
+                break;
+            }
+            case TokenType::BeginStringEmbed: {
+                PLY_SET_IN_SCOPE(parser->recovery.outerAcceptFlags,
+                                 parser->recovery.outerAcceptFlags |
+                                     Parser::RecoveryState::AcceptCloseCurly);
+                PLY_SET_IN_SCOPE(parser->tkr->behavior.insideString, false);
+                PLY_SET_IN_SCOPE(parser->tkr->behavior.tokenizeNewLine, false);
+                pieces.back().embed = parser->parseExpression();
+                ExpandedToken closeToken = parser->tkr->readToken();
+                if (closeToken.type != TokenType::CloseCurly) {
+                    error(parser, closeToken, ErrorTokenAction::HandleUnexpected,
+                          String::format("expected '}' to close embedded expression at {}; got {}",
+                                         getLocation(parser, token), closeToken.desc()));
+                    skipAnyScope(parser, nullptr, TokenType::OpenCurly);
+                }
+                parser->recovery.muteErrors = false; // embed is now closed
+                break;
+            }
+            case TokenType::EndString: {
+                return expr;
+            }
+            default: {
+                PLY_ASSERT(0); // Shouldn't get here
+                break;
+            }
+        }
+    }
+}
+
 Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
     Owned<Expression> expr;
 
@@ -131,11 +171,15 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
             expr->integerLiteral().switchTo()->value = token.text.to<u32>();
             break;
         }
+        case TokenType::BeginString: {
+            expr = parseInterpolatedString(this);
+            break;
+        }
         case TokenType::OpenParen: {
             PLY_SET_IN_SCOPE(this->recovery.outerAcceptFlags,
                              this->recovery.outerAcceptFlags |
                                  Parser::RecoveryState::AcceptCloseParen);
-            PLY_SET_IN_SCOPE(this->tkr->tokenizeNewLine, false);
+            PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
             expr = this->parseExpression();
             ExpandedToken closingToken = this->tkr->readToken();
             if (closingToken.type != TokenType::CloseParen) {
@@ -244,7 +288,7 @@ Owned<Statement> Parser::parseStatement() {
 }
 
 Owned<StatementBlock> Parser::parseStatementBlock() {
-    PLY_SET_IN_SCOPE(this->tkr->tokenizeNewLine, true);
+    PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, true);
     auto block = Owned<StatementBlock>::create();
 
     for (;;) {
@@ -273,7 +317,7 @@ recover:
 }
 
 Owned<StatementBlock> Parser::parseNestedBlock(StringView forStatementType) {
-    PLY_SET_IN_SCOPE(this->tkr->tokenizeNewLine, false);
+    PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
     ExpandedToken token = this->tkr->readToken();
     if (token.type == TokenType::OpenCurly) {
         Owned<StatementBlock> block = this->parseStatementBlock();
@@ -336,7 +380,7 @@ void parseParameterList(Parser* parser, FunctionDefinition* functionDef) {
 
 Owned<FunctionDefinition> parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken) {
     auto functionDef = Owned<FunctionDefinition>::create();
-    PLY_SET_IN_SCOPE(parser->tkr->tokenizeNewLine, false);
+    PLY_SET_IN_SCOPE(parser->tkr->behavior.tokenizeNewLine, false);
 
     // We got the 'fn' keyword.
     parser->recovery.muteErrors = false;

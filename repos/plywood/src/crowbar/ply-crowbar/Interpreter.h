@@ -48,6 +48,11 @@ struct Breadcrumb {
         AnyObject callee;
         Array<AnyObject*> args;
     };
+    struct DoString {
+        const Expression::InterpolatedString* string = nullptr;
+        u32 stage = 0;
+        MemOutStream mout;
+    };
     struct DoReturn {
         const Statement::Return_* return_ = nullptr;
     };

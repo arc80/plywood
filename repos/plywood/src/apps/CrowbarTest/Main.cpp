@@ -16,6 +16,8 @@ AnyObject doPrint(ObjectStack* stack, const AnyObject& arg) {
         *doPrintTarget << *arg.cast<u32>() << '\n';
     } else if (arg.is<bool>()) {
         *doPrintTarget << *arg.cast<bool>() << '\n';
+    } else if (arg.is<String>()) {
+        *doPrintTarget << *arg.cast<String>() << '\n';
     }
     return {};
 }

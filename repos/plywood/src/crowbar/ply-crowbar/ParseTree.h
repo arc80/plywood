@@ -25,6 +25,13 @@ struct Expression {
     struct IntegerLiteral {
         u32 value;
     };
+    struct InterpolatedString {
+        struct Piece {
+            StringView literal; // Uses InternedString storage
+            Owned<Expression> embed;
+        };
+        Array<Piece> pieces;
+    };
     struct PropertyLookup {
         Owned<Expression> obj;
         u32 propertyName; // Interned string.

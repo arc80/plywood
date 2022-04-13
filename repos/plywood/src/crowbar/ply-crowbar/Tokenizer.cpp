@@ -19,8 +19,43 @@ PLY_NO_INLINE void Tokenizer::setSourceInput(StringView src) {
 }
 
 StringView tokenRepr[] = {
-    "",  "",  "",   "",  "",   "",  "",   "",   "{", "}", "(", ")", "[", "]", ":",  ";", ".",
-    ",", "=", "/=", "<", "<=", ">", ">=", "==", "+", "-", "*", "/", "%", "|", "||", "&", "&&",
+    "",   // Invalid
+    "",   // EndOfFile
+    "",   // NewLine
+    "",   // LineComment
+    "",   // CStyleComment
+    "",   // Identifier
+    "",   // NumericLiteral
+    "",   // BeginString
+    "",   // StringLiteral
+    "",   // BeginStringEmbed
+    "",   // EndString
+    "{",  // OpenCurly
+    "}",  // CloseCurly
+    "(",  // OpenParen
+    ")",  // CloseParen
+    "[",  // OpenSquare
+    "]",  // CloseSquare
+    ":",  // Colon
+    ";",  // Semicolon
+    ".",  // Dot
+    ",",  // Comma
+    "=",  // Equal
+    "/=", // SlashEqual
+    "<",  // LessThan
+    "<=", // LessThanOrEqual
+    ">",  // GreaterThan
+    ">=", // GreaterThanOrEqual
+    "==", // DoubleEqual
+    "+",  // Plus
+    "-",  // Minus
+    "*",  // Asterisk
+    "/",  // Slash
+    "%",  // Percent
+    "|",  // VerticalBar
+    "||", // DoubleVerticalBar
+    "&",  // Ampersand
+    "&&", // DoubleAmpersand
 };
 PLY_STATIC_ASSERT(PLY_STATIC_ARRAY_SIZE(tokenRepr) == (u32) TokenType::Count);
 
@@ -176,24 +211,47 @@ PLY_NO_INLINE void readNumeric(ExpandedToken& expToken, Tokenizer* tkr) {
     expToken.text = text;
 }
 
-PLY_NO_INLINE void readStringLiteral(ExpandedToken& expToken, Tokenizer* tkr) {
+PLY_NO_INLINE void readString(ExpandedToken& expToken, Tokenizer* tkr) {
     MemOutStream mout;
     for (;;) {
         if (tkr->vin.atEOF())
             goto eofError;
-        char c = tkr->vin.next();
+        char c = tkr->vin.peek();
         if (c == '\\') {
+            tkr->vin.next();
             if (tkr->vin.atEOF())
                 goto eofError;
-            tkr->vin.next();
+            mout << tkr->vin.next();
         } else if (c == '"') {
-            goto gotToken;
+            if (mout.getSeekPos() == 0) {
+                tkr->vin.next();
+                expToken.type = TokenType::EndString;
+                return;
+            }
+            goto gotStringLiteral;
+        } else if (c == '$') {
+            tkr->vin.next();
+            if (!tkr->vin.atEOF()) {
+                c = tkr->vin.peek();
+                if (c == '{') {
+                    if (mout.getSeekPos() == 0) {
+                        expToken.type = TokenType::BeginStringEmbed;
+                        tkr->vin.next();
+                        return;
+                    }
+                    tkr->vin.cur--; // rewind to start of '${'
+                    goto gotStringLiteral;
+                }
+            }
+            mout << '$';
+        } else {
+            mout << c;
+            tkr->vin.next();
         }
-        mout << c;
     }
 eofError:
     PLY_ASSERT(0);
-gotToken:
+gotStringLiteral:
     String text = mout.moveToString();
     expToken.type = TokenType::StringLiteral;
     expToken.stringKey = tkr->internedStrings->findOrInsertKey(text);
@@ -205,7 +263,7 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
     while (this->nextTokenIdx < this->tokenData.numItems()) {
         u32 offset = expandTokenInternal(expToken, this, this->nextTokenIdx);
         this->nextTokenIdx += offset;
-        if (!(expToken.type == TokenType::NewLine && !this->tokenizeNewLine))
+        if (!(expToken.type == TokenType::NewLine && !this->behavior.tokenizeNewLine))
             return expToken;
     }
 
@@ -219,6 +277,11 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
 
         expToken.fileOffset = safeDemote<u32>(this->vin.cur - this->vin.start);
         expToken.tokenIdx = safeDemote<u32>(this->tokenData.numItems());
+        if (this->behavior.insideString) {
+            readString(expToken, this);
+            return expToken;
+        }
+
         char c = this->vin.peek();
         if (c < 0 || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
             readIdentifier(expToken, this);
@@ -232,7 +295,7 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
         switch (c) {
             // newline
             case '\n': {
-                if (this->tokenizeNewLine) {
+                if (this->behavior.tokenizeNewLine) {
                     expToken.type = TokenType::NewLine;
                     goto result;
                 }
@@ -258,7 +321,7 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
             }
 
             case '"': {
-                readStringLiteral(expToken, this);
+                expToken.type = TokenType::BeginString;
                 goto result;
             }
 

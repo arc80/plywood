@@ -43,6 +43,7 @@ struct Parser {
     Owned<File> parseFile();
 };
 
+bool skipAnyScope(Parser* parser, ExpandedToken* outCloseToken, TokenType openTokenType);
 bool handleUnexpectedToken(Parser* parser, ExpandedToken* outCloseToken,
                            const ExpandedToken& unexpected);
 

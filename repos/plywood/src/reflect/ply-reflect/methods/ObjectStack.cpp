@@ -10,7 +10,9 @@ namespace ply {
 
 AnyObject* ObjectStack::appendObject(TypeDescriptor* type) {
     void* data = this->storage.appendBytes(type->fixedSize);
-    return &this->items.append(data, type);
+    AnyObject* obj = &this->items.append(data, type);
+    obj->construct();
+    return obj;
 }
 
 void ObjectStack::popLastObject() {
