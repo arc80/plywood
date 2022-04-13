@@ -139,7 +139,7 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
             expr = this->parseExpression();
             ExpandedToken closingToken = this->tkr->readToken();
             if (closingToken.type != TokenType::CloseParen) {
-                error(this, token, ErrorTokenAction::PushBack,
+                error(this, closingToken, ErrorTokenAction::PushBack,
                       String::format("expected ')' to match the '(' at {}; got {}",
                                      getLocation(this, token), closingToken.desc()));
                 return {};

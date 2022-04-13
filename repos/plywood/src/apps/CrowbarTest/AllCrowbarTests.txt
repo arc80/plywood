@@ -250,3 +250,19 @@ fn foo() {
             2)
 }
 
+------------------------------------------------------------
+fn foo() {
+    return (1 +
+}
+
+result:
+(3, 1) error: expected an expression; got '}'
+
+------------------------------------------------------------
+fn foo() {
+    return (1 2)
+}
+
+result:
+(2, 15) error: expected ')' to match the '(' at (2, 12); got '2'
+
