@@ -300,3 +300,15 @@ result:
 Roses are red.
 You can evaluate complex expressions inside string literals.
 
+------------------------------------------------------------
+fn somefunc() {
+    return 42
+}
+
+fn test() {
+    print("The answer is ${somefunc()}.")
+}
+
+result:
+The answer is 42.
+

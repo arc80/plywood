@@ -456,6 +456,10 @@ void Interpreter::step() {
             stepCall(this, crumb->doCall().get());
             return;
         }
+        case Breadcrumb::ID::DoString: {
+            stepString(this, crumb->doString().get());
+            return;
+        }
         case Breadcrumb::ID::DoReturn: {
             stepReturn(this, crumb->doReturn().get());
             return;
