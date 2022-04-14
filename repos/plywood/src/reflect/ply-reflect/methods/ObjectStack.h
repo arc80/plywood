@@ -18,6 +18,10 @@ struct ObjectStack {
     struct Boundary {
         BlockList::WeakRef storage;
         WeakSequenceRef<AnyObject> item;
+
+        PLY_INLINE bool operator!=(const Boundary& other) const {
+            return this->item != other.item;
+        }
     };
 
     BlockList storage;

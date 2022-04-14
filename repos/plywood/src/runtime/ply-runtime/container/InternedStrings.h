@@ -30,6 +30,7 @@ private:
 public:
     InternedStrings();
     u32 findOrInsertKey(StringView view);
+    u32 findKey(StringView view) const;
     StringView view(u32 key) const;
 };
 

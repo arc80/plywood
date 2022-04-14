@@ -27,6 +27,13 @@ PLY_NO_INLINE u32 InternedStrings::findOrInsertKey(StringView view) {
     return resultID;
 }
 
+PLY_NO_INLINE u32 InternedStrings::findKey(StringView view) const {
+    auto cursor = this->strToIndex.find(view, &this->bigPool);
+    if (cursor.wasFound())
+        return *cursor;
+    return 0;    
+}
+
 PLY_NO_INLINE StringView InternedStrings::view(u32 key) const {
     const char* ptr = this->bigPool.get(key);
     u32 numBytes = details::InternedStringEncoder::decodeValue(ptr);

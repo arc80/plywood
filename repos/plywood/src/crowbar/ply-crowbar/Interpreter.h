@@ -23,70 +23,19 @@ struct VariableMapTraits {
     }
 };
 
-struct Breadcrumb {
-    // ply make switch
-    struct DoBlock {
-        const StatementBlock* block = nullptr;
-        u32 stage = 0;
-    };
-    struct DoEval {
-        const Statement::Evaluate* eval = nullptr;
-    };
-    struct DoAssign {
-        const Statement::Assignment* assign = nullptr;
-        u32 stage = 0;
-        AnyObject left; // blank if assigning to local variable
-    };
-    struct DoBinaryOp {
-        const Expression::BinaryOp* binaryOp = nullptr;
-        u32 stage = 0;
-        AnyObject left;
-    };
-    struct DoCall {
-        const Expression::Call* call = nullptr;
-        u32 stage = 0;
-        AnyObject callee;
-        Array<AnyObject*> args;
-    };
-    struct DoString {
-        const Expression::InterpolatedString* string = nullptr;
-        u32 stage = 0;
-        MemOutStream mout;
-    };
-    struct DoReturn {
-        const Statement::Return_* return_ = nullptr;
-    };
-    struct DoIf {
-        const Statement::If_* if_ = nullptr;
-        u32 stage = 0;
-    };
-    struct DoWhile {
-        const Statement::While_* while_ = nullptr;
-        u32 stage = 0;
-    };
-#include "codegen/switch-ply-crowbar-Breadcrumb.inl" //@@ply
-};
-
 struct Interpreter {
-    struct FunctionStackFrame {
-        Sequence<Breadcrumb> location;
+    struct StackFrame {
+        Interpreter* interp = nullptr;
         HashMap<VariableMapTraits> localVariableTable;
-        ObjectStack::Boundary endOfPreviousFrameStorage;
-        ObjectStack::Boundary localVariableStorageBoundary;
     };
 
     const InternedStrings* internedStrings = nullptr;
     ObjectStack localVariableStorage;
-    Array<FunctionStackFrame> stackFrames;
     AnyObject returnValue;
     Array<HashMap<VariableMapTraits>*> outerNameSpaces;
-
-    Interpreter();
-    void startStackFrame(const StatementBlock* block,
-                         HashMap<VariableMapTraits>* localVariableTable = nullptr);
-    void step();
-    void finish();
 };
+
+void execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
 
 } // namespace crowbar
 } // namespace ply

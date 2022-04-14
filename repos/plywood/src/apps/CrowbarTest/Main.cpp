@@ -79,8 +79,10 @@ String runTestCase(StringView src) {
         }
 
         // Invoke "test" function if it exists
-        auto testFuncCursor = ns.find(internedStrings.findOrInsertKey("test"));
+        auto testFuncCursor = ns.find(internedStrings.findKey("test"));
         if (testFuncCursor.wasFound()) {
+            const AnyObject& testObj = testFuncCursor->obj;
+
             MemOutStream outs;
             doPrintTarget = &outs;
             ns.insertOrFind(internedStrings.findOrInsertKey("print"))->obj =
@@ -93,9 +95,9 @@ String runTestCase(StringView src) {
             interp.outerNameSpaces.append(&ns);
 
             // Invoke function
-            const AnyObject& testObj = testFuncCursor->obj;
-            interp.startStackFrame(testObj.cast<FunctionDefinition>()->body);
-            interp.finish();
+            Interpreter::StackFrame frame;
+            frame.interp = &interp;
+            execFunction(&frame, testObj.cast<FunctionDefinition>()->body);
 
             output = outs.moveToString();
         }
