@@ -276,14 +276,14 @@ Hello world!
 
 ------------------------------------------------------------
 fn test() {
-    left = "Yeah, well, that's just, like, "
-    right = "your opinion, man."
+    left = "Yeah, well, you know, that's just, "
+    right = "like, your opinion, man."
     print(left + right)
     print("/" * 20)
 }
 
 result:
-Yeah, well, that's just, like, your opinion, man.
+Yeah, well, you know, that's just, like, your opinion, man.
 ////////////////////
 
 ------------------------------------------------------------
@@ -311,4 +311,31 @@ fn test() {
 
 result:
 The answer is 42.
+
+------------------------------------------------------------
+fn foo() {
+    return "a"
+}
+
+fn test() {
+    print(foo())
+}
+
+result:
+a
+
+------------------------------------------------------------
+fn somefunc(x) {
+    if (x > 3)
+        return "go"
+    else
+        return "${x} ${somefunc(x + 1)}"
+}
+
+fn test() {
+    print(somefunc(1))
+}
+
+result:
+1 2 3 go
 

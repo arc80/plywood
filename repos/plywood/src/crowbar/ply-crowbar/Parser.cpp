@@ -134,6 +134,9 @@ Owned<Expression> parseInterpolatedString(Parser* parser) {
                                      Parser::RecoveryState::AcceptCloseCurly);
                 PLY_SET_IN_SCOPE(parser->tkr->behavior.insideString, false);
                 PLY_SET_IN_SCOPE(parser->tkr->behavior.tokenizeNewLine, false);
+                if (pieces.isEmpty() || pieces.back().embed) {
+                    pieces.append();
+                }
                 pieces.back().embed = parser->parseExpression();
                 ExpandedToken closeToken = parser->tkr->readToken();
                 if (closeToken.type != TokenType::CloseCurly) {

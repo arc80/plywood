@@ -22,7 +22,7 @@ void destroyStackFrame(Interpreter* interp, bool withReturn = false) {
     WeakSequenceRef<AnyObject> deleteTo = interp->localVariableStorage.items.end();
     bool fixupReturnValue = withReturn && (PLY_PTR_OFFSET(interp->returnValue.data,
                                                           interp->returnValue.type->fixedSize) ==
-                                           interp->localVariableStorage.items.end().byte());
+                                           interp->localVariableStorage.storage.end().byte);
     if (fixupReturnValue) {
         PLY_ASSERT(interp->localVariableStorage.items.tail() == interp->returnValue);
         --deleteTo;
