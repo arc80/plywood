@@ -9,4 +9,5 @@ void module_CrowbarTest(ModuleArgs* args) {
     args->buildTarget->targetType = BuildTargetType::EXE;
     args->addSourceFiles(".", false);
     args->addTarget(Visibility::Private, "crowbar");
+    args->addTarget(Visibility::Private, "test");
 }

@@ -8,6 +8,20 @@
 
 namespace ply {
 
+#if PLY_WITH_METHOD_TABLES
+
+PLY_NO_INLINE MethodTable getMethodTable_Struct() {
+    MethodTable methods;
+    methods.propertyLookup = [](ObjectStack* stack, const AnyObject& obj, StringView propertyName) {
+        const TypeDescriptor_Struct* structType = obj.type->cast<TypeDescriptor_Struct>();
+        const TypeDescriptor_Struct::Member* member = structType->findMember(propertyName);
+        return AnyObject{PLY_PTR_OFFSET(obj.data, member->offset), member->type};
+    };
+    return methods;
+}
+
+#endif // PLY_WITH_METHOD_TABLES
+
 NativeBindings& getNativeBindings_SynthesizedStruct() {
     static NativeBindings bindings{
         // create

@@ -11,6 +11,7 @@ namespace ply {
 PLY_DLL_ENTRY extern TypeKey TypeKey_Struct;
 
 PLY_DLL_ENTRY NativeBindings& getNativeBindings_SynthesizedStruct();
+PLY_DLL_ENTRY MethodTable getMethodTable_Struct();
 
 struct TypeDescriptor_Struct : TypeDescriptor {
     PLY_DLL_ENTRY static TypeKey* typeKey;
@@ -40,7 +41,7 @@ struct TypeDescriptor_Struct : TypeDescriptor {
     // Constructor for synthesized TypeDescriptor_Struct:
     PLY_INLINE TypeDescriptor_Struct(u32 fixedSize, u32 alignment, StringView name)
         : TypeDescriptor{&TypeKey_Struct, fixedSize, alignment,
-                         getNativeBindings_SynthesizedStruct() PLY_METHOD_TABLES_ONLY(, {})},
+                         getNativeBindings_SynthesizedStruct() PLY_METHOD_TABLES_ONLY(, getMethodTable_Struct())},
           name{name} {
     }
     // Constructor for TypeDescriptor_Struct of an existing C++ class:
@@ -48,7 +49,7 @@ struct TypeDescriptor_Struct : TypeDescriptor {
     PLY_INLINE TypeDescriptor_Struct(T* typedArg, StringView name,
                                      std::initializer_list<Member> members = {})
         : TypeDescriptor{&TypeKey_Struct, typedArg,
-                         NativeBindings::make<T>() PLY_METHOD_TABLES_ONLY(, {})},
+                         NativeBindings::make<T>() PLY_METHOD_TABLES_ONLY(, getMethodTable_Struct())},
           name{name}, members{members} {
         onPostSerialize = [](void* data) { invokePostSerialize((T*) data); };
     }

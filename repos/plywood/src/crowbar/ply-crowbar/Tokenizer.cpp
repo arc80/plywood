@@ -373,6 +373,11 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
                 goto result;
             }
 
+            case '.': {
+                expToken.type = TokenType::Dot;
+                goto result;
+            }
+
             case ',': {
                 expToken.type = TokenType::Comma;
                 goto result;

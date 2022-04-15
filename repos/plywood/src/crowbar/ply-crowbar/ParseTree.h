@@ -20,10 +20,10 @@ struct FunctionDefinition {
 struct Expression {
     // ply make switch
     struct NameLookup {
-        u32 name; // Interned string.
+        u32 name = 0; // Interned string.
     };
     struct IntegerLiteral {
-        u32 value;
+        u32 value = 0;
     };
     struct InterpolatedString {
         struct Piece {
@@ -34,7 +34,7 @@ struct Expression {
     };
     struct PropertyLookup {
         Owned<Expression> obj;
-        u32 propertyName; // Interned string.
+        u32 propertyName = 0; // Interned string.
     };
     struct BinaryOp {
         MethodTable::BinaryOp op;

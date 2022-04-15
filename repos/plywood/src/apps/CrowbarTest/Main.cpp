@@ -5,6 +5,7 @@
 #include <ply-crowbar/Parser.h>
 #include <ply-crowbar/Interpreter.h>
 #include <ply-runtime/algorithm/Find.h>
+#include <ply-test/TestSuite.h>
 
 using namespace ply;
 using namespace ply::crowbar;
@@ -18,6 +19,8 @@ AnyObject doPrint(ObjectStack* stack, const AnyObject& arg) {
         *doPrintTarget << *arg.cast<bool>() << '\n';
     } else if (arg.is<String>()) {
         *doPrintTarget << *arg.cast<String>() << '\n';
+    } else {
+        PLY_ASSERT(0);
     }
     return {};
 }
@@ -33,76 +36,108 @@ void addBuiltIns(InternedStrings& internedStrings, HashMap<VariableMapTraits>& n
     ns.insertOrFind(internedStrings.findOrInsertKey("false"))->obj = AnyObject::bind(&false_);
 }
 
-String runTestCase(StringView src) {
-    // Create tokenizer
+String callScriptFunction(StringView src, StringView funcName, ArrayView<const AnyObject> args) {
+    // Create tokenizer and parser.
     Tokenizer tkr;
     InternedStrings internedStrings;
     tkr.internedStrings = &internedStrings;
     tkr.setSourceInput(src);
-
-    // Create parser
     Parser parser;
     parser.tkr = &tkr;
 
-    // Implement hooks
-    MemOutStream errorOut;
+    // Implement hooks.
     struct Hooks : Parser::Hooks {
-        MemOutStream& errorOut;
+        MemOutStream errorOut;
         u32 errorCount = 0;
         virtual void onError(StringView errorMsg) override {
             this->errorOut << errorMsg;
             this->errorCount++;
         }
-        Hooks(MemOutStream& errorOut) : errorOut{errorOut} {
-        }
     };
-    Hooks hooks{errorOut};
+    Hooks hooks;
     parser.hooks = &hooks;
 
-    // Parse the expression
+    // Parse the script.
     Owned<File> file = parser.parseFile();
+    if (hooks.errorCount > 0)
+        return hooks.errorOut.moveToString();
 
-    String output;
-    if (hooks.errorCount > 0) {
-        output = errorOut.moveToString();
-    } else {
-        // Create built-in namespace
-        HashMap<VariableMapTraits> builtIns;
-        addBuiltIns(internedStrings, builtIns);
+    // Create built-in namespace
+    HashMap<VariableMapTraits> builtIns;
+    addBuiltIns(internedStrings, builtIns);
 
-        // Put functions in a namespace
-        Sequence<AnyObject> fnObjs;
-        HashMap<VariableMapTraits> ns;
-        for (const FunctionDefinition* fnDef : file->functions) {
-            const AnyObject& fnObj = fnObjs.append(AnyObject::bind(fnDef));
-            ns.insertOrFind(fnDef->name)->obj = fnObj;
-        }
-
-        // Invoke "test" function if it exists
-        auto testFuncCursor = ns.find(internedStrings.findKey("test"));
-        if (testFuncCursor.wasFound()) {
-            const AnyObject& testObj = testFuncCursor->obj;
-
-            MemOutStream outs;
-            doPrintTarget = &outs;
-            ns.insertOrFind(internedStrings.findOrInsertKey("print"))->obj =
-                AnyObject::bind(doPrint);
-
-            // Create interpreter
-            Interpreter interp;
-            interp.internedStrings = &internedStrings;
-            interp.outerNameSpaces.append(&builtIns);
-            interp.outerNameSpaces.append(&ns);
-
-            // Invoke function
-            Interpreter::StackFrame frame;
-            frame.interp = &interp;
-            execFunction(&frame, testObj.cast<FunctionDefinition>()->body);
-
-            output = outs.moveToString();
-        }
+    // Put functions in a namespace
+    Sequence<AnyObject> fnObjs;
+    HashMap<VariableMapTraits> ns;
+    for (const FunctionDefinition* fnDef : file->functions) {
+        const AnyObject& fnObj = fnObjs.append(AnyObject::bind(fnDef));
+        ns.insertOrFind(fnDef->name)->obj = fnObj;
     }
-    return output;
+
+    // Invoke function if it exists
+    auto testFuncCursor = ns.find(internedStrings.findKey(funcName));
+    if (testFuncCursor.wasFound()) {
+        const AnyObject& testObj = testFuncCursor->obj;
+
+        MemOutStream outs;
+        doPrintTarget = &outs;
+        ns.insertOrFind(internedStrings.findOrInsertKey("print"))->obj = AnyObject::bind(doPrint);
+
+        // Create interpreter
+        Interpreter interp;
+        interp.internedStrings = &internedStrings;
+        interp.outerNameSpaces.append(&builtIns);
+        interp.outerNameSpaces.append(&ns);
+
+        // Invoke function
+        Interpreter::StackFrame frame;
+        frame.interp = &interp;
+        const FunctionDefinition* fnDef = testObj.cast<FunctionDefinition>();
+        PLY_ASSERT(fnDef->parameterNames.numItems() == args.numItems);
+        for (u32 i = 0; i < args.numItems; i++) {
+            frame.localVariableTable.insertOrFind(fnDef->parameterNames[i])->obj = args[i];
+        }
+        execFunction(&frame, fnDef->body);
+
+        return outs.moveToString();
+    }
+
+    return {};
+}
+
+#define PLY_TEST_CASE_PREFIX Crowbar_
+
+// Runtime reflection lets us access struct members from script.
+struct TestStruct {
+    PLY_REFLECT()
+    String name;
+    u32 value = 0;
+    // ply reflect off
+};
+
+PLY_TEST_CASE("Manipulate a C++ object from script") {
+    // This C++ object will be passed into the script.
+    TestStruct obj;
+    obj.name = "banana";
+    obj.value = 12;
+
+    // Script source code.
+    StringView script = R"(
+fn test(obj) {
+    print(obj.name)
+    print(obj.value);
+    obj.name = "orange";
+    obj.value = obj.value + 1;
+}
+)";
+
+    // Parse the script and call function "test" with obj as its argument.
+    String result = callScriptFunction(script, "test", {AnyObject::bind(&obj)});
+
+    // Check result.
+    PLY_TEST_CHECK(result == "banana\n12\n");
+    PLY_TEST_CHECK(obj.name == "orange");
+    PLY_TEST_CHECK(obj.value == 13);
 }
 
 void runTestSuite() {
@@ -149,7 +184,7 @@ void runTestSuite() {
         }
 
         // Run this test case
-        String output = runTestCase(src);
+        String output = callScriptFunction(src, "test", {});
 
         // Append to result
         outs << StringView{"-"} * 60 << '\n';
@@ -174,5 +209,7 @@ void runTestSuite() {
 
 int main() {
     runTestSuite();
-    return 0;
+    return ply::test::run() ? 0 : 1;
 }
+
+#include "codegen/Main.inl" //%%

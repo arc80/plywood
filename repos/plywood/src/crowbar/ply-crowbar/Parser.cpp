@@ -210,6 +210,20 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
         if (token.type == TokenType::OpenParen) {
             expr = parseArgumentList(this, std::move(expr));
             continue;
+        } else if (token.type == TokenType::Dot) {
+            token = this->tkr->readToken();
+            if (token.type != TokenType::Identifier) {
+                error(this, token, ErrorTokenAction::PushBack,
+                      String::format("expected identifier after '.'; got {}",
+                                     token.desc()));
+                continue;
+            }
+            auto propLookupExpr = Owned<crowbar::Expression>::create();
+            auto propLookup = propLookupExpr->propertyLookup().switchTo();
+            propLookup->obj = std::move(expr);
+            propLookup->propertyName = token.stringKey;
+            expr = std::move(propLookupExpr);
+            continue;
         }
 
         MethodTable::BinaryOp op = tokenToBinaryOp(token.type);

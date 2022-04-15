@@ -54,6 +54,22 @@ PLY_INLINE bool isReturnValueOnTopOfStack(Interpreter* interp) {
            (interp->localVariableStorage.items.tail() == interp->returnValue);
 }
 
+void evalPropertyLookup(Interpreter::StackFrame* frame,
+                        const Expression::PropertyLookup* propLookup) {
+    Interpreter* interp = frame->interp;
+
+    // Evaluate left side.
+    eval(frame, propLookup->obj);
+    AnyObject obj = interp->returnValue;
+    interp->returnValue = {};
+
+    // Perform property lookup.
+    // FIXME: This should accept interned strings.
+    interp->returnValue =
+        obj.type->methods.propertyLookup(&interp->localVariableStorage, obj,
+                                         interp->internedStrings->view(propLookup->propertyName));
+}
+
 void evalBinaryOp(Interpreter::StackFrame* frame, const Expression::BinaryOp* binaryOp) {
     Interpreter* interp = frame->interp;
 
@@ -155,6 +171,11 @@ void eval(Interpreter::StackFrame* frame, const Expression* expr) {
 
         case Expression::ID::InterpolatedString: {
             evalString(frame, expr->interpolatedString().get());
+            return;
+        }
+
+        case Expression::ID::PropertyLookup: {
+            evalPropertyLookup(frame, expr->propertyLookup().get());
             return;
         }
 
