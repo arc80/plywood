@@ -2,6 +2,7 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
+#include <ply-runtime/Precomp.h>
 #include <ply-runtime/container/BigPool.h>
 #include <ply-runtime/memory/MemPage.h>
 
