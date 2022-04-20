@@ -95,6 +95,7 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
     addPPDef(&pp, "PLY_METHOD_TABLES_ONLY", "", true);
     addPPDef(&pp, "SWITCH_FOOTER", "", true);   // temporary
     addPPDef(&pp, "SWITCH_ACCESSOR", "", true); // temporary
+    addPPDef(&pp, "PLY_TEST_CASE", "void foo()", true);
     Parser parser;
     parser.pp = &pp;
     pp.includeCallback = {visor, onGotInclude};

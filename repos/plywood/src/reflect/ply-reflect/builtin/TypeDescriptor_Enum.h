@@ -52,7 +52,7 @@ struct TypeDescriptor_Enum : TypeDescriptor {
     PLY_DEFINE_TYPE_DESCRIPTOR(ns type) { \
         using T = ns type; \
         static ply::TypeDescriptor_Enum typeDesc{ \
-            sizeof(T), #type, {
+            (T*) nullptr, #type, {
 
 #define PLY_ENUM_IDENTIFIER(name) \
                 {#name, ply::u32(T::name)},

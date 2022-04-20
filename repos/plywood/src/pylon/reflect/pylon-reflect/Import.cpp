@@ -50,7 +50,7 @@ struct PylonTypeImporter {
                 // Synthesize a struct
                 const Node* aName = aNode->get("name");
                 PLY_ASSERT(aName->isText());
-                TypeDescriptor_Struct* structType = new TypeDescriptor_Struct{0, aName->text()};
+                TypeDescriptor_Struct* structType = new TypeDescriptor_Struct{0, 0, aName->text()};
                 auto appendMember = [&](StringView memberName, TypeDescriptor* memberType) {
                     structType->appendMember(memberName, memberType);
 
