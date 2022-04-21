@@ -9,26 +9,37 @@
 
 namespace ply {
 
-struct ObjectStack;
+struct BaseInterpreter;
 struct AnyObject;
-struct OutStream;
+
+enum class MethodResult {
+    OK,
+    Return,
+    Error,
+};
 
 struct MethodTable {
     enum class UnaryOp {
+        Invalid = 0,
+
         Negate,
         LogicalNot,
         BitComplement,
 
         // Container protocol:
-        IsEmpty,
+        ContainerStart,
+        IsEmpty = ContainerStart,
         NumItems,
 
         // List protocol:
-        Head,
+        ListStart,
+        Head = ListStart,
         Tail,
         Dereference,
         Next,
         Prev,
+
+        Count
     };
 
     enum class BinaryOp {
@@ -51,18 +62,37 @@ struct MethodTable {
         LogicalAnd,
         // C operator precedence level 12
         LogicalOr,
+
+        Count
     };
 
-    AnyObject (*unaryOp)(ObjectStack* stack, UnaryOp op, const AnyObject& obj) = nullptr;
-    AnyObject (*binaryOp)(ObjectStack* stack, BinaryOp op, const AnyObject& first,
-                     const AnyObject& second) = nullptr;
-    AnyObject (*propertyLookup)(ObjectStack* stack, const AnyObject& obj,
-                           StringView propertyName) = nullptr;
-    AnyObject (*subscript)(ObjectStack* stack, const AnyObject& obj, u32 index) = nullptr;
-    void (*print)(ObjectStack* stack, OutStream* outs, StringView formatSpec,
-                  const AnyObject& obj) = nullptr;
-    AnyObject (*call)(ObjectStack* stack, const AnyObject& obj) = nullptr;
+    // Static member functions
+    static StringView unaryOpToString(UnaryOp op);
+    static StringView binaryOpToString(BinaryOp op);
+    static MethodResult unsupportedUnaryOp(BaseInterpreter* interp, UnaryOp op,
+                                           const AnyObject& obj);
+    static MethodResult unsupportedBinaryOp(BaseInterpreter* interp, MethodTable::BinaryOp op,
+                                            const AnyObject& first, const AnyObject& second);
+    static MethodResult unsupportedPropertyLookup(BaseInterpreter* interp, const AnyObject& obj,
+                                                  StringView propertyName);
+    static MethodResult unsupportedSubscript(BaseInterpreter* interp, const AnyObject& obj,
+                                             u32 index);
+    static MethodResult unsupportedPrint(BaseInterpreter* interp, const AnyObject& obj,
+                                         StringView formatSpec);
+    static MethodResult unsupportedCall(BaseInterpreter* interp, const AnyObject& obj);
 
+    // Member variables
+    MethodResult (*unaryOp)(BaseInterpreter* interp, UnaryOp op, const AnyObject& obj) = nullptr;
+    MethodResult (*binaryOp)(BaseInterpreter* interp, BinaryOp op, const AnyObject& first,
+                             const AnyObject& second) = nullptr;
+    MethodResult (*propertyLookup)(BaseInterpreter* interp, const AnyObject& obj,
+                                   StringView propertyName) = nullptr;
+    MethodResult (*subscript)(BaseInterpreter* interp, const AnyObject& obj, u32 index) = nullptr;
+    MethodResult (*print)(BaseInterpreter* interp, const AnyObject& obj,
+                          StringView formatSpec) = nullptr;
+    MethodResult (*call)(BaseInterpreter* interp, const AnyObject& obj) = nullptr;
+
+    // Constructor
     MethodTable();
 };
 

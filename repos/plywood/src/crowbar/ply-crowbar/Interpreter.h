@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-crowbar/Core.h>
-#include <ply-reflect/methods/ObjectStack.h>
+#include <ply-reflect/methods/BaseInterpreter.h>
 #include <ply-crowbar/ParseTree.h>
 
 namespace ply {
@@ -23,19 +23,17 @@ struct VariableMapTraits {
     }
 };
 
-struct Interpreter {
+struct Interpreter : BaseInterpreter {
     struct StackFrame {
         Interpreter* interp = nullptr;
         HashMap<VariableMapTraits> localVariableTable;
     };
 
     const InternedStrings* internedStrings = nullptr;
-    ObjectStack localVariableStorage;
-    AnyObject returnValue;
     Array<HashMap<VariableMapTraits>*> outerNameSpaces;
 };
 
-void execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
+MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
 
 } // namespace crowbar
 } // namespace ply

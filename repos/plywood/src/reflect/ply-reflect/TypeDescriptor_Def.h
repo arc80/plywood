@@ -134,6 +134,9 @@ struct TypeDescriptor {
         return static_cast<const T*>(this);
     }
 
+    PLY_INLINE HybridString getName() const {
+        return this->typeKey->getName(this);
+    }
     PLY_INLINE bool isEquivalentTo(const TypeDescriptor* other) const {
         if (this == other)
             return true;

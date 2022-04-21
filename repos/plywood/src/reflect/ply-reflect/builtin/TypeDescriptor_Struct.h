@@ -6,6 +6,10 @@
 #include <ply-reflect/Core.h>
 #include <ply-reflect/TypeDescriptor_Def.h>
 
+#if PLY_WITH_METHOD_TABLES
+#include <ply-reflect/methods/BaseInterpreter.h>
+#endif // PLY_WITH_METHOD_TABLES
+
 namespace ply {
 
 PLY_DLL_ENTRY extern TypeKey TypeKey_Struct;

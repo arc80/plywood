@@ -7,7 +7,7 @@
 #include <ply-reflect/AnyObject.h>
 
 #if PLY_WITH_METHOD_TABLES
-#include <ply-reflect/methods/ObjectStack.h>
+#include <ply-reflect/methods/BaseInterpreter.h>
 #endif // PLY_WITH_METHOD_TABLES
 
 namespace ply {
@@ -17,31 +17,35 @@ namespace ply {
 struct BoolMethodTable {
     static PLY_INLINE MethodTable make() {
         MethodTable methods;
-        methods.binaryOp = [](ObjectStack* stack, MethodTable::BinaryOp op, const AnyObject& first,
-                              const AnyObject& second) {
-            AnyObject* obj;
+        methods.binaryOp = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
+                              const AnyObject& first,
+                              const AnyObject& second) -> MethodResult {
             switch (op) {
                 case MethodTable::BinaryOp::DoubleEqual: {
-                    obj = stack->appendObject(getTypeDescriptor<bool>());
-                    *obj->cast<bool>() = (*first.cast<bool>() == *second.cast<bool>());
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+                    *interp->returnValue.cast<bool>() =
+                        (*first.cast<bool>() == *second.cast<bool>());
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::LogicalAnd: {
-                    obj = stack->appendObject(getTypeDescriptor<bool>());
-                    *obj->cast<bool>() = (*first.cast<bool>() && *second.cast<bool>());
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+                    *interp->returnValue.cast<bool>() =
+                        (*first.cast<bool>() && *second.cast<bool>());
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::LogicalOr: {
-                    obj = stack->appendObject(getTypeDescriptor<bool>());
-                    *obj->cast<bool>() = (*first.cast<bool>() || *second.cast<bool>());
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+                    *interp->returnValue.cast<bool>() =
+                        (*first.cast<bool>() || *second.cast<bool>());
+                    return MethodResult::OK;
                 }
                 default: {
-                    PLY_ASSERT(0);
-                    break;
+                    return MethodTable::unsupportedBinaryOp(interp, op, first, second);
                 }
             }
-            return *obj;
         };
         return methods;
     }

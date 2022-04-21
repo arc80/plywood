@@ -8,7 +8,7 @@
 #include <ply-reflect/AnyObject.h>
 
 #if PLY_WITH_METHOD_TABLES
-#include <ply-reflect/methods/ObjectStack.h>
+#include <ply-reflect/methods/BaseInterpreter.h>
 #endif // PLY_WITH_METHOD_TABLES
 
 namespace ply {
@@ -18,26 +18,27 @@ namespace ply {
 struct StringMethodTable {
     static PLY_INLINE MethodTable make() {
         MethodTable methods;
-        methods.binaryOp = [](ObjectStack* stack, MethodTable::BinaryOp op, const AnyObject& first,
-                              const AnyObject& second) {
-            AnyObject* obj;
+        methods.binaryOp = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
+                              const AnyObject& first, const AnyObject& second) {
             switch (op) {
                 case MethodTable::BinaryOp::Add: {
-                    obj = stack->appendObject(getTypeDescriptor<String>());
-                    *obj->cast<String>() = *first.cast<String>() + *second.cast<String>();
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<String>());
+                    *interp->returnValue.cast<String>() =
+                        *first.cast<String>() + *second.cast<String>();
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::Multiply: {
-                    obj = stack->appendObject(getTypeDescriptor<String>());
-                    *obj->cast<String>() = *first.cast<String>() * *second.cast<u32>();
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<String>());
+                    *interp->returnValue.cast<String>() =
+                        *first.cast<String>() * *second.cast<u32>();
+                    return MethodResult::OK;
                 }
                 default: {
-                    PLY_ASSERT(0);
-                    break;
+                    return MethodTable::unsupportedBinaryOp(interp, op, first, second);
                 }
             }
-            return *obj;
         };
         return methods;
     }

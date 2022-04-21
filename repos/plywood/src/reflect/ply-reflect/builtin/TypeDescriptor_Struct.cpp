@@ -6,16 +6,28 @@
 #include <ply-reflect/builtin/TypeDescriptor_Struct.h>
 #include <ply-reflect/AnyObject.h>
 
+#if PLY_WITH_METHOD_TABLES
+#include <ply-reflect/methods/BaseInterpreter.h>
+#endif // PLY_WITH_METHOD_TABLES
+
 namespace ply {
 
 #if PLY_WITH_METHOD_TABLES
 
 PLY_NO_INLINE MethodTable getMethodTable_Struct() {
     MethodTable methods;
-    methods.propertyLookup = [](ObjectStack* stack, const AnyObject& obj, StringView propertyName) {
+    methods.propertyLookup = [](BaseInterpreter* interp, const AnyObject& obj,
+                                StringView propertyName) -> MethodResult {
         const TypeDescriptor_Struct* structType = obj.type->cast<TypeDescriptor_Struct>();
         const TypeDescriptor_Struct::Member* member = structType->findMember(propertyName);
-        return AnyObject{PLY_PTR_OFFSET(obj.data, member->offset), member->type};
+        if (!member) {
+            interp->returnValue = {};
+            interp->error(interp, String::format("property '{}' not found in type '{}'",
+                                                 propertyName, obj.type->getName()));
+            return MethodResult::Error;
+        }
+        interp->returnValue = {PLY_PTR_OFFSET(obj.data, member->offset), member->type};
+        return MethodResult::OK;
     };
     return methods;
 }

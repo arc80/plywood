@@ -8,7 +8,7 @@
 #include <ply-reflect/AnyObject.h>
 
 #if PLY_WITH_METHOD_TABLES
-#include <ply-reflect/methods/ObjectStack.h>
+#include <ply-reflect/methods/BaseInterpreter.h>
 #endif // PLY_WITH_METHOD_TABLES
 
 namespace ply {
@@ -19,66 +19,74 @@ struct ArithmeticMethodTable {
     template <typename T>
     static PLY_INLINE MethodTable make() {
         MethodTable methods;
-        methods.binaryOp = [](ObjectStack* stack, MethodTable::BinaryOp op, const AnyObject& first,
-                              const AnyObject& second) {
-            AnyObject* obj;
+        methods.binaryOp = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
+                              const AnyObject& first,
+                              const AnyObject& second) -> MethodResult {
             switch (op) {
                 case MethodTable::BinaryOp::Multiply: {
-                    obj = stack->appendObject(getTypeDescriptor<T>());
-                    *obj->cast<T>() = *first.cast<T>() * *second.cast<T>();
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
+                    *interp->returnValue.cast<T>() = *first.cast<T>() * *second.cast<T>();
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::Divide: {
-                    obj = stack->appendObject(getTypeDescriptor<T>());
-                    *obj->cast<T>() = *first.cast<T>() / *second.cast<T>();
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
+                    *interp->returnValue.cast<T>() = *first.cast<T>() / *second.cast<T>();
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::Modulo: {
-                    obj = stack->appendObject(getTypeDescriptor<T>());
-                    *obj->cast<T>() = *first.cast<T>() % *second.cast<T>();
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
+                    *interp->returnValue.cast<T>() = *first.cast<T>() % *second.cast<T>();
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::Add: {
-                    obj = stack->appendObject(getTypeDescriptor<T>());
-                    *obj->cast<T>() = *first.cast<T>() + *second.cast<T>();
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
+                    *interp->returnValue.cast<T>() = *first.cast<T>() + *second.cast<T>();
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::Subtract: {
-                    obj = stack->appendObject(getTypeDescriptor<T>());
-                    *obj->cast<T>() = *first.cast<T>() - *second.cast<T>();
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
+                    *interp->returnValue.cast<T>() = *first.cast<T>() - *second.cast<T>();
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::DoubleEqual: {
-                    obj = stack->appendObject(getTypeDescriptor<bool>());
-                    *obj->cast<bool>() = (*first.cast<T>() == *second.cast<T>());
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+                    *interp->returnValue.cast<bool>() = (*first.cast<T>() == *second.cast<T>());
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::LessThan: {
-                    obj = stack->appendObject(getTypeDescriptor<bool>());
-                    *obj->cast<bool>() = (*first.cast<T>() < *second.cast<T>());
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+                    *interp->returnValue.cast<bool>() = (*first.cast<T>() < *second.cast<T>());
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::LessThanOrEqual: {
-                    obj = stack->appendObject(getTypeDescriptor<bool>());
-                    *obj->cast<bool>() = (*first.cast<T>() <= *second.cast<T>());
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+                    *interp->returnValue.cast<bool>() = (*first.cast<T>() <= *second.cast<T>());
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::GreaterThan: {
-                    obj = stack->appendObject(getTypeDescriptor<bool>());
-                    *obj->cast<bool>() = (*first.cast<T>() > *second.cast<T>());
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+                    *interp->returnValue.cast<bool>() = (*first.cast<T>() > *second.cast<T>());
+                    return MethodResult::OK;
                 }
                 case MethodTable::BinaryOp::GreaterThanOrEqual: {
-                    obj = stack->appendObject(getTypeDescriptor<bool>());
-                    *obj->cast<bool>() = (*first.cast<T>() >= *second.cast<T>());
-                    break;
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+                    *interp->returnValue.cast<bool>() = (*first.cast<T>() >= *second.cast<T>());
+                    return MethodResult::OK;
                 }
                 default: {
-                    PLY_ASSERT(0);
-                    break;
+                    return MethodTable::unsupportedBinaryOp(interp, op, first, second);
                 }
             }
-            return *obj;
         };
         return methods;
     }

@@ -23,6 +23,7 @@ struct FormatDescriptor;
 // time -- instead of hardcoding a bunch of system-specific function pointers here.
 //
 struct TypeKey {
+    HybridString (*getName)(const TypeDescriptor* typeDesc);
     void (*write)(AnyObject obj, WriteObjectContext* context);
     void (*writeFormat)(TypeDescriptor* typeDesc, WriteFormatContext* context);
     void (*read)(AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc);
