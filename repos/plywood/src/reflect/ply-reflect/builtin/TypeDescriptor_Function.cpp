@@ -45,6 +45,10 @@ NativeBindings& getNativeBindings_Function() {
 }
 
 TypeKey TypeKey_Function {
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        return "built-in function";
+    },
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Function* functionType = obj.type->cast<TypeDescriptor_Function>();

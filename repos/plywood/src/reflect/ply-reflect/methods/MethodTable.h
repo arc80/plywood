@@ -79,7 +79,8 @@ struct MethodTable {
                                              u32 index);
     static MethodResult unsupportedPrint(BaseInterpreter* interp, const AnyObject& obj,
                                          StringView formatSpec);
-    static MethodResult unsupportedCall(BaseInterpreter* interp, const AnyObject& obj);
+    static MethodResult unsupportedCall(BaseInterpreter* interp, const AnyObject& callee,
+                                        ArrayView<const AnyObject> args);
 
     // Member variables
     MethodResult (*unaryOp)(BaseInterpreter* interp, UnaryOp op, const AnyObject& obj) = nullptr;
@@ -90,7 +91,8 @@ struct MethodTable {
     MethodResult (*subscript)(BaseInterpreter* interp, const AnyObject& obj, u32 index) = nullptr;
     MethodResult (*print)(BaseInterpreter* interp, const AnyObject& obj,
                           StringView formatSpec) = nullptr;
-    MethodResult (*call)(BaseInterpreter* interp, const AnyObject& obj) = nullptr;
+    MethodResult (*call)(BaseInterpreter* interp, const AnyObject& callee,
+                         ArrayView<const AnyObject> args) = nullptr;
 
     // Constructor
     MethodTable();

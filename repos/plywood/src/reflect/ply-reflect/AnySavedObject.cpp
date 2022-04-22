@@ -14,6 +14,11 @@ namespace ply {
 SLOG_DECLARE_CHANNEL(Load)
 
 TypeKey TypeKey_AnySavedObject{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        return "AnySavedObject";
+    },
+
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         AnySavedObject* savedTypedPtr = (AnySavedObject*) obj.data;

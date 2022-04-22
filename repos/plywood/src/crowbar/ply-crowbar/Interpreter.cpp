@@ -102,7 +102,7 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
     interp->returnValue = {};
 
     // Evaluate arguments.
-    Array<AnyObject*> args;
+    Array<AnyObject> args;
     for (const Expression* argExpr : call->args) {
         result = eval(frame, argExpr);
         if (result != MethodResult::OK)
@@ -115,13 +115,14 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
         } else {
             arg = &interp->localVariableStorage.items.tail();
         }
-        args.append(arg);
+        args.append(*arg);
         interp->returnValue = {};
     }
 
     // Invoke function using provided arguments.
     if (callee.is<FunctionDefinition>()) {
         // It's a Crowbar function.
+        // FIXME: Move this to MethodTable.
         const FunctionDefinition* functionDef = callee.cast<FunctionDefinition>();
         PLY_ASSERT(args.numItems() == functionDef->parameterNames.numItems());
 
@@ -130,18 +131,14 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
         frame.interp = interp;
         for (u32 argIndex : range(args.numItems())) {
             frame.localVariableTable.insertOrFind(functionDef->parameterNames[argIndex])->obj =
-                *args[argIndex];
+                args[argIndex];
         }
 
         // Execute function body and clean up stack frame.
         return execFunction(&frame, functionDef->body);
-    } else if (auto* funcType = callee.type->cast<TypeDescriptor_Function>()) {
-        // It's a native function.
-        PLY_ASSERT(args.numItems() == funcType->paramTypes.numItems());
-        return funcType->methods.call(interp, callee);
     } else {
-        PLY_ASSERT(0);
-        return MethodResult::Error;
+        // Call through MethodTable.
+        return callee.type->methods.call(interp, callee, args);
     }
 }
 
@@ -169,8 +166,9 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
         case Expression::ID::NameLookup: {
             interp->returnValue = lookupName(frame, expr->nameLookup()->name);
             if (!interp->returnValue.data) {
-                interp->error(interp,
-                              String::format("Can't resolve name '{}'", expr->nameLookup()->name));
+                interp->error(interp, String::format(
+                                          "Can't resolve name '{}'",
+                                          interp->internedStrings->view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
             return MethodResult::OK;

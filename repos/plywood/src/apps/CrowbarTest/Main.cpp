@@ -87,6 +87,10 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
         interp.internedStrings = &internedStrings;
         interp.outerNameSpaces.append(&builtIns);
         interp.outerNameSpaces.append(&ns);
+        interp.error = [](BaseInterpreter* base, StringView message) {
+            Interpreter* interp = static_cast<Interpreter*>(base);
+            *interp->outs << "error: " << message << "\n";
+        };
 
         // Invoke function
         Interpreter::StackFrame frame;
@@ -124,9 +128,9 @@ PLY_TEST_CASE("Manipulate a C++ object from script") {
     StringView script = R"(
 fn test(obj) {
     print(obj.name)
-    print(obj.value);
-    obj.name = "orange";
-    obj.value = obj.value + 1;
+    print(obj.value)
+    obj.name = "orange"
+    obj.value = obj.value + 1
 }
 )";
 

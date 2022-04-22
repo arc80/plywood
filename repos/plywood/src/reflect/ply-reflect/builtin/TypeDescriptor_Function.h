@@ -34,21 +34,23 @@ template <typename... Params>
 struct FunctionCallThunk {};
 template <typename Param0>
 struct FunctionCallThunk<Param0> {
-    static PLY_NO_INLINE MethodResult call(BaseInterpreter* interp, const AnyObject& callee) {
+    static PLY_NO_INLINE MethodResult call(BaseInterpreter* interp, const AnyObject& callee,
+                                           ArrayView<const AnyObject> args) {
         using FunctionType = MethodResult(BaseInterpreter*, Param0);
         PLY_ASSERT(callee.type->isEquivalentTo(getTypeDescriptor<FunctionType>()));
-        const AnyObject& arg = interp->localVariableStorage.items.tail();
-        PLY_ASSERT(arg.type->isEquivalentTo(getTypeDescriptor<Param0>()));
-        return reinterpret_cast<FunctionType*>(callee.data)(interp, *(Param0*) arg.data);
+        PLY_ASSERT(args.numItems == 1);
+        PLY_ASSERT(args[0].type->isEquivalentTo(getTypeDescriptor<Param0>()));
+        return reinterpret_cast<FunctionType*>(callee.data)(interp, *(Param0*) args[0].data);
     }
 };
 template <>
 struct FunctionCallThunk<const AnyObject&> {
-    static PLY_NO_INLINE MethodResult call(BaseInterpreter* interp, const AnyObject& callee) {
+    static PLY_NO_INLINE MethodResult call(BaseInterpreter* interp, const AnyObject& callee,
+                                           ArrayView<const AnyObject> args) {
         using FunctionType = MethodResult(BaseInterpreter*, const AnyObject&);
         PLY_ASSERT(callee.type->isEquivalentTo(getTypeDescriptor<FunctionType>()));
-        const AnyObject& arg = interp->localVariableStorage.items.tail();
-        return reinterpret_cast<FunctionType*>(callee.data)(interp, arg);
+        PLY_ASSERT(args.numItems == 1);
+        return reinterpret_cast<FunctionType*>(callee.data)(interp, args[0]);
     }
 };
 

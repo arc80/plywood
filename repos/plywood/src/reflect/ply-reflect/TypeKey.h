@@ -30,10 +30,11 @@ struct TypeKey {
     void (*hashDescriptor)(Hasher& hasher, const TypeDescriptor* typeDesc);
     bool (*equalDescriptors)(const TypeDescriptor* type0, const TypeDescriptor* type1);
 
-    TypeKey(decltype(write) write_, decltype(writeFormat) writeFormat_, decltype(read) read_,
-            decltype(hashDescriptor) hashTypeParams_, decltype(equalDescriptors) equalTypeParams_)
-        : write{write_}, writeFormat{writeFormat_}, read{read_}, hashDescriptor{hashTypeParams_},
-          equalDescriptors{equalTypeParams_} {
+    TypeKey(decltype(getName) getName_, decltype(write) write_, decltype(writeFormat) writeFormat_,
+            decltype(read) read_, decltype(hashDescriptor) hashTypeParams_,
+            decltype(equalDescriptors) equalTypeParams_)
+        : getName{getName_}, write{write_}, writeFormat{writeFormat_}, read{read_},
+          hashDescriptor{hashTypeParams_}, equalDescriptors{equalTypeParams_} {
     }
 
     static void hashEmptyDescriptor(Hasher&, const TypeDescriptor*);

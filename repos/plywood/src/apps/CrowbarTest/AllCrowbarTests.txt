@@ -326,7 +326,7 @@ a
 
 ------------------------------------------------------------
 fn somefunc(x) {
-    if (x > 3)
+    if x > 3
         return "go"
     else
         return "${x} ${somefunc(x + 1)}"
@@ -338,4 +338,52 @@ fn test() {
 
 result:
 1 2 3 go
+
+------------------------------------------------------------
+fn foo(x) {
+    if x > 0 {
+        foo(x - 1)
+    } else {
+        bad()
+    }
+}
+
+fn test() {
+    foo(5)
+}
+
+result:
+error: Can't resolve name 'bad'
+
+------------------------------------------------------------
+fn test() {
+    -false // FIXME: Parse unary operators
+}
+
+result:
+(2, 5) error: expected an expression; got '-'
+
+------------------------------------------------------------
+fn test() {
+    false + true
+}
+
+result:
+error: 'bool' does not support binary operator '+'
+
+------------------------------------------------------------
+fn test() {
+    3()
+}
+
+result:
+error: 'u32' cannot be called as a function
+
+------------------------------------------------------------
+fn test() {
+    false.foo
+}
+
+result:
+error: 'bool' does not support property lookup
 

@@ -83,6 +83,10 @@ PLY_NO_INLINE AnyObject TypedArray::append() {
 }
 
 TypeKey TypeKey_TypedArray{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        return "TypedArray";
+    },
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypedArray* arr = (TypedArray*) obj.data;

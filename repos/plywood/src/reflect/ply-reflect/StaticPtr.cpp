@@ -42,6 +42,11 @@ NativeBindings& getNativeBindings_StaticPtr() {
 }
 
 TypeKey TypeKey_StaticPtr = {
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        // FIXME: Include template argument
+        return "StaticPtr";
+    },
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_StaticPtr* staticPtrType = obj.type->cast<TypeDescriptor_StaticPtr>();

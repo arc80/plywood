@@ -99,85 +99,142 @@ void readNumeric(AnyObject obj, ReadObjectContext* context, FormatDescriptor* fo
 // Primitive TypeKeys
 //
 TypeKey TypeKey_Bool{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "bool"; },
     [](AnyObject obj, WriteObjectContext* context) { context->out.write<bool>(*(bool*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::Bool); },
     readNumeric, // FIXME
-    TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
 TypeKey TypeKey_S8{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "s8"; },
     [](AnyObject obj, WriteObjectContext* context) { context->out.write<s8>(*(s8*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::S8); },
-    readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+    readNumeric,
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
 TypeKey TypeKey_S16{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "s16"; },
     [](AnyObject obj, WriteObjectContext* context) { context->out.write<s16>(*(s16*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::S16); },
-    readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+    readNumeric,
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
 TypeKey TypeKey_S32{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "s32"; },
     [](AnyObject obj, WriteObjectContext* context) { context->out.write<s32>(*(s32*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::S32); },
-    readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+    readNumeric,
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
 TypeKey TypeKey_S64{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "s64"; },
     [](AnyObject obj, WriteObjectContext* context) { context->out.write<s64>(*(s64*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::S64); },
-    readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+    readNumeric,
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
 TypeKey TypeKey_U8{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "u8"; },
     [](AnyObject obj, WriteObjectContext* context) { context->out.write<u8>(*(u8*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::U8); },
-    readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+    readNumeric,
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
 TypeKey TypeKey_U16{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "u16"; },
     [](AnyObject obj, WriteObjectContext* context) { context->out.write<u16>(*(u16*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::U16); },
-    readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+    readNumeric,
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
 TypeKey TypeKey_U32{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "u32"; },
     [](AnyObject obj, WriteObjectContext* context) { context->out.write<u32>(*(u32*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::U32); },
-    readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+    readNumeric,
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
 TypeKey TypeKey_U64{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "u64"; },
     [](AnyObject obj, WriteObjectContext* context) { context->out.write<u64>(*(u64*) obj.data); },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::U64); },
-    readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+    readNumeric,
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
 TypeKey TypeKey_Float{
-    [](AnyObject obj, WriteObjectContext* context) { context->out.write<float>(*(float*) obj.data); },
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "float"; },
+    [](AnyObject obj, WriteObjectContext* context) {
+        context->out.write<float>(*(float*) obj.data);
+    },
     [](TypeDescriptor*, WriteFormatContext* context) { context->writePrimitive(FormatKey::Float); },
-    readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+    readNumeric,
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
-TypeKey TypeKey_Double{[](AnyObject obj, WriteObjectContext* context) {
-                           context->out.write<double>(*(double*) obj.data);
-                       },
-                       [](TypeDescriptor*, WriteFormatContext* context) {
-                           context->writePrimitive(FormatKey::Double);
-                       },
-                       readNumeric, TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+TypeKey TypeKey_Double{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "double"; },
+    [](AnyObject obj, WriteObjectContext* context) {
+        context->out.write<double>(*(double*) obj.data);
+    },
+    [](TypeDescriptor*, WriteFormatContext* context) {
+        context->writePrimitive(FormatKey::Double);
+    },
+    readNumeric,
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
-TypeKey TypeKey_String{[](AnyObject obj, WriteObjectContext* context) {
-                           Boxed<String>::write(context->out, *(String*) obj.data);
-                       },
-                       [](TypeDescriptor*, WriteFormatContext* context) {
-                           context->writePrimitive(FormatKey::String);
-                       },
-                       [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
-                           PLY_ASSERT(obj.type == getTypeDescriptor<String>());
-                           if ((FormatKey) formatDesc->formatKey == FormatKey::String) {
-                               *(String*) obj.data = Boxed<String>::read(context->in);
-                           } else {
-                               SLOG(Load, "Can't convert to string");
-                               skip(context, formatDesc);
-                           }
-                       },
-                       TypeKey::hashEmptyDescriptor, TypeKey::alwaysEqualDescriptors};
+TypeKey TypeKey_String{
+    [](const TypeDescriptor* typeDesc) -> HybridString { return "String"; },
+    [](AnyObject obj, WriteObjectContext* context) {
+        Boxed<String>::write(context->out, *(String*) obj.data);
+    },
+    [](TypeDescriptor*, WriteFormatContext* context) {
+        context->writePrimitive(FormatKey::String);
+    },
+    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
+        PLY_ASSERT(obj.type == getTypeDescriptor<String>());
+        if ((FormatKey) formatDesc->formatKey == FormatKey::String) {
+            *(String*) obj.data = Boxed<String>::read(context->in);
+        } else {
+            SLOG(Load, "Can't convert to string");
+            skip(context, formatDesc);
+        }
+    },
+    TypeKey::hashEmptyDescriptor,
+    TypeKey::alwaysEqualDescriptors,
+};
 
 //-----------------------------------------------------------------
 // TypeKey_FixedArray
 //
 TypeKey TypeKey_FixedArray{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        const TypeDescriptor_FixedArray* fixedArrayType =
+            typeDesc->cast<const TypeDescriptor_FixedArray>();
+        return String::format("FixedArray<{}>", fixedArrayType->itemType->getName());
+    },
+
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_FixedArray* fixedArrayType = obj.type->cast<TypeDescriptor_FixedArray>();
@@ -244,6 +301,12 @@ TypeKey* TypeDescriptor_FixedArray::typeKey = &TypeKey_FixedArray;
 // TypeKey_Array
 //
 TypeKey TypeKey_Array{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        const TypeDescriptor_Array* arrayType = typeDesc->cast<const TypeDescriptor_Array>();
+        return String::format("Array<{}>", arrayType->itemType->getName());
+    },
+
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Array* arrayType = obj.type->cast<TypeDescriptor_Array>();
@@ -311,6 +374,12 @@ TypeKey* TypeDescriptor_Array::typeKey = &TypeKey_Array;
 // TypeKey_Owned
 //
 TypeKey TypeKey_Owned{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        const TypeDescriptor_Owned* ownedType = typeDesc->cast<const TypeDescriptor_Owned>();
+        return String::format("Owned<{}>", ownedType->targetType->getName());
+    },
+
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Owned* ownedType = obj.type->cast<TypeDescriptor_Owned>();
@@ -395,6 +464,13 @@ TypeKey* TypeDescriptor_Owned::typeKey = &TypeKey_Owned;
 // TypeKey_Reference
 //
 TypeKey TypeKey_Reference{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        const TypeDescriptor_Reference* referencedType =
+            typeDesc->cast<const TypeDescriptor_Reference>();
+        return String::format("Reference<{}>", referencedType->targetType->getName());
+    },
+
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Reference* referencedType = obj.type->cast<TypeDescriptor_Reference>();
@@ -441,6 +517,12 @@ TypeDescriptor_Struct::Member* findMember(TypeDescriptor_Struct* structType, con
 }
 
 TypeKey TypeKey_Struct{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        const TypeDescriptor_Struct* structType = typeDesc->cast<const TypeDescriptor_Struct>();
+        return structType->name;
+    },
+
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Struct* structType = obj.type->cast<TypeDescriptor_Struct>();
@@ -520,6 +602,12 @@ TypeKey* TypeDescriptor_Struct::typeKey = &TypeKey_Struct;
 // TypeKey_Enum
 //
 TypeKey TypeKey_Enum{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        const TypeDescriptor_Enum* enumType = typeDesc->cast<const TypeDescriptor_Enum>();
+        return enumType->name;
+    },
+
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Enum* enumType = obj.type->cast<TypeDescriptor_Enum>();
@@ -624,6 +712,12 @@ TypeKey* TypeDescriptor_Enum::typeKey = &TypeKey_Enum;
 // TypeKey_RawPtr
 //
 TypeKey TypeKey_RawPtr{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        const TypeDescriptor_RawPtr* weakPtrType = typeDesc->cast<const TypeDescriptor_RawPtr>();
+        return String::format("{}*", weakPtrType->getName());
+    },
+
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_RawPtr* weakPtrType = obj.type->cast<TypeDescriptor_RawPtr>();
@@ -678,6 +772,12 @@ TypeKey* TypeDescriptor_RawPtr::typeKey = &TypeKey_RawPtr;
 // TypeKey_EnumIndexedArray
 //
 TypeKey TypeKey_EnumIndexedArray{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        const TypeDescriptor_EnumIndexedArray* arrayType =
+            typeDesc->cast<const TypeDescriptor_EnumIndexedArray>();
+        return String::format("EnumIndexedArray<{}>", arrayType->itemType->getName());
+    },
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_EnumIndexedArray* arrayType =
@@ -724,7 +824,7 @@ TypeKey TypeKey_EnumIndexedArray{
                     PLY_ASSERT(identifier.value < enumType->identifiers.numItems());
                     itemType->typeKey->read(
                         AnyObject{PLY_PTR_OFFSET(items, itemType->fixedSize * identifier.value),
-                                 itemType},
+                                  itemType},
                         context, itemFormat);
                     goto found;
                 }
@@ -747,13 +847,18 @@ TypeKey* TypeDescriptor_EnumIndexedArray::typeKey = &TypeKey_EnumIndexedArray;
 // TypeKey_Switch
 //
 TypeKey TypeKey_Switch{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        const TypeDescriptor_Switch* switchType = typeDesc->cast<const TypeDescriptor_Switch>();
+        return switchType->name;
+    },
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         TypeDescriptor_Switch* switchType = obj.type->cast<TypeDescriptor_Switch>();
         u16 id = *(u16*) obj.data;
         context->out.write<u16>(id);
         AnyObject typedState{PLY_PTR_OFFSET(obj.data, switchType->storageOffset),
-                            switchType->states[id].structType};
+                             switchType->states[id].structType};
         typedState.type->typeKey->write(typedState, context);
     },
     // writeFormat
@@ -788,7 +893,7 @@ TypeKey TypeKey_Switch{
             return;
         }
         AnyObject newTypedState{PLY_PTR_OFFSET(obj.data, switchType->storageOffset),
-                               switchType->states[newID].structType};
+                                switchType->states[newID].structType};
         u16 oldID = *(u16*) obj.data;
         if (oldID != newID) {
             AnyObject oldTypedState{newTypedState.data, switchType->states[oldID].structType};

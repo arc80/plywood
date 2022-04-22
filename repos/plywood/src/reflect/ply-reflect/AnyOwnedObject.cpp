@@ -13,6 +13,11 @@ namespace ply {
 SLOG_DECLARE_CHANNEL(Load)
 
 TypeKey TypeKey_AnyOwnedObject{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        return "AnyOwnedObject";
+    },
+
     // write
     [](AnyObject obj, WriteObjectContext* context) {
         AnyOwnedObject* ownTypedPtr = (AnyOwnedObject*) obj.data;
