@@ -353,7 +353,7 @@ fn test() {
 }
 
 result:
-error: Can't resolve name 'bad'
+(5, 9) error: Can't resolve name 'bad'
 
 ------------------------------------------------------------
 fn test() {
@@ -369,7 +369,7 @@ fn test() {
 }
 
 result:
-error: 'bool' does not support binary operator '+'
+(2, 11) error: 'bool' does not support binary operator '+'
 
 ------------------------------------------------------------
 fn test() {
@@ -377,7 +377,7 @@ fn test() {
 }
 
 result:
-error: 'u32' cannot be called as a function
+(2, 6) error: 'u32' cannot be called as a function
 
 ------------------------------------------------------------
 fn test() {
@@ -385,5 +385,5 @@ fn test() {
 }
 
 result:
-error: 'bool' does not support property lookup
+(2, 11) error: 'bool' does not support property lookup
 

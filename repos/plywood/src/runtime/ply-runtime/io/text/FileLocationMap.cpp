@@ -5,6 +5,7 @@
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/io/text/FileLocationMap.h>
 #include <ply-runtime/string/TextEncoding.h>
+#include <ply-runtime/io/OutStream.h>
 
 namespace ply {
 
@@ -79,6 +80,11 @@ FileLocation FileLocationMap::getFileLocation(u32 offset) const {
             columnNumber++;
         }
     }
+}
+
+PLY_NO_INLINE String FileLocationMap::formatFileLocation(u32 offset) const {
+    FileLocation fileLoc = this->getFileLocation(offset);
+    return String::format("({}, {})", fileLoc.lineNumber, fileLoc.columnNumber);
 }
 
 } // namespace ply

@@ -18,6 +18,8 @@ struct FunctionDefinition {
 };
 
 struct Expression {
+    u32 tokenIdx = 0;
+
     // ply make switch
     struct NameLookup {
         u32 name = 0; // Interned string.
@@ -52,6 +54,7 @@ struct Expression {
 };
 
 struct Statement {
+    u32 tokenIdx = 0; // FIXME: Delete this member because it's not actually useful?
     u32 fileOffset = 0;
 
     // ply make switch

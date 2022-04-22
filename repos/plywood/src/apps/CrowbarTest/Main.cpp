@@ -89,8 +89,12 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
         interp.outerNameSpaces.append(&ns);
         interp.error = [](BaseInterpreter* base, StringView message) {
             Interpreter* interp = static_cast<Interpreter*>(base);
-            *interp->outs << "error: " << message << "\n";
+            ExpandedToken expToken = interp->tkr->expandToken(interp->currentTokenIdx);
+            interp->outs->format(
+                "{} error: {}\n",
+                interp->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset), message);
         };
+        interp.tkr = &tkr;
 
         // Invoke function
         Interpreter::StackFrame frame;
@@ -212,7 +216,7 @@ void runTestSuite() {
 
 int main() {
     runTestSuite();
-    //return ply::test::run() ? 0 : 1;
+    // return ply::test::run() ? 0 : 1;
     return 0;
 }
 

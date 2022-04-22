@@ -28,6 +28,7 @@ struct FileLocationMap {
 
     static FileLocationMap fromView(StringView view);
     FileLocation getFileLocation(u32 offset) const;
+    String formatFileLocation(u32 offset) const;
 };
 
 } // namespace ply

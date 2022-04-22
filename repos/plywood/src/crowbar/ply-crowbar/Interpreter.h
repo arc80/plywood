@@ -10,6 +10,8 @@
 namespace ply {
 namespace crowbar {
 
+struct Tokenizer;
+
 struct VariableMapTraits {
     struct Item {
         u32 key = 0;
@@ -31,6 +33,10 @@ struct Interpreter : BaseInterpreter {
 
     const InternedStrings* internedStrings = nullptr;
     Array<HashMap<VariableMapTraits>*> outerNameSpaces;
+
+    // For expanding the location of runtime errors:
+    Tokenizer* tkr = nullptr;
+    u32 currentTokenIdx = 0;
 };
 
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);

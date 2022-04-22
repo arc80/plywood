@@ -162,13 +162,15 @@ AnyObject lookupName(Interpreter::StackFrame* frame, u32 name) {
 MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
     Interpreter* interp = frame->interp;
 
+    PLY_SET_IN_SCOPE(interp->currentTokenIdx, expr->tokenIdx);
     switch (expr->id) {
         case Expression::ID::NameLookup: {
             interp->returnValue = lookupName(frame, expr->nameLookup()->name);
             if (!interp->returnValue.data) {
-                interp->error(interp, String::format(
-                                          "Can't resolve name '{}'",
-                                          interp->internedStrings->view(expr->nameLookup()->name)));
+                interp->error(
+                    interp,
+                    String::format("Can't resolve name '{}'",
+                                   interp->internedStrings->view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
             return MethodResult::OK;
@@ -315,6 +317,7 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
 
     // Execute each statement in this block.
     for (const Statement* statement : block->statements) {
+        interp->currentTokenIdx = statement->tokenIdx;
         switch (statement->id) {
             case Statement::ID::If_: {
                 MethodResult result = execIf(frame, statement->if_().get());

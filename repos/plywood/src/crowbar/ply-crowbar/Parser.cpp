@@ -11,16 +11,12 @@ namespace crowbar {
 
 enum class ErrorTokenAction { DoNothing, PushBack, HandleUnexpected };
 
-PLY_NO_INLINE String getLocation(Parser* parser, const ExpandedToken& token) {
-    FileLocation fileLoc = parser->tkr->fileLocationMap.getFileLocation(token.fileOffset);
-    return String::format("({}, {})", fileLoc.lineNumber, fileLoc.columnNumber);
-}
-
 PLY_NO_INLINE bool error(Parser* parser, const ExpandedToken& errorToken,
                          ErrorTokenAction tokenAction, StringView message) {
     if (!parser->recovery.muteErrors) {
         MemOutStream msg;
-        msg.format("{} error: {}\n", getLocation(parser, errorToken), message);
+        msg.format("{} error: {}\n",
+                   parser->tkr->fileLocationMap.formatFileLocation(errorToken.fileOffset), message);
         parser->hooks->onError(msg.moveToString());
     }
 
@@ -50,11 +46,13 @@ u32 BinaryOpPrecedence[] = {
     12, // LogicalOr
 };
 
-Owned<Expression> parseArgumentList(Parser* parser, Owned<Expression>&& callable) {
+Owned<Expression> parseArgumentList(Parser* parser, Owned<Expression>&& callable,
+                                    u32 openParenTokenIdx) {
     PLY_SET_IN_SCOPE(parser->recovery.outerAcceptFlags,
                      parser->recovery.outerAcceptFlags | Parser::RecoveryState::AcceptCloseParen);
     PLY_SET_IN_SCOPE(parser->tkr->behavior.tokenizeNewLine, false);
     auto callExpr = Owned<Expression>::create();
+    callExpr->tokenIdx = openParenTokenIdx;
     auto call = callExpr->call().switchTo();
     call->callable = std::move(callable);
 
@@ -116,8 +114,7 @@ MethodTable::BinaryOp tokenToBinaryOp(TokenType tokenType) {
     }
 }
 
-Owned<Expression> parseInterpolatedString(Parser* parser) {
-    auto expr = Owned<crowbar::Expression>::create();
+void parseInterpolatedString(Parser* parser, Expression* expr) {
     auto& pieces = expr->interpolatedString().switchTo()->pieces;
 
     PLY_SET_IN_SCOPE(parser->tkr->behavior.insideString, true);
@@ -141,15 +138,17 @@ Owned<Expression> parseInterpolatedString(Parser* parser) {
                 ExpandedToken closeToken = parser->tkr->readToken();
                 if (closeToken.type != TokenType::CloseCurly) {
                     error(parser, closeToken, ErrorTokenAction::HandleUnexpected,
-                          String::format("expected '}' to close embedded expression at {}; got {}",
-                                         getLocation(parser, token), closeToken.desc()));
+                          String::format(
+                              "expected '}' to close embedded expression at {}; got {}",
+                              parser->tkr->fileLocationMap.formatFileLocation(token.fileOffset),
+                              closeToken.desc()));
                     skipAnyScope(parser, nullptr, TokenType::OpenCurly);
                 }
                 parser->recovery.muteErrors = false; // embed is now closed
                 break;
             }
             case TokenType::EndString: {
-                return expr;
+                return;
             }
             default: {
                 PLY_ASSERT(0); // Shouldn't get here
@@ -163,41 +162,41 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
     Owned<Expression> expr;
 
     ExpandedToken token = this->tkr->readToken();
-    switch (token.type) {
-        case TokenType::Identifier: {
-            expr = Owned<crowbar::Expression>::create();
-            expr->nameLookup().switchTo()->name = token.stringKey;
-            break;
+    if (token.type == TokenType::OpenParen) {
+        PLY_SET_IN_SCOPE(this->recovery.outerAcceptFlags,
+                         this->recovery.outerAcceptFlags | Parser::RecoveryState::AcceptCloseParen);
+        PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
+        expr = this->parseExpression();
+        ExpandedToken closingToken = this->tkr->readToken();
+        if (closingToken.type != TokenType::CloseParen) {
+            error(this, closingToken, ErrorTokenAction::PushBack,
+                  String::format("expected ')' to match the '(' at {}; got {}",
+                                 this->tkr->fileLocationMap.formatFileLocation(token.fileOffset),
+                                 closingToken.desc()));
+            return {};
         }
-        case TokenType::NumericLiteral: {
-            expr = Owned<crowbar::Expression>::create();
-            expr->integerLiteral().switchTo()->value = token.text.to<u32>();
-            break;
-        }
-        case TokenType::BeginString: {
-            expr = parseInterpolatedString(this);
-            break;
-        }
-        case TokenType::OpenParen: {
-            PLY_SET_IN_SCOPE(this->recovery.outerAcceptFlags,
-                             this->recovery.outerAcceptFlags |
-                                 Parser::RecoveryState::AcceptCloseParen);
-            PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
-            expr = this->parseExpression();
-            ExpandedToken closingToken = this->tkr->readToken();
-            if (closingToken.type != TokenType::CloseParen) {
-                error(this, closingToken, ErrorTokenAction::PushBack,
-                      String::format("expected ')' to match the '(' at {}; got {}",
-                                     getLocation(this, token), closingToken.desc()));
+        this->recovery.muteErrors = false;
+    } else {
+        expr = Owned<Expression>::create();
+        expr->tokenIdx = token.tokenIdx;
+        switch (token.type) {
+            case TokenType::Identifier: {
+                expr->nameLookup().switchTo()->name = token.stringKey;
+                break;
+            }
+            case TokenType::NumericLiteral: {
+                expr->integerLiteral().switchTo()->value = token.text.to<u32>();
+                break;
+            }
+            case TokenType::BeginString: {
+                parseInterpolatedString(this, expr);
+                break;
+            }
+            default: {
+                error(this, token, ErrorTokenAction::PushBack,
+                      String::format("expected an expression; got {}", token.desc()));
                 return {};
             }
-            this->recovery.muteErrors = false;
-            break;
-        }
-        default: {
-            error(this, token, ErrorTokenAction::PushBack,
-                  String::format("expected an expression; got {}", token.desc()));
-            return {};
         }
     }
     this->recovery.muteErrors = false; // Got a valid expression
@@ -208,17 +207,17 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
         token = this->tkr->readToken();
 
         if (token.type == TokenType::OpenParen) {
-            expr = parseArgumentList(this, std::move(expr));
+            expr = parseArgumentList(this, std::move(expr), token.tokenIdx);
             continue;
         } else if (token.type == TokenType::Dot) {
             token = this->tkr->readToken();
             if (token.type != TokenType::Identifier) {
                 error(this, token, ErrorTokenAction::PushBack,
-                      String::format("expected identifier after '.'; got {}",
-                                     token.desc()));
+                      String::format("expected identifier after '.'; got {}", token.desc()));
                 continue;
             }
-            auto propLookupExpr = Owned<crowbar::Expression>::create();
+            auto propLookupExpr = Owned<Expression>::create();
+            propLookupExpr->tokenIdx = token.tokenIdx;
             auto propLookup = propLookupExpr->propertyLookup().switchTo();
             propLookup->obj = std::move(expr);
             propLookup->propertyName = token.stringKey;
@@ -238,7 +237,8 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
             if (!rhs)
                 return expr; // an error occurred
 
-            auto binaryOpExpr = Owned<crowbar::Expression>::create();
+            auto binaryOpExpr = Owned<Expression>::create();
+            binaryOpExpr->tokenIdx = token.tokenIdx;
             auto binaryOp = binaryOpExpr->binaryOp().switchTo();
             binaryOp->op = op;
             binaryOp->left = std::move(expr);
@@ -261,6 +261,7 @@ Owned<Statement> Parser::parseStatement() {
     auto stmt = Owned<crowbar::Statement>::create();
 
     ExpandedToken token = this->tkr->readToken();
+    stmt->tokenIdx = token.tokenIdx;
     if (token.stringKey == ifKey) {
         auto cond = stmt->if_().switchTo();
         cond->condition = this->parseExpression();
