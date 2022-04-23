@@ -80,7 +80,7 @@ MethodResult MethodTable::unsupportedCall(BaseInterpreter* interp, const AnyObje
                                           ArrayView<const AnyObject> args) {
     interp->returnValue = {};
     interp->error(interp,
-                  String::format("'{}' cannot be called as a function", callee.type->getName()));
+                  String::format("cannot call '{}' as a function", callee.type->getName()));
     return MethodResult::Error;
 }
 

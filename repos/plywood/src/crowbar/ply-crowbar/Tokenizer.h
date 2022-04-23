@@ -49,6 +49,8 @@ enum class TokenType {
     Asterisk,
     Slash,
     Percent,
+    Bang,
+    Tilde,
 
     VerticalBar,
     DoubleVerticalBar,

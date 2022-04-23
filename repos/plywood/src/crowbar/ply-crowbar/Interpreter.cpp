@@ -91,6 +91,20 @@ MethodResult evalBinaryOp(Interpreter::StackFrame* frame, const Expression::Bina
     return left.type->methods.binaryOp(interp, binaryOp->op, left, right);
 }
 
+MethodResult evalUnaryOp(Interpreter::StackFrame* frame, const Expression::UnaryOp* unaryOp) {
+    Interpreter* interp = frame->interp;
+
+    // Evaluate subexpression.
+    MethodResult result = eval(frame, unaryOp->expr);
+    if (result != MethodResult::OK)
+        return result;
+    AnyObject obj = interp->returnValue;
+    interp->returnValue = {};
+
+    // Invoke operator.
+    return obj.type->methods.unaryOp(interp, unaryOp->op, obj);
+}
+
 MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* call) {
     Interpreter* interp = frame->interp;
 
@@ -171,7 +185,7 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
             if (!interp->returnValue.data) {
                 interp->error(
                     interp,
-                    String::format("Can't resolve identifier '{}'",
+                    String::format("cannot resolve identifier '{}'",
                                    interp->internedStrings->view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
@@ -193,6 +207,10 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
 
         case Expression::ID::BinaryOp: {
             return evalBinaryOp(frame, expr->binaryOp().get());
+        }
+
+        case Expression::ID::UnaryOp: {
+            return evalUnaryOp(frame, expr->unaryOp().get());
         }
 
         case Expression::ID::Call: {

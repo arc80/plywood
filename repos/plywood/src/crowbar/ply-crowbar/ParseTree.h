@@ -43,6 +43,10 @@ struct Expression {
         Owned<Expression> left;
         Owned<Expression> right;
     };
+    struct UnaryOp {
+        MethodTable::UnaryOp op;
+        Owned<Expression> expr;
+    };
     struct Call {
         Owned<Expression> callable;
         Array<Owned<Expression>> args;

@@ -20,8 +20,7 @@ struct ArithmeticMethodTable {
     static PLY_INLINE MethodTable make() {
         MethodTable methods;
         methods.binaryOp = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
-                              const AnyObject& first,
-                              const AnyObject& second) -> MethodResult {
+                              const AnyObject& first, const AnyObject& second) -> MethodResult {
             switch (op) {
                 case MethodTable::BinaryOp::Multiply: {
                     interp->returnValue =
@@ -85,6 +84,32 @@ struct ArithmeticMethodTable {
                 }
                 default: {
                     return MethodTable::unsupportedBinaryOp(interp, op, first, second);
+                }
+            }
+        };
+        methods.unaryOp = [](BaseInterpreter* interp, MethodTable::UnaryOp op,
+                             const AnyObject& obj) -> MethodResult {
+            switch (op) {
+                case MethodTable::UnaryOp::Negate: {
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
+                    *interp->returnValue.cast<T>() = -*obj.cast<T>();
+                    return MethodResult::OK;
+                }
+                case MethodTable::UnaryOp::LogicalNot: {
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
+                    *interp->returnValue.cast<T>() = !*obj.cast<T>();
+                    return MethodResult::OK;
+                }
+                case MethodTable::UnaryOp::BitComplement: {
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
+                    *interp->returnValue.cast<T>() = ~*obj.cast<T>();
+                    return MethodResult::OK;
+                }
+                default: {
+                    return MethodTable::unsupportedUnaryOp(interp, op, obj);
                 }
             }
         };

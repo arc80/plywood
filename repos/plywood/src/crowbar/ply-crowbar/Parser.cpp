@@ -30,7 +30,7 @@ PLY_NO_INLINE bool error(Parser* parser, const ExpandedToken& errorToken,
     return false;
 }
 
-u32 BinaryOpPrecedence[] = {
+constexpr u32 BinaryOpPrecedence[] = {
     0,  // Invalid
     3,  // Multiply
     3,  // Divide
@@ -44,7 +44,20 @@ u32 BinaryOpPrecedence[] = {
     7,  // DoubleEqual
     11, // LogicalAnd
     12, // LogicalOr
+    0,  // Count
 };
+
+PLY_STATIC_ASSERT(BinaryOpPrecedence[(u32) MethodTable::BinaryOp::Count] == 0);
+
+constexpr u32 UnaryOpPrecedence[] = {
+    0, // Invalid
+    2, // Negate
+    2, // LogicalNot
+    2, // BitComplement
+    0, // ContainerStart
+};
+
+PLY_STATIC_ASSERT(UnaryOpPrecedence[(u32) MethodTable::UnaryOp::ContainerStart] == 0);
 
 Owned<Expression> parseArgumentList(Parser* parser, Owned<Expression>&& callable,
                                     u32 openParenTokenIdx) {
@@ -114,6 +127,19 @@ MethodTable::BinaryOp tokenToBinaryOp(TokenType tokenType) {
     }
 }
 
+MethodTable::UnaryOp tokenToUnaryOp(TokenType tokenType) {
+    switch (tokenType) {
+        case TokenType::Minus:
+            return MethodTable::UnaryOp::Negate;
+        case TokenType::Bang:
+            return MethodTable::UnaryOp::LogicalNot;
+        case TokenType::Tilde:
+            return MethodTable::UnaryOp::BitComplement;
+        default:
+            return MethodTable::UnaryOp::Invalid;
+    }
+}
+
 void parseInterpolatedString(Parser* parser, Expression* expr) {
     auto& pieces = expr->interpolatedString().switchTo()->pieces;
 
@@ -168,14 +194,14 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
         PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
         expr = this->parseExpression();
         ExpandedToken closingToken = this->tkr->readToken();
-        if (closingToken.type != TokenType::CloseParen) {
+        if (closingToken.type == TokenType::CloseParen) {
+            this->recovery.muteErrors = false;
+        } else {
             error(this, closingToken, ErrorTokenAction::PushBack,
                   String::format("expected ')' to match the '(' at {}; got {}",
                                  this->tkr->fileLocationMap.formatFileLocation(token.fileOffset),
                                  closingToken.desc()));
-            return {};
         }
-        this->recovery.muteErrors = false;
     } else {
         expr = Owned<Expression>::create();
         expr->tokenIdx = token.tokenIdx;
@@ -193,9 +219,16 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
                 break;
             }
             default: {
-                error(this, token, ErrorTokenAction::PushBack,
-                      String::format("expected an expression; got {}", token.desc()));
-                return {};
+                MethodTable::UnaryOp op = tokenToUnaryOp(token.type);
+                if (op == MethodTable::UnaryOp::Invalid) {
+                    error(this, token, ErrorTokenAction::PushBack,
+                          String::format("expected an expression; got {}", token.desc()));
+                    return {};
+                }
+                auto unaryOp = expr->unaryOp().switchTo();
+                unaryOp->op = op;
+                unaryOp->expr = this->parseExpression();
+                break;
             }
         }
     }

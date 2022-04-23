@@ -341,12 +341,12 @@ result:
 
 ------------------------------------------------------------
 fn test() {
-    false + true
+    true + false
 }
 
 result:
 error: 'bool' does not support binary operator '+'
-(2, 11) in function 'test'
+(2, 10) in function 'test'
 
 ------------------------------------------------------------
 fn test() {
@@ -363,7 +363,7 @@ fn test() {
 }
 
 result:
-error: 'u32' cannot be called as a function
+error: cannot call 'u32' as a function
 (2, 6) in function 'test'
 
 ------------------------------------------------------------
@@ -380,20 +380,12 @@ fn test() {
 }
 
 result:
-error: Can't resolve identifier 'bar'
+error: cannot resolve identifier 'bar'
 (5, 9) in function 'foo'
 (3, 12) called from 'foo'
 (3, 12) called from 'foo'
 (3, 12) called from 'foo'
 (10, 8) called from 'test'
-
-------------------------------------------------------------
-fn test() {
-    -false // FIXME: Parse unary operators
-}
-
-result:
-(2, 5) error: expected an expression; got '-'
 
 ------------------------------------------------------------
 fn somefunc(x) {
@@ -408,10 +400,43 @@ fn test() {
 }
 
 result:
-error: Can't resolve identifier 'bar'
+error: cannot resolve identifier 'bar'
 (3, 16) in function 'somefunc'
 (5, 32) called from 'somefunc'
 (5, 32) called from 'somefunc'
 (5, 32) called from 'somefunc'
 (9, 19) called from 'test'
+
+------------------------------------------------------------
+fn test() {
+    print(-false)
+}
+
+result:
+error: 'bool' does not support unary operator '-'
+(2, 11) in function 'test'
+
+------------------------------------------------------------
+fn test() {
+    print(!true)
+}
+
+result:
+false
+
+------------------------------------------------------------
+fn test() {
+    print(~1)
+}
+
+result:
+4294967294
+
+------------------------------------------------------------
+fn test() {
+    print(!5)
+}
+
+result:
+0
 

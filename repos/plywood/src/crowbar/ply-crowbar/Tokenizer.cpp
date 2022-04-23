@@ -52,6 +52,8 @@ StringView tokenRepr[] = {
     "*",  // Asterisk
     "/",  // Slash
     "%",  // Percent
+    "!",  // Bang
+    "~",  // Tilde
     "|",  // VerticalBar
     "||", // DoubleVerticalBar
     "&",  // Ampersand
@@ -350,6 +352,16 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
 
             case '%': {
                 expToken.type = TokenType::Percent;
+                goto result;
+            }
+
+            case '!': {
+                expToken.type = TokenType::Bang;
+                goto result;
+            }
+
+            case '~': {
+                expToken.type = TokenType::Tilde;
                 goto result;
             }
 
