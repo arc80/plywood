@@ -127,15 +127,17 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
         PLY_ASSERT(args.numItems() == functionDef->parameterNames.numItems());
 
         // Set up a new stack frame.
-        Interpreter::StackFrame frame;
-        frame.interp = interp;
+        Interpreter::StackFrame newFrame;
+        newFrame.interp = interp;
+        newFrame.functionDef = functionDef;
+        newFrame.prevFrame = frame;
         for (u32 argIndex : range(args.numItems())) {
-            frame.localVariableTable.insertOrFind(functionDef->parameterNames[argIndex])->obj =
+            newFrame.localVariableTable.insertOrFind(functionDef->parameterNames[argIndex])->obj =
                 args[argIndex];
         }
 
         // Execute function body and clean up stack frame.
-        return execFunction(&frame, functionDef->body);
+        return execFunction(&newFrame, functionDef->body);
     } else {
         // Call through MethodTable.
         return callee.type->methods.call(interp, callee, args);
@@ -161,15 +163,15 @@ AnyObject lookupName(Interpreter::StackFrame* frame, u32 name) {
 
 MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
     Interpreter* interp = frame->interp;
+    PLY_SET_IN_SCOPE(frame->tokenIdx, expr->tokenIdx);
 
-    PLY_SET_IN_SCOPE(interp->currentTokenIdx, expr->tokenIdx);
     switch (expr->id) {
         case Expression::ID::NameLookup: {
             interp->returnValue = lookupName(frame, expr->nameLookup()->name);
             if (!interp->returnValue.data) {
                 interp->error(
                     interp,
-                    String::format("Can't resolve name '{}'",
+                    String::format("Can't resolve identifier '{}'",
                                    interp->internedStrings->view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
@@ -317,7 +319,7 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
 
     // Execute each statement in this block.
     for (const Statement* statement : block->statements) {
-        interp->currentTokenIdx = statement->tokenIdx;
+        frame->tokenIdx = statement->tokenIdx;
         switch (statement->id) {
             case Statement::ID::If_: {
                 MethodResult result = execIf(frame, statement->if_().get());
@@ -367,6 +369,7 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
 
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block) {
     Interpreter* interp = frame->interp;
+    PLY_SET_IN_SCOPE(interp->currentFrame, frame);
     ObjectStack::Boundary endOfPreviousFrameStorage = interp->localVariableStorage.end();
 
     // Execute function body.

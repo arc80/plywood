@@ -89,10 +89,18 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
         interp.outerNameSpaces.append(&ns);
         interp.error = [](BaseInterpreter* base, StringView message) {
             Interpreter* interp = static_cast<Interpreter*>(base);
-            ExpandedToken expToken = interp->tkr->expandToken(interp->currentTokenIdx);
-            interp->outs->format(
-                "{} error: {}\n",
-                interp->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset), message);
+            interp->outs->format("error: {}\n", message);
+            bool first = true;
+            for (Interpreter::StackFrame* frame = interp->currentFrame; frame;
+                 frame = frame->prevFrame) {
+                ExpandedToken expToken = interp->tkr->expandToken(frame->tokenIdx);
+                interp->outs->format(
+                    "{} {} '{}'\n",
+                    interp->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
+                    first ? "in function" : "called from",
+                    interp->internedStrings->view(frame->functionDef->name));
+                first = false;
+            }
         };
         interp.tkr = &tkr;
 
@@ -100,6 +108,7 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
         Interpreter::StackFrame frame;
         frame.interp = &interp;
         const FunctionDefinition* fnDef = testObj.cast<FunctionDefinition>();
+        frame.functionDef = fnDef;
         PLY_ASSERT(fnDef->parameterNames.numItems() == args.numItems);
         for (u32 i = 0; i < args.numItems; i++) {
             frame.localVariableTable.insertOrFind(fnDef->parameterNames[i])->obj = args[i];

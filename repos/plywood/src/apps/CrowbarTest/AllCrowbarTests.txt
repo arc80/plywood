@@ -340,20 +340,52 @@ result:
 1 2 3 go
 
 ------------------------------------------------------------
+fn test() {
+    false + true
+}
+
+result:
+error: 'bool' does not support binary operator '+'
+(2, 11) in function 'test'
+
+------------------------------------------------------------
+fn test() {
+    false.foo
+}
+
+result:
+error: 'bool' does not support property lookup
+(2, 11) in function 'test'
+
+------------------------------------------------------------
+fn test() {
+    3()
+}
+
+result:
+error: 'u32' cannot be called as a function
+(2, 6) in function 'test'
+
+------------------------------------------------------------
 fn foo(x) {
     if x > 0 {
         foo(x - 1)
     } else {
-        bad()
+        bar()
     }
 }
 
 fn test() {
-    foo(5)
+    foo(3)
 }
 
 result:
-(5, 9) error: Can't resolve name 'bad'
+error: Can't resolve identifier 'bar'
+(5, 9) in function 'foo'
+(3, 12) called from 'foo'
+(3, 12) called from 'foo'
+(3, 12) called from 'foo'
+(10, 8) called from 'test'
 
 ------------------------------------------------------------
 fn test() {
@@ -364,26 +396,22 @@ result:
 (2, 5) error: expected an expression; got '-'
 
 ------------------------------------------------------------
+fn somefunc(x) {
+    if x > 3
+        return bar
+    else
+        return "${x} ${somefunc(x + 1)}"
+}
+
 fn test() {
-    false + true
+    print(somefunc(1))
 }
 
 result:
-(2, 11) error: 'bool' does not support binary operator '+'
-
-------------------------------------------------------------
-fn test() {
-    3()
-}
-
-result:
-(2, 6) error: 'u32' cannot be called as a function
-
-------------------------------------------------------------
-fn test() {
-    false.foo
-}
-
-result:
-(2, 11) error: 'bool' does not support property lookup
+error: Can't resolve identifier 'bar'
+(3, 16) in function 'somefunc'
+(5, 32) called from 'somefunc'
+(5, 32) called from 'somefunc'
+(5, 32) called from 'somefunc'
+(9, 19) called from 'test'
 

@@ -28,7 +28,10 @@ struct VariableMapTraits {
 struct Interpreter : BaseInterpreter {
     struct StackFrame {
         Interpreter* interp = nullptr;
+        const FunctionDefinition* functionDef = nullptr;
         HashMap<VariableMapTraits> localVariableTable;
+        u32 tokenIdx = 0;
+        StackFrame* prevFrame = nullptr;
     };
 
     const InternedStrings* internedStrings = nullptr;
@@ -36,7 +39,7 @@ struct Interpreter : BaseInterpreter {
 
     // For expanding the location of runtime errors:
     Tokenizer* tkr = nullptr;
-    u32 currentTokenIdx = 0;
+    StackFrame *currentFrame = nullptr;
 };
 
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
