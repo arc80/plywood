@@ -216,8 +216,8 @@ fn foo() {
 }
 
 result:
-(2, 5) error: expected an expression; got '/'
-(3, 11) error: expected an expression; got '$'
+(2, 5) error: expected a statement; got '/'
+(3, 11) error: unexpected '$' after assignment
 
 ------------------------------------------------------------
 fn test() {
@@ -265,6 +265,7 @@ fn foo() {
 
 result:
 (2, 15) error: expected ')' to match the '(' at (2, 12); got '2'
+(2, 16) error: unexpected ')' after expression
 
 ------------------------------------------------------------
 fn test() {

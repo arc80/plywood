@@ -9,8 +9,6 @@
 namespace ply {
 namespace crowbar {
 
-enum class ErrorTokenAction { DoNothing, PushBack, HandleUnexpected };
-
 PLY_NO_INLINE bool error(Parser* parser, const ExpandedToken& errorToken,
                          ErrorTokenAction tokenAction, StringView message) {
     if (!parser->recovery.muteErrors) {
@@ -184,7 +182,7 @@ void parseInterpolatedString(Parser* parser, Expression* expr) {
     }
 }
 
-Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
+Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel, bool asStatement) {
     Owned<Expression> expr;
 
     ExpandedToken token = this->tkr->readToken();
@@ -221,8 +219,11 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel) {
             default: {
                 MethodTable::UnaryOp op = tokenToUnaryOp(token.type);
                 if (op == MethodTable::UnaryOp::Invalid) {
-                    error(this, token, ErrorTokenAction::PushBack,
-                          String::format("expected an expression; got {}", token.desc()));
+                    this->tkr->rewindTo(token.tokenIdx);
+                    if (!asStatement) { // Statement errors are issued by caller
+                        error(this, token, ErrorTokenAction::DoNothing,
+                              String::format("expected an expression; got {}", token.desc()));
+                    }
                     return {};
                 }
                 auto unaryOp = expr->unaryOp().switchTo();
@@ -298,10 +299,11 @@ Owned<Statement> Parser::parseStatement() {
     if (token.stringKey == ifKey) {
         auto cond = stmt->if_().switchTo();
         cond->condition = this->parseExpression();
-        cond->trueBlock = this->parseNestedBlock("if-statement");
+        cond->trueBlock = parseStatementBlock(this, {"if-statement", "if-condition", true});
+        PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
         token = this->tkr->readToken();
         if (token.stringKey == elseKey) {
-            cond->falseBlock = this->parseNestedBlock("else-block");
+            cond->falseBlock = parseStatementBlock(this, {"else-block", "'else'", true});
         } else {
             this->tkr->rewindTo(token.tokenIdx);
         }
@@ -309,7 +311,8 @@ Owned<Statement> Parser::parseStatement() {
     } else if (token.stringKey == whileKey) {
         auto cond = stmt->while_().switchTo();
         cond->condition = this->parseExpression();
-        cond->block = this->parseNestedBlock("while-loop");
+        PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
+        cond->block = parseStatementBlock(this, {"while-loop", "'while'", true});
         return stmt;
     } else if (token.stringKey == returnKey) {
         auto return_ = stmt->return_().switchTo();
@@ -319,88 +322,100 @@ Owned<Statement> Parser::parseStatement() {
         this->tkr->rewindTo(token.tokenIdx);
     }
 
-    Owned<Expression> expr = this->parseExpression();
+    Owned<Expression> expr = this->parseExpression(Limits<u32>::Max, true);
     token = this->tkr->readToken();
-    switch (token.type) {
-        case TokenType::Equal: {
+    if (expr) {
+        StringView statementType;
+        if (token.type == TokenType::Equal) {
+            statementType = "assignment";
             auto assignment = stmt->assignment().switchTo();
             assignment->left = std::move(expr);
             assignment->right = this->parseExpression();
-            return stmt;
-        }
-        default: {
+            token = this->tkr->readToken();
+        } else {
+            statementType = "expression";
             auto evaluate = stmt->evaluate().switchTo();
             evaluate->expr = std::move(expr);
-            return stmt;
         }
+        if ((token.type == TokenType::NewLine) || (token.type == TokenType::Semicolon)) {
+            // This token marks the end of the statement.
+        } else {
+            this->tkr->rewindTo(token.tokenIdx);
+            if (token.type != TokenType::CloseCurly) {
+                error(this, token, ErrorTokenAction::DoNothing,
+                      String::format("unexpected {} after {}", token.desc(), statementType));
+            }
+        }
+        return stmt;
+    } else {
+        if (error(this, token, ErrorTokenAction::HandleUnexpected,
+                  String::format("expected a statement; got {}", token.desc())))
+            return {};
     }
 
     return {};
 }
 
-Owned<StatementBlock> Parser::parseStatementBlock() {
-    PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, true);
-    auto block = Owned<StatementBlock>::create();
+Owned<StatementBlock> parseStatementBlock(Parser* parser, const StatementBlockProperties& props) {
+    PLY_SET_IN_SCOPE(parser->tkr->behavior.tokenizeNewLine, false);
+    ExpandedToken token = parser->tkr->readToken();
+    parser->tkr->behavior.tokenizeNewLine = true;
 
-    for (;;) {
-        ExpandedToken token = this->tkr->readToken();
-        switch (token.type) {
-            case TokenType::NewLine:
-            case TokenType::Semicolon: {
-                break;
-            }
-            case TokenType::CloseCurly:
-            case TokenType::EndOfFile: {
-                this->tkr->rewindTo(token.tokenIdx);
-                goto recover;
-            }
-            default: {
-                this->tkr->rewindTo(token.tokenIdx);
-                Owned<Statement> stmt = this->parseStatement();
-                block->statements.append(std::move(stmt));
-                break;
-            }
-        }
-    }
-
-recover:
-    return block;
-}
-
-Owned<StatementBlock> Parser::parseNestedBlock(StringView forStatementType) {
-    PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
-    ExpandedToken token = this->tkr->readToken();
     if (token.type == TokenType::OpenCurly) {
-        Owned<StatementBlock> block = this->parseStatementBlock();
-        token = this->tkr->readToken();
-        if (token.type != TokenType::CloseCurly) {
-            if (!error(this, token, ErrorTokenAction::HandleUnexpected,
-                       String::format("unexpected {} inside {}", token.desc(), forStatementType)))
-                return {};
+        auto block = Owned<StatementBlock>::create();
+
+        for (;;) {
+            ExpandedToken token = parser->tkr->readToken();
+            switch (token.type) {
+                case TokenType::NewLine:
+                case TokenType::Semicolon: {
+                    break;
+                }
+                case TokenType::CloseCurly: {
+                    return block;
+                }
+                case TokenType::EndOfFile: {
+                    error(parser, token, ErrorTokenAction::PushBack,
+                          String::format("unexpected end-of-file inside {}", props.blockType));
+                    return block;
+                }
+                default: {
+                    parser->tkr->rewindTo(token.tokenIdx);
+                    Owned<Statement> stmt = parser->parseStatement();
+                    block->statements.append(std::move(stmt));
+                    break;
+                }
+            }
         }
-        return block;
-    } else {
-        this->tkr->rewindTo(token.tokenIdx);
-        Owned<Statement> statement = this->parseStatement();
+
+        token = parser->tkr->readToken();
+    } else if (props.curlyBracesOptionalIfControlFlow) {
+        parser->tkr->rewindTo(token.tokenIdx);
+        Owned<Statement> statement = parser->parseStatement();
         switch (statement->id) {
             case Statement::ID::Return_:
                 break;
             default: {
-                error(this, token, ErrorTokenAction::DoNothing,
+                error(parser, token, ErrorTokenAction::DoNothing,
                       String::format("body of {} must be enclosed in curly braces unless it's a "
                                      "break, continue or return statement",
-                                     forStatementType));
-                this->recovery.muteErrors = false;
+                                     props.blockType));
+                parser->recovery.muteErrors = false;
                 break;
             }
         }
         auto block = Owned<StatementBlock>::create();
         block->statements.append(std::move(statement));
         return block;
+    } else {
+        error(parser, token, ErrorTokenAction::PushBack,
+              String::format("expected '{{' after {}; got {}", props.afterItemText, token.desc()));
+        return {};
     }
 }
 
 void parseParameterList(Parser* parser, FunctionDefinition* functionDef) {
+    PLY_SET_IN_SCOPE(parser->tkr->behavior.tokenizeNewLine, false);
     ExpandedToken paramToken = parser->tkr->readToken();
     if (paramToken.type == TokenType::CloseParen) {
         parser->tkr->rewindTo(paramToken.tokenIdx);
@@ -431,7 +446,6 @@ void parseParameterList(Parser* parser, FunctionDefinition* functionDef) {
 
 Owned<FunctionDefinition> parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken) {
     auto functionDef = Owned<FunctionDefinition>::create();
-    PLY_SET_IN_SCOPE(parser->tkr->behavior.tokenizeNewLine, false);
 
     // We got the 'fn' keyword.
     parser->recovery.muteErrors = false;
@@ -462,19 +476,7 @@ Owned<FunctionDefinition> parseFunctionDefinition(Parser* parser, const Expanded
     parser->recovery.muteErrors = false;
 
     // Parse function body.
-    token = parser->tkr->readToken();
-    if (token.type != TokenType::OpenCurly) {
-        error(parser, token, ErrorTokenAction::PushBack,
-              String::format("expected '{{' after parameter list; got {}", token.desc()));
-        return {};
-    }
-    functionDef->body = parser->parseStatementBlock();
-    token = parser->tkr->readToken();
-    if (token.type != TokenType::CloseCurly) {
-        error(parser, token, ErrorTokenAction::PushBack,
-              String::format("unexpected {} inside function", token.desc()));
-        return {};
-    }
+    functionDef->body = parseStatementBlock(parser, {"function", "parameter list"});
 
     return functionDef;
 }
@@ -487,6 +489,9 @@ Owned<File> Parser::parseFile() {
         ExpandedToken token = this->tkr->readToken();
         if (token.type == TokenType::EndOfFile)
             break;
+
+        if (this->hooks->recognizeKeyword(token))
+            continue;
 
         if (token.stringKey == fnKey) {
             Owned<FunctionDefinition> functionDef = parseFunctionDefinition(this, token);

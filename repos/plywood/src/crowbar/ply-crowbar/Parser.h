@@ -10,13 +10,12 @@
 namespace ply {
 namespace crowbar {
 
-enum class ErrorCode {
-    ExpectedAfter,
-};
-
 struct Parser {
     // Hooks to customize parser behavior.
     struct Hooks {
+        virtual bool recognizeKeyword(const ExpandedToken& token) {
+            return false;
+        }
         virtual void onError(StringView errorMsg) = 0;
     };
     Hooks* hooks = nullptr;
@@ -36,16 +35,35 @@ struct Parser {
     };
     RecoveryState recovery;
 
-    Owned<Expression> parseExpression(u32 outerPrecendenceLevel = Limits<u32>::Max);
+    Owned<Expression> parseExpression(u32 outerPrecendenceLevel = Limits<u32>::Max, bool asStatement = false);
     Owned<Statement> parseStatement();
-    Owned<StatementBlock> parseStatementBlock();
-    Owned<StatementBlock> parseNestedBlock(StringView forStatementType);
     Owned<File> parseFile();
 };
 
+enum class ErrorTokenAction {
+    DoNothing,
+    PushBack,
+    HandleUnexpected,
+};
+
+struct StatementBlockProperties {
+    StringView blockType;
+    StringView afterItemText;
+    bool curlyBracesOptionalIfControlFlow = false;
+
+    PLY_INLINE StatementBlockProperties(StringView blockType, StringView afterItemText = {},
+                                        bool curlyBracesOptionalIfControlFlow = false)
+        : blockType{blockType}, afterItemText{afterItemText},
+          curlyBracesOptionalIfControlFlow{curlyBracesOptionalIfControlFlow} {
+    }
+};
+
+bool error(Parser* parser, const ExpandedToken& errorToken, ErrorTokenAction tokenAction,
+           StringView message);
 bool skipAnyScope(Parser* parser, ExpandedToken* outCloseToken, TokenType openTokenType);
 bool handleUnexpectedToken(Parser* parser, ExpandedToken* outCloseToken,
                            const ExpandedToken& unexpected);
+Owned<StatementBlock> parseStatementBlock(Parser* parser, const StatementBlockProperties& props);
 
 } // namespace crowbar
 } // namespace ply
