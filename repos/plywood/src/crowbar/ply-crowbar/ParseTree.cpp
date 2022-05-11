@@ -5,7 +5,7 @@
 #include <ply-crowbar/Core.h>
 #include <ply-crowbar/ParseTree.h>
 
-PLY_STRUCT_BEGIN_PRIM(ply::crowbar::FunctionDefinition)
+PLY_STRUCT_BEGIN_PRIM(ply::crowbar::Statement::FunctionDefinition)
 PLY_STRUCT_END_PRIM()
 
 #include "codegen/ParseTree.inl"

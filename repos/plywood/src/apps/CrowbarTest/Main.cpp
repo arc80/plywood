@@ -59,7 +59,7 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
     parser.hooks = &hooks;
 
     // Parse the script.
-    Owned<File> file = parser.parseFile();
+    Owned<StatementBlock> file = parser.parseFile();
     if (hooks.errorCount > 0)
         return hooks.errorOut.moveToString();
 
@@ -70,7 +70,8 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
     // Put functions in a namespace
     Sequence<AnyObject> fnObjs;
     HashMap<VariableMapTraits> ns;
-    for (const FunctionDefinition* fnDef : file->functions) {
+    for (const Statement* stmt : file->statements) {
+        const Statement::FunctionDefinition* fnDef = stmt->functionDefinition().get();
         const AnyObject& fnObj = fnObjs.append(AnyObject::bind(fnDef));
         ns.insertOrFind(fnDef->name)->obj = fnObj;
     }
@@ -107,7 +108,7 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
         // Invoke function
         Interpreter::StackFrame frame;
         frame.interp = &interp;
-        const FunctionDefinition* fnDef = testObj.cast<FunctionDefinition>();
+        const auto* fnDef = testObj.cast<Statement::FunctionDefinition>();
         frame.functionDef = fnDef;
         PLY_ASSERT(fnDef->parameterNames.numItems() == args.numItems);
         for (u32 i = 0; i < args.numItems; i++) {
@@ -225,8 +226,7 @@ void runTestSuite() {
 
 int main() {
     runTestSuite();
-    // return ply::test::run() ? 0 : 1;
-    return 0;
+    return ply::test::run() ? 0 : 1;
 }
 
 #include "codegen/Main.inl" //%%

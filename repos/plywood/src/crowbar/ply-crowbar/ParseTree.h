@@ -11,12 +11,6 @@ namespace crowbar {
 
 struct StatementBlock;
 
-struct FunctionDefinition {
-    u32 name; // Interned string.
-    Array<u32> parameterNames;
-    Owned<StatementBlock> body;
-};
-
 struct Expression {
     u32 tokenIdx = 0;
 
@@ -51,9 +45,6 @@ struct Expression {
         Owned<Expression> callable;
         Array<Owned<Expression>> args;
     };
-    struct Custom {
-        void* data = nullptr;
-    };
 #include "codegen/switch-ply-crowbar-Expression.inl" //@@ply
 };
 
@@ -77,9 +68,23 @@ struct Statement {
     };
     struct Evaluate {
         Owned<Expression> expr;
+        AnyOwnedObject traits;
     };
     struct Return_ {
         Owned<Expression> expr;
+    };
+    struct FunctionDefinition {
+        PLY_REFLECT()
+        // ply reflect off
+
+        u32 name; // Interned string.
+        Array<u32> parameterNames;
+        Owned<StatementBlock> body;
+    };
+    struct CustomBlock {
+        u32 typeKey = 0;
+        u32 name = 0;
+        Owned<StatementBlock> body;
     };
 #include "codegen/switch-ply-crowbar-Statement.inl" //@@ply
 };
@@ -88,12 +93,8 @@ struct StatementBlock {
     Array<Owned<Statement>> statements;
 };
 
-struct File {
-    Array<Owned<FunctionDefinition>> functions;
-};
-
 } // namespace crowbar
 
-PLY_DECLARE_TYPE_DESCRIPTOR(crowbar::FunctionDefinition)
+PLY_DECLARE_TYPE_DESCRIPTOR(crowbar::Statement::FunctionDefinition)
 
 } // namespace ply

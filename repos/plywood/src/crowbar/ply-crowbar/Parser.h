@@ -11,9 +11,11 @@ namespace ply {
 namespace crowbar {
 
 struct Parser {
-    // Hooks to customize parser behavior.
     struct Hooks {
-        virtual bool recognizeKeyword(const ExpandedToken& token) {
+        virtual bool tryParseCustomBlock(StatementBlock* stmtBlock) {
+            return false;
+        }
+        virtual bool tryParseExpressionTrait(AnyOwnedObject* expressionTraits) {
             return false;
         }
         virtual void onError(StringView errorMsg) = 0;
@@ -35,9 +37,17 @@ struct Parser {
     };
     RecoveryState recovery;
 
-    Owned<Expression> parseExpression(u32 outerPrecendenceLevel = Limits<u32>::Max, bool asStatement = false);
-    Owned<Statement> parseStatement();
-    Owned<File> parseFile();
+    // Information about the current parsing context.
+    struct Context {
+        Statement::FunctionDefinition* func = nullptr;
+        Statement::CustomBlock* customBlock = nullptr;
+    };
+    Context context;
+
+    Owned<Expression> parseExpression(u32 outerPrecendenceLevel = Limits<u32>::Max,
+                                      bool asStatement = false);
+    void parseStatement(StatementBlock* stmtBlock);
+    Owned<StatementBlock> parseFile();
 };
 
 enum class ErrorTokenAction {

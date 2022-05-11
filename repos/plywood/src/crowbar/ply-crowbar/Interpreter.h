@@ -26,9 +26,16 @@ struct VariableMapTraits {
 };
 
 struct Interpreter : BaseInterpreter {
+    struct Hooks {
+        virtual ~Hooks() {}
+        virtual void enterCustomBlock(const Statement::CustomBlock* customBlock) {}
+        virtual void exitCustomBlock(const Statement::CustomBlock* customBlock) {}
+        virtual void onEvaluate(const AnyObject& evaluationTraits) {}
+    };
+
     struct StackFrame {
         Interpreter* interp = nullptr;
-        const FunctionDefinition* functionDef = nullptr;
+        const Statement::FunctionDefinition* functionDef = nullptr;
         HashMap<VariableMapTraits> localVariableTable;
         u32 tokenIdx = 0;
         StackFrame* prevFrame = nullptr;
@@ -36,6 +43,7 @@ struct Interpreter : BaseInterpreter {
 
     const InternedStrings* internedStrings = nullptr;
     Array<HashMap<VariableMapTraits>*> outerNameSpaces;
+    Hooks* hooks = nullptr;
 
     // For expanding the location of runtime errors:
     Tokenizer* tkr = nullptr;

@@ -134,10 +134,10 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
     }
 
     // Invoke function using provided arguments.
-    if (callee.is<FunctionDefinition>()) {
+    if (callee.is<Statement::FunctionDefinition>()) {
         // It's a Crowbar function.
         // FIXME: Move this to MethodTable.
-        const FunctionDefinition* functionDef = callee.cast<FunctionDefinition>();
+        const auto* functionDef = callee.cast<Statement::FunctionDefinition>();
         PLY_ASSERT(args.numItems() == functionDef->parameterNames.numItems());
 
         // Set up a new stack frame.
@@ -183,10 +183,9 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
         case Expression::ID::NameLookup: {
             interp->returnValue = lookupName(frame, expr->nameLookup()->name);
             if (!interp->returnValue.data) {
-                interp->error(
-                    interp,
-                    String::format("cannot resolve identifier '{}'",
-                                   interp->internedStrings->view(expr->nameLookup()->name)));
+                interp->error(interp, String::format(
+                                          "cannot resolve identifier '{}'",
+                                          interp->internedStrings->view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
             return MethodResult::OK;
@@ -363,6 +362,9 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
                 MethodResult result = eval(frame, statement->evaluate()->expr);
                 if (result != MethodResult::OK)
                     return result;
+                if (interp->hooks) {
+                    interp->hooks->onEvaluate(interp->returnValue);
+                }
                 interp->returnValue = {};
                 // Delete temporary objects.
                 interp->localVariableStorage.deleteRange(localVariableStorageBoundary,
@@ -374,6 +376,19 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
                 if (result != MethodResult::OK)
                     return result;
                 return MethodResult::Return;
+            }
+            case Statement::ID::CustomBlock: {
+                const Statement::CustomBlock* cb = statement->customBlock().get();
+                if (interp->hooks) {
+                    interp->hooks->enterCustomBlock(cb);
+                }
+                MethodResult result = execBlock(frame, cb->body);
+                if (interp->hooks) {
+                    interp->hooks->exitCustomBlock(cb);
+                }
+                if (result != MethodResult::OK)
+                    return result;
+                break;
             }
             default: {
                 PLY_ASSERT(0);

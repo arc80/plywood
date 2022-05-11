@@ -287,14 +287,35 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel, bool asStat
     }
 }
 
-Owned<Statement> Parser::parseStatement() {
+Owned<Expression> parseExpressionWithTraits(Parser* parser, AnyOwnedObject* expressionTraits) {
+    Owned<Expression> expr;
+    for (;;) {
+        // Try to parse a custom expression trait.
+        if (parser->hooks->tryParseExpressionTrait(expressionTraits))
+            continue;
+
+        // Try to parse an expression unless we've already obtained one.
+        if (expr)
+            return expr;
+        expr = parser->parseExpression(Limits<u32>::Max, true);
+        if (!expr)
+            return {};
+    }
+}
+
+void Parser::parseStatement(StatementBlock* stmtBlock) {
     u32 ifKey = this->tkr->internedStrings->findOrInsertKey("if");
     u32 whileKey = this->tkr->internedStrings->findOrInsertKey("while");
     u32 elseKey = this->tkr->internedStrings->findOrInsertKey("else");
     u32 returnKey = this->tkr->internedStrings->findOrInsertKey("return");
-    auto stmt = Owned<crowbar::Statement>::create();
 
+    // Try to parse a custom block.
+    if (this->hooks->tryParseCustomBlock(stmtBlock))
+        return;
+
+    // Try to parse a flow control statement.
     ExpandedToken token = this->tkr->readToken();
+    auto stmt = Owned<Statement>::create();
     stmt->tokenIdx = token.tokenIdx;
     if (token.stringKey == ifKey) {
         auto cond = stmt->if_().switchTo();
@@ -307,26 +328,35 @@ Owned<Statement> Parser::parseStatement() {
         } else {
             this->tkr->rewindTo(token.tokenIdx);
         }
-        return stmt;
+        stmtBlock->statements.append(std::move(stmt));
+        return;
     } else if (token.stringKey == whileKey) {
         auto cond = stmt->while_().switchTo();
         cond->condition = this->parseExpression();
         PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
         cond->block = parseStatementBlock(this, {"while-loop", "'while'", true});
-        return stmt;
+        stmtBlock->statements.append(std::move(stmt));
+        return;
     } else if (token.stringKey == returnKey) {
         auto return_ = stmt->return_().switchTo();
         return_->expr = this->parseExpression();
-        return stmt;
-    } else {
-        this->tkr->rewindTo(token.tokenIdx);
+        stmtBlock->statements.append(std::move(stmt));
+        return;
     }
+    this->tkr->rewindTo(token.tokenIdx);
 
-    Owned<Expression> expr = this->parseExpression(Limits<u32>::Max, true);
+    AnyOwnedObject expressionTraits;
+    Owned<Expression> expr = parseExpressionWithTraits(this, &expressionTraits);
     token = this->tkr->readToken();
     if (expr) {
         StringView statementType;
         if (token.type == TokenType::Equal) {
+            if (expressionTraits.data) {
+                // FIXME: Improve the error message by mentioning the specific trait that was
+                // used.
+                error(this, token, ErrorTokenAction::DoNothing,
+                      "assignment not allowed when expression traits are used");
+            }
             statementType = "assignment";
             auto assignment = stmt->assignment().switchTo();
             assignment->left = std::move(expr);
@@ -346,14 +376,13 @@ Owned<Statement> Parser::parseStatement() {
                       String::format("unexpected {} after {}", token.desc(), statementType));
             }
         }
-        return stmt;
+        stmtBlock->statements.append(std::move(stmt));
+        return;
     } else {
         if (error(this, token, ErrorTokenAction::HandleUnexpected,
                   String::format("expected a statement; got {}", token.desc())))
-            return {};
+            return;
     }
-
-    return {};
 }
 
 Owned<StatementBlock> parseStatementBlock(Parser* parser, const StatementBlockProperties& props) {
@@ -381,31 +410,32 @@ Owned<StatementBlock> parseStatementBlock(Parser* parser, const StatementBlockPr
                 }
                 default: {
                     parser->tkr->rewindTo(token.tokenIdx);
-                    Owned<Statement> stmt = parser->parseStatement();
-                    block->statements.append(std::move(stmt));
+                    parser->parseStatement(block);
                     break;
                 }
             }
         }
-
-        token = parser->tkr->readToken();
     } else if (props.curlyBracesOptionalIfControlFlow) {
         parser->tkr->rewindTo(token.tokenIdx);
-        Owned<Statement> statement = parser->parseStatement();
-        switch (statement->id) {
-            case Statement::ID::Return_:
-                break;
-            default: {
-                error(parser, token, ErrorTokenAction::DoNothing,
-                      String::format("body of {} must be enclosed in curly braces unless it's a "
-                                     "break, continue or return statement",
-                                     props.blockType));
-                parser->recovery.muteErrors = false;
-                break;
+        auto block = Owned<StatementBlock>::create();
+        parser->parseStatement(block);
+        bool isLegal = false;
+        if (block->statements.numItems() == 1) {
+            switch (block->statements[0]->id) {
+                case Statement::ID::Return_:
+                    isLegal = true;
+                    break;
+                default:
+                    break;
             }
         }
-        auto block = Owned<StatementBlock>::create();
-        block->statements.append(std::move(statement));
+        if (!isLegal) {
+            error(parser, token, ErrorTokenAction::DoNothing,
+                  String::format("body of {} must be enclosed in curly braces unless it's a "
+                                 "break, continue or return statement",
+                                 props.blockType));
+            parser->recovery.muteErrors = false;
+        }
         return block;
     } else {
         error(parser, token, ErrorTokenAction::PushBack,
@@ -414,7 +444,7 @@ Owned<StatementBlock> parseStatementBlock(Parser* parser, const StatementBlockPr
     }
 }
 
-void parseParameterList(Parser* parser, FunctionDefinition* functionDef) {
+void parseParameterList(Parser* parser, Statement::FunctionDefinition* functionDef) {
     PLY_SET_IN_SCOPE(parser->tkr->behavior.tokenizeNewLine, false);
     ExpandedToken paramToken = parser->tkr->readToken();
     if (paramToken.type == TokenType::CloseParen) {
@@ -444,8 +474,11 @@ void parseParameterList(Parser* parser, FunctionDefinition* functionDef) {
     }
 }
 
-Owned<FunctionDefinition> parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken) {
-    auto functionDef = Owned<FunctionDefinition>::create();
+void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
+                             StatementBlock* stmtBlock) {
+    auto stmt = Owned<Statement>::create();
+    auto functionDef = stmt->functionDefinition().switchTo().get();
+    PLY_SET_IN_SCOPE(parser->context.func, functionDef);
 
     // We got the 'fn' keyword.
     parser->recovery.muteErrors = false;
@@ -455,7 +488,7 @@ Owned<FunctionDefinition> parseFunctionDefinition(Parser* parser, const Expanded
     if (nameToken.type != TokenType::Identifier) {
         error(parser, nameToken, ErrorTokenAction::PushBack,
               String::format("expected function name after 'fn'; got {}", nameToken.desc()));
-        return {};
+        return;
     }
     functionDef->name = nameToken.stringKey;
 
@@ -465,39 +498,36 @@ Owned<FunctionDefinition> parseFunctionDefinition(Parser* parser, const Expanded
         error(parser, token, ErrorTokenAction::PushBack,
               String::format("expected '(' after function name {}; got {}", nameToken.desc(),
                              token.desc()));
-        return {};
+        return;
     }
     parseParameterList(parser, functionDef);
     token = parser->tkr->readToken();
     if (token.type != TokenType::CloseParen)
-        return {}; // Typically parser would be EOF, in which case an error was already logged.
+        return; // Typically parser would be EOF, in which case an error was already logged.
 
     // We got the closing ')'.
     parser->recovery.muteErrors = false;
 
     // Parse function body.
     functionDef->body = parseStatementBlock(parser, {"function", "parameter list"});
-
-    return functionDef;
+    stmtBlock->statements.append(std::move(stmt));
 }
 
-Owned<File> Parser::parseFile() {
+Owned<StatementBlock> Parser::parseFile() {
     u32 fnKey = this->tkr->internedStrings->findOrInsertKey("fn");
-    auto file = Owned<File>::create();
+    auto stmtBlock = Owned<StatementBlock>::create();
 
     for (;;) {
+        // Hooks allow the host application to customize parse behavior:
+        if (this->hooks->tryParseCustomBlock(stmtBlock))
+            continue;
+
+        // Input was not handled by hooks.
         ExpandedToken token = this->tkr->readToken();
         if (token.type == TokenType::EndOfFile)
             break;
-
-        if (this->hooks->recognizeKeyword(token))
-            continue;
-
         if (token.stringKey == fnKey) {
-            Owned<FunctionDefinition> functionDef = parseFunctionDefinition(this, token);
-            if (functionDef) {
-                file->functions.append(std::move(functionDef));
-            }
+            parseFunctionDefinition(this, token, stmtBlock);
         } else {
             error(this, token, ErrorTokenAction::HandleUnexpected,
                   String::format("unexpected {}", token.desc()));
@@ -505,7 +535,7 @@ Owned<File> Parser::parseFile() {
         }
     }
 
-    return file;
+    return stmtBlock;
 }
 
 } // namespace crowbar
