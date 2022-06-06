@@ -106,7 +106,8 @@ struct StringView {
     Constructs a `StringView` from a single byte. `c` is expected to remain valid for the lifetime
     of the `StringView`.
     */
-    PLY_INLINE StringView(const char& c) : bytes{&c}, numBytes{1} {
+    template <typename U, typename = std::enable_if_t<std::is_same<U, char>::value>>
+    PLY_INLINE StringView(const U& c) : bytes{&c}, numBytes{1} {
     }
 
     /*!

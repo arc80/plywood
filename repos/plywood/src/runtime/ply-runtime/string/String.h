@@ -63,7 +63,8 @@ struct String : StringMixin<String> {
     }
     PLY_INLINE String(const char* s) : String{StringView{s}} {
     }
-    PLY_INLINE String(char u) : String{StringView{&u, 1}} {
+    template <typename U, typename = std::enable_if_t<std::is_same<U, char>::value>>
+    PLY_INLINE String(const U& u) : String{StringView{&u, 1}} {
     }
     /*!
     \endGroup
