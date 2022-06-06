@@ -28,7 +28,6 @@ MethodResult doPrint(BaseInterpreter* interp, const AnyObject& arg) {
 
 // FIXME: Move this to the crowbar module:
 void addBuiltIns(InternedStrings& internedStrings, HashMap<VariableMapTraits>& ns) {
-    getTypeDescriptor(doPrint);
     ns.insertOrFind(internedStrings.findOrInsertKey("print"))->obj = AnyObject::bind(doPrint);
 
     static bool true_ = true;
