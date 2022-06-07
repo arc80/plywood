@@ -10,10 +10,6 @@
 namespace ply {
 namespace cpp {
 
-PLY_NO_INLINE void onGotInclude(ParseSupervisor* visor, StringView directive) {
-    visor->onGotInclude(directive);
-}
-
 void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFiles,
                          ParseSupervisor* visor) {
     Preprocessor pp;
@@ -98,7 +94,9 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
     addPPDef(&pp, "PLY_TEST_CASE", "void foo()", true);
     Parser parser;
     parser.pp = &pp;
-    pp.includeCallback = {visor, onGotInclude};
+    pp.includeCallback = {
+        [](ParseSupervisor* visor, StringView directive) { visor->onGotInclude(directive); },
+        visor};
     parser.visor = visor;
     PLY_ASSERT(!visor->parser);
     visor->parser = &parser;
