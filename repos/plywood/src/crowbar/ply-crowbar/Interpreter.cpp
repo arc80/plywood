@@ -67,7 +67,7 @@ MethodResult evalPropertyLookup(Interpreter::StackFrame* frame,
     // Perform property lookup.
     // FIXME: This should accept interned strings.
     return obj.type->methods.propertyLookup(
-        interp, obj, interp->internedStrings->view(propLookup->propertyName));
+        interp, obj, LabelMap::instance.view(propLookup->propertyName));
 }
 
 MethodResult evalBinaryOp(Interpreter::StackFrame* frame, const Expression::BinaryOp* binaryOp) {
@@ -158,7 +158,7 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
     }
 }
 
-AnyObject lookupName(Interpreter::StackFrame* frame, u32 name) {
+AnyObject lookupName(Interpreter::StackFrame* frame, Label name) {
     Interpreter* interp = frame->interp;
 
     auto cursor = frame->localVariableTable.find(name);
@@ -185,7 +185,7 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
             if (!interp->returnValue.data) {
                 interp->error(interp, String::format(
                                           "cannot resolve identifier '{}'",
-                                          interp->internedStrings->view(expr->nameLookup()->name)));
+                                          LabelMap::instance.view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
             return MethodResult::OK;
@@ -293,7 +293,7 @@ MethodResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignm
     // Perform assignment.
     if (assign->left->id == Expression::ID::NameLookup) {
         PLY_ASSERT(!left.data);
-        u32 name = assign->left->nameLookup()->name;
+        Label name = assign->left->nameLookup()->name;
         auto cursor = frame->localVariableTable.insertOrFind(name);
         if (cursor.wasFound()) {
             // Move result to existing local variable.

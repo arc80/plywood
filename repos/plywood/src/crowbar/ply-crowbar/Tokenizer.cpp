@@ -78,7 +78,7 @@ String ExpandedToken::desc() const {
 PLY_NO_INLINE void writeCompact(Tokenizer* tkr, u32 value) {
     char* start = tkr->tokenData.beginWrite(5);
     char* end = start;
-    details::InternedStringEncoder::encodeValue(end, value);
+    details::LabelEncoder::encodeValue(end, value);
     tkr->tokenData.endWrite(end - start);
 }
 
@@ -103,7 +103,7 @@ PLY_NO_INLINE void encodeToken(Tokenizer* tkr, const ExpandedToken& expToken) {
 
     if (expToken.type == TokenType::Identifier || expToken.type == TokenType::StringLiteral) {
         // Write the string key
-        writeCompact(tkr, expToken.stringKey);
+        writeCompact(tkr, expToken.label.idx);
     }
     tkr->nextTokenIdx = safeDemote<u32>(tkr->tokenData.numItems());
 }
@@ -125,18 +125,18 @@ PLY_NO_INLINE u32 expandTokenInternal(ExpandedToken& expToken, Tokenizer* tkr, u
         const char* start = tkr->tokenData.get(tokenIdx);
         const char* data = start;
         expToken.fileOffset =
-            tkr->fileOffsetTable[tokenIdx >> 8] + details::InternedStringEncoder::decodeValue(data);
+            tkr->fileOffsetTable[tokenIdx >> 8] + details::LabelEncoder::decodeValue(data);
         expToken.type = (TokenType)(u8) *data++;
         if (expToken.type == TokenType::Identifier || expToken.type == TokenType::StringLiteral) {
-            // Read the string key
-            expToken.stringKey = details::InternedStringEncoder::decodeValue(data);
+            // Read the label index
+            expToken.label.idx = details::LabelEncoder::decodeValue(data);
         }
         PLY_ASSERT(data <= tkr->tokenData.end());
         u32 compactLength = safeDemote<u32>(data - start);
         u32 endOffset = safeDemote<u32>(tkr->vin.cur - tkr->vin.start);
         if (data < tkr->tokenData.end()) {
             endOffset = tkr->fileOffsetTable[(tokenIdx + 1) >> 8] +
-                        details::InternedStringEncoder::decodeValue(data);
+                        details::LabelEncoder::decodeValue(data);
         }
         expToken.text =
             StringView::fromRange(tkr->vin.start + expToken.fileOffset, tkr->vin.start + endOffset);
@@ -191,7 +191,7 @@ PLY_NO_INLINE void readIdentifier(ExpandedToken& expToken, Tokenizer* tkr) {
 
     StringView text = StringView::fromRange(start, tkr->vin.cur);
     expToken.type = TokenType::Identifier;
-    expToken.stringKey = tkr->internedStrings->findOrInsertKey(text);
+    expToken.label = LabelMap::instance.insertOrFind(text);
     expToken.text = text;
 }
 
@@ -256,8 +256,8 @@ eofError:
 gotStringLiteral:
     String text = mout.moveToString();
     expToken.type = TokenType::StringLiteral;
-    expToken.stringKey = tkr->internedStrings->findOrInsertKey(text);
-    expToken.text = tkr->internedStrings->view(expToken.stringKey);
+    expToken.label = LabelMap::instance.insertOrFind(text);
+    expToken.text = LabelMap::instance.view(expToken.label);
 }
 
 PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {

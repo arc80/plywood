@@ -5,6 +5,7 @@
 #pragma once
 #include <ply-crowbar/Core.h>
 #include <ply-reflect/methods/BaseInterpreter.h>
+#include <ply-runtime/string/Label.h>
 #include <ply-crowbar/ParseTree.h>
 
 namespace ply {
@@ -13,15 +14,15 @@ namespace crowbar {
 struct Tokenizer;
 
 struct VariableMapTraits {
+    using Key = Label;
     struct Item {
-        u32 key = 0;
+        Label identifier;
         AnyObject obj;
-        Item(u32 key) : key{key} {
+        Item(Label identifier) : identifier{identifier} {
         }
     };
-    using Key = u32;
-    static PLY_INLINE bool match(const Item& item, Key key) {
-        return item.key == key;
+    static PLY_INLINE bool match(const Item& item, const Label& identifier) {
+        return item.identifier == identifier;
     }
 };
 
@@ -41,7 +42,6 @@ struct Interpreter : BaseInterpreter {
         StackFrame* prevFrame = nullptr;
     };
 
-    const InternedStrings* internedStrings = nullptr;
     Array<HashMap<VariableMapTraits>*> outerNameSpaces;
     Hooks* hooks = nullptr;
 

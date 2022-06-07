@@ -39,7 +39,7 @@ public:
     }
 };
 
-#define PLY_DEFINE_RACE_DETECTOR(name) ply::RaceDetector name;
+#define PLY_DEFINE_RACE_DETECTOR(name) mutable ply::RaceDetector name;
 #define PLY_RACE_DETECT_GUARD(name) ply::RaceDetectGuard PLY_UNIQUE_VARIABLE(raceDetectGuard)(name)
 #define PLY_RACE_DETECT_ENTER(name) name.enter()
 #define PLY_RACE_DETECT_EXIT(name) name.exit()

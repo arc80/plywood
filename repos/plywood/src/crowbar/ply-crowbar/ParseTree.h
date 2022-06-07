@@ -16,21 +16,21 @@ struct Expression {
 
     // ply make switch
     struct NameLookup {
-        u32 name = 0; // Interned string.
+        Label name;
     };
     struct IntegerLiteral {
         u32 value = 0;
     };
     struct InterpolatedString {
         struct Piece {
-            StringView literal; // Uses InternedString storage
+            StringView literal; // Uses Label storage
             Owned<Expression> embed;
         };
         Array<Piece> pieces;
     };
     struct PropertyLookup {
         Owned<Expression> obj;
-        u32 propertyName = 0; // Interned string.
+        Label propertyName;
     };
     struct BinaryOp {
         MethodTable::BinaryOp op;
@@ -77,13 +77,13 @@ struct Statement {
         PLY_REFLECT()
         // ply reflect off
 
-        u32 name; // Interned string.
-        Array<u32> parameterNames;
+        Label name;
+        Array<Label> parameterNames;
         Owned<StatementBlock> body;
     };
     struct CustomBlock {
-        u32 typeKey = 0;
-        u32 name = 0;
+        Label type;
+        Label name;
         Owned<StatementBlock> body;
     };
 #include "codegen/switch-ply-crowbar-Statement.inl" //@@ply

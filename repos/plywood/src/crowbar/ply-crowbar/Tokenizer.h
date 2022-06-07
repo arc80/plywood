@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-crowbar/Core.h>
-#include <ply-runtime/container/InternedStrings.h>
+#include <ply-runtime/string/Label.h>
 #include <ply-runtime/io/text/FileLocationMap.h>
 
 namespace ply {
@@ -67,7 +67,7 @@ struct ExpandedToken {
     u32 tokenIdx = 0;
     u32 fileOffset = 0;
     TokenType type = TokenType::Invalid;
-    u32 stringKey = 0; // Interned string.
+    Label label;
     StringView text;
 
     String desc() const;
@@ -103,9 +103,6 @@ struct Tokenizer {
 
     // There is entry in the fileOffsetTable for every 256 bytes of tokenData.
     BigPool<u32> fileOffsetTable;
-
-    // InternedStrings lets us compare identifiers just by comparing their 32-bit keys.
-    InternedStrings* internedStrings = nullptr;
 
     // Behavior that can be changed on the fly by the parser.
     struct Behavior {

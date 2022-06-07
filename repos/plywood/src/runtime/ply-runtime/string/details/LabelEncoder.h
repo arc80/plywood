@@ -8,7 +8,7 @@
 namespace ply {
 namespace details {
 
-struct InternedStringEncoder {
+struct LabelEncoder {
     static PLY_INLINE u32 decodeValue(const char*& ptr) {
         u32 value = 0;
         for (;;) {

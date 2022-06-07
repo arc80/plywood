@@ -27,20 +27,18 @@ MethodResult doPrint(BaseInterpreter* interp, const AnyObject& arg) {
 }
 
 // FIXME: Move this to the crowbar module:
-void addBuiltIns(InternedStrings& internedStrings, HashMap<VariableMapTraits>& ns) {
-    ns.insertOrFind(internedStrings.findOrInsertKey("print"))->obj = AnyObject::bind(doPrint);
+void addBuiltIns(HashMap<VariableMapTraits>& ns) {
+    ns.insertOrFind(LabelMap::instance.insertOrFind("print"))->obj = AnyObject::bind(doPrint);
 
     static bool true_ = true;
     static bool false_ = false;
-    ns.insertOrFind(internedStrings.findOrInsertKey("true"))->obj = AnyObject::bind(&true_);
-    ns.insertOrFind(internedStrings.findOrInsertKey("false"))->obj = AnyObject::bind(&false_);
+    ns.insertOrFind(LabelMap::instance.insertOrFind("true"))->obj = AnyObject::bind(&true_);
+    ns.insertOrFind(LabelMap::instance.insertOrFind("false"))->obj = AnyObject::bind(&false_);
 }
 
 String callScriptFunction(StringView src, StringView funcName, ArrayView<const AnyObject> args) {
     // Create tokenizer and parser.
     Tokenizer tkr;
-    InternedStrings internedStrings;
-    tkr.internedStrings = &internedStrings;
     tkr.setSourceInput(src);
     Parser parser;
     parser.tkr = &tkr;
@@ -64,7 +62,7 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
 
     // Create built-in namespace
     HashMap<VariableMapTraits> builtIns;
-    addBuiltIns(internedStrings, builtIns);
+    addBuiltIns(builtIns);
 
     // Put functions in a namespace
     Sequence<AnyObject> fnObjs;
@@ -76,7 +74,7 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
     }
 
     // Invoke function if it exists
-    auto testFuncCursor = ns.find(internedStrings.findKey(funcName));
+    auto testFuncCursor = ns.find(LabelMap::instance.find(funcName));
     if (testFuncCursor.wasFound()) {
         const AnyObject& testObj = testFuncCursor->obj;
         MemOutStream outs;
@@ -84,7 +82,6 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
         // Create interpreter
         Interpreter interp;
         interp.outs = &outs;
-        interp.internedStrings = &internedStrings;
         interp.outerNameSpaces.append(&builtIns);
         interp.outerNameSpaces.append(&ns);
         interp.error = [](BaseInterpreter* base, StringView message) {
@@ -98,7 +95,7 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
                     "{} {} '{}'\n",
                     interp->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
                     first ? "in function" : "called from",
-                    interp->internedStrings->view(frame->functionDef->name));
+                    LabelMap::instance.view(frame->functionDef->name));
                 first = false;
             }
         };

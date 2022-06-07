@@ -205,7 +205,7 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel, bool asStat
         expr->tokenIdx = token.tokenIdx;
         switch (token.type) {
             case TokenType::Identifier: {
-                expr->nameLookup().switchTo()->name = token.stringKey;
+                expr->nameLookup().switchTo()->name = token.label;
                 break;
             }
             case TokenType::NumericLiteral: {
@@ -254,7 +254,7 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel, bool asStat
             propLookupExpr->tokenIdx = token.tokenIdx;
             auto propLookup = propLookupExpr->propertyLookup().switchTo();
             propLookup->obj = std::move(expr);
-            propLookup->propertyName = token.stringKey;
+            propLookup->propertyName = token.label;
             expr = std::move(propLookupExpr);
             continue;
         }
@@ -304,10 +304,10 @@ Owned<Expression> parseExpressionWithTraits(Parser* parser, AnyOwnedObject* expr
 }
 
 void Parser::parseStatement(StatementBlock* stmtBlock) {
-    u32 ifKey = this->tkr->internedStrings->findOrInsertKey("if");
-    u32 whileKey = this->tkr->internedStrings->findOrInsertKey("while");
-    u32 elseKey = this->tkr->internedStrings->findOrInsertKey("else");
-    u32 returnKey = this->tkr->internedStrings->findOrInsertKey("return");
+    Label ifKey = LabelMap::instance.insertOrFind("if");
+    Label whileKey = LabelMap::instance.insertOrFind("while");
+    Label elseKey = LabelMap::instance.insertOrFind("else");
+    Label returnKey = LabelMap::instance.insertOrFind("return");
 
     // Try to parse a custom block.
     if (this->hooks->tryParseCustomBlock(stmtBlock))
@@ -317,27 +317,27 @@ void Parser::parseStatement(StatementBlock* stmtBlock) {
     ExpandedToken token = this->tkr->readToken();
     auto stmt = Owned<Statement>::create();
     stmt->tokenIdx = token.tokenIdx;
-    if (token.stringKey == ifKey) {
+    if (token.label == ifKey) {
         auto cond = stmt->if_().switchTo();
         cond->condition = this->parseExpression();
         cond->trueBlock = parseStatementBlock(this, {"if-statement", "if-condition", true});
         PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
         token = this->tkr->readToken();
-        if (token.stringKey == elseKey) {
+        if (token.label == elseKey) {
             cond->falseBlock = parseStatementBlock(this, {"else-block", "'else'", true});
         } else {
             this->tkr->rewindTo(token.tokenIdx);
         }
         stmtBlock->statements.append(std::move(stmt));
         return;
-    } else if (token.stringKey == whileKey) {
+    } else if (token.label == whileKey) {
         auto cond = stmt->while_().switchTo();
         cond->condition = this->parseExpression();
         PLY_SET_IN_SCOPE(this->tkr->behavior.tokenizeNewLine, false);
         cond->block = parseStatementBlock(this, {"while-loop", "'while'", true});
         stmtBlock->statements.append(std::move(stmt));
         return;
-    } else if (token.stringKey == returnKey) {
+    } else if (token.label == returnKey) {
         auto return_ = stmt->return_().switchTo();
         return_->expr = this->parseExpression();
         stmtBlock->statements.append(std::move(stmt));
@@ -460,7 +460,7 @@ void parseParameterList(Parser* parser, Statement::FunctionDefinition* functionD
                       String::format("expected function parameter; got {}", paramToken.desc())))
                 return;
         }
-        functionDef->parameterNames.append(paramToken.stringKey);
+        functionDef->parameterNames.append(paramToken.label);
         ExpandedToken token = parser->tkr->readToken();
         if (token.type == TokenType::CloseParen) {
             parser->tkr->rewindTo(token.tokenIdx);
@@ -491,7 +491,7 @@ void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
               String::format("expected function name after 'fn'; got {}", nameToken.desc()));
         return;
     }
-    functionDef->name = nameToken.stringKey;
+    functionDef->name = nameToken.label;
 
     // Parse parameter list.
     ExpandedToken token = parser->tkr->readToken();
@@ -515,7 +515,7 @@ void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
 }
 
 Owned<StatementBlock> Parser::parseFile() {
-    u32 fnKey = this->tkr->internedStrings->findOrInsertKey("fn");
+    Label fnKey = LabelMap::instance.insertOrFind("fn");
     auto stmtBlock = Owned<StatementBlock>::create();
 
     for (;;) {
@@ -527,7 +527,7 @@ Owned<StatementBlock> Parser::parseFile() {
         ExpandedToken token = this->tkr->readToken();
         if (token.type == TokenType::EndOfFile)
             break;
-        if (token.stringKey == fnKey) {
+        if (token.label == fnKey) {
             parseFunctionDefinition(this, token, stmtBlock);
         } else {
             error(this, token, ErrorTokenAction::HandleUnexpected,
