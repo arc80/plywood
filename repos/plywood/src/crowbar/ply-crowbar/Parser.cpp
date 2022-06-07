@@ -366,6 +366,7 @@ void Parser::parseStatement(StatementBlock* stmtBlock) {
             statementType = "expression";
             auto evaluate = stmt->evaluate().switchTo();
             evaluate->expr = std::move(expr);
+            evaluate->traits = std::move(expressionTraits);
         }
         if ((token.type == TokenType::NewLine) || (token.type == TokenType::Semicolon)) {
             // This token marks the end of the statement.
