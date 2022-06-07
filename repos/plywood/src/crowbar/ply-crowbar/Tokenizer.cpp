@@ -86,7 +86,7 @@ PLY_NO_INLINE void encodeToken(Tokenizer* tkr, const ExpandedToken& expToken) {
     PLY_ASSERT(tkr->nextTokenIdx == safeDemote<u32>(tkr->tokenData.numItems()));
 
     // Write the token's file offset as a compact offset from the current fileOffsetTable entry.
-    u32 fot_idx = expToken.fileOffset >> 8;
+    u32 fot_idx = expToken.tokenIdx >> 8;
     while (safeDemote<u32>(tkr->fileOffsetTable.numItems()) <= fot_idx) {
         // Write a new entry to the fileOffsetTable.
         tkr->fileOffsetTable.append(expToken.fileOffset);
