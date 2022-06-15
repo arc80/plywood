@@ -4,11 +4,11 @@
 ------------------------------------*/
 #include <ply-reflect/Core.h>
 #include <ply-reflect/builtin/TypeDescriptor_Function.h>
-#include <ply-reflect/AnyObject.h>
 
 #if PLY_WITH_METHOD_TABLES
+
+#include <ply-reflect/AnyObject.h>
 #include <ply-reflect/methods/ObjectStack.h>
-#endif // PLY_WITH_METHOD_TABLES
 
 namespace ply {
 
@@ -24,12 +24,9 @@ NativeBindings& getNativeBindings_Function() {
             PLY_ASSERT(0); // Not supported
         },
         // construct
-        [](AnyObject obj) {
-            *(void**) obj.data = nullptr;
-        },
+        [](AnyObject obj) { *(void**) obj.data = nullptr; },
         // destruct
-        [](AnyObject obj) {
-        },
+        [](AnyObject obj) {},
         // move
         [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(dst.type->isEquivalentTo(src.type));
@@ -44,7 +41,7 @@ NativeBindings& getNativeBindings_Function() {
     return bindings;
 }
 
-TypeKey TypeKey_Function {
+TypeKey TypeKey_Function{
     // getName
     [](const TypeDescriptor* typeDesc) -> HybridString { //
         return "built-in function";
@@ -88,4 +85,11 @@ TypeKey TypeKey_Function {
 
 TypeKey* TypeDescriptor_Function::typeKey = &TypeKey_Function;
 
+PLY_NO_INLINE MethodResult TypeDescriptorSpecializer<Function>::call(
+    BaseInterpreter* interp, const AnyObject& callee, ArrayView<const AnyObject> args) {
+    return reinterpret_cast<Function*>(callee.data)(interp, callee, args);
+}
+
 } // namespace ply
+
+#endif // PLY_WITH_METHOD_TABLES

@@ -143,7 +143,10 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
         // Set up a new stack frame.
         Interpreter::StackFrame newFrame;
         newFrame.interp = interp;
-        newFrame.functionDef = functionDef;
+        newFrame.desc = {[](const Statement::FunctionDefinition* fnDef) -> HybridString {
+                             return String::format("function '{}'", LabelMap::instance.view(fnDef->name));
+                         },
+                         functionDef};
         newFrame.prevFrame = frame;
         for (u32 argIndex : range(args.numItems())) {
             newFrame.localVariableTable.insertOrFind(functionDef->parameterNames[argIndex])->obj =
@@ -363,7 +366,7 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
                 if (result != MethodResult::OK)
                     return result;
                 if (interp->hooks) {
-                    interp->hooks->onEvaluate(interp->returnValue);
+                    interp->hooks->onEvaluate(statement->evaluate()->traits);
                 }
                 interp->returnValue = {};
                 // Delete temporary objects.
@@ -379,13 +382,16 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
             }
             case Statement::ID::CustomBlock: {
                 const Statement::CustomBlock* cb = statement->customBlock().get();
+                const Statement::CustomBlock* prevBlock = interp->customBlock;
                 if (interp->hooks) {
                     interp->hooks->enterCustomBlock(cb);
                 }
+                interp->customBlock = cb;
                 MethodResult result = execBlock(frame, cb->body);
                 if (interp->hooks) {
                     interp->hooks->exitCustomBlock(cb);
                 }
+                interp->customBlock = prevBlock;
                 if (result != MethodResult::OK)
                     return result;
                 break;

@@ -8,9 +8,10 @@
 
 #if PLY_WITH_METHOD_TABLES
 #include <ply-reflect/methods/BaseInterpreter.h>
-#endif
 
 namespace ply {
+
+using Function = MethodResult(BaseInterpreter*, const AnyObject&, ArrayView<const AnyObject>);
 
 PLY_DLL_ENTRY extern TypeKey TypeKey_Function;
 
@@ -26,68 +27,14 @@ struct TypeDescriptor_Function : TypeDescriptor {
     }
 };
 
-namespace details {
-
-#if PLY_WITH_METHOD_TABLES
-
-template <typename... Params>
-struct FunctionCallThunk {};
-template <typename Param0>
-struct FunctionCallThunk<Param0> {
-    static PLY_NO_INLINE MethodResult call(BaseInterpreter* interp, const AnyObject& callee,
-                                           ArrayView<const AnyObject> args) {
-        using FunctionType = MethodResult(BaseInterpreter*, Param0);
-        PLY_ASSERT(callee.type->isEquivalentTo(getTypeDescriptor<FunctionType>()));
-        PLY_ASSERT(args.numItems == 1);
-        PLY_ASSERT(args[0].type->isEquivalentTo(getTypeDescriptor<Param0>()));
-        return reinterpret_cast<FunctionType*>(callee.data)(interp, *(Param0*) args[0].data);
-    }
-};
 template <>
-struct FunctionCallThunk<const AnyObject&> {
-    static PLY_NO_INLINE MethodResult call(BaseInterpreter* interp, const AnyObject& callee,
-                                           ArrayView<const AnyObject> args) {
-        using FunctionType = MethodResult(BaseInterpreter*, const AnyObject&);
-        PLY_ASSERT(callee.type->isEquivalentTo(getTypeDescriptor<FunctionType>()));
-        PLY_ASSERT(args.numItems == 1);
-        return reinterpret_cast<FunctionType*>(callee.data)(interp, args[0]);
-    }
-};
+struct TypeDescriptorSpecializer<Function> {
+    static MethodResult call(BaseInterpreter* interp, const AnyObject& callee,
+                             ArrayView<const AnyObject> args);
 
-#endif // PLY_WITH_METHOD_TABLES
-
-template <typename... Params>
-struct ParameterAdder {
-    static PLY_INLINE void add(TypeDescriptor_Function*) {
-    }
-};
-template <typename Param, typename... Rest>
-struct ParameterAdder<Param, Rest...> {
-    static PLY_INLINE void add(TypeDescriptor_Function* functionType) {
-        functionType->paramTypes.append(getTypeDescriptor<Param>());
-        ParameterAdder<Rest...>::add(functionType);
-    }
-};
-template <typename... Rest>
-struct ParameterAdder<const AnyObject&, Rest...> {
-    static PLY_INLINE void add(TypeDescriptor_Function* functionType) {
-        functionType->paramTypes.append(nullptr);
-        ParameterAdder<Rest...>::add(functionType);
-    }
-};
-
-} // namespace details
-
-// We can only create a TypeDescriptor for a function if it accepts ObjectStack* as its first
-// parameter and returns an AnyObject.
-template <typename... Params>
-struct TypeDescriptorSpecializer<MethodResult(BaseInterpreter*, Params...)> {
     static PLY_INLINE TypeDescriptor_Function initType() {
         TypeDescriptor_Function functionType;
-        PLY_METHOD_TABLES_ONLY(functionType.methods.call =
-                                   details::FunctionCallThunk<Params...>::call;)
-        functionType.paramTypes.reserve(sizeof...(Params));
-        details::ParameterAdder<Params...>::add(&functionType);
+        functionType.methods.call = call;
         return functionType;
     }
 
@@ -98,3 +45,5 @@ struct TypeDescriptorSpecializer<MethodResult(BaseInterpreter*, Params...)> {
 };
 
 } // namespace ply
+
+#endif // PLY_WITH_METHOD_TABLES

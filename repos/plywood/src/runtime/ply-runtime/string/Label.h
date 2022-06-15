@@ -25,6 +25,9 @@ struct Label {
     PLY_INLINE bool operator==(const Label& other) const {
         return this->idx == other.idx;
     }
+    PLY_INLINE bool operator!=(const Label& other) const {
+        return this->idx != other.idx;
+    }
 };
 
 PLY_INLINE Hasher& operator<<(Hasher& hasher, const Label& label) {
