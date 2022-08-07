@@ -1,11 +1,8 @@
-/*
-!/Setup.cmake
-!/LICENSE
-!/*.md
-!/repos
-/repos/*
-!/repos/plywood
+/data
 codegen/
+/plytool
+/plytool.exe
+/workspace-settings.pylon
 *~
 .*
 !.clang-format

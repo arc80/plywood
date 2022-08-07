@@ -54,7 +54,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/Helper.cmake")
     } else {
         outs->format("include(\"{}\")\n",
                    fmt::EscapedString(PosixPath::from<NativePath>(NativePath::join(
-                       PLY_WORKSPACE_FOLDER, "repos/plywood/scripts/Helper.cmake"))));
+                       PLY_WORKSPACE_FOLDER, "base/scripts/Helper.cmake"))));
     }
 
     // Iterate over all targets

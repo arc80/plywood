@@ -73,7 +73,7 @@ if(BUILD_FOLDER)
 endif()
 
 # Copy all the source code needed for PlyTool (unless -DNO_BACKUP was passed)
-set(srcCodeToBuildFolder "${workspaceFolder}repos/plywood/src/")
+set(srcCodeToBuildFolder "${workspaceFolder}base/src/")
 if(NOT NO_BACKUP)
     message("Backing up source files...")
     set(srcCodeToBuildFolder "${buildFolder}src/")
@@ -86,7 +86,7 @@ if(NOT NO_BACKUP)
         "pylon/reflect"
         "pylon/pylon"
         "cpp")
-        set(srcPath "${workspaceFolder}repos/plywood/src/${relPath}")
+        set(srcPath "${workspaceFolder}base/src/${relPath}")
         set(dstPath "${srcCodeToBuildFolder}${relPath}")
         string(REGEX REPLACE "/[^/]*$" "" dstPath "${dstPath}") # Strip last component
         file(COPY "${srcPath}" DESTINATION "${dstPath}")
@@ -95,14 +95,14 @@ if(NOT NO_BACKUP)
 endif()
 
 # Generate CMakeLists.txt in the build folder
-file(READ "${workspaceFolder}repos/plywood/scripts/bootstrap_CMakeLists.txt" cmakeListsContents)
+file(READ "${workspaceFolder}base/scripts/bootstrap_CMakeLists.txt" cmakeListsContents)
 string(REPLACE "<<<WORKSPACE_FOLDER>>>" "${workspaceFolder}" cmakeListsContents "${cmakeListsContents}")
 string(REPLACE "<<<SRC_FOLDER>>>" "${srcCodeToBuildFolder}" cmakeListsContents "${cmakeListsContents}")
 string(REPLACE "<<<BUILD_FOLDER>>>" "${buildFolder}" cmakeListsContents "${cmakeListsContents}")
 file(WRITE "${buildFolder}CMakeLists.txt" "${cmakeListsContents}")
 
 # Generate codegen/ply-platform/ply-platform/Config.h in the build folder
-file(READ "${workspaceFolder}repos/plywood/scripts/bootstrap_Config.h" configContents)
+file(READ "${workspaceFolder}base/scripts/bootstrap_Config.h" configContents)
 string(REPLACE "<<<WORKSPACE_FOLDER>>>" "${workspaceFolder}" configContents "${configContents}")
 string(REPLACE "<<<SRC_FOLDER>>>" "${srcCodeToBuildFolder}" configContents "${configContents}")
 string(REPLACE "<<<BUILD_FOLDER>>>" "${buildFolder}" configContents "${configContents}")
@@ -122,7 +122,7 @@ String DefaultNativeConfig = \"${CMAKE_BUILD_TYPE}\";
 file(WRITE "${buildFolder}codegen/ply-build-target/ply-build-target/NativeToolchain.inl" "${nativeToolchainContents}")
 
 # Copy Helper.cmake to the build folder
-file(COPY "${workspaceFolder}repos/plywood/scripts/Helper.cmake"
+file(COPY "${workspaceFolder}base/scripts/Helper.cmake"
      DESTINATION "${buildFolder}")
 
 # Generate build system for PlyTool

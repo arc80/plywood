@@ -20,7 +20,6 @@ namespace ply {
 namespace build {
 
 struct GenerateDLLContext {
-    String repoRootFolder;
     String dllBuildFolder;
     String backedUpSrcFolder;
 };
@@ -108,12 +107,12 @@ Owned<Dependency> createDLLTarget(const GenerateDLLContext& ctx, const Extracted
     target->targetType = BuildTargetType::DLL;
     {
         // Add all *.modules.cpp files:
-        String repoFolder = NativePath::join(ctx.repoRootFolder, exRepo.repoName);
+        String srcRoot = NativePath::normalize(PLY_WORKSPACE_FOLDER);
         Array<String> relModDefPaths;
         for (const ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
-            relModDefPaths.append(NativePath::makeRelative(repoFolder, modDefFile.absPath));
+            relModDefPaths.append(NativePath::makeRelative(srcRoot, modDefFile.absPath));
         }
-        target->sourceFiles.append({repoFolder, std::move(relModDefPaths)});
+        target->sourceFiles.append({srcRoot, std::move(relModDefPaths)});
     }
     target->sourceFiles.append({NativePath::join(ctx.dllBuildFolder, "codegen"),
                                 {exRepo.repoName + "_Instantiators.cpp"}});
@@ -147,7 +146,6 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
     PLY_ASSERT(DefaultNativeConfig);
 
     GenerateDLLContext ctx;
-    ctx.repoRootFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/");
     ctx.dllBuildFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/bootstrap/DLLs/");
     ctx.backedUpSrcFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/");
 #ifdef PLY_SRC_FOLDER
@@ -164,26 +162,21 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
 
     // Visit all repo folders
     u128 moduleDefSignature = 1; // Can increment when making a breaking change to plytool
-    Array<ExtractedRepo> exRepos;
-    for (const DirectoryEntry& entry : FileSystem::native()->listDir(ctx.repoRootFolder, 0)) {
+    ExtractedRepo exRepo;
+    exRepo.repoName = "all";
+    for (const DirectoryEntry& entry : FileSystem::native()->listDir(PLY_WORKSPACE_FOLDER, 0)) {
         if (!entry.isDir)
             continue;
+        if (entry.name.startsWith("."))
+            continue;
+        if (entry.name == "data")
+            continue;
 
-        // This is a separate repo.
         // Recursively find all files named *.modules.cpp:
-        String repoFolder = NativePath::join(ctx.repoRootFolder, entry.name);
-        Array<ModuleDefinitionFile> modDefFiles;
+        String repoFolder = NativePath::join(PLY_WORKSPACE_FOLDER, entry.name);
         for (const WalkTriple& triple : FileSystem::native()->walk(repoFolder)) {
             for (const WalkTriple::FileInfo& file : triple.files) {
-                if (file.name == "Instantiators.inl") {
-                    // FIXME: Remove this later
-                    ErrorHandler::log(
-                        ErrorHandler::Error,
-                        String::format("Please rename '{}' to a filename that ends with "
-                                       "'.modules.cpp' (and make sure it contains the line "
-                                       "'#include <ply-build-repo/Module.h>')'\n",
-                                       NativePath::join(triple.dirPath, file.name)));
-                } else if (file.name.endsWith(".modules.cpp")) {
+                if (file.name.endsWith(".modules.cpp")) {
                     // Found one. Add it to the signature.
                     String absPath = NativePath::join(triple.dirPath, file.name);
                     {
@@ -198,15 +191,9 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
                     // Next, scan it and find all instantiator functions.
                     ModuleDefinitionFile modDefFile;
                     modDefFile.absPath = std::move(absPath);
-                    modDefFiles.append(std::move(modDefFile));
+                    exRepo.modDefFiles.append(std::move(modDefFile));
                 }
             }
-        }
-
-        if (!modDefFiles.isEmpty()) {
-            ExtractedRepo& exRepo = exRepos.append();
-            exRepo.repoName = entry.name;
-            exRepo.modDefFiles = std::move(modDefFiles);
         }
     }
 
@@ -219,7 +206,7 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
 
     InstantiatedDLLs result;
     result.signature = moduleDefSignature;
-    for (const ExtractedRepo& exRepo : exRepos) {
+    {
         // Add to return value
         InstantiatedDLL& idll = result.dlls.append();
         idll.repoName = exRepo.repoName;
@@ -235,7 +222,7 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
         cbf.solutionName = "DLLs";
         cbf.absPath = ctx.dllBuildFolder;
 
-        for (ExtractedRepo& exRepo : exRepos) {
+        {
             for (ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
                 // Extract instantiators from module definition file
                 extractInstantiatorFunctions(&modDefFile);
