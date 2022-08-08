@@ -38,10 +38,9 @@ s32 command_run(PlyToolCommandEnv* env) {
         getTargetOutputPath(buildResult.runTarget->targetType, buildResult.runTarget->name,
                             buildResult.folder->getAbsPath(), buildParams.configName);
     if (FileSystem::native()->exists(exePath) != ExistsResult::File) {
-        fatalError(
-            String::format("Executable '{}' is not built in folder '{}'\n",
-                           RepoRegistry::get()->getShortDepSourceName(buildResult.runTargetInst),
-                           buildResult.folder->buildFolderName));
+        fatalError(String::format("Executable '{}' is not built in folder '{}'\n",
+                                  buildResult.runTargetInst->name,
+                                  buildResult.folder->buildFolderName));
     }
 
     // FIXME: Implement --args option (should be last option on command line; rest of command line

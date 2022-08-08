@@ -58,67 +58,27 @@ PLY_NO_INLINE void addDependency(ModuleArgs* targetArgs, const DependencySource*
     // Check if it's already a dependency
     if (find(targetArgs->buildTarget->dep->dependencies,
              [&](const auto& p) { return p.second == dep; }) >= 0) {
-        instantiatorError(
-            String::format("{} '{}' is already a dependency",
-                           depSrc->type == DependencySource::Extern ? "extern" : "target",
-                           RepoRegistry::get()->getShortDepSourceName(depSrc)));
+        instantiatorError(String::format(
+            "{} '{}' is already a dependency",
+            depSrc->type == DependencySource::Extern ? "extern" : "target", depSrc->name));
         return;
     }
 
     targetArgs->buildTarget->dep->dependencies.append({visibility, dep});
 }
 
-PLY_NO_INLINE void ModuleArgs::addTarget(Visibility visibility, StringView targetName) {
-    Array<StringView> ownComps = splitName(targetName, "target name");
-    ArrayView<StringView> comps = ownComps;
-    if (comps.isEmpty())
+PLY_NO_INLINE void ModuleArgs::addTarget(Visibility visibility, StringView qualifiedName) {
+    const TargetInstantiator* targetInst =
+        RepoRegistry::get()->findTargetInstantiator(qualifiedName);
+    if (!targetInst)
         return;
-    const Repo* childRepo = this->targetInst->repo->findChildRepo(comps[0]);
-    const TargetInstantiator* targetInst = nullptr;
-    if (childRepo) {
-        comps.offsetHead(1);
-        if (comps.isEmpty()) {
-            ErrorHandler::log(
-                ErrorHandler::Error,
-                String::format("'{}' is a repo; expected a module name\n", targetName));
-            return;
-        }
-        targetInst = childRepo->findTargetInstantiatorImm(comps[0]);
-        if (!targetInst) {
-            ErrorHandler::log(ErrorHandler::Error,
-                              String::format("Can't find module '{}' in repo '{}'\n", comps[0],
-                                             childRepo->repoName));
-            return;
-        }
-        comps.offsetHead(1);
-    } else {
-        targetInst = this->targetInst->repo->findTargetInstantiatorRecursive(comps[0]);
-        if (!targetInst) {
-            ErrorHandler::log(ErrorHandler::Error,
-                              String::format("Can't find module '{}' in any repo\n", comps[0]));
-            return;
-        }
-        comps.offsetHead(1);
-    }
-
-    PLY_ASSERT(targetInst);
     addDependency(this, targetInst, visibility);
 }
 
-PLY_NO_INLINE void ModuleArgs::addExtern(Visibility visibility, StringView externName) {
-    Array<StringView> ownComps = splitName(externName, "extern name");
-    ArrayView<StringView> comps = ownComps;
-    if (comps.isEmpty())
-        return;
-
-    const DependencySource* depSrc = this->targetInst->repo->findExtern(comps);
+PLY_NO_INLINE void ModuleArgs::addExtern(Visibility visibility, StringView qualifiedName) {
+    const DependencySource* depSrc = RepoRegistry::get()->findExtern(qualifiedName);
     if (!depSrc)
         return;
-    if (!comps.isEmpty()) {
-        ErrorHandler::log(ErrorHandler::Error,
-                          String::format("Too many components in extern name '{}'\n", externName));
-        return;
-    }
     addDependency(this, depSrc, visibility);
 }
 

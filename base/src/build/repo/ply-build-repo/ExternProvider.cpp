@@ -14,20 +14,14 @@
 namespace ply {
 namespace build {
 
-String ExternProvider::getFullyQualifiedName() const {
-    if (this->repo == this->extern_->repo) {
-        return String::format("{}.{}.{}", this->repo->repoName, this->extern_->name,
-                              this->providerName);
-    } else {
-        return String::format("{}.{}.{}.{}", this->extern_->repo->repoName, this->extern_->name,
-                              this->repo->repoName, this->providerName);
-    }
+String ExternProvider::getQualifiedName() const {
+    return String::format("{}.{}", this->extern_->name, this->providerName);
 }
 
 PLY_NO_INLINE Tuple<ExternResult, ExternFolder*>
 ExternProviderArgs::findExistingExternFolder(StringView folderArgs) const {
-    String providerName = this->provider->getFullyQualifiedName();
-    ExternFolder* folder = ExternFolderRegistry::get()->find(providerName, folderArgs);
+    String qualifiedName = this->provider->getQualifiedName();
+    ExternFolder* folder = ExternFolderRegistry::get()->find(qualifiedName, folderArgs);
     if (!folder) {
         return {ExternResult{ExternResult::SupportedButNotInstalled, {}}, nullptr};
     }
@@ -52,7 +46,7 @@ PLY_NO_INLINE String makeUniqueFileName(StringView parentFolder, StringView pref
 
 PLY_NO_INLINE ExternFolder* ExternProviderArgs::createExternFolder(StringView folderArgs) const {
     // Make directory
-    String baseName = RepoRegistry::get()->getShortProviderName(this->provider);
+    String baseName = this->provider->getQualifiedName();
     if (folderArgs) {
         baseName = String::format("{}.{}", baseName, folderArgs);
     }
@@ -68,7 +62,7 @@ PLY_NO_INLINE ExternFolder* ExternProviderArgs::createExternFolder(StringView fo
     // Create ExternFolder object
     ExternFolder* folder = new ExternFolder;
     folder->path = std::move(folderPath);
-    folder->providerName = this->provider->getFullyQualifiedName();
+    folder->providerName = this->provider->getQualifiedName();
     folder->folderArgs = folderArgs;
     ExternFolderRegistry::get()->folders.append(folder);
     return folder;

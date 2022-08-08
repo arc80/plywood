@@ -105,7 +105,6 @@ target_compile_definitions(build-folder PRIVATE
 SetSourceFolders(BUILD-REPO_SOURCES "${SRC_FOLDER}build/repo/ply-build-repo"
     "BuildInstantiatorDLLs.cpp"
     "BuildInstantiatorDLLs.h"
-    "DependencySource.cpp"
     "DependencySource.h"
     "ErrorHandler.cpp"
     "ErrorHandler.h"

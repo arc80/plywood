@@ -19,10 +19,10 @@ struct TargetInstantiator : DependencySource {
 
     PLY_INLINE TargetInstantiator() : DependencySource{Target} {
     }
-    PLY_INLINE TargetInstantiator(StringView name, StringView instantiatorPath, const Repo* repo,
+    PLY_INLINE TargetInstantiator(StringView name, StringView instantiatorPath,
                                   ModuleFunc* moduleFunc)
-        : DependencySource{Target, name, repo}, instantiatorPath{instantiatorPath},
-          moduleFunc{moduleFunc} {
+        : DependencySource{Target, name}, instantiatorPath{instantiatorPath}, moduleFunc{
+                                                                                  moduleFunc} {
     }
 };
 

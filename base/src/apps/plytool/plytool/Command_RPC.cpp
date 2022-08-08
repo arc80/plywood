@@ -26,11 +26,9 @@ PLY_NO_INLINE void buildAndRun(const tool::Command::Type::Run& runCmd) {
     }
 
     PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
-    const Repo* plyRepo = RepoRegistry::get()->repos.find("ply")->get();
     PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
     TargetInstantiator targetInst;
     targetInst.name = "AutoDiagramMaker"; // FIXME: generalize
-    targetInst.repo = plyRepo;
     targetInst.instantiatorPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/docsite-cache");
     targetInst.moduleFunc = [&runCmd](ModuleArgs* args) {
         args->buildTarget->targetType = BuildTargetType::EXE;

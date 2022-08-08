@@ -23,75 +23,19 @@ PLY_BUILD_ENTRY void Repo::addTargetInstantiator(Owned<TargetInstantiator>&& tar
 
 PLY_NO_INLINE void Repo::addExternProvider(StringView externName, StringView providerName,
                                            ExternProvider::ExternFunc* externFunc) {
-    Array<StringView> ownComps = splitName(externName, "extern name");
-    ArrayView<StringView> comps = ownComps;
-    if (comps.isEmpty()) {
-        exit(1); // fatal, message was already logged
-    }
-
-    const DependencySource* depSrc = this->findOrCreateExtern(comps, true);
+    const DependencySource* depSrc = this->findOrCreateExtern(externName, true);
     if (!depSrc) {
         exit(1); // fatal, message was already logged
-    }
-
-    if (!comps.isEmpty()) {
-        // Does not return:
-        ErrorHandler::log(ErrorHandler::Fatal,
-                          String::format("Too many components in extern name '{}'\n", externName));
-    }
-
-    if (providerName.findByte('.') >= 0) {
-        // Does not return:
-        ErrorHandler::log(
-            ErrorHandler::Fatal,
-            String::format("Too many components in provider name '{}'\n", providerName));
     }
 
     Owned<ExternProvider> provider = new ExternProvider;
     provider->extern_ = depSrc;
     provider->providerName = providerName;
-    provider->repo = this;
     provider->externFunc = externFunc;
     this->externProviders.append(std::move(provider));
 }
 
-struct RepoVisitor {
-    Array<const Repo*> checkedRepos;
-    bool preChildren = true;
-
-    RepoVisitor(bool preChildren = true) {
-    }
-
-    PLY_NO_INLINE void visit(const Repo* repo, const LambdaView<bool(const Repo*)>& callback) {
-        if (ply::find(this->checkedRepos, repo) >= 0)
-            return;
-        this->checkedRepos.append(repo);
-        if (this->preChildren) {
-            if (!callback(repo))
-                return;
-        }
-        for (Repo* childRepo : repo->childRepos) {
-            visit(childRepo, callback);
-        }
-        if (!this->preChildren) {
-            callback(repo);
-        }
-    }
-};
-
-const Repo* Repo::findChildRepo(StringView childName) const {
-    const Repo* result = nullptr;
-    RepoVisitor{}.visit(this, [&](const Repo* r) {
-        if (r->repoName == childName) {
-            result = r;
-            return false;
-        }
-        return true;
-    });
-    return result;
-}
-
-const DependencySource* Repo::findExternImm(StringView externName) const {
+const DependencySource* Repo::findExtern(StringView externName) const {
     s32 i = find(this->externs,
                  [&](const DependencySource* depSrc) { return depSrc->name == externName; });
     if (i >= 0) {
@@ -100,101 +44,32 @@ const DependencySource* Repo::findExternImm(StringView externName) const {
     return nullptr;
 }
 
-const DependencySource* Repo::findExternRecursive(StringView externName) const {
-    const DependencySource* extern_ = nullptr;
-    bool conflict = false;
-    RepoVisitor{}.visit(this, [&](const Repo* r) {
-        s32 i = find(r->externs,
-                     [&](const DependencySource* depSrc) { return depSrc->name == externName; });
-        if (i >= 0) {
-            if (extern_) {
-                conflict = true;
-            } else {
-                extern_ = r->externs[i];
-            }
-        }
-        return true;
-    });
-    if (conflict)
-        return nullptr;
-    return extern_;
-}
-
-const DependencySource* Repo::findOrCreateExtern(ArrayView<StringView>& comps, bool allowCreate) {
-    PLY_ASSERT(!comps.isEmpty());
-    const Repo* childRepo = this->findChildRepo(comps[0]);
-    StringView externName;
-    if (childRepo) {
-        comps.offsetHead(1);
-        if (comps.isEmpty()) {
-            ErrorHandler::log(
-                ErrorHandler::Error,
-                String::format("'{}' is a repo; expected an extern name\n", childRepo->repoName));
-            return nullptr;
-        }
-        externName = comps[0];
-        comps.offsetHead(1);
-        const DependencySource* depSrc = childRepo->findExternImm(externName);
+const DependencySource* Repo::findOrCreateExtern(StringView externName, bool allowCreate) {
+    {
+        const DependencySource* depSrc = this->findExtern(externName);
         if (depSrc)
             return depSrc;
-        if (!(childRepo == this && allowCreate)) {
-            ErrorHandler::log(ErrorHandler::Error,
-                              String::format("Can't find extern '{}' in repo '{}'\n", externName,
-                                             childRepo->repoName));
-            return nullptr;
-        }
-        // Create the extern below
-    } else {
-        childRepo = this;
-        externName = comps[0];
-        comps.offsetHead(1);
-        // FIXME: Should warn here in ambiguous cases, such as when an unqualified extern name is
-        // used but the same extern name is defined in multiple repos. Just need to decide which
-        // cases are considered ambiguous and which cases are not...
-        const DependencySource* depSrc = this->findExternRecursive(externName);
-        if (depSrc)
-            return depSrc;
-        if (!(childRepo == this && allowCreate)) {
+        if (!allowCreate) {
             ErrorHandler::log(ErrorHandler::Error,
                               String::format("Can't find extern '{}' in any repo\n", externName));
             return nullptr;
         }
-        // Create the extern below
     }
+
     // Create a new extern
     PLY_ASSERT(allowCreate);
     PLY_ASSERT(externName);
     DependencySource* depSrc = new DependencySource{DependencySource::Extern};
     depSrc->name = externName;
-    depSrc->repo = this;
     this->externs.append(depSrc);
     return depSrc;
 }
 
-const TargetInstantiator* Repo::findTargetInstantiatorImm(StringView targetInstName) const {
+const TargetInstantiator* Repo::findTargetInstantiator(StringView targetInstName) const {
     auto instCursor = this->targetInstantiators.find(targetInstName);
     if (instCursor.wasFound())
         return *instCursor;
     return nullptr;
-}
-
-const TargetInstantiator* Repo::findTargetInstantiatorRecursive(StringView targetInstName) const {
-    const TargetInstantiator* targetInst = nullptr;
-    bool conflict = false;
-    RepoVisitor{}.visit(this, [&](const Repo* r) {
-        auto instCursor = r->targetInstantiators.find(targetInstName);
-        if (instCursor.wasFound()) {
-            if (targetInst) {
-                conflict = true;
-            } else {
-                targetInst = *instCursor;
-            }
-        }
-        return true;
-    });
-    if (conflict)
-        return nullptr;
-    return targetInst;
 }
 
 } // namespace build

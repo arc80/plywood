@@ -22,14 +22,14 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
             instantiatorError(
                 String::format("Loop detected for '{}'",
                                depSrc->type == DependencySource::Extern ? "extern" : "target",
-                               RepoRegistry::get()->getShortDepSourceName(depSrc)));
+                               depSrc->name));
             return nullptr;
         }
         // It was already instantiated.
         if (this->depTreeNode) {
             DependencyTree* depTreeChild = &this->depTreeNode->children.append();
             depTreeChild->desc =
-                String::format("({})", RepoRegistry::get()->getShortDepSourceName(depSrc));
+                String::format("({})", depSrc->name);
         }
         return dep;
     }
@@ -37,7 +37,7 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
     DependencyTree* depTreeChild = nullptr;
     if (this->depTreeNode) {
         depTreeChild = &this->depTreeNode->children.append();
-        depTreeChild->desc = RepoRegistry::get()->getShortDepSourceName(depSrc);
+        depTreeChild->desc = depSrc->name;
     }
     PLY_SET_IN_SCOPE(this->depTreeNode, depTreeChild);
 
@@ -147,7 +147,7 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
                 // FIXME: Check the ExternResult and be more specific here
                 depTreeChild->desc =
                     String::format("{} [uninstalled extern => {}]", depTreeChild->desc,
-                                   RepoRegistry::get()->getShortProviderName(externProvider));
+                                   externProvider->getQualifiedName());
             }
             return nullptr;
         }
@@ -156,7 +156,7 @@ Dependency* ProjectInstantiator::instantiate(const DependencySource* depSrc, boo
         if (depTreeChild) {
             depTreeChild->desc =
                 String::format("{} [extern => {}]", depTreeChild->desc,
-                               RepoRegistry::get()->getShortProviderName(externProvider));
+                               externProvider->getQualifiedName());
         }
         dep->initialized = true;
         this->result->dependencies[depIndex].dep = std::move(dep);

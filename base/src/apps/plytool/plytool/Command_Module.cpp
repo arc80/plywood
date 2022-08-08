@@ -38,17 +38,10 @@ void command_module(PlyToolCommandEnv* env) {
         PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
 
         OutStream outs = StdOut::text();
-        Array<const Repo*> repos;
-        for (const Repo* repo : RepoRegistry::get()->repos) {
-            repos.append(repo);
-        }
-        sort(repos, [](const Repo* a, const Repo* b) { //
-            return a->repoName < b->repoName;
-        });
-        for (const Repo* repo : repos) {
-            outs.format("Modules in repo '{}':\n", repo->repoName);
+        {
+            outs << "Available modules:\n";
             Array<TargetInstantiator*> targetInsts;
-            for (TargetInstantiator* targetInst : repo->targetInstantiators) {
+            for (TargetInstantiator* targetInst : RepoRegistry::get()->repo.targetInstantiators) {
                 targetInsts.append(targetInst);
             }
             sort(targetInsts, [](const TargetInstantiator* a, const TargetInstantiator* b) {

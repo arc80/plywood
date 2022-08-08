@@ -19,6 +19,7 @@ struct ExternFolder {
     String path; // Not written to the .pylon file
 
     PLY_REFLECT()
+    String externName;
     String providerName;
     String folderArgs;
     bool success = false;
@@ -39,7 +40,7 @@ struct ExternFolderRegistry {
         return instance_;
     }
 
-    PLY_BUILD_ENTRY ExternFolder* find(StringView providerName, StringView folderArgs) const;
+    PLY_BUILD_ENTRY ExternFolder* find(StringView qualifiedName, StringView folderArgs) const;
 };
 
 } // namespace build

@@ -26,6 +26,14 @@ PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
 
     Owned<ExternFolder> info = pylon::import<ExternFolder>(aRoot);
     info->path = std::move(path);
+
+    // Fixup files saved by older Plytool versions:
+    Array<StringView> comps = info->providerName.splitByte('.');
+    if (comps.numItems() > 1) {
+        info->externName = comps.back(-2);
+        info->providerName = comps.back(-1);
+    }
+
     return info;
 }
 
@@ -58,9 +66,11 @@ Owned<ExternFolderRegistry> ExternFolderRegistry::create() {
     return externFolders;
 }
 
-ExternFolder* ExternFolderRegistry::find(StringView providerName, StringView folderArgs) const {
+ExternFolder* ExternFolderRegistry::find(StringView qualifiedName, StringView folderArgs) const {
     for (ExternFolder* info : this->folders) {
-        if (info->providerName == providerName && info->folderArgs == folderArgs) {
+        bool nameMatches = (info->providerName == qualifiedName) ||
+                           (info->providerName.endsWith("." + qualifiedName));
+        if (nameMatches && info->folderArgs == folderArgs) {
             return info;
         }
     }

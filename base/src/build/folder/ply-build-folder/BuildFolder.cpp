@@ -84,6 +84,20 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::load(StringView buildFolderName) {
     if (!info->buildSystemSignature) {
         info->buildSystemSignature = pylon::Node::createObject();
     }
+
+    // Fixup files saved by older Plytool versions:
+    for (String& rootTarget : info->rootTargets) {
+        rootTarget = String{rootTarget.splitByte('.').back()};
+    }
+    for (String& makeShared : info->makeShared) {
+        makeShared = String{makeShared.splitByte('.').back()};
+    }
+    for (String& externSelector : info->externSelectors) {
+        Array<StringView> comps = externSelector.splitByte('.');
+        u32 keep = max(comps.numItems(), 2u);
+        externSelector = StringView{"."}.join(comps.subView(comps.numItems() - keep));
+    }
+
     return info;
 }
 
@@ -326,12 +340,12 @@ PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
             OutStream outs = StdOut::text();
             for (const DependencySource* unselectedExtern : instResult.unselectedExterns) {
                 outs.format("Can't generate build system in folder '{}' because extern '{}' is not "
-                          "selected.\n",
-                          this->buildFolderName,
-                          RepoRegistry::get()->getShortDepSourceName(unselectedExtern));
+                            "selected.\n",
+                            this->buildFolderName, unselectedExtern->name);
                 Array<Tuple<const ExternProvider*, bool>> candidates;
-                for (const Repo* repo : RepoRegistry::get()->repos) {
-                    for (const ExternProvider* externProvider : repo->externProviders) {
+                {
+                    for (const ExternProvider* externProvider :
+                         RepoRegistry::get()->repo.externProviders) {
                         if (externProvider->extern_ != unselectedExtern)
                             continue;
                         Owned<pylon::Node> toolchain =
@@ -347,14 +361,14 @@ PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
                 }
                 if (candidates.isEmpty()) {
                     outs.format("No compatible providers are available for extern '{}'.\n",
-                              RepoRegistry::get()->getShortDepSourceName(unselectedExtern));
+                                unselectedExtern->name);
                 } else {
                     u32 n = candidates.numItems();
-                    outs.format("{} compatible provider{} available:\n", n, n == 1 ? " is" : "s are");
+                    outs.format("{} compatible provider{} available:\n", n,
+                                n == 1 ? " is" : "s are");
                     for (Tuple<const ExternProvider*, bool> pair : candidates) {
-                        outs.format("    {} ({})\n",
-                                  RepoRegistry::get()->getShortProviderName(pair.first),
-                                  pair.second ? "installed" : "not installed");
+                        outs.format("    {} ({})\n", pair.first->getQualifiedName(),
+                                    pair.second ? "installed" : "not installed");
                     }
                 }
             }
@@ -364,16 +378,16 @@ PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
             OutStream outs = StdOut::text();
             for (const ExternProvider* prov : instResult.uninstalledProviders) {
                 outs.format("Can't generate build system in folder '{}' because extern provider "
-                          "'{}' is selected, but not installed.\n",
-                          this->buildFolderName, RepoRegistry::get()->getShortProviderName(prov));
+                            "'{}' is selected, but not installed.\n",
+                            this->buildFolderName, prov->getQualifiedName());
             }
         }
         if (canGenerate) {
             // Reinstantiate, but this time pass isGenerating = true:
             instResult = this->instantiateAllTargets(true);
             if (this->generate(config, &instResult)) {
-                StdOut::text().format(
-                    "Successfully generated build system in folder '{}'.\n", this->buildFolderName);
+                StdOut::text().format("Successfully generated build system in folder '{}'.\n",
+                                      this->buildFolderName);
                 return true;
             }
         }

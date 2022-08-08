@@ -66,7 +66,7 @@ void command_target(PlyToolCommandEnv* env) {
 
         OutStream outs = StdOut::text();
         outs.format("List of root targets in build folder '{}':\n",
-                  env->currentBuildFolder->buildFolderName);
+                    env->currentBuildFolder->buildFolderName);
         for (StringView targetName : env->currentBuildFolder->rootTargets) {
             const TargetInstantiator* targetInst =
                 RepoRegistry::get()->findTargetInstantiator(targetName);
@@ -77,8 +77,7 @@ void command_target(PlyToolCommandEnv* env) {
                 if (targetName == env->currentBuildFolder->activeTarget) {
                     activeText = " (active)";
                 }
-                outs.format("    {}{}\n", RepoRegistry::get()->getShortDepSourceName(targetInst),
-                          activeText);
+                outs.format("    {}{}\n", targetInst->name, activeText);
             }
         }
     } else if (prefixMatch(cmd, "add")) {
@@ -97,14 +96,13 @@ void command_target(PlyToolCommandEnv* env) {
         if (!targetInst) {
             fatalError(String::format("Can't find target '{}'", targetName));
         }
-        String fullTargetName = targetInst->getFullyQualifiedName();
+        String fullTargetName = targetInst->name;
 
         addParams.exec(env->currentBuildFolder, fullTargetName);
 
         env->currentBuildFolder->save();
-        StdOut::text().format("Added root target '{}' to build folder '{}'.\n",
-                                            RepoRegistry::get()->getShortDepSourceName(targetInst),
-                                            env->currentBuildFolder->buildFolderName);
+        StdOut::text().format("Added root target '{}' to build folder '{}'.\n", targetInst->name,
+                              env->currentBuildFolder->buildFolderName);
     } else if (prefixMatch(cmd, "remove")) {
         StringView targetName = env->cl->readToken();
         if (targetName.isEmpty()) {
@@ -119,18 +117,17 @@ void command_target(PlyToolCommandEnv* env) {
             exit(1);
         }
 
-        String fullTargetName = targetInst->getFullyQualifiedName();
-        s32 j = find(env->currentBuildFolder->rootTargets, fullTargetName);
+        s32 j = find(env->currentBuildFolder->rootTargets, [&](StringView savedName) {
+            return (savedName == targetInst->name) || (savedName.endsWith("." + targetInst->name));
+        });
         if (j < 0) {
             fatalError(String::format("Folder '{}' does not have root target '{}'",
-                                      env->currentBuildFolder->buildFolderName,
-                                      RepoRegistry::get()->getShortDepSourceName(targetInst)));
+                                      env->currentBuildFolder->buildFolderName, targetInst->name));
         }
         env->currentBuildFolder->rootTargets.erase(j);
         env->currentBuildFolder->save();
         StdOut::text().format("Removed root target '{}' from build folder '{}'.\n",
-                                            RepoRegistry::get()->getShortDepSourceName(targetInst),
-                                            env->currentBuildFolder->buildFolderName);
+                              targetInst->name, env->currentBuildFolder->buildFolderName);
     } else if (prefixMatch(cmd, "set")) {
         StringView targetName = env->cl->readToken();
         if (targetName.isEmpty()) {
@@ -162,11 +159,10 @@ void command_target(PlyToolCommandEnv* env) {
                                       targetName, env->currentBuildFolder->buildFolderName));
         }
 
-        env->currentBuildFolder->activeTarget = targetInst->getFullyQualifiedName();
+        env->currentBuildFolder->activeTarget = targetInst->name;
         env->currentBuildFolder->save();
-        StdOut::text().format("Active target is now '{}' in folder '{}'.\n",
-                                            RepoRegistry::get()->getShortDepSourceName(targetInst),
-                                            env->currentBuildFolder->buildFolderName);
+        StdOut::text().format("Active target is now '{}' in folder '{}'.\n", targetInst->name,
+                              env->currentBuildFolder->buildFolderName);
     } else if (prefixMatch(cmd, "graph")) {
         ensureTerminated(env->cl);
         env->cl->finalize();
@@ -175,7 +171,8 @@ void command_target(PlyToolCommandEnv* env) {
         PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
         DependencyTree depTree = env->currentBuildFolder->buildDepTree();
         OutStream outs = StdOut::text();
-        outs.format("Dependency graph for folder '{}':\n", env->currentBuildFolder->buildFolderName);
+        outs.format("Dependency graph for folder '{}':\n",
+                    env->currentBuildFolder->buildFolderName);
         DepTreeIndent indent;
         indent.node = "    ";
         indent.children = "    ";

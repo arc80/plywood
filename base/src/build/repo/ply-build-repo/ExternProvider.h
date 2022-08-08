@@ -53,10 +53,9 @@ struct ExternProvider {
 
     const DependencySource* extern_ = nullptr;
     String providerName;
-    const Repo* repo = nullptr;
     ExternFunc* externFunc = nullptr;
 
-    PLY_BUILD_ENTRY String getFullyQualifiedName() const;
+    PLY_BUILD_ENTRY String getQualifiedName() const;
 };
 
 struct ExternProviderArgs {

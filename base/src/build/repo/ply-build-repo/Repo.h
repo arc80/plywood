@@ -23,24 +23,14 @@ struct Repo {
     HashMap<TargetInstantiatorsTraits> targetInstantiators;
     Array<Owned<DependencySource>> externs;
     Array<Owned<ExternProvider>> externProviders;
-    Array<Repo*> childRepos;
 
     PLY_BUILD_ENTRY void addTargetInstantiator(Owned<TargetInstantiator>&& targetInst);
     PLY_BUILD_ENTRY void addExternProvider(StringView externName, StringView providerName,
                                            ExternProvider::ExternFunc* externFunc);
 
-    const Repo* findChildRepo(StringView childName) const;
-    PLY_INLINE Repo* findChildRepo(StringView childName) {
-        return const_cast<Repo*>(const_cast<const Repo*>(this)->findChildRepo(childName));
-    }
-    const DependencySource* findExternImm(StringView externName) const;
-    const DependencySource* findExternRecursive(StringView externName) const;
-    const DependencySource* findOrCreateExtern(ArrayView<StringView>& comps, bool allowCreate);
-    PLY_INLINE const DependencySource* findExtern(ArrayView<StringView>& comps) const {
-        return const_cast<Repo*>(this)->findOrCreateExtern(comps, false);
-    }
-    const TargetInstantiator* findTargetInstantiatorImm(StringView targetInstName) const;
-    const TargetInstantiator* findTargetInstantiatorRecursive(StringView targetInstName) const;
+    const DependencySource* findExtern(StringView externName) const;
+    const DependencySource* findOrCreateExtern(StringView externName, bool allowCreate);
+    const TargetInstantiator* findTargetInstantiator(StringView targetInstName) const;
 };
 
 } // namespace build

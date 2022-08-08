@@ -27,8 +27,8 @@ struct ModuleArgs {
     PLY_BUILD_ENTRY void addNonParticipatingFiles(StringView sourceRoot,
                                                   ArrayView<const StringView> relPaths);
     PLY_BUILD_ENTRY void setPrecompiledHeader(StringView generatorSource, StringView pchInclude);
-    PLY_BUILD_ENTRY void addTarget(Visibility visibility, StringView targetName);
-    PLY_BUILD_ENTRY void addExtern(Visibility visibility, StringView externName);
+    PLY_BUILD_ENTRY void addTarget(Visibility visibility, StringView qualifiedName);
+    PLY_BUILD_ENTRY void addExtern(Visibility visibility, StringView qualifiedName);
     PLY_INLINE void setPreprocessorDefinition(Visibility visibility, StringView key,
                                               StringView value) {
         this->buildTarget->setPreprocessorDefinition(visibility, key, value);

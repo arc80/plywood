@@ -88,11 +88,10 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
             if (env->workspace->defaultConfig) {
                 newFolder->activeConfig = env->workspace->defaultConfig;
             }
-            this->addParams.exec(newFolder, buildTargetInst->getFullyQualifiedName());
+            this->addParams.exec(newFolder, buildTargetInst->name);
             newFolder->save();
             StdOut::text().format("Created build folder '{}' with root target '{}' at: {}\n",
-                                  newFolder->buildFolderName,
-                                  RepoRegistry::get()->getShortDepSourceName(buildTargetInst),
+                                  newFolder->buildFolderName, buildTargetInst->name,
                                   newFolder->getAbsPath());
             result->folder = newFolder;
             env->buildFolders.append(std::move(newFolder));
@@ -151,10 +150,9 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
                                                               &result->instResult.dependencies);
     if (!runTargetIdx.wasFound()) {
         if (this->doAdd) {
-            this->addParams.exec(result->folder, result->runTargetInst->getFullyQualifiedName());
+            this->addParams.exec(result->folder, result->runTargetInst->name);
             StdOut::text().format("Added target '{}' to folder '{}'.\n",
-                                  RepoRegistry::get()->getShortDepSourceName(result->runTargetInst),
-                                  result->folder->buildFolderName);
+                                  result->runTargetInst->name, result->folder->buildFolderName);
             result->folder->save();
 
             // Re-instantiate all targets
@@ -167,10 +165,9 @@ bool BuildParams::exec(BuildParams::Result* result, PlyToolCommandEnv* env, bool
                                                                  &result->instResult.dependencies);
             PLY_ASSERT(runTargetIdx.wasFound());
         } else {
-            fatalError(
-                String::format("Target '{}' is not instantiated in folder '{}'\n",
-                               RepoRegistry::get()->getShortDepSourceName(result->runTargetInst),
-                               result->folder->buildFolderName));
+            fatalError(String::format("Target '{}' is not instantiated in folder '{}'\n",
+                                      result->runTargetInst->name,
+                                      result->folder->buildFolderName));
         }
     }
 

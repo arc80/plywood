@@ -13,16 +13,8 @@ namespace build {
 struct DependencySource;
 
 struct RepoRegistry {
-    struct RepoMapTraits {
-        using Key = StringView;
-        using Item = Owned<Repo>;
-        static PLY_INLINE bool match(const Item& item, Key key) {
-            return item->repoName == key;
-        }
-    };
-
     u128 moduleDefSignature = 0;
-    HashMap<RepoMapTraits> repos;
+    Repo repo;
 
     static Owned<RepoRegistry> instance_;
     static Owned<RepoRegistry> create();
@@ -34,8 +26,6 @@ struct RepoRegistry {
     PLY_NO_INLINE const TargetInstantiator* findTargetInstantiator(StringView targetName) const;
     PLY_NO_INLINE const DependencySource* findExtern(StringView externName) const;
     PLY_NO_INLINE const ExternProvider* getExternProvider(StringView qualifiedName) const;
-    PLY_NO_INLINE String getShortDepSourceName(const DependencySource* depSrc) const;
-    PLY_NO_INLINE String getShortProviderName(const ExternProvider* externProvider) const;
 };
 
 u128 parseSignatureString(StringView str);

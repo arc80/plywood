@@ -71,26 +71,26 @@ Owned<Dependency> createDLLTarget(const GenerateDLLContext& ctx, const Extracted
         for (const ModuleDefinitionFile::ExternProviderFunc& externProviderFunc :
              modDefFile.externProviderFuncs) {
             mout.format("ExternResult {}(ExternCommand cmd, ExternProviderArgs* args);\n",
-                      externProviderFunc.funcName);
+                        externProviderFunc.funcName);
         }
     }
 
     mout << "\nextern \"C\" PLY_DLL_EXPORT void registerInstantiators(Repo* repo) "
-          "{\n";
+            "{\n";
     for (const ModuleDefinitionFile& modDefFile : exRepo.modDefFiles) {
         for (const ModuleDefinitionFile::ModuleFunc& moduleFunc : modDefFile.moduleFuncs) {
             mout.format("    repo->addTargetInstantiator(new TargetInstantiator{{\"{}\", \"{}\", "
-                      "repo, {}}});\n",
-                      fmt::EscapedString(moduleFunc.moduleName),
-                      fmt::EscapedString(NativePath::split(modDefFile.absPath).first),
-                      moduleFunc.funcName);
+                        "{}}});\n",
+                        fmt::EscapedString(moduleFunc.moduleName),
+                        fmt::EscapedString(NativePath::split(modDefFile.absPath).first),
+                        moduleFunc.funcName);
         }
         for (const ModuleDefinitionFile::ExternProviderFunc& externProviderFunc :
              modDefFile.externProviderFuncs) {
             mout.format("    repo->addExternProvider(\"{}\", \"{}\", {});\n",
-                      fmt::EscapedString(externProviderFunc.externName),
-                      fmt::EscapedString(externProviderFunc.providerName),
-                      externProviderFunc.funcName);
+                        fmt::EscapedString(externProviderFunc.externName),
+                        fmt::EscapedString(externProviderFunc.providerName),
+                        externProviderFunc.funcName);
         }
     }
     mout << "}\n";
@@ -161,7 +161,7 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
     }
 
     // Visit all repo folders
-    u128 moduleDefSignature = 1; // Can increment when making a breaking change to plytool
+    u128 moduleDefSignature = 2; // Can increment when making a breaking change to plytool
     ExtractedRepo exRepo;
     exRepo.repoName = "all";
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(PLY_WORKSPACE_FOLDER, 0)) {
@@ -184,7 +184,8 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
                         Hash128 h;
                         h.append(absPath);
                         h.append({(const char*) &stat.fileSize, sizeof(stat.fileSize)});
-                        h.append({(const char*) &stat.modificationTime, sizeof(stat.modificationTime)});
+                        h.append(
+                            {(const char*) &stat.modificationTime, sizeof(stat.modificationTime)});
                         moduleDefSignature += h.get();
                     }
 

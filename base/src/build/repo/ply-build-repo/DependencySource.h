@@ -22,18 +22,13 @@ struct DependencySource {
 
     Type type = Extern;
     String name; // unqualified
-    const Repo* repo = nullptr;
 
     DependencySource(Type type) : type{type} {
     }
-    PLY_INLINE DependencySource(Type type, StringView name, const Repo* repo)
-        : type{type}, name{name}, repo{repo} {
+    PLY_INLINE DependencySource(Type type, StringView name)
+        : type{type}, name{name} {
     }
-    PLY_NO_INLINE String getFullyQualifiedName() const;
 };
-
-// Logs an error and returns empty if nameWithDots is invalid
-Array<StringView> splitName(StringView nameWithDots, StringView typeForErrorMsg);
 
 } // namespace build
 } // namespace ply
