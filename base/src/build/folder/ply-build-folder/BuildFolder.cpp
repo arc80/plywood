@@ -97,6 +97,7 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::load(StringView buildFolderName) {
         u32 keep = max(comps.numItems(), 2u);
         externSelector = StringView{"."}.join(comps.subView(comps.numItems() - keep));
     }
+    info->activeTarget = String{info->activeTarget.splitByte('.').back()};
 
     return info;
 }
