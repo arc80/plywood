@@ -129,7 +129,8 @@ struct ParseHooks : crowbar::Parser::Hooks {
     }
 };
 
-bool parsePlyfile(Repository* repo, StringView path) {
+bool parsePlyfile(StringView path) {
+    Repository* repo = Repository::instance;
     String src = FileSystem::native()->loadTextAutodetect(path).first;
     if (FileSystem::native()->lastResult() != FSResult::OK) {
         PLY_FORCE_CRASH();

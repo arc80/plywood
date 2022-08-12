@@ -42,6 +42,7 @@ struct BuildFolder {
     // Operations
     Owned<ProjectInstantiationEnv> createEnvironment() const;
     ProjectInstantiationResult instantiateAllTargets(bool isGenerating) const;
+    void instantiateLatest(bool isGenerating) const;
     DependencyTree buildDepTree() const;
     u128 currentBuildSystemSignature() const;
     bool isGenerated(StringView config) const;

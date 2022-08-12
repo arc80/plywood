@@ -33,7 +33,12 @@ struct Repository {
     Common common;
     Array<Owned<Plyfile>> plyfiles;
     HashMap<ModuleMapTraits> moduleMap;
+
+    static Owned<Repository> instance;
+    static void create();
 };
+
+bool parsePlyfile(StringView path);
 
 } // namespace latest
 } // namespace build

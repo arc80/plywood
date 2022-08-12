@@ -208,59 +208,69 @@ void command_codegen(PlyToolCommandEnv* env) {
     cpp::ReflectionInfoAggregator agg;
 
     u32 fileNum = 0;
-    for (WalkTriple& triple :
-         FileSystem::native()->walk(NativePath::join(PLY_WORKSPACE_FOLDER, "repos"))) {
-        // Sort child directories and filenames so that files are visited in a deterministic order:
-        sort(triple.dirNames);
-        sort(triple.files, [](const WalkTriple::FileInfo& a, const WalkTriple::FileInfo& b) {
-            return a.name < b.name;
-        });
-
-        if (find(triple.files, [](const auto& fileInfo) { return fileInfo.name == "nocodegen"; }) >=
-            0) {
-            triple.dirNames.clear();
+    for (const DirectoryEntry& entry : FileSystem::native()->listDir(PLY_WORKSPACE_FOLDER, 0)) {
+        if (!entry.isDir)
             continue;
-        }
+        if (entry.name.startsWith("."))
+            continue;
+        if (entry.name == "data")
+            continue;
 
-        for (const WalkTriple::FileInfo& file : triple.files) {
-            if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
-                if (file.name.endsWith(".modules.cpp"))
-                    continue;
-                // FIXME: Eliminate exclusions
-                for (StringView exclude : {
-                         "Sort.h",
-                         "Functor.h",
-                         "DirectoryWatcher_Mac.h",
-                         "DirectoryWatcher_Win32.h",
-                         "Heap.cpp",
-                         "HiddenArgFunctor.h",
-                         "LambdaView.h",
-                         "Pool.h",
-                     }) {
-                    if (file.name == exclude)
-                        goto skipIt;
-                }
-                {
-                    fileNum++;
+        for (WalkTriple& triple :
+             FileSystem::native()->walk(NativePath::join(PLY_WORKSPACE_FOLDER, entry.name))) {
+            // Sort child directories and filenames so that files are visited in a deterministic
+            // order:
+            sort(triple.dirNames);
+            sort(triple.files, [](const WalkTriple::FileInfo& a, const WalkTriple::FileInfo& b) {
+                return a.name < b.name;
+            });
 
-                    Tuple<cpp::SingleFileReflectionInfo, bool> sfri =
-                        cpp::extractReflection(&agg, NativePath::join(triple.dirPath, file.name));
-                    if (sfri.second) {
-                        for (cpp::SwitchInfo* switch_ : sfri.first.switches) {
-                            writeSwitchInl(switch_, env->workspace->getSourceTextFormat());
-                        }
-                        performSubstsAndSave(NativePath::join(triple.dirPath, file.name),
-                                             sfri.first.substsInParsedFile,
-                                             env->workspace->getSourceTextFormat());
-                    }
-                }
-            skipIt:;
+            if (find(triple.files,
+                     [](const auto& fileInfo) { return fileInfo.name == "nocodegen"; }) >= 0) {
+                triple.dirNames.clear();
+                continue;
             }
-        }
-        for (StringView exclude : {"Shell_iOS", "opengl-support"}) {
-            s32 i = find(triple.dirNames, exclude);
-            if (i >= 0) {
-                triple.dirNames.erase(i);
+
+            for (const WalkTriple::FileInfo& file : triple.files) {
+                if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
+                    if (file.name.endsWith(".modules.cpp"))
+                        continue;
+                    // FIXME: Eliminate exclusions
+                    for (StringView exclude : {
+                             "Sort.h",
+                             "Functor.h",
+                             "DirectoryWatcher_Mac.h",
+                             "DirectoryWatcher_Win32.h",
+                             "Heap.cpp",
+                             "HiddenArgFunctor.h",
+                             "LambdaView.h",
+                             "Pool.h",
+                         }) {
+                        if (file.name == exclude)
+                            goto skipIt;
+                    }
+                    {
+                        fileNum++;
+
+                        Tuple<cpp::SingleFileReflectionInfo, bool> sfri = cpp::extractReflection(
+                            &agg, NativePath::join(triple.dirPath, file.name));
+                        if (sfri.second) {
+                            for (cpp::SwitchInfo* switch_ : sfri.first.switches) {
+                                writeSwitchInl(switch_, env->workspace->getSourceTextFormat());
+                            }
+                            performSubstsAndSave(NativePath::join(triple.dirPath, file.name),
+                                                 sfri.first.substsInParsedFile,
+                                                 env->workspace->getSourceTextFormat());
+                        }
+                    }
+                skipIt:;
+                }
+            }
+            for (StringView exclude : {"Shell_iOS", "opengl-support"}) {
+                s32 i = find(triple.dirNames, exclude);
+                if (i >= 0) {
+                    triple.dirNames.erase(i);
+                }
             }
         }
     }

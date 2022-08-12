@@ -70,6 +70,7 @@ void module_ply_build_folder(ModuleArgs* args) {
     args->addSourceFiles("folder/ply-build-folder");
     args->addIncludeDir(Visibility::Public, "folder");
     args->addTarget(Visibility::Public, "build-repo");
+    args->addTarget(Visibility::Public, "build-repository");
     args->addTarget(Visibility::Private, "pylon-reflect");
 }
 
@@ -78,8 +79,8 @@ void module_ply_build_repository(ModuleArgs* args) {
     args->buildTarget->dynamicLinkPrefix = "PLY_BUILD";
     args->addSourceFiles("repository/ply-build-repository");
     args->addIncludeDir(Visibility::Public, "repository");
-    args->addTarget(Visibility::Private, "pylon-reflect");
+    args->addTarget(Visibility::Public, "reflect");
     args->addTarget(Visibility::Private, "buildSteps");
-    args->addTarget(Visibility::Private, "crowbar");
+    args->addTarget(Visibility::Public, "crowbar");
     args->addTarget(Visibility::Private, "build-common");
 }
