@@ -14,6 +14,7 @@ Owned<Repository> Repository::instance;
 void Repository::create() {
     Repository::instance = Owned<Repository>::create();
 
+    bool anyError = false;
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(PLY_WORKSPACE_FOLDER, 0)) {
         if (!entry.isDir)
             continue;
@@ -27,10 +28,16 @@ void Repository::create() {
         for (const WalkTriple& triple : FileSystem::native()->walk(repoFolder)) {
             for (const WalkTriple::FileInfo& file : triple.files) {
                 if (file.name == "Plyfile") {
-                    parsePlyfile(NativePath::join(triple.dirPath, file.name));
+                    if (!parsePlyfile(NativePath::join(triple.dirPath, file.name))) {
+                        anyError = true;
+                    }
                 }
             }
         }
+    }
+
+    if (anyError) {
+        exit(1);
     }
 }
 

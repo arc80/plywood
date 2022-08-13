@@ -14,16 +14,18 @@ namespace latest {
 // 'module' and expression traits like 'public'.
 struct ParseHooks : crowbar::Parser::Hooks {
     crowbar::Parser* parser = nullptr;
-    Repository* repo = nullptr;
-    Repository::Plyfile* plyfile = nullptr;
+    const Common* common = nullptr;
+    StringView srcFilePath;
+
+    // These data members are modified by the parser:
+    Array<crowbar::Statement::CustomBlock*> moduleBlocks;
     MemOutStream errorOut;
     u32 errorCount = 0;
 
     virtual bool tryParseCustomBlock(crowbar::StatementBlock* stmtBlock) override {
-        Common* common = &this->repo->common;
         crowbar::ExpandedToken kwToken = this->parser->tkr->readToken();
 
-        if (kwToken.label == common->moduleKey) {
+        if (kwToken.label == this->common->moduleKey) {
             // module { ... } block
             if (this->parser->context.customBlock || this->parser->context.func) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
@@ -32,7 +34,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
             }
             auto moduleStmt = Owned<crowbar::Statement>::create();
             auto* customBlock = moduleStmt->customBlock().switchTo().get();
-            customBlock->type = common->moduleKey;
+            customBlock->type = this->common->moduleKey;
 
             // Parse module name.
             crowbar::ExpandedToken nameToken = parser->tkr->readToken();
@@ -47,27 +49,14 @@ struct ParseHooks : crowbar::Parser::Hooks {
             // Parse nested block.
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, customBlock);
             customBlock->body = parseStatementBlock(this->parser, {"module", "module name", true});
-            // Note: Adding the module block to stmtBlock->statements is not that useful, but we
-            // currently do it so that stmtBlock is the owner of the module. We could instead the
-            // Repository the owner, and even store the module in something other than a
-            // CustomBlock.
             stmtBlock->statements.append(std::move(moduleStmt));
-
-            // Add to module map.
-            auto cursor = this->repo->moduleMap.insertOrFind(customBlock->name);
-            if (cursor.wasFound()) {
-                PLY_FORCE_CRASH(); // Duplicate name
-            }
-            *cursor = Owned<Repository::Module>::create();
-            (*cursor)->plyfile = this->plyfile;
-            (*cursor)->block = customBlock;
-
+            this->moduleBlocks.append(customBlock);
             return true;
         }
 
-        if (kwToken.label == common->sourceFilesKey) {
+        if (kwToken.label == this->common->sourceFilesKey) {
             // source_files { ... } block
-            if (this->parser->context.customBlock->type != common->moduleKey) {
+            if (this->parser->context.customBlock->type != this->common->moduleKey) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
                       "source_files block can only be used within a module");
                 this->parser->recovery.muteErrors = false;
@@ -75,16 +64,16 @@ struct ParseHooks : crowbar::Parser::Hooks {
 
             auto customBlock = Owned<crowbar::Statement>::create();
             auto* cb = customBlock->customBlock().switchTo().get();
-            cb->type = common->sourceFilesKey;
+            cb->type = this->common->sourceFilesKey;
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
             cb->body = parseStatementBlock(this->parser, {"source_files", "source_files", true});
             stmtBlock->statements.append(std::move(customBlock));
             return true;
         }
 
-        if (kwToken.label == common->includeDirectoriesKey) {
+        if (kwToken.label == this->common->includeDirectoriesKey) {
             // include_directories { ... } block
-            if (this->parser->context.customBlock->type != common->moduleKey) {
+            if (this->parser->context.customBlock->type != this->common->moduleKey) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
                       "include_directories block can only be used within a module");
                 this->parser->recovery.muteErrors = false;
@@ -92,7 +81,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
 
             auto customBlock = Owned<crowbar::Statement>::create();
             auto* cb = customBlock->customBlock().switchTo().get();
-            cb->type = common->includeDirectoriesKey;
+            cb->type = this->common->includeDirectoriesKey;
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
             cb->body = parseStatementBlock(this->parser,
                                            {"include_directories", "include_directories", true});
@@ -105,17 +94,17 @@ struct ParseHooks : crowbar::Parser::Hooks {
     }
 
     virtual bool tryParseExpressionTrait(AnyOwnedObject* expressionTraits) override {
-        Common* common = &this->repo->common;
         crowbar::ExpandedToken kwToken = this->parser->tkr->readToken();
 
-        if ((kwToken.label == common->publicKey) || (kwToken.label == common->privateKey)) {
+        if ((kwToken.label == this->common->publicKey) ||
+            (kwToken.label == this->common->privateKey)) {
             // public / private keywords
             if (!expressionTraits->data) {
                 *expressionTraits = AnyOwnedObject::create<ExpressionTraits>();
             }
             auto traits = expressionTraits->cast<ExpressionTraits>();
             traits->visibilityTokenIdx = kwToken.tokenIdx;
-            traits->isPublic = (kwToken.label == common->publicKey);
+            traits->isPublic = (kwToken.label == this->common->publicKey);
             return true;
         }
 
@@ -124,7 +113,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
     }
 
     virtual void onError(StringView errorMsg) override {
-        this->errorOut << errorMsg;
+        this->errorOut << this->srcFilePath << errorMsg;
         this->errorCount++;
     }
 };
@@ -143,18 +132,30 @@ bool parsePlyfile(StringView path) {
     crowbar::Parser parser;
     ParseHooks parserHooks;
     parserHooks.parser = &parser;
-    parserHooks.repo = repo;
-    parserHooks.plyfile = plyfile;
+    parserHooks.common = &repo->common;
+    parserHooks.srcFilePath = path;
     parser.hooks = &parserHooks;
     parser.tkr = &plyfile->tkr;
 
-    // Parse the script. This adds modules to the Repository.
+    // Parse the script and check for errors.
     Owned<crowbar::StatementBlock> file = parser.parseFile();
     if (parserHooks.errorCount > 0) {
         StdErr::text().write(parserHooks.errorOut.moveToString());
         return false;
     }
+
+    // Success. Add parsed modules to the repository.
     plyfile->contents = std::move(file);
+    for (crowbar::Statement::CustomBlock* customBlock : parserHooks.moduleBlocks) {
+        auto cursor = repo->moduleMap.insertOrFind(customBlock->name);
+        if (cursor.wasFound()) {
+            PLY_FORCE_CRASH(); // Duplicate name
+        }
+        *cursor = Owned<Repository::Module>::create();
+        (*cursor)->plyfile = plyfile;
+        (*cursor)->block = customBlock;
+    }
+
     return true;
 }
 

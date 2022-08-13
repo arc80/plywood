@@ -19,7 +19,7 @@
 #include <ply-build-provider/ExternFolderRegistry.h>
 #include <ply-build-provider/HostTools.h>
 #include <ply-runtime/container/Hash128.h>
-//#include <ply-build-repository/Instantiate.h>
+#include <ply-build-repository/Instantiate.h>
 
 namespace ply {
 namespace build {
@@ -329,7 +329,6 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
     return true;
 }
 
-/*
 PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     latest::ModuleInstantiator mi;
     mi.repo = latest::Repository::instance;
@@ -359,10 +358,9 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
                                                          TextFormat::platformPreference());
     return true;
 }
-*/
 
 PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
-//    return generateLatest(this);
+    //return generateLatest(this);
 
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);
