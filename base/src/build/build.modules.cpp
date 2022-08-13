@@ -80,7 +80,7 @@ void module_ply_build_repository(ModuleArgs* args) {
     args->addSourceFiles("repository/ply-build-repository");
     args->addIncludeDir(Visibility::Public, "repository");
     args->addTarget(Visibility::Public, "reflect");
-    args->addTarget(Visibility::Private, "buildSteps");
+    args->addTarget(Visibility::Public, "buildSteps");
     args->addTarget(Visibility::Public, "crowbar");
     args->addTarget(Visibility::Private, "build-common");
 }

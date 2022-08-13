@@ -104,7 +104,7 @@ void command_cleanup(PlyToolCommandEnv* env) {
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 )";
-    cleanupRepo(NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src"), desiredHeader, {},
+    cleanupRepo(NativePath::join(PLY_WORKSPACE_FOLDER, "base/src"), desiredHeader, {},
                 env->workspace->getSourceTextFormat());
 }
 

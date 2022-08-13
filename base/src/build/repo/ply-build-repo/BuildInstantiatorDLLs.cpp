@@ -147,7 +147,7 @@ InstantiatedDLLs buildInstantiatorDLLs(bool force) {
 
     GenerateDLLContext ctx;
     ctx.dllBuildFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/bootstrap/DLLs/");
-    ctx.backedUpSrcFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/");
+    ctx.backedUpSrcFolder = NativePath::join(PLY_WORKSPACE_FOLDER, "base/src/");
 #ifdef PLY_SRC_FOLDER
     ctx.backedUpSrcFolder = NativePath::normalize(PLY_SRC_FOLDER, "");
 #endif

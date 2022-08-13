@@ -19,7 +19,7 @@ void writeCMakeLists(OutStream* outs, CMakeBuildFolder* cbf) {
 
     HybridString sourceFolderPrefix = cbf->sourceFolderPrefix;
     if (!sourceFolderPrefix) {
-        sourceFolderPrefix = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/");
+        sourceFolderPrefix = NativePath::join(PLY_WORKSPACE_FOLDER, "base/src/");
     }
 
     // Define lambda expression that will filter filenames when generating CMakeLists.txt in

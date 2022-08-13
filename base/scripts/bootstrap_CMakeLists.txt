@@ -34,6 +34,7 @@ SetSourceFolders(PLYTOOL_SOURCES "${SRC_FOLDER}apps/plytool/plytool"
 add_executable(plytool
     ${PLYTOOL_SOURCES}
     $<TARGET_OBJECTS:build-folder>
+    $<TARGET_OBJECTS:build-repository>
     $<TARGET_OBJECTS:build-repo>
     $<TARGET_OBJECTS:build-provider>
     $<TARGET_OBJECTS:pylon>
@@ -45,9 +46,12 @@ set_property(TARGET plytool PROPERTY ENABLE_EXPORTS TRUE)
 EnableCppExceptions(plytool FALSE)
 target_include_directories(plytool PRIVATE
     "${SRC_FOLDER}apps/plytool/plytool-client"
-    "${SRC_FOLDER}pylon/pylon"
     "${SRC_FOLDER}pylon/reflect"
     "${SRC_FOLDER}cpp"
+    "${SRC_FOLDER}crowbar"
+    "${SRC_FOLDER}pylon/pylon"
+    "${SRC_FOLDER}buildSteps"
+    "${SRC_FOLDER}build/repository"
     "${SRC_FOLDER}build/provider"
     "${BUILD_FOLDER}codegen/ply-platform"
     "${SRC_FOLDER}platform"
@@ -66,6 +70,8 @@ target_compile_definitions(plytool PRIVATE
 )
 target_link_libraries(plytool PRIVATE
     "plytool-client"
+    "crowbar"
+    "buildSteps"
     "cpp"
     "pylon-reflect"
     ${PLY_RUNTIME_DEPENDENCIES}
@@ -83,8 +89,11 @@ add_library(build-folder OBJECT
 )
 EnableCppExceptions(build-folder FALSE)
 target_include_directories(build-folder PRIVATE
-    "${SRC_FOLDER}pylon/pylon"
     "${SRC_FOLDER}pylon/reflect"
+    "${SRC_FOLDER}crowbar"
+    "${SRC_FOLDER}pylon/pylon"
+    "${SRC_FOLDER}buildSteps"
+    "${SRC_FOLDER}build/repository"
     "${SRC_FOLDER}build/provider"
     "${BUILD_FOLDER}codegen/ply-platform"
     "${SRC_FOLDER}platform"
@@ -636,6 +645,87 @@ target_include_directories(cpp PRIVATE
     "${SRC_FOLDER}cpp"
 )
 target_compile_definitions(cpp PRIVATE
+    "PLY_DLL_EXPORTING=1"
+)
+
+# build-repository
+SetSourceFolders(BUILD-REPOSITORY_SOURCES "${SRC_FOLDER}build/repository/ply-build-repository"
+    "Common.cpp"
+    "Common.h"
+    "Instantiate.cpp"
+    "Instantiate.h"
+    "ParsePlyfile.cpp"
+    "Repository.cpp"
+    "Repository.h"
+)
+add_library(build-repository OBJECT
+    ${BUILD-REPOSITORY_SOURCES}
+)
+EnableCppExceptions(build-repository FALSE)
+target_include_directories(build-repository PRIVATE
+    "${SRC_FOLDER}build/common"
+    "${SRC_FOLDER}crowbar"
+    "${SRC_FOLDER}pylon/pylon"
+    "${SRC_FOLDER}buildSteps"
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+    "${SRC_FOLDER}build/repository"
+)
+target_compile_definitions(build-repository PRIVATE
+    "PLY_BUILD_EXPORTING=1"
+    "PLY_DLL_EXPORTING=1"
+    "PYLON_EXPORTING=1"
+)
+
+# buildSteps
+SetSourceFolders(BUILDSTEPS_SOURCES "${SRC_FOLDER}buildSteps/buildSteps"
+    "BuildSteps.cpp"
+    "BuildSteps.h"
+    "Core.h"
+)
+add_library(buildSteps
+    ${BUILDSTEPS_SOURCES}
+)
+EnableCppExceptions(buildSteps FALSE)
+target_include_directories(buildSteps PRIVATE
+    "${SRC_FOLDER}pylon/pylon"
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}buildSteps"
+)
+target_compile_definitions(buildSteps PRIVATE
+    "PLY_DLL_EXPORTING=1"
+    "PYLON_EXPORTING=1"
+)
+
+# crowbar
+SetSourceFolders(CROWBAR_SOURCES "${SRC_FOLDER}crowbar/ply-crowbar"
+    "Core.h"
+    "Interpreter.cpp"
+    "Interpreter.h"
+    "ParseTree.cpp"
+    "ParseTree.h"
+    "ParseUnexpected.cpp"
+    "Parser.cpp"
+    "Parser.h"
+    "Tokenizer.cpp"
+    "Tokenizer.h"
+)
+add_library(crowbar
+    ${CROWBAR_SOURCES}
+)
+EnableCppExceptions(crowbar FALSE)
+target_include_directories(crowbar PRIVATE
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+    "${SRC_FOLDER}crowbar"
+)
+target_compile_definitions(crowbar PRIVATE
     "PLY_DLL_EXPORTING=1"
 )
 

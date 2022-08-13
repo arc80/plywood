@@ -50,7 +50,7 @@ String getSwitchInl(SwitchInfo* switch_) {
 }
 
 void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
-    String absInlPath = NativePath::join(PLY_WORKSPACE_FOLDER, "repos", switch_->inlineInlPath);
+    String absInlPath = NativePath::join(PLY_WORKSPACE_FOLDER, switch_->inlineInlPath);
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         absInlPath, getSwitchInl(switch_), tff);
     OutStream stdOut = StdOut::text();
@@ -184,7 +184,7 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg, const TextFormat& tf
 
     for (const Traits::Item& item : fileToGeneratorList) {
         PLY_ASSERT(item.cppInlPath.endsWith(".inl"));
-        String absPath = NativePath::join(PLY_WORKSPACE_FOLDER, "repos", item.cppInlPath);
+        String absPath = NativePath::join(PLY_WORKSPACE_FOLDER, item.cppInlPath);
 
         MemOutStream mout;
         for (CodeGenerator* generator : item.sources) {

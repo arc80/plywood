@@ -19,6 +19,7 @@
 #include <ply-build-provider/ExternFolderRegistry.h>
 #include <ply-build-provider/HostTools.h>
 #include <ply-runtime/container/Hash128.h>
+//#include <ply-build-repository/Instantiate.h>
 
 namespace ply {
 namespace build {
@@ -176,9 +177,6 @@ Owned<ProjectInstantiationEnv> BuildFolder::createEnvironment() const {
     return env;
 }
 
-PLY_NO_INLINE void BuildFolder::instantiateLatest(bool isGenerating) const {
-}
-
 PLY_NO_INLINE ProjectInstantiationResult
 BuildFolder::instantiateAllTargets(bool isGenerating) const {
     Owned<ProjectInstantiationEnv> env = this->createEnvironment();
@@ -331,7 +329,41 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
     return true;
 }
 
+/*
+PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
+    latest::ModuleInstantiator mi;
+    mi.repo = latest::Repository::instance;
+    mi.project.name = bf->solutionName;
+
+    // Add configs
+    mi.project.configs.resize(3);
+    mi.project.configs[0].name = "Debug";
+    mi.project.configs[1].name = "RelWithAsserts";
+    mi.project.configs[2].name = "RelWithDebInfo";
+
+    // For each config, instantiate root modules
+    for (u32 i = 0; i < mi.project.configs.numItems(); i++) {
+        mi.currentConfig = i;
+        for (StringView targetName : bf->rootTargets) {
+            if (!latest::instantiateModuleForCurrentConfig(
+                    &mi, LabelMap::instance.insertOrFind(targetName)))
+                return false;
+        }
+    }
+
+    Owned<buildSteps::MetaProject> mp = expand(&mi.project);
+    MemOutStream outs;
+    writeCMakeLists(&outs, mp);
+
+    FileSystem::native()->makeDirsAndSaveTextIfDifferent("out.txt", outs.moveToString(),
+                                                         TextFormat::platformPreference());
+    return true;
+}
+*/
+
 PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
+//    return generateLatest(this);
+
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);
         if (!instResult.isValid) {

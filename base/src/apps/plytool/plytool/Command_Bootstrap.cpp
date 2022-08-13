@@ -20,15 +20,15 @@ void command_bootstrap(PlyToolCommandEnv* env) {
     PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
 
     const TargetInstantiator* target =
-        RepoRegistry::get()->findTargetInstantiator("plywood.plytool");
+        RepoRegistry::get()->findTargetInstantiator("plytool");
     if (!target) {
         StdErr::text() << "Error: Can't find 'plytool' module in 'plywood' repo.\n";
         return;
     }
 
     Owned<BuildFolder> buildFolder = BuildFolder::create({}, "plytool");
-    buildFolder->rootTargets.append("plywood.plytool");
-    buildFolder->makeShared.append("plywood.plytool");
+    buildFolder->rootTargets.append("plytool");
+    buildFolder->makeShared.append("plytool");
     ProjectInstantiationResult instResult = buildFolder->instantiateAllTargets(true);
     if (!instResult.isValid) {
         return;
@@ -43,7 +43,7 @@ void command_bootstrap(PlyToolCommandEnv* env) {
     MemOutStream mout;
     writeCMakeLists(&mout, buildFolder->solutionName, buildFolder->getAbsPath(), &instResult, true);
     String savePath =
-        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/scripts/bootstrap_CMakeLists.txt");
+        NativePath::join(PLY_WORKSPACE_FOLDER, "base/scripts/bootstrap_CMakeLists.txt");
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         savePath, mout.moveToString(), env->workspace->getSourceTextFormat());
     if (result == FSResult::OK) {
