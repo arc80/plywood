@@ -82,5 +82,5 @@ void module_ply_build_repository(ModuleArgs* args) {
     args->addTarget(Visibility::Public, "reflect");
     args->addTarget(Visibility::Public, "buildSteps");
     args->addTarget(Visibility::Public, "crowbar");
-    args->addTarget(Visibility::Private, "build-common");
+    args->addTarget(Visibility::Public, "build-common");
 }

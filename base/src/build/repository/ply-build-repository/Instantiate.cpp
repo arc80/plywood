@@ -28,6 +28,10 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
             PLY_FORCE_CRASH();
         }
     }
+    String makeAbsPath(StringView relPath) const {
+        StringView plyfilePath = NativePath::split(this->currentModule->plyfile->path).first;
+        return NativePath::join(plyfilePath, relPath);
+    }
     virtual void onEvaluate(const AnyObject& evaluationTraits) override {
         const Common* common = &Repository::instance->common;
         if (this->interp->currentFrame->customBlock) {
@@ -36,12 +40,11 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
                 PLY_ASSERT(!evaluationTraits.data);
                 // FIXME: Only add the path once
                 buildSteps::Node::SourceFiles& sf = this->node->sourceFiles.append();
-                sf.root =
-                    NativePath::join(NativePath::split(this->currentModule->plyfile->path).first,
-                                     *this->interp->returnValue.cast<String>());
+                sf.root = this->makeAbsPath(*this->interp->returnValue.cast<String>());
                 for (WalkTriple& triple : FileSystem::native()->walk(sf.root, 0)) {
                     for (const WalkTriple::FileInfo& file : triple.files) {
-                        if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
+                        if ((file.name.endsWith(".cpp") && !file.name.endsWith(".modules.cpp")) ||
+                            file.name.endsWith(".h")) {
                             sf.relFiles.append(NativePath::makeRelative(
                                 sf.root, NativePath::join(triple.dirPath, file.name)));
                         }
@@ -53,8 +56,8 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
                 buildSteps::ToolchainOpt& tcOpt = this->nodeConfig->opts.tcOpts.append(
                     traits->isPublic ? buildSteps::Visibility::Public
                                      : buildSteps::Visibility::Private,
-                    buildSteps::ToolchainOpt::IncludeDir,
-                    *this->interp->returnValue.cast<String>());
+                    buildSteps::ToolchainOpt::Type::IncludeDir,
+                    this->makeAbsPath(*this->interp->returnValue.cast<String>()));
             } else if (blockType == common->dependenciesKey) {
                 const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
                 PLY_ASSERT(traits->visibilityTokenIdx >= 0);
@@ -102,11 +105,11 @@ struct ModuleNamespace : crowbar::INamespace {
     }
 };
 
-ModuleInstantiator::ModuleInstantiator() {
+ModuleInstantiator::ModuleInstantiator(StringView buildFolderPath)
+    : buildFolderPath{buildFolderPath} {
     Owned<crowbar::MapNamespace> globalNamespace = Owned<crowbar::MapNamespace>::create();
     globalNamespace->map.insertOrFind(LabelMap::instance.insertOrFind("join_path"))->obj =
         AnyObject::bind(doJoinPath);
-    this->buildFolderPath = "C:/Jeff/plywood-fresh/plywood/data/build/delete_me";
     globalNamespace->map.insertOrFind(LabelMap::instance.insertOrFind("build_folder"))->obj =
         AnyObject::bind(&this->buildFolderPath);
     this->globalNamespace = std::move(globalNamespace);

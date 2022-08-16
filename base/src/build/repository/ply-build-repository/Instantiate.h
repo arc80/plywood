@@ -26,7 +26,6 @@ struct ModuleInstantiator {
         }
     };
 
-    // Stuff shared by every interpreter.
     String buildFolderPath;
     MemOutStream errorOut;
     Owned<crowbar::INamespace> globalNamespace;
@@ -38,7 +37,7 @@ struct ModuleInstantiator {
     HashMap<ModuleMapTraits> modules;
     u32 currentConfig = 0;
 
-    ModuleInstantiator();
+    ModuleInstantiator(StringView buildFolderPath);
 };
 
 buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel);

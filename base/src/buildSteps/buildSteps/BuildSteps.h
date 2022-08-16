@@ -16,20 +16,22 @@ enum class Visibility {
 };
 
 struct ToolchainOpt {
-    static constexpr u32 IncludeDir = 0;
-    static constexpr u32 PreprocessorDef = 1;
-    static constexpr u32 Generic = 2;
-    static constexpr u32 CompilerSpecific = 3;
-    static constexpr u32 LinkerSpecific = 4;
+    enum class Type {
+        IncludeDir,
+        PreprocessorDef,
+        Generic,
+        CompilerSpecific,
+        LinkerSpecific
+    };
 
     static const String Erased;
 
     Visibility vis = Visibility::Private;
-    u32 type : 3;
+    Type type = Type::IncludeDir;
     String key;
     String value;  // could be Erased
 
-    PLY_INLINE ToolchainOpt(Visibility vis, u32 type, StringView key, StringView value = {})
+    PLY_INLINE ToolchainOpt(Visibility vis, Type type, StringView key, StringView value = {})
         : vis{vis}, type{type}, key{key}, value{value} {
     }
 };
@@ -41,8 +43,8 @@ struct Node : RefCounted<Node> {
         Array<String> prebuiltLibs;
     };
 
-    enum Type {
-        EXE,
+    enum class Type {
+        Executable,
         Lib,
     };
 
@@ -57,7 +59,7 @@ struct Node : RefCounted<Node> {
     };
 
     String name;
-    Type type = Lib;
+    Type type = Type::Lib;
     Options opts;
     Array<SourceFiles> sourceFiles;
     Array<Config> configs;

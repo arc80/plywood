@@ -10,7 +10,7 @@ namespace buildSteps {
 //------------------------------------------------------------------------------
 
 struct FinalOption {
-    u32 type;
+    ToolchainOpt::Type type;
     String key;
     Array<String> values; // if numItems() == 1, it's an every-config option
 };
@@ -130,22 +130,23 @@ struct CompileOpts {
 CompileOpts extractCompilerOpts(const ToolChain& tc, ArrayView<const FinalOption> opts,
                                 u32 configIdx) {
     CompileOpts copts;
-    iterOverOptions(opts, configIdx, [&](u32 type, StringView key, StringView value) {
-        if (type == ToolchainOpt::Generic) {
-            auto cursor = tc.allGenericOptions.find(key);
-            PLY_ASSERT(cursor.wasFound()); // FIXME: Handle gracefully
-            if (cursor->values.numItems() == 1 && cursor->values[0].value.isEmpty()) {
-                copts.compile.extend(cursor->values[0].compile);
-                copts.link.extend(cursor->values[0].link);
-            } else {
-                s32 idx =
-                    find(cursor->values, [&](const auto& cand) { return cand.value == value; });
-                PLY_ASSERT(idx >= 0); // FIXME: Handle gracefully
-                copts.compile.extend(cursor->values[idx].compile);
-                copts.link.extend(cursor->values[idx].link);
+    iterOverOptions(
+        opts, configIdx, [&](ToolchainOpt::Type type, StringView key, StringView value) {
+            if (type == ToolchainOpt::Type::Generic) {
+                auto cursor = tc.allGenericOptions.find(key);
+                PLY_ASSERT(cursor.wasFound()); // FIXME: Handle gracefully
+                if (cursor->values.numItems() == 1 && cursor->values[0].value.isEmpty()) {
+                    copts.compile.extend(cursor->values[0].compile);
+                    copts.link.extend(cursor->values[0].link);
+                } else {
+                    s32 idx =
+                        find(cursor->values, [&](const auto& cand) { return cand.value == value; });
+                    PLY_ASSERT(idx >= 0); // FIXME: Handle gracefully
+                    copts.compile.extend(cursor->values[idx].compile);
+                    copts.link.extend(cursor->values[idx].link);
+                }
             }
-        }
-    });
+        });
     return copts;
 }
 
@@ -414,9 +415,9 @@ endmacro()
             }
             *outs << ")\n";
         }
-        if (meta->node->type == Node::EXE) {
+        if (meta->node->type == Node::Type::Executable) {
             outs->format("add_executable({} ${{{}_SOURCES}})\n", meta->node->name, upperName);
-        } else if (meta->node->type == Node::Lib) {
+        } else if (meta->node->type == Node::Type::Lib) {
             if (meta->needsBuild) {
                 outs->format("add_library({} ${{{}_SOURCES}})\n", meta->node->name, upperName);
             } else {
@@ -451,7 +452,7 @@ endmacro()
             // Write include directories
             outs->format("target_include_directories({} PRIVATE\n", meta->node->name);
             for (const FinalOption& opt : finalOpts) {
-                if (opt.type == ToolchainOpt::IncludeDir) {
+                if (opt.type == ToolchainOpt::Type::IncludeDir) {
                     for (u32 configIdx = 0; configIdx < opt.values.numItems(); configIdx++) {
                         if (opt.values[configIdx] != ToolchainOpt::Erased) {
                             if (opt.values.numItems() == 1) {
@@ -477,7 +478,7 @@ endmacro()
             }
             *outs << ")\n";
 
-            if (meta->node->type == Node::EXE) {
+            if (meta->node->type == Node::Type::Executable) {
                 // Write libraries to link with
                 outs->format("target_link_libraries({} PRIVATE\n", meta->node->name);
                 for (u32 i = 0; i < meta->opts.dependencies.numItems(); i++) {
