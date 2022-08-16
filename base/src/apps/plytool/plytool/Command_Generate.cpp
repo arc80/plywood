@@ -26,10 +26,11 @@ bool command_generate(PlyToolCommandEnv* env) {
     }
     env->cl->finalize();
 
-    //latest::Repository::create();
+    latest::Repository::create();
     PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
     PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());
     PLY_SET_IN_SCOPE(HostTools::instance_, HostTools::create());
+
 
     return env->currentBuildFolder->generateLoop(configName);
 }

@@ -44,3 +44,5 @@ void Repository::create() {
 } // namespace latest
 } // namespace build
 } // namespace ply
+
+#include "codegen/Repository.inl"

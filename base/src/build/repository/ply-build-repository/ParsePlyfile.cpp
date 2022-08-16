@@ -89,6 +89,41 @@ struct ParseHooks : crowbar::Parser::Hooks {
             return true;
         }
 
+        if (kwToken.label == this->common->dependenciesKey) {
+            // dependencies { ... } block
+            if (this->parser->context.customBlock->type != this->common->moduleKey) {
+                error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                      "dependencies block can only be used within a module");
+                this->parser->recovery.muteErrors = false;
+            }
+
+            auto customBlock = Owned<crowbar::Statement>::create();
+            auto* cb = customBlock->customBlock().switchTo().get();
+            cb->type = this->common->dependenciesKey;
+            PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
+            cb->body = parseStatementBlock(this->parser, {"dependencies", "dependencies", true});
+            stmtBlock->statements.append(std::move(customBlock));
+            return true;
+        }
+
+        if (kwToken.label == this->common->linkLibrariesKey) {
+            // dependencies { ... } block
+            if (this->parser->context.customBlock->type != this->common->moduleKey) {
+                error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                      "link_libraries block can only be used within a module");
+                this->parser->recovery.muteErrors = false;
+            }
+
+            auto customBlock = Owned<crowbar::Statement>::create();
+            auto* cb = customBlock->customBlock().switchTo().get();
+            cb->type = this->common->linkLibrariesKey;
+            PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
+            cb->body =
+                parseStatementBlock(this->parser, {"link_libraries", "link_libraries", true});
+            stmtBlock->statements.append(std::move(customBlock));
+            return true;
+        }
+
         this->parser->tkr->rewindTo(kwToken.tokenIdx);
         return false;
     }
@@ -99,12 +134,26 @@ struct ParseHooks : crowbar::Parser::Hooks {
         if ((kwToken.label == this->common->publicKey) ||
             (kwToken.label == this->common->privateKey)) {
             // public / private keywords
-            if (!expressionTraits->data) {
-                *expressionTraits = AnyOwnedObject::create<ExpressionTraits>();
+            bool legal = false;
+            if (crowbar::Statement::CustomBlock* cb = this->parser->context.customBlock) {
+                legal = (cb->type == this->common->includeDirectoriesKey) ||
+                        (cb->type == this->common->dependenciesKey);
             }
-            auto traits = expressionTraits->cast<ExpressionTraits>();
-            traits->visibilityTokenIdx = kwToken.tokenIdx;
-            traits->isPublic = (kwToken.label == this->common->publicKey);
+            if (legal) {
+                if (!expressionTraits->data) {
+                    *expressionTraits = AnyOwnedObject::create<ExpressionTraits>();
+                }
+                auto traits = expressionTraits->cast<ExpressionTraits>();
+                traits->visibilityTokenIdx = kwToken.tokenIdx;
+                traits->isPublic = (kwToken.label == this->common->publicKey);
+            } else {
+                error(
+                    this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                    String::format(
+                        "'{}' can only be used inside an include_directories or dependencies block",
+                        kwToken.text));
+                this->parser->recovery.muteErrors = false;
+            }
             return true;
         }
 

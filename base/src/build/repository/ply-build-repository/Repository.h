@@ -18,6 +18,9 @@ struct Repository {
     };
 
     struct Module {
+        PLY_REFLECT()
+        // ply reflect off
+
         Plyfile* plyfile;
         crowbar::Statement::CustomBlock* block;
     };

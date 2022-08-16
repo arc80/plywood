@@ -26,7 +26,26 @@ struct VariableMapTraits {
     }
 };
 
+struct INamespace {
+    virtual ~INamespace() {}
+    virtual AnyObject find(Label identifier) const = 0;
+};
+
+struct MapNamespace : INamespace {
+    HashMap<VariableMapTraits> map;
+    virtual AnyObject find(Label identifier) const;
+};
+
 struct Interpreter : BaseInterpreter {
+    struct StackFrame {
+        Interpreter* interp = nullptr;
+        HiddenArgFunctor<HybridString()> desc;
+        HashMap<VariableMapTraits> localVariableTable;
+        const Statement::CustomBlock* customBlock = nullptr;
+        u32 tokenIdx = 0;
+        StackFrame* prevFrame = nullptr;
+    };
+
     struct Hooks {
         virtual ~Hooks() {}
         virtual void enterCustomBlock(const Statement::CustomBlock* customBlock) {}
@@ -34,23 +53,12 @@ struct Interpreter : BaseInterpreter {
         virtual void onEvaluate(const AnyObject& evaluationTraits) {}
     };
 
-    struct StackFrame {
-        Interpreter* interp = nullptr;
-        HiddenArgFunctor<HybridString()> desc;
-        HashMap<VariableMapTraits> localVariableTable;
-        u32 tokenIdx = 0;
-        StackFrame* prevFrame = nullptr;
-    };
-
-    Array<HashMap<VariableMapTraits>*> outerNameSpaces;
+    Array<INamespace*> outerNameSpaces;
     Hooks* hooks = nullptr;
 
     // For expanding the location of runtime errors:
     Tokenizer* tkr = nullptr;
     StackFrame *currentFrame = nullptr;
-
-    // Custom block support
-    const Statement::CustomBlock* customBlock = nullptr;
 };
 
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);

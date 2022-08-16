@@ -424,6 +424,7 @@ Owned<StatementBlock> parseStatementBlock(Parser* parser, const StatementBlockPr
         if (block->statements.numItems() == 1) {
             switch (block->statements[0]->id) {
                 case Statement::ID::Return_:
+                case Statement::ID::If_:
                     isLegal = true;
                     break;
                 default:

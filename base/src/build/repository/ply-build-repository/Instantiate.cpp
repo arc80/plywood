@@ -17,25 +17,36 @@ namespace latest {
 struct InterpreterHooks : crowbar::Interpreter::Hooks {
     crowbar::Interpreter* interp = nullptr;
     ModuleInstantiator* mi = nullptr;
+    Repository::Module* currentModule = nullptr;
     buildSteps::Node* node = nullptr;
     buildSteps::Node::Config* nodeConfig = nullptr;
 
     virtual ~InterpreterHooks() override {
     }
     virtual void enterCustomBlock(const crowbar::Statement::CustomBlock* enteringBlock) override {
-        if (this->interp->customBlock) {
+        if (this->interp->currentFrame->customBlock) {
             PLY_FORCE_CRASH();
         }
     }
     virtual void onEvaluate(const AnyObject& evaluationTraits) override {
-        const Common* common = &this->mi->repo->common;
-        if (this->interp->customBlock) {
-            Label blockType = this->interp->customBlock->type;
+        const Common* common = &Repository::instance->common;
+        if (this->interp->currentFrame->customBlock) {
+            Label blockType = this->interp->currentFrame->customBlock->type;
             if (blockType == common->sourceFilesKey) {
                 PLY_ASSERT(!evaluationTraits.data);
                 // FIXME: Only add the path once
                 buildSteps::Node::SourceFiles& sf = this->node->sourceFiles.append();
-                sf.root = *this->interp->returnValue.cast<String>();
+                sf.root =
+                    NativePath::join(NativePath::split(this->currentModule->plyfile->path).first,
+                                     *this->interp->returnValue.cast<String>());
+                for (WalkTriple& triple : FileSystem::native()->walk(sf.root, 0)) {
+                    for (const WalkTriple::FileInfo& file : triple.files) {
+                        if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
+                            sf.relFiles.append(NativePath::makeRelative(
+                                sf.root, NativePath::join(triple.dirPath, file.name)));
+                        }
+                    }
+                }
             } else if (blockType == common->includeDirectoriesKey) {
                 const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
                 PLY_ASSERT(traits->visibilityTokenIdx >= 0);
@@ -44,6 +55,21 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
                                      : buildSteps::Visibility::Private,
                     buildSteps::ToolchainOpt::IncludeDir,
                     *this->interp->returnValue.cast<String>());
+            } else if (blockType == common->dependenciesKey) {
+                const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
+                PLY_ASSERT(traits->visibilityTokenIdx >= 0);
+
+                // Instantiate the dependency
+                Repository::Module* mod = this->interp->returnValue.cast<Repository::Module>();
+                buildSteps::Node* dep = instantiateModuleForCurrentConfig(mi, mod->block->name);
+                this->node->opts.dependencies.append(traits->isPublic
+                                                         ? buildSteps::Visibility::Public
+                                                         : buildSteps::Visibility::Private,
+                                                     dep);
+            } else if (blockType == common->linkLibrariesKey) {
+                // PLY_ASSERT(!evaluationTraits.data);
+                // this->nodeConfig->opts.prebuiltLibs.append(
+                //    *this->interp->returnValue.cast<String>());
             }
         }
     }
@@ -66,8 +92,28 @@ PLY_NO_INLINE MethodResult doJoinPath(BaseInterpreter* interp, const AnyObject&,
     return MethodResult::OK;
 }
 
+struct ModuleNamespace : crowbar::INamespace {
+    virtual AnyObject find(Label identifier) const {
+        auto cursor = Repository::instance->moduleMap.find(identifier);
+        if (cursor.wasFound()) {
+            return AnyObject::bind(cursor->get());
+        }
+        return {};
+    }
+};
+
+ModuleInstantiator::ModuleInstantiator() {
+    Owned<crowbar::MapNamespace> globalNamespace = Owned<crowbar::MapNamespace>::create();
+    globalNamespace->map.insertOrFind(LabelMap::instance.insertOrFind("join_path"))->obj =
+        AnyObject::bind(doJoinPath);
+    this->buildFolderPath = "C:/Jeff/plywood-fresh/plywood/data/build/delete_me";
+    globalNamespace->map.insertOrFind(LabelMap::instance.insertOrFind("build_folder"))->obj =
+        AnyObject::bind(&this->buildFolderPath);
+    this->globalNamespace = std::move(globalNamespace);
+}
+
 buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel) {
-    Common* common = &mi->repo->common;
+    Common* common = &Repository::instance->common;
     StringView moduleName = LabelMap::instance.view(moduleLabel);
 
     // Check if a buildSteps::Node was already created for this moduleName.
@@ -78,7 +124,9 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
             // No. Create a new one.
             instCursor->node = new buildSteps::Node;
             instCursor->node->name = moduleName;
-            instCursor->node->configs.resize(mi->project.configs.numItems());
+            for (const auto& config : mi->project.configs) {
+                instCursor->node->configs.append().name = config.name;
+            }
         } else {
             // Yes. If the module was already fully instantiated in this config, return it.
             if (instCursor->statusInCurrentConfig == ModuleInstantiator::Instantiated)
@@ -94,12 +142,13 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     }
 
     // Find module function by name.
-    auto funcCursor = mi->repo->moduleMap.find(moduleLabel);
+    auto funcCursor = Repository::instance->moduleMap.find(moduleLabel);
     if (!funcCursor.wasFound()) {
         PLY_FORCE_CRASH();
     }
+    const crowbar::Statement::CustomBlock* moduleDef = (*funcCursor)->block;
 
-    // Create Crowbar interpreter.
+    // Create new interpreter.
     MemOutStream outs;
     crowbar::Interpreter interp;
     interp.outs = &outs;
@@ -117,34 +166,25 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
         }
     };
     interp.tkr = &(*funcCursor)->plyfile->tkr;
-    HashMap<crowbar::VariableMapTraits> globalNamespace;
-    globalNamespace.insertOrFind(LabelMap::instance.insertOrFind("join_path"))->obj =
-        AnyObject::bind(doJoinPath);
-    String buildFolder = "C:/Jeff/plywood-fresh/plywood/data/build/delete_me";
-    globalNamespace.insertOrFind(LabelMap::instance.insertOrFind("build_folder"))->obj =
-        AnyObject::bind(&buildFolder);
-    interp.outerNameSpaces.append(&globalNamespace);
 
     // Extend the interpreter with support for custom blocks and expression attributes used by the
     // build system.
     InterpreterHooks interpHooks;
     interpHooks.interp = &interp;
     interpHooks.mi = mi;
+    interpHooks.currentModule = *funcCursor;
     interpHooks.node = node;
     interpHooks.nodeConfig = &node->configs[mi->currentConfig];
     interp.hooks = &interpHooks;
 
-    // Create built-in namespace of objects that module functions use.
-    HashMap<crowbar::VariableMapTraits> builtins;
-    String configName = "Debug";
-    builtins.insertOrFind(LabelMap::instance.insertOrFind("config"))->obj =
-        AnyObject::bind(&configName);
+    // Add global & module namespaces.
+    interp.outerNameSpaces.append(mi->globalNamespace);
+    ModuleNamespace moduleNamespace;
+    interp.outerNameSpaces.append(&moduleNamespace);
 
     // Invoke module function.
     crowbar::Interpreter::StackFrame frame;
     frame.interp = &interp;
-    const crowbar::Statement::CustomBlock* moduleDef = (*funcCursor)->block;
-    PLY_ASSERT(moduleDef->type == common->moduleKey);
     frame.desc = {[](const crowbar::Statement::CustomBlock* moduleDef) -> HybridString {
                       return String::format("module '{}'",
                                             LabelMap::instance.view(moduleDef->name));

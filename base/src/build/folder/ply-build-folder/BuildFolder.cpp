@@ -331,22 +331,23 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
 
 PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     latest::ModuleInstantiator mi;
-    mi.repo = latest::Repository::instance;
     mi.project.name = bf->solutionName;
 
     // Add configs
-    mi.project.configs.resize(3);
+    mi.project.configs.resize(1);
     mi.project.configs[0].name = "Debug";
-    mi.project.configs[1].name = "RelWithAsserts";
-    mi.project.configs[2].name = "RelWithDebInfo";
+    // mi.project.configs[1].name = "RelWithAsserts";
+    // mi.project.configs[2].name = "RelWithDebInfo";
 
     // For each config, instantiate root modules
     for (u32 i = 0; i < mi.project.configs.numItems(); i++) {
         mi.currentConfig = i;
         for (StringView targetName : bf->rootTargets) {
-            if (!latest::instantiateModuleForCurrentConfig(
-                    &mi, LabelMap::instance.insertOrFind(targetName)))
+            buildSteps::Node* rootNode = latest::instantiateModuleForCurrentConfig(
+                &mi, LabelMap::instance.insertOrFind(targetName));
+            if (!rootNode)
                 return false;
+            mi.project.rootNodes.append(rootNode);
         }
     }
 
@@ -360,7 +361,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
 }
 
 PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
-    //return generateLatest(this);
+    return generateLatest(this);
 
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);

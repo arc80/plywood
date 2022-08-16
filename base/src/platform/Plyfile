@@ -1,6 +1,6 @@
 module platform {
     source_files {
-        "ply_platform"
+        "ply-platform"
     }
     include_directories {
         public "."

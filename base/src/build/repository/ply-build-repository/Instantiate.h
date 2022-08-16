@@ -6,6 +6,7 @@
 #include <ply-build-repository/Common.h>
 #include <buildSteps/buildSteps.h>
 #include <ply-build-repository/Repository.h>
+#include <ply-crowbar/Interpreter.h>
 
 namespace ply {
 namespace build {
@@ -25,7 +26,10 @@ struct ModuleInstantiator {
         }
     };
 
-    Repository* repo = nullptr;
+    // Stuff shared by every interpreter.
+    String buildFolderPath;
+    MemOutStream errorOut;
+    Owned<crowbar::INamespace> globalNamespace;
 
     // The project is initialized by instantiating a set of root modules.
     buildSteps::Project project;
@@ -33,6 +37,8 @@ struct ModuleInstantiator {
     // These members are only used while the project is being instantiated.
     HashMap<ModuleMapTraits> modules;
     u32 currentConfig = 0;
+
+    ModuleInstantiator();
 };
 
 buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel);

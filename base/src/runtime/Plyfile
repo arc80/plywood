@@ -1,14 +1,14 @@
 module runtime {
     source_files {
-        public "ply_platform"
+        "ply-runtime"
     }
     include_directories {
         public "."
-        public join_path(build_folder, "codegen/ply-platform")
     }
     dependencies {
         public platform
     }
+    /*
     link_libraries {
         if platform.name == "win32" {
             "ws2_32.lib"
@@ -19,4 +19,5 @@ module runtime {
         }
     }
     dynamic_link_prefix("PLL_DLL")
+    */
 }

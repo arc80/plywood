@@ -1,6 +1,6 @@
 module HelloWorld {
     source_files {
-        public "."
+        "."
     }
     include_directories {
         private "."

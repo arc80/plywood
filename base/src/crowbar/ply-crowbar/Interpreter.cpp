@@ -8,6 +8,13 @@
 namespace ply {
 namespace crowbar {
 
+AnyObject MapNamespace::find(Label identifier) const {
+    auto cursor = this->map.find(identifier);
+    if (cursor.wasFound())
+        return cursor->obj;
+    return {};
+}
+
 MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr);
 MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block);
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
@@ -169,10 +176,9 @@ AnyObject lookupName(Interpreter::StackFrame* frame, Label name) {
         return cursor->obj;
 
     for (s32 i = interp->outerNameSpaces.numItems() - 1; i >= 0; i--) {
-        const HashMap<VariableMapTraits>* ns = interp->outerNameSpaces[i];
-        auto cursor = ns->find(name);
-        if (cursor.wasFound())
-            return cursor->obj;
+        AnyObject obj = interp->outerNameSpaces[i]->find(name);
+        if (obj.data)
+            return obj;
     }
 
     return {};
@@ -382,16 +388,16 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
             }
             case Statement::ID::CustomBlock: {
                 const Statement::CustomBlock* cb = statement->customBlock().get();
-                const Statement::CustomBlock* prevBlock = interp->customBlock;
+                const Statement::CustomBlock* prevBlock = interp->currentFrame->customBlock;
                 if (interp->hooks) {
                     interp->hooks->enterCustomBlock(cb);
                 }
-                interp->customBlock = cb;
+                interp->currentFrame->customBlock = cb;
                 MethodResult result = execBlock(frame, cb->body);
                 if (interp->hooks) {
                     interp->hooks->exitCustomBlock(cb);
                 }
-                interp->customBlock = prevBlock;
+                interp->currentFrame->customBlock = prevBlock;
                 if (result != MethodResult::OK)
                     return result;
                 break;

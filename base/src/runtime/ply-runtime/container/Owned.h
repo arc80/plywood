@@ -42,6 +42,7 @@ public:
 template <typename T>
 class Owned {
 private:
+    template<typename> friend class Owned;
     T* ptr;
 
 public:

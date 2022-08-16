@@ -17,6 +17,8 @@ struct Common {
     Label moduleKey;
     Label includeDirectoriesKey;
     Label sourceFilesKey;
+    Label dependenciesKey;
+    Label linkLibrariesKey;
     Label publicKey;
     Label privateKey;
 
@@ -24,6 +26,8 @@ struct Common {
         this->moduleKey = LabelMap::instance.insertOrFind("module");
         this->includeDirectoriesKey = LabelMap::instance.insertOrFind("include_directories");
         this->sourceFilesKey = LabelMap::instance.insertOrFind("source_files");
+        this->dependenciesKey = LabelMap::instance.insertOrFind("dependencies");
+        this->linkLibrariesKey = LabelMap::instance.insertOrFind("link_libraries");
         this->publicKey = LabelMap::instance.insertOrFind("public");
         this->privateKey = LabelMap::instance.insertOrFind("private");
     }
