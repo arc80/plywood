@@ -15,6 +15,7 @@ struct Common {
     // String keys for all the extra keywords used by build system scripts: 'module',
     // 'include_directories', 'dependencies', etc.
     Label moduleKey;
+    Label executableKey;
     Label includeDirectoriesKey;
     Label sourceFilesKey;
     Label dependenciesKey;
@@ -24,6 +25,7 @@ struct Common {
 
     Common() {
         this->moduleKey = LabelMap::instance.insertOrFind("module");
+        this->executableKey = LabelMap::instance.insertOrFind("executable");
         this->includeDirectoriesKey = LabelMap::instance.insertOrFind("include_directories");
         this->sourceFilesKey = LabelMap::instance.insertOrFind("source_files");
         this->dependenciesKey = LabelMap::instance.insertOrFind("dependencies");

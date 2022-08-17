@@ -150,6 +150,9 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
         PLY_FORCE_CRASH();
     }
     const crowbar::Statement::CustomBlock* moduleDef = (*funcCursor)->block;
+    if (moduleDef->type == common->executableKey) {
+        node->type = buildSteps::Node::Type::Executable;
+    }
 
     // Create new interpreter.
     MemOutStream outs;
