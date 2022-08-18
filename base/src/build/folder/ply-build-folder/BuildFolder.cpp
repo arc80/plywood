@@ -330,18 +330,17 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
 }
 
 PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
-    latest::ModuleInstantiator mi;
+    latest::ModuleInstantiator mi{bf->getAbsPath()};
     mi.project.name = bf->solutionName;
 
     // Add configs
-    mi.project.configs.resize(1);
-    mi.project.configs[0].name = "Debug";
-    // mi.project.configs[1].name = "RelWithAsserts";
-    // mi.project.configs[2].name = "RelWithDebInfo";
+    mi.project.configNames.append("Debug");
 
     // For each config, instantiate root modules
-    for (u32 i = 0; i < mi.project.configs.numItems(); i++) {
-        mi.currentConfig = i;
+    PLY_ASSERT(mi.project.configNames.numItems() <= 64);
+    for (u32 i = 0; i < mi.project.configNames.numItems(); i++) {
+        PLY_ASSERT(i < 64);
+        mi.configBit = (u64{1} << i);
         for (StringView targetName : bf->rootTargets) {
             buildSteps::Node* rootNode = latest::instantiateModuleForCurrentConfig(
                 &mi, LabelMap::instance.insertOrFind(targetName));
@@ -351,9 +350,9 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
         }
     }
 
-    Owned<buildSteps::MetaProject> mp = expand(&mi.project);
+    Owned<buildSteps::FlatProject> flatProject = flatten(&mi.project);
     MemOutStream outs;
-    writeCMakeLists(&outs, mp);
+    writeCMakeLists(&outs, flatProject);
 
     FileSystem::native()->makeDirsAndSaveTextIfDifferent("out.txt", outs.moveToString(),
                                                          TextFormat::platformPreference());
@@ -361,7 +360,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
 }
 
 PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
-//    return generateLatest(this);
+    return generateLatest(this);
 
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);

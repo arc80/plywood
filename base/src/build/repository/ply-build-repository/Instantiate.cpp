@@ -12,6 +12,15 @@ namespace latest {
 
 //--------------------------------------------------------------
 
+template <typename T, typename U, typename Callable>
+T& appendOrFind(Array<T>& arr, U&& item, const Callable& callable) {
+    for (u32 i = 0; i < arr.numItems(); i++) {
+        if (callable(arr[i]))
+            return arr[i];
+    }
+    return arr.append(U{std::forward<U>(item)});
+}
+
 // InterpreterHooks implements hooks that are used to extend the interpreter. Handles custom blocks
 // like 'module' and expression traits like 'public'.
 struct InterpreterHooks : crowbar::Interpreter::Hooks {
@@ -19,56 +28,62 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
     ModuleInstantiator* mi = nullptr;
     Repository::Module* currentModule = nullptr;
     buildSteps::Node* node = nullptr;
-    buildSteps::Node::Config* nodeConfig = nullptr;
 
     virtual ~InterpreterHooks() override {
     }
+
     virtual void enterCustomBlock(const crowbar::Statement::CustomBlock* enteringBlock) override {
         if (this->interp->currentFrame->customBlock) {
             PLY_FORCE_CRASH();
         }
     }
+
     String makeAbsPath(StringView relPath) const {
         StringView plyfilePath = NativePath::split(this->currentModule->plyfile->path).first;
         return NativePath::join(plyfilePath, relPath);
     }
+
     virtual void onEvaluate(const AnyObject& evaluationTraits) override {
         const Common* common = &Repository::instance->common;
         if (this->interp->currentFrame->customBlock) {
             Label blockType = this->interp->currentFrame->customBlock->type;
+
             if (blockType == common->sourceFilesKey) {
+                // Expression inside source_files block
                 PLY_ASSERT(!evaluationTraits.data);
-                // FIXME: Only add the path once
-                buildSteps::Node::SourceFiles& sf = this->node->sourceFiles.append();
-                sf.root = this->makeAbsPath(*this->interp->returnValue.cast<String>());
-                for (WalkTriple& triple : FileSystem::native()->walk(sf.root, 0)) {
-                    for (const WalkTriple::FileInfo& file : triple.files) {
-                        if ((file.name.endsWith(".cpp") && !file.name.endsWith(".modules.cpp")) ||
-                            file.name.endsWith(".h")) {
-                            sf.relFiles.append(NativePath::makeRelative(
-                                sf.root, NativePath::join(triple.dirPath, file.name)));
-                        }
-                    }
-                }
+                String absPath = this->makeAbsPath(*this->interp->returnValue.cast<String>());
+                buildSteps::Node::SourceFilePath& srcFilePath =
+                    appendOrFind(this->node->sourceFilePaths, std::move(absPath),
+                                 [&](const auto& a) { return a.path == absPath; });
+                srcFilePath.activeMask |= this->mi->configBit;
+
             } else if (blockType == common->includeDirectoriesKey) {
+                // Expression inside include_directories block
                 const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
                 PLY_ASSERT(traits->visibilityTokenIdx >= 0);
-                buildSteps::ToolchainOpt& tcOpt = this->nodeConfig->opts.tcOpts.append(
-                    traits->isPublic ? buildSteps::Visibility::Public
-                                     : buildSteps::Visibility::Private,
+                buildSteps::ToolchainOpt tcOpt{
                     buildSteps::ToolchainOpt::Type::IncludeDir,
-                    this->makeAbsPath(*this->interp->returnValue.cast<String>()));
+                    this->makeAbsPath(*this->interp->returnValue.cast<String>())};
+                buildSteps::Node::Option& foundOpt =
+                    appendOrFind(this->node->options, std::move(tcOpt),
+                                 [&](const auto& a) { return a.opt == tcOpt; });
+                foundOpt.activeMask |= this->mi->configBit;
+                if (traits->isPublic) {
+                    foundOpt.publicMask |= this->mi->configBit;
+                }
+
             } else if (blockType == common->dependenciesKey) {
+                // Expression inside dependencies block
                 const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
                 PLY_ASSERT(traits->visibilityTokenIdx >= 0);
 
                 // Instantiate the dependency
                 Repository::Module* mod = this->interp->returnValue.cast<Repository::Module>();
                 buildSteps::Node* dep = instantiateModuleForCurrentConfig(mi, mod->block->name);
-                this->node->opts.dependencies.append(traits->isPublic
-                                                         ? buildSteps::Visibility::Public
-                                                         : buildSteps::Visibility::Private,
-                                                     dep);
+                buildSteps::Node::Dependency& foundDep =
+                    appendOrFind(this->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
+                foundDep.activeMask |= this->mi->configBit;
+
             } else if (blockType == common->linkLibrariesKey) {
                 // PLY_ASSERT(!evaluationTraits.data);
                 // this->nodeConfig->opts.prebuiltLibs.append(
@@ -127,9 +142,6 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
             // No. Create a new one.
             instCursor->node = new buildSteps::Node;
             instCursor->node->name = moduleName;
-            for (const auto& config : mi->project.configs) {
-                instCursor->node->configs.append().name = config.name;
-            }
         } else {
             // Yes. If the module was already fully instantiated in this config, return it.
             if (instCursor->statusInCurrentConfig == ModuleInstantiator::Instantiated)
@@ -143,6 +155,10 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
         instCursor->statusInCurrentConfig = ModuleInstantiator::Instantiating;
         node = instCursor->node;
     }
+
+    // Set node as active in this config.
+    PLY_ASSERT(mi->configBit);
+    node->configMask |= mi->configBit;
 
     // Find module function by name.
     auto funcCursor = Repository::instance->moduleMap.find(moduleLabel);
@@ -180,7 +196,6 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     interpHooks.mi = mi;
     interpHooks.currentModule = *funcCursor;
     interpHooks.node = node;
-    interpHooks.nodeConfig = &node->configs[mi->currentConfig];
     interp.hooks = &interpHooks;
 
     // Add global & module namespaces.

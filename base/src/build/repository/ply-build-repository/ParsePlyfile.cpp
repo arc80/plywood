@@ -37,7 +37,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
             // module/executable { ... } block
             if (this->parser->context.customBlock || this->parser->context.func) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-                      String::format("{}s must be defined at file scope", kwToken.text));
+                      String::format("{} must be defined at file scope", kwToken.text));
                 this->parser->recovery.muteErrors = false;
             }
             auto moduleStmt = Owned<crowbar::Statement>::create();

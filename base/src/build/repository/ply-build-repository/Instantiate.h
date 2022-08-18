@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-build-repository/Common.h>
-#include <buildSteps/buildSteps.h>
+#include <buildSteps/Project.h>
 #include <ply-build-repository/Repository.h>
 #include <ply-crowbar/Interpreter.h>
 
@@ -35,7 +35,7 @@ struct ModuleInstantiator {
 
     // These members are only used while the project is being instantiated.
     HashMap<ModuleMapTraits> modules;
-    u32 currentConfig = 0;
+    u64 configBit = 0;
 
     ModuleInstantiator(StringView buildFolderPath);
 };

@@ -681,9 +681,13 @@ target_compile_definitions(build-repository PRIVATE
 
 # buildSteps
 SetSourceFolders(BUILDSTEPS_SOURCES "${SRC_FOLDER}buildSteps/buildSteps"
-    "BuildSteps.cpp"
-    "BuildSteps.h"
+    "CMakeLists.cpp"
     "Core.h"
+    "FlatProject.h"
+    "Project.cpp"
+    "Project.h"
+    "ToolChain.cpp"
+    "ToolChain.h"
 )
 add_library(buildSteps
     ${BUILDSTEPS_SOURCES}
