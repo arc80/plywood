@@ -1,4 +1,7 @@
 module platform {
+    config_options {
+        with_asserts = false
+    }
     source_files {
         "ply-platform"
     }

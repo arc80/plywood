@@ -14,58 +14,72 @@ namespace latest {
 // 'module' and expression traits like 'public'.
 struct ParseHooks : crowbar::Parser::Hooks {
     crowbar::Parser* parser = nullptr;
-    StringView srcFilePath;
+    Repository::Plyfile* currentPlyfile = nullptr;
 
     // These data members are modified by the parser:
-    Array<crowbar::Statement::CustomBlock*> moduleBlocks;
+    Repository::Module* currentModule = nullptr;
     MemOutStream errorOut;
     u32 errorCount = 0;
-
-    bool isInModuleOrExecutableBlock() const {
-        Label type = this->parser->context.customBlock->type;
-        const Common* common = &Repository::instance->common;
-        return (type == common->moduleKey) || (type == common->executableKey);
-    }
 
     virtual bool tryParseCustomBlock(crowbar::StatementBlock* stmtBlock) override {
         const Common* common = &Repository::instance->common;
 
         crowbar::ExpandedToken kwToken = this->parser->tkr->readToken();
 
-        if ((kwToken.label == common->moduleKey) ||
-            (kwToken.label == common->executableKey)) {
+        if ((kwToken.label == common->moduleKey) || (kwToken.label == common->executableKey)) {
             // module/executable { ... } block
             if (this->parser->context.customBlock || this->parser->context.func) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
                       String::format("{} must be defined at file scope", kwToken.text));
                 this->parser->recovery.muteErrors = false;
             }
+
+            // Create new Repository::Module
+            auto ownedMod = Owned<Repository::Module>::create();
+            Repository::Module* mod = ownedMod;
+            mod->plyfile = this->currentPlyfile;
+            mod->fileOffset = kwToken.fileOffset;
+
             auto moduleStmt = Owned<crowbar::Statement>::create();
-            auto* customBlock = moduleStmt->customBlock().switchTo().get();
-            customBlock->type = kwToken.label;
+            mod->block = moduleStmt->customBlock().switchTo().get();
+            mod->block->type = kwToken.label;
 
             // Parse module name.
             crowbar::ExpandedToken nameToken = parser->tkr->readToken();
             if (nameToken.type == crowbar::TokenType::Identifier) {
-                customBlock->name = nameToken.label;
+                mod->block->name = nameToken.label;
             } else {
                 error(parser, nameToken, crowbar::ErrorTokenAction::PushBack,
                       String::format("expected {} name after '{}'; got {}", kwToken.text,
                                      kwToken.text, nameToken.desc()));
             }
 
+            // Add to Repository
+            auto cursor = Repository::instance->moduleMap.insertOrFind(mod->block->name);
+            if (cursor.wasFound()) {
+                error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                      String::format("'{}' was already defined as {}", kwToken.text,
+                                     LabelMap::instance.view((*cursor)->block->type)));
+                this->parser->recovery.muteErrors = false;
+                this->errorOut.format("{}{}: ... see previous definition\n",
+                                      (*cursor)->plyfile->path,
+                                      (*cursor)->plyfile->tkr.fileLocationMap.formatFileLocation(
+                                          (*cursor)->fileOffset));
+            }
+            (*cursor) = std::move(ownedMod);
+
             // Parse nested block.
-            PLY_SET_IN_SCOPE(this->parser->context.customBlock, customBlock);
-            customBlock->body = parseStatementBlock(
-                this->parser, {kwToken.text, kwToken.text + " module name", true});
+            PLY_SET_IN_SCOPE(this->currentModule, mod);
+            PLY_SET_IN_SCOPE(this->parser->context.customBlock, mod->block);
+            mod->block->body =
+                parseStatementBlock(this->parser, {kwToken.text, kwToken.text + " name", true});
             stmtBlock->statements.append(std::move(moduleStmt));
-            this->moduleBlocks.append(customBlock);
             return true;
         }
 
         if (kwToken.label == common->sourceFilesKey) {
             // source_files { ... } block
-            if (!this->isInModuleOrExecutableBlock()) {
+            if (!this->currentModule) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
                       "source_files block can only be used within a module or executable block");
                 this->parser->recovery.muteErrors = false;
@@ -82,7 +96,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
 
         if (kwToken.label == common->includeDirectoriesKey) {
             // include_directories { ... } block
-            if (!this->isInModuleOrExecutableBlock()) {
+            if (!this->currentModule) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
                       "include_directories block can only be used within a module or executable "
                       "block");
@@ -101,7 +115,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
 
         if (kwToken.label == common->dependenciesKey) {
             // dependencies { ... } block
-            if (!this->isInModuleOrExecutableBlock()) {
+            if (!this->currentModule) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
                       "dependencies block can only be used within a module or executable block");
                 this->parser->recovery.muteErrors = false;
@@ -117,8 +131,8 @@ struct ParseHooks : crowbar::Parser::Hooks {
         }
 
         if (kwToken.label == common->linkLibrariesKey) {
-            // dependencies { ... } block
-            if (!this->isInModuleOrExecutableBlock()) {
+            // link_libraries { ... } block
+            if (!this->currentModule) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
                       "link_libraries block can only be used within a module or executable block");
                 this->parser->recovery.muteErrors = false;
@@ -134,6 +148,39 @@ struct ParseHooks : crowbar::Parser::Hooks {
             return true;
         }
 
+        if (kwToken.label == common->configOptionsKey) {
+            // config_options { ... } block
+            if (this->currentModule) {
+                if (this->currentModule->configBlock) {
+                    error(
+                        this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                        String::format("{} '{}' already has a config_options block",
+                                       LabelMap::instance.view(this->currentModule->block->type),
+                                       LabelMap::instance.view(this->currentModule->block->name)));
+                    this->parser->recovery.muteErrors = false;
+                    this->errorOut.format(
+                        "{} {}: see previous definition\n", this->currentModule->plyfile->path,
+                        this->currentModule->plyfile->tkr.fileLocationMap.formatFileLocation(
+                            this->currentModule->configBlock->fileOffset));
+                }
+            } else {
+                error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                      "config_options block can only be used within a module or executable block");
+                this->parser->recovery.muteErrors = false;
+            }
+
+            auto customBlock = Owned<crowbar::Statement>::create();
+            auto* cb = customBlock->customBlock().switchTo().get();
+            cb->type = common->configOptionsKey;
+            PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
+            cb->body =
+                parseStatementBlock(this->parser, {"config_options", "config_options", true});
+            if (this->currentModule) {
+                this->currentModule->configBlock = std::move(customBlock);
+            }
+            return true;
+        }
+
         this->parser->tkr->rewindTo(kwToken.tokenIdx);
         return false;
     }
@@ -143,8 +190,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
 
         crowbar::ExpandedToken kwToken = this->parser->tkr->readToken();
 
-        if ((kwToken.label == common->publicKey) ||
-            (kwToken.label == common->privateKey)) {
+        if ((kwToken.label == common->publicKey) || (kwToken.label == common->privateKey)) {
             // public / private keywords
             bool legal = false;
             if (crowbar::Statement::CustomBlock* cb = this->parser->context.customBlock) {
@@ -174,7 +220,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
     }
 
     virtual void onError(StringView errorMsg) override {
-        this->errorOut << this->srcFilePath << errorMsg;
+        this->errorOut << this->currentPlyfile->path << errorMsg;
         this->errorCount++;
     }
 };
@@ -193,7 +239,7 @@ bool parsePlyfile(StringView path) {
     crowbar::Parser parser;
     ParseHooks parserHooks;
     parserHooks.parser = &parser;
-    parserHooks.srcFilePath = path;
+    parserHooks.currentPlyfile = plyfile;
     parser.hooks = &parserHooks;
     parser.tkr = &plyfile->tkr;
 
@@ -204,18 +250,8 @@ bool parsePlyfile(StringView path) {
         return false;
     }
 
-    // Success. Add parsed modules to the repository.
+    // Success.
     plyfile->contents = std::move(file);
-    for (crowbar::Statement::CustomBlock* customBlock : parserHooks.moduleBlocks) {
-        auto cursor = repo->moduleMap.insertOrFind(customBlock->name);
-        if (cursor.wasFound()) {
-            PLY_FORCE_CRASH(); // Duplicate name
-        }
-        *cursor = Owned<Repository::Module>::create();
-        (*cursor)->plyfile = plyfile;
-        (*cursor)->block = customBlock;
-    }
-
     return true;
 }
 

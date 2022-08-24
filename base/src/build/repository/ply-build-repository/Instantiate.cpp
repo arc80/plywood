@@ -88,6 +88,9 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
                 // PLY_ASSERT(!evaluationTraits.data);
                 // this->nodeConfig->opts.prebuiltLibs.append(
                 //    *this->interp->returnValue.cast<String>());
+            } else {
+                // Shouldn't get here
+                PLY_ASSERT(0);
             }
         }
     }

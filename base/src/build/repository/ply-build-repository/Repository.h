@@ -21,8 +21,10 @@ struct Repository {
         PLY_REFLECT()
         // ply reflect off
 
-        Plyfile* plyfile;
-        crowbar::Statement::CustomBlock* block;
+        Plyfile* plyfile = nullptr;
+        u32 fileOffset = 0;
+        crowbar::Statement::CustomBlock* block = nullptr;
+        Owned<crowbar::Statement> configBlock;
     };
 
     struct ModuleMapTraits {
