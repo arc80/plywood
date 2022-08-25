@@ -85,6 +85,7 @@ struct Statement {
     struct CustomBlock {
         Label type;
         Label name;
+        Owned<Expression> expr;
         Owned<StatementBlock> body;
     };
 #include "codegen/switch-ply-crowbar-Statement.inl" //@@ply

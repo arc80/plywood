@@ -23,6 +23,8 @@ struct Common {
     Label publicKey;
     Label privateKey;
     Label configOptionsKey;
+    Label configListKey;
+    Label configKey;
 
     Common() {
         this->moduleKey = LabelMap::instance.insertOrFind("module");
@@ -34,6 +36,8 @@ struct Common {
         this->publicKey = LabelMap::instance.insertOrFind("public");
         this->privateKey = LabelMap::instance.insertOrFind("private");
         this->configOptionsKey = LabelMap::instance.insertOrFind("config_options");
+        this->configListKey = LabelMap::instance.insertOrFind("config_list");
+        this->configKey = LabelMap::instance.insertOrFind("config");
     }
 };
 

@@ -53,9 +53,16 @@ struct Repository {
         }
     };
 
+    struct ConfigList {
+        Plyfile* plyfile = nullptr;
+        u32 fileOffset = 0;
+        Owned<crowbar::StatementBlock> block;
+    };
+
     Common common;
     Array<Owned<Plyfile>> plyfiles;
     HashMap<ModuleMapTraits> moduleMap;
+    Owned<ConfigList> configList;
 
     static Owned<Repository> instance;
     static void create();

@@ -1,0 +1,5 @@
+config_list {
+    config "Debug" {
+        platform.with_asserts = true
+    }
+}

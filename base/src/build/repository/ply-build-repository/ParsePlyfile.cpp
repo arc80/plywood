@@ -180,6 +180,68 @@ struct ParseHooks : crowbar::Parser::Hooks {
             return true;
         }
 
+        if (kwToken.label == common->configListKey) {
+            if (this->parser->context.customBlock || this->parser->context.func) {
+                error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                      "conflig_list must be defined at file scope");
+                this->parser->recovery.muteErrors = false;
+            }
+
+            Repository::ConfigList* configList = Repository::instance->configList;
+            if (configList) {
+                error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                      "a conflig_list was already defined");
+                this->parser->recovery.muteErrors = false;
+                this->parser->errorOut->format(
+                    "{}: see previous definition\n",
+                    configList->plyfile->tkr.fileLocationMap.formatFileLocation(
+                        configList->fileOffset));
+            }
+
+            Repository::instance->configList = Owned<Repository::ConfigList>::create();
+            configList = Repository::instance->configList;
+            configList->plyfile = this->currentPlyfile;
+            configList->fileOffset = kwToken.fileOffset;
+
+            auto customBlock = Owned<crowbar::Statement>::create();
+            customBlock->fileOffset = kwToken.fileOffset;
+            auto* cb = customBlock->customBlock().switchTo().get();
+            cb->type = common->configListKey;
+            PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
+            configList->block =
+                parseStatementBlock(this->parser, {"config_list", "config_list", true});
+
+            return true;
+        }
+
+        if (kwToken.label == common->configKey) {
+            crowbar::Statement::CustomBlock* configListBlock = nullptr;
+            if (this->parser->context.customBlock &&
+                  (this->parser->context.customBlock->type == common->configListKey)) {
+                configListBlock = this->parser->context.customBlock;
+            }
+
+            if (!configListBlock) {
+                error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                      "config must be defined inside a config_list block");
+                this->parser->recovery.muteErrors = false;
+            }
+
+            configListBlock->expr = this->parser->parseExpression();
+
+            auto customBlock = Owned<crowbar::Statement>::create();
+            customBlock->fileOffset = kwToken.fileOffset;
+            auto* cb = customBlock->customBlock().switchTo().get();
+            cb->type = common->configKey;
+            PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
+            cb->body = parseStatementBlock(this->parser, {"config", "config", true});
+
+            if (configListBlock) {
+                stmtBlock->statements.append(std::move(customBlock));
+            }
+            return true;
+        }
+
         this->parser->tkr->rewindTo(kwToken.tokenIdx);
         return false;
     }
