@@ -50,6 +50,12 @@ struct AnyOwnedObject : AnyObject {
     static AnyOwnedObject create(Args&&... args) {
         return bind(new T{std::forward<Args>(args)...});
     }
+    static AnyOwnedObject create(TypeDescriptor* typeDesc) {
+        void* data = PLY_HEAP.alloc(typeDesc->fixedSize);
+        AnyOwnedObject result{data, typeDesc};
+        result.construct();
+        return result;
+    }
     template <typename T>
     PLY_INLINE T* release() {
         PLY_ASSERT(type->isEquivalentTo(TypeDescriptorSpecializer<T>::get()));

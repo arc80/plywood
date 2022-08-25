@@ -17,6 +17,23 @@ struct Repository {
         Owned<crowbar::StatementBlock> contents;
     };
 
+    struct ConfigOptions {
+        struct Traits {
+            using Key = Label;
+            struct Item {
+                Label identifier;
+                AnyOwnedObject obj;
+                Item(Label identifier) : identifier{identifier} {
+                }
+            };
+            static PLY_INLINE bool match(const Item& item, const Label& identifier) {
+                return item.identifier == identifier;
+            }
+        };
+
+        HashMap<Traits> map;
+    };
+
     struct Module {
         PLY_REFLECT()
         // ply reflect off
@@ -25,6 +42,8 @@ struct Repository {
         u32 fileOffset = 0;
         crowbar::Statement::CustomBlock* block = nullptr;
         Owned<crowbar::Statement> configBlock;
+        Owned<ConfigOptions> defaultOptions;
+        Owned<ConfigOptions> currentOptions;
     };
 
     struct ModuleMapTraits {

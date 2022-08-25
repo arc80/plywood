@@ -4,12 +4,28 @@
 ------------------------------------*/
 #pragma once
 #include <ply-build-repository/Repository.h>
+#include <ply-crowbar/Interpreter.h>
 
 namespace ply {
 namespace build {
 namespace latest {
 
 Owned<Repository> Repository::instance;
+
+struct ConfigOptionsInterpreterHooks : crowbar::Interpreter::Hooks {
+    crowbar::Interpreter* interp = nullptr;
+    Repository::ConfigOptions* optionSet = nullptr;
+
+    virtual ~ConfigOptionsInterpreterHooks() override {
+    }
+
+    virtual bool handleLocalAssignment(Label label) override {
+        auto cursor = optionSet->map.insertOrFind(label);
+        cursor->obj = AnyOwnedObject::create(this->interp->returnValue.type);
+        cursor->obj.move(this->interp->returnValue);
+        return true;
+    }
+};
 
 void Repository::create() {
     Repository::instance = Owned<Repository>::create();
@@ -38,6 +54,63 @@ void Repository::create() {
 
     if (anyError) {
         exit(1);
+    }
+
+    // Initialize all config_options
+    for (Module* mod : Repository::instance->moduleMap) {
+        mod->defaultOptions = Owned<ConfigOptions>::create();
+        if (mod->configBlock) {
+            // Create new interpreter.
+            MemOutStream outs;
+            crowbar::Interpreter interp;
+            interp.outs = &outs;
+            interp.error = [](BaseInterpreter* base, StringView message) {
+                crowbar::Interpreter* interp = static_cast<crowbar::Interpreter*>(base);
+                interp->outs->format("error: {}\n", message);
+                bool first = true;
+                for (crowbar::Interpreter::StackFrame* frame = interp->currentFrame; frame;
+                     frame = frame->prevFrame) {
+                    crowbar::ExpandedToken expToken = interp->tkr->expandToken(frame->tokenIdx);
+                    interp->outs->format(
+                        "{} {} {}\n",
+                        interp->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
+                        first ? "in" : "called from", frame->desc());
+                    first = false;
+                }
+            };
+            interp.tkr = &mod->plyfile->tkr;
+
+            // Add hooks.
+            ConfigOptionsInterpreterHooks interpHooks;
+            interpHooks.interp = &interp;
+            interpHooks.optionSet = mod->defaultOptions;
+            interp.hooks = &interpHooks;
+
+            // Add builtin namespace.
+            crowbar::MapNamespace builtIns;
+            static bool true_ = true;
+            static bool false_ = false;
+            builtIns.map.insertOrFind(LabelMap::instance.insertOrFind("true"))->obj =
+                AnyObject::bind(&true_);
+            builtIns.map.insertOrFind(LabelMap::instance.insertOrFind("false"))->obj =
+                AnyObject::bind(&false_);
+            interp.outerNameSpaces.append(&builtIns);
+
+            // Invoke config_options block.
+            crowbar::Interpreter::StackFrame frame;
+            frame.interp = &interp;
+            frame.desc = {[](Module* mod) -> HybridString {
+                              return String::format("config_options for {} '{}'",
+                                                    LabelMap::instance.view(mod->block->type),
+                                                    LabelMap::instance.view(mod->block->name));
+                          },
+                          mod};
+            MethodResult result = execFunction(&frame, mod->configBlock->customBlock()->body);
+            if (result == MethodResult::Error) {
+                StdErr::text() << outs.moveToString();
+                exit(1);
+            }
+        }
     }
 }
 

@@ -51,6 +51,7 @@ struct Interpreter : BaseInterpreter {
         virtual void enterCustomBlock(const Statement::CustomBlock* customBlock) {}
         virtual void exitCustomBlock(const Statement::CustomBlock* customBlock) {}
         virtual void onEvaluate(const AnyObject& evaluationTraits) {}
+        virtual bool handleLocalAssignment(Label label) { return false; }
     };
 
     Array<INamespace*> outerNameSpaces;

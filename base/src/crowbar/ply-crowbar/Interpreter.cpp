@@ -303,6 +303,9 @@ MethodResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignm
     if (assign->left->id == Expression::ID::NameLookup) {
         PLY_ASSERT(!left.data);
         Label name = assign->left->nameLookup()->name;
+        if (interp->hooks->handleLocalAssignment(name))
+            return MethodResult::OK;
+
         auto cursor = frame->localVariableTable.insertOrFind(name);
         if (cursor.wasFound()) {
             // Move result to existing local variable.
