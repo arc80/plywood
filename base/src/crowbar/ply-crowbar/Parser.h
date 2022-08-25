@@ -18,14 +18,17 @@ struct Parser {
         virtual bool tryParseExpressionTrait(AnyOwnedObject* expressionTraits) {
             return false;
         }
-        virtual void onError(StringView errorMsg) = 0;
     };
     Hooks* hooks = nullptr;
 
     // Tokenizer.
     Tokenizer* tkr = nullptr;
 
-    // Error recovery state.
+    // Error reporting.
+    OutStream* errorOut = nullptr;
+    u32 errorCount = 0;
+
+    // Error recovery.
     struct RecoveryState {
         // When an illegal token is encountered, errors are muted for all subsequent tokens until
         // the parser recognizes a token that gets it back on track, usually in an outer scope.

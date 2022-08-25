@@ -12,11 +12,12 @@
 namespace ply {
 
 PLY_NO_INLINE bool WorkspaceSettings::load() {
-    String strContents = FileSystem::native()->loadTextAutodetect(getPath()).first;
+    String path = this->getPath();
+    String strContents = FileSystem::native()->loadTextAutodetect(path).first;
     if (FileSystem::native()->lastResult() != FSResult::OK)
         return true;
 
-    auto aRoot = pylon::Parser{}.parse(strContents).root;
+    auto aRoot = pylon::Parser{}.parse(path, strContents).root;
     if (!aRoot->isValid())
         return false;
 
@@ -32,8 +33,8 @@ PLY_NO_INLINE bool WorkspaceSettings::save() const {
     auto aRoot = pylon::exportObj(AnyObject::bind(this));
     String strContents = pylon::toString(aRoot);
     // FIXME: makeDirsAndSaveTextIfDifferent should write to temp file with atomic rename
-    FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(getPath(), strContents,
-                                                                           this->getSourceTextFormat());
+    FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+        getPath(), strContents, this->getSourceTextFormat());
     if (result != FSResult::OK && result != FSResult::Unchanged) {
         StdErr::text() << "Error: Can't save workspace settings.\n";
         return false;

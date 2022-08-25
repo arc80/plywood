@@ -11,7 +11,7 @@
 namespace ply {
 namespace cpp {
 
-grammar::TranslationUnit parse(String&& sourceCode, PPVisitedFiles* visitedFiles,
+grammar::TranslationUnit parse(StringView path, String&& sourceCode, PPVisitedFiles* visitedFiles,
                                ArrayView<const PreprocessorDefinition> ppDefs,
                                const HiddenArgFunctor<void(StringView directive)>& includeCallback,
                                ParseSupervisor* visor) {
@@ -23,7 +23,7 @@ grammar::TranslationUnit parse(String&& sourceCode, PPVisitedFiles* visitedFiles
     u32 sourceFileIdx = visitedFiles->sourceFiles.numItems();
     PPVisitedFiles::SourceFile& srcFile = visitedFiles->sourceFiles.append();
     srcFile.contents = std::move(sourceCode);
-    srcFile.fileLocMap = FileLocationMap::fromView(srcFile.contents);
+    srcFile.fileLocationMap = FileLocationMap::fromView(path, srcFile.contents);
 
     // Create include chain for this file
     u32 includeChainIdx = visitedFiles->includeChains.numItems();

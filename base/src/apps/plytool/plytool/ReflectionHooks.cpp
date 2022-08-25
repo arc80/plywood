@@ -83,7 +83,7 @@ struct ReflectionHookError : BaseError {
 } // namespace cpp
 PLY_DECLARE_TYPE_DESCRIPTOR(cpp::ReflectionHookError::Type)
 namespace cpp {
-    
+
 void ReflectionHookError::writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const {
     outs->format("{}: error: ", expandFileLocation(visitedFiles, this->linearLoc).toString());
     switch (this->type) {
@@ -204,11 +204,10 @@ struct ReflectionHooks : ParseSupervisor {
                         record->closeCurly.linearLoc, state.switch_->macro.linearLoc});
                 } else {
                     const PPVisitedFiles::SourceFile& srcFile = vf->sourceFiles[chain.fileOrExpIdx];
-                    String curAbsPath =
-                        NativePath::join(PLY_WORKSPACE_FOLDER, this->filePath);
+                    String curAbsPath = NativePath::join(PLY_WORKSPACE_FOLDER, this->filePath);
                     // FIXME: Improve this if we ever start following includes while collecting
                     // reflection info:
-                    PLY_ASSERT(srcFile.absPath == curAbsPath);
+                    PLY_ASSERT(srcFile.fileLocationMap.path == curAbsPath);
                     const char* endCurly =
                         srcFile.contents.bytes +
                         (lmItem.offset + record->closeCurly.linearLoc - lmItem.linearLoc);
@@ -411,8 +410,7 @@ Tuple<SingleFileReflectionInfo, bool> extractReflection(ReflectionInfoAggregator
     visor.sfri = &sfri;
 
     cpp::PPVisitedFiles visitedFiles;
-    parsePlywoodSrcFile(NativePath::join(PLY_WORKSPACE_FOLDER, relPath), &visitedFiles,
-                        &visor);
+    parsePlywoodSrcFile(NativePath::join(PLY_WORKSPACE_FOLDER, relPath), &visitedFiles, &visor);
 
     return {std::move(sfri), !visor.anyError};
 }

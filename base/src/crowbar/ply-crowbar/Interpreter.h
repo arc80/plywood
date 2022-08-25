@@ -41,6 +41,7 @@ struct Interpreter : BaseInterpreter {
         Interpreter* interp = nullptr;
         HiddenArgFunctor<HybridString()> desc;
         HashMap<VariableMapTraits> localVariableTable;
+        Tokenizer* tkr = nullptr;
         const Statement::CustomBlock* customBlock = nullptr;
         u32 tokenIdx = 0;
         StackFrame* prevFrame = nullptr;
@@ -58,7 +59,6 @@ struct Interpreter : BaseInterpreter {
     Hooks* hooks = nullptr;
 
     // For expanding the location of runtime errors:
-    Tokenizer* tkr = nullptr;
     StackFrame *currentFrame = nullptr;
 };
 

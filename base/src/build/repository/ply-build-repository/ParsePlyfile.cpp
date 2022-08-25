@@ -18,8 +18,6 @@ struct ParseHooks : crowbar::Parser::Hooks {
 
     // These data members are modified by the parser:
     Repository::Module* currentModule = nullptr;
-    MemOutStream errorOut;
-    u32 errorCount = 0;
 
     virtual bool tryParseCustomBlock(crowbar::StatementBlock* stmtBlock) override {
         const Common* common = &Repository::instance->common;
@@ -61,10 +59,10 @@ struct ParseHooks : crowbar::Parser::Hooks {
                       String::format("'{}' was already defined as {}", kwToken.text,
                                      LabelMap::instance.view((*cursor)->block->type)));
                 this->parser->recovery.muteErrors = false;
-                this->errorOut.format("{}{}: ... see previous definition\n",
-                                      (*cursor)->plyfile->path,
-                                      (*cursor)->plyfile->tkr.fileLocationMap.formatFileLocation(
-                                          (*cursor)->fileOffset));
+                this->parser->errorOut->format(
+                    "{}: ... see previous definition\n",
+                    (*cursor)->plyfile->tkr.fileLocationMap.formatFileLocation(
+                        (*cursor)->fileOffset));
             }
             (*cursor) = std::move(ownedMod);
 
@@ -158,8 +156,8 @@ struct ParseHooks : crowbar::Parser::Hooks {
                                        LabelMap::instance.view(this->currentModule->block->type),
                                        LabelMap::instance.view(this->currentModule->block->name)));
                     this->parser->recovery.muteErrors = false;
-                    this->errorOut.format(
-                        "{} {}: see previous definition\n", this->currentModule->plyfile->path,
+                    this->parser->errorOut->format(
+                        "{}: see previous definition\n",
                         this->currentModule->plyfile->tkr.fileLocationMap.formatFileLocation(
                             this->currentModule->configBlock->fileOffset));
                 }
@@ -170,6 +168,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
             }
 
             auto customBlock = Owned<crowbar::Statement>::create();
+            customBlock->fileOffset = kwToken.fileOffset;
             auto* cb = customBlock->customBlock().switchTo().get();
             cb->type = common->configOptionsKey;
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
@@ -218,11 +217,6 @@ struct ParseHooks : crowbar::Parser::Hooks {
         this->parser->tkr->rewindTo(kwToken.tokenIdx);
         return false;
     }
-
-    virtual void onError(StringView errorMsg) override {
-        this->errorOut << this->currentPlyfile->path << errorMsg;
-        this->errorCount++;
-    }
 };
 
 bool parsePlyfile(StringView path) {
@@ -234,19 +228,19 @@ bool parsePlyfile(StringView path) {
 
     // Create Plyfile, tokenizer and parser.
     Repository::Plyfile* plyfile = repo->plyfiles.append(Owned<Repository::Plyfile>::create());
-    plyfile->path = path;
-    plyfile->tkr.setSourceInput(src);
+    plyfile->tkr.setSourceInput(path, src);
     crowbar::Parser parser;
     ParseHooks parserHooks;
     parserHooks.parser = &parser;
     parserHooks.currentPlyfile = plyfile;
     parser.hooks = &parserHooks;
     parser.tkr = &plyfile->tkr;
+    OutStream errorOut = StdErr::text();
+    parser.errorOut = &errorOut;
 
     // Parse the script and check for errors.
     Owned<crowbar::StatementBlock> file = parser.parseFile();
-    if (parserHooks.errorCount > 0) {
-        StdErr::text().write(parserHooks.errorOut.moveToString());
+    if (parser.errorCount > 0) {
         return false;
     }
 

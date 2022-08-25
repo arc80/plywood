@@ -78,6 +78,7 @@ struct Statement {
         // ply reflect off
 
         Label name;
+        Tokenizer* tkr = nullptr;
         Array<Label> parameterNames;
         Owned<StatementBlock> body;
     };

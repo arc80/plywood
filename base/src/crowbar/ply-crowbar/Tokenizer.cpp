@@ -11,8 +11,8 @@ PLY_NO_INLINE Tokenizer::Tokenizer()
     : tokenData{1024 * 1024 * 1024}, fileOffsetTable{4 * 1024 * 1024} {
 }
 
-PLY_NO_INLINE void Tokenizer::setSourceInput(StringView src) {
-    this->fileLocationMap = FileLocationMap::fromView(src);
+PLY_NO_INLINE void Tokenizer::setSourceInput(StringView path, StringView src) {
+    this->fileLocationMap = FileLocationMap::fromView(path, src);
     this->vin.start = src.bytes;
     this->vin.end = src.end();
     this->vin.cur = src.bytes;

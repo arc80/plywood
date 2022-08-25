@@ -23,9 +23,8 @@ void checkFileHeader(StringView srcPath, StringView desiredHeader, const TextFor
     // Factor it out into a convenience function.
     u32 sourceFileIdx = visitedFiles.sourceFiles.numItems();
     PPVisitedFiles::SourceFile& srcFile = visitedFiles.sourceFiles.append();
-    srcFile.absPath = srcPath;
     srcFile.contents = std::move(src);
-    srcFile.fileLocMap = FileLocationMap::fromView(srcFile.contents);
+    srcFile.fileLocationMap = FileLocationMap::fromView(srcPath, srcFile.contents);
 
     u32 includeChainIdx = visitedFiles.includeChains.numItems();
     PPVisitedFiles::IncludeChain& includeChain = visitedFiles.includeChains.append();

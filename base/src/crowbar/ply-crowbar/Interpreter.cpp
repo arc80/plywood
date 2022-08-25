@@ -154,6 +154,7 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
                              return String::format("function '{}'", LabelMap::instance.view(fnDef->name));
                          },
                          functionDef};
+        newFrame.tkr = functionDef->tkr;
         newFrame.prevFrame = frame;
         for (u32 argIndex : range(args.numItems())) {
             newFrame.localVariableTable.insertOrFind(functionDef->parameterNames[argIndex])->obj =

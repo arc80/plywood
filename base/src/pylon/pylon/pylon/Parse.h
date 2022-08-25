@@ -129,7 +129,7 @@ public:
 
     void dumpError(const ParseError& error, OutStream& outs) const;
 
-    Result parse(StringView srcView_);
+    Result parse(StringView path, StringView srcView_);
 };
 
 } // namespace pylon

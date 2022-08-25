@@ -13,9 +13,8 @@ namespace cpp {
 
 struct PPVisitedFiles {
     struct SourceFile {
-        String absPath;
         HybridString contents;
-        FileLocationMap fileLocMap;
+        FileLocationMap fileLocationMap;
     };
     Array<SourceFile> sourceFiles;
 

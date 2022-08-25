@@ -12,7 +12,6 @@ namespace latest {
 
 struct Repository {
     struct Plyfile {
-        String path;
         crowbar::Tokenizer tkr; // For tokenData and FileLocationMap (only)
         Owned<crowbar::StatementBlock> contents;
     };

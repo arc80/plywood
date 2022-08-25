@@ -16,7 +16,7 @@ ExpandedFileLocation expandFileLocation(const PPVisitedFiles* visitedFiles,
         visitedFiles->includeChains[iter.getItem().includeChainIdx];
     PLY_ASSERT(!chain.isMacroExpansion); // FIXME handle macros
     const cpp::PPVisitedFiles::SourceFile* srcFile = &visitedFiles->sourceFiles[chain.fileOrExpIdx];
-    FileLocation fileLoc = srcFile->fileLocMap.getFileLocation(
+    FileLocation fileLoc = srcFile->fileLocationMap.getFileLocation(
         safeDemote<u32>(linearLoc - iter.getItem().linearLoc + iter.getItem().offset));
     return {srcFile, fileLoc};
 }
@@ -87,13 +87,13 @@ StringView getExpectedTokenDesc(ExpectedToken expected) {
 }
 
 String ExpandedFileLocation::toString() const {
-    return String::format("{}({}, {})", this->srcFile->absPath, this->fileLoc.lineNumber,
-                          this->fileLoc.columnNumber);
+    return String::format("{}({}, {})", this->srcFile->fileLocationMap.path,
+                          this->fileLoc.lineNumber, this->fileLoc.columnNumber);
 }
 
 void ParseError::writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const {
     outs->format("{}: error: ",
-               expandFileLocation(visitedFiles, this->errorToken.linearLoc).toString());
+                 expandFileLocation(visitedFiles, this->errorToken.linearLoc).toString());
     switch (this->type) {
         case ParseError::UnexpectedEOF: {
             PLY_ASSERT(this->errorToken.type == Token::EndOfFile);
@@ -102,16 +102,17 @@ void ParseError::writeMessage(OutStream* outs, const PPVisitedFiles* visitedFile
         }
         case ParseError::Expected: {
             outs->format("expected {} before '{}'\n", getExpectedTokenDesc(this->expected),
-                       this->errorToken.toString());
+                         this->errorToken.toString());
             break;
         }
         case ParseError::UnclosedToken: {
             outs->format("expected '{}'\n",
-                       getPunctuationString((Token::Type)((u32) this->precedingToken.type + 1)));
+                         getPunctuationString((Token::Type) ((u32) this->precedingToken.type + 1)));
             PLY_ASSERT(this->precedingToken.isValid());
-            outs->format("{}: note: to match this '{}'\n",
-                       expandFileLocation(visitedFiles, this->precedingToken.linearLoc).toString(),
-                       this->precedingToken.toString());
+            outs->format(
+                "{}: note: to match this '{}'\n",
+                expandFileLocation(visitedFiles, this->precedingToken.linearLoc).toString(),
+                this->precedingToken.toString());
             break;
         }
         case ParseError::MissingCommaAfterEnumerator: {

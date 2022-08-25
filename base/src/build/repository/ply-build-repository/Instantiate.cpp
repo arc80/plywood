@@ -39,7 +39,8 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
     }
 
     String makeAbsPath(StringView relPath) const {
-        StringView plyfilePath = NativePath::split(this->currentModule->plyfile->path).first;
+        StringView plyfilePath =
+            NativePath::split(this->currentModule->plyfile->tkr.fileLocationMap.path).first;
         return NativePath::join(plyfilePath, relPath);
     }
 
@@ -80,8 +81,8 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
                 // Instantiate the dependency
                 Repository::Module* mod = this->interp->returnValue.cast<Repository::Module>();
                 buildSteps::Node* dep = instantiateModuleForCurrentConfig(mi, mod->block->name);
-                buildSteps::Node::Dependency& foundDep =
-                    appendOrFind(this->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
+                buildSteps::Node::Dependency& foundDep = appendOrFind(
+                    this->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
                 foundDep.activeMask |= this->mi->configBit;
 
             } else if (blockType == common->linkLibrariesKey) {
@@ -183,14 +184,13 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
         bool first = true;
         for (crowbar::Interpreter::StackFrame* frame = interp->currentFrame; frame;
              frame = frame->prevFrame) {
-            crowbar::ExpandedToken expToken = interp->tkr->expandToken(frame->tokenIdx);
+            crowbar::ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
             interp->outs->format(
-                "{} {} {}\n", interp->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
-                first ? "in" : "called from", frame->desc());
+                "{} {} {}\n", frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
+                (first ? "in" : "called from"), frame->desc());
             first = false;
         }
     };
-    interp.tkr = &(*funcCursor)->plyfile->tkr;
 
     // Extend the interpreter with support for custom blocks and expression attributes used by the
     // build system.
@@ -214,6 +214,7 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
                                             LabelMap::instance.view(moduleDef->name));
                   },
                   moduleDef};
+    frame.tkr = &(*funcCursor)->plyfile->tkr;
     MethodResult result = execFunction(&frame, moduleDef->body);
     if (result == MethodResult::Error) {
         StdErr::text() << outs.moveToString();

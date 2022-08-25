@@ -5,7 +5,7 @@
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/container/Array.h>
-#include <ply-runtime/string/StringView.h>
+#include <ply-runtime/string/String.h>
 
 namespace ply {
 
@@ -23,12 +23,13 @@ struct FileLocation {
 };
 
 struct FileLocationMap {
+    String path;
     Array<FileLocation> table;
     StringView view;
 
-    static FileLocationMap fromView(StringView view);
+    static FileLocationMap fromView(StringView path, StringView view);
     FileLocation getFileLocation(u32 offset) const;
-    String formatFileLocation(u32 offset) const;
+    String formatFileLocation(u32 offset, bool withPath = true) const;
 };
 
 } // namespace ply

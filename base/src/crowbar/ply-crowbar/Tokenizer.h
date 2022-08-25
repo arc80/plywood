@@ -112,7 +112,7 @@ struct Tokenizer {
     Behavior behavior;
 
     Tokenizer();
-    void setSourceInput(StringView src);
+    void setSourceInput(StringView path, StringView src);
     ExpandedToken readToken();
     ExpandedToken expandToken(u32 tokenIdx);
     PLY_INLINE void rewindTo(u32 tokenIdx) {

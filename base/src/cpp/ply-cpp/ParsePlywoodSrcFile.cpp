@@ -17,8 +17,7 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
 
     u32 sourceFileIdx = visitedFiles->sourceFiles.numItems();
     PPVisitedFiles::SourceFile& srcFile = visitedFiles->sourceFiles.append();
-    srcFile.absPath = absSrcPath;
-    String src = FileSystem::native()->loadTextAutodetect(srcFile.absPath).first;
+    String src = FileSystem::native()->loadTextAutodetect(absSrcPath).first;
     if (FileSystem::native()->lastResult() != FSResult::OK) {
         struct ErrorWrapper : BaseError {
             String msg;
@@ -28,11 +27,11 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
                 *outs << msg;
             }
         };
-        visor->handleError(new ErrorWrapper{String::format("Can't open '{}'\n", srcFile.absPath)});
+        visor->handleError(new ErrorWrapper{String::format("Can't open '{}'\n", absSrcPath)});
         return;
     }
     srcFile.contents = std::move(src);
-    srcFile.fileLocMap = FileLocationMap::fromView(srcFile.contents);
+    srcFile.fileLocationMap = FileLocationMap::fromView(absSrcPath, srcFile.contents);
 
     u32 includeChainIdx = visitedFiles->includeChains.numItems();
     PPVisitedFiles::IncludeChain& includeChain = visitedFiles->includeChains.append();

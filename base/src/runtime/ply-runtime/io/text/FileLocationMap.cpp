@@ -9,8 +9,9 @@
 
 namespace ply {
 
-FileLocationMap FileLocationMap::fromView(StringView src) {
+FileLocationMap FileLocationMap::fromView(StringView path, StringView src) {
     FileLocationMap result;
+    result.path = path;
     result.view = src;
     u32 lineNumber = 1;
     u32 columnNumber = 1;
@@ -82,9 +83,10 @@ FileLocation FileLocationMap::getFileLocation(u32 offset) const {
     }
 }
 
-PLY_NO_INLINE String FileLocationMap::formatFileLocation(u32 offset) const {
+PLY_NO_INLINE String FileLocationMap::formatFileLocation(u32 offset, bool withPath) const {
     FileLocation fileLoc = this->getFileLocation(offset);
-    return String::format("({}, {})", fileLoc.lineNumber, fileLoc.columnNumber);
+    return String::format("{}({}, {})", (withPath ? this->path : ""), fileLoc.lineNumber,
+                          fileLoc.columnNumber);
 }
 
 } // namespace ply

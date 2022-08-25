@@ -12,10 +12,10 @@ namespace crowbar {
 PLY_NO_INLINE bool error(Parser* parser, const ExpandedToken& errorToken,
                          ErrorTokenAction tokenAction, StringView message) {
     if (!parser->recovery.muteErrors) {
-        MemOutStream msg;
-        msg.format("{} error: {}\n",
-                   parser->tkr->fileLocationMap.formatFileLocation(errorToken.fileOffset), message);
-        parser->hooks->onError(msg.moveToString());
+        parser->errorOut->format(
+            "{} error: {}\n",
+            parser->tkr->fileLocationMap.formatFileLocation(errorToken.fileOffset), message);
+        parser->errorCount++;
     }
 
     parser->recovery.muteErrors = true;
@@ -162,10 +162,10 @@ void parseInterpolatedString(Parser* parser, Expression* expr) {
                 ExpandedToken closeToken = parser->tkr->readToken();
                 if (closeToken.type != TokenType::CloseCurly) {
                     error(parser, closeToken, ErrorTokenAction::HandleUnexpected,
-                          String::format(
-                              "expected '}' to close embedded expression at {}; got {}",
-                              parser->tkr->fileLocationMap.formatFileLocation(token.fileOffset),
-                              closeToken.desc()));
+                          String::format("expected '}' to close embedded expression at {}; got {}",
+                                         parser->tkr->fileLocationMap.formatFileLocation(
+                                             token.fileOffset, false),
+                                         closeToken.desc()));
                     skipAnyScope(parser, nullptr, TokenType::OpenCurly);
                 }
                 parser->recovery.muteErrors = false; // embed is now closed
@@ -196,9 +196,10 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel, bool asStat
             this->recovery.muteErrors = false;
         } else {
             error(this, closingToken, ErrorTokenAction::PushBack,
-                  String::format("expected ')' to match the '(' at {}; got {}",
-                                 this->tkr->fileLocationMap.formatFileLocation(token.fileOffset),
-                                 closingToken.desc()));
+                  String::format(
+                      "expected ')' to match the '(' at {}; got {}",
+                      this->tkr->fileLocationMap.formatFileLocation(token.fileOffset, false),
+                      closingToken.desc()));
         }
     } else {
         expr = Owned<Expression>::create();
@@ -480,6 +481,7 @@ void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
                              StatementBlock* stmtBlock) {
     auto stmt = Owned<Statement>::create();
     auto functionDef = stmt->functionDefinition().switchTo().get();
+    functionDef->tkr = parser->tkr;
     PLY_SET_IN_SCOPE(parser->context.func, functionDef);
 
     // We got the 'fn' keyword.

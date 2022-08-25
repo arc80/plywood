@@ -70,15 +70,14 @@ void Repository::create() {
                 bool first = true;
                 for (crowbar::Interpreter::StackFrame* frame = interp->currentFrame; frame;
                      frame = frame->prevFrame) {
-                    crowbar::ExpandedToken expToken = interp->tkr->expandToken(frame->tokenIdx);
+                    crowbar::ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
                     interp->outs->format(
                         "{} {} {}\n",
-                        interp->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
-                        first ? "in" : "called from", frame->desc());
+                        frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
+                        (first ? "in" : "called from"), frame->desc());
                     first = false;
                 }
             };
-            interp.tkr = &mod->plyfile->tkr;
 
             // Add hooks.
             ConfigOptionsInterpreterHooks interpHooks;
@@ -105,6 +104,7 @@ void Repository::create() {
                                                     LabelMap::instance.view(mod->block->name));
                           },
                           mod};
+            frame.tkr = &mod->plyfile->tkr;
             MethodResult result = execFunction(&frame, mod->configBlock->customBlock()->body);
             if (result == MethodResult::Error) {
                 StdErr::text() << outs.moveToString();

@@ -75,7 +75,7 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::load(StringView buildFolderName) {
     if (FileSystem::native()->lastResult() != FSResult::OK)
         return nullptr;
 
-    Owned<pylon::Node> aRoot = pylon::Parser{}.parse(strContents).root;
+    Owned<pylon::Node> aRoot = pylon::Parser{}.parse(infoPath, strContents).root;
     if (!aRoot->isValid())
         return nullptr;
 

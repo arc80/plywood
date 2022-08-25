@@ -39,7 +39,7 @@ struct DLLSignature {
         if (FileSystem::native()->lastResult() != FSResult::OK)
             return false;
 
-        Owned<pylon::Node> aRoot = pylon::Parser{}.parse(strContents).root;
+        Owned<pylon::Node> aRoot = pylon::Parser{}.parse(absPath, strContents).root;
         if (!aRoot->isValid())
             return false;
 
