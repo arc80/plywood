@@ -383,10 +383,10 @@ fn test() {
 result:
 error: cannot resolve identifier 'bar'
 (5, 9) in function 'foo'
-(3, 12) called from 'foo'
-(3, 12) called from 'foo'
-(3, 12) called from 'foo'
-(10, 8) called from 'test'
+(3, 12) called from function 'foo'
+(3, 12) called from function 'foo'
+(3, 12) called from function 'foo'
+(10, 8) called from function 'test'
 
 ------------------------------------------------------------
 fn somefunc(x) {
@@ -403,10 +403,10 @@ fn test() {
 result:
 error: cannot resolve identifier 'bar'
 (3, 16) in function 'somefunc'
-(5, 32) called from 'somefunc'
-(5, 32) called from 'somefunc'
-(5, 32) called from 'somefunc'
-(9, 19) called from 'test'
+(5, 32) called from function 'somefunc'
+(5, 32) called from function 'somefunc'
+(5, 32) called from function 'somefunc'
+(9, 19) called from function 'test'
 
 ------------------------------------------------------------
 fn test() {

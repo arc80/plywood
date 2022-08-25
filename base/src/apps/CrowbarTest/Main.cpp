@@ -10,7 +10,14 @@
 using namespace ply;
 using namespace ply::crowbar;
 
-MethodResult doPrint(BaseInterpreter* interp, const AnyObject& arg) {
+MethodResult doPrint(BaseInterpreter* interp, const AnyObject& callee,
+                     ArrayView<const AnyObject> args) {
+    if (args.numItems != 1) {
+        interp->error(interp, "'print' expects exactly one argument");
+        return MethodResult::Error;
+    }
+
+    const AnyObject& arg = args[0];
     interp->returnValue = {};
     if (arg.is<u32>()) {
         *interp->outs << *arg.cast<u32>() << '\n';
@@ -39,42 +46,32 @@ void addBuiltIns(HashMap<VariableMapTraits>& ns) {
 String callScriptFunction(StringView src, StringView funcName, ArrayView<const AnyObject> args) {
     // Create tokenizer and parser.
     Tokenizer tkr;
-    tkr.setSourceInput(src);
+    tkr.setSourceInput({}, src);
     Parser parser;
     parser.tkr = &tkr;
-
-    // Implement hooks.
-    struct Hooks : Parser::Hooks {
-        MemOutStream errorOut;
-        u32 errorCount = 0;
-        virtual void onError(StringView errorMsg) override {
-            this->errorOut << errorMsg;
-            this->errorCount++;
-        }
-    };
-    Hooks hooks;
-    parser.hooks = &hooks;
+    MemOutStream errorOut;
+    parser.errorOut = &errorOut;
 
     // Parse the script.
     Owned<StatementBlock> file = parser.parseFile();
-    if (hooks.errorCount > 0)
-        return hooks.errorOut.moveToString();
+    if (parser.errorCount > 0)
+        return errorOut.moveToString();
 
     // Create built-in namespace
-    HashMap<VariableMapTraits> builtIns;
-    addBuiltIns(builtIns);
+    MapNamespace builtIns;
+    addBuiltIns(builtIns.map);
 
     // Put functions in a namespace
     Sequence<AnyObject> fnObjs;
-    HashMap<VariableMapTraits> ns;
+    MapNamespace ns;
     for (const Statement* stmt : file->statements) {
         const Statement::FunctionDefinition* fnDef = stmt->functionDefinition().get();
         const AnyObject& fnObj = fnObjs.append(AnyObject::bind(fnDef));
-        ns.insertOrFind(fnDef->name)->obj = fnObj;
+        ns.map.insertOrFind(fnDef->name)->obj = fnObj;
     }
 
     // Invoke function if it exists
-    auto testFuncCursor = ns.find(LabelMap::instance.find(funcName));
+    auto testFuncCursor = ns.map.find(LabelMap::instance.find(funcName));
     if (testFuncCursor.wasFound()) {
         const AnyObject& testObj = testFuncCursor->obj;
         MemOutStream outs;
@@ -90,22 +87,21 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
             bool first = true;
             for (Interpreter::StackFrame* frame = interp->currentFrame; frame;
                  frame = frame->prevFrame) {
-                ExpandedToken expToken = interp->tkr->expandToken(frame->tokenIdx);
+                ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
                 interp->outs->format(
-                    "{} {} '{}'\n",
-                    interp->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
-                    first ? "in function" : "called from",
-                    LabelMap::instance.view(frame->functionDef->name));
+                    "{} {} {}\n",
+                    frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
+                    first ? "in" : "called from", frame->desc());
                 first = false;
             }
         };
-        interp.tkr = &tkr;
 
         // Invoke function
         Interpreter::StackFrame frame;
         frame.interp = &interp;
         const auto* fnDef = testObj.cast<Statement::FunctionDefinition>();
-        frame.functionDef = fnDef;
+        frame.desc = makeFunctionDesc(fnDef);
+        frame.tkr = &tkr;
         PLY_ASSERT(fnDef->parameterNames.numItems() == args.numItems);
         for (u32 i = 0; i < args.numItems; i++) {
             frame.localVariableTable.insertOrFind(fnDef->parameterNames[i])->obj = args[i];
@@ -182,7 +178,7 @@ void runTestSuite() {
 
     // Open input file
     String testSuitePath = NativePath::join(
-        PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/CrowbarTest/AllCrowbarTests.txt");
+        PLY_WORKSPACE_FOLDER, "base/src/apps/CrowbarTest/AllCrowbarTests.txt");
     Tuple<String, TextFormat> allTests = FileSystem::native()->loadTextAutodetect(testSuitePath);
     SectionReader sr{allTests.first};
 

@@ -19,6 +19,7 @@ struct Parser {
             return false;
         }
     };
+    Hooks defaultHooks;
     Hooks* hooks = nullptr;
 
     // Tokenizer.
@@ -47,6 +48,8 @@ struct Parser {
     };
     Context context;
 
+    Parser() : hooks{&this->defaultHooks} {
+    }
     Owned<Expression> parseExpression(u32 outerPrecendenceLevel = Limits<u32>::Max,
                                       bool asStatement = false);
     void parseStatement(StatementBlock* stmtBlock);

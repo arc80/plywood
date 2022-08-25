@@ -27,7 +27,8 @@ struct VariableMapTraits {
 };
 
 struct INamespace {
-    virtual ~INamespace() {}
+    virtual ~INamespace() {
+    }
     virtual AnyObject find(Label identifier) const = 0;
 };
 
@@ -48,20 +49,31 @@ struct Interpreter : BaseInterpreter {
     };
 
     struct Hooks {
-        virtual ~Hooks() {}
-        virtual void enterCustomBlock(const Statement::CustomBlock* customBlock) {}
-        virtual void exitCustomBlock(const Statement::CustomBlock* customBlock) {}
-        virtual void onEvaluate(const AnyObject& evaluationTraits) {}
-        virtual bool handleLocalAssignment(Label label) { return false; }
+        virtual ~Hooks() {
+        }
+        virtual void enterCustomBlock(const Statement::CustomBlock* customBlock) {
+        }
+        virtual void exitCustomBlock(const Statement::CustomBlock* customBlock) {
+        }
+        virtual void onEvaluate(const AnyObject& evaluationTraits) {
+        }
+        virtual bool handleLocalAssignment(Label label) {
+            return false;
+        }
     };
 
     Array<INamespace*> outerNameSpaces;
+    Hooks defaultHooks;
     Hooks* hooks = nullptr;
 
     // For expanding the location of runtime errors:
-    StackFrame *currentFrame = nullptr;
+    StackFrame* currentFrame = nullptr;
+
+    Interpreter() : hooks{&this->defaultHooks} {
+    }
 };
 
+HiddenArgFunctor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef);
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
 
 } // namespace crowbar

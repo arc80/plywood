@@ -8,6 +8,13 @@
 namespace ply {
 namespace crowbar {
 
+HiddenArgFunctor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef) {
+    return {[](const Statement::FunctionDefinition* fnDef) -> HybridString {
+                return String::format("function '{}'", LabelMap::instance.view(fnDef->name));
+            },
+            fnDef};
+}
+
 AnyObject MapNamespace::find(Label identifier) const {
     auto cursor = this->map.find(identifier);
     if (cursor.wasFound())
@@ -73,8 +80,8 @@ MethodResult evalPropertyLookup(Interpreter::StackFrame* frame,
 
     // Perform property lookup.
     // FIXME: This should accept interned strings.
-    return obj.type->methods.propertyLookup(
-        interp, obj, LabelMap::instance.view(propLookup->propertyName));
+    return obj.type->methods.propertyLookup(interp, obj,
+                                            LabelMap::instance.view(propLookup->propertyName));
 }
 
 MethodResult evalBinaryOp(Interpreter::StackFrame* frame, const Expression::BinaryOp* binaryOp) {
@@ -150,10 +157,7 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
         // Set up a new stack frame.
         Interpreter::StackFrame newFrame;
         newFrame.interp = interp;
-        newFrame.desc = {[](const Statement::FunctionDefinition* fnDef) -> HybridString {
-                             return String::format("function '{}'", LabelMap::instance.view(fnDef->name));
-                         },
-                         functionDef};
+        newFrame.desc = makeFunctionDesc(functionDef);
         newFrame.tkr = functionDef->tkr;
         newFrame.prevFrame = frame;
         for (u32 argIndex : range(args.numItems())) {
@@ -193,9 +197,9 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
         case Expression::ID::NameLookup: {
             interp->returnValue = lookupName(frame, expr->nameLookup()->name);
             if (!interp->returnValue.data) {
-                interp->error(interp, String::format(
-                                          "cannot resolve identifier '{}'",
-                                          LabelMap::instance.view(expr->nameLookup()->name)));
+                interp->error(interp,
+                              String::format("cannot resolve identifier '{}'",
+                                             LabelMap::instance.view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
             return MethodResult::OK;
