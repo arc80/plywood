@@ -15,7 +15,10 @@ struct BaseInterpreter {
     AnyObject returnValue;
     OutStream* outs = nullptr;
 
-    void (*error)(BaseInterpreter* interp, StringView message) = nullptr;
+    ~BaseInterpreter() {
+    }
+    virtual void error(StringView message) {
+    }
 };
 
 } // namespace ply

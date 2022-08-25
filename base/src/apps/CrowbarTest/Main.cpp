@@ -13,7 +13,7 @@ using namespace ply::crowbar;
 MethodResult doPrint(BaseInterpreter* interp, const AnyObject& callee,
                      ArrayView<const AnyObject> args) {
     if (args.numItems != 1) {
-        interp->error(interp, "'print' expects exactly one argument");
+        interp->error("'print' expects exactly one argument");
         return MethodResult::Error;
     }
 
@@ -26,8 +26,7 @@ MethodResult doPrint(BaseInterpreter* interp, const AnyObject& callee,
     } else if (arg.is<String>()) {
         *interp->outs << *arg.cast<String>() << '\n';
     } else {
-        interp->error(interp,
-                      String::format("'{}' does not support printing", arg.type->getName()));
+        interp->error(String::format("'{}' does not support printing", arg.type->getName()));
         return MethodResult::Error;
     }
     return MethodResult::OK;
@@ -81,20 +80,6 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
         interp.outs = &outs;
         interp.outerNameSpaces.append(&builtIns);
         interp.outerNameSpaces.append(&ns);
-        interp.error = [](BaseInterpreter* base, StringView message) {
-            Interpreter* interp = static_cast<Interpreter*>(base);
-            interp->outs->format("error: {}\n", message);
-            bool first = true;
-            for (Interpreter::StackFrame* frame = interp->currentFrame; frame;
-                 frame = frame->prevFrame) {
-                ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
-                interp->outs->format(
-                    "{} {} {}\n",
-                    frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
-                    first ? "in" : "called from", frame->desc());
-                first = false;
-            }
-        };
 
         // Invoke function
         Interpreter::StackFrame frame;
@@ -177,8 +162,8 @@ void runTestSuite() {
     };
 
     // Open input file
-    String testSuitePath = NativePath::join(
-        PLY_WORKSPACE_FOLDER, "base/src/apps/CrowbarTest/AllCrowbarTests.txt");
+    String testSuitePath =
+        NativePath::join(PLY_WORKSPACE_FOLDER, "base/src/apps/CrowbarTest/AllCrowbarTests.txt");
     Tuple<String, TextFormat> allTests = FileSystem::native()->loadTextAutodetect(testSuitePath);
     SectionReader sr{allTests.first};
 

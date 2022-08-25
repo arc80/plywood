@@ -71,6 +71,7 @@ struct Interpreter : BaseInterpreter {
 
     Interpreter() : hooks{&this->defaultHooks} {
     }
+    virtual void error(StringView message) override;
 };
 
 HiddenArgFunctor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef);

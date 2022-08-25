@@ -40,47 +40,44 @@ StringView MethodTable::binaryOpToString(MethodTable::BinaryOp op) {
 MethodResult MethodTable::unsupportedUnaryOp(BaseInterpreter* interp, UnaryOp op,
                                              const AnyObject& obj) {
     interp->returnValue = {};
-    interp->error(interp, String::format("'{}' does not support unary operator '{}'",
-                                         obj.type->getName(), MethodTable::unaryOpToString(op)));
+    interp->error(String::format("'{}' does not support unary operator '{}'", obj.type->getName(),
+                                 MethodTable::unaryOpToString(op)));
     return MethodResult::Error;
 }
 
 MethodResult MethodTable::unsupportedBinaryOp(BaseInterpreter* interp, MethodTable::BinaryOp op,
                                               const AnyObject& first, const AnyObject& second) {
     interp->returnValue = {};
-    interp->error(interp, String::format("'{}' does not support binary operator '{}'",
-                                         first.type->getName(), MethodTable::binaryOpToString(op)));
+    interp->error(String::format("'{}' does not support binary operator '{}'",
+                                 first.type->getName(), MethodTable::binaryOpToString(op)));
     return MethodResult::Error;
 }
 
 MethodResult MethodTable::unsupportedPropertyLookup(BaseInterpreter* interp, const AnyObject& obj,
                                                     StringView propertyName) {
     interp->returnValue = {};
-    interp->error(interp,
-                  String::format("'{}' does not support property lookup", obj.type->getName()));
+    interp->error(String::format("'{}' does not support property lookup", obj.type->getName()));
     return MethodResult::Error;
 }
 
 MethodResult MethodTable::unsupportedSubscript(BaseInterpreter* interp, const AnyObject& obj,
                                                u32 index) {
     interp->returnValue = {};
-    interp->error(interp,
-                  String::format("'{}' does not support array indexing", obj.type->getName()));
+    interp->error(String::format("'{}' does not support array indexing", obj.type->getName()));
     return MethodResult::Error;
 }
 
 MethodResult MethodTable::unsupportedPrint(BaseInterpreter* interp, const AnyObject& obj,
                                            StringView formatSpec) {
     interp->returnValue = {};
-    interp->error(interp, String::format("'{}' does not support printing", obj.type->getName()));
+    interp->error(String::format("'{}' does not support printing", obj.type->getName()));
     return MethodResult::Error;
 }
 
 MethodResult MethodTable::unsupportedCall(BaseInterpreter* interp, const AnyObject& callee,
                                           ArrayView<const AnyObject> args) {
     interp->returnValue = {};
-    interp->error(interp,
-                  String::format("cannot call '{}' as a function", callee.type->getName()));
+    interp->error(String::format("cannot call '{}' as a function", callee.type->getName()));
     return MethodResult::Error;
 }
 

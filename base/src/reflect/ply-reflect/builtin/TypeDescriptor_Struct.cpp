@@ -22,8 +22,8 @@ PLY_NO_INLINE MethodTable getMethodTable_Struct() {
         const TypeDescriptor_Struct::Member* member = structType->findMember(propertyName);
         if (!member) {
             interp->returnValue = {};
-            interp->error(interp, String::format("property '{}' not found in type '{}'",
-                                                 propertyName, obj.type->getName()));
+            interp->error(String::format("property '{}' not found in type '{}'", propertyName,
+                                         obj.type->getName()));
             return MethodResult::Error;
         }
         interp->returnValue = {PLY_PTR_OFFSET(obj.data, member->offset), member->type};

@@ -64,20 +64,6 @@ void Repository::create() {
             MemOutStream outs;
             crowbar::Interpreter interp;
             interp.outs = &outs;
-            interp.error = [](BaseInterpreter* base, StringView message) {
-                crowbar::Interpreter* interp = static_cast<crowbar::Interpreter*>(base);
-                interp->outs->format("error: {}\n", message);
-                bool first = true;
-                for (crowbar::Interpreter::StackFrame* frame = interp->currentFrame; frame;
-                     frame = frame->prevFrame) {
-                    crowbar::ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
-                    interp->outs->format(
-                        "{} {} {}\n",
-                        frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
-                        (first ? "in" : "called from"), frame->desc());
-                    first = false;
-                }
-            };
 
             // Add hooks.
             ConfigOptionsInterpreterHooks interpHooks;

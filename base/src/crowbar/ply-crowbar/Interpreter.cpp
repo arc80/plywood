@@ -15,6 +15,18 @@ HiddenArgFunctor<HybridString()> makeFunctionDesc(const Statement::FunctionDefin
             fnDef};
 }
 
+void Interpreter::error(StringView message) {
+    this->outs->format("error: {}\n", message);
+    bool first = true;
+    for (Interpreter::StackFrame* frame = this->currentFrame; frame; frame = frame->prevFrame) {
+        ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
+        this->outs->format("{} {} {}\n",
+                             frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
+                             first ? "in" : "called from", frame->desc());
+        first = false;
+    }
+}
+
 AnyObject MapNamespace::find(Label identifier) const {
     auto cursor = this->map.find(identifier);
     if (cursor.wasFound())
@@ -197,8 +209,7 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
         case Expression::ID::NameLookup: {
             interp->returnValue = lookupName(frame, expr->nameLookup()->name);
             if (!interp->returnValue.data) {
-                interp->error(interp,
-                              String::format("cannot resolve identifier '{}'",
+                interp->error(String::format("cannot resolve identifier '{}'",
                                              LabelMap::instance.view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
