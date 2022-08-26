@@ -227,12 +227,13 @@ struct ParseHooks : crowbar::Parser::Hooks {
                 this->parser->recovery.muteErrors = false;
             }
 
-            configListBlock->expr = this->parser->parseExpression();
+            Owned<crowbar::Expression> expr = this->parser->parseExpression();
 
             auto customBlock = Owned<crowbar::Statement>::create();
             customBlock->fileOffset = kwToken.fileOffset;
             auto* cb = customBlock->customBlock().switchTo().get();
             cb->type = common->configKey;
+            cb->expr = std::move(expr);
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
             cb->body = parseStatementBlock(this->parser, {"config", "config", true});
 

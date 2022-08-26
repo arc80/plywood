@@ -72,4 +72,7 @@ bool parsePlyfile(StringView path);
 
 } // namespace latest
 } // namespace build
+
+PLY_DECLARE_TYPE_DESCRIPTOR(build::latest::Repository::ConfigOptions)
+
 } // namespace ply

@@ -34,7 +34,7 @@ struct INamespace {
 
 struct MapNamespace : INamespace {
     HashMap<VariableMapTraits> map;
-    virtual AnyObject find(Label identifier) const;
+    virtual AnyObject find(Label identifier) const override;
 };
 
 struct Interpreter : BaseInterpreter {
@@ -76,6 +76,7 @@ struct Interpreter : BaseInterpreter {
 
 HiddenArgFunctor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef);
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
+MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr);
 
 } // namespace crowbar
 } // namespace ply

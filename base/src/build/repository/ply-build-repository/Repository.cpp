@@ -100,8 +100,62 @@ void Repository::create() {
     }
 }
 
+PLY_NO_INLINE MethodTable getMethodTable_Repository_ConfigOptions() {
+    MethodTable methods;
+    methods.propertyLookup = [](BaseInterpreter* interp, const AnyObject& obj,
+                                StringView propertyName) -> MethodResult {
+        Label label = LabelMap::instance.find(propertyName);
+        if (label.isValid()) {
+            auto* configOpts = obj.cast<Repository::ConfigOptions>();
+            auto cursor = configOpts->map.find(label);
+            if (cursor.wasFound()) {
+                interp->returnValue = cursor->obj;
+                return MethodResult::OK;
+            }
+        }
+
+        interp->returnValue = {};
+        interp->error(
+            String::format("configuration option '{}' not found in module", propertyName));
+        return MethodResult::Error;
+    };
+    return methods;
+}
+
+TypeKey TypeKey_Repository_ConfigOptions{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        return "ConfigOptions";
+    },
+
+    // write
+    nullptr, // Unimplemented
+
+    // writeFormat
+    nullptr, // Unimplemented
+
+    // read
+    nullptr, // Unimplemented
+
+    // hashDescriptor
+    TypeKey::hashEmptyDescriptor,
+
+    // equalDescriptors
+    TypeKey::alwaysEqualDescriptors,
+};
+
 } // namespace latest
 } // namespace build
+
+PLY_DEFINE_TYPE_DESCRIPTOR(build::latest::Repository::ConfigOptions) {
+    static TypeDescriptor typeDesc{
+        &build::latest::TypeKey_Repository_ConfigOptions,
+        (build::latest::Repository::ConfigOptions*) nullptr,
+        NativeBindings::make<build::latest::Repository::ConfigOptions>()
+            PLY_METHOD_TABLES_ONLY(, build::latest::getMethodTable_Repository_ConfigOptions())};
+    return &typeDesc;
+}
+
 } // namespace ply
 
 #include "codegen/Repository.inl"

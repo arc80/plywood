@@ -2,4 +2,9 @@ config_list {
     config "Debug" {
         platform.with_asserts = true
     }
+    config "RelWithAsserts" {
+        platform.with_asserts = true
+    }
+    config "Release" {
+    }
 }

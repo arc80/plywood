@@ -329,24 +329,128 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
     return true;
 }
 
+struct ConfigListInterpreterHooks : crowbar::Interpreter::Hooks {
+    crowbar::Interpreter* interp = nullptr;
+    latest::ModuleInstantiator* mi = nullptr;
+    BuildFolder* buildFolder = nullptr;
+    String currentConfigName;
+
+    virtual ~ConfigListInterpreterHooks() override {
+    }
+
+    virtual void enterCustomBlock(const crowbar::Statement::CustomBlock* enteringBlock) override {
+        PLY_ASSERT(enteringBlock->type == latest::Repository::instance->common.configKey);
+
+        // Evaluate config name
+        MethodResult result = eval(interp->currentFrame, enteringBlock->expr);
+        PLY_ASSERT(result == MethodResult::OK); // FIXME: Make robust
+        this->currentConfigName = *interp->returnValue.cast<String>();
+        PLY_ASSERT(this->currentConfigName); // FIXME: Make robust
+
+        // Initialize all Module::currentOptions
+        for (latest::Repository::Module* mod : latest::Repository::instance->moduleMap) {
+            auto newOptions = Owned<latest::Repository::ConfigOptions>::create();
+            for (const auto& item : mod->defaultOptions->map) {
+                auto cursor = newOptions->map.insertOrFind(item.identifier);
+                cursor->obj = AnyOwnedObject::create(item.obj.type);
+                cursor->obj.copy(item.obj);
+            }
+            mod->currentOptions = std::move(newOptions);
+        }
+    }
+
+    virtual void exitCustomBlock(const crowbar::Statement::CustomBlock* exitingBlock) override {
+        PLY_ASSERT(exitingBlock->type == latest::Repository::instance->common.configKey);
+
+        // Add config to project
+        u32 configIndex = this->mi->project.configNames.numItems();
+        PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
+        this->mi->project.configNames.append(this->currentConfigName);
+
+        // Instantiate all root modules in this config
+        this->mi->configBit = (u64{1} << configIndex);
+        for (StringView targetName : this->buildFolder->rootTargets) {
+            buildSteps::Node* rootNode = latest::instantiateModuleForCurrentConfig(
+                this->mi, LabelMap::instance.insertOrFind(targetName));
+            PLY_ASSERT(rootNode); // FIXME: Handle elegantly
+            if (find(this->mi->project.rootNodes, rootNode) < 0) {
+                this->mi->project.rootNodes.append(rootNode);
+            }
+        }
+
+        // Clear currentConfigName and all Module::currentOptions
+        this->currentConfigName.clear();
+        for (latest::Repository::Module* mod : latest::Repository::instance->moduleMap) {
+            mod->currentOptions.clear();
+        }
+    }
+};
+
+struct ConfigNamespace : crowbar::INamespace {
+    crowbar::Interpreter* interp = nullptr;
+
+    virtual AnyObject find(Label identifier) const override {
+        auto cursor = latest::Repository::instance->moduleMap.find(identifier);
+        if (!cursor.wasFound())
+            return {};
+
+        // FIXME: Handle gracefully instead of asserting
+        // modules should only be looked up within config block
+        PLY_ASSERT(this->interp->currentFrame->customBlock->type ==
+                   latest::Repository::instance->common.configKey);
+
+        latest::Repository::Module* mod = *cursor;
+        return AnyObject::bind(mod->currentOptions.get());
+    }
+};
+
 PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     latest::ModuleInstantiator mi{bf->getAbsPath()};
     mi.project.name = bf->solutionName;
 
-    // Add configs
-    mi.project.configNames.append("Debug");
+    // Execute the config_list block
+    latest::Repository::ConfigList* configList = latest::Repository::instance->configList;
+    if (!configList) {
+        ErrorHandler::log(ErrorHandler::Fatal, "No config_list block defined.\n");
+    }
 
-    // For each config, instantiate root modules
-    PLY_ASSERT(mi.project.configNames.numItems() <= 64);
-    for (u32 i = 0; i < mi.project.configNames.numItems(); i++) {
-        PLY_ASSERT(i < 64);
-        mi.configBit = (u64{1} << i);
-        for (StringView targetName : bf->rootTargets) {
-            buildSteps::Node* rootNode = latest::instantiateModuleForCurrentConfig(
-                &mi, LabelMap::instance.insertOrFind(targetName));
-            if (!rootNode)
-                return false;
-            mi.project.rootNodes.append(rootNode);
+    {
+        // Create new interpreter.
+        MemOutStream outs;
+        crowbar::Interpreter interp;
+        interp.outs = &outs;
+
+        // Add hooks.
+        ConfigListInterpreterHooks interpHooks;
+        interpHooks.interp = &interp;
+        interpHooks.mi = &mi;
+        interpHooks.buildFolder = bf;
+        interp.hooks = &interpHooks;
+
+        // Add namespace to map module names to ConfigOptions.
+        ConfigNamespace configNs;
+        configNs.interp = &interp;
+        interp.outerNameSpaces.append(&configNs);
+
+        // Add builtin namespace.
+        crowbar::MapNamespace builtIns;
+        static bool true_ = true;
+        static bool false_ = false;
+        builtIns.map.insertOrFind(LabelMap::instance.insertOrFind("true"))->obj =
+            AnyObject::bind(&true_);
+        builtIns.map.insertOrFind(LabelMap::instance.insertOrFind("false"))->obj =
+            AnyObject::bind(&false_);
+        interp.outerNameSpaces.append(&builtIns);
+
+        // Invoke block.
+        crowbar::Interpreter::StackFrame frame;
+        frame.interp = &interp;
+        frame.desc = {[](void*) -> HybridString { return "config_list"; }, (void*) 0};
+        frame.tkr = &configList->plyfile->tkr;
+        MethodResult result = execFunction(&frame, configList->block);
+        if (result == MethodResult::Error) {
+            StdErr::text() << outs.moveToString();
+            exit(1);
         }
     }
 
@@ -360,7 +464,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
 }
 
 PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
-    //return generateLatest(this);
+    return generateLatest(this);
 
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);

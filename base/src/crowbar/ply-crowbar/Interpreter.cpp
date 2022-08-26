@@ -34,7 +34,6 @@ AnyObject MapNamespace::find(Label identifier) const {
     return {};
 }
 
-MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr);
 MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block);
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
 
