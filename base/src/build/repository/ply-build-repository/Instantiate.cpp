@@ -150,10 +150,11 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
             // Yes. If the module was already fully instantiated in this config, return it.
             if (instCursor->statusInCurrentConfig == ModuleInstantiator::Instantiated)
                 return instCursor->node;
-            // Circular dependency check.
-            if (instCursor->statusInCurrentConfig != ModuleInstantiator::NotInstantiated) {
+            // Circular dependency check. FIXME: Handle gracefully
+            if (instCursor->statusInCurrentConfig == ModuleInstantiator::Instantiating) {
                 PLY_FORCE_CRASH();
             }
+            PLY_ASSERT(instCursor->statusInCurrentConfig == ModuleInstantiator::NotInstantiated);
         }
         // Set this module's status as Instantiating so that circular dependencies can be detected.
         instCursor->statusInCurrentConfig = ModuleInstantiator::Instantiating;

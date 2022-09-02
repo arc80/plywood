@@ -378,10 +378,15 @@ struct ConfigListInterpreterHooks : crowbar::Interpreter::Hooks {
             }
         }
 
-        // Clear currentConfigName and all Module::currentOptions
+        // Reset state between configs.
+        // Clear currentConfigName, Module::currentOptions, and set ModuleInstantiator status to
+        // NotInstantiated.
         this->currentConfigName.clear();
         for (latest::Repository::Module* mod : latest::Repository::instance->moduleMap) {
             mod->currentOptions.clear();
+        }
+        for (auto& item : this->mi->modules) {
+            item.statusInCurrentConfig = latest::ModuleInstantiator::NotInstantiated;
         }
     }
 };
@@ -464,7 +469,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
 }
 
 PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
-    //return generateLatest(this);
+    return generateLatest(this);
 
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);
