@@ -21,8 +21,8 @@ void Interpreter::error(StringView message) {
     for (Interpreter::StackFrame* frame = this->currentFrame; frame; frame = frame->prevFrame) {
         ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
         this->outs->format("{} {} {}\n",
-                             frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
-                             first ? "in" : "called from", frame->desc());
+                           frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
+                           first ? "in" : "called from", frame->desc());
         first = false;
     }
 }
@@ -149,8 +149,13 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
 
         AnyObject* arg;
         if (!isReturnValueOnTopOfStack(interp)) {
+            // The return value is not a temporary object, and the interpreter is currently designed
+            // to pass all arguments "by value", like in C, so we should make a copy here. (In the
+            // future, we could extend the interpreter to support passing "by reference" as well,
+            // like in C++. In the meantime, scripts can achieve the same thing by passing
+            // pointers.)
             arg = interp->localVariableStorage.appendObject(interp->returnValue.type);
-            arg->move(interp->returnValue);
+            arg->copy(interp->returnValue);
         } else {
             arg = &interp->localVariableStorage.items.tail();
         }
