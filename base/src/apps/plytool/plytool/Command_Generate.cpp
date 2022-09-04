@@ -26,6 +26,7 @@ bool command_generate(PlyToolCommandEnv* env) {
     }
     env->cl->finalize();
 
+    latest::Common::initialize();
     latest::Repository::create();
     PLY_SET_IN_SCOPE(RepoRegistry::instance_, RepoRegistry::create());
     PLY_SET_IN_SCOPE(ExternFolderRegistry::instance_, ExternFolderRegistry::create());

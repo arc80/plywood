@@ -20,11 +20,9 @@ struct ParseHooks : crowbar::Parser::Hooks {
     Repository::Module* currentModule = nullptr;
 
     virtual bool tryParseCustomBlock(crowbar::StatementBlock* stmtBlock) override {
-        const Common* common = &Repository::instance->common;
-
         crowbar::ExpandedToken kwToken = this->parser->tkr->readToken();
 
-        if ((kwToken.label == common->moduleKey) || (kwToken.label == common->executableKey)) {
+        if ((kwToken.label == g_common->moduleKey) || (kwToken.label == g_common->executableKey)) {
             // module/executable { ... } block
             if (this->parser->context.customBlock || this->parser->context.func) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
@@ -75,7 +73,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
             return true;
         }
 
-        if (kwToken.label == common->sourceFilesKey) {
+        if (kwToken.label == g_common->sourceFilesKey) {
             // source_files { ... } block
             if (!this->currentModule) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
@@ -85,14 +83,14 @@ struct ParseHooks : crowbar::Parser::Hooks {
 
             auto customBlock = Owned<crowbar::Statement>::create();
             auto* cb = customBlock->customBlock().switchTo().get();
-            cb->type = common->sourceFilesKey;
+            cb->type = g_common->sourceFilesKey;
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
             cb->body = parseStatementBlock(this->parser, {"source_files", "source_files", true});
             stmtBlock->statements.append(std::move(customBlock));
             return true;
         }
 
-        if (kwToken.label == common->includeDirectoriesKey) {
+        if (kwToken.label == g_common->includeDirectoriesKey) {
             // include_directories { ... } block
             if (!this->currentModule) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
@@ -103,7 +101,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
 
             auto customBlock = Owned<crowbar::Statement>::create();
             auto* cb = customBlock->customBlock().switchTo().get();
-            cb->type = common->includeDirectoriesKey;
+            cb->type = g_common->includeDirectoriesKey;
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
             cb->body = parseStatementBlock(this->parser,
                                            {"include_directories", "include_directories", true});
@@ -111,7 +109,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
             return true;
         }
 
-        if (kwToken.label == common->dependenciesKey) {
+        if (kwToken.label == g_common->dependenciesKey) {
             // dependencies { ... } block
             if (!this->currentModule) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
@@ -121,14 +119,14 @@ struct ParseHooks : crowbar::Parser::Hooks {
 
             auto customBlock = Owned<crowbar::Statement>::create();
             auto* cb = customBlock->customBlock().switchTo().get();
-            cb->type = common->dependenciesKey;
+            cb->type = g_common->dependenciesKey;
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
             cb->body = parseStatementBlock(this->parser, {"dependencies", "dependencies", true});
             stmtBlock->statements.append(std::move(customBlock));
             return true;
         }
 
-        if (kwToken.label == common->linkLibrariesKey) {
+        if (kwToken.label == g_common->linkLibrariesKey) {
             // link_libraries { ... } block
             if (!this->currentModule) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
@@ -138,7 +136,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
 
             auto customBlock = Owned<crowbar::Statement>::create();
             auto* cb = customBlock->customBlock().switchTo().get();
-            cb->type = common->linkLibrariesKey;
+            cb->type = g_common->linkLibrariesKey;
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
             cb->body =
                 parseStatementBlock(this->parser, {"link_libraries", "link_libraries", true});
@@ -146,7 +144,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
             return true;
         }
 
-        if (kwToken.label == common->configOptionsKey) {
+        if (kwToken.label == g_common->configOptionsKey) {
             // config_options { ... } block
             if (this->currentModule) {
                 if (this->currentModule->configBlock) {
@@ -170,7 +168,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
             auto customBlock = Owned<crowbar::Statement>::create();
             customBlock->fileOffset = kwToken.fileOffset;
             auto* cb = customBlock->customBlock().switchTo().get();
-            cb->type = common->configOptionsKey;
+            cb->type = g_common->configOptionsKey;
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
             cb->body =
                 parseStatementBlock(this->parser, {"config_options", "config_options", true});
@@ -180,7 +178,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
             return true;
         }
 
-        if (kwToken.label == common->configListKey) {
+        if (kwToken.label == g_common->configListKey) {
             if (this->parser->context.customBlock || this->parser->context.func) {
                 error(this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
                       "conflig_list must be defined at file scope");
@@ -206,7 +204,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
             auto customBlock = Owned<crowbar::Statement>::create();
             customBlock->fileOffset = kwToken.fileOffset;
             auto* cb = customBlock->customBlock().switchTo().get();
-            cb->type = common->configListKey;
+            cb->type = g_common->configListKey;
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
             configList->block =
                 parseStatementBlock(this->parser, {"config_list", "config_list", true});
@@ -214,10 +212,10 @@ struct ParseHooks : crowbar::Parser::Hooks {
             return true;
         }
 
-        if (kwToken.label == common->configKey) {
+        if (kwToken.label == g_common->configKey) {
             crowbar::Statement::CustomBlock* configListBlock = nullptr;
             if (this->parser->context.customBlock &&
-                  (this->parser->context.customBlock->type == common->configListKey)) {
+                  (this->parser->context.customBlock->type == g_common->configListKey)) {
                 configListBlock = this->parser->context.customBlock;
             }
 
@@ -232,7 +230,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
             auto customBlock = Owned<crowbar::Statement>::create();
             customBlock->fileOffset = kwToken.fileOffset;
             auto* cb = customBlock->customBlock().switchTo().get();
-            cb->type = common->configKey;
+            cb->type = g_common->configKey;
             cb->expr = std::move(expr);
             PLY_SET_IN_SCOPE(this->parser->context.customBlock, cb);
             cb->body = parseStatementBlock(this->parser, {"config", "config", true});
@@ -248,16 +246,14 @@ struct ParseHooks : crowbar::Parser::Hooks {
     }
 
     virtual bool tryParseExpressionTrait(AnyOwnedObject* expressionTraits) override {
-        const Common* common = &Repository::instance->common;
-
         crowbar::ExpandedToken kwToken = this->parser->tkr->readToken();
 
-        if ((kwToken.label == common->publicKey) || (kwToken.label == common->privateKey)) {
+        if ((kwToken.label == g_common->publicKey) || (kwToken.label == g_common->privateKey)) {
             // public / private keywords
             bool legal = false;
             if (crowbar::Statement::CustomBlock* cb = this->parser->context.customBlock) {
-                legal = (cb->type == common->includeDirectoriesKey) ||
-                        (cb->type == common->dependenciesKey);
+                legal = (cb->type == g_common->includeDirectoriesKey) ||
+                        (cb->type == g_common->dependenciesKey);
             }
             if (legal) {
                 if (!expressionTraits->data) {
@@ -265,7 +261,7 @@ struct ParseHooks : crowbar::Parser::Hooks {
                 }
                 auto traits = expressionTraits->cast<ExpressionTraits>();
                 traits->visibilityTokenIdx = kwToken.tokenIdx;
-                traits->isPublic = (kwToken.label == common->publicKey);
+                traits->isPublic = (kwToken.label == g_common->publicKey);
             } else {
                 error(
                     this->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,

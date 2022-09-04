@@ -339,7 +339,7 @@ struct ConfigListInterpreterHooks : crowbar::Interpreter::Hooks {
     }
 
     virtual void enterCustomBlock(const crowbar::Statement::CustomBlock* enteringBlock) override {
-        PLY_ASSERT(enteringBlock->type == latest::Repository::instance->common.configKey);
+        PLY_ASSERT(enteringBlock->type == latest::g_common->configKey);
 
         // Evaluate config name
         MethodResult result = eval(interp->currentFrame, enteringBlock->expr);
@@ -360,7 +360,7 @@ struct ConfigListInterpreterHooks : crowbar::Interpreter::Hooks {
     }
 
     virtual void exitCustomBlock(const crowbar::Statement::CustomBlock* exitingBlock) override {
-        PLY_ASSERT(exitingBlock->type == latest::Repository::instance->common.configKey);
+        PLY_ASSERT(exitingBlock->type == latest::g_common->configKey);
 
         // Add config to project
         u32 configIndex = this->mi->project.configNames.numItems();
@@ -401,8 +401,7 @@ struct ConfigNamespace : crowbar::INamespace {
 
         // FIXME: Handle gracefully instead of asserting
         // modules should only be looked up within config block
-        PLY_ASSERT(this->interp->currentFrame->customBlock->type ==
-                   latest::Repository::instance->common.configKey);
+        PLY_ASSERT(this->interp->currentFrame->customBlock->type == latest::g_common->configKey);
 
         latest::Repository::Module* mod = *cursor;
         return AnyObject::bind(mod->currentOptions.get());

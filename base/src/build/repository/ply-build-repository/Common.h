@@ -26,20 +26,10 @@ struct Common {
     Label configListKey;
     Label configKey;
 
-    Common() {
-        this->moduleKey = LabelMap::instance.insertOrFind("module");
-        this->executableKey = LabelMap::instance.insertOrFind("executable");
-        this->includeDirectoriesKey = LabelMap::instance.insertOrFind("include_directories");
-        this->sourceFilesKey = LabelMap::instance.insertOrFind("source_files");
-        this->dependenciesKey = LabelMap::instance.insertOrFind("dependencies");
-        this->linkLibrariesKey = LabelMap::instance.insertOrFind("link_libraries");
-        this->publicKey = LabelMap::instance.insertOrFind("public");
-        this->privateKey = LabelMap::instance.insertOrFind("private");
-        this->configOptionsKey = LabelMap::instance.insertOrFind("config_options");
-        this->configListKey = LabelMap::instance.insertOrFind("config_list");
-        this->configKey = LabelMap::instance.insertOrFind("config");
-    }
+    static void initialize();
 };
+
+extern Common* g_common;
 
 // ExpressionTraits is a type of object created at parse time (via ParseHooks) and consumed by
 // the interpreter (via InterpreterHooks). It contains extra information about each entry inside

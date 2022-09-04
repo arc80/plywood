@@ -45,11 +45,10 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
     }
 
     virtual void onEvaluate(const AnyObject& evaluationTraits) override {
-        const Common* common = &Repository::instance->common;
         if (this->interp->currentFrame->customBlock) {
             Label blockType = this->interp->currentFrame->customBlock->type;
 
-            if (blockType == common->sourceFilesKey) {
+            if (blockType == g_common->sourceFilesKey) {
                 // Expression inside source_files block
                 PLY_ASSERT(!evaluationTraits.data);
                 String absPath = this->makeAbsPath(*this->interp->returnValue.cast<String>());
@@ -58,7 +57,7 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
                                  [&](const auto& a) { return a.path == absPath; });
                 srcFilePath.activeMask |= this->mi->configBit;
 
-            } else if (blockType == common->includeDirectoriesKey) {
+            } else if (blockType == g_common->includeDirectoriesKey) {
                 // Expression inside include_directories block
                 const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
                 PLY_ASSERT(traits->visibilityTokenIdx >= 0);
@@ -73,7 +72,7 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
                     foundOpt.publicMask |= this->mi->configBit;
                 }
 
-            } else if (blockType == common->dependenciesKey) {
+            } else if (blockType == g_common->dependenciesKey) {
                 // Expression inside dependencies block
                 const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
                 PLY_ASSERT(traits->visibilityTokenIdx >= 0);
@@ -85,7 +84,7 @@ struct InterpreterHooks : crowbar::Interpreter::Hooks {
                     this->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
                 foundDep.activeMask |= this->mi->configBit;
 
-            } else if (blockType == common->linkLibrariesKey) {
+            } else if (blockType == g_common->linkLibrariesKey) {
                 // PLY_ASSERT(!evaluationTraits.data);
                 // this->nodeConfig->opts.prebuiltLibs.append(
                 //    *this->interp->returnValue.cast<String>());
@@ -135,7 +134,6 @@ ModuleInstantiator::ModuleInstantiator(StringView buildFolderPath)
 }
 
 buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel) {
-    Common* common = &Repository::instance->common;
     StringView moduleName = LabelMap::instance.view(moduleLabel);
 
     // Check if a buildSteps::Node was already created for this moduleName.
@@ -171,7 +169,7 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
         PLY_FORCE_CRASH();
     }
     const crowbar::Statement::CustomBlock* moduleDef = (*funcCursor)->block;
-    if (moduleDef->type == common->executableKey) {
+    if (moduleDef->type == g_common->executableKey) {
         node->type = buildSteps::Node::Type::Executable;
     }
 

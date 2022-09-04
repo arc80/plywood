@@ -59,7 +59,6 @@ struct Repository {
         Owned<crowbar::StatementBlock> block;
     };
 
-    Common common;
     Array<Owned<Plyfile>> plyfiles;
     HashMap<ModuleMapTraits> moduleMap;
     Owned<ConfigList> configList;
