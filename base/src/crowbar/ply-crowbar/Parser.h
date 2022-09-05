@@ -11,16 +11,72 @@ namespace ply {
 namespace crowbar {
 
 struct Parser {
-    struct Hooks {
-        virtual bool tryParseCustomBlock(StatementBlock* stmtBlock) {
-            return false;
+    struct CustomBlockHooks {
+        template <typename T>
+        using Callback = bool(T* arg, const ExpandedToken& kwToken, StatementBlock* stmtBlock);
+
+        struct Traits {
+            using Key = Label;
+            struct Item {
+                Label keyword;
+                Callback<void>* callback = nullptr;
+                void* arg = nullptr;
+                PLY_INLINE Item(Label kw) : keyword{kw} {
+                }
+            };
+            static PLY_INLINE bool match(const Item& item, Key key) {
+                return item.keyword == key;
+            }
+        };
+        HashMap<Traits> map;
+
+        void add(Label keyword, Callback<void>* callback, void* arg) {
+            auto cursor = this->map.insertOrFind(keyword);
+            PLY_ASSERT(!cursor.wasFound());
+            cursor->callback = callback;
+            cursor->arg = arg;
         }
-        virtual bool tryParseExpressionTrait(AnyOwnedObject* expressionTraits) {
-            return false;
+        template <typename T>
+        PLY_INLINE void add(Label keyword, Callback<T>* callback, T* arg) {
+            this->add(keyword, (Callback<void>*) callback, (void*) arg);
         }
     };
-    Hooks defaultHooks;
-    Hooks* hooks = nullptr;
+
+    CustomBlockHooks* customBlockHooks = nullptr;
+
+    struct ExpressionTraitHooks {
+        template <typename T>
+        using Callback = bool(T* hooks, const crowbar::ExpandedToken& kwToken,
+                              AnyOwnedObject* expressionTraits);
+
+        struct Traits {
+            using Key = Label;
+            struct Item {
+                Label keyword;
+                Callback<void>* callback = nullptr;
+                void* arg = nullptr;
+                PLY_INLINE Item(Label kw) : keyword{kw} {
+                }
+            };
+            static PLY_INLINE bool match(const Item& item, Key key) {
+                return item.keyword == key;
+            }
+        };
+        HashMap<Traits> map;
+
+        void add(Label keyword, Callback<void>* callback, void* arg) {
+            auto cursor = this->map.insertOrFind(keyword);
+            PLY_ASSERT(!cursor.wasFound());
+            cursor->callback = callback;
+            cursor->arg = arg;
+        }
+        template <typename T>
+        PLY_INLINE void add(Label keyword, Callback<T>* callback, T* arg) {
+            this->add(keyword, (Callback<void>*) callback, (void*) arg);
+        }
+    };
+
+    ExpressionTraitHooks* exprTraitHooks = nullptr;
 
     // Tokenizer.
     Tokenizer* tkr = nullptr;
@@ -48,8 +104,6 @@ struct Parser {
     };
     Context context;
 
-    Parser() : hooks{&this->defaultHooks} {
-    }
     Owned<Expression> parseExpression(u32 outerPrecendenceLevel = Limits<u32>::Max,
                                       bool asStatement = false);
     void parseStatement(StatementBlock* stmtBlock);

@@ -292,8 +292,15 @@ Owned<Expression> parseExpressionWithTraits(Parser* parser, AnyOwnedObject* expr
     Owned<Expression> expr;
     for (;;) {
         // Try to parse a custom expression trait.
-        if (parser->hooks->tryParseExpressionTrait(expressionTraits))
-            continue;
+        ExpandedToken token = parser->tkr->readToken();
+        if ((token.type == TokenType::Identifier) && parser->exprTraitHooks) {
+            auto cursor = parser->exprTraitHooks->map.find(token.label);
+            if (cursor.wasFound()) {
+                if (cursor->callback(cursor->arg, token, expressionTraits))
+                    continue; // Parsed as an expression trait.
+            }
+        }
+        parser->tkr->rewindTo(token.tokenIdx);
 
         // Try to parse an expression unless we've already obtained one.
         if (expr)
@@ -304,14 +311,26 @@ Owned<Expression> parseExpressionWithTraits(Parser* parser, AnyOwnedObject* expr
     }
 }
 
+bool tryParseCustomBlock(Parser* parser, StatementBlock* stmtBlock) {
+    ExpandedToken token = parser->tkr->readToken();
+    if ((token.type == TokenType::Identifier) && parser->customBlockHooks) {
+        auto cursor = parser->customBlockHooks->map.find(token.label);
+        if (cursor.wasFound()) {
+            if (cursor->callback(cursor->arg, token, stmtBlock))
+                return true; // Parsed as a custom block.
+        }
+    }
+    parser->tkr->rewindTo(token.tokenIdx);
+    return false;
+}
+
 void Parser::parseStatement(StatementBlock* stmtBlock) {
     Label ifKey = LabelMap::instance.insertOrFind("if");
     Label whileKey = LabelMap::instance.insertOrFind("while");
     Label elseKey = LabelMap::instance.insertOrFind("else");
     Label returnKey = LabelMap::instance.insertOrFind("return");
 
-    // Try to parse a custom block.
-    if (this->hooks->tryParseCustomBlock(stmtBlock))
+    if (tryParseCustomBlock(this, stmtBlock))
         return;
 
     // Try to parse a flow control statement.
@@ -522,8 +541,7 @@ Owned<StatementBlock> Parser::parseFile() {
     auto stmtBlock = Owned<StatementBlock>::create();
 
     for (;;) {
-        // Hooks allow the host application to customize parse behavior:
-        if (this->hooks->tryParseCustomBlock(stmtBlock))
+        if (tryParseCustomBlock(this, stmtBlock))
             continue;
 
         // Input was not handled by hooks.
