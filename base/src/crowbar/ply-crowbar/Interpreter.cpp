@@ -10,7 +10,7 @@ namespace crowbar {
 
 HiddenArgFunctor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef) {
     return {[](const Statement::FunctionDefinition* fnDef) -> HybridString {
-                return String::format("function '{}'", LabelMap::instance.view(fnDef->name));
+                return String::format("function '{}'", g_labelStorage->view(fnDef->name));
             },
             fnDef};
 }
@@ -92,7 +92,7 @@ MethodResult evalPropertyLookup(Interpreter::StackFrame* frame,
     // Perform property lookup.
     // FIXME: This should accept interned strings.
     return obj.type->methods.propertyLookup(interp, obj,
-                                            LabelMap::instance.view(propLookup->propertyName));
+                                            g_labelStorage->view(propLookup->propertyName));
 }
 
 MethodResult evalBinaryOp(Interpreter::StackFrame* frame, const Expression::BinaryOp* binaryOp) {
@@ -214,7 +214,7 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
             interp->returnValue = lookupName(frame, expr->nameLookup()->name);
             if (!interp->returnValue.data) {
                 interp->error(String::format("cannot resolve identifier '{}'",
-                                             LabelMap::instance.view(expr->nameLookup()->name)));
+                                             g_labelStorage->view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
             return MethodResult::OK;

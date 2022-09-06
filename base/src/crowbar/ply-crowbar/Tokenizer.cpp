@@ -126,7 +126,7 @@ PLY_NO_INLINE u32 expandTokenInternal(ExpandedToken& expToken, Tokenizer* tkr, u
         const char* data = start;
         expToken.fileOffset =
             tkr->fileOffsetTable[tokenIdx >> 8] + details::LabelEncoder::decodeValue(data);
-        expToken.type = (TokenType)(u8) *data++;
+        expToken.type = (TokenType) (u8) *data++;
         if (expToken.type == TokenType::Identifier || expToken.type == TokenType::StringLiteral) {
             // Read the label index
             expToken.label.idx = details::LabelEncoder::decodeValue(data);
@@ -191,7 +191,7 @@ PLY_NO_INLINE void readIdentifier(ExpandedToken& expToken, Tokenizer* tkr) {
 
     StringView text = StringView::fromRange(start, tkr->vin.cur);
     expToken.type = TokenType::Identifier;
-    expToken.label = LabelMap::instance.insertOrFind(text);
+    expToken.label = g_labelStorage->insert(text);
     expToken.text = text;
 }
 
@@ -256,8 +256,8 @@ eofError:
 gotStringLiteral:
     String text = mout.moveToString();
     expToken.type = TokenType::StringLiteral;
-    expToken.label = LabelMap::instance.insertOrFind(text);
-    expToken.text = LabelMap::instance.view(expToken.label);
+    expToken.label = g_labelStorage->insert(text);
+    expToken.text = g_labelStorage->view(expToken.label);
 }
 
 PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {

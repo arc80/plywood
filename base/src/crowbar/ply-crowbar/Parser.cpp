@@ -325,10 +325,10 @@ bool tryParseCustomBlock(Parser* parser, StatementBlock* stmtBlock) {
 }
 
 void Parser::parseStatement(StatementBlock* stmtBlock) {
-    Label ifKey = LabelMap::instance.insertOrFind("if");
-    Label whileKey = LabelMap::instance.insertOrFind("while");
-    Label elseKey = LabelMap::instance.insertOrFind("else");
-    Label returnKey = LabelMap::instance.insertOrFind("return");
+    Label ifKey = g_labelStorage->insert("if");
+    Label whileKey = g_labelStorage->insert("while");
+    Label elseKey = g_labelStorage->insert("else");
+    Label returnKey = g_labelStorage->insert("return");
 
     if (tryParseCustomBlock(this, stmtBlock))
         return;
@@ -537,7 +537,7 @@ void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
 }
 
 Owned<StatementBlock> Parser::parseFile() {
-    Label fnKey = LabelMap::instance.insertOrFind("fn");
+    Label fnKey = g_labelStorage->insert("fn");
     auto stmtBlock = Owned<StatementBlock>::create();
 
     for (;;) {

@@ -35,7 +35,7 @@ PLY_INLINE Hasher& operator<<(Hasher& hasher, const Label& label) {
     return hasher;
 }
 
-struct LabelMap {
+struct LabelStorage {
 private:
     struct Traits {
         using Key = StringView;
@@ -53,12 +53,13 @@ private:
     HashMap<Traits> strToIndex;
 
 public:
-    LabelMap();
-    Label insertOrFind(StringView view);
+    static void initialize();
+
+    Label insert(StringView view);
     Label find(StringView view) const;
     StringView view(Label label) const;
-
-    static LabelMap instance;
 };
+
+extern LabelStorage* g_labelStorage;
 
 } // namespace ply

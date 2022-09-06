@@ -75,9 +75,9 @@ void Repository::create() {
             crowbar::MapNamespace builtIns;
             static bool true_ = true;
             static bool false_ = false;
-            builtIns.map.insertOrFind(LabelMap::instance.insertOrFind("true"))->obj =
+            builtIns.map.insertOrFind(g_labelStorage->insert("true"))->obj =
                 AnyObject::bind(&true_);
-            builtIns.map.insertOrFind(LabelMap::instance.insertOrFind("false"))->obj =
+            builtIns.map.insertOrFind(g_labelStorage->insert("false"))->obj =
                 AnyObject::bind(&false_);
             interp.outerNameSpaces.append(&builtIns);
 
@@ -86,8 +86,8 @@ void Repository::create() {
             frame.interp = &interp;
             frame.desc = {[](Module* mod) -> HybridString {
                               return String::format("config_options for {} '{}'",
-                                                    LabelMap::instance.view(mod->block->type),
-                                                    LabelMap::instance.view(mod->block->name));
+                                                    g_labelStorage->view(mod->block->type),
+                                                    g_labelStorage->view(mod->block->name));
                           },
                           mod};
             frame.tkr = &mod->plyfile->tkr;
@@ -104,7 +104,7 @@ PLY_NO_INLINE MethodTable getMethodTable_Repository_ConfigOptions() {
     MethodTable methods;
     methods.propertyLookup = [](BaseInterpreter* interp, const AnyObject& obj,
                                 StringView propertyName) -> MethodResult {
-        Label label = LabelMap::instance.find(propertyName);
+        Label label = g_labelStorage->find(propertyName);
         if (label.isValid()) {
             auto* configOpts = obj.cast<Repository::ConfigOptions>();
             auto cursor = configOpts->map.find(label);

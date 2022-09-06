@@ -54,7 +54,7 @@ bool parseModuleOrExecutableBlock(ExtendedParser* ep, const crowbar::ExpandedTok
     if (cursor.wasFound()) {
         error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
               String::format("'{}' was already defined as {}", kwToken.text,
-                             LabelMap::instance.view((*cursor)->block->type)));
+                             g_labelStorage->view((*cursor)->block->type)));
         ep->parser->recovery.muteErrors = false;
         ep->parser->errorOut->format(
             "{}: ... see previous definition\n",
@@ -148,8 +148,8 @@ bool parseConfigOptionsBlock(ExtendedParser* ep, const crowbar::ExpandedToken& k
         if (ep->currentModule->configBlock) {
             error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
                   String::format("{} '{}' already has a config_options block",
-                                 LabelMap::instance.view(ep->currentModule->block->type),
-                                 LabelMap::instance.view(ep->currentModule->block->name)));
+                                 g_labelStorage->view(ep->currentModule->block->type),
+                                 g_labelStorage->view(ep->currentModule->block->name)));
             ep->parser->recovery.muteErrors = false;
             ep->parser->errorOut->format(
                 "{}: see previous definition\n",
