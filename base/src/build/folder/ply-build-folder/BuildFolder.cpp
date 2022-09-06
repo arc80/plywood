@@ -371,7 +371,7 @@ struct ConfigListInterpreterHooks : crowbar::Interpreter::Hooks {
         this->mi->configBit = (u64{1} << configIndex);
         for (StringView targetName : this->buildFolder->rootTargets) {
             buildSteps::Node* rootNode = latest::instantiateModuleForCurrentConfig(
-                this->mi, g_labelStorage->insert(targetName));
+                this->mi, g_labelStorage.insert(targetName));
             PLY_ASSERT(rootNode); // FIXME: Handle elegantly
             if (find(this->mi->project.rootNodes, rootNode) < 0) {
                 this->mi->project.rootNodes.append(rootNode);
@@ -440,9 +440,9 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
         crowbar::MapNamespace builtIns;
         static bool true_ = true;
         static bool false_ = false;
-        builtIns.map.insertOrFind(g_labelStorage->insert("true"))->obj =
+        builtIns.map.insertOrFind(g_labelStorage.insert("true"))->obj =
             AnyObject::bind(&true_);
-        builtIns.map.insertOrFind(g_labelStorage->insert("false"))->obj =
+        builtIns.map.insertOrFind(g_labelStorage.insert("false"))->obj =
             AnyObject::bind(&false_);
         interp.outerNameSpaces.append(&builtIns);
 

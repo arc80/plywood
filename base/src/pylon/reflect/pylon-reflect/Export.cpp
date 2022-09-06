@@ -28,7 +28,7 @@ PLY_NO_INLINE Owned<pylon::Node> exportObj(AnyObject obj, const FilterFunc& filt
         const TypeDescriptor_Array* arrayType = obj.type->cast<TypeDescriptor_Array>();
         TypeDescriptor* itemType = arrayType->itemType;
         u32 itemSize = itemType->fixedSize;
-        details::BaseArray* arr = (details::BaseArray*) obj.data;
+        impl::BaseArray* arr = (impl::BaseArray*) obj.data;
         Array<Owned<Node>>& childNodes = arrNode->array();
         childNodes.resize(arr->m_numItems);
         for (u32 i : range(arr->m_numItems)) {
@@ -41,7 +41,7 @@ PLY_NO_INLINE Owned<pylon::Node> exportObj(AnyObject obj, const FilterFunc& filt
         u16 id = *(u16*) obj.data;
         Owned<Node> objNode = Node::createObject();
         AnyObject typedState{PLY_PTR_OFFSET(obj.data, switchType->storageOffset),
-                            switchType->states[id].structType};
+                             switchType->states[id].structType};
         objNode->set(switchType->states[id].name.view(), exportObj(typedState, filter));
         return objNode;
     } else if (obj.type->typeKey == &TypeKey_Bool) {

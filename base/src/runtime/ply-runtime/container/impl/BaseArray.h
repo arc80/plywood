@@ -6,7 +6,7 @@
 #include <ply-runtime/Core.h>
 
 namespace ply {
-namespace details {
+namespace impl {
 
 //---------------------------------------------------
 // BaseArray
@@ -26,5 +26,5 @@ struct BaseArray {
     PLY_DLL_ENTRY void truncate(u32 itemSize);
 };
 
-} // namespace details
+} // namespace impl
 } // namespace ply

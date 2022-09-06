@@ -10,7 +10,7 @@
 // https://en.cppreference.com/w/cpp/language/range-for
 
 namespace ply {
-namespace details {
+namespace impl {
 
 PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasBeginMember, std::declval<T0>().begin())
 PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasBeginADL, begin(std::declval<T0>()))
@@ -34,5 +34,5 @@ struct ItemTypeImpl<
 template <typename T>
 using ItemType = std::decay_t<typename ItemTypeImpl<std::remove_reference_t<T>, void>::Type>;
 
-} // namespace details
+} // namespace impl
 } // namespace ply

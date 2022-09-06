@@ -34,12 +34,12 @@ MethodResult doPrint(BaseInterpreter* interp, const AnyObject& callee,
 
 // FIXME: Move this to the crowbar module:
 void addBuiltIns(HashMap<VariableMapTraits>& ns) {
-    ns.insertOrFind(g_labelStorage->insert("print"))->obj = AnyObject::bind(doPrint);
+    ns.insertOrFind(g_labelStorage.insert("print"))->obj = AnyObject::bind(doPrint);
 
     static bool true_ = true;
     static bool false_ = false;
-    ns.insertOrFind(g_labelStorage->insert("true"))->obj = AnyObject::bind(&true_);
-    ns.insertOrFind(g_labelStorage->insert("false"))->obj = AnyObject::bind(&false_);
+    ns.insertOrFind(g_labelStorage.insert("true"))->obj = AnyObject::bind(&true_);
+    ns.insertOrFind(g_labelStorage.insert("false"))->obj = AnyObject::bind(&false_);
 }
 
 String callScriptFunction(StringView src, StringView funcName, ArrayView<const AnyObject> args) {
@@ -70,7 +70,7 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
     }
 
     // Invoke function if it exists
-    auto testFuncCursor = ns.map.find(g_labelStorage->find(funcName));
+    auto testFuncCursor = ns.map.find(g_labelStorage.find(funcName));
     if (testFuncCursor.wasFound()) {
         const AnyObject& testObj = testFuncCursor->obj;
         MemOutStream outs;

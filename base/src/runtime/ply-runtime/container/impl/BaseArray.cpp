@@ -3,11 +3,11 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
-#include <ply-runtime/container/details/BaseArray.h>
+#include <ply-runtime/container/impl/BaseArray.h>
 #include <ply-runtime/memory/Heap.h>
 
 namespace ply {
-namespace details {
+namespace impl {
 
 PLY_NO_INLINE void BaseArray::alloc(u32 numItems, u32 itemSize) {
     m_allocated = roundUpPowerOf2(numItems);
@@ -41,5 +41,5 @@ PLY_NO_INLINE void BaseArray::truncate(u32 itemSize) {
     m_items = PLY_HEAP.realloc(m_items, ureg(m_allocated) * itemSize);
 }
 
-} // namespace details
+} // namespace impl
 } // namespace ply

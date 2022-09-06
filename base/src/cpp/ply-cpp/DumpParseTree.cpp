@@ -55,7 +55,7 @@ void dumpParseTree(OutStream* outs, AnyObject any, u32 indent, const PPVisitedFi
         TypeDescriptor_Array* arrayType = any.type->cast<TypeDescriptor_Array>();
         TypeDescriptor* itemType = arrayType->itemType;
         *outs << "[]\n";
-        details::BaseArray* arr = (details::BaseArray*) any.data;
+        impl::BaseArray* arr = (impl::BaseArray*) any.data;
         void* item = arr->m_items;
         for (u32 i = 0; i < arr->m_numItems; i++) {
             doIndent();

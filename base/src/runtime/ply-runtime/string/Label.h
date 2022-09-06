@@ -19,7 +19,7 @@ struct Label {
     }
     explicit PLY_INLINE Label(u32 idx) : idx{idx} {
     }
-    PLY_INLINE bool isValid() const {
+    explicit PLY_INLINE operator bool() const {
         return idx != 0;
     }
     PLY_INLINE bool operator==(const Label& other) const {
@@ -53,13 +53,13 @@ private:
     HashMap<Traits> strToIndex;
 
 public:
-    static void initialize();
+    LabelStorage();
 
     Label insert(StringView view);
     Label find(StringView view) const;
     StringView view(Label label) const;
 };
 
-extern LabelStorage* g_labelStorage;
+extern LabelStorage g_labelStorage;
 
 } // namespace ply

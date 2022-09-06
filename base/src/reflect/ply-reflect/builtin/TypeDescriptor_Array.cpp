@@ -20,12 +20,12 @@ NativeBindings& getNativeBindings_Array() {
             PLY_ASSERT(0); // Not supported
         },
         // construct
-        [](AnyObject obj) { new (obj.data) details::BaseArray; },
+        [](AnyObject obj) { new (obj.data) impl::BaseArray; },
         // destruct
         [](AnyObject obj) {
             TypeDescriptor_Array* arrayType = obj.type->cast<TypeDescriptor_Array>();
             TypeDescriptor* itemType = arrayType->itemType;
-            details::BaseArray* arr = (details::BaseArray*) obj.data;
+            impl::BaseArray* arr = (impl::BaseArray*) obj.data;
             void* item = arr->m_items;
             u32 itemSize = itemType->fixedSize;
             // FIXME: Skip this loop if itemType is trivially

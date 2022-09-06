@@ -50,7 +50,7 @@ struct TypedArrayView {
 
 class TypedArray {
 public:
-    details::BaseArray m_array;
+    impl::BaseArray m_array;
     Reference<TypeDescriptorOwner> m_typeOwner = TypeOwnerResolver<EmptyType>::get();
 
     PLY_INLINE TypedArrayView view() {

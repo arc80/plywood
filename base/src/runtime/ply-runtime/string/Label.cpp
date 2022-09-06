@@ -8,12 +8,10 @@
 
 namespace ply {
 
-LabelStorage* g_labelStorage = nullptr;
+LabelStorage g_labelStorage;
 
-PLY_NO_INLINE void LabelStorage::initialize() {
-    PLY_ASSERT(!g_labelStorage);
-    g_labelStorage = new LabelStorage;
-    g_labelStorage->bigPool.append('\0');
+PLY_NO_INLINE LabelStorage::LabelStorage() {
+    this->bigPool.append('\0');
 }
 
 PLY_NO_INLINE Label LabelStorage::insert(StringView view) {

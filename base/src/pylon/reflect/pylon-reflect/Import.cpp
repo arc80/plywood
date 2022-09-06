@@ -156,7 +156,7 @@ PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
         PLY_ASSERT(aNode->isArray());
         ArrayView<const Node* const> aNodeArr = aNode->arrayView();
         auto* arrType = static_cast<TypeDescriptor_Array*>(obj.type);
-        details::BaseArray* arr = (details::BaseArray*) obj.data;
+        impl::BaseArray* arr = (impl::BaseArray*) obj.data;
         u32 oldArrSize = arr->m_numItems;
         u32 newArrSize = aNodeArr.numItems;
         u32 itemSize = arrType->itemType->fixedSize;
@@ -255,7 +255,7 @@ PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
 }
 
 PLY_NO_INLINE AnyOwnedObject import(TypeDescriptor* typeDesc, const Node* aRoot,
-                                 const Functor<TypeFromName>& typeFromName) {
+                                    const Functor<TypeFromName>& typeFromName) {
     AnyOwnedObject result = AnyObject::create(typeDesc);
     convertFrom(result, aRoot, typeFromName);
     return result;

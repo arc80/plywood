@@ -126,15 +126,15 @@ struct ModuleNamespace : crowbar::INamespace {
 ModuleInstantiator::ModuleInstantiator(StringView buildFolderPath)
     : buildFolderPath{buildFolderPath} {
     Owned<crowbar::MapNamespace> globalNamespace = Owned<crowbar::MapNamespace>::create();
-    globalNamespace->map.insertOrFind(g_labelStorage->insert("join_path"))->obj =
+    globalNamespace->map.insertOrFind(g_labelStorage.insert("join_path"))->obj =
         AnyObject::bind(doJoinPath);
-    globalNamespace->map.insertOrFind(g_labelStorage->insert("build_folder"))->obj =
+    globalNamespace->map.insertOrFind(g_labelStorage.insert("build_folder"))->obj =
         AnyObject::bind(&this->buildFolderPath);
     this->globalNamespace = std::move(globalNamespace);
 }
 
 buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel) {
-    StringView moduleName = g_labelStorage->view(moduleLabel);
+    StringView moduleName = g_labelStorage.view(moduleLabel);
 
     // Check if a buildSteps::Node was already created for this moduleName.
     buildSteps::Node* node;
@@ -196,7 +196,7 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     crowbar::Interpreter::StackFrame frame;
     frame.interp = &interp;
     frame.desc = {[](const crowbar::Statement::CustomBlock* moduleDef) -> HybridString {
-                      return String::format("module '{}'", g_labelStorage->view(moduleDef->name));
+                      return String::format("module '{}'", g_labelStorage.view(moduleDef->name));
                   },
                   moduleDef};
     frame.tkr = &(*funcCursor)->plyfile->tkr;

@@ -5,7 +5,7 @@
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/container/ArrayView.h>
-#include <ply-runtime/container/details/BaseArray.h>
+#include <ply-runtime/container/impl/BaseArray.h>
 #include <ply-runtime/memory/Heap.h>
 #include <ply-runtime/string/StringMixin.h>
 
@@ -72,7 +72,7 @@ public:
         Array<u32> arr = other;
     */
     PLY_INLINE Array(const Array& other) {
-        ((details::BaseArray&) *this).alloc(other.numItems_, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).alloc(other.numItems_, (u32) sizeof(T));
         subst::unsafeConstructArrayFrom(this->items, other.items, other.numItems_);
     }
 
@@ -95,7 +95,7 @@ public:
     */
     PLY_NO_INLINE Array(InitList<T> init) {
         u32 initSize = safeDemote<u32>(init.size());
-        ((details::BaseArray&) *this).alloc(initSize, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).alloc(initSize, (u32) sizeof(T));
         subst::constructArrayFrom(this->items, init.begin(), initSize);
     }
 
@@ -116,7 +116,7 @@ public:
     */
     template <typename Other, typename U = details::ArrayViewType<Other>>
     PLY_INLINE Array(Other&& other) {
-        ((details::BaseArray&) *this).alloc(ArrayView<U>{other}.numItems, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).alloc(ArrayView<U>{other}.numItems, (u32) sizeof(T));
         details::moveOrCopyConstruct(this->items, std::forward<Other>(other));
     }
 
@@ -125,7 +125,7 @@ public:
     */
     PLY_INLINE ~Array() {
         PLY_STATIC_ASSERT(sizeof(Array) ==
-                          sizeof(details::BaseArray)); // Sanity check binary compatibility
+                          sizeof(impl::BaseArray)); // Sanity check binary compatibility
         subst::destructArray(this->items, this->numItems_);
         PLY_HEAP.free(this->items);
     }
@@ -140,7 +140,7 @@ public:
     */
     PLY_INLINE void operator=(const Array& other) {
         subst::destructArray(this->items, this->numItems_);
-        ((details::BaseArray&) *this).realloc(other.numItems_, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).realloc(other.numItems_, (u32) sizeof(T));
         subst::unsafeConstructArrayFrom(this->items, other.items, other.numItems_);
     }
 
@@ -163,7 +163,7 @@ public:
     PLY_INLINE void operator=(std::initializer_list<T> init) {
         subst::destructArray(this->items, this->numItems_);
         u32 initSize = safeDemote<u32>(init.size());
-        ((details::BaseArray&) *this).realloc(initSize, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).realloc(initSize, (u32) sizeof(T));
         subst::unsafeConstructArrayFrom(this->items, init.begin(), initSize);
     }
 
@@ -187,7 +187,7 @@ public:
     template <typename Other, typename U = details::ArrayViewType<Other>>
     PLY_INLINE void operator=(Other&& other) {
         subst::destructArray(this->items, this->numItems_);
-        ((details::BaseArray&) *this).realloc(ArrayView<U>{other}.numItems, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).realloc(ArrayView<U>{other}.numItems, (u32) sizeof(T));
         details::moveOrCopyConstruct(this->items, std::forward<Other>(other));
     }
 
@@ -314,7 +314,7 @@ public:
     reallocation as the array grows in size.
     */
     PLY_INLINE void reserve(u32 numItems) {
-        ((details::BaseArray&) *this).reserve(numItems, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).reserve(numItems, (u32) sizeof(T));
     }
 
     /*!
@@ -326,7 +326,7 @@ public:
         if (numItems < this->numItems_) {
             subst::destructArray(this->items + numItems, this->numItems_ - numItems);
         }
-        ((details::BaseArray&) *this).reserve(numItems, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).reserve(numItems, (u32) sizeof(T));
         if (numItems > this->numItems_) {
             subst::constructArray(this->items + this->numItems_, numItems - this->numItems_);
         }
@@ -338,7 +338,7 @@ public:
     items.
     */
     PLY_INLINE void truncate() {
-        ((details::BaseArray&) *this).truncate((u32) sizeof(T));
+        ((impl::BaseArray&) *this).truncate((u32) sizeof(T));
     }
 
     /*!
@@ -349,7 +349,7 @@ public:
     */
     PLY_INLINE T& append(T&& item) {
         if (this->numItems_ >= this->allocated) {
-            ((details::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
+            ((impl::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
         }
         T* result = new (this->items + this->numItems_) T{std::move(item)};
         this->numItems_++;
@@ -357,7 +357,7 @@ public:
     }
     PLY_INLINE T& append(const T& item) {
         if (this->numItems_ >= this->allocated) {
-            ((details::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
+            ((impl::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
         }
         T* result = new (this->items + this->numItems_) T{item};
         this->numItems_++;
@@ -366,7 +366,7 @@ public:
     template <typename... Args>
     PLY_INLINE T& append(Args&&... args) {
         if (this->numItems_ >= this->allocated) {
-            ((details::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
+            ((impl::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
         }
         T* result = new (this->items + this->numItems_) T{std::forward<Args>(args)...};
         this->numItems_++;
@@ -396,14 +396,14 @@ public:
     */
     PLY_INLINE void extend(InitList<T> init) {
         u32 initSize = safeDemote<u32>(init.size());
-        ((details::BaseArray&) *this).reserve(this->numItems_ + initSize, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).reserve(this->numItems_ + initSize, (u32) sizeof(T));
         subst::constructArrayFrom(this->items + this->numItems_, init.begin(), initSize);
         this->numItems_ += initSize;
     }
     template <typename Other, typename U = details::ArrayViewType<Other>>
     PLY_INLINE void extend(Other&& other) {
         u32 numOtherItems = ArrayView<U>{other}.numItems;
-        ((details::BaseArray&) *this).reserve(this->numItems_ + numOtherItems, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).reserve(this->numItems_ + numOtherItems, (u32) sizeof(T));
         details::moveOrCopyConstruct(this->items + this->numItems_, std::forward<Other>(other));
         this->numItems_ += numOtherItems;
     }
@@ -416,7 +416,7 @@ public:
     constructed from the items in `other`.
     */
     PLY_NO_INLINE void moveExtend(ArrayView<T> other) {
-        ((details::BaseArray&) *this).reserve(this->numItems_ + other.numItems, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).reserve(this->numItems_ + other.numItems, (u32) sizeof(T));
         subst::moveConstructArray(this->items + this->numItems_, other.items, other.numItems);
         this->numItems_ += other.numItems;
     }
@@ -435,7 +435,7 @@ public:
     */
     PLY_NO_INLINE T& insert(u32 pos, u32 count = 1) {
         PLY_ASSERT(pos <= this->numItems_);
-        ((details::BaseArray&) *this).reserve(this->numItems_ + count, (u32) sizeof(T));
+        ((impl::BaseArray&) *this).reserve(this->numItems_ + count, (u32) sizeof(T));
         memmove(static_cast<void*>(this->items + pos + count),
                 static_cast<const void*>(this->items + pos),
                 (this->numItems_ - pos) * sizeof(T)); // Underlying type is relocatable
@@ -599,7 +599,7 @@ PLY_INLINE auto operator+(Arr0&& a, Arr1&& b) {
     u32 numItemsB = ArrayView<T1>{b}.numItems;
 
     Array<std::remove_const_t<T0>> result;
-    ((details::BaseArray&) result).alloc(numItemsA + numItemsB, (u32) sizeof(T0));
+    ((impl::BaseArray&) result).alloc(numItemsA + numItemsB, (u32) sizeof(T0));
     details::moveOrCopyConstruct(result.items, std::forward<Arr0>(a));
     details::moveOrCopyConstruct(result.items + numItemsA, std::forward<Arr1>(b));
     return result;

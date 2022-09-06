@@ -20,7 +20,7 @@ bool test() {
     for (u32 i = 0; i < mi.project.configs.numItems(); i++) {
         mi.currentConfig = i;
         buildSteps::Node* node =
-            instantiateModuleForCurrentConfig(&mi, g_labelStorage->find("HelloWorld"));
+            instantiateModuleForCurrentConfig(&mi, g_labelStorage.find("HelloWorld"));
         if (!node)
             return false;
         mi.project.rootNodes.append(node);

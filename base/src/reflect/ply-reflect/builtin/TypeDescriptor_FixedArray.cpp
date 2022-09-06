@@ -68,8 +68,7 @@ NativeBindings& getNativeBindings_FixedArray() {
                 }
             } else if (src.type->typeKey == &TypeKey_Array) {
                 const TypeDescriptor_Array* srcArrType = src.type->cast<TypeDescriptor_Array>();
-                const details::BaseArray* baseSrcArray =
-                    reinterpret_cast<details::BaseArray*>(src.data);
+                const impl::BaseArray* baseSrcArray = reinterpret_cast<impl::BaseArray*>(src.data);
                 TypeDescriptor* srcItemType = srcArrType->itemType;
                 // FIXME: Warn about size mismatch
                 u32 itemsToCopy = min<u32>(dstArrType->numItems, baseSrcArray->m_numItems);

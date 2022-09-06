@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/details/ItemType.h>
+#include <ply-runtime/container/impl/ItemType.h>
 #include <ply-runtime/container/Subst.h>
 
 namespace ply {
