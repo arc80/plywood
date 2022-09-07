@@ -16,7 +16,7 @@ struct BaseLabelMap {
 
     Cell* cells = nullptr;
     u32 population = 0;
-    u32 sizeMask = 0;
+    u32 capacity = 0;
 
     enum Operation { Find, Insert, Erase, Repopulate };
 

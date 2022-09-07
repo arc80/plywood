@@ -10,6 +10,9 @@
 namespace ply {
 
 template <typename T>
+struct LabelMapIterator;
+
+template <typename T>
 class LabelMap {
 private:
     struct Cell {
@@ -19,44 +22,49 @@ private:
 
     Cell* cells;
     u32 population;
-    u32 sizeMask;
+    u32 capacity; // Always a power of 2
 
-    using namespace impl;
+    using Base = impl::BaseLabelMap;
+    template <typename T>
+    friend struct LabelMapIterator;
 
 public:
     PLY_INLINE LabelMap() {
         PLY_PUN_SCOPE
-        construct((BaseLabelMap*) this, &BaseLabelMap::typeInfo<T>);
+        construct((Base*) this, &Base::typeInfo<T>);
     }
 
     PLY_INLINE ~LabelMap() {
         PLY_PUN_SCOPE
-        destruct((BaseLabelMap*) this, &BaseLabelMap::typeInfo<T>);
+        destruct((Base*) this, &Base::typeInfo<T>);
+    }
+
+    PLY_INLINE u32 numItems() const {
+        return this->population;
     }
 
     PLY_INLINE T* find(Label key) {
         PLY_PUN_SCOPE
         T* value;
-        operate((BaseLabelMap*) this, BaseLabelMap::Find, key, &BaseLabelMap::typeInfo<T>, &value);
+        operate((Base*) this, Base::Find, key, &Base::typeInfo<T>, (void**) &value);
         return value;
     }
 
     PLY_INLINE const T* find(Label key) const {
         PLY_PUN_SCOPE
         const T* value;
-        operate((BaseLabelMap*) this, BaseLabelMap::Find, key, &BaseLabelMap::typeInfo<T>, &value);
+        operate((Base*) this, Base::Find, key, &Base::typeInfo<T>, &value);
         return value;
     }
 
-    PLY_INLINE bool insert(Label key, T** value) {
+    PLY_INLINE bool insertOrFind(Label key, T** value) {
         PLY_PUN_SCOPE
-        return operate((BaseLabelMap*) this, BaseLabelMap::Insert, key, &BaseLabelMap::typeInfo<T>,
-                       value);
+        return operate((Base*) this, Base::Insert, key, &Base::typeInfo<T>, (void**) value);
     }
 
     struct Item {
         Label key;
-        T* value;
+        T& value;
     };
     LabelMapIterator<T> begin();
     LabelMapIterator<T> end();
@@ -66,29 +74,35 @@ public:
 
 template <typename T>
 struct LabelMapIterator {
-    LabelMap<T>* map;
+    using Map = LabelMap<T>;
+    using Cell = typename Map::Cell;
+    using Item = typename Map::Item;
+
+    Map* map;
     u32 index;
 
-    PLY_INLINE Item operator++() const {
+    PLY_INLINE void operator++() {
+        u32 mask = this->map->capacity - 1;
         while (true) {
             this->index++;
-            PLY_ASSERT(this->index <= this->map->sizeMask + 1);
-            if (this->index > this->map->sizeMask)
+            PLY_ASSERT(this->index <= this->map->capacity);
+            if (this->index >= this->map->capacity)
                 break;
-            Cell* cell = this->map->cells + ((this->index & this->map->sizeMask) >> 2);
+            Cell* cell = this->map->cells + ((this->index & mask) >> 2);
             if (cell->keys[this->index & 3])
                 break;
         }
     }
 
-    bool operator!=(const Iterator& other) const {
+    PLY_INLINE bool operator!=(const LabelMapIterator& other) const {
         PLY_ASSERT(this->map == other.map);
         return this->index != other.index;
     }
 
     PLY_INLINE Item operator*() const {
-        PLY_ASSERT(this->index <= this->map->sizeMask);
-        Cell* cell = this->map->cells + ((this->index & this->map->sizeMask) >> 2);
+        u32 mask = this->map->capacity - 1;
+        PLY_ASSERT(this->index < this->map->capacity);
+        Cell* cell = this->map->cells + ((this->index & mask) >> 2);
         u32 cellIdx = (this->index & 3);
         PLY_ASSERT(cell->keys[cellIdx]);
         return {cell->keys[cellIdx], cell->values[cellIdx]};
@@ -97,26 +111,26 @@ struct LabelMapIterator {
 
 template <typename T>
 PLY_INLINE LabelMapIterator<T> LabelMap<T>::begin() {
-    LabelMapIterator iter{this, -1};
+    LabelMapIterator<T> iter{this, (u32) -1};
     ++iter;
     return iter;
 }
 
 template <typename T>
 PLY_INLINE LabelMapIterator<T> LabelMap<T>::end() {
-    return {this, this->sizeMask + 1};
+    return {this, this->capacity};
 }
 
 template <typename T>
 PLY_INLINE LabelMapIterator<const T> LabelMap<T>::begin() const {
-    LabelMapIterator iter{this, -1};
+    LabelMapIterator<const T> iter{this, (u32) -1};
     ++iter;
     return iter;
 }
 
 template <typename T>
 PLY_INLINE LabelMapIterator<const T> LabelMap<T>::end() const {
-    return {this, this->sizeMask + 1};
+    return {this, this->capacity};
 }
 
 } // namespace ply
