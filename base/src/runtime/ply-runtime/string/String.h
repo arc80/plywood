@@ -243,12 +243,12 @@ struct String : StringMixin<String> {
     */
 };
 
-namespace details {
+namespace impl {
 template <>
 struct InitListType<String> {
     using Type = StringView;
 };
-} // namespace details
+} // namespace impl
 
 template <typename Derived>
 PLY_INLINE String StringMixin<Derived>::operator+(StringView other) const {

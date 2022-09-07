@@ -221,7 +221,7 @@ struct ArrayView {
     */
 };
 
-namespace details {
+namespace impl {
 
 // There's an ArrayTraits specialization for each array-like class template in this library.
 // If ArrayTraits<Arr>::ItemType is well-formed, Arr is convertible to ArrayView of that type.
@@ -261,7 +261,7 @@ PLY_INLINE void moveOrCopyConstruct(T* dst, Arr&& src) {
     subst::constructArrayFrom(dst, srcView.items, srcView.numItems);
 }
 
-} // namespace details
+} // namespace impl
 
 /*!
 \addToClass ArrayView
@@ -280,8 +280,8 @@ PLY_NO_INLINE bool operator==(ArrayView<T0> a, ArrayView<T1> b) {
     }
     return true;
 }
-template <typename Arr0, typename Arr1, typename T0 = details::ArrayViewType<Arr0>,
-          typename T1 = details::ArrayViewType<Arr1>>
+template <typename Arr0, typename Arr1, typename T0 = impl::ArrayViewType<Arr0>,
+          typename T1 = impl::ArrayViewType<Arr1>>
 PLY_INLINE bool operator==(Arr0&& a, Arr1&& b) {
     return ArrayView<T0>{a} == ArrayView<T1>{b};
 }

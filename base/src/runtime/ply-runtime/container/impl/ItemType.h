@@ -5,7 +5,7 @@
 #pragma once
 #include <ply-runtime/Core.h>
 
-// Define alias template ply::details::ItemType<T> that models the item type used in a range-based
+// Define alias template ply::impl::ItemType<T> that models the item type used in a range-based
 // for loop over an instance of T, according to the rules of
 // https://en.cppreference.com/w/cpp/language/range-for
 

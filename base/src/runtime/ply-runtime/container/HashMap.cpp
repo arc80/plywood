@@ -7,7 +7,7 @@
 #include <string.h>
 
 namespace ply {
-namespace details {
+namespace impl {
 
 //------------------------------------------------------------------
 // HashMap
@@ -30,12 +30,12 @@ PLY_NO_INLINE void HashMap::moveAssign(const Callbacks* cb, HashMap&& other) {
     if (m_cellGroups) {
         destroyTable(cb, m_cellGroups, m_sizeMask + 1);
     }
-    new (this) details::HashMap{std::move((details::HashMap&) other)};
+    new (this) impl::HashMap{std::move((impl::HashMap&) other)};
 }
 
 PLY_NO_INLINE void HashMap::clear(const Callbacks* cb) {
     if (m_cellGroups) {
-        details::HashMap::destroyTable(cb, m_cellGroups, m_sizeMask + 1);
+        impl::HashMap::destroyTable(cb, m_cellGroups, m_sizeMask + 1);
     }
     m_cellGroups = nullptr;
     m_sizeMask = 0;
@@ -335,16 +335,16 @@ PLY_NO_INLINE void HashMap::Cursor::constructFindWithInsert(const Callbacks* cb,
     m_map = map;
     for (;;) {
         m_findResult = m_map->insertOrFind(&m_findInfo, cb, key, context, flags);
-        if (m_findResult != details::HashMap::FindResult::Overflow) {
-            if (m_findResult == details::HashMap::FindResult::InsertedNew) {
+        if (m_findResult != impl::HashMap::FindResult::Overflow) {
+            if (m_findResult == impl::HashMap::FindResult::InsertedNew) {
                 m_map->m_population++;
             }
             return;
         }
         // Insert overflow. Migrate and try again.
-        reinterpret_cast<details::HashMap*>(m_map)->migrateToNewTable(cb);
+        reinterpret_cast<impl::HashMap*>(m_map)->migrateToNewTable(cb);
     }
 }
 
-} // namespace details
+} // namespace impl
 } // namespace ply

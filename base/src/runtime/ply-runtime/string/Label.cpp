@@ -21,12 +21,12 @@ PLY_NO_INLINE Label LabelStorage::insert(StringView view) {
     if (cursor.wasFound())
         return Label{*cursor};
 
-    u32 numEntryBytes = details::LabelEncoder::getEncLen(view.numBytes) + view.numBytes;
+    u32 numEntryBytes = impl::LabelEncoder::getEncLen(view.numBytes) + view.numBytes;
     u32 resultID = safeDemote<u32>(this->bigPool.numItems());
     *cursor = resultID;
 
     char* ptr = this->bigPool.alloc(numEntryBytes);
-    details::LabelEncoder::encodeValue(ptr, view.numBytes);
+    impl::LabelEncoder::encodeValue(ptr, view.numBytes);
     memcpy(ptr, view.bytes, view.numBytes);
     PLY_ASSERT(ptr + view.numBytes == this->bigPool.end());
     return Label{resultID};
@@ -45,7 +45,7 @@ PLY_NO_INLINE StringView LabelStorage::view(Label label) const {
     PLY_RACE_DETECT_GUARD(this->raceDetector);
 
     const char* ptr = this->bigPool.get(label.idx);
-    u32 numBytes = details::LabelEncoder::decodeValue(ptr);
+    u32 numBytes = impl::LabelEncoder::decodeValue(ptr);
     return {ptr, numBytes};
 }
 

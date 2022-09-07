@@ -30,7 +30,7 @@ PLY_INLINE s32 find(ArrayView<const T> arr, const Callback& callback) {
     return -1;
 }
 
-template <typename Arr, typename Arg, typename T = details::ArrayViewType<Arr>>
+template <typename Arr, typename Arg, typename T = impl::ArrayViewType<Arr>>
 PLY_INLINE s32 find(const Arr& arr, const Arg& arg) {
     return find(ArrayView<const T>{arr}, arg);
 }
@@ -54,7 +54,7 @@ PLY_INLINE s32 rfind(ArrayView<const T> arr, const Callback& callback) {
     return -1;
 }
 
-template <typename Arr, typename Arg, typename T = details::ArrayViewType<Arr>>
+template <typename Arr, typename Arg, typename T = impl::ArrayViewType<Arr>>
 PLY_INLINE s32 rfind(const Arr& arr, const Arg& arg) {
     return rfind(ArrayView<const T>{arr}, arg);
 }

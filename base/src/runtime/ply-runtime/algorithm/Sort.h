@@ -8,15 +8,15 @@
 
 namespace ply {
 
-namespace details {
+namespace impl {
 template <typename T>
 PLY_INLINE bool defaultLess(const T& a, const T& b) {
     return a < b;
 }
-} // namespace details
+} // namespace impl
 
-template <typename T, typename IsLess = decltype(details::defaultLess<T>)>
-PLY_NO_INLINE void sort(ArrayView<T> view, const IsLess& isLess = details::defaultLess<T>) {
+template <typename T, typename IsLess = decltype(impl::defaultLess<T>)>
+PLY_NO_INLINE void sort(ArrayView<T> view, const IsLess& isLess = impl::defaultLess<T>) {
     if (view.numItems <= 1)
         return;
     u32 lo = 0;
@@ -68,10 +68,10 @@ PLY_NO_INLINE void sort(ArrayView<T> view, const IsLess& isLess = details::defau
 }
 
 template <typename Arr,
-          typename IsLess = decltype(details::defaultLess<details::ArrayViewType<Arr>>)>
+          typename IsLess = decltype(impl::defaultLess<impl::ArrayViewType<Arr>>)>
 PLY_INLINE void sort(Arr& arr,
-                     const IsLess& isLess = details::defaultLess<details::ArrayViewType<Arr>>) {
-    using T = details::ArrayViewType<Arr>;
+                     const IsLess& isLess = impl::defaultLess<impl::ArrayViewType<Arr>>) {
+    using T = impl::ArrayViewType<Arr>;
     sort(ArrayView<T>{arr}, isLess);
 }
 

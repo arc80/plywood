@@ -10,7 +10,7 @@ namespace ply {
 
 ThreadLocal<FSResult> FileSystem::lastResult_;
 
-namespace details {
+namespace impl {
 struct WalkImpl : FileSystem::Walk::Impl {
     struct StackItem {
         String path;
@@ -70,12 +70,12 @@ struct WalkImpl : FileSystem::Walk::Impl {
         PLY_ASSERT(walk->triple.dirPath.isEmpty());
     }
 };
-} // namespace details
+} // namespace impl
 
 PLY_NO_INLINE FileSystem::Walk FileSystem::walk(StringView top, u32 flags) {
-    details::WalkImpl* walk = new details::WalkImpl;
-    walk->destruct = details::WalkImpl::destructImpl;
-    walk->next = details::WalkImpl::nextImpl;
+    impl::WalkImpl* walk = new impl::WalkImpl;
+    walk->destruct = impl::WalkImpl::destructImpl;
+    walk->next = impl::WalkImpl::nextImpl;
     walk->fs = this;
     walk->flags = flags;
     walk->visit(top);

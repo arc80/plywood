@@ -8,7 +8,7 @@
 
 namespace ply {
 
-namespace details {
+namespace impl {
 template <typename T>
 struct InitItems {
     static void init(T*) {
@@ -19,7 +19,7 @@ struct InitItems {
         init(items + 1, std::forward<RemainingArgs>(remainingArgs)...);
     }
 };
-} // namespace details
+} // namespace impl
 
 template <typename T, u32 Size>
 struct FixedArray {
@@ -42,7 +42,7 @@ struct FixedArray {
     template <typename... Args>
     PLY_INLINE FixedArray(Args&&... args) {
         PLY_STATIC_ASSERT(Size == sizeof...(Args));
-        details::InitItems<T>::init(items, std::forward<Args>(args)...);
+        impl::InitItems<T>::init(items, std::forward<Args>(args)...);
     }
 
     PLY_INLINE constexpr u32 numItems() const {
@@ -100,7 +100,7 @@ struct FixedArray {
     }
 };
 
-namespace details {
+namespace impl {
 template <typename T, u32 Size>
 struct InitListType<FixedArray<T, Size>> {
     using Type = ArrayView<const T>;
@@ -111,6 +111,6 @@ struct ArrayTraits<FixedArray<T, Size>> {
     using ItemType = T;
     static constexpr bool IsOwner = true;
 };
-} // namespace details
+} // namespace impl
 
 } // namespace ply

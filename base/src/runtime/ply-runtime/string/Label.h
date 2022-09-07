@@ -7,7 +7,7 @@
 #include <ply-runtime/string/StringView.h>
 #include <ply-runtime/container/BigPool.h>
 #include <ply-runtime/container/HashMap.h>
-#include <ply-runtime/string/details/LabelEncoder.h>
+#include <ply-runtime/string/impl/LabelEncoder.h>
 #include <ply-runtime/thread/RaceDetector.h>
 
 namespace ply {
@@ -43,7 +43,7 @@ private:
         using Context = BigPool<>;
         static bool match(u32 id, const StringView& key, const BigPool<>& bigPool) {
             const char* ptr = bigPool.get(id);
-            u32 numBytes = details::LabelEncoder::decodeValue(ptr);
+            u32 numBytes = impl::LabelEncoder::decodeValue(ptr);
             return StringView{ptr, numBytes} == key;
         }
     };

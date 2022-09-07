@@ -6,7 +6,7 @@
 #include <ply-runtime/container/Sequence.h>
 
 namespace ply {
-namespace details {
+namespace impl {
 
 PLY_NO_INLINE void destructSequence(Reference<BlockList::Footer>* headRef,
                                     void (*destructViewAs)(StringView)) {
@@ -85,5 +85,5 @@ PLY_NO_INLINE char* read(BlockList::WeakRef* weakRef, u32 itemSize) {
     return result;
 }
 
-} // namespace details
+} // namespace impl
 } // namespace ply

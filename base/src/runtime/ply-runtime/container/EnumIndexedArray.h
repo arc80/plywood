@@ -74,7 +74,7 @@ public:
     }
 };
 
-namespace details {
+namespace impl {
 template <typename T, typename EnumType>
 struct InitListType<EnumIndexedArray<T, EnumType>> {
     using Type = ArrayView<const T>;
@@ -85,6 +85,6 @@ struct ArrayTraits<EnumIndexedArray<T, EnumType>> {
     using ItemType = T;
     static constexpr bool IsOwner = true;
 };
-} // namespace details
+} // namespace impl
 
 } // namespace ply

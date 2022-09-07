@@ -6,7 +6,7 @@
 #include <ply-runtime/Core.h>
 
 namespace ply {
-namespace details {
+namespace impl {
 
 struct LabelEncoder {
     static PLY_INLINE u32 decodeValue(const char*& ptr) {
@@ -43,5 +43,5 @@ struct LabelEncoder {
     }
 };
 
-} // namespace details
+} // namespace impl
 } // namespace ply

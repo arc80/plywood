@@ -10,9 +10,9 @@
 namespace ply {
 
 template <typename Iterable, typename ReduceFunc>
-details::ItemType<Iterable> reduce(Iterable&& iterable, ReduceFunc&& reduceFunc,
-                                   const details::ItemType<Iterable> initializer) {
-    details::ItemType<Iterable> result = initializer;
+impl::ItemType<Iterable> reduce(Iterable&& iterable, ReduceFunc&& reduceFunc,
+                                   const impl::ItemType<Iterable> initializer) {
+    impl::ItemType<Iterable> result = initializer;
     for (auto&& item : iterable) {
         result = reduceFunc(std::move(result), item);
     }
@@ -20,8 +20,8 @@ details::ItemType<Iterable> reduce(Iterable&& iterable, ReduceFunc&& reduceFunc,
 }
 
 template <typename Iterable>
-PLY_INLINE details::ItemType<Iterable> sum(Iterable&& iterable) {
-    details::ItemType<Iterable> result = 0;
+PLY_INLINE impl::ItemType<Iterable> sum(Iterable&& iterable) {
+    impl::ItemType<Iterable> result = 0;
     for (auto&& item : iterable) {
         result = std::move(result) + item;
     }

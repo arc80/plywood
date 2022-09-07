@@ -10,9 +10,9 @@
 namespace ply {
 
 //------------------------------------------------------------------
-// details::HashMap
+// impl::HashMap
 //------------------------------------------------------------------
-namespace details {
+namespace impl {
 struct HashMap {
     static constexpr u32 InitialSize = 4;
     static constexpr u32 LinearSearchLimit = 128;
@@ -179,7 +179,7 @@ struct HashMap {
                                                    const void* key, const void* context, u32 flags);
     };
 };
-} // namespace details
+} // namespace impl
 
 //------------------------------------------------------------------
 // CursorMixin is some template magic that lets us use different return values for
@@ -249,10 +249,10 @@ class HashMap {
 private:
     using Key = typename Traits::Key;
     using Item = typename Traits::Item;
-    using Context = typename details::HashMap::Context<Traits>::Type;
-    using Callbacks = details::HashMap::CallbackMaker<Traits>;
+    using Context = typename impl::HashMap::Context<Traits>::Type;
+    using Callbacks = impl::HashMap::CallbackMaker<Traits>;
 
-    // Note: Must be kept binary compatible with details::HashMap::CellGroup
+    // Note: Must be kept binary compatible with impl::HashMap::CellGroup
     struct CellGroup {
         u8 nextDelta[4]; // EmptySlot means the slot is unused
         u8 firstDelta[4];
@@ -260,12 +260,12 @@ private:
         Item items[4];
     };
 
-    // Note: Must be kept binary compatible with details::HashMap
+    // Note: Must be kept binary compatible with impl::HashMap
     CellGroup* m_cellGroups;
     u32 m_sizeMask;
     u32 m_population;
 
-    // Must be kept binary-compatible with details::HashMap::FindInfo:
+    // Must be kept binary-compatible with impl::HashMap::FindInfo:
     struct FindInfo {
         u32 idx;
         u8* prevLink;
@@ -277,7 +277,7 @@ public:
     Constructs an empty `HashMap`.
     */
     PLY_INLINE HashMap(u32 initialSize = 8) {
-        new (this) details::HashMap(Callbacks::instance(), initialSize);
+        new (this) impl::HashMap(Callbacks::instance(), initialSize);
     }
 
     /*!
@@ -285,14 +285,14 @@ public:
     or find items in `other` unless it is set back to a valid state using move assignment.
     */
     PLY_INLINE HashMap(HashMap&& other) {
-        new (this) details::HashMap{std::move((details::HashMap&) other)};
+        new (this) impl::HashMap{std::move((impl::HashMap&) other)};
         other.m_cellGroups = nullptr;
     }
 
     PLY_INLINE ~HashMap() {
         if (m_cellGroups) {
-            details::HashMap::destroyTable(
-                Callbacks::instance(), (details::HashMap::CellGroup*) m_cellGroups, m_sizeMask + 1);
+            impl::HashMap::destroyTable(
+                Callbacks::instance(), (impl::HashMap::CellGroup*) m_cellGroups, m_sizeMask + 1);
         }
     }
 
@@ -301,8 +301,8 @@ public:
     to insert or find items in `other` unless it is set back to a valid state using move assignment.
     */
     PLY_INLINE void operator=(HashMap&& other) {
-        reinterpret_cast<details::HashMap*>(this)->moveAssign(
-            Callbacks::instance(), std::move(reinterpret_cast<details::HashMap&>(other)));
+        reinterpret_cast<impl::HashMap*>(this)->moveAssign(
+            Callbacks::instance(), std::move(reinterpret_cast<impl::HashMap&>(other)));
         other.m_cellGroups = nullptr;
     }
 
@@ -312,7 +312,7 @@ public:
     move assignment.
     */
     PLY_INLINE void clear() {
-        reinterpret_cast<details::HashMap*>(this)->clear(Callbacks::instance());
+        reinterpret_cast<impl::HashMap*>(this)->clear(Callbacks::instance());
     }
 
     //------------------------------------------------------------------
@@ -321,27 +321,27 @@ public:
     class Cursor : public CursorMixin<Cursor, Item> {
     private:
         PLY_STATIC_ASSERT(sizeof(CellGroup) ==
-                          sizeof(details::HashMap::CellGroup) + sizeof(Item) * 4);
+                          sizeof(impl::HashMap::CellGroup) + sizeof(Item) * 4);
 
         friend class HashMap;
         template <class, typename, bool>
         friend class CursorMixin;
 
-        // Must be kept binary-compatible with details::HashMap::Cursor:
+        // Must be kept binary-compatible with impl::HashMap::Cursor:
         HashMap* m_map;
         FindInfo m_findInfo;
-        details::HashMap::FindResult m_findResult;
+        impl::HashMap::FindResult m_findResult;
 
         // Find without insert
         PLY_INLINE Cursor(HashMap* map, const Key& key, const Context* context) : m_map{map} {
-            m_findResult = reinterpret_cast<details::HashMap*>(m_map)->insertOrFind(
-                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, context,
-                details::HashMap::AllowFind);
+            m_findResult = reinterpret_cast<impl::HashMap*>(m_map)->insertOrFind(
+                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, context,
+                impl::HashMap::AllowFind);
         }
         // Find with insert
         PLY_INLINE Cursor(HashMap* map, const Key& key, const Context* context, u32 flags) {
-            reinterpret_cast<details::HashMap::Cursor*>(this)->constructFindWithInsert(
-                Callbacks::instance(), (details::HashMap*) map, &key, context, flags);
+            reinterpret_cast<impl::HashMap::Cursor*>(this)->constructFindWithInsert(
+                Callbacks::instance(), (impl::HashMap*) map, &key, context, flags);
         }
 
     public:
@@ -351,14 +351,14 @@ public:
             m_findResult = other.m_findResult;
         }
         PLY_INLINE bool isValid() const {
-            return m_findResult != details::HashMap::FindResult::NotFound;
+            return m_findResult != impl::HashMap::FindResult::NotFound;
         }
         PLY_INLINE bool wasFound() const {
-            return m_findResult == details::HashMap::FindResult::Found;
+            return m_findResult == impl::HashMap::FindResult::Found;
         }
         PLY_INLINE void next(const Key& key, const Context& context = {}) {
-            m_findResult = reinterpret_cast<const details::HashMap*>(m_map)->findNext(
-                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
+            m_findResult = reinterpret_cast<const impl::HashMap*>(m_map)->findNext(
+                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
         }
         PLY_INLINE Item& operator*() {
             PLY_ASSERT(m_findInfo.itemSlot);
@@ -370,16 +370,16 @@ public:
         }
         PLY_INLINE void erase() {
             u8* unusedLink = nullptr;
-            reinterpret_cast<details::HashMap*>(m_map)->erase(
-                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), unusedLink);
-            m_findResult = details::HashMap::FindResult::NotFound;
+            reinterpret_cast<impl::HashMap*>(m_map)->erase(
+                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), unusedLink);
+            m_findResult = impl::HashMap::FindResult::NotFound;
         }
         PLY_INLINE void eraseAndAdvance(const Key& key, const Context& context = {}) {
             FindInfo infoToErase = m_findInfo;
-            m_findResult = reinterpret_cast<const details::HashMap&>(m_map).findNext(
-                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
-            reinterpret_cast<details::HashMap*>(m_map)->erase(
-                (details::HashMap::FindInfo*) &infoToErase, Callbacks::instance(),
+            m_findResult = reinterpret_cast<const impl::HashMap&>(m_map).findNext(
+                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
+            reinterpret_cast<impl::HashMap*>(m_map)->erase(
+                (impl::HashMap::FindInfo*) &infoToErase, Callbacks::instance(),
                 m_findInfo.prevLink);
         }
     };
@@ -390,7 +390,7 @@ public:
     class ConstCursor : public CursorMixin<ConstCursor, Item> {
     private:
         PLY_STATIC_ASSERT(sizeof(CellGroup) ==
-                          sizeof(details::HashMap::CellGroup) + sizeof(Item) * 4);
+                          sizeof(impl::HashMap::CellGroup) + sizeof(Item) * 4);
 
         friend class HashMap;
         template <class, typename, bool>
@@ -398,15 +398,15 @@ public:
 
         const HashMap* m_map;
         FindInfo m_findInfo;
-        details::HashMap::FindResult m_findResult;
+        impl::HashMap::FindResult m_findResult;
 
         // Find without insert
         PLY_INLINE ConstCursor(const HashMap* map, const Key& key, const Context* context)
             : m_map{map} {
             m_findResult =
-                ((details::HashMap*) m_map)
-                    ->insertOrFind((details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(),
-                                   &key, context, details::HashMap::AllowFind);
+                ((impl::HashMap*) m_map)
+                    ->insertOrFind((impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(),
+                                   &key, context, impl::HashMap::AllowFind);
         }
 
     public:
@@ -416,14 +416,14 @@ public:
             m_findResult = other.m_findResult;
         }
         PLY_INLINE bool isValid() const {
-            return m_findResult != details::HashMap::FindResult::NotFound;
+            return m_findResult != impl::HashMap::FindResult::NotFound;
         }
         PLY_INLINE bool wasFound() const {
-            return m_findResult == details::HashMap::FindResult::Found;
+            return m_findResult == impl::HashMap::FindResult::Found;
         }
         PLY_INLINE void next(const Key& key, const Context& context = {}) {
-            m_findResult = reinterpret_cast<const details::HashMap&>(m_map).findNext(
-                (details::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
+            m_findResult = reinterpret_cast<const impl::HashMap&>(m_map).findNext(
+                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
         }
         PLY_INLINE Item& operator*() {
             PLY_ASSERT(m_findInfo.itemSlot);
@@ -457,13 +457,13 @@ public:
     `construct` function.
     */
     PLY_INLINE Cursor insertOrFind(const Key& key, const Context* context = nullptr) {
-        return {this, key, context, details::HashMap::AllowFind | details::HashMap::AllowInsert};
+        return {this, key, context, impl::HashMap::AllowFind | impl::HashMap::AllowInsert};
     }
 
     // insertMulti is experimental and should not be used. Will likely delete.
     // FIXME: Delete this function and its associated support code, including Cursor::next()
     PLY_INLINE Cursor insertMulti(const Key& key, const Context* context = nullptr) {
-        return {this, key, context, details::HashMap::AllowInsert};
+        return {this, key, context, impl::HashMap::AllowInsert};
     }
 
     /*!
@@ -507,7 +507,7 @@ public:
                 if (m_idx > m_map.m_sizeMask)
                     break;
                 CellGroup* group = m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
-                if (group->nextDelta[m_idx & 3] != details::HashMap::EmptySlot)
+                if (group->nextDelta[m_idx & 3] != impl::HashMap::EmptySlot)
                     break;
             }
         }
@@ -524,7 +524,7 @@ public:
         Item& operator*() const {
             PLY_ASSERT(m_idx <= m_map.m_sizeMask);
             CellGroup* group = m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
-            PLY_ASSERT(group->nextDelta[m_idx & 3] != details::HashMap::EmptySlot);
+            PLY_ASSERT(group->nextDelta[m_idx & 3] != impl::HashMap::EmptySlot);
             return group->items[m_idx & 3];
         }
 
@@ -557,7 +557,7 @@ public:
                 if (m_idx > m_map.m_sizeMask)
                     break;
                 CellGroup* group = m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
-                if (group->nextDelta[m_idx & 3] != details::HashMap::EmptySlot)
+                if (group->nextDelta[m_idx & 3] != impl::HashMap::EmptySlot)
                     break;
             }
         }
@@ -574,7 +574,7 @@ public:
         const Item& operator*() const {
             PLY_ASSERT(m_idx <= m_map.m_sizeMask);
             CellGroup* group = m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
-            PLY_ASSERT(group->nextDelta[m_idx & 3] != details::HashMap::EmptySlot);
+            PLY_ASSERT(group->nextDelta[m_idx & 3] != impl::HashMap::EmptySlot);
             return group->items[m_idx & 3];
         }
 
