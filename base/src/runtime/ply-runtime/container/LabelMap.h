@@ -53,13 +53,20 @@ public:
     PLY_INLINE const T* find(Label key) const {
         PLY_PUN_SCOPE
         const T* value;
-        operate((Base*) this, Base::Find, key, &Base::typeInfo<T>, &value);
+        operate((Base*) this, Base::Find, key, &Base::typeInfo<T>, (void**) &value);
         return value;
     }
 
     PLY_INLINE bool insertOrFind(Label key, T** value) {
         PLY_PUN_SCOPE
         return operate((Base*) this, Base::Insert, key, &Base::typeInfo<T>, (void**) value);
+    }
+
+    PLY_INLINE T* insert(Label key) {
+        PLY_PUN_SCOPE
+        T* value;
+        operate((Base*) this, Base::Insert, key, &Base::typeInfo<T>, (void**) &value);
+        return value;
     }
 
     struct Item {

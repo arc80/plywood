@@ -33,13 +33,13 @@ MethodResult doPrint(BaseInterpreter* interp, const AnyObject& callee,
 }
 
 // FIXME: Move this to the crowbar module:
-void addBuiltIns(HashMap<VariableMapTraits>& ns) {
-    ns.insertOrFind(g_labelStorage.insert("print"))->obj = AnyObject::bind(doPrint);
+void addBuiltIns(LabelMap<AnyObject>& ns) {
+    *ns.insert(g_labelStorage.insert("print")) = AnyObject::bind(doPrint);
 
     static bool true_ = true;
     static bool false_ = false;
-    ns.insertOrFind(g_labelStorage.insert("true"))->obj = AnyObject::bind(&true_);
-    ns.insertOrFind(g_labelStorage.insert("false"))->obj = AnyObject::bind(&false_);
+    *ns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
+    *ns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
 }
 
 String callScriptFunction(StringView src, StringView funcName, ArrayView<const AnyObject> args) {
@@ -66,13 +66,12 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
     for (const Statement* stmt : file->statements) {
         const Statement::FunctionDefinition* fnDef = stmt->functionDefinition().get();
         const AnyObject& fnObj = fnObjs.append(AnyObject::bind(fnDef));
-        ns.map.insertOrFind(fnDef->name)->obj = fnObj;
+        *ns.map.insert(fnDef->name) = fnObj;
     }
 
     // Invoke function if it exists
-    auto testFuncCursor = ns.map.find(g_labelStorage.find(funcName));
-    if (testFuncCursor.wasFound()) {
-        const AnyObject& testObj = testFuncCursor->obj;
+    const AnyObject* testObj = ns.map.find(g_labelStorage.find(funcName));
+    if (testObj) {
         MemOutStream outs;
 
         // Create interpreter
@@ -84,12 +83,12 @@ String callScriptFunction(StringView src, StringView funcName, ArrayView<const A
         // Invoke function
         Interpreter::StackFrame frame;
         frame.interp = &interp;
-        const auto* fnDef = testObj.cast<Statement::FunctionDefinition>();
+        const auto* fnDef = testObj->cast<Statement::FunctionDefinition>();
         frame.desc = makeFunctionDesc(fnDef);
         frame.tkr = &tkr;
         PLY_ASSERT(fnDef->parameterNames.numItems() == args.numItems);
         for (u32 i = 0; i < args.numItems; i++) {
-            frame.localVariableTable.insertOrFind(fnDef->parameterNames[i])->obj = args[i];
+            *frame.localVariableTable.insert(fnDef->parameterNames[i]) = args[i];
         }
         execFunction(&frame, fnDef->body);
 

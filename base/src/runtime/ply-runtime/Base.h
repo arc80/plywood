@@ -12,6 +12,7 @@
 #include <ply-runtime/container/HashMap.h>
 #include <ply-runtime/container/HiddenArgFunctor.h>
 #include <ply-runtime/container/Int128.h>
+#include <ply-runtime/container/LabelMap.h>
 #include <ply-runtime/container/LambdaView.h>
 #include <ply-runtime/container/Owned.h>
 #include <ply-runtime/container/Pool.h>
@@ -30,6 +31,7 @@
 #include <ply-runtime/memory/Heap.h>
 #include <ply-runtime/network/Socket.h>
 #include <ply-runtime/process/Subprocess.h>
+#include <ply-runtime/string/Label.h>
 #include <ply-runtime/string/String.h>
 #include <ply-runtime/thread/Atomic.h>
 #include <ply-runtime/thread/ConditionVariable.h>

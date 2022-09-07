@@ -294,9 +294,9 @@ Owned<Expression> parseExpressionWithTraits(Parser* parser, AnyOwnedObject* expr
         // Try to parse a custom expression trait.
         ExpandedToken token = parser->tkr->readToken();
         if ((token.type == TokenType::Identifier) && parser->exprTraitHooks) {
-            auto cursor = parser->exprTraitHooks->map.find(token.label);
-            if (cursor.wasFound()) {
-                if (cursor->callback(cursor->arg, token, expressionTraits))
+            Parser::ExpressionTraitHooks::Handler* handler = parser->exprTraitHooks->map.find(token.label);
+            if (handler) {
+                if (handler->callback(handler->arg, token, expressionTraits))
                     continue; // Parsed as an expression trait.
             }
         }
@@ -314,9 +314,9 @@ Owned<Expression> parseExpressionWithTraits(Parser* parser, AnyOwnedObject* expr
 bool tryParseCustomBlock(Parser* parser, StatementBlock* stmtBlock) {
     ExpandedToken token = parser->tkr->readToken();
     if ((token.type == TokenType::Identifier) && parser->customBlockHooks) {
-        auto cursor = parser->customBlockHooks->map.find(token.label);
-        if (cursor.wasFound()) {
-            if (cursor->callback(cursor->arg, token, stmtBlock))
+        Parser::CustomBlockHooks::Handler* handler = parser->customBlockHooks->map.find(token.label);
+        if (handler) {
+            if (handler->callback(handler->arg, token, stmtBlock))
                 return true; // Parsed as a custom block.
         }
     }

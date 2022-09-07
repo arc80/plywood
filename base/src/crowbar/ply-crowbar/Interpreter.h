@@ -5,26 +5,12 @@
 #pragma once
 #include <ply-crowbar/Core.h>
 #include <ply-reflect/methods/BaseInterpreter.h>
-#include <ply-runtime/string/Label.h>
 #include <ply-crowbar/ParseTree.h>
 
 namespace ply {
 namespace crowbar {
 
 struct Tokenizer;
-
-struct VariableMapTraits {
-    using Key = Label;
-    struct Item {
-        Label identifier;
-        AnyObject obj;
-        Item(Label identifier) : identifier{identifier} {
-        }
-    };
-    static PLY_INLINE bool match(const Item& item, const Label& identifier) {
-        return item.identifier == identifier;
-    }
-};
 
 struct INamespace {
     virtual ~INamespace() {
@@ -33,7 +19,7 @@ struct INamespace {
 };
 
 struct MapNamespace : INamespace {
-    HashMap<VariableMapTraits> map;
+    LabelMap<AnyObject> map;
     virtual AnyObject find(Label identifier) const override;
 };
 
@@ -41,7 +27,7 @@ struct Interpreter : BaseInterpreter {
     struct StackFrame {
         Interpreter* interp = nullptr;
         HiddenArgFunctor<HybridString()> desc;
-        HashMap<VariableMapTraits> localVariableTable;
+        LabelMap<AnyObject> localVariableTable;
         Tokenizer* tkr = nullptr;
         const Statement::CustomBlock* customBlock = nullptr;
         u32 tokenIdx = 0;

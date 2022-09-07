@@ -14,31 +14,15 @@ struct Parser {
     struct CustomBlockHooks {
         template <typename T>
         using Callback = bool(T* arg, const ExpandedToken& kwToken, StatementBlock* stmtBlock);
-
-        struct Traits {
-            using Key = Label;
-            struct Item {
-                Label keyword;
-                Callback<void>* callback = nullptr;
-                void* arg = nullptr;
-                PLY_INLINE Item(Label kw) : keyword{kw} {
-                }
-            };
-            static PLY_INLINE bool match(const Item& item, Key key) {
-                return item.keyword == key;
-            }
+        struct Handler {
+            Callback<void>* callback = nullptr;
+            void* arg = nullptr;
         };
-        HashMap<Traits> map;
+        LabelMap<Handler> map;
 
-        void add(Label keyword, Callback<void>* callback, void* arg) {
-            auto cursor = this->map.insertOrFind(keyword);
-            PLY_ASSERT(!cursor.wasFound());
-            cursor->callback = callback;
-            cursor->arg = arg;
-        }
         template <typename T>
         PLY_INLINE void add(Label keyword, Callback<T>* callback, T* arg) {
-            this->add(keyword, (Callback<void>*) callback, (void*) arg);
+            *this->map.insert(keyword) = {(Callback<void>*) callback, (void*) arg};
         }
     };
 
@@ -48,31 +32,15 @@ struct Parser {
         template <typename T>
         using Callback = bool(T* hooks, const crowbar::ExpandedToken& kwToken,
                               AnyOwnedObject* expressionTraits);
-
-        struct Traits {
-            using Key = Label;
-            struct Item {
-                Label keyword;
-                Callback<void>* callback = nullptr;
-                void* arg = nullptr;
-                PLY_INLINE Item(Label kw) : keyword{kw} {
-                }
-            };
-            static PLY_INLINE bool match(const Item& item, Key key) {
-                return item.keyword == key;
-            }
+        struct Handler {
+            Callback<void>* callback = nullptr;
+            void* arg = nullptr;
         };
-        HashMap<Traits> map;
+        LabelMap<Handler> map;
 
-        void add(Label keyword, Callback<void>* callback, void* arg) {
-            auto cursor = this->map.insertOrFind(keyword);
-            PLY_ASSERT(!cursor.wasFound());
-            cursor->callback = callback;
-            cursor->arg = arg;
-        }
         template <typename T>
         PLY_INLINE void add(Label keyword, Callback<T>* callback, T* arg) {
-            this->add(keyword, (Callback<void>*) callback, (void*) arg);
+            *this->map.insert(keyword) = {(Callback<void>*) callback, (void*) arg};
         }
     };
 

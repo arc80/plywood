@@ -75,10 +75,8 @@ void Repository::create() {
             crowbar::MapNamespace builtIns;
             static bool true_ = true;
             static bool false_ = false;
-            builtIns.map.insertOrFind(g_labelStorage.insert("true"))->obj =
-                AnyObject::bind(&true_);
-            builtIns.map.insertOrFind(g_labelStorage.insert("false"))->obj =
-                AnyObject::bind(&false_);
+            *builtIns.map.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
+            *builtIns.map.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
             interp.outerNameSpaces.append(&builtIns);
 
             // Invoke config_options block.

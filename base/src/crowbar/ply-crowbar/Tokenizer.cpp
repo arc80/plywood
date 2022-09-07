@@ -78,7 +78,7 @@ String ExpandedToken::desc() const {
 PLY_NO_INLINE void writeCompact(Tokenizer* tkr, u32 value) {
     char* start = tkr->tokenData.beginWrite(5);
     char* end = start;
-    details::LabelEncoder::encodeValue(end, value);
+    impl::LabelEncoder::encodeValue(end, value);
     tkr->tokenData.endWrite(end - start);
 }
 
@@ -125,18 +125,18 @@ PLY_NO_INLINE u32 expandTokenInternal(ExpandedToken& expToken, Tokenizer* tkr, u
         const char* start = tkr->tokenData.get(tokenIdx);
         const char* data = start;
         expToken.fileOffset =
-            tkr->fileOffsetTable[tokenIdx >> 8] + details::LabelEncoder::decodeValue(data);
+            tkr->fileOffsetTable[tokenIdx >> 8] + impl::LabelEncoder::decodeValue(data);
         expToken.type = (TokenType) (u8) *data++;
         if (expToken.type == TokenType::Identifier || expToken.type == TokenType::StringLiteral) {
             // Read the label index
-            expToken.label.idx = details::LabelEncoder::decodeValue(data);
+            expToken.label.idx = impl::LabelEncoder::decodeValue(data);
         }
         PLY_ASSERT(data <= tkr->tokenData.end());
         u32 compactLength = safeDemote<u32>(data - start);
         u32 endOffset = safeDemote<u32>(tkr->vin.cur - tkr->vin.start);
         if (data < tkr->tokenData.end()) {
             endOffset = tkr->fileOffsetTable[(tokenIdx + 1) >> 8] +
-                        details::LabelEncoder::decodeValue(data);
+                        impl::LabelEncoder::decodeValue(data);
         }
         expToken.text =
             StringView::fromRange(tkr->vin.start + expToken.fileOffset, tkr->vin.start + endOffset);

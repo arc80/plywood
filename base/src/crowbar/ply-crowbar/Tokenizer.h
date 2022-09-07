@@ -4,7 +4,6 @@
 ------------------------------------*/
 #pragma once
 #include <ply-crowbar/Core.h>
-#include <ply-runtime/string/Label.h>
 #include <ply-runtime/io/text/FileLocationMap.h>
 
 namespace ply {

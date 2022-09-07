@@ -28,9 +28,9 @@ void Interpreter::error(StringView message) {
 }
 
 AnyObject MapNamespace::find(Label identifier) const {
-    auto cursor = this->map.find(identifier);
-    if (cursor.wasFound())
-        return cursor->obj;
+    const AnyObject* value = this->map.find(identifier);
+    if (value)
+        return *value;
     return {};
 }
 
@@ -177,8 +177,9 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
         newFrame.tkr = functionDef->tkr;
         newFrame.prevFrame = frame;
         for (u32 argIndex : range(args.numItems())) {
-            newFrame.localVariableTable.insertOrFind(functionDef->parameterNames[argIndex])->obj =
-                args[argIndex];
+            AnyObject* value;
+            newFrame.localVariableTable.insertOrFind(functionDef->parameterNames[argIndex], &value);
+            *value = args[argIndex];
         }
 
         // Execute function body and clean up stack frame.
@@ -192,9 +193,9 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
 AnyObject lookupName(Interpreter::StackFrame* frame, Label name) {
     Interpreter* interp = frame->interp;
 
-    auto cursor = frame->localVariableTable.find(name);
-    if (cursor.wasFound())
-        return cursor->obj;
+    AnyObject* value = frame->localVariableTable.find(name);
+    if (value)
+        return *value;
 
     for (s32 i = interp->outerNameSpaces.numItems() - 1; i >= 0; i--) {
         AnyObject obj = interp->outerNameSpaces[i]->find(name);
@@ -326,21 +327,15 @@ MethodResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignm
         if (interp->hooks->handleLocalAssignment(name))
             return MethodResult::OK;
 
-        auto cursor = frame->localVariableTable.insertOrFind(name);
-        if (cursor.wasFound()) {
-            // Move result to existing local variable.
-            cursor->obj.move(interp->returnValue);
-            // Delete temporary objects.
-            interp->localVariableStorage.deleteRange(localVariableStorageBoundary,
-                                                     interp->localVariableStorage.items.end());
-        } else {
+        AnyObject* value;
+        if (frame->localVariableTable.insertOrFind(name, &value)) {
             if (isReturnValueOnTopOfStack(interp)) {
                 WeakSequenceRef<AnyObject> deleteTo = interp->localVariableStorage.items.end();
                 --deleteTo;
                 // Delete temporary objects except for the return value.
                 interp->localVariableStorage.deleteRange(localVariableStorageBoundary, deleteTo);
                 // We've just created a new local Local variable.
-                cursor->obj = interp->localVariableStorage.items.tail();
+                *value = interp->localVariableStorage.items.tail();
             } else {
                 // Delete temporary objects.
                 interp->localVariableStorage.deleteRange(localVariableStorageBoundary,
@@ -349,8 +344,14 @@ MethodResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignm
                 AnyObject* dest =
                     interp->localVariableStorage.appendObject(interp->returnValue.type);
                 dest->move(interp->returnValue);
-                cursor->obj = *dest;
+                *value = *dest;
             }
+        } else {
+            // Move result to existing local variable.
+            value->move(interp->returnValue);
+            // Delete temporary objects.
+            interp->localVariableStorage.deleteRange(localVariableStorageBoundary,
+                                                     interp->localVariableStorage.items.end());
         }
         interp->returnValue = {};
     } else {

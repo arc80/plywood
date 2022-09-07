@@ -126,9 +126,8 @@ struct ModuleNamespace : crowbar::INamespace {
 ModuleInstantiator::ModuleInstantiator(StringView buildFolderPath)
     : buildFolderPath{buildFolderPath} {
     Owned<crowbar::MapNamespace> globalNamespace = Owned<crowbar::MapNamespace>::create();
-    globalNamespace->map.insertOrFind(g_labelStorage.insert("join_path"))->obj =
-        AnyObject::bind(doJoinPath);
-    globalNamespace->map.insertOrFind(g_labelStorage.insert("build_folder"))->obj =
+    *globalNamespace->map.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
+    *globalNamespace->map.insert(g_labelStorage.insert("build_folder")) =
         AnyObject::bind(&this->buildFolderPath);
     this->globalNamespace = std::move(globalNamespace);
 }
