@@ -8,11 +8,10 @@
 namespace ply {
 namespace crowbar {
 
-HiddenArgFunctor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef) {
-    return {[](const Statement::FunctionDefinition* fnDef) -> HybridString {
-                return String::format("function '{}'", g_labelStorage.view(fnDef->name));
-            },
-            fnDef};
+Functor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef) {
+    return [fnDef]() -> HybridString {
+        return String::format("function '{}'", g_labelStorage.view(fnDef->name));
+    };
 }
 
 void Interpreter::error(StringView message) {

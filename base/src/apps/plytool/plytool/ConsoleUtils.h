@@ -26,10 +26,10 @@ struct CommandLine {
     }
 
     StringView readToken();
-    StringView checkForSkippedOpt(const LambdaView<bool(StringView)>& matcher);
+    StringView checkForSkippedOpt(const Functor<bool(StringView)>& matcher);
     PLY_INLINE bool checkForSkippedOpt(StringView argToMatch) {
-        return !this->checkForSkippedOpt([&](StringView arg) { return arg == argToMatch; })
-                    .isEmpty();
+        return !this->checkForSkippedOpt(
+            [argToMatch](StringView arg) -> bool { return arg == argToMatch; });
     }
     void finalize();
 };

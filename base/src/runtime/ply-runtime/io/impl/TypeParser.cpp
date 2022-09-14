@@ -47,7 +47,7 @@ PLY_NO_INLINE void fmt::scanUsingMask(InStream* ins, const u32* mask, bool inver
     }
 }
 
-PLY_NO_INLINE void fmt::scanUsingCallback(InStream* ins, const LambdaView<bool(char)>& callback) {
+PLY_NO_INLINE void fmt::scanUsingCallback(InStream* ins, const Functor<bool(char)>& callback) {
     for (;;) {
         if (!ins->tryMakeBytesAvailable())
             break;

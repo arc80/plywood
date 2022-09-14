@@ -56,8 +56,6 @@ Array<String> getSourceFileKeys(StringView srcRoot) {
                          "DirectoryWatcher_Mac.h",
                          "DirectoryWatcher_Win32.h",
                          "Heap.cpp",
-                         "HiddenArgFunctor.h",
-                         "LambdaView.h",
                          "Pool.h",
                      }) {
                     if (file.name == exclude)
@@ -114,7 +112,7 @@ Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, Stri
 }
 
 void visitPageMetas(const cook::CookJob* pageMetaJob,
-                    const LambdaView<void(const docs::CookResult_ExtractPageMeta*)>& visitor) {
+                    const Functor<void(const docs::CookResult_ExtractPageMeta*)>& visitor) {
     const docs::CookResult_ExtractPageMeta* pageMetaResult =
         pageMetaJob->castResult<docs::CookResult_ExtractPageMeta>();
     PLY_ASSERT(pageMetaResult);

@@ -12,15 +12,15 @@ namespace build {
 struct ModuleArgs;
 
 struct TargetInstantiator : DependencySource {
-    typedef void ModuleFunc(ModuleArgs* args);
+    typedef Functor<void(ModuleArgs*)> ModuleFunc;
 
     String instantiatorPath;
-    Functor<ModuleFunc> moduleFunc;
+    ModuleFunc moduleFunc;
 
     PLY_INLINE TargetInstantiator() : DependencySource{Target} {
     }
     PLY_INLINE TargetInstantiator(StringView name, StringView instantiatorPath,
-                                  ModuleFunc* moduleFunc)
+                                  const ModuleFunc& moduleFunc)
         : DependencySource{Target, name}, instantiatorPath{instantiatorPath}, moduleFunc{
                                                                                   moduleFunc} {
     }

@@ -36,7 +36,7 @@ struct PylonTypeImporter {
                 return getTypeDescriptor<float>();
             } else {
                 TypeDescriptor* typeDesc = nullptr;
-                if (typeFromName.isValid()) {
+                if (typeFromName) {
                     typeDesc = typeFromName(str);
                 }
                 PLY_ASSERT(typeDesc); // Unrecognized primitive type

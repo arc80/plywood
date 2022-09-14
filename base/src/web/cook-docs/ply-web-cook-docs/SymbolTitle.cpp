@@ -40,7 +40,7 @@ void writeParseTitleError(OutStream* outs, ParseTitleError err, StringView arg) 
 
 Array<TitleSpan> parseTitle(
     StringView srcText,
-    const LambdaView<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback) {
+    const Functor<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback) {
     Array<TitleSpan> result;
     ViewInStream vins{srcText};
     MemOutStream mout;

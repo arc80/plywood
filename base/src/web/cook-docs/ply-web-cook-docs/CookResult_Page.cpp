@@ -16,7 +16,7 @@ namespace docs {
 
 extern cook::CookJobType CookJobType_Page;
 
-void visitAll(markdown::Node* node, const LambdaView<bool(markdown::Node*)>& callback) {
+void visitAll(markdown::Node* node, const Functor<bool(markdown::Node*)>& callback) {
     if (callback(node)) {
         for (markdown::Node* child : node->children) {
             visitAll(child, callback);

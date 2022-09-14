@@ -4,6 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
+#include <utility>
 
 namespace ply {
 
@@ -11,54 +12,54 @@ template <typename>
 struct Functor;
 
 template <typename Return, typename... Args>
-struct Functor<Return(Args...)> {
+class Functor<Return(Args...)> {
 private:
-    struct BaseWrapper {
-        Return (*thunk)(BaseWrapper* wrapper, Args... args) = nullptr;
-    };
+    typedef Return Handler(void*, Args...);
 
-    template <typename Callable>
-    struct Wrapper : BaseWrapper {
-        std::decay_t<Callable> callable;
-
-        static PLY_NO_INLINE Return thunk(BaseWrapper* wrapper, Args... args) {
-            return static_cast<Wrapper*>(wrapper)->callable(std::forward<Args>(args)...);
-        }
-        template <typename I>
-        PLY_INLINE Wrapper(I&& callable)
-            : BaseWrapper{&thunk}, callable{std::forward<I>(callable)} {
-        }
-    };
-
-    BaseWrapper* wrapper = nullptr;
+    Handler* handler = nullptr;
+    void* storedArg = nullptr;
 
 public:
-    PLY_INLINE Functor() = default;
-    PLY_INLINE Functor(Functor&& other) : wrapper{other.wrapper} {
-        other.wrapper = nullptr;
+    Functor() = default;
+
+    PLY_INLINE Functor(const Functor& other) : handler{other.handler}, storedArg{other.storedArg} {
     }
+
+    template <typename T>
+    PLY_INLINE Functor(Return (*handler)(T*, Args...), T* storedArg)
+        : handler{(Handler*) handler}, storedArg{(void*) storedArg} {
+    }
+
+    template <typename T>
+    PLY_INLINE Functor(Return (T::*handler)(Args...), T* target) : storedArg{(void*) target} {
+        this->handler = [this](void* target, Args... args) {
+            return ((T*) target)->*(this->hiddenArg)(std::forward<Args>(args)...);
+        };
+    }
+
+    // Support lambda expressions
     template <typename Callable,
               typename = void_t<decltype(std::declval<Callable>()(std::declval<Args>()...))>>
-    PLY_INLINE Functor(Callable&& callable)
-        : wrapper{new Wrapper<Callable>{std::forward<Callable>(callable)}} {
+    Functor(const Callable& callable) : storedArg{(void*) &callable} {
+        this->handler = [](void* callable, Args... args) -> Return {
+            return (*(const Callable*) callable) (std::forward<Args>(args)...);
+        };
     }
-    PLY_INLINE ~Functor() {
-        if (this->wrapper) {
-            delete this->wrapper;
-        }
+
+    PLY_INLINE void operator=(const Functor& other) {
+        this->handler = other.handler;
+        this->storedArg = other.storedArg;
     }
-    PLY_INLINE void operator=(Functor&& other) {
-        this->wrapper = other.wrapper;
-        other.wrapper = nullptr;
-    }
-    PLY_INLINE bool isValid() const {
-        return this->wrapper != nullptr;
-    }
+
     PLY_INLINE explicit operator bool() const {
-        return this->wrapper != nullptr;
+        return this->handler != nullptr;
     }
-    PLY_INLINE Return operator()(Args... args) const {
-        return this->wrapper->thunk(this->wrapper, std::forward<Args>(args)...);
+
+    template <typename... CallArgs>
+    PLY_INLINE Return operator()(CallArgs&&... args) const {
+        PLY_ASSERT(this->handler);
+        PLY_PUN_SCOPE
+        return this->handler(this->storedArg, std::forward<CallArgs>(args)...);
     }
 };
 

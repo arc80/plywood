@@ -26,7 +26,7 @@ struct MapNamespace : INamespace {
 struct Interpreter : BaseInterpreter {
     struct StackFrame {
         Interpreter* interp = nullptr;
-        HiddenArgFunctor<HybridString()> desc;
+        Functor<HybridString()> desc;
         LabelMap<AnyObject> localVariableTable;
         Tokenizer* tkr = nullptr;
         const Statement::CustomBlock* customBlock = nullptr;
@@ -60,7 +60,7 @@ struct Interpreter : BaseInterpreter {
     virtual void error(StringView message) override;
 };
 
-HiddenArgFunctor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef);
+Functor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef);
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
 MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr);
 

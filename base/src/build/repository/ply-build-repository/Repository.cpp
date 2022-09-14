@@ -82,12 +82,11 @@ void Repository::create() {
             // Invoke config_options block.
             crowbar::Interpreter::StackFrame frame;
             frame.interp = &interp;
-            frame.desc = {[](Module* mod) -> HybridString {
-                              return String::format("config_options for {} '{}'",
-                                                    g_labelStorage.view(mod->block->type),
-                                                    g_labelStorage.view(mod->block->name));
-                          },
-                          mod};
+            frame.desc = [mod]() -> HybridString {
+                return String::format("config_options for {} '{}'",
+                                      g_labelStorage.view(mod->block->type),
+                                      g_labelStorage.view(mod->block->name));
+            };
             frame.tkr = &mod->plyfile->tkr;
             MethodResult result = execFunction(&frame, mod->configBlock->customBlock()->body);
             if (result == MethodResult::Error) {

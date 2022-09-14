@@ -17,11 +17,10 @@ struct PreprocessorDefinition {
     bool takesArgs = false;
 };
 
-grammar::TranslationUnit
-parse(StringView path, String&& sourceCode, PPVisitedFiles* visitedFiles,
-      ArrayView<const PreprocessorDefinition> ppDefs = {},
-      const HiddenArgFunctor<void(StringView directive)>& includeCallback = {},
-      ParseSupervisor* visor = nullptr);
+grammar::TranslationUnit parse(StringView path, String&& sourceCode, PPVisitedFiles* visitedFiles,
+                               ArrayView<const PreprocessorDefinition> ppDefs = {},
+                               const Functor<void(StringView directive)>& includeCallback = {},
+                               ParseSupervisor* visor = nullptr);
 
 Tuple<grammar::Declaration::Simple, Array<Owned<BaseError>>>
 parseSimpleDeclaration(StringView sourceCode, LinearLocation linearLocOfs = 0);

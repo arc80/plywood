@@ -242,8 +242,6 @@ void command_codegen(PlyToolCommandEnv* env) {
                              "DirectoryWatcher_Mac.h",
                              "DirectoryWatcher_Win32.h",
                              "Heap.cpp",
-                             "HiddenArgFunctor.h",
-                             "LambdaView.h",
                              "Pool.h",
                          }) {
                         if (file.name == exclude)

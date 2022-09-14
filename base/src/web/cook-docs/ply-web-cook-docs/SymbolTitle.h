@@ -34,7 +34,7 @@ enum class ParseTitleError {
 
 Array<TitleSpan> parseTitle(
     StringView srcText,
-    const LambdaView<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback);
+    const Functor<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback);
 void writeParseTitleError(OutStream* outs, ParseTitleError err, StringView arg);
 void writeAltMemberTitle(OutStream& htmlWriter, ArrayView<const TitleSpan> spans,
                          const LookupContext& lookupCtx,

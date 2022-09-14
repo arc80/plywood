@@ -194,10 +194,9 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     // Invoke module function.
     crowbar::Interpreter::StackFrame frame;
     frame.interp = &interp;
-    frame.desc = {[](const crowbar::Statement::CustomBlock* moduleDef) -> HybridString {
-                      return String::format("module '{}'", g_labelStorage.view(moduleDef->name));
-                  },
-                  moduleDef};
+    frame.desc = [moduleDef]() -> HybridString {
+        return String::format("module '{}'", g_labelStorage.view(moduleDef->name));
+    };
     frame.tkr = &(*funcCursor)->plyfile->tkr;
     MethodResult result = execFunction(&frame, moduleDef->body);
     if (result == MethodResult::Error) {

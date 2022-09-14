@@ -447,7 +447,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
         // Invoke block.
         crowbar::Interpreter::StackFrame frame;
         frame.interp = &interp;
-        frame.desc = {[](void*) -> HybridString { return "config_list"; }, (void*) 0};
+        frame.desc = []() -> HybridString { return "config_list"; };
         frame.tkr = &configList->plyfile->tkr;
         MethodResult result = execFunction(&frame, configList->block);
         if (result == MethodResult::Error) {
@@ -466,7 +466,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
 }
 
 PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
-    return generateLatest(this);
+    //return generateLatest(this);
 
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);

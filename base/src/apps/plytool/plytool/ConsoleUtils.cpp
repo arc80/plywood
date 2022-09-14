@@ -37,7 +37,7 @@ StringView CommandLine::readToken() {
     return {};
 }
 
-StringView CommandLine::checkForSkippedOpt(const LambdaView<bool(StringView)>& matcher) {
+StringView CommandLine::checkForSkippedOpt(const Functor<bool(StringView)>& matcher) {
     s32 i = find(this->skippedOpts, matcher);
     if (i >= 0) {
         StringView matched = this->skippedOpts[i];

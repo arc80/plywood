@@ -94,9 +94,7 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
     addPPDef(&pp, "PLY_DEFINE_RACE_DETECTOR", "", true);
     Parser parser;
     parser.pp = &pp;
-    pp.includeCallback = {
-        [](ParseSupervisor* visor, StringView directive) { visor->onGotInclude(directive); },
-        visor};
+    pp.includeCallback = [visor](StringView directive) { visor->onGotInclude(directive); };
     parser.visor = visor;
     PLY_ASSERT(!visor->parser);
     visor->parser = &parser;

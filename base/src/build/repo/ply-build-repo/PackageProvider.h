@@ -19,10 +19,10 @@ struct PackageProvider {
 
     Manager manager;
     String packageName;
-    LambdaView<void(StringView prefix)> initDep;
+    Functor<void(StringView prefix)> initDep;
 
     PLY_INLINE PackageProvider(Manager manager, StringView packageName,
-                           LambdaView<void(StringView prefix)> initDep)
+                           Functor<void(StringView prefix)> initDep)
         : manager{manager}, packageName{packageName}, initDep{initDep} {
     }
     PLY_BUILD_ENTRY ExternResult handle(ExternCommand cmd, ExternProviderArgs* args);

@@ -71,7 +71,7 @@ struct Preprocessor {
     // It'll remain valid until the next call to readToken.
     Array<Token> macroArgs;
 
-    HiddenArgFunctor<void(StringView directive)> includeCallback;
+    Functor<void(StringView directive)> includeCallback;
 
     PLY_INLINE void error(Error&& err) {
         this->errorHandler(new Error{std::move(err)});

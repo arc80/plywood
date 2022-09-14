@@ -9,7 +9,7 @@
 
 namespace pylon {
 
-using FilterFunc = HiddenArgFunctor<Owned<Node>(AnyObject)>;
+using FilterFunc = Functor<Owned<Node>(AnyObject)>;
 Owned<Node> exportObj(AnyObject obj, const FilterFunc& filter = {});
 
 } // namespace pylon

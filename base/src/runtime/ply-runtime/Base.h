@@ -10,10 +10,8 @@
 #include <ply-runtime/container/FixedArray.h>
 #include <ply-runtime/container/Functor.h>
 #include <ply-runtime/container/HashMap.h>
-#include <ply-runtime/container/HiddenArgFunctor.h>
 #include <ply-runtime/container/Int128.h>
 #include <ply-runtime/container/LabelMap.h>
-#include <ply-runtime/container/LambdaView.h>
 #include <ply-runtime/container/Owned.h>
 #include <ply-runtime/container/Pool.h>
 #include <ply-runtime/container/Reference.h>

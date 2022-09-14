@@ -90,7 +90,7 @@ struct PathCompIterator {
 
     PLY_NO_INLINE void iterateOver(const PathFormat* pathFmt,
                                    ArrayView<const StringView> components,
-                                   const LambdaView<void(StringView)>& callback) {
+                                   const Functor<void(StringView)>& callback) {
         s32 absoluteIndex = -1;
         s32 driveLetterIndex = -1;
         for (s32 i = components.numItems - 1; i >= 0; i--) {
@@ -109,9 +109,9 @@ struct PathCompIterator {
             firstComp[1] = ':';
             if (absoluteIndex >= 0) {
                 firstComp[2] = pathFmt->sepByte();
-                callback({firstComp, 3});
+                callback(StringView{firstComp, 3});
             } else {
-                callback({firstComp, 2});
+                callback(StringView{firstComp, 2});
             }
         }
 
@@ -121,7 +121,7 @@ struct PathCompIterator {
             PLY_ASSERT((u32) absoluteIndex >= i);
             i = absoluteIndex;
             if (driveLetterIndex < 0) {
-                callback({&pathFmt->sepByte(), 1});
+                callback(StringView{&pathFmt->sepByte(), 1});
             }
         }
 

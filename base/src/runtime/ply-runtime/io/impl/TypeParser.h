@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/container/HiddenArgFunctor.h>
+#include <ply-runtime/container/Functor.h>
 
 namespace ply {
 namespace fmt {
@@ -12,7 +12,8 @@ namespace fmt {
 extern const u8 DigitTable[256];
 extern const u32 WhitespaceMask[8];
 PLY_DLL_ENTRY void scanUsingMask(InStream* ins, const u32* mask, bool invert);
-PLY_DLL_ENTRY void scanUsingCallback(InStream* ins, const LambdaView<bool(char)>& callback);
+typedef Functor<bool(char)> Callback;
+PLY_DLL_ENTRY void scanUsingCallback(InStream* ins, const Callback& callback);
 PLY_DLL_ENTRY bool scanUpToAndIncludingSpecial(InStream* ins, StringView special);
 
 struct Radix {
@@ -99,7 +100,7 @@ struct QuotedString {
     };
 
     u32 flags = 0;
-    HiddenArgFunctor<void(InStream*, ErrorCode)> errorCallback;
+    Functor<void(InStream*, ErrorCode)> errorCallback;
 };
 template <>
 struct FormatParser<QuotedString> {
@@ -138,13 +139,10 @@ struct FormatParser<Whitespace> {
 };
 
 // Callback
-struct Callback {
-    LambdaView<bool(char)> cb;
-};
 template <>
 struct FormatParser<Callback> {
     static PLY_NO_INLINE void parse(InStream* ins, const Callback& cb) {
-        fmt::scanUsingCallback(ins, cb.cb);
+        fmt::scanUsingCallback(ins, cb);
     }
 };
 
