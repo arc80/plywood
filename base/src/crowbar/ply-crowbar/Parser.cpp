@@ -293,12 +293,10 @@ Owned<Expression> parseExpressionWithTraits(Parser* parser, AnyOwnedObject* expr
     for (;;) {
         // Try to parse a custom expression trait.
         ExpandedToken token = parser->tkr->readToken();
-        if ((token.type == TokenType::Identifier) && parser->exprTraitHooks) {
-            Parser::ExpressionTraitHooks::Handler* handler = parser->exprTraitHooks->map.find(token.label);
-            if (handler) {
-                if (handler->callback(handler->arg, token, expressionTraits))
-                    continue; // Parsed as an expression trait.
-            }
+        if ((token.type == TokenType::Identifier) && parser->exprTraitHandlers) {
+            Functor<ExpressionTraitHandler>* handler = parser->exprTraitHandlers->find(token.label);
+            if (handler && (*handler)(token, expressionTraits))
+                continue; // Parsed as an expression trait.
         }
         parser->tkr->rewindTo(token.tokenIdx);
 
@@ -313,12 +311,10 @@ Owned<Expression> parseExpressionWithTraits(Parser* parser, AnyOwnedObject* expr
 
 bool tryParseCustomBlock(Parser* parser, StatementBlock* stmtBlock) {
     ExpandedToken token = parser->tkr->readToken();
-    if ((token.type == TokenType::Identifier) && parser->customBlockHooks) {
-        Parser::CustomBlockHooks::Handler* handler = parser->customBlockHooks->map.find(token.label);
-        if (handler) {
-            if (handler->callback(handler->arg, token, stmtBlock))
-                return true; // Parsed as a custom block.
-        }
+    if ((token.type == TokenType::Identifier) && parser->customBlockHandlers) {
+        Functor<CustomBlockHandler>* handler = parser->customBlockHandlers->find(token.label);
+        if (handler && (*handler)(token, stmtBlock))
+            return true; // Parsed as a custom block.
     }
     parser->tkr->rewindTo(token.tokenIdx);
     return false;

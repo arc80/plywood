@@ -16,6 +16,7 @@ struct Common {
     // 'include_directories', 'dependencies', etc.
     Label moduleKey;
     Label executableKey;
+    Label externKey;
     Label includeDirectoriesKey;
     Label sourceFilesKey;
     Label dependenciesKey;

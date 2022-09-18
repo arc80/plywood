@@ -12,16 +12,16 @@ namespace latest {
 
 struct ExtendedParser {
     crowbar::Parser* parser = nullptr;
-    crowbar::Parser::CustomBlockHooks customBlocks;
-    crowbar::Parser::ExpressionTraitHooks exprTraits;
+    LabelMap<Functor<crowbar::CustomBlockHandler>> customBlocks;
+    LabelMap<Functor<crowbar::ExpressionTraitHandler>> exprTraits;
 
     // Current Plyfile and module being parsed:
     Repository::Plyfile* currentPlyfile = nullptr;
     Repository::Module* currentModule = nullptr;
 };
 
-bool parseModuleOrExecutableBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
-                                  crowbar::StatementBlock* stmtBlock) {
+bool parseModuleLikeBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
+                          crowbar::StatementBlock* stmtBlock) {
     // module/executable { ... } block
     if (ep->parser->context.customBlock || ep->parser->context.func) {
         error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
@@ -277,19 +277,20 @@ bool parsePlyfile(StringView path) {
     ExtendedParser ph;
     ph.parser = &parser;
     ph.currentPlyfile = plyfile;
-    ph.customBlocks.add(g_common->moduleKey, parseModuleOrExecutableBlock, &ph);
-    ph.customBlocks.add(g_common->executableKey, parseModuleOrExecutableBlock, &ph);
-    ph.customBlocks.add(g_common->sourceFilesKey, parseSourceFilesBlock, &ph);
-    ph.customBlocks.add(g_common->includeDirectoriesKey, parseIncludeDirectoriesBlock, &ph);
-    ph.customBlocks.add(g_common->dependenciesKey, parseDependenciesBlock, &ph);
-    ph.customBlocks.add(g_common->linkLibrariesKey, parseLinkLibrariesBlock, &ph);
-    ph.customBlocks.add(g_common->configOptionsKey, parseConfigOptionsBlock, &ph);
-    ph.customBlocks.add(g_common->configListKey, parseConfigListBlock, &ph);
-    ph.customBlocks.add(g_common->configKey, parseConfigBlock, &ph);
-    ph.exprTraits.add(g_common->publicKey, parsePublicPrivateExpressionTrait, &ph);
-    ph.exprTraits.add(g_common->privateKey, parsePublicPrivateExpressionTrait, &ph);
-    parser.customBlockHooks = &ph.customBlocks;
-    parser.exprTraitHooks = &ph.exprTraits;
+    *ph.customBlocks.insert(g_common->moduleKey) = {parseModuleLikeBlock, &ph};
+    *ph.customBlocks.insert(g_common->executableKey) = {parseModuleLikeBlock, &ph};
+    *ph.customBlocks.insert(g_common->externKey) = {parseModuleLikeBlock, &ph};
+    *ph.customBlocks.insert(g_common->sourceFilesKey) = {parseSourceFilesBlock, &ph};
+    *ph.customBlocks.insert(g_common->includeDirectoriesKey) = {parseIncludeDirectoriesBlock, &ph};
+    *ph.customBlocks.insert(g_common->dependenciesKey) = {parseDependenciesBlock, &ph};
+    *ph.customBlocks.insert(g_common->linkLibrariesKey) = {parseLinkLibrariesBlock, &ph};
+    *ph.customBlocks.insert(g_common->configOptionsKey) = {parseConfigOptionsBlock, &ph};
+    *ph.customBlocks.insert(g_common->configListKey) = {parseConfigListBlock, &ph};
+    *ph.customBlocks.insert(g_common->configKey) = {parseConfigBlock, &ph};
+    *ph.exprTraits.insert(g_common->publicKey) = {parsePublicPrivateExpressionTrait, &ph};
+    *ph.exprTraits.insert(g_common->privateKey) = {parsePublicPrivateExpressionTrait, &ph};
+    parser.customBlockHandlers = &ph.customBlocks;
+    parser.exprTraitHandlers = &ph.exprTraits;
 
     parser.tkr = &plyfile->tkr;
     OutStream errorOut = StdErr::text();

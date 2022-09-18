@@ -16,6 +16,7 @@ void Common::initialize() {
     g_common = new Common;
     g_common->moduleKey = g_labelStorage.insert("module");
     g_common->executableKey = g_labelStorage.insert("executable");
+    g_common->externKey = g_labelStorage.insert("extern");
     g_common->includeDirectoriesKey = g_labelStorage.insert("include_directories");
     g_common->sourceFilesKey = g_labelStorage.insert("source_files");
     g_common->dependenciesKey = g_labelStorage.insert("dependencies");

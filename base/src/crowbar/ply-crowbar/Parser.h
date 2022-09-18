@@ -10,41 +10,12 @@
 namespace ply {
 namespace crowbar {
 
+typedef bool CustomBlockHandler(const ExpandedToken& kwToken, StatementBlock* stmtBlock);
+typedef bool ExpressionTraitHandler(const ExpandedToken& kwToken, AnyOwnedObject* expressionTraits);
+
 struct Parser {
-    struct CustomBlockHooks {
-        template <typename T>
-        using Callback = bool(T* arg, const ExpandedToken& kwToken, StatementBlock* stmtBlock);
-        struct Handler {
-            Callback<void>* callback = nullptr;
-            void* arg = nullptr;
-        };
-        LabelMap<Handler> map;
-
-        template <typename T>
-        PLY_INLINE void add(Label keyword, Callback<T>* callback, T* arg) {
-            *this->map.insert(keyword) = {(Callback<void>*) callback, (void*) arg};
-        }
-    };
-
-    CustomBlockHooks* customBlockHooks = nullptr;
-
-    struct ExpressionTraitHooks {
-        template <typename T>
-        using Callback = bool(T* hooks, const crowbar::ExpandedToken& kwToken,
-                              AnyOwnedObject* expressionTraits);
-        struct Handler {
-            Callback<void>* callback = nullptr;
-            void* arg = nullptr;
-        };
-        LabelMap<Handler> map;
-
-        template <typename T>
-        PLY_INLINE void add(Label keyword, Callback<T>* callback, T* arg) {
-            *this->map.insert(keyword) = {(Callback<void>*) callback, (void*) arg};
-        }
-    };
-
-    ExpressionTraitHooks* exprTraitHooks = nullptr;
+    LabelMap<Functor<CustomBlockHandler>>* customBlockHandlers = nullptr;
+    LabelMap<Functor<ExpressionTraitHandler>>* exprTraitHandlers = nullptr;
 
     // Tokenizer.
     Tokenizer* tkr = nullptr;
