@@ -51,7 +51,7 @@ bool parseModuleLikeBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
     }
 
     // Add to Repository
-    auto cursor = Repository::instance->moduleMap.insertOrFind(mod->block->name);
+    auto cursor = g_repository->moduleMap.insertOrFind(mod->block->name);
     if (cursor.wasFound()) {
         error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
               String::format("'{}' was already defined as {}", kwToken.text,
@@ -165,8 +165,7 @@ bool parseConfigOptionsBlock(ExtendedParser* ep, const crowbar::ExpandedToken& k
     PLY_SET_IN_SCOPE(ep->customBlock, cb);
     cb->body = parseStatementBlock(ep->parser, {"config_options", "config_options", true});
     if (ep->currentModule) {
-        Repository::instance->moduleConfigBlocks.append(
-            {ep->currentModule, std::move(customBlock)});
+        g_repository->moduleConfigBlocks.append({ep->currentModule, std::move(customBlock)});
     }
     return true;
 }
@@ -179,7 +178,7 @@ bool parseConfigListBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
         ep->parser->recovery.muteErrors = false;
     }
 
-    Repository::ConfigList* configList = Repository::instance->configList;
+    Repository::ConfigList* configList = g_repository->configList;
     if (configList) {
         error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
               "a conflig_list was already defined");
@@ -189,8 +188,8 @@ bool parseConfigListBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
             configList->plyfile->tkr.fileLocationMap.formatFileLocation(configList->fileOffset));
     }
 
-    Repository::instance->configList = Owned<Repository::ConfigList>::create();
-    configList = Repository::instance->configList;
+    g_repository->configList = Owned<Repository::ConfigList>::create();
+    configList = g_repository->configList;
     configList->plyfile = ep->currentPlyfile;
     configList->fileOffset = kwToken.fileOffset;
 
@@ -238,7 +237,7 @@ bool parsePublicPrivateExpressionTrait(ExtendedParser* ep, const crowbar::Expand
     bool isLegal = false;
     if (crowbar::Statement::CustomBlock* cb = ep->customBlock) {
         isLegal = (cb->type == g_common->includeDirectoriesKey) ||
-                (cb->type == g_common->dependenciesKey);
+                  (cb->type == g_common->dependenciesKey);
     }
     if (isLegal) {
         if (!expressionTraits->data) {
@@ -258,14 +257,14 @@ bool parsePublicPrivateExpressionTrait(ExtendedParser* ep, const crowbar::Expand
 }
 
 bool parsePlyfile(StringView path) {
-    Repository* repo = Repository::instance;
     String src = FileSystem::native()->loadTextAutodetect(path).first;
     if (FileSystem::native()->lastResult() != FSResult::OK) {
         PLY_FORCE_CRASH();
     }
 
     // Create Plyfile, tokenizer and parser.
-    Repository::Plyfile* plyfile = repo->plyfiles.append(Owned<Repository::Plyfile>::create());
+    Repository::Plyfile* plyfile =
+        g_repository->plyfiles.append(Owned<Repository::Plyfile>::create());
     plyfile->tkr.setSourceInput(path, src);
     crowbar::Parser parser;
 

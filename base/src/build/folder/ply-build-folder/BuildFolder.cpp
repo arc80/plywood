@@ -348,7 +348,7 @@ struct ConfigListInterpreterHooks : crowbar::Interpreter::Hooks {
         PLY_ASSERT(this->currentConfigName); // FIXME: Make robust
 
         // Initialize all Module::currentOptions
-        for (latest::Repository::Module* mod : latest::Repository::instance->moduleMap) {
+        for (latest::Repository::Module* mod : latest::g_repository->moduleMap) {
             auto newOptions = Owned<latest::Repository::ConfigOptions>::create();
             for (const auto& item : mod->defaultOptions->map) {
                 auto cursor = newOptions->map.insertOrFind(item.identifier);
@@ -382,7 +382,7 @@ struct ConfigListInterpreterHooks : crowbar::Interpreter::Hooks {
         // Clear currentConfigName, Module::currentOptions, and set ModuleInstantiator status to
         // NotInstantiated.
         this->currentConfigName.clear();
-        for (latest::Repository::Module* mod : latest::Repository::instance->moduleMap) {
+        for (latest::Repository::Module* mod : latest::g_repository->moduleMap) {
             mod->currentOptions.clear();
         }
         for (auto& item : this->mi->modules) {
@@ -395,7 +395,7 @@ struct ConfigNamespace : crowbar::INamespace {
     crowbar::Interpreter* interp = nullptr;
 
     virtual AnyObject find(Label identifier) const override {
-        auto cursor = latest::Repository::instance->moduleMap.find(identifier);
+        auto cursor = latest::g_repository->moduleMap.find(identifier);
         if (!cursor.wasFound())
             return {};
 
@@ -413,7 +413,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     mi.project.name = bf->solutionName;
 
     // Execute the config_list block
-    latest::Repository::ConfigList* configList = latest::Repository::instance->configList;
+    latest::Repository::ConfigList* configList = latest::g_repository->configList;
     if (!configList) {
         ErrorHandler::log(ErrorHandler::Fatal, "No config_list block defined.\n");
     }

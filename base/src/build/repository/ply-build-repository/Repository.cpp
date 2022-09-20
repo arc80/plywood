@@ -10,7 +10,7 @@ namespace ply {
 namespace build {
 namespace latest {
 
-Owned<Repository> Repository::instance;
+Repository* g_repository = nullptr;
 
 struct ConfigOptionsInterpreterHooks : crowbar::Interpreter::Hooks {
     crowbar::Interpreter* interp = nullptr;
@@ -28,7 +28,7 @@ struct ConfigOptionsInterpreterHooks : crowbar::Interpreter::Hooks {
 };
 
 void Repository::create() {
-    Repository::instance = Owned<Repository>::create();
+    g_repository = new Repository;
 
     bool anyError = false;
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(PLY_WORKSPACE_FOLDER, 0)) {
@@ -57,11 +57,11 @@ void Repository::create() {
     }
 
     // Initialize all config_options
-    for (Module* mod : Repository::instance->moduleMap) {
+    for (Module* mod : g_repository->moduleMap) {
         mod->defaultOptions = Owned<ConfigOptions>::create();
     }
 
-    for (const ModuleConfigBlock& cb : Repository::instance->moduleConfigBlocks) {
+    for (const ModuleConfigBlock& cb : g_repository->moduleConfigBlocks) {
         // Create new interpreter.
         MemOutStream outs;
         crowbar::Interpreter interp;

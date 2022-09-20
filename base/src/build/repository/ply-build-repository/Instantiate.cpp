@@ -115,7 +115,7 @@ PLY_NO_INLINE MethodResult doJoinPath(BaseInterpreter* interp, const AnyObject&,
 
 struct ModuleNamespace : crowbar::INamespace {
     virtual AnyObject find(Label identifier) const {
-        auto cursor = Repository::instance->moduleMap.find(identifier);
+        auto cursor = g_repository->moduleMap.find(identifier);
         if (cursor.wasFound()) {
             return AnyObject::bind(cursor->get());
         }
@@ -163,7 +163,7 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     node->configMask |= mi->configBit;
 
     // Find module function by name.
-    auto funcCursor = Repository::instance->moduleMap.find(moduleLabel);
+    auto funcCursor = g_repository->moduleMap.find(moduleLabel);
     if (!funcCursor.wasFound()) {
         PLY_FORCE_CRASH();
     }

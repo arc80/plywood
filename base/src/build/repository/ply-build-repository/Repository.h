@@ -68,9 +68,10 @@ struct Repository {
     Array<ModuleConfigBlock> moduleConfigBlocks;
     Owned<ConfigList> configList;
 
-    static Owned<Repository> instance;
     static void create();
 };
+
+extern Repository* g_repository;
 
 bool parsePlyfile(StringView path);
 
