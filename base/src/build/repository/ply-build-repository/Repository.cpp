@@ -59,40 +59,41 @@ void Repository::create() {
     // Initialize all config_options
     for (Module* mod : Repository::instance->moduleMap) {
         mod->defaultOptions = Owned<ConfigOptions>::create();
-        if (mod->configBlock) {
-            // Create new interpreter.
-            MemOutStream outs;
-            crowbar::Interpreter interp;
-            interp.outs = &outs;
+    }
 
-            // Add hooks.
-            ConfigOptionsInterpreterHooks interpHooks;
-            interpHooks.interp = &interp;
-            interpHooks.optionSet = mod->defaultOptions;
-            interp.hooks = &interpHooks;
+    for (const ModuleConfigBlock& cb : Repository::instance->moduleConfigBlocks) {
+        // Create new interpreter.
+        MemOutStream outs;
+        crowbar::Interpreter interp;
+        interp.outs = &outs;
 
-            // Add builtin namespace.
-            crowbar::MapNamespace builtIns;
-            static bool true_ = true;
-            static bool false_ = false;
-            *builtIns.map.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
-            *builtIns.map.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
-            interp.outerNameSpaces.append(&builtIns);
+        // Add hooks.
+        ConfigOptionsInterpreterHooks interpHooks;
+        interpHooks.interp = &interp;
+        interpHooks.optionSet = cb.mod->defaultOptions;
+        interp.hooks = &interpHooks;
 
-            // Invoke config_options block.
-            crowbar::Interpreter::StackFrame frame;
-            frame.interp = &interp;
-            frame.desc = [mod]() -> HybridString {
-                return String::format("config_options for {} '{}'",
-                                      g_labelStorage.view(mod->block->type),
-                                      g_labelStorage.view(mod->block->name));
-            };
-            frame.tkr = &mod->plyfile->tkr;
-            MethodResult result = execFunction(&frame, mod->configBlock->customBlock()->body);
-            if (result == MethodResult::Error) {
-                StdErr::text() << outs.moveToString();
-                exit(1);
-            }
+        // Add builtin namespace.
+        crowbar::MapNamespace builtIns;
+        static bool true_ = true;
+        static bool false_ = false;
+        *builtIns.map.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
+        *builtIns.map.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
+        interp.outerNameSpaces.append(&builtIns);
+
+        // Invoke config_options block.
+        crowbar::Interpreter::StackFrame frame;
+        frame.interp = &interp;
+        frame.desc = [mod = cb.mod]() -> HybridString {
+            return String::format("config_options for {} '{}'",
+                                  g_labelStorage.view(mod->block->type),
+                                  g_labelStorage.view(mod->block->name));
+        };
+        frame.tkr = &cb.mod->plyfile->tkr;
+        MethodResult result = execFunction(&frame, cb.block->customBlock()->body);
+        if (result == MethodResult::Error) {
+            StdErr::text() << outs.moveToString();
+            exit(1);
         }
     }
 }

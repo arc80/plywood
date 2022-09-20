@@ -495,9 +495,9 @@ void parseParameterList(Parser* parser, Statement::FunctionDefinition* functionD
 void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
                              StatementBlock* stmtBlock) {
     auto stmt = Owned<Statement>::create();
-    auto functionDef = stmt->functionDefinition().switchTo().get();
+    auto* functionDef = stmt->functionDefinition().switchTo().get();
     functionDef->tkr = parser->tkr;
-    PLY_SET_IN_SCOPE(parser->context.func, functionDef);
+    PLY_SET_IN_SCOPE(parser->functionLikeScope, stmt);
 
     // We got the 'fn' keyword.
     parser->recovery.muteErrors = false;

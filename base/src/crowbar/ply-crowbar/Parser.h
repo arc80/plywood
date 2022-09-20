@@ -36,12 +36,8 @@ struct Parser {
     };
     RecoveryState recovery;
 
-    // Information about the current parsing context.
-    struct Context {
-        Statement::FunctionDefinition* func = nullptr;
-        Statement::CustomBlock* customBlock = nullptr;
-    };
-    Context context;
+    // Information about the current parsing context:
+    Statement* functionLikeScope = nullptr; // nullptr means file scope
 
     Owned<Expression> parseExpression(u32 outerPrecendenceLevel = Limits<u32>::Max,
                                       bool asStatement = false);

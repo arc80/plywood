@@ -40,7 +40,6 @@ struct Repository {
         Plyfile* plyfile = nullptr;
         u32 fileOffset = 0;
         crowbar::Statement::CustomBlock* block = nullptr;
-        Owned<crowbar::Statement> configBlock;
         Owned<ConfigOptions> defaultOptions;
         Owned<ConfigOptions> currentOptions;
     };
@@ -53,6 +52,11 @@ struct Repository {
         }
     };
 
+    struct ModuleConfigBlock {
+        Module* mod = nullptr;
+        Owned<crowbar::Statement> block;
+    };
+
     struct ConfigList {
         Plyfile* plyfile = nullptr;
         u32 fileOffset = 0;
@@ -61,6 +65,7 @@ struct Repository {
 
     Array<Owned<Plyfile>> plyfiles;
     HashMap<ModuleMapTraits> moduleMap;
+    Array<ModuleConfigBlock> moduleConfigBlocks;
     Owned<ConfigList> configList;
 
     static Owned<Repository> instance;

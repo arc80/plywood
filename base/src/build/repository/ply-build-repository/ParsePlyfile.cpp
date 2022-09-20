@@ -15,15 +15,16 @@ struct ExtendedParser {
     LabelMap<Functor<crowbar::CustomBlockHandler>> customBlocks;
     LabelMap<Functor<crowbar::ExpressionTraitHandler>> exprTraits;
 
-    // Current Plyfile and module being parsed:
+    // Information about the current parsing context:
     Repository::Plyfile* currentPlyfile = nullptr;
     Repository::Module* currentModule = nullptr;
+    crowbar::Statement::CustomBlock* customBlock = nullptr;
 };
 
 bool parseModuleLikeBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                           crowbar::StatementBlock* stmtBlock) {
-    // module/executable { ... } block
-    if (ep->parser->context.customBlock || ep->parser->context.func) {
+    // module/executable/extern { ... } block
+    if (ep->parser->functionLikeScope) {
         error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
               String::format("{} must be defined at file scope", kwToken.text));
         ep->parser->recovery.muteErrors = false;
@@ -63,8 +64,8 @@ bool parseModuleLikeBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
     (*cursor) = std::move(ownedMod);
 
     // Parse nested block.
+    PLY_SET_IN_SCOPE(ep->parser->functionLikeScope, moduleStmt);
     PLY_SET_IN_SCOPE(ep->currentModule, mod);
-    PLY_SET_IN_SCOPE(ep->parser->context.customBlock, mod->block);
     mod->block->body =
         parseStatementBlock(ep->parser, {kwToken.text, kwToken.text + " name", true});
     stmtBlock->statements.append(std::move(moduleStmt));
@@ -73,16 +74,17 @@ bool parseModuleLikeBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
 
 bool parseSourceFilesBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                            crowbar::StatementBlock* stmtBlock) {
-    if (!ep->currentModule) {
+    if (!ep->parser->functionLikeScope) {
         error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "source_files block can only be used within a module or executable block");
+              "source_files block can only be used within a function, module, executable or extern "
+              "block");
         ep->parser->recovery.muteErrors = false;
     }
 
     auto customBlock = Owned<crowbar::Statement>::create();
     auto* cb = customBlock->customBlock().switchTo().get();
     cb->type = g_common->sourceFilesKey;
-    PLY_SET_IN_SCOPE(ep->parser->context.customBlock, cb);
+    PLY_SET_IN_SCOPE(ep->customBlock, cb);
     cb->body = parseStatementBlock(ep->parser, {"source_files", "source_files", true});
     stmtBlock->statements.append(std::move(customBlock));
     return true;
@@ -90,17 +92,18 @@ bool parseSourceFilesBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwT
 
 bool parseIncludeDirectoriesBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                                   crowbar::StatementBlock* stmtBlock) {
-    if (!ep->currentModule) {
+    // include_directories { ... } block
+    if (!ep->parser->functionLikeScope) {
         error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "include_directories block can only be used within a module or executable "
-              "block");
+              "include_directories block can only be used within a function, module, executable or "
+              "extern block");
         ep->parser->recovery.muteErrors = false;
     }
 
     auto customBlock = Owned<crowbar::Statement>::create();
     auto* cb = customBlock->customBlock().switchTo().get();
     cb->type = g_common->includeDirectoriesKey;
-    PLY_SET_IN_SCOPE(ep->parser->context.customBlock, cb);
+    PLY_SET_IN_SCOPE(ep->customBlock, cb);
     cb->body =
         parseStatementBlock(ep->parser, {"include_directories", "include_directories", true});
     stmtBlock->statements.append(std::move(customBlock));
@@ -110,16 +113,17 @@ bool parseIncludeDirectoriesBlock(ExtendedParser* ep, const crowbar::ExpandedTok
 bool parseDependenciesBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                             crowbar::StatementBlock* stmtBlock) {
     // dependencies { ... } block
-    if (!ep->currentModule) {
+    if (!ep->parser->functionLikeScope) {
         error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "dependencies block can only be used within a module or executable block");
+              "dependencies block can only be used within a function, module, executable or extern "
+              "block");
         ep->parser->recovery.muteErrors = false;
     }
 
     auto customBlock = Owned<crowbar::Statement>::create();
     auto* cb = customBlock->customBlock().switchTo().get();
     cb->type = g_common->dependenciesKey;
-    PLY_SET_IN_SCOPE(ep->parser->context.customBlock, cb);
+    PLY_SET_IN_SCOPE(ep->customBlock, cb);
     cb->body = parseStatementBlock(ep->parser, {"dependencies", "dependencies", true});
     stmtBlock->statements.append(std::move(customBlock));
     return true;
@@ -127,16 +131,19 @@ bool parseDependenciesBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kw
 
 bool parseLinkLibrariesBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                              crowbar::StatementBlock* stmtBlock) {
-    if (!ep->currentModule) {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "link_libraries block can only be used within a module or executable block");
+    // link_libraries { ... } block
+    if (!ep->parser->functionLikeScope) {
+        error(
+            ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+            "link_libraries block can only be used within a function, module, executable or extern "
+            "block");
         ep->parser->recovery.muteErrors = false;
     }
 
     auto customBlock = Owned<crowbar::Statement>::create();
     auto* cb = customBlock->customBlock().switchTo().get();
     cb->type = g_common->linkLibrariesKey;
-    PLY_SET_IN_SCOPE(ep->parser->context.customBlock, cb);
+    PLY_SET_IN_SCOPE(ep->customBlock, cb);
     cb->body = parseStatementBlock(ep->parser, {"link_libraries", "link_libraries", true});
     stmtBlock->statements.append(std::move(customBlock));
     return true;
@@ -144,39 +151,29 @@ bool parseLinkLibrariesBlock(ExtendedParser* ep, const crowbar::ExpandedToken& k
 
 bool parseConfigOptionsBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                              crowbar::StatementBlock* stmtBlock) {
-    if (ep->currentModule) {
-        if (ep->currentModule->configBlock) {
-            error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-                  String::format("{} '{}' already has a config_options block",
-                                 g_labelStorage.view(ep->currentModule->block->type),
-                                 g_labelStorage.view(ep->currentModule->block->name)));
-            ep->parser->recovery.muteErrors = false;
-            ep->parser->errorOut->format(
-                "{}: see previous definition\n",
-                ep->currentModule->plyfile->tkr.fileLocationMap.formatFileLocation(
-                    ep->currentModule->configBlock->fileOffset));
-        }
-    } else {
+    // config_options { ... } block
+    if (!ep->currentModule) {
         error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "config_options block can only be used within a module or executable block");
+              "config_options block can only be used within a module, executable or extern block");
         ep->parser->recovery.muteErrors = false;
     }
 
     auto customBlock = Owned<crowbar::Statement>::create();
     customBlock->fileOffset = kwToken.fileOffset;
-    auto* cb = customBlock->customBlock().switchTo().get();
+    crowbar::Statement::CustomBlock* cb = customBlock->customBlock().switchTo().get();
     cb->type = g_common->configOptionsKey;
-    PLY_SET_IN_SCOPE(ep->parser->context.customBlock, cb);
+    PLY_SET_IN_SCOPE(ep->customBlock, cb);
     cb->body = parseStatementBlock(ep->parser, {"config_options", "config_options", true});
     if (ep->currentModule) {
-        ep->currentModule->configBlock = std::move(customBlock);
+        Repository::instance->moduleConfigBlocks.append(
+            {ep->currentModule, std::move(customBlock)});
     }
     return true;
 }
 
 bool parseConfigListBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                           crowbar::StatementBlock* stmtBlock) {
-    if (ep->parser->context.customBlock || ep->parser->context.func) {
+    if (ep->parser->functionLikeScope) {
         error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
               "conflig_list must be defined at file scope");
         ep->parser->recovery.muteErrors = false;
@@ -201,7 +198,7 @@ bool parseConfigListBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
     customBlock->fileOffset = kwToken.fileOffset;
     auto* cb = customBlock->customBlock().switchTo().get();
     cb->type = g_common->configListKey;
-    PLY_SET_IN_SCOPE(ep->parser->context.customBlock, cb);
+    PLY_SET_IN_SCOPE(ep->customBlock, cb);
     configList->block = parseStatementBlock(ep->parser, {"config_list", "config_list", true});
 
     return true;
@@ -210,9 +207,8 @@ bool parseConfigListBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
 bool parseConfigBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                       crowbar::StatementBlock* stmtBlock) {
     crowbar::Statement::CustomBlock* configListBlock = nullptr;
-    if (ep->parser->context.customBlock &&
-        (ep->parser->context.customBlock->type == g_common->configListKey)) {
-        configListBlock = ep->parser->context.customBlock;
+    if (ep->customBlock && (ep->customBlock->type == g_common->configListKey)) {
+        configListBlock = ep->customBlock;
     }
 
     if (!configListBlock) {
@@ -228,7 +224,7 @@ bool parseConfigBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
     auto* cb = customBlock->customBlock().switchTo().get();
     cb->type = g_common->configKey;
     cb->expr = std::move(expr);
-    PLY_SET_IN_SCOPE(ep->parser->context.customBlock, cb);
+    PLY_SET_IN_SCOPE(ep->customBlock, cb);
     cb->body = parseStatementBlock(ep->parser, {"config", "config", true});
 
     if (configListBlock) {
@@ -239,12 +235,12 @@ bool parseConfigBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
 
 bool parsePublicPrivateExpressionTrait(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                                        AnyOwnedObject* expressionTraits) {
-    bool legal = false;
-    if (crowbar::Statement::CustomBlock* cb = ep->parser->context.customBlock) {
-        legal = (cb->type == g_common->includeDirectoriesKey) ||
+    bool isLegal = false;
+    if (crowbar::Statement::CustomBlock* cb = ep->customBlock) {
+        isLegal = (cb->type == g_common->includeDirectoriesKey) ||
                 (cb->type == g_common->dependenciesKey);
     }
-    if (legal) {
+    if (isLegal) {
         if (!expressionTraits->data) {
             *expressionTraits = AnyOwnedObject::create<ExpressionTraits>();
         }
@@ -274,23 +270,23 @@ bool parsePlyfile(StringView path) {
     crowbar::Parser parser;
 
     // Extend the parser
-    ExtendedParser ph;
-    ph.parser = &parser;
-    ph.currentPlyfile = plyfile;
-    *ph.customBlocks.insert(g_common->moduleKey) = {parseModuleLikeBlock, &ph};
-    *ph.customBlocks.insert(g_common->executableKey) = {parseModuleLikeBlock, &ph};
-    *ph.customBlocks.insert(g_common->externKey) = {parseModuleLikeBlock, &ph};
-    *ph.customBlocks.insert(g_common->sourceFilesKey) = {parseSourceFilesBlock, &ph};
-    *ph.customBlocks.insert(g_common->includeDirectoriesKey) = {parseIncludeDirectoriesBlock, &ph};
-    *ph.customBlocks.insert(g_common->dependenciesKey) = {parseDependenciesBlock, &ph};
-    *ph.customBlocks.insert(g_common->linkLibrariesKey) = {parseLinkLibrariesBlock, &ph};
-    *ph.customBlocks.insert(g_common->configOptionsKey) = {parseConfigOptionsBlock, &ph};
-    *ph.customBlocks.insert(g_common->configListKey) = {parseConfigListBlock, &ph};
-    *ph.customBlocks.insert(g_common->configKey) = {parseConfigBlock, &ph};
-    *ph.exprTraits.insert(g_common->publicKey) = {parsePublicPrivateExpressionTrait, &ph};
-    *ph.exprTraits.insert(g_common->privateKey) = {parsePublicPrivateExpressionTrait, &ph};
-    parser.customBlockHandlers = &ph.customBlocks;
-    parser.exprTraitHandlers = &ph.exprTraits;
+    ExtendedParser ep;
+    ep.parser = &parser;
+    ep.currentPlyfile = plyfile;
+    *ep.customBlocks.insert(g_common->moduleKey) = {parseModuleLikeBlock, &ep};
+    *ep.customBlocks.insert(g_common->executableKey) = {parseModuleLikeBlock, &ep};
+    *ep.customBlocks.insert(g_common->externKey) = {parseModuleLikeBlock, &ep};
+    *ep.customBlocks.insert(g_common->sourceFilesKey) = {parseSourceFilesBlock, &ep};
+    *ep.customBlocks.insert(g_common->includeDirectoriesKey) = {parseIncludeDirectoriesBlock, &ep};
+    *ep.customBlocks.insert(g_common->dependenciesKey) = {parseDependenciesBlock, &ep};
+    *ep.customBlocks.insert(g_common->linkLibrariesKey) = {parseLinkLibrariesBlock, &ep};
+    *ep.customBlocks.insert(g_common->configOptionsKey) = {parseConfigOptionsBlock, &ep};
+    *ep.customBlocks.insert(g_common->configListKey) = {parseConfigListBlock, &ep};
+    *ep.customBlocks.insert(g_common->configKey) = {parseConfigBlock, &ep};
+    *ep.exprTraits.insert(g_common->publicKey) = {parsePublicPrivateExpressionTrait, &ep};
+    *ep.exprTraits.insert(g_common->privateKey) = {parsePublicPrivateExpressionTrait, &ep};
+    parser.customBlockHandlers = &ep.customBlocks;
+    parser.exprTraitHandlers = &ep.exprTraits;
 
     parser.tkr = &plyfile->tkr;
     OutStream errorOut = StdErr::text();
