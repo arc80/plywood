@@ -12,18 +12,14 @@ namespace crowbar {
 
 struct Tokenizer;
 
-struct INamespace {
-    virtual ~INamespace() {
-    }
-    virtual AnyObject find(Label identifier) const = 0;
-};
+struct Interpreter  {
+    struct Hooks {
+        Functor<AnyObject(Label identifier)> resolveName;
+        Functor<void(const Statement::CustomBlock* customBlock, bool enter)> customBlock;
+        Functor<void(const AnyObject& evaluationTraits)> onEvaluate;
+        Functor<bool(Label label)> assignToLocal;
+    };
 
-struct MapNamespace : INamespace {
-    LabelMap<AnyObject> map;
-    virtual AnyObject find(Label identifier) const override;
-};
-
-struct Interpreter : BaseInterpreter {
     struct StackFrame {
         Interpreter* interp = nullptr;
         Functor<HybridString()> desc;
@@ -34,30 +30,10 @@ struct Interpreter : BaseInterpreter {
         StackFrame* prevFrame = nullptr;
     };
 
-    struct Hooks {
-        virtual ~Hooks() {
-        }
-        virtual void enterCustomBlock(const Statement::CustomBlock* customBlock) {
-        }
-        virtual void exitCustomBlock(const Statement::CustomBlock* customBlock) {
-        }
-        virtual void onEvaluate(const AnyObject& evaluationTraits) {
-        }
-        virtual bool handleLocalAssignment(Label label) {
-            return false;
-        }
-    };
-
-    Array<INamespace*> outerNameSpaces;
-    Hooks defaultHooks;
-    Hooks* hooks = nullptr;
-
-    // For expanding the location of runtime errors:
+    BaseInterpreter base;
+    Hooks hooks;
+    LabelMap<AnyObject> builtIns;
     StackFrame* currentFrame = nullptr;
-
-    Interpreter() : hooks{&this->defaultHooks} {
-    }
-    virtual void error(StringView message) override;
 };
 
 Functor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef);

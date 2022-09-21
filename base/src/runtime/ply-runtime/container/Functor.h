@@ -57,7 +57,8 @@ public:
 
     template <typename... CallArgs>
     PLY_INLINE Return operator()(CallArgs&&... args) const {
-        PLY_ASSERT(this->handler);
+        if (!this->handler)
+            return subst::createDefault<Return>();
         PLY_PUN_SCOPE
         return this->handler(this->storedArg, std::forward<CallArgs>(args)...);
     }

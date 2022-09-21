@@ -28,7 +28,7 @@ struct ModuleInstantiator {
 
     String buildFolderPath;
     MemOutStream errorOut;
-    Owned<crowbar::INamespace> globalNamespace;
+    LabelMap<AnyObject> globalNamespace;
 
     // The project is initialized by instantiating a set of root modules.
     buildSteps::Project project;
@@ -37,7 +37,8 @@ struct ModuleInstantiator {
     HashMap<ModuleMapTraits> modules;
     u64 configBit = 0;
 
-    ModuleInstantiator(StringView buildFolderPath);
+    ModuleInstantiator(StringView buildFolderPath) : buildFolderPath{buildFolderPath} {
+    }
 };
 
 buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel);

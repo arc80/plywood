@@ -12,20 +12,17 @@ namespace latest {
 
 Repository* g_repository = nullptr;
 
-struct ConfigOptionsInterpreterHooks : crowbar::Interpreter::Hooks {
-    crowbar::Interpreter* interp = nullptr;
+struct ConfigOptionsInterpreter {
+    crowbar::Interpreter interp;
     Repository::ConfigOptions* optionSet = nullptr;
-
-    virtual ~ConfigOptionsInterpreterHooks() override {
-    }
-
-    virtual bool handleLocalAssignment(Label label) override {
-        auto cursor = optionSet->map.insertOrFind(label);
-        cursor->obj = AnyOwnedObject::create(this->interp->returnValue.type);
-        cursor->obj.move(this->interp->returnValue);
-        return true;
-    }
 };
+
+bool doLocalAssignment(ConfigOptionsInterpreter* coi, Label label) {
+    auto cursor = coi->optionSet->map.insertOrFind(label);
+    cursor->obj = AnyOwnedObject::create(coi->interp.base.returnValue.type);
+    cursor->obj.move(coi->interp.base.returnValue);
+    return true;
+}
 
 void Repository::create() {
     g_repository = new Repository;
@@ -63,27 +60,20 @@ void Repository::create() {
 
     for (const ModuleConfigBlock& cb : g_repository->moduleConfigBlocks) {
         // Create new interpreter.
-        MemOutStream outs;
-        crowbar::Interpreter interp;
-        interp.outs = &outs;
-
-        // Add hooks.
-        ConfigOptionsInterpreterHooks interpHooks;
-        interpHooks.interp = &interp;
-        interpHooks.optionSet = cb.mod->defaultOptions;
-        interp.hooks = &interpHooks;
+        ConfigOptionsInterpreter coi;
+        coi.interp.base.error = [](StringView message) { StdErr::text() << message; };
+        coi.optionSet = cb.mod->defaultOptions;
+        coi.interp.hooks.assignToLocal = {doLocalAssignment, &coi};
 
         // Add builtin namespace.
-        crowbar::MapNamespace builtIns;
         static bool true_ = true;
         static bool false_ = false;
-        *builtIns.map.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
-        *builtIns.map.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
-        interp.outerNameSpaces.append(&builtIns);
+        *coi.interp.builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
+        *coi.interp.builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
 
         // Invoke config_options block.
         crowbar::Interpreter::StackFrame frame;
-        frame.interp = &interp;
+        frame.interp = &coi.interp;
         frame.desc = [mod = cb.mod]() -> HybridString {
             return String::format("config_options for {} '{}'",
                                   g_labelStorage.view(mod->block->type),
@@ -92,7 +82,6 @@ void Repository::create() {
         frame.tkr = &cb.mod->plyfile->tkr;
         MethodResult result = execFunction(&frame, cb.block->customBlock()->body);
         if (result == MethodResult::Error) {
-            StdErr::text() << outs.moveToString();
             exit(1);
         }
     }

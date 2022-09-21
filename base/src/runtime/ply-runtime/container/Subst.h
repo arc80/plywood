@@ -21,9 +21,14 @@ PLY_INLINE T createDefault() {
     return 0;
 }
 
-template <typename T, std::enable_if_t<!std::is_arithmetic<T>::value, int> = 0>
+template <typename T,
+          std::enable_if_t<!std::is_arithmetic<T>::value && !std::is_same<T, void>::value, int> = 0>
 PLY_INLINE T createDefault() {
     return {};
+}
+
+template <typename T, std::enable_if_t<std::is_same<T, void>::value, int> = 0>
+PLY_INLINE T createDefault() {
 }
 
 //-------------------------------------------------------------

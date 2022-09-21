@@ -329,23 +329,23 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
     return true;
 }
 
-struct ConfigListInterpreterHooks : crowbar::Interpreter::Hooks {
-    crowbar::Interpreter* interp = nullptr;
+struct ConfigListInterpreter {
+    crowbar::Interpreter interp;
     latest::ModuleInstantiator* mi = nullptr;
     BuildFolder* buildFolder = nullptr;
     String currentConfigName;
+};
 
-    virtual ~ConfigListInterpreterHooks() override {
-    }
+void doCustomBlock(ConfigListInterpreter* cli, const crowbar::Statement::CustomBlock* block,
+                   bool isEntering) {
+    PLY_ASSERT(block->type == latest::g_common->configKey);
 
-    virtual void enterCustomBlock(const crowbar::Statement::CustomBlock* enteringBlock) override {
-        PLY_ASSERT(enteringBlock->type == latest::g_common->configKey);
-
+    if (isEntering) {
         // Evaluate config name
-        MethodResult result = eval(interp->currentFrame, enteringBlock->expr);
+        MethodResult result = eval(cli->interp.currentFrame, block->expr);
         PLY_ASSERT(result == MethodResult::OK); // FIXME: Make robust
-        this->currentConfigName = *interp->returnValue.cast<String>();
-        PLY_ASSERT(this->currentConfigName); // FIXME: Make robust
+        cli->currentConfigName = *cli->interp.base.returnValue.cast<String>();
+        PLY_ASSERT(cli->currentConfigName); // FIXME: Make robust
 
         // Initialize all Module::currentOptions
         for (latest::Repository::Module* mod : latest::g_repository->moduleMap) {
@@ -357,56 +357,47 @@ struct ConfigListInterpreterHooks : crowbar::Interpreter::Hooks {
             }
             mod->currentOptions = std::move(newOptions);
         }
-    }
-
-    virtual void exitCustomBlock(const crowbar::Statement::CustomBlock* exitingBlock) override {
-        PLY_ASSERT(exitingBlock->type == latest::g_common->configKey);
-
+    } else {
         // Add config to project
-        u32 configIndex = this->mi->project.configNames.numItems();
+        u32 configIndex = cli->mi->project.configNames.numItems();
         PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
-        this->mi->project.configNames.append(this->currentConfigName);
+        cli->mi->project.configNames.append(cli->currentConfigName);
 
         // Instantiate all root modules in this config
-        this->mi->configBit = (u64{1} << configIndex);
-        for (StringView targetName : this->buildFolder->rootTargets) {
+        cli->mi->configBit = (u64{1} << configIndex);
+        for (StringView targetName : cli->buildFolder->rootTargets) {
             buildSteps::Node* rootNode = latest::instantiateModuleForCurrentConfig(
-                this->mi, g_labelStorage.insert(targetName));
+                cli->mi, g_labelStorage.insert(targetName));
             PLY_ASSERT(rootNode); // FIXME: Handle elegantly
-            if (find(this->mi->project.rootNodes, rootNode) < 0) {
-                this->mi->project.rootNodes.append(rootNode);
+            if (find(cli->mi->project.rootNodes, rootNode) < 0) {
+                cli->mi->project.rootNodes.append(rootNode);
             }
         }
 
         // Reset state between configs.
         // Clear currentConfigName, Module::currentOptions, and set ModuleInstantiator status to
         // NotInstantiated.
-        this->currentConfigName.clear();
+        cli->currentConfigName.clear();
         for (latest::Repository::Module* mod : latest::g_repository->moduleMap) {
             mod->currentOptions.clear();
         }
-        for (auto& item : this->mi->modules) {
+        for (auto& item : cli->mi->modules) {
             item.statusInCurrentConfig = latest::ModuleInstantiator::NotInstantiated;
         }
     }
-};
+}
 
-struct ConfigNamespace : crowbar::INamespace {
-    crowbar::Interpreter* interp = nullptr;
-
-    virtual AnyObject find(Label identifier) const override {
-        auto cursor = latest::g_repository->moduleMap.find(identifier);
-        if (!cursor.wasFound())
-            return {};
-
+AnyObject resolveName(ConfigListInterpreter* cli, Label identifier) {
+    auto cursor = latest::g_repository->moduleMap.find(identifier);
+    if (cursor.wasFound()) {
         // FIXME: Handle gracefully instead of asserting
         // modules should only be looked up within config block
-        PLY_ASSERT(this->interp->currentFrame->customBlock->type == latest::g_common->configKey);
-
+        PLY_ASSERT(cli->interp.currentFrame->customBlock->type == latest::g_common->configKey);
         latest::Repository::Module* mod = *cursor;
         return AnyObject::bind(mod->currentOptions.get());
     }
-};
+    return {};
+}
 
 PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     latest::ModuleInstantiator mi{bf->getAbsPath()};
@@ -420,38 +411,26 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
 
     {
         // Create new interpreter.
-        MemOutStream outs;
-        crowbar::Interpreter interp;
-        interp.outs = &outs;
-
-        // Add hooks.
-        ConfigListInterpreterHooks interpHooks;
-        interpHooks.interp = &interp;
-        interpHooks.mi = &mi;
-        interpHooks.buildFolder = bf;
-        interp.hooks = &interpHooks;
-
-        // Add namespace to map module names to ConfigOptions.
-        ConfigNamespace configNs;
-        configNs.interp = &interp;
-        interp.outerNameSpaces.append(&configNs);
+        ConfigListInterpreter cli;
+        cli.interp.base.error = [](StringView message) { StdErr::text() << message; };
+        cli.mi = &mi;
+        cli.buildFolder = bf;
+        cli.interp.hooks.resolveName = {resolveName, &cli};
+        cli.interp.hooks.customBlock = {doCustomBlock, &cli};
 
         // Add builtin namespace.
-        crowbar::MapNamespace builtIns;
         static bool true_ = true;
         static bool false_ = false;
-        *builtIns.map.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
-        *builtIns.map.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
-        interp.outerNameSpaces.append(&builtIns);
+        *cli.interp.builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
+        *cli.interp.builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
 
         // Invoke block.
         crowbar::Interpreter::StackFrame frame;
-        frame.interp = &interp;
+        frame.interp = &cli.interp;
         frame.desc = []() -> HybridString { return "config_list"; };
         frame.tkr = &configList->plyfile->tkr;
         MethodResult result = execFunction(&frame, configList->block);
         if (result == MethodResult::Error) {
-            StdErr::text() << outs.moveToString();
             exit(1);
         }
     }
@@ -466,7 +445,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
 }
 
 PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
-    //return generateLatest(this);
+//    return generateLatest(this);
 
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);

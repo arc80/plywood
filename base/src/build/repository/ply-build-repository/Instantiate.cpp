@@ -21,80 +21,78 @@ T& appendOrFind(Array<T>& arr, U&& item, const Callable& callable) {
     return arr.append(U{std::forward<U>(item)});
 }
 
-// InterpreterHooks implements hooks that are used to extend the interpreter. Handles custom blocks
-// like 'module' and expression traits like 'public'.
-struct InterpreterHooks : crowbar::Interpreter::Hooks {
-    crowbar::Interpreter* interp = nullptr;
+struct InstantiatingInterpreter {
+    crowbar::Interpreter interp;
     ModuleInstantiator* mi = nullptr;
     Repository::Module* currentModule = nullptr;
     buildSteps::Node* node = nullptr;
 
-    virtual ~InterpreterHooks() override {
-    }
-
-    virtual void enterCustomBlock(const crowbar::Statement::CustomBlock* enteringBlock) override {
-        if (this->interp->currentFrame->customBlock) {
-            PLY_FORCE_CRASH();
-        }
-    }
-
-    String makeAbsPath(StringView relPath) const {
+    String makeAbsPath(StringView relPath) {
         StringView plyfilePath =
             NativePath::split(this->currentModule->plyfile->tkr.fileLocationMap.path).first;
         return NativePath::join(plyfilePath, relPath);
     }
+};
 
-    virtual void onEvaluate(const AnyObject& evaluationTraits) override {
-        if (this->interp->currentFrame->customBlock) {
-            Label blockType = this->interp->currentFrame->customBlock->type;
+void customBlock(InstantiatingInterpreter* ii, const crowbar::Statement::CustomBlock* enteringBlock,
+                 bool isEntering) {
+    if (isEntering) {
+        if (ii->interp.currentFrame->customBlock) {
+            PLY_FORCE_CRASH();
+        }
+    } else {
+    }
+}
 
-            if (blockType == g_common->sourceFilesKey) {
-                // Expression inside source_files block
-                PLY_ASSERT(!evaluationTraits.data);
-                String absPath = this->makeAbsPath(*this->interp->returnValue.cast<String>());
-                buildSteps::Node::SourceFilePath& srcFilePath =
-                    appendOrFind(this->node->sourceFilePaths, std::move(absPath),
-                                 [&](const auto& a) { return a.path == absPath; });
-                srcFilePath.activeMask |= this->mi->configBit;
+void onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits) {
+    if (ii->interp.currentFrame->customBlock) {
+        Label blockType = ii->interp.currentFrame->customBlock->type;
 
-            } else if (blockType == g_common->includeDirectoriesKey) {
-                // Expression inside include_directories block
-                const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
-                PLY_ASSERT(traits->visibilityTokenIdx >= 0);
-                buildSteps::ToolchainOpt tcOpt{
-                    buildSteps::ToolchainOpt::Type::IncludeDir,
-                    this->makeAbsPath(*this->interp->returnValue.cast<String>())};
-                buildSteps::Node::Option& foundOpt =
-                    appendOrFind(this->node->options, std::move(tcOpt),
-                                 [&](const auto& a) { return a.opt == tcOpt; });
-                foundOpt.activeMask |= this->mi->configBit;
-                if (traits->isPublic) {
-                    foundOpt.publicMask |= this->mi->configBit;
-                }
+        if (blockType == g_common->sourceFilesKey) {
+            // Expression inside source_files block
+            PLY_ASSERT(!evaluationTraits.data);
+            String absPath = ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>());
+            buildSteps::Node::SourceFilePath& srcFilePath =
+                appendOrFind(ii->node->sourceFilePaths, std::move(absPath),
+                             [&](const auto& a) { return a.path == absPath; });
+            srcFilePath.activeMask |= ii->mi->configBit;
 
-            } else if (blockType == g_common->dependenciesKey) {
-                // Expression inside dependencies block
-                const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
-                PLY_ASSERT(traits->visibilityTokenIdx >= 0);
-
-                // Instantiate the dependency
-                Repository::Module* mod = this->interp->returnValue.cast<Repository::Module>();
-                buildSteps::Node* dep = instantiateModuleForCurrentConfig(mi, mod->block->name);
-                buildSteps::Node::Dependency& foundDep = appendOrFind(
-                    this->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
-                foundDep.activeMask |= this->mi->configBit;
-
-            } else if (blockType == g_common->linkLibrariesKey) {
-                // PLY_ASSERT(!evaluationTraits.data);
-                // this->nodeConfig->opts.prebuiltLibs.append(
-                //    *this->interp->returnValue.cast<String>());
-            } else {
-                // Shouldn't get here
-                PLY_ASSERT(0);
+        } else if (blockType == g_common->includeDirectoriesKey) {
+            // Expression inside include_directories block
+            const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
+            PLY_ASSERT(traits->visibilityTokenIdx >= 0);
+            buildSteps::ToolchainOpt tcOpt{
+                buildSteps::ToolchainOpt::Type::IncludeDir,
+                ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>())};
+            buildSteps::Node::Option& foundOpt = appendOrFind(
+                ii->node->options, std::move(tcOpt), [&](const auto& a) { return a.opt == tcOpt; });
+            foundOpt.activeMask |= ii->mi->configBit;
+            if (traits->isPublic) {
+                foundOpt.publicMask |= ii->mi->configBit;
             }
+
+        } else if (blockType == g_common->dependenciesKey) {
+            // Expression inside dependencies block
+            const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
+            PLY_ASSERT(traits->visibilityTokenIdx >= 0);
+
+            // Instantiate the dependency
+            Repository::Module* mod = ii->interp.base.returnValue.cast<Repository::Module>();
+            buildSteps::Node* dep = instantiateModuleForCurrentConfig(ii->mi, mod->block->name);
+            buildSteps::Node::Dependency& foundDep = appendOrFind(
+                ii->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
+            foundDep.activeMask |= ii->mi->configBit;
+
+        } else if (blockType == g_common->linkLibrariesKey) {
+            // PLY_ASSERT(!evaluationTraits.data);
+            // this->nodeConfig->opts.prebuiltLibs.append(
+            //    *this->interp->returnValue.cast<String>());
+        } else {
+            // Shouldn't get here
+            PLY_ASSERT(0);
         }
     }
-};
+}
 
 PLY_NO_INLINE MethodResult doJoinPath(BaseInterpreter* interp, const AnyObject&,
                                       ArrayView<const AnyObject> args) {
@@ -111,25 +109,6 @@ PLY_NO_INLINE MethodResult doJoinPath(BaseInterpreter* interp, const AnyObject&,
     *resultStorage->cast<String>() = std::move(result);
     interp->returnValue = *resultStorage;
     return MethodResult::OK;
-}
-
-struct ModuleNamespace : crowbar::INamespace {
-    virtual AnyObject find(Label identifier) const {
-        auto cursor = g_repository->moduleMap.find(identifier);
-        if (cursor.wasFound()) {
-            return AnyObject::bind(cursor->get());
-        }
-        return {};
-    }
-};
-
-ModuleInstantiator::ModuleInstantiator(StringView buildFolderPath)
-    : buildFolderPath{buildFolderPath} {
-    Owned<crowbar::MapNamespace> globalNamespace = Owned<crowbar::MapNamespace>::create();
-    *globalNamespace->map.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
-    *globalNamespace->map.insert(g_labelStorage.insert("build_folder")) =
-        AnyObject::bind(&this->buildFolderPath);
-    this->globalNamespace = std::move(globalNamespace);
 }
 
 buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel) {
@@ -173,36 +152,36 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     }
 
     // Create new interpreter.
-    MemOutStream outs;
-    crowbar::Interpreter interp;
-    interp.outs = &outs;
+    InstantiatingInterpreter ii;
+    ii.interp.base.error = [](StringView message) { StdErr::text() << message; };
+    ii.interp.hooks.customBlock = {customBlock, &ii};
+    ii.interp.hooks.onEvaluate = {onEvaluate, &ii};
+    ii.mi = mi;
+    ii.currentModule = *funcCursor;
+    ii.node = node;
 
-    // Extend the interpreter with support for custom blocks and expression attributes used by the
-    // build system.
-    InterpreterHooks interpHooks;
-    interpHooks.interp = &interp;
-    interpHooks.mi = mi;
-    interpHooks.currentModule = *funcCursor;
-    interpHooks.node = node;
-    interp.hooks = &interpHooks;
-
-    // Add global & module namespaces.
-    interp.outerNameSpaces.append(mi->globalNamespace);
-    ModuleNamespace moduleNamespace;
-    interp.outerNameSpaces.append(&moduleNamespace);
+    // Populate global & module namespaces.
+    *ii.interp.builtIns.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
+    *ii.interp.builtIns.insert(g_labelStorage.insert("build_folder")) =
+        AnyObject::bind(&ii.mi->buildFolderPath);
+    ii.interp.hooks.resolveName = [](Label identifier) -> AnyObject {
+        auto cursor = g_repository->moduleMap.find(identifier);
+        if (cursor.wasFound()) {
+            return AnyObject::bind(cursor->get());
+        }
+        return {};
+    };
 
     // Invoke module function.
     crowbar::Interpreter::StackFrame frame;
-    frame.interp = &interp;
+    frame.interp = &ii.interp;
     frame.desc = [moduleDef]() -> HybridString {
         return String::format("module '{}'", g_labelStorage.view(moduleDef->name));
     };
     frame.tkr = &(*funcCursor)->plyfile->tkr;
     MethodResult result = execFunction(&frame, moduleDef->body);
-    if (result == MethodResult::Error) {
-        StdErr::text() << outs.moveToString();
+    if (result == MethodResult::Error)
         return nullptr;
-    }
 
     mi->modules.find(moduleName)->statusInCurrentConfig = ModuleInstantiator::Instantiated;
     return node;

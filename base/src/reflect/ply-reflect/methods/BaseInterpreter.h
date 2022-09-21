@@ -13,12 +13,7 @@ namespace ply {
 struct BaseInterpreter {
     ObjectStack localVariableStorage;
     AnyObject returnValue;
-    OutStream* outs = nullptr;
-
-    ~BaseInterpreter() {
-    }
-    virtual void error(StringView message) {
-    }
+    Functor<void(StringView message)> error;
 };
 
 } // namespace ply
