@@ -29,12 +29,12 @@ NativeBindings& getNativeBindings_Function() {
         [](AnyObject obj) {},
         // move
         [](AnyObject dst, AnyObject src) {
-            PLY_ASSERT(dst.type->isEquivalentTo(src.type));
+            PLY_ASSERT(dst.type == src.type);
             *(void**) dst.data = *(void**) src.data;
         },
         // copy
         [](AnyObject dst, const AnyObject src) {
-            PLY_ASSERT(dst.type->isEquivalentTo(src.type));
+            PLY_ASSERT(dst.type == src.type);
             *(void**) dst.data = *(void**) src.data;
         },
     };
@@ -76,7 +76,7 @@ TypeKey TypeKey_Function{
         if (functionType0->paramTypes.numItems() != functionType1->paramTypes.numItems())
             return false;
         for (u32 i = 0; i < functionType0->paramTypes.numItems(); i++) {
-            if (!functionType0->paramTypes[i]->isEquivalentTo(functionType1->paramTypes[i]))
+            if (functionType0->paramTypes[i] != functionType1->paramTypes[i])
                 return false;
         }
         return true;

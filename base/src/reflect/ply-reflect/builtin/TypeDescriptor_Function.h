@@ -11,7 +11,8 @@
 
 namespace ply {
 
-using Function = MethodResult(BaseInterpreter*, const AnyObject&, ArrayView<const AnyObject>);
+using Function = MethodResult(BaseInterpreter* base, const AnyObject& self,
+                              ArrayView<const AnyObject> args);
 
 PLY_DLL_ENTRY extern TypeKey TypeKey_Function;
 

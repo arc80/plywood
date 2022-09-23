@@ -8,12 +8,6 @@
 namespace ply {
 namespace crowbar {
 
-Functor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef) {
-    return [fnDef]() -> HybridString {
-        return String::format("function '{}'", g_labelStorage.view(fnDef->name));
-    };
-}
-
 void error(const Interpreter* interp, StringView message) {
     MemOutStream outs;
     outs.format("error: {}\n", message);
@@ -172,7 +166,9 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
         // Set up a new stack frame.
         Interpreter::StackFrame newFrame;
         newFrame.interp = frame->interp;
-        newFrame.desc = makeFunctionDesc(functionDef);
+        newFrame.desc = [functionDef]() -> HybridString {
+            return String::format("function '{}'", g_labelStorage.view(functionDef->name));
+        };
         newFrame.tkr = functionDef->tkr;
         newFrame.prevFrame = frame;
         for (u32 argIndex : range(args.numItems())) {

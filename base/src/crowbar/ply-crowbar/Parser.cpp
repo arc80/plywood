@@ -9,12 +9,12 @@
 namespace ply {
 namespace crowbar {
 
-PLY_NO_INLINE bool error(Parser* parser, const ExpandedToken& errorToken,
-                         ErrorTokenAction tokenAction, StringView message) {
+PLY_NO_INLINE bool errorAtToken(Parser* parser, const ExpandedToken& errorToken,
+                                ErrorTokenAction tokenAction, StringView message) {
     if (!parser->recovery.muteErrors) {
-        parser->errorOut->format(
+        parser->error(String::format(
             "{} error: {}\n",
-            parser->tkr->fileLocationMap.formatFileLocation(errorToken.fileOffset), message);
+            parser->tkr->fileLocationMap.formatFileLocation(errorToken.fileOffset), message));
         parser->errorCount++;
     }
 
@@ -87,8 +87,9 @@ Owned<Expression> parseArgumentList(Parser* parser, Owned<Expression>&& callable
             // Got comma
             parser->recovery.muteErrors = false;
         } else {
-            if (!error(parser, token, ErrorTokenAction::HandleUnexpected,
-                       String::format("expected ',' or ')' after argument; got {}", token.desc())))
+            if (!errorAtToken(
+                    parser, token, ErrorTokenAction::HandleUnexpected,
+                    String::format("expected ',' or ')' after argument; got {}", token.desc())))
                 return callExpr;
         }
     }
@@ -161,11 +162,12 @@ void parseInterpolatedString(Parser* parser, Expression* expr) {
                 pieces.back().embed = parser->parseExpression();
                 ExpandedToken closeToken = parser->tkr->readToken();
                 if (closeToken.type != TokenType::CloseCurly) {
-                    error(parser, closeToken, ErrorTokenAction::HandleUnexpected,
-                          String::format("expected '}' to close embedded expression at {}; got {}",
-                                         parser->tkr->fileLocationMap.formatFileLocation(
-                                             token.fileOffset, false),
-                                         closeToken.desc()));
+                    errorAtToken(
+                        parser, closeToken, ErrorTokenAction::HandleUnexpected,
+                        String::format("expected '}' to close embedded expression at {}; got {}",
+                                       parser->tkr->fileLocationMap.formatFileLocation(
+                                           token.fileOffset, false),
+                                       closeToken.desc()));
                     skipAnyScope(parser, nullptr, TokenType::OpenCurly);
                 }
                 parser->recovery.muteErrors = false; // embed is now closed
@@ -195,11 +197,11 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel, bool asStat
         if (closingToken.type == TokenType::CloseParen) {
             this->recovery.muteErrors = false;
         } else {
-            error(this, closingToken, ErrorTokenAction::PushBack,
-                  String::format(
-                      "expected ')' to match the '(' at {}; got {}",
-                      this->tkr->fileLocationMap.formatFileLocation(token.fileOffset, false),
-                      closingToken.desc()));
+            errorAtToken(this, closingToken, ErrorTokenAction::PushBack,
+                         String::format(
+                             "expected ')' to match the '(' at {}; got {}",
+                             this->tkr->fileLocationMap.formatFileLocation(token.fileOffset, false),
+                             closingToken.desc()));
         }
     } else {
         expr = Owned<Expression>::create();
@@ -222,8 +224,9 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel, bool asStat
                 if (op == MethodTable::UnaryOp::Invalid) {
                     this->tkr->rewindTo(token.tokenIdx);
                     if (!asStatement) { // Statement errors are issued by caller
-                        error(this, token, ErrorTokenAction::DoNothing,
-                              String::format("expected an expression; got {}", token.desc()));
+                        errorAtToken(
+                            this, token, ErrorTokenAction::DoNothing,
+                            String::format("expected an expression; got {}", token.desc()));
                     }
                     return {};
                 }
@@ -247,8 +250,8 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel, bool asStat
         } else if (token.type == TokenType::Dot) {
             token = this->tkr->readToken();
             if (token.type != TokenType::Identifier) {
-                error(this, token, ErrorTokenAction::PushBack,
-                      String::format("expected identifier after '.'; got {}", token.desc()));
+                errorAtToken(this, token, ErrorTokenAction::PushBack,
+                             String::format("expected identifier after '.'; got {}", token.desc()));
                 continue;
             }
             auto propLookupExpr = Owned<Expression>::create();
@@ -370,8 +373,8 @@ void Parser::parseStatement(StatementBlock* stmtBlock) {
             if (expressionTraits.data) {
                 // FIXME: Improve the error message by mentioning the specific trait that was
                 // used.
-                error(this, token, ErrorTokenAction::DoNothing,
-                      "assignment not allowed when expression traits are used");
+                errorAtToken(this, token, ErrorTokenAction::DoNothing,
+                             "assignment not allowed when expression traits are used");
             }
             statementType = "assignment";
             auto assignment = stmt->assignment().switchTo();
@@ -389,15 +392,15 @@ void Parser::parseStatement(StatementBlock* stmtBlock) {
         } else {
             this->tkr->rewindTo(token.tokenIdx);
             if (token.type != TokenType::CloseCurly) {
-                error(this, token, ErrorTokenAction::DoNothing,
-                      String::format("unexpected {} after {}", token.desc(), statementType));
+                errorAtToken(this, token, ErrorTokenAction::DoNothing,
+                             String::format("unexpected {} after {}", token.desc(), statementType));
             }
         }
         stmtBlock->statements.append(std::move(stmt));
         return;
     } else {
-        if (error(this, token, ErrorTokenAction::HandleUnexpected,
-                  String::format("expected a statement; got {}", token.desc())))
+        if (errorAtToken(this, token, ErrorTokenAction::HandleUnexpected,
+                         String::format("expected a statement; got {}", token.desc())))
             return;
     }
 }
@@ -421,8 +424,9 @@ Owned<StatementBlock> parseStatementBlock(Parser* parser, const StatementBlockPr
                     return block;
                 }
                 case TokenType::EndOfFile: {
-                    error(parser, token, ErrorTokenAction::PushBack,
-                          String::format("unexpected end-of-file inside {}", props.blockType));
+                    errorAtToken(
+                        parser, token, ErrorTokenAction::PushBack,
+                        String::format("unexpected end-of-file inside {}", props.blockType));
                     return block;
                 }
                 default: {
@@ -448,16 +452,17 @@ Owned<StatementBlock> parseStatementBlock(Parser* parser, const StatementBlockPr
             }
         }
         if (!isLegal) {
-            error(parser, token, ErrorTokenAction::DoNothing,
-                  String::format("body of {} must be enclosed in curly braces unless it's a "
-                                 "break, continue or return statement",
-                                 props.blockType));
+            errorAtToken(parser, token, ErrorTokenAction::DoNothing,
+                         String::format("body of {} must be enclosed in curly braces unless it's a "
+                                        "break, continue or return statement",
+                                        props.blockType));
             parser->recovery.muteErrors = false;
         }
         return block;
     } else {
-        error(parser, token, ErrorTokenAction::PushBack,
-              String::format("expected '{{' after {}; got {}", props.afterItemText, token.desc()));
+        errorAtToken(
+            parser, token, ErrorTokenAction::PushBack,
+            String::format("expected '{{' after {}; got {}", props.afterItemText, token.desc()));
         return {};
     }
 }
@@ -473,8 +478,9 @@ void parseParameterList(Parser* parser, Statement::FunctionDefinition* functionD
                      parser->recovery.outerAcceptFlags | Parser::RecoveryState::AcceptCloseParen);
     for (;; paramToken = parser->tkr->readToken()) {
         if (paramToken.type != TokenType::Identifier) {
-            if (error(parser, paramToken, ErrorTokenAction::HandleUnexpected,
-                      String::format("expected function parameter; got {}", paramToken.desc())))
+            if (errorAtToken(
+                    parser, paramToken, ErrorTokenAction::HandleUnexpected,
+                    String::format("expected function parameter; got {}", paramToken.desc())))
                 return;
         }
         functionDef->parameterNames.append(paramToken.label);
@@ -484,9 +490,9 @@ void parseParameterList(Parser* parser, Statement::FunctionDefinition* functionD
             return;
         }
         if (token.type != TokenType::Comma) {
-            if (error(parser, token, ErrorTokenAction::HandleUnexpected,
-                      String::format("expected ',' or ')' after parameter {}; got {}",
-                                     paramToken.desc(), token.desc())))
+            if (errorAtToken(parser, token, ErrorTokenAction::HandleUnexpected,
+                             String::format("expected ',' or ')' after parameter {}; got {}",
+                                            paramToken.desc(), token.desc())))
                 return;
         }
     }
@@ -505,8 +511,8 @@ void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
     // Parse function name.
     ExpandedToken nameToken = parser->tkr->readToken();
     if (nameToken.type != TokenType::Identifier) {
-        error(parser, nameToken, ErrorTokenAction::PushBack,
-              String::format("expected function name after 'fn'; got {}", nameToken.desc()));
+        errorAtToken(parser, nameToken, ErrorTokenAction::PushBack,
+                     String::format("expected function name after 'fn'; got {}", nameToken.desc()));
         return;
     }
     functionDef->name = nameToken.label;
@@ -514,9 +520,9 @@ void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
     // Parse parameter list.
     ExpandedToken token = parser->tkr->readToken();
     if (token.type != TokenType::OpenParen) {
-        error(parser, token, ErrorTokenAction::PushBack,
-              String::format("expected '(' after function name {}; got {}", nameToken.desc(),
-                             token.desc()));
+        errorAtToken(parser, token, ErrorTokenAction::PushBack,
+                     String::format("expected '(' after function name {}; got {}", nameToken.desc(),
+                                    token.desc()));
         return;
     }
     parseParameterList(parser, functionDef);
@@ -547,8 +553,8 @@ Owned<StatementBlock> Parser::parseFile() {
         if (token.label == fnKey) {
             parseFunctionDefinition(this, token, stmtBlock);
         } else {
-            error(this, token, ErrorTokenAction::HandleUnexpected,
-                  String::format("unexpected {}", token.desc()));
+            errorAtToken(this, token, ErrorTokenAction::HandleUnexpected,
+                         String::format("unexpected {}", token.desc()));
             continue;
         }
     }

@@ -36,7 +36,6 @@ struct Interpreter  {
     StackFrame* currentFrame = nullptr;
 };
 
-Functor<HybridString()> makeFunctionDesc(const Statement::FunctionDefinition* fnDef);
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
 MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr);
 

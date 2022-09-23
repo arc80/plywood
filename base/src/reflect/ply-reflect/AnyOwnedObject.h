@@ -58,7 +58,7 @@ struct AnyOwnedObject : AnyObject {
     }
     template <typename T>
     PLY_INLINE T* release() {
-        PLY_ASSERT(type->isEquivalentTo(TypeDescriptorSpecializer<T>::get()));
+        PLY_ASSERT(type == TypeDescriptorSpecializer<T>::get());
         T* r = (T*) data;
         data = nullptr;
         type = nullptr;

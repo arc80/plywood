@@ -74,7 +74,7 @@ NativeBindings& getNativeBindings_SynthesizedStruct() {
         },
         // copy
         [](AnyObject dst, const AnyObject src) {
-            PLY_ASSERT(dst.type->isEquivalentTo(src.type));
+            PLY_ASSERT(dst.type == src.type);
             TypeDescriptor_Struct* structType = (TypeDescriptor_Struct*) dst.type;
             for (TypeDescriptor_Struct::Member& member : structType->members) {
                 member.type->bindings.copy({PLY_PTR_OFFSET(dst.data, member.offset), member.type},

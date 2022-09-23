@@ -289,7 +289,7 @@ TypeKey TypeKey_FixedArray{
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
         const auto* fixedArrayType0 = type0->cast<const TypeDescriptor_FixedArray>();
         const auto* fixedArrayType1 = type1->cast<const TypeDescriptor_FixedArray>();
-        return fixedArrayType0->itemType->isEquivalentTo(fixedArrayType1->itemType) &&
+        return (fixedArrayType0->itemType == fixedArrayType1->itemType) &&
                (fixedArrayType0->numItems == fixedArrayType1->numItems) &&
                (fixedArrayType0->stride == fixedArrayType1->stride);
     },
@@ -364,7 +364,7 @@ TypeKey TypeKey_Array{
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
         const auto* arrayType0 = type0->cast<const TypeDescriptor_Array>();
         const auto* arrayType1 = type1->cast<const TypeDescriptor_Array>();
-        return arrayType0->itemType->isEquivalentTo(arrayType1->itemType);
+        return arrayType0->itemType == arrayType1->itemType;
     },
 };
 
@@ -454,7 +454,7 @@ TypeKey TypeKey_Owned{
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
         const auto* ownedType0 = type0->cast<const TypeDescriptor_Owned>();
         const auto* ownedType1 = type1->cast<const TypeDescriptor_Owned>();
-        return ownedType0->targetType->isEquivalentTo(ownedType1->targetType);
+        return ownedType0->targetType == ownedType1->targetType;
     },
 };
 
@@ -497,7 +497,7 @@ TypeKey TypeKey_Reference{
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
         const auto* referencedType0 = type0->cast<const TypeDescriptor_Reference>();
         const auto* referencedType1 = type1->cast<const TypeDescriptor_Reference>();
-        return referencedType0->targetType->isEquivalentTo(referencedType1->targetType);
+        return referencedType0->targetType == referencedType1->targetType;
     },
 };
 
@@ -589,7 +589,7 @@ TypeKey TypeKey_Struct{
             const TypeDescriptor_Struct::Member& member0 = structType0->members[i];
             const TypeDescriptor_Struct::Member& member1 = structType1->members[i];
             if ((member0.name != member1.name) || (member0.offset != member1.offset) ||
-                !member0.type->isEquivalentTo(member1.type))
+                (member0.type != member1.type))
                 return false;
         }
         return true;
@@ -762,7 +762,7 @@ TypeKey TypeKey_RawPtr{
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
         const auto* weakPtrType0 = type0->cast<const TypeDescriptor_RawPtr>();
         const auto* weakPtrType1 = type1->cast<const TypeDescriptor_RawPtr>();
-        return weakPtrType0->targetType->isEquivalentTo(weakPtrType1->targetType);
+        return weakPtrType0->targetType == weakPtrType1->targetType;
     },
 };
 

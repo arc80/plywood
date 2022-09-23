@@ -6,12 +6,22 @@
 #include <ply-crowbar/Interpreter.h>
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-test/TestSuite.h>
+#include <ply-reflect/methods/BoundMethod.h>
 
 using namespace ply;
 using namespace ply::crowbar;
 
+struct ScriptOutStream {
+    PLY_REFLECT()
+    // ply reflect off
+
+    OutStream* outs;
+};
+
 MethodResult doPrint(BaseInterpreter* interp, const AnyObject& callee,
                      ArrayView<const AnyObject> args) {
+    ScriptOutStream* sos = callee.cast<ScriptOutStream>();
+
     if (args.numItems != 1) {
         interp->error("'print' expects exactly one argument");
         return MethodResult::Error;
@@ -20,11 +30,11 @@ MethodResult doPrint(BaseInterpreter* interp, const AnyObject& callee,
     const AnyObject& arg = args[0];
     interp->returnValue = {};
     if (arg.is<u32>()) {
-        *interp->outs << *arg.cast<u32>() << '\n';
+        *sos->outs << *arg.cast<u32>() << '\n';
     } else if (arg.is<bool>()) {
-        *interp->outs << *arg.cast<bool>() << '\n';
+        *sos->outs << *arg.cast<bool>() << '\n';
     } else if (arg.is<String>()) {
-        *interp->outs << *arg.cast<String>() << '\n';
+        *sos->outs << *arg.cast<String>() << '\n';
     } else {
         interp->error(String::format("'{}' does not support printing", arg.type->getName()));
         return MethodResult::Error;
@@ -33,8 +43,9 @@ MethodResult doPrint(BaseInterpreter* interp, const AnyObject& callee,
 }
 
 // FIXME: Move this to the crowbar module:
-void addBuiltIns(LabelMap<AnyObject>& ns) {
-    *ns.insert(g_labelStorage.insert("print")) = AnyObject::bind(doPrint);
+void addBuiltIns(LabelMap<AnyObject>& ns, ScriptOutStream* sos) {
+    static BoundMethod boundPrint = {AnyObject::bind(sos), AnyObject::bind(doPrint)};
+    *ns.insert(g_labelStorage.insert("print")) = AnyObject::bind(&boundPrint);
 
     static bool true_ = true;
     static bool false_ = false;
@@ -42,55 +53,54 @@ void addBuiltIns(LabelMap<AnyObject>& ns) {
     *ns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
 }
 
-String callScriptFunction(StringView src, StringView funcName, ArrayView<const AnyObject> args) {
+String parseAndTryCall(StringView src, StringView funcName, ArrayView<const AnyObject> args) {
     // Create tokenizer and parser.
     Tokenizer tkr;
     tkr.setSourceInput({}, src);
     Parser parser;
     parser.tkr = &tkr;
     MemOutStream errorOut;
-    parser.errorOut = &errorOut;
+    parser.error = [&errorOut](StringView message) { errorOut << message; };
 
     // Parse the script.
     Owned<StatementBlock> file = parser.parseFile();
     if (parser.errorCount > 0)
         return errorOut.moveToString();
 
-    // Create built-in namespace
-    MapNamespace builtIns;
-    addBuiltIns(builtIns.map);
-
     // Put functions in a namespace
-    Sequence<AnyObject> fnObjs;
-    MapNamespace ns;
+    LabelMap<const Statement::FunctionDefinition*> fnMap;
     for (const Statement* stmt : file->statements) {
         const Statement::FunctionDefinition* fnDef = stmt->functionDefinition().get();
-        const AnyObject& fnObj = fnObjs.append(AnyObject::bind(fnDef));
-        *ns.map.insert(fnDef->name) = fnObj;
+        *fnMap.insert(fnDef->name) = fnDef;
     }
 
     // Invoke function if it exists
-    const AnyObject* testObj = ns.map.find(g_labelStorage.find(funcName));
-    if (testObj) {
+    const Statement::FunctionDefinition** fnObj = fnMap.find(g_labelStorage.find(funcName));
+    if (fnObj) {
         MemOutStream outs;
+        ScriptOutStream sos{&outs};
 
         // Create interpreter
         Interpreter interp;
-        interp.outs = &outs;
-        interp.outerNameSpaces.append(&builtIns);
-        interp.outerNameSpaces.append(&ns);
+        interp.base.error = [](StringView message) { StdErr::text() << message; };
+        addBuiltIns(interp.builtIns, &sos);
+        interp.hooks.resolveName = [&fnMap](Label identifier) -> AnyObject {
+            const Statement::FunctionDefinition** fnObj = fnMap.find(identifier);
+            return fnObj ? AnyObject::bind(*fnObj) : AnyObject{};
+        };
 
         // Invoke function
         Interpreter::StackFrame frame;
         frame.interp = &interp;
-        const auto* fnDef = testObj->cast<Statement::FunctionDefinition>();
-        frame.desc = makeFunctionDesc(fnDef);
+        frame.desc = [fnDef = *fnObj]() -> HybridString {
+            return String::format("function '{}'", g_labelStorage.view(fnDef->name));
+        };
         frame.tkr = &tkr;
-        PLY_ASSERT(fnDef->parameterNames.numItems() == args.numItems);
+        PLY_ASSERT((*fnObj)->parameterNames.numItems() == args.numItems);
         for (u32 i = 0; i < args.numItems; i++) {
-            *frame.localVariableTable.insert(fnDef->parameterNames[i]) = args[i];
+            *frame.localVariableTable.insert((*fnObj)->parameterNames[i]) = args[i];
         }
-        execFunction(&frame, fnDef->body);
+        execFunction(&frame, (*fnObj)->body);
 
         return outs.moveToString();
     }
@@ -125,7 +135,7 @@ fn test(obj) {
 )";
 
     // Parse the script and call function "test" with obj as its argument.
-    String result = callScriptFunction(script, "test", {AnyObject::bind(&obj)});
+    String result = parseAndTryCall(script, "test", {AnyObject::bind(&obj)});
 
     // Check result.
     PLY_TEST_CHECK(result == "banana\n12\n");
@@ -177,7 +187,7 @@ void runTestSuite() {
         }
 
         // Run this test case
-        String output = callScriptFunction(src, "test", {});
+        String output = parseAndTryCall(src, "test", {});
 
         // Append to result
         outs << StringView{"-"} * 60 << '\n';

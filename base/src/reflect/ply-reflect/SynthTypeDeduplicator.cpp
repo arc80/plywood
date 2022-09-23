@@ -16,7 +16,7 @@ struct SynthTypeDeduplicator {
             return Hasher::hash(key->getRootType());
         }
         static PLY_INLINE bool match(const Item& a, Key b) {
-            return a->getRootType()->isEquivalentTo(b->getRootType());
+            return a->getRootType() == b->getRootType();
         }
     };
 

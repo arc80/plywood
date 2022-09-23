@@ -26,7 +26,7 @@ NativeBindings& getNativeBindings_Enum() {
         // move
         [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(dst.type->typeKey == &TypeKey_Enum);
-            PLY_ASSERT(dst.type->isEquivalentTo(src.type));
+            PLY_ASSERT(dst.type == src.type);
             TypeDescriptor_Enum* enumType = dst.type->cast<TypeDescriptor_Enum>();
             if (enumType->fixedSize == 1) {
                 *(u8*) dst.data = *(u8*) src.data;

@@ -34,7 +34,7 @@ NativeBindings& getNativeBindings_Owned() {
         // move
         [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(dst.type->typeKey == &TypeKey_Owned);
-            PLY_ASSERT(dst.type->isEquivalentTo(src.type));
+            PLY_ASSERT(dst.type == src.type);
             // Note: This is type punning AppOwned<T> with void*
             if (*(void**) dst.data) {
                 // Must destroy existing object

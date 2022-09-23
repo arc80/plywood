@@ -21,7 +21,7 @@ struct Parser {
     Tokenizer* tkr = nullptr;
 
     // Error reporting.
-    OutStream* errorOut = nullptr;
+    Functor<void(StringView message)> error;
     u32 errorCount = 0;
 
     // Error recovery.
@@ -63,8 +63,8 @@ struct StatementBlockProperties {
     }
 };
 
-bool error(Parser* parser, const ExpandedToken& errorToken, ErrorTokenAction tokenAction,
-           StringView message);
+bool errorAtToken(Parser* parser, const ExpandedToken& errorToken, ErrorTokenAction tokenAction,
+                  StringView message);
 bool skipAnyScope(Parser* parser, ExpandedToken* outCloseToken, TokenType openTokenType);
 bool handleUnexpectedToken(Parser* parser, ExpandedToken* outCloseToken,
                            const ExpandedToken& unexpected);

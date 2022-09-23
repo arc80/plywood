@@ -137,15 +137,6 @@ struct TypeDescriptor {
     PLY_INLINE HybridString getName() const {
         return this->typeKey->getName(this);
     }
-    PLY_INLINE bool isEquivalentTo(const TypeDescriptor* other) const {
-        if (this == other)
-            return true;
-        if (typeKey != other->typeKey)
-            return false;
-        if (!typeKey->equalDescriptors)
-            return false;
-        return typeKey->equalDescriptors(this, other);
-    }
 };
 
 PLY_INLINE Hasher& operator<<(Hasher& hasher, const TypeDescriptor* typeDesc) {

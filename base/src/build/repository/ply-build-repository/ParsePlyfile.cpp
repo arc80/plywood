@@ -25,8 +25,8 @@ bool parseModuleLikeBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
                           crowbar::StatementBlock* stmtBlock) {
     // module/executable/extern { ... } block
     if (ep->parser->functionLikeScope) {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              String::format("{} must be defined at file scope", kwToken.text));
+        errorAtToken(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                     String::format("{} must be defined at file scope", kwToken.text));
         ep->parser->recovery.muteErrors = false;
     }
 
@@ -45,21 +45,21 @@ bool parseModuleLikeBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
     if (nameToken.type == crowbar::TokenType::Identifier) {
         mod->block->name = nameToken.label;
     } else {
-        error(ep->parser, nameToken, crowbar::ErrorTokenAction::PushBack,
-              String::format("expected {} name after '{}'; got {}", kwToken.text, kwToken.text,
-                             nameToken.desc()));
+        errorAtToken(ep->parser, nameToken, crowbar::ErrorTokenAction::PushBack,
+                     String::format("expected {} name after '{}'; got {}", kwToken.text,
+                                    kwToken.text, nameToken.desc()));
     }
 
     // Add to Repository
     auto cursor = g_repository->moduleMap.insertOrFind(mod->block->name);
     if (cursor.wasFound()) {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              String::format("'{}' was already defined as {}", kwToken.text,
-                             g_labelStorage.view((*cursor)->block->type)));
+        errorAtToken(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                     String::format("'{}' was already defined as {}", kwToken.text,
+                                    g_labelStorage.view((*cursor)->block->type)));
         ep->parser->recovery.muteErrors = false;
-        ep->parser->errorOut->format(
+        ep->parser->error(String::format(
             "{}: ... see previous definition\n",
-            (*cursor)->plyfile->tkr.fileLocationMap.formatFileLocation((*cursor)->fileOffset));
+            (*cursor)->plyfile->tkr.fileLocationMap.formatFileLocation((*cursor)->fileOffset)));
     }
     (*cursor) = std::move(ownedMod);
 
@@ -75,9 +75,9 @@ bool parseModuleLikeBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
 bool parseSourceFilesBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                            crowbar::StatementBlock* stmtBlock) {
     if (!ep->parser->functionLikeScope) {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "source_files block can only be used within a function, module, executable or extern "
-              "block");
+        errorAtToken(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                     "source_files block can only be used within a function, module, executable or "
+                     "extern block");
         ep->parser->recovery.muteErrors = false;
     }
 
@@ -94,9 +94,9 @@ bool parseIncludeDirectoriesBlock(ExtendedParser* ep, const crowbar::ExpandedTok
                                   crowbar::StatementBlock* stmtBlock) {
     // include_directories { ... } block
     if (!ep->parser->functionLikeScope) {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "include_directories block can only be used within a function, module, executable or "
-              "extern block");
+        errorAtToken(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                     "include_directories block can only be used within a function, module, "
+                     "executable or extern block");
         ep->parser->recovery.muteErrors = false;
     }
 
@@ -114,9 +114,9 @@ bool parseDependenciesBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kw
                             crowbar::StatementBlock* stmtBlock) {
     // dependencies { ... } block
     if (!ep->parser->functionLikeScope) {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "dependencies block can only be used within a function, module, executable or extern "
-              "block");
+        errorAtToken(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                     "dependencies block can only be used within a function, module, executable or "
+                     "extern block");
         ep->parser->recovery.muteErrors = false;
     }
 
@@ -133,10 +133,9 @@ bool parseLinkLibrariesBlock(ExtendedParser* ep, const crowbar::ExpandedToken& k
                              crowbar::StatementBlock* stmtBlock) {
     // link_libraries { ... } block
     if (!ep->parser->functionLikeScope) {
-        error(
-            ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-            "link_libraries block can only be used within a function, module, executable or extern "
-            "block");
+        errorAtToken(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                     "link_libraries block can only be used within a function, module, executable "
+                     "or extern block");
         ep->parser->recovery.muteErrors = false;
     }
 
@@ -153,8 +152,9 @@ bool parseConfigOptionsBlock(ExtendedParser* ep, const crowbar::ExpandedToken& k
                              crowbar::StatementBlock* stmtBlock) {
     // config_options { ... } block
     if (!ep->currentModule) {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "config_options block can only be used within a module, executable or extern block");
+        errorAtToken(
+            ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+            "config_options block can only be used within a module, executable or extern block");
         ep->parser->recovery.muteErrors = false;
     }
 
@@ -173,19 +173,19 @@ bool parseConfigOptionsBlock(ExtendedParser* ep, const crowbar::ExpandedToken& k
 bool parseConfigListBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
                           crowbar::StatementBlock* stmtBlock) {
     if (ep->parser->functionLikeScope) {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "conflig_list must be defined at file scope");
+        errorAtToken(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                     "conflig_list must be defined at file scope");
         ep->parser->recovery.muteErrors = false;
     }
 
     Repository::ConfigList* configList = g_repository->configList;
     if (configList) {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "a conflig_list was already defined");
+        errorAtToken(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                     "a conflig_list was already defined");
         ep->parser->recovery.muteErrors = false;
-        ep->parser->errorOut->format(
+        ep->parser->error(String::format(
             "{}: see previous definition\n",
-            configList->plyfile->tkr.fileLocationMap.formatFileLocation(configList->fileOffset));
+            configList->plyfile->tkr.fileLocationMap.formatFileLocation(configList->fileOffset)));
     }
 
     g_repository->configList = Owned<Repository::ConfigList>::create();
@@ -211,8 +211,8 @@ bool parseConfigBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwToken,
     }
 
     if (!configListBlock) {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              "config must be defined inside a config_list block");
+        errorAtToken(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+                     "config must be defined inside a config_list block");
         ep->parser->recovery.muteErrors = false;
     }
 
@@ -247,10 +247,11 @@ bool parsePublicPrivateExpressionTrait(ExtendedParser* ep, const crowbar::Expand
         traits->visibilityTokenIdx = kwToken.tokenIdx;
         traits->isPublic = (kwToken.label == g_common->publicKey);
     } else {
-        error(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-              String::format(
-                  "'{}' can only be used inside an include_directories or dependencies block",
-                  kwToken.text));
+        errorAtToken(
+            ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
+            String::format(
+                "'{}' can only be used inside an include_directories or dependencies block",
+                kwToken.text));
         ep->parser->recovery.muteErrors = false;
     }
     return true;
@@ -288,8 +289,7 @@ bool parsePlyfile(StringView path) {
     parser.exprTraitHandlers = &ep.exprTraits;
 
     parser.tkr = &plyfile->tkr;
-    OutStream errorOut = StdErr::text();
-    parser.errorOut = &errorOut;
+    parser.error = [](StringView message) { StdErr::text() << message; };
 
     // Parse the script and check for errors.
     Owned<crowbar::StatementBlock> file = parser.parseFile();

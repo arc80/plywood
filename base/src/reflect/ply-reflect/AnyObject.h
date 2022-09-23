@@ -18,7 +18,7 @@ AnyObject AnyObject::bind(T* data) {
 
 template <class T>
 bool AnyObject::is() const {
-    return TypeDescriptorSpecializer<T>::get()->isEquivalentTo(type);
+    return (TypeDescriptorSpecializer<T>::get() == type);
 }
 
 template <class T>
@@ -27,7 +27,7 @@ T* AnyObject::cast() const {
     // pointer to any target type, regardless of src type (even if src type is null). This
     // extra flexibility was added to simplify callers of readObject(), such as
     // CookCommandReader(), when an unexpected EOF is encountered:
-    PLY_ASSERT(!data || TypeDescriptorSpecializer<T>::get()->isEquivalentTo(type));
+    PLY_ASSERT(!data || (TypeDescriptorSpecializer<T>::get() == type));
     return (T*) data;
 }
 

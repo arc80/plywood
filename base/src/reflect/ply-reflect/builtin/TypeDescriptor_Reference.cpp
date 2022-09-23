@@ -41,7 +41,7 @@ NativeBindings& getNativeBindings_Reference() {
         },
         // move
         [](AnyObject dst, AnyObject src) {
-            PLY_ASSERT(dst.type->isEquivalentTo(src.type));
+            PLY_ASSERT(dst.type == src.type);
             TypeDescriptor_Reference* referenceType = dst.type->cast<TypeDescriptor_Reference>();
             // Note: This is type punning Reference<T> with void*
             void* prevTarget = *(void**) dst.data;
