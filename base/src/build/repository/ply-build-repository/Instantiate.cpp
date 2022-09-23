@@ -2,7 +2,6 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#pragma once
 #include <ply-build-repository/Instantiate.h>
 #include <ply-crowbar/Interpreter.h>
 

@@ -9,7 +9,7 @@
 namespace ply {
 
 template <typename>
-struct Functor;
+class Functor;
 
 template <typename Return, typename... Args>
 class Functor<Return(Args...)> {

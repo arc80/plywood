@@ -73,7 +73,7 @@ PLY_NO_INLINE DirectoryWatcher_Mac::DirectoryWatcher_Mac() {
 
 PLY_NO_INLINE void DirectoryWatcher_Mac::start(StringView root, Functor<Callback>&& callback) {
     PLY_ASSERT(m_root.isEmpty());
-    PLY_ASSERT(!m_callback.isValid());
+    PLY_ASSERT(!m_callback);
     PLY_ASSERT(!m_watcherThread.isValid());
     m_root = root;
     m_callback = std::move(callback);

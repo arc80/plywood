@@ -38,7 +38,7 @@ void destruct(BaseLabelMap* map, const BaseLabelMap::TypeInfo* typeInfo) {
 
 PLY_INLINE u32 bestLabelMapCapacity(u32 population) {
     if (population > 8) {
-        return roundUpPowerOf2(u32{(u64{population} * 5) >> 2});
+        return roundUpPowerOf2(u32((u64{population} * 5) >> 2));
     }
     return (population <= 4) ? 4 : 8;
 }

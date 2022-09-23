@@ -25,8 +25,7 @@ private:
     u32 capacity; // Always a power of 2
 
     using Base = impl::BaseLabelMap;
-    template <typename T>
-    friend struct LabelMapIterator;
+    friend struct LabelMapIterator<T>;
 
 public:
     PLY_INLINE LabelMap() {
