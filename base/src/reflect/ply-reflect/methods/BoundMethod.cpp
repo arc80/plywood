@@ -16,18 +16,6 @@ PLY_DEFINE_TYPE_DESCRIPTOR(BoundMethod) {
     return &typeDesc;
 }
 
-MethodResult BoundMethod_call(BaseInterpreter* interp, const AnyObject& callee,
-                              ArrayView<const AnyObject> args) {
-    PLY_FORCE_CRASH();
-    return MethodResult::OK;
-}
-
-Initializer initTypeDescriptorCaller_BoundMethod{[] {
-    TypeDescriptor_Struct* structType =
-        getTypeDescriptor<BoundMethod>()->cast<TypeDescriptor_Struct>();
-    structType->methods.call = BoundMethod_call;
-}};
-
 } // namespace ply
 
 #endif // PLY_WITH_METHOD_TABLES

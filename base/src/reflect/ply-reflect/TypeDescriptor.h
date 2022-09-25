@@ -11,7 +11,7 @@
 #include <ply-reflect/builtin/TypeDescriptor_Enum.h>
 #include <ply-reflect/builtin/TypeDescriptor_EnumIndexedArray.h>
 #include <ply-reflect/builtin/TypeDescriptor_FixedArray.h>
-#include <ply-reflect/builtin/TypeDescriptor_Function.h>
+#include <ply-reflect/builtin/TypeDescriptor_Method.h>
 #include <ply-reflect/builtin/TypeDescriptor_Owned.h>
 #include <ply-reflect/builtin/TypeDescriptor_RawPtr.h>
 #include <ply-reflect/builtin/TypeDescriptor_Reference.h>

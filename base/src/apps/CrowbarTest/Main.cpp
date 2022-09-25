@@ -18,17 +18,16 @@ struct ScriptOutStream {
     OutStream* outs;
 };
 
-MethodResult doPrint(BaseInterpreter* interp, const AnyObject& callee,
-                     ArrayView<const AnyObject> args) {
-    ScriptOutStream* sos = callee.cast<ScriptOutStream>();
+MethodResult doPrint(const MethodArgs& args) {
+    ScriptOutStream* sos = args.self.cast<ScriptOutStream>();
 
-    if (args.numItems != 1) {
-        interp->error("'print' expects exactly one argument");
+    if (args.args.numItems != 1) {
+        args.base->error("'print' expects exactly one argument");
         return MethodResult::Error;
     }
 
-    const AnyObject& arg = args[0];
-    interp->returnValue = {};
+    const AnyObject& arg = args.args[0];
+    args.base->returnValue = {};
     if (arg.is<u32>()) {
         *sos->outs << *arg.cast<u32>() << '\n';
     } else if (arg.is<bool>()) {
@@ -36,22 +35,27 @@ MethodResult doPrint(BaseInterpreter* interp, const AnyObject& callee,
     } else if (arg.is<String>()) {
         *sos->outs << *arg.cast<String>() << '\n';
     } else {
-        interp->error(String::format("'{}' does not support printing", arg.type->getName()));
+        args.base->error(String::format("'{}' does not support printing", arg.type->getName()));
         return MethodResult::Error;
     }
     return MethodResult::OK;
 }
 
 // FIXME: Move this to the crowbar module:
-void addBuiltIns(LabelMap<AnyObject>& ns, ScriptOutStream* sos) {
-    static BoundMethod boundPrint = {AnyObject::bind(sos), AnyObject::bind(doPrint)};
-    *ns.insert(g_labelStorage.insert("print")) = AnyObject::bind(&boundPrint);
-
-    static bool true_ = true;
-    static bool false_ = false;
-    *ns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
-    *ns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
-}
+struct BuiltInStorage {
+    BoundMethod boundPrint;
+    bool true_ = true;
+    bool false_ = false;
+    
+    BuiltInStorage(ScriptOutStream* sos) {
+        this->boundPrint = {AnyObject::bind(sos), AnyObject::bind(doPrint)};
+    }
+    void addBuiltIns(LabelMap<AnyObject>& ns) {
+        *ns.insert(g_labelStorage.insert("print")) = AnyObject::bind(&this->boundPrint);
+        *ns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&this->true_);
+        *ns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&this->false_);
+    }
+};
 
 String parseAndTryCall(StringView src, StringView funcName, ArrayView<const AnyObject> args) {
     // Create tokenizer and parser.
@@ -79,11 +83,12 @@ String parseAndTryCall(StringView src, StringView funcName, ArrayView<const AnyO
     if (fnObj) {
         MemOutStream outs;
         ScriptOutStream sos{&outs};
+        BuiltInStorage bis{&sos};
 
         // Create interpreter
         Interpreter interp;
-        interp.base.error = [](StringView message) { StdErr::text() << message; };
-        addBuiltIns(interp.builtIns, &sos);
+        interp.base.error = [&outs, &interp](StringView message) { logErrorWithStack(&outs, &interp, message); };
+        bis.addBuiltIns(interp.builtIns);
         interp.hooks.resolveName = [&fnMap](Label identifier) -> AnyObject {
             const Statement::FunctionDefinition** fnObj = fnMap.find(identifier);
             return fnObj ? AnyObject::bind(*fnObj) : AnyObject{};

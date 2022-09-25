@@ -93,20 +93,19 @@ void onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits)
     }
 }
 
-PLY_NO_INLINE MethodResult doJoinPath(BaseInterpreter* interp, const AnyObject&,
-                                      ArrayView<const AnyObject> args) {
+MethodResult doJoinPath(const MethodArgs& args) {
     Array<StringView> parts;
-    parts.reserve(args.numItems);
-    for (const AnyObject& arg : args) {
+    parts.reserve(args.args.numItems);
+    for (const AnyObject& arg : args.args) {
         if (!arg.is<String>())
             PLY_FORCE_CRASH();
         parts.append(*arg.cast<String>());
     }
     String result = PathFormat{false}.joinAndNormalize(parts);
     AnyObject* resultStorage =
-        interp->localVariableStorage.appendObject(getTypeDescriptor(&result));
+        args.base->localVariableStorage.appendObject(getTypeDescriptor(&result));
     *resultStorage->cast<String>() = std::move(result);
-    interp->returnValue = *resultStorage;
+    args.base->returnValue = *resultStorage;
     return MethodResult::OK;
 }
 

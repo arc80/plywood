@@ -59,6 +59,9 @@ PLY_NO_INLINE Array<StringView> StringView::splitByte(char sep) const {
     if (splitStart) {
         result.append(StringView::fromRange(splitStart, cur));
     }
+    if (result.isEmpty()) {
+        result.append({this->bytes, 0});
+    }
     return result;
 }
 

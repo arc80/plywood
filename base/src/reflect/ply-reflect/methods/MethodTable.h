@@ -91,8 +91,6 @@ struct MethodTable {
     MethodResult (*subscript)(BaseInterpreter* interp, const AnyObject& obj, u32 index) = nullptr;
     MethodResult (*print)(BaseInterpreter* interp, const AnyObject& obj,
                           StringView formatSpec) = nullptr;
-    MethodResult (*call)(BaseInterpreter* interp, const AnyObject& callee,
-                         ArrayView<const AnyObject> args) = nullptr;
 
     // Constructor
     MethodTable();

@@ -84,7 +84,7 @@ MethodResult MethodTable::unsupportedCall(BaseInterpreter* interp, const AnyObje
 PLY_NO_INLINE MethodTable::MethodTable()
     : unaryOp{unsupportedUnaryOp}, binaryOp{unsupportedBinaryOp},
       propertyLookup{unsupportedPropertyLookup}, subscript{unsupportedSubscript},
-      print{unsupportedPrint}, call{unsupportedCall} {
+      print{unsupportedPrint} {
 }
 
 } // namespace ply

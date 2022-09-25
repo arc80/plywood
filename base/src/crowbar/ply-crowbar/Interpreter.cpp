@@ -4,22 +4,21 @@
 ------------------------------------*/
 #include <ply-crowbar/Core.h>
 #include <ply-crowbar/Interpreter.h>
+#include <ply-reflect/methods/BoundMethod.h>
 
 namespace ply {
 namespace crowbar {
 
-void error(const Interpreter* interp, StringView message) {
-    MemOutStream outs;
-    outs.format("error: {}\n", message);
+void logErrorWithStack(OutStream* outs, const Interpreter* interp, StringView message) {
+    outs->format("error: {}\n", message);
     bool first = true;
     for (Interpreter::StackFrame* frame = interp->currentFrame; frame; frame = frame->prevFrame) {
         ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
-        outs.format("{} {} {}\n",
-                    frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
-                    first ? "in" : "called from", frame->desc());
+        outs->format("{} {} {}\n",
+                     frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
+                     first ? "in" : "called from", frame->desc());
         first = false;
     }
-    interp->base.error(outs.moveToString());
 }
 
 AnyObject find(const LabelMap<AnyObject>& map, Label identifier) {
@@ -156,11 +155,17 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
         base->returnValue = {};
     }
 
-    // Invoke function using provided arguments.
-    if (callee.is<Statement::FunctionDefinition>()) {
-        // It's a Crowbar function.
-        // FIXME: Move this to MethodTable.
-        const auto* functionDef = callee.cast<Statement::FunctionDefinition>();
+    // Handle bound methods.
+    AnyObject self;
+    if (BoundMethod* bm = callee.safeCast<BoundMethod>()) {
+        self = bm->target;
+        callee = bm->func;
+    }
+
+    // Invoke the callee with with provided arguments.
+    if (const auto* functionDef = callee.safeCast<Statement::FunctionDefinition>()) {
+        // Function is implemented in script.
+        PLY_ASSERT(!self); // Not possible to define classes in script yet
         PLY_ASSERT(args.numItems() == functionDef->parameterNames.numItems());
 
         // Set up a new stack frame.
@@ -179,10 +184,18 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
 
         // Execute function body and clean up stack frame.
         return execFunction(&newFrame, functionDef->body);
-    } else {
-        // Call through MethodTable.
-        return callee.type->methods.call(base, callee, args);
+    } else if (Method* method = callee.safeCast<Method>()) {
+        // Function is implemented in C++.
+        MethodArgs ma;
+        ma.base = base;
+        ma.self = self;
+        ma.args = args;
+        return method(ma);
     }
+
+    // Object is not callable
+    base->error(String::format("cannot call '{}' as a function", callee.type->getName()));
+    return MethodResult::Error;
 }
 
 AnyObject lookupName(Interpreter::StackFrame* frame, Label name) {
@@ -208,7 +221,7 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
         case Expression::ID::NameLookup: {
             base->returnValue = lookupName(frame, expr->nameLookup()->name);
             if (!base->returnValue.data) {
-                error(frame->interp, String::format("cannot resolve identifier '{}'",
+                base->error(String::format("cannot resolve identifier '{}'",
                                                     g_labelStorage.view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
