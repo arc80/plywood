@@ -62,14 +62,14 @@ ExternResult extern_libavcodec_prebuilt(ExternCommand cmd, ExternProviderArgs* a
                                      "avformat-58", "swresample-3", "swscale-5"};
 
     // Handle Command
-    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(arch);
+    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder("libavcodec-2020-10-26");
     if (cmd == ExternCommand::Status) {
         return er.first;
     } else if (cmd == ExternCommand::Install) {
         if (er.first.code != ExternResult::SupportedButNotInstalled) {
             return er.first;
         }
-        ExternFolder* externFolder = args->createExternFolder(arch);
+        ExternFolder* externFolder = args->createExternFolder("libavcodec-2020-10-26");
         String archivePath = NativePath::join(externFolder->path, archiveName);
 
         if (!downloadFile(archivePath, url)) {
@@ -80,7 +80,6 @@ ExternResult extern_libavcodec_prebuilt(ExternCommand cmd, ExternProviderArgs* a
                     String::format("Error extracting '{}'", archivePath)};
         }
         FileSystem::native()->deleteFile(archivePath);
-        externFolder->success = true;
         externFolder->save();
         return {ExternResult::Installed, ""};
     } else if (cmd == ExternCommand::Instantiate) {

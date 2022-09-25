@@ -19,53 +19,15 @@ String ExternProvider::getQualifiedName() const {
 }
 
 PLY_NO_INLINE Tuple<ExternResult, ExternFolder*>
-ExternProviderArgs::findExistingExternFolder(StringView folderArgs) const {
-    String qualifiedName = this->provider->getQualifiedName();
-    ExternFolder* folder = ExternFolderRegistry::get()->find(qualifiedName, folderArgs);
-    if (!folder) {
+ExternProviderArgs::findExistingExternFolder(StringView desc) const {
+    if (ExternFolder* folder = ExternFolderRegistry::get()->find(desc))
+        return {ExternResult{ExternResult::Installed, {}}, folder};
+    else
         return {ExternResult{ExternResult::SupportedButNotInstalled, {}}, nullptr};
-    }
-    return {
-        ExternResult{folder->success ? ExternResult::Installed : ExternResult::InstallFailed, {}},
-        folder};
 }
 
-PLY_NO_INLINE String makeUniqueFileName(StringView parentFolder, StringView prefix) {
-    u32 number = 0;
-    String suffix;
-    for (;;) {
-        String path = NativePath::join(parentFolder, prefix + suffix);
-        if (FileSystem::native()->exists(path) == ExistsResult::NotFound)
-            return path;
-        number++;
-        suffix = String::from(number);
-        u32 numZeroDigits = max<s32>(3 - suffix.numBytes, 0);
-        suffix = String::format(".{}{}", StringView{"0"} * numZeroDigits, suffix);
-    }
-}
-
-PLY_NO_INLINE ExternFolder* ExternProviderArgs::createExternFolder(StringView folderArgs) const {
-    // Make directory
-    String baseName = this->provider->getQualifiedName();
-    if (folderArgs) {
-        baseName = String::format("{}.{}", baseName, folderArgs);
-    }
-    String folderPath =
-        makeUniqueFileName(NativePath::join(PLY_WORKSPACE_FOLDER, "data/extern"), baseName);
-    FSResult fsResult = FileSystem::native()->makeDirs(folderPath);
-    if (!(fsResult == FSResult::OK || fsResult == FSResult::AlreadyExists)) {
-        ErrorHandler::log(ErrorHandler::Fatal,
-                          String::format("Can't create folder '{}'\n", folderPath));
-        return nullptr; // Shouldn't get here
-    }
-
-    // Create ExternFolder object
-    ExternFolder* folder = new ExternFolder;
-    folder->path = std::move(folderPath);
-    folder->providerName = this->provider->getQualifiedName();
-    folder->folderArgs = folderArgs;
-    ExternFolderRegistry::get()->folders.append(folder);
-    return folder;
+PLY_NO_INLINE ExternFolder* ExternProviderArgs::createExternFolder(StringView desc) const {
+    return ExternFolderRegistry::get()->create(desc);
 }
 
 } // namespace build

@@ -399,6 +399,32 @@ AnyObject resolveName(ConfigListInterpreter* cli, Label identifier) {
     return {};
 }
 
+MethodResult getExternFolder(const MethodArgs& args) {
+    // Check arguments
+    if (args.args.numItems != 1) {
+        args.base->error("'get_extern_folder' expects exactly one argument");
+        return MethodResult::Error;
+    }
+    String* desc = args.args[0].safeCast<String>();
+    if (!desc) {
+        args.base->error("'get_extern_folder' expects a string argument");
+        return MethodResult::Error;
+    }
+
+    // Find or create folder
+    ExternFolder* externFolder = ExternFolderRegistry::get()->find(*desc);
+    if (!externFolder) {
+        externFolder = ExternFolderRegistry::get()->create(*desc);
+    }
+
+    // Return folder path
+    AnyObject* resultStorage =
+        args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
+    *resultStorage->cast<String>() = externFolder->path;
+    args.base->returnValue = *resultStorage;
+    return MethodResult::OK;
+}
+
 PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     latest::ModuleInstantiator mi{bf->getAbsPath()};
     mi.project.name = bf->solutionName;
@@ -419,10 +445,12 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
         cli.interp.hooks.customBlock = {doCustomBlock, &cli};
 
         // Add builtin namespace.
-        static bool true_ = true;
-        static bool false_ = false;
+        bool true_ = true;
+        bool false_ = false;
         *cli.interp.builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
         *cli.interp.builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
+        *cli.interp.builtIns.insert(g_labelStorage.insert("get_extern_folder")) =
+            AnyObject::bind(&getExternFolder);
 
         // Invoke block.
         crowbar::Interpreter::StackFrame frame;
@@ -445,7 +473,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
 }
 
 PLY_NO_INLINE bool BuildFolder::generateLoop(StringView config) {
-//    return generateLatest(this);
+    // return generateLatest(this);
 
     for (;;) {
         ProjectInstantiationResult instResult = this->instantiateAllTargets(false);

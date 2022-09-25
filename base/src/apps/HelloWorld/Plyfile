@@ -4,5 +4,6 @@ executable HelloWorld {
     }
     dependencies {
         public runtime
+        // public cairo
     }
 }

@@ -3,30 +3,30 @@ extern cairo {
 }
 
 fn download_cairo_for_windows() {
-    if !(toolchain.arch == "x86" || toolchain.arch == "x64") {
-        error("toolchain.arch must be 'x86' or 'x64'")
+    if !(build.arch == "x86" || build.arch == "x64") {
+        error("target architecture must be 'x86' or 'x64'")
     }
 
     version = "1.17.2"
-    extern_folder = get_extern_folder("cairo-windows-${toolchain.arch}-${version}")
+    extern_folder = sys.get_extern_folder("cairo-windows-${build.arch}-${version}")
     archive_name = "cairo-windows=${version}"
     archive_path = "${extern_folder}/${archive_name}"
 
-    if !filesystem.exists(archive_path) {
+    if !sys.fs.exists(archive_path) {
         compressed_path = "${extern_folder}/${archive_name}.zip"
-        filesystem.download(compressed_path, "https://github.com/preshing/cairo-windows/releases/download/${version}/${archive_name}.zip")
-        filesystem.extract(compressed_path)
-        if !filesystem.exists(archive_path) {
+        sys.download(compressed_path, "https://github.com/preshing/cairo-windows/releases/download/${version}/${archive_name}.zip")
+        sys.extract_archive(compressed_path)
+        if !sys.fs.exists(archive_path) {
             error("expected '${archive_path}' to exist after extracting '${compressed_path}'")
         }
-        filesystem.delete(compressed_path)
+        sys.fs.delete(compressed_path)
     }
 
     include_directories {
         "${archive_path}/include"
     }
     link_libraries {
-        "${archive_path}/lib/${toolchain.arch}/cairo.lib"
-        "${archive_path}/lib/${toolchain.arch}/cairo.dll"
+        "${archive_path}/lib/${build.arch}/cairo.lib"
+        "${archive_path}/lib/${build.arch}/cairo.dll"
     }
 }

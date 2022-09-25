@@ -27,13 +27,6 @@ PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
     Owned<ExternFolder> info = pylon::import<ExternFolder>(aRoot);
     info->path = std::move(path);
 
-    // Fixup files saved by older Plytool versions:
-    Array<StringView> comps = info->providerName.splitByte('.');
-    if (comps.numItems() > 1) {
-        info->externName = comps.back(-2);
-        info->providerName = comps.back(-1);
-    }
-
     return info;
 }
 
@@ -66,15 +59,44 @@ Owned<ExternFolderRegistry> ExternFolderRegistry::create() {
     return externFolders;
 }
 
-ExternFolder* ExternFolderRegistry::find(StringView qualifiedName, StringView folderArgs) const {
+ExternFolder* ExternFolderRegistry::find(StringView desc) const {
     for (ExternFolder* info : this->folders) {
-        bool nameMatches = (info->providerName == qualifiedName) ||
-                           (info->providerName.endsWith("." + qualifiedName));
-        if (nameMatches && info->folderArgs == folderArgs) {
+        if (info->desc == desc)
             return info;
-        }
     }
     return nullptr;
+}
+
+PLY_NO_INLINE String makeUniqueFileName(StringView parentFolder, StringView prefix) {
+    u32 number = 0;
+    String suffix;
+    for (;;) {
+        String path = NativePath::join(parentFolder, prefix + suffix);
+        if (FileSystem::native()->exists(path) == ExistsResult::NotFound)
+            return path;
+        number++;
+        suffix = String::from(number);
+        u32 numZeroDigits = max<s32>(3 - suffix.numBytes, 0);
+        suffix = String::format(".{}{}", StringView{"0"} * numZeroDigits, suffix);
+    }
+}
+
+PLY_NO_INLINE ExternFolder* ExternFolderRegistry::create(StringView desc) {
+    // Make directory
+    String folderPath =
+        makeUniqueFileName(NativePath::join(PLY_WORKSPACE_FOLDER, "data/extern"), desc);
+    FSResult fsResult = FileSystem::native()->makeDirs(folderPath);
+    if (!(fsResult == FSResult::OK || fsResult == FSResult::AlreadyExists)) {
+        PLY_ASSERT(0);  // Don't bother to handle gracefully; this module will be deleted soon
+        return nullptr;
+    }
+
+    // Create ExternFolder object
+    ExternFolder* folder = new ExternFolder;
+    folder->path = std::move(folderPath);
+    folder->desc = desc;
+    this->folders.append(folder);
+    return folder;
 }
 
 } // namespace build

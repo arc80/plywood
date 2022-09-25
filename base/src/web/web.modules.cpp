@@ -112,14 +112,14 @@ ExternResult extern_libsass_prebuilt(ExternCommand cmd, ExternProviderArgs* args
     String archiveName = String::format("libsass-{}-{}", version, arch);
 
     // Handle Command
-    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(arch);
+    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(archiveName);
     if (cmd == ExternCommand::Status) {
         return er.first;
     } else if (cmd == ExternCommand::Install) {
         if (er.first.code != ExternResult::SupportedButNotInstalled) {
             return er.first;
         }
-        ExternFolder* externFolder = args->createExternFolder(arch);
+        ExternFolder* externFolder = args->createExternFolder(archiveName);
         String archivePath = NativePath::join(externFolder->path, archiveName + ".msi");
         String url = String::format("https://github.com/sass/libsass/releases/download/{}/{}.msi",
                                     version, archiveName);
@@ -131,7 +131,6 @@ ExternResult extern_libsass_prebuilt(ExternCommand cmd, ExternProviderArgs* args
                     String::format("Error extracting '{}'", archivePath)};
         }
         FileSystem::native()->deleteFile(archivePath);
-        externFolder->success = true;
         externFolder->save();
         return {ExternResult::Installed, ""};
     } else if (cmd == ExternCommand::Instantiate) {

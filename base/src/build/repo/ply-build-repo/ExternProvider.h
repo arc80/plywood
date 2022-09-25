@@ -68,8 +68,8 @@ struct ExternProviderArgs {
     Dependency* dep = nullptr;
 
     PLY_BUILD_ENTRY Tuple<ExternResult, ExternFolder*>
-    findExistingExternFolder(StringView folderArgs) const;
-    PLY_BUILD_ENTRY ExternFolder* createExternFolder(StringView folderArgs) const;
+    findExistingExternFolder(StringView desc) const;
+    PLY_BUILD_ENTRY ExternFolder* createExternFolder(StringView desc) const;
 };
 
 } // namespace build

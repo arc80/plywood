@@ -75,16 +75,17 @@ ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) 
 
     StringView version = "1.17.2";
     String archiveName = String::format("cairo-windows-{}", version);
+    String externFolderDesc = archiveName + "-" + arch;
 
     // Handle Command
-    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(arch);
+    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(externFolderDesc);
     if (cmd == ExternCommand::Status) {
         return er.first;
     } else if (cmd == ExternCommand::Install) {
         if (er.first.code != ExternResult::SupportedButNotInstalled) {
             return er.first;
         }
-        ExternFolder* externFolder = args->createExternFolder(arch);
+        ExternFolder* externFolder = args->createExternFolder(externFolderDesc);
         String archivePath = NativePath::join(externFolder->path, archiveName + ".zip");
         String url =
             String::format("https://github.com/preshing/cairo-windows/releases/download/{}/{}.zip",
@@ -97,7 +98,6 @@ ExternResult extern_cairo_prebuilt(ExternCommand cmd, ExternProviderArgs* args) 
                     String::format("Error extracting '{}'", archivePath)};
         }
         FileSystem::native()->deleteFile(archivePath);
-        externFolder->success = true;
         externFolder->save();
         return {ExternResult::Installed, ""};
     } else if (cmd == ExternCommand::Instantiate) {
@@ -129,15 +129,15 @@ ExternResult extern_libpng_builtFromSource(ExternCommand cmd, ExternProviderArgs
     }
 
     // Handle Command
-    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder({});
+    String externFolderDesc = "libpng-fromSource-" + arch;
+    Tuple<ExternResult, ExternFolder*> er = args->findExistingExternFolder(externFolderDesc);
     if (cmd == ExternCommand::Status) {
         return er.first;
     } else if (cmd == ExternCommand::Install) {
         if (er.first.code != ExternResult::SupportedButNotInstalled) {
             return er.first;
         }
-        ExternFolder* externFolder = args->createExternFolder({});
-        externFolder->success = true;
+        ExternFolder* externFolder = args->createExternFolder(externFolderDesc);
         externFolder->save();
         return {ExternResult::Installed, ""};
     } else if (cmd == ExternCommand::Instantiate) {

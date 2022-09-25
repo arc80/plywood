@@ -9,21 +9,10 @@ namespace ply {
 namespace build {
 
 struct ExternFolder {
-    struct Config {
-        PLY_REFLECT()
-        String args;
-        bool success = false;
-        // ply reflect off
-    };
-
     String path; // Not written to the .pylon file
 
     PLY_REFLECT()
-    String externName;
-    String providerName;
-    String folderArgs;
-    bool success = false;
-    Array<Config> multiConfig;
+    String desc;
     // ply reflect off
 
     static Owned<ExternFolder> load(String&& path);
@@ -40,7 +29,8 @@ struct ExternFolderRegistry {
         return instance_;
     }
 
-    PLY_BUILD_ENTRY ExternFolder* find(StringView qualifiedName, StringView folderArgs) const;
+    PLY_BUILD_ENTRY ExternFolder* find(StringView desc) const;
+    PLY_BUILD_ENTRY ExternFolder* create(StringView desc);
 };
 
 } // namespace build
