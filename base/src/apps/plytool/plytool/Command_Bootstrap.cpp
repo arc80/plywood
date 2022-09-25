@@ -11,16 +11,7 @@
 
 namespace ply {
 
-void boo(void*) {
-}
-
-void blah() {
-    Functor<void(void*)> cb{boo};
-    cb(nullptr);
-}
-
 void command_bootstrap(PlyToolCommandEnv* env) {
-    //return blah();
     using namespace build;
     ensureTerminated(env->cl);
     env->cl->finalize();
