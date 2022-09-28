@@ -222,7 +222,7 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
             base->returnValue = lookupName(frame, expr->nameLookup()->name);
             if (!base->returnValue.data) {
                 base->error(String::format("cannot resolve identifier '{}'",
-                                                    g_labelStorage.view(expr->nameLookup()->name)));
+                                           g_labelStorage.view(expr->nameLookup()->name)));
                 return MethodResult::Error;
             }
             return MethodResult::OK;

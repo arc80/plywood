@@ -517,6 +517,9 @@ void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
     }
     functionDef->name = nameToken.label;
 
+    // Notify parse hook.
+    bool reject = parser->onDefineFunction(nameToken, stmt, true);
+
     // Parse parameter list.
     ExpandedToken token = parser->tkr->readToken();
     if (token.type != TokenType::OpenParen) {
@@ -535,7 +538,11 @@ void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
 
     // Parse function body.
     functionDef->body = parseStatementBlock(parser, {"function", "parameter list"});
-    stmtBlock->statements.append(std::move(stmt));
+
+    if (!reject) {
+        parser->onDefineFunction(nameToken, stmt, false);
+        stmtBlock->statements.append(std::move(stmt));
+    }
 }
 
 Owned<StatementBlock> Parser::parseFile() {

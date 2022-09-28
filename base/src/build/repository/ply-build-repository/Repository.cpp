@@ -17,9 +17,10 @@ struct ConfigOptionsInterpreter {
 };
 
 bool doLocalAssignment(ConfigOptionsInterpreter* coi, Label label) {
-    auto cursor = coi->optionSet->map.insertOrFind(label);
-    cursor->obj = AnyOwnedObject::create(coi->interp.base.returnValue.type);
-    cursor->obj.move(coi->interp.base.returnValue);
+    AnyOwnedObject* obj;
+    coi->optionSet->map.insertOrFind(label, &obj);
+    *obj = AnyOwnedObject::create(coi->interp.base.returnValue.type);
+    obj->move(coi->interp.base.returnValue);
     return true;
 }
 
@@ -53,14 +54,17 @@ void Repository::create() {
     }
 
     // Initialize all config_options
-    for (Module* mod : g_repository->moduleMap) {
+    for (ModuleOrFunction* mod : g_repository->modules) {
         mod->defaultOptions = Owned<ConfigOptions>::create();
     }
 
     for (const ModuleConfigBlock& cb : g_repository->moduleConfigBlocks) {
         // Create new interpreter.
         ConfigOptionsInterpreter coi;
-        coi.interp.base.error = [](StringView message) { StdErr::text() << message; };
+        coi.interp.base.error = [&coi](StringView message) {
+            OutStream outs = StdErr::text();
+            logErrorWithStack(&outs, &coi.interp, message);
+        };
         coi.optionSet = cb.mod->defaultOptions;
         coi.interp.hooks.assignToLocal = {doLocalAssignment, &coi};
 
@@ -75,8 +79,8 @@ void Repository::create() {
         frame.interp = &coi.interp;
         frame.desc = [mod = cb.mod]() -> HybridString {
             return String::format("config_options for {} '{}'",
-                                  g_labelStorage.view(mod->block->type),
-                                  g_labelStorage.view(mod->block->name));
+                                  g_labelStorage.view(mod->stmt->customBlock()->type),
+                                  g_labelStorage.view(mod->stmt->customBlock()->name));
         };
         frame.tkr = &cb.mod->plyfile->tkr;
         MethodResult result = execFunction(&frame, cb.block->customBlock()->body);
@@ -93,12 +97,12 @@ PLY_NO_INLINE MethodTable getMethodTable_Repository_ConfigOptions() {
         Label label = g_labelStorage.find(propertyName);
         if (label) {
             auto* configOpts = obj.cast<Repository::ConfigOptions>();
-            auto cursor = configOpts->map.find(label);
-            if (cursor.wasFound()) {
-                interp->returnValue = cursor->obj;
-                return MethodResult::OK;
-            }
+            AnyOwnedObject* prop;
+            configOpts->map.insertOrFind(label, &prop);
+            interp->returnValue = *prop;
+            return MethodResult::OK;
         }
+        // read-only access?
 
         interp->returnValue = {};
         interp->error(

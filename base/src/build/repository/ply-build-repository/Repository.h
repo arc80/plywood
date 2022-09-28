@@ -17,43 +17,21 @@ struct Repository {
     };
 
     struct ConfigOptions {
-        struct Traits {
-            using Key = Label;
-            struct Item {
-                Label identifier;
-                AnyOwnedObject obj;
-                Item(Label identifier) : identifier{identifier} {
-                }
-            };
-            static PLY_INLINE bool match(const Item& item, const Label& identifier) {
-                return item.identifier == identifier;
-            }
-        };
-
-        HashMap<Traits> map;
+        LabelMap<AnyOwnedObject> map;
     };
 
-    struct Module {
+    struct ModuleOrFunction {
         PLY_REFLECT()
         // ply reflect off
 
         Plyfile* plyfile = nullptr;
-        u32 fileOffset = 0;
-        crowbar::Statement::CustomBlock* block = nullptr;
+        const crowbar::Statement* stmt = nullptr;
         Owned<ConfigOptions> defaultOptions;
         Owned<ConfigOptions> currentOptions;
     };
 
-    struct ModuleMapTraits {
-        using Key = Label;
-        using Item = Owned<Module>;
-        static bool match(const Item& item, Label name) {
-            return item->block->name == name;
-        }
-    };
-
     struct ModuleConfigBlock {
-        Module* mod = nullptr;
+        ModuleOrFunction* mod = nullptr;
         Owned<crowbar::Statement> block;
     };
 
@@ -64,7 +42,9 @@ struct Repository {
     };
 
     Array<Owned<Plyfile>> plyfiles;
-    HashMap<ModuleMapTraits> moduleMap;
+    Array<Owned<ModuleOrFunction>> modules;
+    Array<Owned<ModuleOrFunction>> functions;
+    LabelMap<ModuleOrFunction*> globalScope; // Maps names to modules & functions
     Array<ModuleConfigBlock> moduleConfigBlocks;
     Owned<ConfigList> configList;
 

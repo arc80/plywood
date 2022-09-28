@@ -16,6 +16,8 @@ typedef bool ExpressionTraitHandler(const ExpandedToken& kwToken, AnyOwnedObject
 struct Parser {
     LabelMap<Functor<CustomBlockHandler>>* customBlockHandlers = nullptr;
     LabelMap<Functor<ExpressionTraitHandler>>* exprTraitHandlers = nullptr;
+    Functor<bool(const ExpandedToken& nameToken, const Statement* stmt, bool isEntering)>
+        onDefineFunction; // return value of true rejects the function
 
     // Tokenizer.
     Tokenizer* tkr = nullptr;

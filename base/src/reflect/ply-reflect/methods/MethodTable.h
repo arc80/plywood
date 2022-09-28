@@ -79,8 +79,6 @@ struct MethodTable {
                                              u32 index);
     static MethodResult unsupportedPrint(BaseInterpreter* interp, const AnyObject& obj,
                                          StringView formatSpec);
-    static MethodResult unsupportedCall(BaseInterpreter* interp, const AnyObject& callee,
-                                        ArrayView<const AnyObject> args);
 
     // Member variables
     MethodResult (*unaryOp)(BaseInterpreter* interp, UnaryOp op, const AnyObject& obj) = nullptr;

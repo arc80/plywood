@@ -23,7 +23,7 @@ T& appendOrFind(Array<T>& arr, U&& item, const Callable& callable) {
 struct InstantiatingInterpreter {
     crowbar::Interpreter interp;
     ModuleInstantiator* mi = nullptr;
-    Repository::Module* currentModule = nullptr;
+    Repository::ModuleOrFunction* currentModule = nullptr;
     buildSteps::Node* node = nullptr;
 
     String makeAbsPath(StringView relPath) {
@@ -76,8 +76,10 @@ void onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits)
             PLY_ASSERT(traits->visibilityTokenIdx >= 0);
 
             // Instantiate the dependency
-            Repository::Module* mod = ii->interp.base.returnValue.cast<Repository::Module>();
-            buildSteps::Node* dep = instantiateModuleForCurrentConfig(ii->mi, mod->block->name);
+            Repository::ModuleOrFunction* mod =
+                ii->interp.base.returnValue.cast<Repository::ModuleOrFunction>();
+            buildSteps::Node* dep =
+                instantiateModuleForCurrentConfig(ii->mi, mod->stmt->customBlock()->name);
             buildSteps::Node::Dependency& foundDep = appendOrFind(
                 ii->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
             foundDep.activeMask |= ii->mi->configBit;
@@ -140,32 +142,39 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     node->configMask |= mi->configBit;
 
     // Find module function by name.
-    auto funcCursor = g_repository->moduleMap.find(moduleLabel);
-    if (!funcCursor.wasFound()) {
-        PLY_FORCE_CRASH();
+    latest::Repository::ModuleOrFunction** mod = g_repository->globalScope.find(moduleLabel);
+    if (!mod || !(*mod)->stmt->customBlock()) {
+        PLY_FORCE_CRASH(); // FIXME: Handle gracefully
     }
-    const crowbar::Statement::CustomBlock* moduleDef = (*funcCursor)->block;
+    const crowbar::Statement::CustomBlock* moduleDef = (*mod)->stmt->customBlock().get();
     if (moduleDef->type == g_common->executableKey) {
         node->type = buildSteps::Node::Type::Executable;
     }
 
     // Create new interpreter.
     InstantiatingInterpreter ii;
-    ii.interp.base.error = [](StringView message) { StdErr::text() << message; };
+    ii.interp.base.error = [&ii](StringView message) {
+        OutStream outs = StdErr::text();
+        logErrorWithStack(&outs, &ii.interp, message);
+    };
     ii.interp.hooks.customBlock = {customBlock, &ii};
     ii.interp.hooks.onEvaluate = {onEvaluate, &ii};
     ii.mi = mi;
-    ii.currentModule = *funcCursor;
+    ii.currentModule = *mod;
     ii.node = node;
 
     // Populate global & module namespaces.
     *ii.interp.builtIns.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
     *ii.interp.builtIns.insert(g_labelStorage.insert("build_folder")) =
         AnyObject::bind(&ii.mi->buildFolderPath);
-    ii.interp.hooks.resolveName = [](Label identifier) -> AnyObject {
-        auto cursor = g_repository->moduleMap.find(identifier);
-        if (cursor.wasFound()) {
-            return AnyObject::bind(cursor->get());
+    ii.interp.hooks.resolveName = [&ii](Label identifier) -> AnyObject {
+        if (AnyObject* obj = ii.currentModule->currentOptions->map.find(identifier))
+            return *obj;
+        if (Repository::ModuleOrFunction** mod = g_repository->globalScope.find(identifier)) {
+            if (auto fnDef = (*mod)->stmt->functionDefinition())
+                return AnyObject::bind(fnDef.get());
+            else
+                return AnyObject::bind(*mod);
         }
         return {};
     };
@@ -176,7 +185,7 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     frame.desc = [moduleDef]() -> HybridString {
         return String::format("module '{}'", g_labelStorage.view(moduleDef->name));
     };
-    frame.tkr = &(*funcCursor)->plyfile->tkr;
+    frame.tkr = &(*mod)->plyfile->tkr;
     MethodResult result = execFunction(&frame, moduleDef->body);
     if (result == MethodResult::Error)
         return nullptr;

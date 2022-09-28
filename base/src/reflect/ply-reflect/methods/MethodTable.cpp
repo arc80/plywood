@@ -74,13 +74,6 @@ MethodResult MethodTable::unsupportedPrint(BaseInterpreter* interp, const AnyObj
     return MethodResult::Error;
 }
 
-MethodResult MethodTable::unsupportedCall(BaseInterpreter* interp, const AnyObject& callee,
-                                          ArrayView<const AnyObject> args) {
-    interp->returnValue = {};
-    interp->error(String::format("cannot call '{}' as a function", callee.type->getName()));
-    return MethodResult::Error;
-}
-
 PLY_NO_INLINE MethodTable::MethodTable()
     : unaryOp{unsupportedUnaryOp}, binaryOp{unsupportedBinaryOp},
       propertyLookup{unsupportedPropertyLookup}, subscript{unsupportedSubscript},

@@ -16,7 +16,7 @@ struct ExtendedParser {
 
     // Information about the current parsing context:
     Repository::Plyfile* currentPlyfile = nullptr;
-    Repository::Module* currentModule = nullptr;
+    Repository::ModuleOrFunction* currentModule = nullptr;
     crowbar::Statement::CustomBlock* customBlock = nullptr;
 };
 
@@ -30,19 +30,17 @@ bool parseModuleLikeBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
     }
 
     // Create new Repository::Module
-    auto ownedMod = Owned<Repository::Module>::create();
-    Repository::Module* mod = ownedMod;
-    mod->plyfile = ep->currentPlyfile;
-    mod->fileOffset = kwToken.fileOffset;
-
+    auto ownedMod = Owned<Repository::ModuleOrFunction>::create();
+    ownedMod->plyfile = ep->currentPlyfile;
     auto moduleStmt = Owned<crowbar::Statement>::create();
-    mod->block = moduleStmt->customBlock().switchTo().get();
-    mod->block->type = kwToken.label;
+    ownedMod->stmt = moduleStmt;
+    auto cb = moduleStmt->customBlock().switchTo();
+    cb->type = kwToken.label;
 
     // Parse module name.
     crowbar::ExpandedToken nameToken = ep->parser->tkr->readToken();
     if (nameToken.type == crowbar::TokenType::Identifier) {
-        mod->block->name = nameToken.label;
+        cb->name = nameToken.label;
     } else {
         errorAtToken(ep->parser, nameToken, crowbar::ErrorTokenAction::PushBack,
                      String::format("expected {} name after '{}'; got {}", kwToken.text,
@@ -50,23 +48,27 @@ bool parseModuleLikeBlock(ExtendedParser* ep, const crowbar::ExpandedToken& kwTo
     }
 
     // Add to Repository
-    auto cursor = g_repository->moduleMap.insertOrFind(mod->block->name);
-    if (cursor.wasFound()) {
+    Repository::ModuleOrFunction** prevMod = nullptr;
+    if (!g_repository->globalScope.insertOrFind(cb->name, &prevMod)) {
+        StringView type = "function";
+        if (auto prevCB = (*prevMod)->stmt->customBlock()) {
+            type = g_labelStorage.view(prevCB->type);
+        }
         errorAtToken(ep->parser, kwToken, crowbar::ErrorTokenAction::DoNothing,
-                     String::format("'{}' was already defined as {}", kwToken.text,
-                                    g_labelStorage.view((*cursor)->block->type)));
+                     String::format("'{}' was already defined as {}", kwToken.text, type));
         ep->parser->recovery.muteErrors = false;
-        ep->parser->error(String::format(
-            "{}: ... see previous definition\n",
-            (*cursor)->plyfile->tkr.fileLocationMap.formatFileLocation((*cursor)->fileOffset)));
+        ep->parser->error(
+            String::format("{}: ... see previous definition\n",
+                           (*prevMod)->plyfile->tkr.fileLocationMap.formatFileLocation(
+                               (*prevMod)->stmt->fileOffset)));
     }
-    (*cursor) = std::move(ownedMod);
+    (*prevMod) = ownedMod;
 
     // Parse nested block.
     PLY_SET_IN_SCOPE(ep->parser->functionLikeScope, moduleStmt);
-    PLY_SET_IN_SCOPE(ep->currentModule, mod);
-    mod->block->body =
-        parseStatementBlock(ep->parser, {kwToken.text, kwToken.text + " name", true});
+    PLY_SET_IN_SCOPE(ep->currentModule, ownedMod);
+    cb->body = parseStatementBlock(ep->parser, {kwToken.text, kwToken.text + " name", true});
+    g_repository->modules.append(std::move(ownedMod));
     stmtBlock->statements.append(std::move(moduleStmt));
     return true;
 }
@@ -256,6 +258,37 @@ bool parsePublicPrivateExpressionTrait(ExtendedParser* ep, const crowbar::Expand
     return true;
 }
 
+bool onDefineFunction(ExtendedParser* ep, const crowbar::ExpandedToken& nameToken,
+                      const crowbar::Statement* stmt, bool isEntering) {
+    auto fnDef = stmt->functionDefinition();
+    if (isEntering) {
+        Repository::ModuleOrFunction** prevMod = g_repository->globalScope.find(fnDef->name);
+        if (prevMod) {
+            StringView type = "function";
+            if (auto prevCB = (*prevMod)->stmt->customBlock()) {
+                type = g_labelStorage.view(prevCB->type);
+            }
+            errorAtToken(ep->parser, nameToken, crowbar::ErrorTokenAction::DoNothing,
+                         String::format("'{}' was already defined as {}", nameToken.text, type));
+            ep->parser->recovery.muteErrors = false;
+            ep->parser->error(
+                String::format("{}: ... see previous definition\n",
+                               (*prevMod)->plyfile->tkr.fileLocationMap.formatFileLocation(
+                                   (*prevMod)->stmt->fileOffset)));
+            return true;
+        }
+        return false;
+    } else {
+        auto ownedMod = Owned<Repository::ModuleOrFunction>::create();
+        ownedMod->plyfile = ep->currentPlyfile;
+        ownedMod->stmt = stmt;
+
+        *g_repository->globalScope.insert(fnDef->name) = ownedMod;
+        g_repository->functions.append(std::move(ownedMod));
+        return true;
+    }
+}
+
 bool parsePlyfile(StringView path) {
     String src = FileSystem::native()->loadTextAutodetect(path).first;
     if (FileSystem::native()->lastResult() != FSResult::OK) {
@@ -286,7 +319,7 @@ bool parsePlyfile(StringView path) {
     *ep.exprTraits.insert(g_common->privateKey) = {parsePublicPrivateExpressionTrait, &ep};
     parser.customBlockHandlers = &ep.customBlocks;
     parser.exprTraitHandlers = &ep.exprTraits;
-
+    parser.onDefineFunction = {onDefineFunction, &ep};
     parser.tkr = &plyfile->tkr;
     parser.error = [](StringView message) { StdErr::text() << message; };
 

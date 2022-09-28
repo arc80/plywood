@@ -96,7 +96,4 @@ struct StatementBlock {
 };
 
 } // namespace crowbar
-
-PLY_DECLARE_TYPE_DESCRIPTOR(crowbar::Statement::FunctionDefinition)
-
 } // namespace ply

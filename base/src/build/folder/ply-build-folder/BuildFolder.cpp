@@ -348,12 +348,12 @@ void doCustomBlock(ConfigListInterpreter* cli, const crowbar::Statement::CustomB
         PLY_ASSERT(cli->currentConfigName); // FIXME: Make robust
 
         // Initialize all Module::currentOptions
-        for (latest::Repository::Module* mod : latest::g_repository->moduleMap) {
+        for (latest::Repository::ModuleOrFunction* mod : latest::g_repository->modules) {
             auto newOptions = Owned<latest::Repository::ConfigOptions>::create();
             for (const auto& item : mod->defaultOptions->map) {
-                auto cursor = newOptions->map.insertOrFind(item.identifier);
-                cursor->obj = AnyOwnedObject::create(item.obj.type);
-                cursor->obj.copy(item.obj);
+                AnyOwnedObject* dst = newOptions->map.insert(item.key);
+                *dst = AnyOwnedObject::create(item.value.type);
+                dst->copy(item.value);
             }
             mod->currentOptions = std::move(newOptions);
         }
@@ -378,25 +378,13 @@ void doCustomBlock(ConfigListInterpreter* cli, const crowbar::Statement::CustomB
         // Clear currentConfigName, Module::currentOptions, and set ModuleInstantiator status to
         // NotInstantiated.
         cli->currentConfigName.clear();
-        for (latest::Repository::Module* mod : latest::g_repository->moduleMap) {
+        for (latest::Repository::ModuleOrFunction* mod : latest::g_repository->modules) {
             mod->currentOptions.clear();
         }
         for (auto& item : cli->mi->modules) {
             item.statusInCurrentConfig = latest::ModuleInstantiator::NotInstantiated;
         }
     }
-}
-
-AnyObject resolveName(ConfigListInterpreter* cli, Label identifier) {
-    auto cursor = latest::g_repository->moduleMap.find(identifier);
-    if (cursor.wasFound()) {
-        // FIXME: Handle gracefully instead of asserting
-        // modules should only be looked up within config block
-        PLY_ASSERT(cli->interp.currentFrame->customBlock->type == latest::g_common->configKey);
-        latest::Repository::Module* mod = *cursor;
-        return AnyObject::bind(mod->currentOptions.get());
-    }
-    return {};
 }
 
 MethodResult getExternFolder(const MethodArgs& args) {
@@ -438,10 +426,21 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     {
         // Create new interpreter.
         ConfigListInterpreter cli;
-        cli.interp.base.error = [](StringView message) { StdErr::text() << message; };
+        cli.interp.base.error = [&cli](StringView message) {
+            OutStream outs = StdErr::text();
+            logErrorWithStack(&outs, &cli.interp, message);
+        };
         cli.mi = &mi;
         cli.buildFolder = bf;
-        cli.interp.hooks.resolveName = {resolveName, &cli};
+        cli.interp.hooks.resolveName = [&cli](Label identifier) -> AnyObject {
+            PLY_ASSERT(cli.currentConfigName);
+            latest::Repository::ModuleOrFunction** mod =
+                latest::g_repository->globalScope.find(identifier);
+            if (auto fnDef = (*mod)->stmt->functionDefinition())
+                return AnyObject::bind(fnDef.get());
+            else
+                return AnyObject::bind((*mod)->currentOptions.get());
+        };
         cli.interp.hooks.customBlock = {doCustomBlock, &cli};
 
         // Add builtin namespace.
@@ -449,8 +448,6 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
         bool false_ = false;
         *cli.interp.builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
         *cli.interp.builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
-        *cli.interp.builtIns.insert(g_labelStorage.insert("get_extern_folder")) =
-            AnyObject::bind(&getExternFolder);
 
         // Invoke block.
         crowbar::Interpreter::StackFrame frame;
