@@ -111,6 +111,32 @@ MethodResult doJoinPath(const MethodArgs& args) {
     return MethodResult::OK;
 }
 
+struct ReadOnlyDict {
+    LabelMap<AnyOwnedObject> map;
+};
+
+PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
+    MethodTable methods;
+    methods.propertyLookup = [](BaseInterpreter* interp, const AnyObject& obj,
+                                StringView propertyName) -> MethodResult {
+        Label label = g_labelStorage.find(propertyName);
+        if (label) {
+            auto* dict = obj.cast<ReadOnlyDict>();
+            AnyObject* prop = dict->map.find(label);
+            if (prop) {
+                interp->returnValue = *prop;
+                return MethodResult::OK;
+            }
+        }
+
+        interp->returnValue = {};
+        interp->error(
+            String::format("configuration option '{}' not found in module", propertyName));
+        return MethodResult::Error;
+    };
+    return methods;
+}
+
 buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel) {
     StringView moduleName = g_labelStorage.view(moduleLabel);
 
@@ -167,6 +193,10 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     *ii.interp.builtIns.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
     *ii.interp.builtIns.insert(g_labelStorage.insert("build_folder")) =
         AnyObject::bind(&ii.mi->buildFolderPath);
+    ReadOnlyDict dict;
+    *dict.map.insert(g_labelStorage.insert("arch")) = AnyOwnedObject::create<String>("x64");
+    *ii.interp.builtIns.insert(g_labelStorage.insert("build")) = AnyObject::bind(&dict);
+    AnyObject::bind(&ii.mi->buildFolderPath);
     ii.interp.hooks.resolveName = [&ii](Label identifier) -> AnyObject {
         if (AnyObject* obj = ii.currentModule->currentOptions->map.find(identifier))
             return *obj;
@@ -197,3 +227,14 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
 } // namespace latest
 } // namespace build
 } // namespace ply
+
+PLY_DECLARE_TYPE_DESCRIPTOR(ply::build::latest::ReadOnlyDict)
+
+PLY_DEFINE_TYPE_DESCRIPTOR(ply::build::latest::ReadOnlyDict) {
+    static TypeDescriptor typeDesc{
+        &build::latest::TypeKey_Repository_ConfigOptions,
+        (build::latest::Repository::ConfigOptions*) nullptr,
+        NativeBindings::make<build::latest::Repository::ConfigOptions>()
+            PLY_METHOD_TABLES_ONLY(, build::latest::getMethodTable_ReadOnlyDict())};
+    return &typeDesc;
+}
