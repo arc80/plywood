@@ -20,9 +20,7 @@ NativeBindings& getNativeBindings_Method() {
             return {};
         },
         // destroy
-        [](AnyObject obj) {
-            PLY_ASSERT(0); // Not supported
-        },
+        [](AnyObject obj) {},
         // construct
         [](AnyObject obj) { *(void**) obj.data = nullptr; },
         // destruct

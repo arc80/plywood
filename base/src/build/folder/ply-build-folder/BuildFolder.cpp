@@ -336,7 +336,7 @@ struct ConfigListInterpreter {
     String currentConfigName;
 };
 
-void doCustomBlock(ConfigListInterpreter* cli, const crowbar::Statement::CustomBlock* block,
+bool doCustomBlock(ConfigListInterpreter* cli, const crowbar::Statement::CustomBlock* block,
                    bool isEntering) {
     PLY_ASSERT(block->type == latest::g_common->configKey);
 
@@ -350,7 +350,7 @@ void doCustomBlock(ConfigListInterpreter* cli, const crowbar::Statement::CustomB
         // Initialize all Module::currentOptions
         for (latest::Repository::ModuleOrFunction* mod : latest::g_repository->modules) {
             auto newOptions = Owned<latest::Repository::ConfigOptions>::create();
-            for (const auto& item : mod->defaultOptions->map) {
+            for (const auto item : mod->defaultOptions->map) {
                 AnyOwnedObject* dst = newOptions->map.insert(item.key);
                 *dst = AnyOwnedObject::create(item.value.type);
                 dst->copy(item.value);
@@ -368,7 +368,8 @@ void doCustomBlock(ConfigListInterpreter* cli, const crowbar::Statement::CustomB
         for (StringView targetName : cli->buildFolder->rootTargets) {
             buildSteps::Node* rootNode = latest::instantiateModuleForCurrentConfig(
                 cli->mi, g_labelStorage.insert(targetName));
-            PLY_ASSERT(rootNode); // FIXME: Handle elegantly
+            if (!rootNode)
+                return true;
             if (find(cli->mi->project.rootNodes, rootNode) < 0) {
                 cli->mi->project.rootNodes.append(rootNode);
             }
@@ -385,6 +386,7 @@ void doCustomBlock(ConfigListInterpreter* cli, const crowbar::Statement::CustomB
             item.statusInCurrentConfig = latest::ModuleInstantiator::NotInstantiated;
         }
     }
+    return false;
 }
 
 MethodResult getExternFolder(const MethodArgs& args) {

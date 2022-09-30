@@ -5,6 +5,7 @@
 #include <ply-reflect/Core.h>
 #include <ply-reflect/builtin/TypeDescriptor_String.h>
 #include <ply-reflect/builtin/TypeDescriptor_Arithmetic.h>
+#include <ply-reflect/builtin/TypeDescriptor_Bool.h>
 #include <ply-reflect/AnyObject.h>
 
 #if PLY_WITH_METHOD_TABLES
@@ -33,6 +34,13 @@ struct StringMethodTable {
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<String>());
                     *interp->returnValue.cast<String>() =
                         *first.cast<String>() * *second.cast<u32>();
+                    return MethodResult::OK;
+                }
+                case MethodTable::BinaryOp::DoubleEqual: {
+                    interp->returnValue =
+                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+                    *interp->returnValue.cast<bool>() =
+                        (*first.cast<String>() == *second.cast<String>());
                     return MethodResult::OK;
                 }
                 default: {

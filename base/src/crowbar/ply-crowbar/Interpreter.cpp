@@ -14,7 +14,7 @@ void logErrorWithStack(OutStream* outs, const Interpreter* interp, StringView me
     bool first = true;
     for (Interpreter::StackFrame* frame = interp->currentFrame; frame; frame = frame->prevFrame) {
         ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
-        outs->format("{} {} {}\n",
+        outs->format("{}: {} {}\n",
                      frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
                      first ? "in" : "called from", frame->desc());
         first = false;
@@ -401,11 +401,13 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
                 MethodResult result = eval(frame, statement->evaluate()->expr);
                 if (result != MethodResult::OK)
                     return result;
-                frame->interp->hooks.onEvaluate(statement->evaluate()->traits);
+                bool anyError = frame->interp->hooks.onEvaluate(statement->evaluate()->traits);
                 base->returnValue = {};
                 // Delete temporary objects.
                 base->localVariableStorage.deleteRange(localVariableStorageBoundary,
                                                        base->localVariableStorage.items.end());
+                if (anyError)
+                    return MethodResult::Error;
                 break;
             }
             case Statement::ID::Return_: {
@@ -422,9 +424,10 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
                     PLY_SET_IN_SCOPE(frame->interp->currentFrame->customBlock, cb);
                     result = execBlock(frame, cb->body);
                 }
-                frame->interp->hooks.customBlock(cb, false);
                 if (result != MethodResult::OK)
                     return result;
+                if (frame->interp->hooks.customBlock(cb, false))
+                    return MethodResult::Error;
                 break;
             }
             default: {

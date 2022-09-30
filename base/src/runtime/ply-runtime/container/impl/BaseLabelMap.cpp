@@ -40,7 +40,7 @@ PLY_INLINE u32 bestLabelMapCapacity(u32 population) {
     if (population > 8) {
         return roundUpPowerOf2(u32((u64{population} * 5) >> 2));
     }
-    return (population <= 4) ? 4 : 8;
+    return (population < 4) ? 4 : 8;
 }
 
 void repopulate(BaseLabelMap* map, u32 newCapacity, const BaseLabelMap::TypeInfo* typeInfo) {

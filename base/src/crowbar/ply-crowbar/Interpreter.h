@@ -15,8 +15,8 @@ struct Tokenizer;
 struct Interpreter  {
     struct Hooks {
         Functor<AnyObject(Label identifier)> resolveName;
-        Functor<void(const Statement::CustomBlock* customBlock, bool enter)> customBlock;
-        Functor<void(const AnyObject& evaluationTraits)> onEvaluate;
+        Functor<bool(const Statement::CustomBlock* customBlock, bool enter)> customBlock;
+        Functor<bool(const AnyObject& evaluationTraits)> onEvaluate; // true on error
         Functor<bool(Label label)> assignToLocal;
     };
 

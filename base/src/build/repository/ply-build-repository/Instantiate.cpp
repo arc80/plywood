@@ -33,7 +33,7 @@ struct InstantiatingInterpreter {
     }
 };
 
-void customBlock(InstantiatingInterpreter* ii, const crowbar::Statement::CustomBlock* enteringBlock,
+bool customBlock(InstantiatingInterpreter* ii, const crowbar::Statement::CustomBlock* enteringBlock,
                  bool isEntering) {
     if (isEntering) {
         if (ii->interp.currentFrame->customBlock) {
@@ -41,9 +41,10 @@ void customBlock(InstantiatingInterpreter* ii, const crowbar::Statement::CustomB
         }
     } else {
     }
+    return false;
 }
 
-void onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits) {
+bool onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits) {
     if (ii->interp.currentFrame->customBlock) {
         Label blockType = ii->interp.currentFrame->customBlock->type;
 
@@ -80,6 +81,8 @@ void onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits)
                 ii->interp.base.returnValue.cast<Repository::ModuleOrFunction>();
             buildSteps::Node* dep =
                 instantiateModuleForCurrentConfig(ii->mi, mod->stmt->customBlock()->name);
+            if (!dep)
+                return true;
             buildSteps::Node::Dependency& foundDep = appendOrFind(
                 ii->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
             foundDep.activeMask |= ii->mi->configBit;
@@ -93,6 +96,7 @@ void onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits)
             PLY_ASSERT(0);
         }
     }
+    return false;
 }
 
 MethodResult doJoinPath(const MethodArgs& args) {
@@ -111,17 +115,45 @@ MethodResult doJoinPath(const MethodArgs& args) {
     return MethodResult::OK;
 }
 
+MethodResult getExternFolder(const MethodArgs& args) {
+    if (args.args.numItems != 1) {
+        args.base->error(String::format("'get_extern_folder' expects 1 argument"));
+        return MethodResult::Error;
+    }
+    String* name = args.args[0].safeCast<String>();
+    if (!name) {
+        args.base->error(String::format("'get_extern_folder' argument must be a string"));
+        return MethodResult::Error;
+    }
+    
+    AnyObject* resultStorage =
+        args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
+    *resultStorage->cast<String>() = "...";
+    args.base->returnValue = *resultStorage;
+    return MethodResult::OK;
+}
+
 struct ReadOnlyDict {
+    String name;
     LabelMap<AnyOwnedObject> map;
+    
+    ReadOnlyDict(StringView name) : name{name} {
+    }
 };
+
+}
+}
+PLY_DECLARE_TYPE_DESCRIPTOR(build::latest::ReadOnlyDict)
+namespace build {
+namespace latest {
 
 PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
     MethodTable methods;
     methods.propertyLookup = [](BaseInterpreter* interp, const AnyObject& obj,
                                 StringView propertyName) -> MethodResult {
+        auto* dict = obj.cast<ReadOnlyDict>();
         Label label = g_labelStorage.find(propertyName);
         if (label) {
-            auto* dict = obj.cast<ReadOnlyDict>();
             AnyObject* prop = dict->map.find(label);
             if (prop) {
                 interp->returnValue = *prop;
@@ -131,7 +163,7 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
 
         interp->returnValue = {};
         interp->error(
-            String::format("configuration option '{}' not found in module", propertyName));
+            String::format("property '{}' not found in '{}'", propertyName, dict->name));
         return MethodResult::Error;
     };
     return methods;
@@ -193,9 +225,12 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     *ii.interp.builtIns.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
     *ii.interp.builtIns.insert(g_labelStorage.insert("build_folder")) =
         AnyObject::bind(&ii.mi->buildFolderPath);
-    ReadOnlyDict dict;
+    ReadOnlyDict dict{"build"};
     *dict.map.insert(g_labelStorage.insert("arch")) = AnyOwnedObject::create<String>("x64");
     *ii.interp.builtIns.insert(g_labelStorage.insert("build")) = AnyObject::bind(&dict);
+    ReadOnlyDict sysDict{"sys"};
+    *sysDict.map.insert(g_labelStorage.insert("get_extern_folder")) = AnyObject::bind(getExternFolder);
+    *ii.interp.builtIns.insert(g_labelStorage.insert("sys")) = AnyObject::bind(&sysDict);
     AnyObject::bind(&ii.mi->buildFolderPath);
     ii.interp.hooks.resolveName = [&ii](Label identifier) -> AnyObject {
         if (AnyObject* obj = ii.currentModule->currentOptions->map.find(identifier))
@@ -224,17 +259,37 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     return node;
 }
 
+TypeKey TypeKey_ReadOnlyDict{
+    // getName
+    [](const TypeDescriptor* typeDesc) -> HybridString { //
+        return "ReadOnlyDict";
+    },
+
+    // write
+    nullptr, // Unimplemented
+
+    // writeFormat
+    nullptr, // Unimplemented
+
+    // read
+    nullptr, // Unimplemented
+
+    // hashDescriptor
+    TypeKey::hashEmptyDescriptor,
+
+    // equalDescriptors
+    TypeKey::alwaysEqualDescriptors,
+};
+
 } // namespace latest
 } // namespace build
 } // namespace ply
 
-PLY_DECLARE_TYPE_DESCRIPTOR(ply::build::latest::ReadOnlyDict)
-
 PLY_DEFINE_TYPE_DESCRIPTOR(ply::build::latest::ReadOnlyDict) {
     static TypeDescriptor typeDesc{
-        &build::latest::TypeKey_Repository_ConfigOptions,
-        (build::latest::Repository::ConfigOptions*) nullptr,
-        NativeBindings::make<build::latest::Repository::ConfigOptions>()
+        &ply::build::latest::TypeKey_ReadOnlyDict,
+        (ply::build::latest::ReadOnlyDict*) nullptr,
+        NativeBindings::make<build::latest::ReadOnlyDict>()
             PLY_METHOD_TABLES_ONLY(, build::latest::getMethodTable_ReadOnlyDict())};
     return &typeDesc;
 }
