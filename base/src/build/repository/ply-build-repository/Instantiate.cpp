@@ -126,7 +126,7 @@ MethodResult getExternFolder(const MethodArgs& args) {
         args.base->error(String::format("'get_extern_folder' argument must be a string"));
         return MethodResult::Error;
     }
-    
+
     AnyObject* resultStorage =
         args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
     *resultStorage->cast<String>() = "...";
@@ -137,16 +137,55 @@ MethodResult getExternFolder(const MethodArgs& args) {
 struct ReadOnlyDict {
     String name;
     LabelMap<AnyObject> map;
-    
+
     ReadOnlyDict(StringView name) : name{name} {
     }
 };
 
-}
-}
+} // namespace latest
+} // namespace build
 PLY_DECLARE_TYPE_DESCRIPTOR(build::latest::ReadOnlyDict)
 namespace build {
 namespace latest {
+
+MethodResult sys_fs_exists(const MethodArgs& args) {
+    if (args.args.numItems != 1) {
+        args.base->error(String::format("'exists' expects 1 argument; got {}", args.args.numItems));
+        return MethodResult::Error;
+    }
+    String* path = args.args[0].safeCast<String>();
+    if (!path) {
+        args.base->error(String::format("'exists' argument must be a string"));
+        return MethodResult::Error;
+    }
+
+    AnyObject* resultStorage =
+        args.base->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+    *resultStorage->cast<bool>() = (FileSystem::native()->exists(*path) != ExistsResult::NotFound);
+    args.base->returnValue = *resultStorage;
+    return MethodResult::OK;
+}
+
+MethodResult sys_fs_download(const MethodArgs& args) {
+    if (args.args.numItems != 2) {
+        args.base->error(
+            String::format("'download' expects 2 arguments; got {}", args.args.numItems));
+        return MethodResult::Error;
+    }
+    String* path = args.args[0].safeCast<String>();
+    if (!path) {
+        args.base->error(String::format("first argument to 'download' must be a string"));
+        return MethodResult::Error;
+    }
+    String* url = args.args[0].safeCast<String>();
+    if (!url) {
+        args.base->error(String::format("second argument to 'download' must be a string"));
+        return MethodResult::Error;
+    }
+
+    args.base->returnValue = {};
+    return MethodResult::OK;
+}
 
 PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
     MethodTable methods;
@@ -158,7 +197,8 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
             AnyObject* prop = dict->map.find(label);
             if (prop) {
                 if (prop->is<Method>()) {
-                    AnyObject* bm = interp->localVariableStorage.appendObject(getTypeDescriptor<BoundMethod>());
+                    AnyObject* bm =
+                        interp->localVariableStorage.appendObject(getTypeDescriptor<BoundMethod>());
                     *bm->cast<BoundMethod>() = {obj, *prop};
                     interp->returnValue = *bm;
                 } else {
@@ -169,8 +209,7 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
         }
 
         interp->returnValue = {};
-        interp->error(
-            String::format("property '{}' not found in '{}'", propertyName, dict->name));
+        interp->error(String::format("property '{}' not found in '{}'", propertyName, dict->name));
         return MethodResult::Error;
     };
     return methods;
@@ -237,9 +276,12 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     *dict_build.map.insert(g_labelStorage.insert("arch")) = AnyObject::bind(&value_arch);
     *ii.interp.builtIns.insert(g_labelStorage.insert("build")) = AnyObject::bind(&dict_build);
     ReadOnlyDict dict_sys{"sys"};
-    *dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) = AnyObject::bind(getExternFolder);
+    *dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) =
+        AnyObject::bind(getExternFolder);
+    *dict_sys.map.insert(g_labelStorage.insert("download")) = AnyObject::bind(&sys_fs_download);
     *ii.interp.builtIns.insert(g_labelStorage.insert("sys")) = AnyObject::bind(&dict_sys);
     ReadOnlyDict dict_sys_fs{"sys.fs"};
+    *dict_sys_fs.map.insert(g_labelStorage.insert("exists")) = AnyObject::bind(&sys_fs_exists);
     *dict_sys.map.insert(g_labelStorage.insert("fs")) = AnyObject::bind(&dict_sys_fs);
     AnyObject::bind(&ii.mi->buildFolderPath);
     ii.interp.hooks.resolveName = [&ii](Label identifier) -> AnyObject {
@@ -297,8 +339,7 @@ TypeKey TypeKey_ReadOnlyDict{
 
 PLY_DEFINE_TYPE_DESCRIPTOR(ply::build::latest::ReadOnlyDict) {
     static TypeDescriptor typeDesc{
-        &ply::build::latest::TypeKey_ReadOnlyDict,
-        (ply::build::latest::ReadOnlyDict*) nullptr,
+        &ply::build::latest::TypeKey_ReadOnlyDict, (ply::build::latest::ReadOnlyDict*) nullptr,
         NativeBindings::make<build::latest::ReadOnlyDict>()
             PLY_METHOD_TABLES_ONLY(, build::latest::getMethodTable_ReadOnlyDict())};
     return &typeDesc;
