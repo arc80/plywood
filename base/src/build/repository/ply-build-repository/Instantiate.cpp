@@ -4,6 +4,7 @@
 ------------------------------------*/
 #include <ply-build-repository/Instantiate.h>
 #include <ply-crowbar/Interpreter.h>
+#include <ply-reflect/methods/BoundMethod.h>
 
 namespace ply {
 namespace build {
@@ -135,7 +136,7 @@ MethodResult getExternFolder(const MethodArgs& args) {
 
 struct ReadOnlyDict {
     String name;
-    LabelMap<AnyOwnedObject> map;
+    LabelMap<AnyObject> map;
     
     ReadOnlyDict(StringView name) : name{name} {
     }
@@ -156,7 +157,13 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
         if (label) {
             AnyObject* prop = dict->map.find(label);
             if (prop) {
-                interp->returnValue = *prop;
+                if (prop->is<Method>()) {
+                    AnyObject* bm = interp->localVariableStorage.appendObject(getTypeDescriptor<BoundMethod>());
+                    *bm->cast<BoundMethod>() = {obj, *prop};
+                    interp->returnValue = *bm;
+                } else {
+                    interp->returnValue = *prop;
+                }
                 return MethodResult::OK;
             }
         }
@@ -225,12 +232,15 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     *ii.interp.builtIns.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
     *ii.interp.builtIns.insert(g_labelStorage.insert("build_folder")) =
         AnyObject::bind(&ii.mi->buildFolderPath);
-    ReadOnlyDict dict{"build"};
-    *dict.map.insert(g_labelStorage.insert("arch")) = AnyOwnedObject::create<String>("x64");
-    *ii.interp.builtIns.insert(g_labelStorage.insert("build")) = AnyObject::bind(&dict);
-    ReadOnlyDict sysDict{"sys"};
-    *sysDict.map.insert(g_labelStorage.insert("get_extern_folder")) = AnyObject::bind(getExternFolder);
-    *ii.interp.builtIns.insert(g_labelStorage.insert("sys")) = AnyObject::bind(&sysDict);
+    ReadOnlyDict dict_build{"build"};
+    String value_arch = "x64";
+    *dict_build.map.insert(g_labelStorage.insert("arch")) = AnyObject::bind(&value_arch);
+    *ii.interp.builtIns.insert(g_labelStorage.insert("build")) = AnyObject::bind(&dict_build);
+    ReadOnlyDict dict_sys{"sys"};
+    *dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) = AnyObject::bind(getExternFolder);
+    *ii.interp.builtIns.insert(g_labelStorage.insert("sys")) = AnyObject::bind(&dict_sys);
+    ReadOnlyDict dict_sys_fs{"sys.fs"};
+    *dict_sys.map.insert(g_labelStorage.insert("fs")) = AnyObject::bind(&dict_sys_fs);
     AnyObject::bind(&ii.mi->buildFolderPath);
     ii.interp.hooks.resolveName = [&ii](Label identifier) -> AnyObject {
         if (AnyObject* obj = ii.currentModule->currentOptions->map.find(identifier))
