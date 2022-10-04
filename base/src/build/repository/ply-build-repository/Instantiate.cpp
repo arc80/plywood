@@ -3,8 +3,14 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-build-repository/Instantiate.h>
+#include <ply-build-provider/ExternFolderRegistry.h>
 #include <ply-crowbar/Interpreter.h>
 #include <ply-reflect/methods/BoundMethod.h>
+#include <ply-runtime/string/WString.h>
+#include <ply-runtime/string/TextEncoding.h>
+#if PLY_TARGET_WIN32
+#include <winhttp.h>
+#endif
 
 namespace ply {
 namespace build {
@@ -127,9 +133,15 @@ MethodResult getExternFolder(const MethodArgs& args) {
         return MethodResult::Error;
     }
 
+    ExternFolder* externFolder = ExternFolderRegistry::get()->find(*name);
+    if (!externFolder) {
+        externFolder = ExternFolderRegistry::get()->create(*name);
+        externFolder->save();
+    }
+
     AnyObject* resultStorage =
         args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
-    *resultStorage->cast<String>() = "...";
+    *resultStorage->cast<String>() = externFolder->path;
     args.base->returnValue = *resultStorage;
     return MethodResult::OK;
 }
@@ -159,11 +171,96 @@ MethodResult sys_fs_exists(const MethodArgs& args) {
         return MethodResult::Error;
     }
 
+    ExistsResult result = FileSystem::native()->exists(*path);
     AnyObject* resultStorage =
         args.base->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-    *resultStorage->cast<bool>() = (FileSystem::native()->exists(*path) != ExistsResult::NotFound);
+    *resultStorage->cast<bool>() = (result != ExistsResult::NotFound);
     args.base->returnValue = *resultStorage;
     return MethodResult::OK;
+}
+
+struct SplitURL {
+    bool https = false;
+    String hostname;
+    String resource;
+};
+
+bool splitURL(BaseInterpreter* base, SplitURL* split, StringView s) {
+    if (s.startsWith("https://")) {
+        split->https = true;
+        s.offsetHead(8);
+    } else if (s.startsWith("http://")) {
+        s.offsetHead(7);
+    } else {
+        base->error("URL must start with 'http://' or 'https://'");
+        return false;
+    }
+
+    s32 i = s.findByte('/');
+    if (i < 0) {
+        base->error("Expected '/' after hostname");
+        return false;
+    }
+
+    split->hostname = s.left(i);
+    split->resource = s.subStr(i);
+    return true;
+}
+
+PLY_NO_INLINE WString toWString(StringView str) {
+    MemOutStream outs;
+    while (str.numBytes > 0) {
+        DecodeResult decoded = UTF8::decodePoint(str);
+        outs.makeBytesAvailable(4);
+        u32 numEncodedBytes = UTF16_Native::encodePoint(outs.viewAvailable(), decoded.point);
+        outs.curByte += numEncodedBytes;
+        str.offsetHead(decoded.numBytes);
+    }
+    NativeEndianWriter{&outs}.write<u16>(0);
+    return WString::moveFromString(outs.moveToString());
+}
+
+void download(StringView dstPath, const SplitURL& split) {
+#if PLY_TARGET_WIN32
+    // FIXME: More graceful error handling
+    // This could also be an InPipe
+    HINTERNET hsess = WinHttpOpen(L"PlywoodSDK/0.1", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                                  WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+    PLY_ASSERT(hsess);
+    HINTERNET hconn =
+        WinHttpConnect(hsess, toWString(split.hostname),
+                       split.https ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT, 0);
+    PLY_ASSERT(hconn);
+    HINTERNET hreq =
+        WinHttpOpenRequest(hconn, L"GET", toWString(split.resource), NULL, WINHTTP_NO_REFERER,
+                           WINHTTP_DEFAULT_ACCEPT_TYPES, split.https ? WINHTTP_FLAG_SECURE : 0);
+    PLY_ASSERT(hreq);
+    BOOL rc = WinHttpSendRequest(hreq, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0,
+                                 0, 0);
+    PLY_ASSERT(rc);
+    rc = WinHttpReceiveResponse(hreq, NULL);
+    PLY_ASSERT(rc); // getting ERROR_WINHTTP_INVALID_SERVER_RESPONSE
+
+    Owned<OutStream> outs = FileSystem::native()->openStreamForWrite(dstPath);
+    PLY_ASSERT(outs);
+    for (;;) {
+        DWORD size = 0;
+        rc = WinHttpQueryDataAvailable(hreq, &size);
+        PLY_ASSERT(rc);
+        if (size == 0)
+            break;
+
+        outs->tryMakeBytesAvailable();
+        MutableStringView dst = outs->viewAvailable();
+        DWORD downloaded = 0;
+        rc = WinHttpReadData(hreq, (LPVOID) dst.bytes, dst.numBytes, &downloaded);
+        PLY_ASSERT(rc);
+        PLY_ASSERT(downloaded <= dst.numBytes);
+        outs->curByte += downloaded;
+    }
+#else
+    PLY_FORCE_CRASH(0);  // Not implemented yet
+#endif
 }
 
 MethodResult sys_fs_download(const MethodArgs& args) {
@@ -177,12 +274,17 @@ MethodResult sys_fs_download(const MethodArgs& args) {
         args.base->error(String::format("first argument to 'download' must be a string"));
         return MethodResult::Error;
     }
-    String* url = args.args[0].safeCast<String>();
+    String* url = args.args[1].safeCast<String>();
     if (!url) {
         args.base->error(String::format("second argument to 'download' must be a string"));
         return MethodResult::Error;
     }
 
+    StringView s = *url;
+    SplitURL split;
+    if (!splitURL(args.base, &split, *url))
+        return MethodResult::Error;
+    download(*path, split);
     args.base->returnValue = {};
     return MethodResult::OK;
 }

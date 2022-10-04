@@ -389,32 +389,6 @@ bool doCustomBlock(ConfigListInterpreter* cli, const crowbar::Statement::CustomB
     return false;
 }
 
-MethodResult getExternFolder(const MethodArgs& args) {
-    // Check arguments
-    if (args.args.numItems != 1) {
-        args.base->error("'get_extern_folder' expects exactly one argument");
-        return MethodResult::Error;
-    }
-    String* desc = args.args[0].safeCast<String>();
-    if (!desc) {
-        args.base->error("'get_extern_folder' expects a string argument");
-        return MethodResult::Error;
-    }
-
-    // Find or create folder
-    ExternFolder* externFolder = ExternFolderRegistry::get()->find(*desc);
-    if (!externFolder) {
-        externFolder = ExternFolderRegistry::get()->create(*desc);
-    }
-
-    // Return folder path
-    AnyObject* resultStorage =
-        args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
-    *resultStorage->cast<String>() = externFolder->path;
-    args.base->returnValue = *resultStorage;
-    return MethodResult::OK;
-}
-
 PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     latest::ModuleInstantiator mi{bf->getAbsPath()};
     mi.project.name = bf->solutionName;

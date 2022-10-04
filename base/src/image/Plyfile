@@ -9,7 +9,7 @@ fn download_cairo_for_windows() {
 
     version = "1.17.2"
     extern_folder = sys.get_extern_folder("cairo-windows-${build.arch}-${version}")
-    archive_name = "cairo-windows=${version}"
+    archive_name = "cairo-windows-${version}"
     archive_path = "${extern_folder}/${archive_name}"
 
     if !sys.fs.exists(archive_path) {

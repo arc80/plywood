@@ -666,6 +666,7 @@ add_library(build-repository OBJECT
 )
 EnableCppExceptions(build-repository FALSE)
 target_include_directories(build-repository PRIVATE
+    "${SRC_FOLDER}build/provider"
     "${SRC_FOLDER}build/common"
     "${SRC_FOLDER}crowbar"
     "${SRC_FOLDER}pylon/pylon"

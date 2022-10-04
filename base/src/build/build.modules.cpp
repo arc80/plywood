@@ -83,4 +83,8 @@ void module_ply_build_repository(ModuleArgs* args) {
     args->addTarget(Visibility::Public, "buildSteps");
     args->addTarget(Visibility::Public, "crowbar");
     args->addTarget(Visibility::Public, "build-common");
+    args->addTarget(Visibility::Public, "build-provider");
+    if (args->projInst->env->toolchain->get("targetPlatform")->text() == "windows") {
+        args->buildTarget->dep->libs.append("winhttp.lib");
+    }
 }
