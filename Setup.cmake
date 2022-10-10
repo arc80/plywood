@@ -6,7 +6,13 @@ if(DEFINED PRESET)
     unset(CMAKE_GENERATOR_PLATFORM)
     unset(CMAKE_GENERATOR_TOOLSET)
     set(CMAKE_BUILD_TYPE "Debug")
-    if(PRESET STREQUAL vs2019)
+    if(PRESET STREQUAL vs2022)
+        set(CMAKE_GENERATOR "Visual Studio 17 2022")
+        set(CMAKE_GENERATOR_PLATFORM "x64")
+    elseif(PRESET STREQUAL vs2022-32)
+        set(CMAKE_GENERATOR "Visual Studio 17 2022")
+        set(CMAKE_GENERATOR_PLATFORM "Win32")
+    elseif(PRESET STREQUAL vs2019)
         set(CMAKE_GENERATOR "Visual Studio 16 2019")
         set(CMAKE_GENERATOR_PLATFORM "x64")
     elseif(PRESET STREQUAL vs2019-32)
@@ -39,6 +45,7 @@ endif()
 if(NOT DEFINED CMAKE_GENERATOR)
     message("Please choose a generator by running one of the following commands:\n")
     foreach(pair
+        "vs2022;Visual Studio 2022"
         "vs2019;Visual Studio 2019"
         "vs2017;Visual Studio 2017"
         "xcode;Xcode"
