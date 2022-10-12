@@ -281,10 +281,10 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
                                                       StringView config,
                                                       Functor<void(StringView)> errorCallback) {
     PLY_ASSERT(generatorOpts.generator);
-    PLY_ASSERT(config);
+    bool isMultiConfig = isMultiConfigCMakeGenerator(generatorOpts.generator);
+    PLY_ASSERT(isMultiConfig || config);
     String buildFolder = NativePath::join(cmakeListsFolder, "build");
     String relPathToCMakeLists = "..";
-    bool isMultiConfig = isMultiConfigCMakeGenerator(generatorOpts.generator);
     if (!isMultiConfig) {
         buildFolder = NativePath::join(buildFolder, config);
         relPathToCMakeLists = "../..";

@@ -307,7 +307,6 @@ bool parsePlyfile(StringView path) {
     ep.currentPlyfile = plyfile;
     *ep.customBlocks.insert(g_common->moduleKey) = {parseModuleLikeBlock, &ep};
     *ep.customBlocks.insert(g_common->executableKey) = {parseModuleLikeBlock, &ep};
-    *ep.customBlocks.insert(g_common->externKey) = {parseModuleLikeBlock, &ep};
     *ep.customBlocks.insert(g_common->sourceFilesKey) = {parseSourceFilesBlock, &ep};
     *ep.customBlocks.insert(g_common->includeDirectoriesKey) = {parseIncludeDirectoriesBlock, &ep};
     *ep.customBlocks.insert(g_common->dependenciesKey) = {parseDependenciesBlock, &ep};

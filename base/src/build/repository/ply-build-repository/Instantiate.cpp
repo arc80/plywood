@@ -59,11 +59,31 @@ bool onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits)
             // Expression inside source_files block
             PLY_ASSERT(!evaluationTraits.data);
             String absPath = ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>());
-            buildSteps::Node::SourceFilePath& srcFilePath =
-                appendOrFind(ii->node->sourceFilePaths, std::move(absPath),
-                             [&](const auto& a) { return a.path == absPath; });
-            srcFilePath.activeMask |= ii->mi->configBit;
-
+            buildSteps::Node::SourceGroup& srcGroup =
+                appendOrFind(ii->node->sourceGroups, absPath,
+                             [&](const auto& a) { return a.absPath == absPath; });
+            bool needsCompilation = false;
+            for (WalkTriple& triple : FileSystem::native()->walk(absPath, 0)) {
+                for (const WalkTriple::FileInfo& file : triple.files) {
+                    if ((file.name.endsWith(".cpp") && !file.name.endsWith(".modules.cpp")) ||
+                        file.name.endsWith(".h")) {
+                        if (!needsCompilation && file.name.endsWith(".cpp")) {
+                            needsCompilation = true;
+                        }
+                        String relPath = NativePath::makeRelative(
+                            absPath, NativePath::join(triple.dirPath, file.name));
+                        buildSteps::Node::SourceFile& srcFile =
+                            appendOrFind(srcGroup.files, std::move(relPath),
+                                         [&](const buildSteps::Node::SourceFile& a) {
+                                             return a.relPath == relPath;
+                                         });
+                        srcFile.enabled.bits |= ii->mi->configBit;
+                    }
+                }
+            }
+            if (needsCompilation) {
+                ii->node->hasBuildStep.bits |= ii->mi->configBit;
+            }
         } else if (blockType == g_common->includeDirectoriesKey) {
             // Expression inside include_directories block
             const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
@@ -73,11 +93,10 @@ bool onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits)
                 ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>())};
             buildSteps::Node::Option& foundOpt = appendOrFind(
                 ii->node->options, std::move(tcOpt), [&](const auto& a) { return a.opt == tcOpt; });
-            foundOpt.activeMask |= ii->mi->configBit;
+            foundOpt.enabled.bits |= ii->mi->configBit;
             if (traits->isPublic) {
-                foundOpt.publicMask |= ii->mi->configBit;
+                foundOpt.isPublic.bits |= ii->mi->configBit;
             }
-
         } else if (blockType == g_common->dependenciesKey) {
             // Expression inside dependencies block
             const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
@@ -92,8 +111,7 @@ bool onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits)
                 return true;
             buildSteps::Node::Dependency& foundDep = appendOrFind(
                 ii->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
-            foundDep.activeMask |= ii->mi->configBit;
-
+            foundDep.enabled.bits |= ii->mi->configBit;
         } else if (blockType == g_common->linkLibrariesKey) {
             // PLY_ASSERT(!evaluationTraits.data);
             // this->nodeConfig->opts.prebuiltLibs.append(
@@ -239,7 +257,7 @@ void download(StringView dstPath, const SplitURL& split) {
                                  0, 0);
     PLY_ASSERT(rc);
     rc = WinHttpReceiveResponse(hreq, NULL);
-    PLY_ASSERT(rc); // getting ERROR_WINHTTP_INVALID_SERVER_RESPONSE
+    PLY_ASSERT(rc);
 
     Owned<OutStream> outs = FileSystem::native()->openStreamForWrite(dstPath);
     PLY_ASSERT(outs);
@@ -258,8 +276,12 @@ void download(StringView dstPath, const SplitURL& split) {
         PLY_ASSERT(downloaded <= dst.numBytes);
         outs->curByte += downloaded;
     }
+
+    WinHttpCloseHandle(hreq);
+    WinHttpCloseHandle(hconn);
+    WinHttpCloseHandle(hsess);
 #else
-    PLY_FORCE_CRASH(0);  // Not implemented yet
+    PLY_FORCE_CRASH(0); // Not implemented yet
 #endif
 }
 
@@ -345,7 +367,7 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
 
     // Set node as active in this config.
     PLY_ASSERT(mi->configBit);
-    node->configMask |= mi->configBit;
+    node->enabled.bits |= mi->configBit;
 
     // Find module function by name.
     latest::Repository::ModuleOrFunction** mod = g_repository->globalScope.find(moduleLabel);
@@ -355,6 +377,10 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     const crowbar::Statement::CustomBlock* moduleDef = (*mod)->stmt->customBlock().get();
     if (moduleDef->type == g_common->executableKey) {
         node->type = buildSteps::Node::Type::Executable;
+    } else if (moduleDef->type == g_common->moduleKey) {
+        node->type = buildSteps::Node::Type::Lib;
+    } else {
+        PLY_ASSERT(0);
     }
 
     // Create new interpreter.

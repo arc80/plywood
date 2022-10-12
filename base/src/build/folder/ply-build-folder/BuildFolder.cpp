@@ -439,9 +439,16 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     Owned<buildSteps::FlatProject> flatProject = flatten(&mi.project);
     MemOutStream outs;
     writeCMakeLists(&outs, flatProject);
-
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent("out.txt", outs.moveToString(),
+    String cmakeListsPath = NativePath::join(bf->getAbsPath(), "CMakeLists.txt");
+    FileSystem::native()->makeDirsAndSaveTextIfDifferent(cmakeListsPath, outs.moveToString(),
                                                          TextFormat::platformPreference());
+
+    CMakeGeneratorOptions cmakeOptions;
+    cmakeOptions.generator = "Visual Studio 16 2019";
+    cmakeOptions.platform = "x64";
+    generateCMakeProject(bf->getAbsPath(), cmakeOptions, {}, [&](StringView errMsg) {
+        ErrorHandler::log(ErrorHandler::Error, errMsg);
+    });
     return true;
 }
 

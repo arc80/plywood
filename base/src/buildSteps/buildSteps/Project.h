@@ -37,6 +37,19 @@ struct ToolchainOpt {
     }
 };
 
+struct ConfigMask {
+    u64 bits = 0;
+    PLY_INLINE bool hasAllBitsIn(u64 mask) const {
+        return (this->bits & mask) == mask;
+    }
+    PLY_INLINE bool hasAnyBit() const {
+        return this->bits;
+    }
+    PLY_INLINE bool hasBitAtIndex(u32 idx) const {
+        return (this->bits & (u64{1} << idx)) != 0;
+    }
+};
+
 struct Node : RefCounted<Node> {
     enum class Type {
         Executable,
@@ -45,33 +58,39 @@ struct Node : RefCounted<Node> {
 
     struct Option {
         ToolchainOpt opt;
-        u64 activeMask = 0; // whether option is active in each config
-        u64 publicMask = 0; // whether option is public/private in each config
+        ConfigMask enabled;  // whether option is enabled for each config
+        ConfigMask isPublic; // whether option is public/private for each config
     };
 
     struct Dependency {
         Reference<Node> dep;
-        u64 activeMask = 0; // whether dependency is active in each config
-        u64 publicMask = 0; // whether dependency is public/private in each config
+        ConfigMask enabled;  // whether dependency is enabled for each config
+        ConfigMask isPublic; // whether dependency is public/private for each config
     };
 
-    struct SourceFilePath {
-        String path;
-        u64 activeMask = 0; // whether path is active in each config
+    struct SourceFile {
+        String relPath;
+        ConfigMask enabled; // whether path is enabled for each config
+    };
+
+    struct SourceGroup {
+        String absPath;
+        Array<SourceFile> files;
     };
 
     struct LinkerInput {
-        String nameOrPath;
-        u64 activeMask = 0; // whether path is active in each config
+        String path;
+        ConfigMask enabled; // whether linker input is enabled for each config
     };
 
     String name;
-    u64 configMask = 0; // whether node is active in each config
+    ConfigMask enabled;      // ie. must be built and/or has a dependent, per-config
+    ConfigMask hasBuildStep; // ie. contains .cpp files, per-config
     Type type = Type::Lib;
     Array<Option> options;
     Array<Dependency> dependencies;
     Array<LinkerInput> prebuiltLibs;
-    Array<SourceFilePath> sourceFilePaths;
+    Array<SourceGroup> sourceGroups;
 
     PLY_INLINE void onRefCountZero() {
         delete this;

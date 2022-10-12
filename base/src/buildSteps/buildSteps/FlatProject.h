@@ -10,10 +10,15 @@
 namespace buildSteps {
 
 struct FlatNode {
+    struct Dependency {
+        FlatNode* dep;
+        ConfigMask enabled;  // whether dependency is enabled for each config
+    };
+
     const Node* node = nullptr;
     bool initialized = false;
     Array<Node::Option> opts;
-    Array<Node::LinkerInput> dependencies;
+    Array<Dependency> dependencies;
     Array<Node::LinkerInput> prebuiltLibs;
 };
 

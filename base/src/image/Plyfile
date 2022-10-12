@@ -1,4 +1,4 @@
-extern cairo {
+module cairo {
     download_cairo_for_windows()
 }
 
@@ -23,7 +23,7 @@ fn download_cairo_for_windows() {
     }
 
     include_directories {
-        "${archive_path}/include"
+        public "${archive_path}/include"
     }
     link_libraries {
         "${archive_path}/lib/${build.arch}/cairo.lib"
