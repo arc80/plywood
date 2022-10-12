@@ -139,9 +139,10 @@ public:
         arr = other;
     */
     PLY_INLINE void operator=(const Array& other) {
-        subst::destructArray(this->items, this->numItems_);
-        ((details::BaseArray&) *this).realloc(other.numItems_, (u32) sizeof(T));
-        subst::unsafeConstructArrayFrom(this->items, other.items, other.numItems_);
+        ArrayView<T> arrayToFree = {this->items, this->numItems_};
+        new (this) Array{other};
+        subst::destructArray(arrayToFree.items, arrayToFree.numItems);
+        PLY_HEAP.free(arrayToFree.items);
     }
 
     /*!
@@ -150,8 +151,10 @@ public:
         arr = std::move(other);
     */
     PLY_INLINE void operator=(Array&& other) {
-        this->~Array();
+        ArrayView<T> arrayToFree = {this->items, this->numItems_};
         new (this) Array{std::move(other)};
+        subst::destructArray(arrayToFree.items, arrayToFree.numItems);
+        PLY_HEAP.free(arrayToFree.items);
     }
 
     /*!
@@ -168,9 +171,9 @@ public:
     }
 
     /*!
-    Construct an `Array` from any array-like object (ie. `Array`, `ArrayView`, `FixedArray`, etc.)
-    of any type from which `T` can be constructed. The other object must have a member function
-    named `view()` that returns an `ArrayView`.
+    Assignment from any array-like object (ie. `Array`, `ArrayView`, `FixedArray`, etc.) of any type
+    from which `T` can be constructed. The other object must have a member function named `view()`
+    that returns an `ArrayView`.
 
         Array<u32> arr;
         FixedArray<u16, 3> fixed = {4, 5, 6};
@@ -184,11 +187,12 @@ public:
         Array<HybridString> arr;
         arr = Array<String>{"hello", "there"}; // uses move semantics
     */
-    template <typename Other, typename U = details::ArrayViewType<Other>>
+    template <typename Other, typename = details::ArrayViewType<Other>>
     PLY_INLINE void operator=(Other&& other) {
-        subst::destructArray(this->items, this->numItems_);
-        ((details::BaseArray&) *this).realloc(ArrayView<U>{other}.numItems, (u32) sizeof(T));
-        details::moveOrCopyConstruct(this->items, std::forward<Other>(other));
+        ArrayView<T> arrayToFree = {this->items, this->numItems_};
+        new (this) Array{std::forward<Other>(other)};
+        subst::destructArray(arrayToFree.items, arrayToFree.numItems);
+        PLY_HEAP.free(arrayToFree.items);
     }
 
     /*!
@@ -345,9 +349,11 @@ public:
     \beginGroup
     Appends a single item to the array and returns a reference to it. The arguments are forwarded
     directly to the item's constructor. The returned reference remains valid until the array is
-    resized or reallocated.
+    resized or reallocated. The argument must not be a reference to an existing item in the array.
     */
     PLY_INLINE T& append(T&& item) {
+        // The argument must not be a reference to an existing item in the array:
+        PLY_ASSERT((&item < this->items) || (&item >= this->items + this->numItems_));
         if (this->numItems_ >= this->allocated) {
             ((details::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
         }
@@ -356,6 +362,8 @@ public:
         return *result;
     }
     PLY_INLINE T& append(const T& item) {
+        // The argument must not be a reference to an existing item in the array:
+        PLY_ASSERT((&item < this->items) || (&item >= this->items + this->numItems_));
         if (this->numItems_ >= this->allocated) {
             ((details::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
         }
@@ -380,7 +388,7 @@ public:
     \beginGroup
     Appends multiple items to the array. The argument can be a braced initializer list or an
     array-like object (ie. `Array`, `ArrayView`, `FixedArray`, etc.) of any type from which `T` can
-    be constructed.
+    be constructed. The argument must not be a subview into the array itself.
 
         Array<String> arr;
         arr.extend({"hello", "there"});
@@ -413,9 +421,11 @@ public:
 
     /*!
     Appends multiple items to the `Array` from an `ArrayView`. The new array items are move
-    constructed from the items in `other`.
+    constructed from the items in `other`. The argument must not be a subview into the array itself.
     */
     PLY_NO_INLINE void moveExtend(ArrayView<T> other) {
+        // The argument must not be a subview into the array itself:
+        PLY_ASSERT((other.end() <= this->items) || (other.items >= this->end()));
         ((details::BaseArray&) *this).reserve(this->numItems_ + other.numItems, (u32) sizeof(T));
         subst::moveConstructArray(this->items + this->numItems_, other.items, other.numItems);
         this->numItems_ += other.numItems;

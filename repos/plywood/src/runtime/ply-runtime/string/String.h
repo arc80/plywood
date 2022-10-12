@@ -98,8 +98,11 @@ struct String : StringMixin<String> {
     */
     template <typename = void>
     PLY_INLINE void operator=(StringView other) {
-        this->~String();
+        char* bytesToFree = this->bytes;
         new (this) String{other};
+        if (bytesToFree) {
+            PLY_HEAP.free(bytesToFree);
+        }
     }
 
     /*!
