@@ -65,10 +65,11 @@ struct Statement {
     struct Assignment {
         Owned<Expression> left;
         Owned<Expression> right;
+        AnyOwnedObject attributes;
     };
     struct Evaluate {
         Owned<Expression> expr;
-        AnyOwnedObject traits;
+        AnyOwnedObject attributes;
     };
     struct Return_ {
         Owned<Expression> expr;

@@ -26,7 +26,6 @@ AnyObject find(const LabelMap<AnyObject>& map, Label identifier) {
     return value ? *value : AnyObject{};
 }
 
-MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block);
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
 
 // FIXME: Generalize this:
@@ -204,13 +203,8 @@ AnyObject lookupName(Interpreter::StackFrame* frame, Label name) {
     if (value)
         return *value;
 
-    // Then builtins.
-    value = frame->interp->builtIns.find(name);
-    if (value)
-        return *value;
-
-    // Then dynamic hooks.
-    return frame->interp->hooks.resolveName(name);
+    // Then client.
+    return frame->interp->resolveName(name);
 }
 
 MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
@@ -331,7 +325,7 @@ MethodResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignm
     if (assign->left->id == Expression::ID::NameLookup) {
         PLY_ASSERT(!left.data);
         Label name = assign->left->nameLookup()->name;
-        if (frame->interp->hooks.assignToLocal(name))
+        if (frame->hooks.assignToLocal(assign->attributes, name))
             return MethodResult::OK;
 
         AnyObject* value;
@@ -401,12 +395,12 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
                 MethodResult result = eval(frame, statement->evaluate()->expr);
                 if (result != MethodResult::OK)
                     return result;
-                bool anyError = frame->interp->hooks.onEvaluate(statement->evaluate()->traits);
+                bool hookResult = frame->hooks.onEvaluate(statement->evaluate()->attributes);
                 base->returnValue = {};
                 // Delete temporary objects.
                 base->localVariableStorage.deleteRange(localVariableStorageBoundary,
                                                        base->localVariableStorage.items.end());
-                if (anyError)
+                if (!hookResult)
                     return MethodResult::Error;
                 break;
             }
@@ -418,16 +412,9 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
             }
             case Statement::ID::CustomBlock: {
                 const Statement::CustomBlock* cb = statement->customBlock().get();
-                frame->interp->hooks.customBlock(cb, true);
-                MethodResult result;
-                {
-                    PLY_SET_IN_SCOPE(frame->interp->currentFrame->customBlock, cb);
-                    result = execBlock(frame, cb->body);
-                }
+                MethodResult result = frame->hooks.doCustomBlock(cb);
                 if (result != MethodResult::OK)
                     return result;
-                if (frame->interp->hooks.customBlock(cb, false))
-                    return MethodResult::Error;
                 break;
             }
             default: {

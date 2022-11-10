@@ -12,6 +12,7 @@ namespace latest {
 
 struct Repository {
     struct Plyfile {
+        String src;
         crowbar::Tokenizer tkr; // For tokenData and FileLocationMap (only)
         Owned<crowbar::StatementBlock> contents;
     };
@@ -25,7 +26,7 @@ struct Repository {
         // ply reflect off
 
         Plyfile* plyfile = nullptr;
-        const crowbar::Statement* stmt = nullptr;
+        Owned<crowbar::Statement> stmt = nullptr;
         Owned<ConfigOptions> defaultOptions;
         Owned<ConfigOptions> currentOptions;
     };
@@ -38,7 +39,7 @@ struct Repository {
     struct ConfigList {
         Plyfile* plyfile = nullptr;
         u32 fileOffset = 0;
-        Owned<crowbar::StatementBlock> block;
+        Owned<crowbar::Statement> blockStmt;
     };
 
     Array<Owned<Plyfile>> plyfiles;

@@ -14,10 +14,9 @@ struct Tokenizer;
 
 struct Interpreter  {
     struct Hooks {
-        Functor<AnyObject(Label identifier)> resolveName;
-        Functor<bool(const Statement::CustomBlock* customBlock, bool enter)> customBlock;
-        Functor<bool(const AnyObject& evaluationTraits)> onEvaluate; // true on error
-        Functor<bool(Label label)> assignToLocal;
+        Functor<MethodResult(const Statement::CustomBlock* customBlock)> doCustomBlock;
+        Functor<bool(const AnyObject& attributes)> onEvaluate; // true on error
+        Functor<bool(const AnyObject& attributes, Label label)> assignToLocal;
     };
 
     struct StackFrame {
@@ -28,16 +27,17 @@ struct Interpreter  {
         const Statement::CustomBlock* customBlock = nullptr;
         u32 tokenIdx = 0;
         StackFrame* prevFrame = nullptr;
+        Hooks hooks;
     };
 
     BaseInterpreter base;
-    Hooks hooks;
-    LabelMap<AnyObject> builtIns;
+    Functor<AnyObject(Label identifier)> resolveName;
     StackFrame* currentFrame = nullptr;
 };
 
 void logErrorWithStack(OutStream* outs, const Interpreter* interp, StringView message);
 MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
+MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block);
 MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr);
 
 } // namespace crowbar

@@ -8,6 +8,7 @@
 #include <ply-reflect/methods/BoundMethod.h>
 #include <ply-runtime/string/WString.h>
 #include <ply-runtime/string/TextEncoding.h>
+#include <ply-runtime/algorithm/Find.h>
 #if PLY_TARGET_WIN32
 #include <winhttp.h>
 #endif
@@ -40,88 +41,114 @@ struct InstantiatingInterpreter {
     }
 };
 
-bool customBlock(InstantiatingInterpreter* ii, const crowbar::Statement::CustomBlock* enteringBlock,
-                 bool isEntering) {
-    if (isEntering) {
-        if (ii->interp.currentFrame->customBlock) {
-            PLY_FORCE_CRASH();
-        }
-    } else {
+bool assignToCompileOptions(InstantiatingInterpreter* ii, const AnyObject& attributes,
+                            Label label) {
+    const StatementAttributes* sa = attributes.cast<StatementAttributes>();
+    PLY_ASSERT(sa->visibilityTokenIdx >= 0);
+    buildSteps::ToolchainOpt tcOpt{buildSteps::ToolchainOpt::Type::Generic,
+                                   g_labelStorage.view(label),
+                                   *ii->interp.base.returnValue.cast<String>()};
+    int i = find(ii->node->options, [&](const auto& a) {
+        return (a.opt.type == tcOpt.type) && (a.opt.key == tcOpt.key);
+    });
+    if (i >= 0) {
+        ii->node->options.erase(i);
     }
-    return false;
+    buildSteps::Node::Option& opt = ii->node->options.append(std::move(tcOpt));
+    opt.enabled.bits |= ii->mi->configBit;
+    if (sa->isPublic) {
+        opt.isPublic.bits |= ii->mi->configBit;
+    }
+    return true;
 }
 
-bool onEvaluate(InstantiatingInterpreter* ii, const AnyObject& evaluationTraits) {
-    if (ii->interp.currentFrame->customBlock) {
-        Label blockType = ii->interp.currentFrame->customBlock->type;
-
-        if (blockType == g_common->sourceFilesKey) {
-            // Expression inside source_files block
-            PLY_ASSERT(!evaluationTraits.data);
-            String absPath = ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>());
-            buildSteps::Node::SourceGroup& srcGroup =
-                appendOrFind(ii->node->sourceGroups, absPath,
-                             [&](const auto& a) { return a.absPath == absPath; });
-            bool needsCompilation = false;
-            for (WalkTriple& triple : FileSystem::native()->walk(absPath, 0)) {
-                for (const WalkTriple::FileInfo& file : triple.files) {
-                    if ((file.name.endsWith(".cpp") && !file.name.endsWith(".modules.cpp")) ||
-                        file.name.endsWith(".h")) {
-                        if (!needsCompilation && file.name.endsWith(".cpp")) {
-                            needsCompilation = true;
-                        }
-                        String relPath = NativePath::makeRelative(
-                            absPath, NativePath::join(triple.dirPath, file.name));
-                        buildSteps::Node::SourceFile& srcFile =
-                            appendOrFind(srcGroup.files, std::move(relPath),
-                                         [&](const buildSteps::Node::SourceFile& a) {
-                                             return a.relPath == relPath;
-                                         });
-                        srcFile.enabled.bits |= ii->mi->configBit;
-                    }
+bool onEvaluateSourceFile(InstantiatingInterpreter* ii, const AnyObject& attributes) {
+    PLY_ASSERT(!attributes.data);
+    String absPath = ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>());
+    buildSteps::Node::SourceGroup& srcGroup = appendOrFind(
+        ii->node->sourceGroups, absPath, [&](const auto& a) { return a.absPath == absPath; });
+    bool needsCompilation = false;
+    for (WalkTriple& triple : FileSystem::native()->walk(absPath, 0)) {
+        for (const WalkTriple::FileInfo& file : triple.files) {
+            if ((file.name.endsWith(".cpp") && !file.name.endsWith(".modules.cpp")) ||
+                file.name.endsWith(".h")) {
+                if (!needsCompilation && file.name.endsWith(".cpp")) {
+                    needsCompilation = true;
                 }
+                String relPath =
+                    NativePath::makeRelative(absPath, NativePath::join(triple.dirPath, file.name));
+                buildSteps::Node::SourceFile& srcFile = appendOrFind(
+                    srcGroup.files, std::move(relPath),
+                    [&](const buildSteps::Node::SourceFile& a) { return a.relPath == relPath; });
+                srcFile.enabled.bits |= ii->mi->configBit;
             }
-            if (needsCompilation) {
-                ii->node->hasBuildStep.bits |= ii->mi->configBit;
-            }
-        } else if (blockType == g_common->includeDirectoriesKey) {
-            // Expression inside include_directories block
-            const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
-            PLY_ASSERT(traits->visibilityTokenIdx >= 0);
-            buildSteps::ToolchainOpt tcOpt{
-                buildSteps::ToolchainOpt::Type::IncludeDir,
-                ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>())};
-            buildSteps::Node::Option& foundOpt = appendOrFind(
-                ii->node->options, std::move(tcOpt), [&](const auto& a) { return a.opt == tcOpt; });
-            foundOpt.enabled.bits |= ii->mi->configBit;
-            if (traits->isPublic) {
-                foundOpt.isPublic.bits |= ii->mi->configBit;
-            }
-        } else if (blockType == g_common->dependenciesKey) {
-            // Expression inside dependencies block
-            const ExpressionTraits* traits = evaluationTraits.cast<ExpressionTraits>();
-            PLY_ASSERT(traits->visibilityTokenIdx >= 0);
-
-            // Instantiate the dependency
-            Repository::ModuleOrFunction* mod =
-                ii->interp.base.returnValue.cast<Repository::ModuleOrFunction>();
-            buildSteps::Node* dep =
-                instantiateModuleForCurrentConfig(ii->mi, mod->stmt->customBlock()->name);
-            if (!dep)
-                return true;
-            buildSteps::Node::Dependency& foundDep = appendOrFind(
-                ii->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
-            foundDep.enabled.bits |= ii->mi->configBit;
-        } else if (blockType == g_common->linkLibrariesKey) {
-            // PLY_ASSERT(!evaluationTraits.data);
-            // this->nodeConfig->opts.prebuiltLibs.append(
-            //    *this->interp->returnValue.cast<String>());
-        } else {
-            // Shouldn't get here
-            PLY_ASSERT(0);
         }
     }
-    return false;
+    if (needsCompilation) {
+        ii->node->hasBuildStep.bits |= ii->mi->configBit;
+    }
+    return true;
+}
+
+bool onEvaluateIncludeDirectory(InstantiatingInterpreter* ii, const AnyObject& attributes) {
+    const StatementAttributes* sa = attributes.cast<StatementAttributes>();
+    PLY_ASSERT(sa->visibilityTokenIdx >= 0);
+    buildSteps::ToolchainOpt tcOpt{buildSteps::ToolchainOpt::Type::IncludeDir,
+                                   ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>())};
+    buildSteps::Node::Option& foundOpt = appendOrFind(
+        ii->node->options, std::move(tcOpt), [&](const auto& a) { return a.opt == tcOpt; });
+    foundOpt.enabled.bits |= ii->mi->configBit;
+    if (sa->isPublic) {
+        foundOpt.isPublic.bits |= ii->mi->configBit;
+    }
+    return true;
+}
+
+bool onEvaluateDependency(InstantiatingInterpreter* ii, const AnyObject& attributes) {
+    const StatementAttributes* sa = attributes.cast<StatementAttributes>();
+    PLY_ASSERT(sa->visibilityTokenIdx >= 0);
+
+    // Instantiate the dependency
+    Repository::ModuleOrFunction* mod =
+        ii->interp.base.returnValue.cast<Repository::ModuleOrFunction>();
+    buildSteps::Node* dep =
+        instantiateModuleForCurrentConfig(ii->mi, mod->stmt->customBlock()->name);
+    if (!dep)
+        return true;
+    buildSteps::Node::Dependency& foundDep =
+        appendOrFind(ii->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
+    foundDep.enabled.bits |= ii->mi->configBit;
+    return true;
+}
+
+bool onEvaluateLinkLibrary(InstantiatingInterpreter* ii, const AnyObject& attributes) {
+    PLY_ASSERT(!attributes.data);
+    String* path = ii->interp.base.returnValue.cast<String>();
+    buildSteps::Node::LinkerInput& li =
+        appendOrFind(ii->node->prebuiltLibs, *path, [&](const auto& a) { return a.path == *path; });
+    li.enabled.bits |= ii->mi->configBit;
+    return true;
+}
+
+MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
+                                        const crowbar::Statement::CustomBlock* cb) {
+    crowbar::Interpreter::Hooks hooks;
+    if (cb->type == g_common->sourceFilesKey) {
+        hooks.onEvaluate = {onEvaluateSourceFile, ii};
+    } else if (cb->type == g_common->includeDirectoriesKey) {
+        hooks.onEvaluate = {onEvaluateIncludeDirectory, ii};
+    } else if (cb->type == g_common->compileOptionsKey) {
+        hooks.assignToLocal = {assignToCompileOptions, ii};
+    } else if (cb->type == g_common->linkLibrariesKey) {
+        hooks.onEvaluate = {onEvaluateLinkLibrary, ii};
+    } else if (cb->type == g_common->dependenciesKey) {
+        hooks.onEvaluate = {onEvaluateDependency, ii};
+    } else {
+        PLY_ASSERT(0); // Shouldn't get here
+    }
+    PLY_SET_IN_SCOPE(ii->interp.currentFrame->customBlock, cb);
+    PLY_SET_IN_SCOPE(ii->interp.currentFrame->hooks, hooks);
+    return execBlock(ii->interp.currentFrame, cb->body);
 }
 
 MethodResult doJoinPath(const MethodArgs& args) {
@@ -389,33 +416,39 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
         OutStream outs = StdErr::text();
         logErrorWithStack(&outs, &ii.interp, message);
     };
-    ii.interp.hooks.customBlock = {customBlock, &ii};
-    ii.interp.hooks.onEvaluate = {onEvaluate, &ii};
     ii.mi = mi;
     ii.currentModule = *mod;
     ii.node = node;
 
     // Populate global & module namespaces.
-    *ii.interp.builtIns.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
-    *ii.interp.builtIns.insert(g_labelStorage.insert("build_folder")) =
+    LabelMap<AnyObject> builtIns;
+    bool true_ = true;
+    bool false_ = false;
+    *builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
+    *builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
+    *builtIns.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
+    *builtIns.insert(g_labelStorage.insert("build_folder")) =
         AnyObject::bind(&ii.mi->buildFolderPath);
     ReadOnlyDict dict_build{"build"};
     String value_arch = "x64";
     *dict_build.map.insert(g_labelStorage.insert("arch")) = AnyObject::bind(&value_arch);
-    *ii.interp.builtIns.insert(g_labelStorage.insert("build")) = AnyObject::bind(&dict_build);
+    *builtIns.insert(g_labelStorage.insert("build")) = AnyObject::bind(&dict_build);
     ReadOnlyDict dict_sys{"sys"};
     *dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) =
         AnyObject::bind(getExternFolder);
     *dict_sys.map.insert(g_labelStorage.insert("download")) = AnyObject::bind(&sys_fs_download);
-    *ii.interp.builtIns.insert(g_labelStorage.insert("sys")) = AnyObject::bind(&dict_sys);
+    *builtIns.insert(g_labelStorage.insert("sys")) = AnyObject::bind(&dict_sys);
     ReadOnlyDict dict_sys_fs{"sys.fs"};
     *dict_sys_fs.map.insert(g_labelStorage.insert("exists")) = AnyObject::bind(&sys_fs_exists);
     *dict_sys.map.insert(g_labelStorage.insert("fs")) = AnyObject::bind(&dict_sys_fs);
     AnyObject::bind(&ii.mi->buildFolderPath);
-    ii.interp.hooks.resolveName = [&ii](Label identifier) -> AnyObject {
+    ii.interp.resolveName = [&builtIns, &ii](Label identifier) -> AnyObject {
+        if (AnyObject* builtIn = builtIns.find(identifier))
+            return *builtIn;
         if (AnyObject* obj = ii.currentModule->currentOptions->map.find(identifier))
             return *obj;
-        if (Repository::ModuleOrFunction** mod = g_repository->globalScope.find(identifier)) {
+        if (latest::Repository::ModuleOrFunction** mod =
+                latest::g_repository->globalScope.find(identifier)) {
             if (auto fnDef = (*mod)->stmt->functionDefinition())
                 return AnyObject::bind(fnDef.get());
             else
@@ -426,6 +459,7 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
 
     // Invoke module function.
     crowbar::Interpreter::StackFrame frame;
+    frame.hooks.doCustomBlock = {doCustomBlockAtModuleScope, &ii};
     frame.interp = &ii.interp;
     frame.desc = [moduleDef]() -> HybridString {
         return String::format("module '{}'", g_labelStorage.view(moduleDef->name));

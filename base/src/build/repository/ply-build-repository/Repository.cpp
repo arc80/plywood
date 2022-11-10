@@ -16,7 +16,8 @@ struct ConfigOptionsInterpreter {
     Repository::ConfigOptions* optionSet = nullptr;
 };
 
-bool doLocalAssignment(ConfigOptionsInterpreter* coi, Label label) {
+bool doLocalAssignment(ConfigOptionsInterpreter* coi, const AnyObject& attributes, Label label) {
+    PLY_ASSERT(!attributes.data);
     AnyOwnedObject* obj;
     coi->optionSet->map.insertOrFind(label, &obj);
     *obj = AnyOwnedObject::create(coi->interp.base.returnValue.type);
@@ -66,17 +67,23 @@ void Repository::create() {
             logErrorWithStack(&outs, &coi.interp, message);
         };
         coi.optionSet = cb.mod->defaultOptions;
-        coi.interp.hooks.assignToLocal = {doLocalAssignment, &coi};
 
         // Add builtin namespace.
+        LabelMap<AnyObject> builtIns;
         static bool true_ = true;
         static bool false_ = false;
-        *coi.interp.builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
-        *coi.interp.builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
+        *builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
+        *builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
+        coi.interp.resolveName = [&builtIns](Label identifier) -> AnyObject {
+            if (AnyObject* builtIn = builtIns.find(identifier))
+                return *builtIn;
+            return {};
+        };
 
         // Invoke config_options block.
         crowbar::Interpreter::StackFrame frame;
         frame.interp = &coi.interp;
+        frame.hooks.assignToLocal = {doLocalAssignment, &coi};
         frame.desc = [mod = cb.mod]() -> HybridString {
             return String::format("config_options for {} '{}'",
                                   g_labelStorage.view(mod->stmt->customBlock()->type),

@@ -10,15 +10,22 @@
 namespace ply {
 namespace crowbar {
 
-typedef bool CustomBlockHandler(const ExpandedToken& kwToken, StatementBlock* stmtBlock);
-typedef bool ExpressionTraitHandler(const ExpandedToken& kwToken, AnyOwnedObject* expressionTraits);
+struct KeywordParams {
+    crowbar::ExpandedToken kwToken;
+    crowbar::StatementBlock* stmtBlock = nullptr;
+    AnyOwnedObject* attributes;
+};
+enum class KeywordResult {
+    Illegal,
+    Attribute,
+    Block,
+    Error,
+};
+typedef KeywordResult KeywordHandler(const KeywordParams& kp);
+typedef void ValidateAttribute(Statement* stmt);
+typedef void FunctionHandler(Owned<crowbar::Statement>&& stmt, const ExpandedToken& nameToken);
 
 struct Parser {
-    LabelMap<Functor<CustomBlockHandler>>* customBlockHandlers = nullptr;
-    LabelMap<Functor<ExpressionTraitHandler>>* exprTraitHandlers = nullptr;
-    Functor<bool(const ExpandedToken& nameToken, const Statement* stmt, bool isEntering)>
-        onDefineFunction; // return value of true rejects the function
-
     // Tokenizer.
     Tokenizer* tkr = nullptr;
 
@@ -38,13 +45,22 @@ struct Parser {
     };
     RecoveryState recovery;
 
-    // Information about the current parsing context:
-    Statement* functionLikeScope = nullptr; // nullptr means file scope
+    // Properties and hooks for extensibility.
+    LabelMap<bool> keywords;
+    struct Filter {
+        Functor<KeywordHandler> keywordHandler;
+        Functor<ValidateAttribute> validateAttributes;
+        bool allowFunctions = false;
+        bool allowInstructions = false;
+    };
+    Filter filter;
+    Functor<FunctionHandler> functionHandler;
+    Statement* outerScope = nullptr;
 
+    Parser();
     Owned<Expression> parseExpression(u32 outerPrecendenceLevel = Limits<u32>::Max,
                                       bool asStatement = false);
     void parseStatement(StatementBlock* stmtBlock);
-    Owned<StatementBlock> parseFile();
 };
 
 enum class ErrorTokenAction {
@@ -70,7 +86,11 @@ bool errorAtToken(Parser* parser, const ExpandedToken& errorToken, ErrorTokenAct
 bool skipAnyScope(Parser* parser, ExpandedToken* outCloseToken, TokenType openTokenType);
 bool handleUnexpectedToken(Parser* parser, ExpandedToken* outCloseToken,
                            const ExpandedToken& unexpected);
+bool parseParameterList(Parser* parser, Statement::FunctionDefinition* functionDef);
 Owned<StatementBlock> parseStatementBlock(Parser* parser, const StatementBlockProperties& props);
+Owned<StatementBlock> parseStatementBlockInner(Parser* parser,
+                                               const StatementBlockProperties& props,
+                                               bool fileScope = false);
 
 } // namespace crowbar
 } // namespace ply

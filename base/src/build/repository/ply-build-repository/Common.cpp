@@ -24,6 +24,8 @@ void Common::initialize() {
     g_common->configOptionsKey = g_labelStorage.insert("config_options");
     g_common->configListKey = g_labelStorage.insert("config_list");
     g_common->configKey = g_labelStorage.insert("config");
+    g_common->compileOptionsKey = g_labelStorage.insert("compile_options");
+    g_common->optimizationKey = g_labelStorage.insert("optimization");
 }
 
 } // namespace latest

@@ -105,7 +105,7 @@ struct Tokenizer {
 
     // Behavior that can be changed on the fly by the parser.
     struct Behavior {
-        bool tokenizeNewLine = false;
+        bool tokenizeNewLine = true;
         bool insideString = false;
     };
     Behavior behavior;

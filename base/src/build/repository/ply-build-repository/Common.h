@@ -16,25 +16,27 @@ struct Common {
     // 'include_directories', 'dependencies', etc.
     Label moduleKey;
     Label executableKey;
-    Label includeDirectoriesKey;
     Label sourceFilesKey;
-    Label dependenciesKey;
+    Label includeDirectoriesKey;
+    Label compileOptionsKey;
     Label linkLibrariesKey;
+    Label dependenciesKey;
     Label publicKey;
     Label privateKey;
     Label configOptionsKey;
     Label configListKey;
     Label configKey;
+    Label optimizationKey;
 
     static void initialize();
 };
 
 extern Common* g_common;
 
-// ExpressionTraits is a type of object created at parse time (via ParseHooks) and consumed by
+// StatementAttributes is a type of object created at parse time (via ParseHooks) and consumed by
 // the interpreter (via InterpreterHooks). It contains extra information about each entry inside
 // a 'include_directories' or 'dependencies' block.
-struct ExpressionTraits {
+struct StatementAttributes {
     PLY_REFLECT()
     s32 visibilityTokenIdx = -1;
     bool isPublic = false;
