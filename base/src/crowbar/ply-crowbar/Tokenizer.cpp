@@ -138,6 +138,7 @@ PLY_NO_INLINE u32 expandTokenInternal(ExpandedToken& expToken, Tokenizer* tkr, u
             endOffset = tkr->fileOffsetTable[(tokenIdx + 1) >> 8] +
                         impl::LabelEncoder::decodeValue(data);
         }
+        // FIXME: this text includes any whitespace between the two tokens
         expToken.text =
             StringView::fromRange(tkr->vin.start + expToken.fileOffset, tkr->vin.start + endOffset);
         return compactLength;

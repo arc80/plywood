@@ -27,7 +27,6 @@ struct ModuleInstantiator {
     };
 
     String buildFolderPath;
-    MemOutStream errorOut;
     LabelMap<AnyObject> globalNamespace;
 
     // The project is initialized by instantiating a set of root modules.
@@ -42,6 +41,17 @@ struct ModuleInstantiator {
 };
 
 buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel);
+
+struct PropertyCollector {
+    crowbar::Interpreter* interp;
+    String basePath;
+    buildSteps::Node* node = nullptr;
+    u32 configBit = 0;
+    bool isModule = false;
+};
+
+MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
+                                       const crowbar::Statement::CustomBlock* cb);
 
 } // namespace latest
 } // namespace build

@@ -146,9 +146,7 @@ crowbar::KeywordResult handleKeywordInsideConfigList(ExtendedParser* ep,
         Owned<crowbar::Expression> expr = ep->parser->parseExpression();
 
         crowbar::Parser::Filter filter;
-        filter.keywordHandler = [](const crowbar::KeywordParams&) {
-            return crowbar::KeywordResult::Illegal;
-        };
+        filter.keywordHandler = {handleKeywordInsideModuleOrFunction, ep};
         filter.allowInstructions = true;
         Owned<crowbar::Statement> cb = parseCustomBlock(ep, filter, kp.kwToken.label);
         cb->customBlock()->expr = std::move(expr);

@@ -41,23 +41,22 @@ struct InstantiatingInterpreter {
     }
 };
 
-bool assignToCompileOptions(InstantiatingInterpreter* ii, const AnyObject& attributes,
-                            Label label) {
+bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes, Label label) {
     const StatementAttributes* sa = attributes.cast<StatementAttributes>();
     PLY_ASSERT(sa->visibilityTokenIdx >= 0);
     buildSteps::ToolchainOpt tcOpt{buildSteps::ToolchainOpt::Type::Generic,
                                    g_labelStorage.view(label),
-                                   *ii->interp.base.returnValue.cast<String>()};
-    int i = find(ii->node->options, [&](const auto& a) {
+                                   *pc->interp->base.returnValue.cast<String>()};
+    int i = find(pc->node->options, [&](const auto& a) {
         return (a.opt.type == tcOpt.type) && (a.opt.key == tcOpt.key);
     });
     if (i >= 0) {
-        ii->node->options.erase(i);
+        pc->node->options.erase(i);
     }
-    buildSteps::Node::Option& opt = ii->node->options.append(std::move(tcOpt));
-    opt.enabled.bits |= ii->mi->configBit;
+    buildSteps::Node::Option& opt = pc->node->options.append(std::move(tcOpt));
+    opt.enabled.bits |= pc->configBit;
     if (sa->isPublic) {
-        opt.isPublic.bits |= ii->mi->configBit;
+        opt.isPublic.bits |= pc->configBit;
     }
     return true;
 }
@@ -90,16 +89,35 @@ bool onEvaluateSourceFile(InstantiatingInterpreter* ii, const AnyObject& attribu
     return true;
 }
 
-bool onEvaluateIncludeDirectory(InstantiatingInterpreter* ii, const AnyObject& attributes) {
-    const StatementAttributes* sa = attributes.cast<StatementAttributes>();
-    PLY_ASSERT(sa->visibilityTokenIdx >= 0);
-    buildSteps::ToolchainOpt tcOpt{buildSteps::ToolchainOpt::Type::IncludeDir,
-                                   ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>())};
+bool onEvaluateIncludeDirectory(PropertyCollector* pc, const AnyObject& attributes) {
+    s32 visibilityTokenIdx = -1;
+    bool isPublic = false;
+    if (const StatementAttributes* sa = attributes.cast<StatementAttributes>()) {
+        visibilityTokenIdx = sa->visibilityTokenIdx;
+        isPublic = sa->isPublic;
+    }
+    if (pc->isModule) {
+        if (visibilityTokenIdx < 0) {
+            pc->interp->base.error("include directory should have 'public' or 'private' attribute");
+            return false;
+        }
+    } else {
+        if (visibilityTokenIdx >= 0) {
+            crowbar::ExpandedToken token =
+                pc->interp->currentFrame->tkr->expandToken(visibilityTokenIdx);
+            pc->interp->base.error(
+                String::format("'{}' cannot be used inside config block", token.text));
+            return false;
+        }
+    }
+    buildSteps::ToolchainOpt tcOpt{
+        buildSteps::ToolchainOpt::Type::IncludeDir,
+        NativePath::join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
     buildSteps::Node::Option& foundOpt = appendOrFind(
-        ii->node->options, std::move(tcOpt), [&](const auto& a) { return a.opt == tcOpt; });
-    foundOpt.enabled.bits |= ii->mi->configBit;
-    if (sa->isPublic) {
-        foundOpt.isPublic.bits |= ii->mi->configBit;
+        pc->node->options, std::move(tcOpt), [&](const auto& a) { return a.opt == tcOpt; });
+    foundOpt.enabled.bits |= pc->configBit;
+    if (pc->isModule && isPublic) {
+        foundOpt.isPublic.bits |= pc->configBit;
     }
     return true;
 }
@@ -121,26 +139,50 @@ bool onEvaluateDependency(InstantiatingInterpreter* ii, const AnyObject& attribu
     return true;
 }
 
-bool onEvaluateLinkLibrary(InstantiatingInterpreter* ii, const AnyObject& attributes) {
+bool onEvaluateLinkLibrary(PropertyCollector* pc, const AnyObject& attributes) {
     PLY_ASSERT(!attributes.data);
-    String* path = ii->interp.base.returnValue.cast<String>();
+    String* path = pc->interp->base.returnValue.cast<String>();
     buildSteps::Node::LinkerInput& li =
-        appendOrFind(ii->node->prebuiltLibs, *path, [&](const auto& a) { return a.path == *path; });
-    li.enabled.bits |= ii->mi->configBit;
+        appendOrFind(pc->node->prebuiltLibs, *path, [&](const auto& a) { return a.path == *path; });
+    li.enabled.bits |= pc->configBit;
     return true;
+}
+
+MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
+                                       const crowbar::Statement::CustomBlock* cb) {
+    crowbar::Interpreter::Hooks hooks;
+    if (cb->type == g_common->includeDirectoriesKey) {
+        hooks.onEvaluate = {onEvaluateIncludeDirectory, pc};
+    } else if (cb->type == g_common->compileOptionsKey) {
+        hooks.assignToLocal = {assignToCompileOptions, pc};
+    } else if (cb->type == g_common->linkLibrariesKey) {
+        hooks.onEvaluate = {onEvaluateLinkLibrary, pc};
+    } else {
+        // FIXME: Make this a runtime error instead of an assert because the config block can call a
+        // function that contains, for example, a dependencies {} block
+        PLY_ASSERT(0); // Shouldn't get here
+    }
+    PLY_SET_IN_SCOPE(pc->interp->currentFrame->hooks, hooks);
+    return execBlock(pc->interp->currentFrame, cb->body);
 }
 
 MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
                                         const crowbar::Statement::CustomBlock* cb) {
+    PropertyCollector pc;
+    pc.interp = &ii->interp;
+    pc.basePath = NativePath::split(ii->currentModule->plyfile->tkr.fileLocationMap.path).second;
+    pc.node = ii->node;
+    pc.isModule = true;
+
     crowbar::Interpreter::Hooks hooks;
     if (cb->type == g_common->sourceFilesKey) {
         hooks.onEvaluate = {onEvaluateSourceFile, ii};
     } else if (cb->type == g_common->includeDirectoriesKey) {
-        hooks.onEvaluate = {onEvaluateIncludeDirectory, ii};
+        hooks.onEvaluate = {onEvaluateIncludeDirectory, &pc};
     } else if (cb->type == g_common->compileOptionsKey) {
-        hooks.assignToLocal = {assignToCompileOptions, ii};
+        hooks.assignToLocal = {assignToCompileOptions, &pc};
     } else if (cb->type == g_common->linkLibrariesKey) {
-        hooks.onEvaluate = {onEvaluateLinkLibrary, ii};
+        hooks.onEvaluate = {onEvaluateLinkLibrary, &pc};
     } else if (cb->type == g_common->dependenciesKey) {
         hooks.onEvaluate = {onEvaluateDependency, ii};
     } else {

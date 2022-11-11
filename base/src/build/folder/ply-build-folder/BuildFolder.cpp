@@ -333,7 +333,6 @@ struct ConfigListInterpreter {
     crowbar::Interpreter interp;
     latest::ModuleInstantiator* mi = nullptr;
     BuildFolder* buildFolder = nullptr;
-    String currentConfigName;
 };
 
 MethodResult doCustomBlock(ConfigListInterpreter* cli,
@@ -343,8 +342,8 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     // Evaluate config name
     MethodResult result = eval(cli->interp.currentFrame, customBlock->expr);
     PLY_ASSERT(result == MethodResult::OK); // FIXME: Make robust
-    cli->currentConfigName = *cli->interp.base.returnValue.cast<String>();
-    PLY_ASSERT(cli->currentConfigName); // FIXME: Make robust
+    String currentConfigName = *cli->interp.base.returnValue.cast<String>();
+    PLY_ASSERT(currentConfigName); // FIXME: Make robust
 
     // Initialize all Module::currentOptions
     for (latest::Repository::ModuleOrFunction* mod : latest::g_repository->modules) {
@@ -357,18 +356,29 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
         mod->currentOptions = std::move(newOptions);
     }
 
+    // Create dummy Node that will be configured in script
+    Reference<buildSteps::Node> node = new buildSteps::Node;
+
     // Execute config block
+    latest::PropertyCollector pc;
+    pc.interp = &cli->interp;
+    pc.basePath = NativePath::split(cli->interp.currentFrame->tkr->fileLocationMap.path).first;
+    pc.node = node;
+    u32 configIndex = cli->mi->project.configNames.numItems();
+    PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
+    pc.configBit = u64{1} << configIndex;;
+    crowbar::Interpreter::Hooks hooks;
+    hooks.doCustomBlock = {latest::doCustomBlockInsideConfig, &pc};
+    PLY_SET_IN_SCOPE(cli->interp.currentFrame->hooks, hooks);
     result = execBlock(cli->interp.currentFrame, customBlock->body);
     if (result != MethodResult::OK)
         return result;
 
     // Add config to project
-    u32 configIndex = cli->mi->project.configNames.numItems();
-    PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
-    cli->mi->project.configNames.append(cli->currentConfigName);
+    cli->mi->project.configNames.append(currentConfigName);
 
     // Instantiate all root modules in this config
-    cli->mi->configBit = (u64{1} << configIndex);
+    cli->mi->configBit = pc.configBit;
     for (StringView targetName : cli->buildFolder->rootTargets) {
         buildSteps::Node* rootNode =
             latest::instantiateModuleForCurrentConfig(cli->mi, g_labelStorage.insert(targetName));
@@ -382,7 +392,6 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     // Reset state between configs.
     // Clear currentConfigName, Module::currentOptions, and set ModuleInstantiator status to
     // NotInstantiated.
-    cli->currentConfigName.clear();
     for (latest::Repository::ModuleOrFunction* mod : latest::g_repository->modules) {
         mod->currentOptions.clear();
     }
@@ -420,7 +429,6 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
         *builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
         *builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
         cli.interp.resolveName = [&builtIns, &cli](Label identifier) -> AnyObject {
-            PLY_ASSERT(cli.currentConfigName);
             if (AnyObject* builtIn = builtIns.find(identifier))
                 return *builtIn;
             if (latest::Repository::ModuleOrFunction** mod =
@@ -428,6 +436,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
                 if (auto fnDef = (*mod)->stmt->functionDefinition())
                     return AnyObject::bind(fnDef.get());
                 else
+                    // FIXME: Don't resolve module names outside config {} block
                     return AnyObject::bind((*mod)->currentOptions.get());
             }
             return {};
