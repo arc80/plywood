@@ -41,9 +41,45 @@ struct InstantiatingInterpreter {
     }
 };
 
+enum class Visibility {
+    Error,
+    Public,
+    Private,
+};
+
+Visibility getVisibility(crowbar::Interpreter* interp, const AnyObject& attributes, bool isModule,
+                         StringView propertyType) {
+    Visibility vis = Visibility::Private;
+    s32 tokenIdx = -1;
+    if (const StatementAttributes* sa = attributes.cast<StatementAttributes>()) {
+        tokenIdx = sa->visibilityTokenIdx;
+        if (sa->isPublic) {
+            vis = Visibility::Public;
+        }
+    }
+    if (isModule) {
+        if (tokenIdx < 0) {
+            interp->base.error(
+                String::format("{} should have 'public' or 'private' attribute", propertyType));
+            return Visibility::Error;
+        }
+    } else {
+        if (tokenIdx >= 0) {
+            crowbar::ExpandedToken token =
+                interp->currentFrame->tkr->expandToken(tokenIdx);
+            interp->base.error(
+                String::format("'{}' cannot be used inside config block", token.text));
+            return Visibility::Error;
+        }
+    }
+    return vis;
+}
+
 bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes, Label label) {
-    const StatementAttributes* sa = attributes.cast<StatementAttributes>();
-    PLY_ASSERT(sa->visibilityTokenIdx >= 0);
+    Visibility vis = getVisibility(pc->interp, attributes, pc->isModule, "compile options");
+    if (vis == Visibility::Error)
+        return false;
+
     buildSteps::ToolchainOpt tcOpt{buildSteps::ToolchainOpt::Type::Generic,
                                    g_labelStorage.view(label),
                                    *pc->interp->base.returnValue.cast<String>()};
@@ -55,7 +91,7 @@ bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes, 
     }
     buildSteps::Node::Option& opt = pc->node->options.append(std::move(tcOpt));
     opt.enabled.bits |= pc->configBit;
-    if (sa->isPublic) {
+    if (vis == Visibility::Public) {
         opt.isPublic.bits |= pc->configBit;
     }
     return true;
@@ -90,33 +126,17 @@ bool onEvaluateSourceFile(InstantiatingInterpreter* ii, const AnyObject& attribu
 }
 
 bool onEvaluateIncludeDirectory(PropertyCollector* pc, const AnyObject& attributes) {
-    s32 visibilityTokenIdx = -1;
-    bool isPublic = false;
-    if (const StatementAttributes* sa = attributes.cast<StatementAttributes>()) {
-        visibilityTokenIdx = sa->visibilityTokenIdx;
-        isPublic = sa->isPublic;
-    }
-    if (pc->isModule) {
-        if (visibilityTokenIdx < 0) {
-            pc->interp->base.error("include directory should have 'public' or 'private' attribute");
-            return false;
-        }
-    } else {
-        if (visibilityTokenIdx >= 0) {
-            crowbar::ExpandedToken token =
-                pc->interp->currentFrame->tkr->expandToken(visibilityTokenIdx);
-            pc->interp->base.error(
-                String::format("'{}' cannot be used inside config block", token.text));
-            return false;
-        }
-    }
+    Visibility vis = getVisibility(pc->interp, attributes, pc->isModule, "include directory");
+    if (vis == Visibility::Error)
+        return false;
+
     buildSteps::ToolchainOpt tcOpt{
         buildSteps::ToolchainOpt::Type::IncludeDir,
         NativePath::join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
     buildSteps::Node::Option& foundOpt = appendOrFind(
         pc->node->options, std::move(tcOpt), [&](const auto& a) { return a.opt == tcOpt; });
     foundOpt.enabled.bits |= pc->configBit;
-    if (pc->isModule && isPublic) {
+    if (vis == Visibility::Public) {
         foundOpt.isPublic.bits |= pc->configBit;
     }
     return true;

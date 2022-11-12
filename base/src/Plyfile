@@ -2,9 +2,15 @@ config_list {
     config "Debug" {
         platform.with_asserts = true
     }
-    config "RelWithAsserts" {
+    config "RelWithAsserts" {        
         platform.with_asserts = true
+        compile_options {
+            optimization = "size"
+        }
     }
     config "Release" {
+        compile_options {
+            optimization = "size"
+        }
     }
 }
