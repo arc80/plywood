@@ -33,6 +33,7 @@ struct ModuleInstantiator {
     buildSteps::Project project;
 
     // These members are only used while the project is being instantiated.
+    buildSteps::Node* initNode = nullptr;
     HashMap<ModuleMapTraits> modules;
     u64 configBit = 0;
 

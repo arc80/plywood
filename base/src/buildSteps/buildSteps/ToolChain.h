@@ -4,19 +4,25 @@
 ------------------------------------*/
 #pragma once
 #include <buildSteps/Core.h>
+#include <buildSteps/Project.h>
 
 namespace buildSteps {
-
-struct ToolChain;
 
 struct CompileOpts {
     Array<String> compileFlags;
     Array<String> linkFlags;
 };
 
-Owned<ToolChain> getMSVC();
-Owned<ToolChain> getGCC();
-void translateGenericOption(ToolChain* tc, CompileOpts* copts, StringView genericKey, StringView genericValue);
-void destroy(ToolChain* tc);
+struct ToolChain;
+struct ToolchainOpt;
+typedef void TranslateOption(CompileOpts* copts, const ToolchainOpt& opt);
+
+struct ToolChain {
+    Functor<TranslateOption> translateOption;
+    ~ToolChain() {}
+};
+
+Owned<ToolChain> createToolChainMSVC();
+Owned<ToolChain> createToolChainGCC();
 
 } // namespace buildSteps

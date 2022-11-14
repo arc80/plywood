@@ -20,6 +20,7 @@
 #include <ply-build-provider/HostTools.h>
 #include <ply-runtime/container/Hash128.h>
 #include <ply-build-repository/Instantiate.h>
+#include <buildSteps/ToolChain.h>
 
 namespace ply {
 namespace build {
@@ -378,7 +379,8 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     cli->mi->project.configNames.append(currentConfigName);
 
     // Instantiate all root modules in this config
-    cli->mi->configBit = pc.configBit;
+    PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
+    PLY_SET_IN_SCOPE(cli->mi->initNode, node);
     for (StringView targetName : cli->buildFolder->rootTargets) {
         buildSteps::Node* rootNode =
             latest::instantiateModuleForCurrentConfig(cli->mi, g_labelStorage.insert(targetName));
@@ -405,6 +407,7 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
 PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     latest::ModuleInstantiator mi{bf->getAbsPath()};
     mi.project.name = bf->solutionName;
+    mi.project.tc = buildSteps::createToolChainMSVC();
 
     // Execute the config_list block
     latest::Repository::ConfigList* configList = latest::g_repository->configList;

@@ -194,8 +194,7 @@ endmacro()
                 for (const Node::Option& opt : flatNode->opts) {
                     if (opt.opt.type == ToolchainOpt::Type::Generic) {
                         if (opt.enabled.hasBitAtIndex(i)) {
-                            translateGenericOption(flatProj->tc, &compileOpts, opt.opt.key,
-                                                   opt.opt.value);
+                            flatProj->proj->tc->translateOption(&compileOpts, opt.opt);
                         }
                     }
                 }
@@ -262,13 +261,12 @@ endmacro()
                 for (const Node::Option& opt : flatNode->opts) {
                     if (opt.opt.type == ToolchainOpt::Type::Generic) {
                         if (opt.enabled.hasBitAtIndex(i)) {
-                            translateGenericOption(flatProj->tc, &compileOpts, opt.opt.key,
-                                                   opt.opt.value);
+                            flatProj->proj->tc->translateOption(&compileOpts, opt.opt);
                         }
                     }
                 }
                 outs->format("    LINK_FLAGS_{} \"{}\"\n", proj->configNames[i].upperAsc(),
-                             escapeCMakeList(Array<StringView>{compileOpts.compileFlags}));
+                             escapeCMakeList(Array<StringView>{compileOpts.linkFlags}));
             }
             *outs << ")\n";
         }

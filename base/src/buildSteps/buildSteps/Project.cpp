@@ -85,11 +85,6 @@ FlatNode* flatten(FlatProject* flatProj, const Node* node) {
 Owned<FlatProject> flatten(const Project* proj) {
     PLY_ASSERT(proj->configNames.numItems() <= 64);
     Owned<FlatProject> flatProj = new FlatProject;
-#if PLY_TARGET_WIN32
-    flatProj->tc = getMSVC();
-#else
-    flatProj->tc = getGCC();
-#endif
     flatProj->proj = proj;
 
     for (const Node* root : proj->rootNodes) {

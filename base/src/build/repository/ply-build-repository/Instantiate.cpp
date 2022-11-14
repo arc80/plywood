@@ -65,8 +65,7 @@ Visibility getVisibility(crowbar::Interpreter* interp, const AnyObject& attribut
         }
     } else {
         if (tokenIdx >= 0) {
-            crowbar::ExpandedToken token =
-                interp->currentFrame->tkr->expandToken(tokenIdx);
+            crowbar::ExpandedToken token = interp->currentFrame->tkr->expandToken(tokenIdx);
             interp->base.error(
                 String::format("'{}' cannot be used inside config block", token.text));
             return Visibility::Error;
@@ -428,6 +427,15 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
     return methods;
 }
 
+void inherit(Array<buildSteps::Node::Option>& dstOpts, const buildSteps::Node::Option& srcOpt) {
+    s32 i = find(dstOpts, [&](const buildSteps::Node::Option& o) { return o.opt == srcOpt.opt; });
+    if (i < 0) {
+        i = dstOpts.numItems();
+        dstOpts.append({srcOpt.opt, 0, 0});
+    }
+    dstOpts[i].enabled.bits |= srcOpt.enabled.bits;
+}
+
 buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel) {
     StringView moduleName = g_labelStorage.view(moduleLabel);
 
@@ -457,6 +465,11 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     // Set node as active in this config.
     PLY_ASSERT(mi->configBit);
     node->enabled.bits |= mi->configBit;
+
+    // Initialize node properties
+    for (const buildSteps::Node::Option& srcOpt : mi->initNode->options) {
+        inherit(node->options, srcOpt);
+    }
 
     // Find module function by name.
     latest::Repository::ModuleOrFunction** mod = g_repository->globalScope.find(moduleLabel);

@@ -4,6 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <buildSteps/Core.h>
+#include <buildSteps/ToolChain.h>
 #include <pylon/Node.h>
 
 namespace buildSteps {
@@ -15,6 +16,7 @@ enum class Visibility {
     Public,
 };
 
+struct ToolChain;
 struct ToolchainOpt {
     enum class Type {
         IncludeDir,
@@ -99,6 +101,7 @@ struct Node : RefCounted<Node> {
 
 struct Project {
     String name;
+    Owned<buildSteps::ToolChain> tc;
     Array<String> configNames;
     Array<Node::Option> opts;
     Array<Reference<Node>> rootNodes;

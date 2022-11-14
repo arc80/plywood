@@ -31,7 +31,6 @@ struct FlatProject {
         }
     };
 
-    ToolChain* tc = nullptr;
     const Project* proj = nullptr;
     HashMap<Traits> nodeMap;
     Array<Owned<FlatNode>> allFlatNodes; // dependencies listed before dependents
