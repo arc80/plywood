@@ -32,6 +32,9 @@ To build PlyTool, you must run `Setup.cmake` using appropriate command-line argu
 
     Please choose a generator by running one of the following commands:
 
+    For Visual Studio 2022:
+        cmake -DPRESET=vs2022 -P Setup.cmake
+
     For Visual Studio 2019:
         cmake -DPRESET=vs2019 -P Setup.cmake
 
@@ -44,9 +47,9 @@ To build PlyTool, you must run `Setup.cmake` using appropriate command-line argu
     For Unix Makefiles:
         cmake -DPRESET=make -P Setup.cmake
 
-Re-run `Setup.cmake` using the command line that applies to your case. For Visual Studio 2019, it would be:
+Re-run `Setup.cmake` using the command line that applies to your case. For Visual Studio 2022, it would be:
 
-    $ cmake -DPRESET=vs2019 -P Setup.cmake
+    $ cmake -DPRESET=vs2022 -P Setup.cmake
 
 This command will generate a build system for PlyTool, build PlyTool, then run PlyTool to generate code used by Plywood's reflection system. The entire process should take about 30 seconds to complete. Once it's finished, there will be a new executable `plytool` (or `plytool.exe` on Windows) in the workspace root.
 

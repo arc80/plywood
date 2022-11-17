@@ -30,6 +30,13 @@ PLY_TEST_CASE("Array copy constructor") {
     PLY_TEST_CHECK(b == ArrayView<const u32>{4, 5, 6});
 }
 
+PLY_TEST_CASE("Array copy constructor") {
+    Array<u32> a = {4, 5, 6};
+    Array<u32> b = a;
+    PLY_TEST_CHECK(a == ArrayView<const u32>{4, 5, 6});
+    PLY_TEST_CHECK(b == ArrayView<const u32>{4, 5, 6});
+}
+
 PLY_TEST_CASE("Array move constructor") {
     Array<u32> a = {4, 5, 6};
     Array<u32> b = std::move(a);
@@ -132,6 +139,12 @@ PLY_TEST_CASE("Array assign from any (FixedArray) with move semantics") {
     b = std::move(a);
     PLY_TEST_CHECK(a == ArrayView<const StringView>{{}, {}});
     PLY_TEST_CHECK(b == ArrayView<const StringView>{"hello", "there"});
+}
+
+PLY_TEST_CASE("Array self-assignment") {
+    Array<u32> a = {1, 1, 2, 3, 5, 8};
+    a = a.subView(1);
+    PLY_TEST_CHECK(a == ArrayView<const u32>{1, 2, 3, 5, 8});
 }
 
 //--------------------------------
