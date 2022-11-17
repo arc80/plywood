@@ -6,8 +6,8 @@
 
 namespace buildSteps {
 
-void translateOptionMSVC(ToolChain* tc, CompileOpts* copts, const buildSteps::ToolchainOpt& opt) {
-    PLY_ASSERT(opt.type == buildSteps::ToolchainOpt::Type::Generic);
+void translateOptionMSVC(ToolChain* tc, CompileOpts* copts, const buildSteps::ToolChainOpt& opt) {
+    PLY_ASSERT(opt.type == buildSteps::ToolChainOpt::Type::Generic);
     if (opt.key == "optimization") {
         if (opt.value == "size") {
             copts->compileFlags.append("/Os");

@@ -168,7 +168,7 @@ endmacro()
             // Write include directories
             outs->format("target_include_directories({} PRIVATE\n", node->name);
             for (const Node::Option& opt : flatNode->opts) {
-                if (opt.opt.type == ToolchainOpt::Type::IncludeDir) {
+                if (opt.opt.type == ToolChainOpt::Type::IncludeDir) {
                     if (opt.enabled.hasAllBitsIn(node->enabled.bits)) {
                         // This include directory is enabled in all relevant configs.
                         outs->format("    \"{}\"\n",
@@ -187,12 +187,37 @@ endmacro()
             }
             *outs << ")\n";
 
+            // Write preprocessor definitions
+            outs->format("target_compile_definitions({} PRIVATE\n", node->name);
+            for (const Node::Option& opt : flatNode->opts) {
+                if (opt.opt.type == ToolChainOpt::Type::PreprocessorDef) {
+                    HybridString def = opt.opt.key;
+                    if (opt.opt.value) {
+                        def = String::format("{}={}", opt.opt.key, opt.opt.value);
+                    }
+                    if (opt.enabled.hasAllBitsIn(node->enabled.bits)) {
+                        // This include directory is enabled in all relevant configs.
+                        outs->format("    \"{}\"\n", CMakeEscape{def});
+                    } else {
+                        // Use generator expressions to exclude include directory from specific
+                        // configs.
+                        for (u32 i = 0; i < proj->configNames.numItems(); i++) {
+                            if (opt.enabled.hasBitAtIndex(i)) {
+                                outs->format("    \"$<$<CONFIG:{}>:{}>\"\n", proj->configNames[i],
+                                             CMakeEscape{def});
+                            }
+                        }
+                    }
+                }
+            }
+            *outs << ")\n";
+
             // Write compile options
             outs->format("set_property(TARGET {} PROPERTY COMPILE_OPTIONS\n", node->name);
             for (u32 i = 0; i < proj->configNames.numItems(); i++) {
                 CompileOpts compileOpts;
                 for (const Node::Option& opt : flatNode->opts) {
-                    if (opt.opt.type == ToolchainOpt::Type::Generic) {
+                    if (opt.opt.type == ToolChainOpt::Type::Generic) {
                         if (opt.enabled.hasBitAtIndex(i)) {
                             flatProj->proj->tc->translateOption(&compileOpts, opt.opt);
                         }
@@ -259,7 +284,7 @@ endmacro()
             for (u32 i = 0; i < proj->configNames.numItems(); i++) {
                 CompileOpts compileOpts;
                 for (const Node::Option& opt : flatNode->opts) {
-                    if (opt.opt.type == ToolchainOpt::Type::Generic) {
+                    if (opt.opt.type == ToolChainOpt::Type::Generic) {
                         if (opt.enabled.hasBitAtIndex(i)) {
                             flatProj->proj->tc->translateOption(&compileOpts, opt.opt);
                         }

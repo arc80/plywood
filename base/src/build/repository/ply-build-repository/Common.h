@@ -18,6 +18,7 @@ struct Common {
     Label executableKey;
     Label sourceFilesKey;
     Label includeDirectoriesKey;
+    Label preprocessorDefinitionsKey;
     Label compileOptionsKey;
     Label linkLibrariesKey;
     Label dependenciesKey;

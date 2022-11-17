@@ -9,12 +9,12 @@ module platform {
         public "."
         public join_path(build_folder, "codegen/ply-platform")
     }
-/*
     preprocessor_definitions {
         if with_asserts {
-            "PLY_WITH_ASSERTS=1"
+            public "PLY_WITH_ASSERTS=1"
         }
     }
+/*
     generate {
         configFile = """
 #define PLY_PREFER_CPP11 0

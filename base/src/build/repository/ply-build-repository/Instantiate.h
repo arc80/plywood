@@ -47,7 +47,7 @@ struct PropertyCollector {
     crowbar::Interpreter* interp;
     String basePath;
     buildSteps::Node* node = nullptr;
-    u32 configBit = 0;
+    u64 configBit = 0;
     bool isModule = false;
 };
 

@@ -114,6 +114,7 @@ crowbar::KeywordResult handleKeywordInsideModuleOrFunction(ExtendedParser* ep,
                                                            const crowbar::KeywordParams& kp) {
     if ((kp.kwToken.label == g_common->sourceFilesKey) ||
         (kp.kwToken.label == g_common->includeDirectoriesKey) ||
+        (kp.kwToken.label == g_common->preprocessorDefinitionsKey) ||
         (kp.kwToken.label == g_common->dependenciesKey) ||
         (kp.kwToken.label == g_common->linkLibrariesKey) ||
         (kp.kwToken.label == g_common->compileOptionsKey)) {
@@ -162,6 +163,7 @@ crowbar::KeywordResult handleKeywordPublicPrivate(ExtendedParser* ep,
     auto cb = ep->parser->outerScope->customBlock();
 
     bool isLegal = (cb->type == g_common->includeDirectoriesKey) ||
+                   (cb->type == g_common->preprocessorDefinitionsKey) ||
                    (cb->type == g_common->dependenciesKey) ||
                    (cb->type == g_common->compileOptionsKey);
     isLegal = isLegal && ((kp.kwToken.label == g_common->publicKey) ||
@@ -238,6 +240,7 @@ bool parsePlyfile(StringView path) {
     *parser.keywords.insert(g_common->executableKey) = true;
     *parser.keywords.insert(g_common->sourceFilesKey) = true;
     *parser.keywords.insert(g_common->includeDirectoriesKey) = true;
+    *parser.keywords.insert(g_common->preprocessorDefinitionsKey) = true;
     *parser.keywords.insert(g_common->dependenciesKey) = true;
     *parser.keywords.insert(g_common->linkLibrariesKey) = true;
     *parser.keywords.insert(g_common->configOptionsKey) = true;

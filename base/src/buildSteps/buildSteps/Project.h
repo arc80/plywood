@@ -17,7 +17,7 @@ enum class Visibility {
 };
 
 struct ToolChain;
-struct ToolchainOpt {
+struct ToolChainOpt {
     enum class Type {
         IncludeDir,
         PreprocessorDef,
@@ -30,10 +30,10 @@ struct ToolchainOpt {
     String key;
     String value;
 
-    PLY_INLINE ToolchainOpt(Type type, StringView key, StringView value = {})
+    PLY_INLINE ToolChainOpt(Type type, StringView key, StringView value = {})
         : type{type}, key{key}, value{value} {
     }
-    PLY_INLINE bool operator==(const ToolchainOpt& other) const {
+    PLY_INLINE bool operator==(const ToolChainOpt& other) const {
         return (this->type == other.type) && (this->key == other.key) &&
                (this->value == other.value);
     }
@@ -59,7 +59,7 @@ struct Node : RefCounted<Node> {
     };
 
     struct Option {
-        ToolchainOpt opt;
+        ToolChainOpt opt;
         ConfigMask enabled;  // whether option is enabled for each config
         ConfigMask isPublic; // whether option is public/private for each config
     };

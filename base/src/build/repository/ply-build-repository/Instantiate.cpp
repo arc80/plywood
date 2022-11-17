@@ -60,7 +60,7 @@ Visibility getVisibility(crowbar::Interpreter* interp, const AnyObject& attribut
     if (isModule) {
         if (tokenIdx < 0) {
             interp->base.error(
-                String::format("{} should have 'public' or 'private' attribute", propertyType));
+                String::format("{} must have 'public' or 'private' attribute", propertyType));
             return Visibility::Error;
         }
     } else {
@@ -79,7 +79,7 @@ bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes, 
     if (vis == Visibility::Error)
         return false;
 
-    buildSteps::ToolchainOpt tcOpt{buildSteps::ToolchainOpt::Type::Generic,
+    buildSteps::ToolChainOpt tcOpt{buildSteps::ToolChainOpt::Type::Generic,
                                    g_labelStorage.view(label),
                                    *pc->interp->base.returnValue.cast<String>()};
     int i = find(pc->node->options, [&](const auto& a) {
@@ -129,11 +129,37 @@ bool onEvaluateIncludeDirectory(PropertyCollector* pc, const AnyObject& attribut
     if (vis == Visibility::Error)
         return false;
 
-    buildSteps::ToolchainOpt tcOpt{
-        buildSteps::ToolchainOpt::Type::IncludeDir,
+    buildSteps::ToolChainOpt tcOpt{
+        buildSteps::ToolChainOpt::Type::IncludeDir,
         NativePath::join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
     buildSteps::Node::Option& foundOpt = appendOrFind(
         pc->node->options, std::move(tcOpt), [&](const auto& a) { return a.opt == tcOpt; });
+    foundOpt.enabled.bits |= pc->configBit;
+    if (vis == Visibility::Public) {
+        foundOpt.isPublic.bits |= pc->configBit;
+    }
+    return true;
+}
+
+bool onEvaluatePreprocessorDefinition(PropertyCollector* pc, const AnyObject& attributes) {
+    Visibility vis = getVisibility(pc->interp, attributes, pc->isModule, "preprocessor definition");
+    if (vis == Visibility::Error)
+        return false;
+
+    String key = *pc->interp->base.returnValue.cast<String>();
+    String value;
+    s32 i = key.findByte('=');
+    if (i >= 0) {
+        value = key.subStr(i + 1);
+        key = key.left(i);
+    }
+
+    buildSteps::ToolChainOpt tcOpt{buildSteps::ToolChainOpt::Type::PreprocessorDef, key, value};
+    buildSteps::Node::Option& foundOpt =
+        appendOrFind(pc->node->options, std::move(tcOpt), [&](const auto& a) {
+            return (a.opt.type == buildSteps::ToolChainOpt::Type::PreprocessorDef) &&
+                   (a.opt.key == tcOpt.key);
+        });
     foundOpt.enabled.bits |= pc->configBit;
     if (vis == Visibility::Public) {
         foundOpt.isPublic.bits |= pc->configBit;
@@ -172,6 +198,8 @@ MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
     crowbar::Interpreter::Hooks hooks;
     if (cb->type == g_common->includeDirectoriesKey) {
         hooks.onEvaluate = {onEvaluateIncludeDirectory, pc};
+    } else if (cb->type == g_common->preprocessorDefinitionsKey) {
+        hooks.onEvaluate = {onEvaluatePreprocessorDefinition, pc};
     } else if (cb->type == g_common->compileOptionsKey) {
         hooks.assignToLocal = {assignToCompileOptions, pc};
     } else if (cb->type == g_common->linkLibrariesKey) {
@@ -189,8 +217,9 @@ MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
                                         const crowbar::Statement::CustomBlock* cb) {
     PropertyCollector pc;
     pc.interp = &ii->interp;
-    pc.basePath = NativePath::split(ii->currentModule->plyfile->tkr.fileLocationMap.path).second;
+    pc.basePath = NativePath::split(ii->currentModule->plyfile->tkr.fileLocationMap.path).first;
     pc.node = ii->node;
+    pc.configBit = ii->mi->configBit;
     pc.isModule = true;
 
     crowbar::Interpreter::Hooks hooks;
@@ -198,6 +227,8 @@ MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
         hooks.onEvaluate = {onEvaluateSourceFile, ii};
     } else if (cb->type == g_common->includeDirectoriesKey) {
         hooks.onEvaluate = {onEvaluateIncludeDirectory, &pc};
+    } else if (cb->type == g_common->preprocessorDefinitionsKey) {
+        hooks.onEvaluate = {onEvaluatePreprocessorDefinition, &pc};
     } else if (cb->type == g_common->compileOptionsKey) {
         hooks.assignToLocal = {assignToCompileOptions, &pc};
     } else if (cb->type == g_common->linkLibrariesKey) {

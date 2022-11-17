@@ -14,8 +14,8 @@ struct CompileOpts {
 };
 
 struct ToolChain;
-struct ToolchainOpt;
-typedef void TranslateOption(CompileOpts* copts, const ToolchainOpt& opt);
+struct ToolChainOpt;
+typedef void TranslateOption(CompileOpts* copts, const ToolChainOpt& opt);
 
 struct ToolChain {
     Functor<TranslateOption> translateOption;
