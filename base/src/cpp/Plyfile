@@ -1,0 +1,11 @@
+module cpp {
+    source_files {
+        "ply-cpp"
+    }
+    include_directories {
+        public "."
+    }
+    dependencies {
+        public reflect
+    }
+}

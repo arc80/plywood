@@ -10,14 +10,18 @@ namespace ply {
 namespace crowbar {
 
 void logErrorWithStack(OutStream* outs, const Interpreter* interp, StringView message) {
-    outs->format("error: {}\n", message);
-    bool first = true;
-    for (Interpreter::StackFrame* frame = interp->currentFrame; frame; frame = frame->prevFrame) {
+    Interpreter::StackFrame* frame = interp->currentFrame;
+    ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
+    outs->format("{} error: {}\n",
+                 frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset), message);
+    for (;;) {
+        frame = frame->prevFrame;
+        if (!frame)
+            break;
         ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
-        outs->format("{}: {} {}\n",
+        outs->format("{}: called from {}\n",
                      frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
-                     first ? "in" : "called from", frame->desc());
-        first = false;
+                     frame->desc());
     }
 }
 

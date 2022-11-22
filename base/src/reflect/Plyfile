@@ -1,0 +1,11 @@
+module reflect {
+    source_files {
+        "ply-reflect"
+    }
+    include_directories {
+        public "."
+    }
+    dependencies {
+        public runtime
+    }
+}

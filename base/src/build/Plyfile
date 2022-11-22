@@ -1,0 +1,88 @@
+module build_common {
+    source_files {
+        "common/ply-build-common"
+    }
+    include_directories {
+        public "common"
+    }
+    dependencies {
+        public reflect
+    }
+}
+
+module build_target {
+    source_files {
+        "target/ply-build-target"
+    }
+    include_directories {
+        public "target"
+        private join_path(sys_build_folder, "codegen/ply-build-target")
+    }
+    dependencies {
+        public build_common
+    }
+}
+
+module build_provider {
+    source_files {
+        "provider/ply-build-provider"
+    }
+    include_directories {
+        public "provider"
+    }
+    dependencies {
+        public build_common
+        private pylon_reflect
+    }
+}
+
+module build_repo {
+    source_files {
+        "repo/ply-build-repo"
+    }
+    include_directories {
+        public "repo"
+    }
+    dependencies {
+        public build_target
+        public build_provider
+        private pylon_reflect
+        private cpp
+    }
+}
+
+module build_folder {
+    source_files {
+        "folder/ply-build-folder"
+    }
+    include_directories {
+        public "folder"
+    }
+    dependencies {
+        public build_repo
+        public build_repository
+        public pylon_reflect
+    }
+}
+
+module build_repository {
+    source_files {
+        "repository/ply-build-repository"
+    }
+    include_directories {
+        public "repository"
+    }
+    dependencies {
+        public reflect
+        public buildSteps
+        public crowbar
+        public build_common
+        public build_provider
+        public reflect
+    }
+    link_libraries {
+        if true {
+            "winhttp.lib"
+        }
+    }
+}

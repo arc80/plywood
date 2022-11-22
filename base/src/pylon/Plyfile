@@ -1,0 +1,24 @@
+module pylon {
+    source_files {
+        "pylon/pylon"
+    }
+    include_directories {
+        public "pylon"
+    }
+    dependencies {
+        public runtime
+    }
+}
+
+module pylon_reflect {
+    source_files {
+        "reflect/pylon-reflect"
+    }
+    include_directories {
+        public "reflect"
+    }
+    dependencies {
+        public pylon
+        public reflect
+    }
+}

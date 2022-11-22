@@ -41,7 +41,8 @@ struct ModuleInstantiator {
     }
 };
 
-buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel);
+MethodResult instantiateModuleForCurrentConfig(buildSteps::Node** node, ModuleInstantiator* mi,
+                                               Label moduleLabel);
 
 struct PropertyCollector {
     crowbar::Interpreter* interp;

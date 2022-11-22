@@ -1,0 +1,12 @@
+module buildSteps {
+    source_files {
+        "buildSteps"
+    }
+    include_directories {
+        public "."
+    }
+    dependencies {
+        public runtime
+        public pylon
+    }
+}

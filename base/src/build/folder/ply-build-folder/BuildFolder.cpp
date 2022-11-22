@@ -382,10 +382,10 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
     PLY_SET_IN_SCOPE(cli->mi->initNode, node);
     for (StringView targetName : cli->buildFolder->rootTargets) {
-        buildSteps::Node* rootNode =
-            latest::instantiateModuleForCurrentConfig(cli->mi, g_labelStorage.insert(targetName));
-        if (!rootNode)
-            return MethodResult::Error;
+        buildSteps::Node* rootNode;
+        MethodResult result = latest::instantiateModuleForCurrentConfig(&rootNode, cli->mi, g_labelStorage.insert(targetName));
+        if (result != MethodResult::OK)
+            return result;
         if (find(cli->mi->project.rootNodes, rootNode) < 0) {
             cli->mi->project.rootNodes.append(rootNode);
         }

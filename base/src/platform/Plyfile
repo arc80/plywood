@@ -7,35 +7,11 @@ module platform {
     }
     include_directories {
         public "."
-        public join_path(build_folder, "codegen/ply-platform")
+        public join_path(sys_build_folder, "codegen/ply-platform")
     }
     preprocessor_definitions {
         if with_asserts {
             public "PLY_WITH_ASSERTS=1"
         }
     }
-/*
-    generate {
-        configFile = """
-#define PLY_PREFER_CPP11 0
-#define PLY_WITH_EXCEPTIONS 0
-#define PLY_REPLACE_OPERATOR_NEW 1
-#define PLY_USE_DLMALLOC 1
-#define PLY_DLMALLOC_DEBUG_CHECKS 0
-#define PLY_DLMALLOC_FAST_STATS 0
-
-// Avoid degraded performance caused by Mutex_Win32 (FIXME: Make this the default?):
-#define PLY_IMPL_MUTEX_PATH "impl/Mutex_CPP11.h"
-#define PLY_IMPL_MUTEX_TYPE ply::Mutex_CPP11
-#define PLY_IMPL_CONDITIONVARIABLE_PATH "impl/ConditionVariable_CPP11.h"
-#define PLY_IMPL_CONDITIONVARIABLE_TYPE ply::ConditionVariable_CPP11
-
-#define PLY_WORKSPACE_FOLDER "${join_path("..", "..", "..")}"
-#define PLY_BUILD_FOLDER "${build_folder}"
-#define PLY_CMAKE_PATH delete_me
-#define WITH_AUDIO 1
-"""
-    }
-*/
-    //dynamic_link_prefix("PLL_DLL")
 }

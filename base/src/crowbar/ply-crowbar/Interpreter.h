@@ -15,7 +15,7 @@ struct Tokenizer;
 struct Interpreter  {
     struct Hooks {
         Functor<MethodResult(const Statement::CustomBlock* customBlock)> doCustomBlock;
-        Functor<bool(const AnyObject& attributes)> onEvaluate; // true on error
+        Functor<bool(const AnyObject& attributes)> onEvaluate;
         Functor<bool(const AnyObject& attributes, Label label)> assignToLocal;
     };
 

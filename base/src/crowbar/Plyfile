@@ -1,0 +1,11 @@
+module crowbar {
+    source_files {
+        "ply-crowbar"
+    }
+    include_directories {
+        public "."
+    }
+    dependencies {
+        public reflect
+    }
+}

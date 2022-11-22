@@ -1,0 +1,26 @@
+executable plytool {
+    source_files {
+        "plytool"
+    }
+    include_directories {
+        private "plytool"
+    }
+    dependencies {
+        private build_folder
+        private cpp
+        private pylon_reflect
+        private plytool_client
+    }
+}
+
+module plytool_client {
+    source_files {
+        "plytool-client/plytool-client"
+    }
+    include_directories {
+        public "plytool-client"
+    }
+    dependencies {
+        public reflect
+    }
+}

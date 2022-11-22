@@ -168,19 +168,23 @@ bool onEvaluatePreprocessorDefinition(PropertyCollector* pc, const AnyObject& at
 }
 
 bool onEvaluateDependency(InstantiatingInterpreter* ii, const AnyObject& attributes) {
-    const StatementAttributes* sa = attributes.cast<StatementAttributes>();
-    PLY_ASSERT(sa->visibilityTokenIdx >= 0);
+    Visibility vis = getVisibility(&ii->interp, attributes, true, "dependency");
+    if (vis == Visibility::Error)
+        return false;
 
     // Instantiate the dependency
     Repository::ModuleOrFunction* mod =
         ii->interp.base.returnValue.cast<Repository::ModuleOrFunction>();
-    buildSteps::Node* dep =
-        instantiateModuleForCurrentConfig(ii->mi, mod->stmt->customBlock()->name);
-    if (!dep)
-        return true;
+    buildSteps::Node* dep;
+    if (instantiateModuleForCurrentConfig(&dep, ii->mi, mod->stmt->customBlock()->name) !=
+        MethodResult::OK)
+        return false;
     buildSteps::Node::Dependency& foundDep =
         appendOrFind(ii->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
     foundDep.enabled.bits |= ii->mi->configBit;
+    if (vis == Visibility::Public) {
+        foundDep.isPublic.bits |= ii->mi->configBit;
+    }
     return true;
 }
 
@@ -467,21 +471,23 @@ void inherit(Array<buildSteps::Node::Option>& dstOpts, const buildSteps::Node::O
     dstOpts[i].enabled.bits |= srcOpt.enabled.bits;
 }
 
-buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Label moduleLabel) {
+MethodResult instantiateModuleForCurrentConfig(buildSteps::Node** node, ModuleInstantiator* mi,
+                                               Label moduleLabel) {
     StringView moduleName = g_labelStorage.view(moduleLabel);
 
     // Check if a buildSteps::Node was already created for this moduleName.
-    buildSteps::Node* node;
     {
         auto instCursor = mi->modules.insertOrFind(moduleName);
         if (!instCursor.wasFound()) {
             // No. Create a new one.
-            instCursor->node = new buildSteps::Node;
-            instCursor->node->name = moduleName;
+            *node = new buildSteps::Node;
+            (*node)->name = moduleName;
+            instCursor->node = *node;
         } else {
             // Yes. If the module was already fully instantiated in this config, return it.
+            *node = instCursor->node;
             if (instCursor->statusInCurrentConfig == ModuleInstantiator::Instantiated)
-                return instCursor->node;
+                return MethodResult::OK;
             // Circular dependency check. FIXME: Handle gracefully
             if (instCursor->statusInCurrentConfig == ModuleInstantiator::Instantiating) {
                 PLY_FORCE_CRASH();
@@ -490,16 +496,15 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
         }
         // Set this module's status as Instantiating so that circular dependencies can be detected.
         instCursor->statusInCurrentConfig = ModuleInstantiator::Instantiating;
-        node = instCursor->node;
     }
 
     // Set node as active in this config.
     PLY_ASSERT(mi->configBit);
-    node->enabled.bits |= mi->configBit;
+    (*node)->enabled.bits |= mi->configBit;
 
     // Initialize node properties
     for (const buildSteps::Node::Option& srcOpt : mi->initNode->options) {
-        inherit(node->options, srcOpt);
+        inherit((*node)->options, srcOpt);
     }
 
     // Find module function by name.
@@ -509,9 +514,9 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     }
     const crowbar::Statement::CustomBlock* moduleDef = (*mod)->stmt->customBlock().get();
     if (moduleDef->type == g_common->executableKey) {
-        node->type = buildSteps::Node::Type::Executable;
+        (*node)->type = buildSteps::Node::Type::Executable;
     } else if (moduleDef->type == g_common->moduleKey) {
-        node->type = buildSteps::Node::Type::Lib;
+        (*node)->type = buildSteps::Node::Type::Lib;
     } else {
         PLY_ASSERT(0);
     }
@@ -524,7 +529,7 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     };
     ii.mi = mi;
     ii.currentModule = *mod;
-    ii.node = node;
+    ii.node = *node;
 
     // Populate global & module namespaces.
     LabelMap<AnyObject> builtIns;
@@ -533,7 +538,7 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     *builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
     *builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
     *builtIns.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
-    *builtIns.insert(g_labelStorage.insert("build_folder")) =
+    *builtIns.insert(g_labelStorage.insert("sys_build_folder")) =
         AnyObject::bind(&ii.mi->buildFolderPath);
     ReadOnlyDict dict_build{"build"};
     String value_arch = "x64";
@@ -572,11 +577,8 @@ buildSteps::Node* instantiateModuleForCurrentConfig(ModuleInstantiator* mi, Labe
     };
     frame.tkr = &(*mod)->plyfile->tkr;
     MethodResult result = execFunction(&frame, moduleDef->body);
-    if (result == MethodResult::Error)
-        return nullptr;
-
     mi->modules.find(moduleName)->statusInCurrentConfig = ModuleInstantiator::Instantiated;
-    return node;
+    return result;
 }
 
 TypeKey TypeKey_ReadOnlyDict{
