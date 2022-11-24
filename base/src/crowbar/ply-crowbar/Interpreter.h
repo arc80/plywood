@@ -12,10 +12,12 @@ namespace crowbar {
 
 struct Tokenizer;
 
-struct Interpreter  {
+struct Interpreter {
     struct Hooks {
         Functor<MethodResult(const Statement::CustomBlock* customBlock)> doCustomBlock;
-        Functor<bool(const AnyObject& attributes)> onEvaluate;
+        Functor<bool(const AnyObject& attributes)> onEvaluate = [](const AnyObject&) {
+            return true;
+        };
         Functor<bool(const AnyObject& attributes, Label label)> assignToLocal;
     };
 

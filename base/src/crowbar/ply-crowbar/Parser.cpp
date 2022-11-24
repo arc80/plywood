@@ -295,7 +295,7 @@ bool parseParameterList(Parser* parser, Statement::FunctionDefinition* functionD
     ExpandedToken token = parser->tkr->readToken();
     if (token.type != TokenType::OpenParen) {
         errorAtToken(parser, token, ErrorTokenAction::PushBack,
-                     String::format("expected '(' after function name {}; got {}",
+                     String::format("expected '(' after function name '{}'; got {}",
                                     g_labelStorage.view(functionDef->name), token.desc()));
         return false;
     }
@@ -331,8 +331,7 @@ bool parseParameterList(Parser* parser, Statement::FunctionDefinition* functionD
     }
 }
 
-void handleFunction(Parser* parser, Owned<Statement>&& stmt,
-                    const ExpandedToken&) {
+void handleFunction(Parser* parser, Owned<Statement>&& stmt, const ExpandedToken&) {
     if (!parseParameterList(parser, stmt->functionDefinition().get()))
         return;
 
@@ -340,6 +339,7 @@ void handleFunction(Parser* parser, Owned<Statement>&& stmt,
     crowbar::Parser::Filter filter;
     filter.keywordHandler = [](const KeywordParams&) { return KeywordResult::Illegal; };
     filter.allowInstructions = true;
+    PLY_SET_IN_SCOPE(parser->filter, filter);
     stmt->functionDefinition()->body = parseStatementBlock(parser, {"function", "parameter list"});
 }
 
@@ -356,7 +356,7 @@ void parseFunctionDefinition(Parser* parser, const ExpandedToken& fnToken,
     // Parse function name.
     ExpandedToken nameToken = parser->tkr->readToken();
     if (nameToken.type != TokenType::Identifier) {
-        errorAtToken(parser, nameToken, ErrorTokenAction::PushBack,
+        errorAtToken(parser, nameToken, ErrorTokenAction::HandleUnexpected,
                      String::format("expected function name after 'fn'; got {}", nameToken.desc()));
         return;
     }
@@ -442,6 +442,13 @@ void Parser::parseStatement(StatementBlock* stmtBlock) {
             }
         } while (this->keywords.find(token.label));
     }
+
+    if (!this->filter.allowInstructions) {
+        errorAtToken(this, token, ErrorTokenAction::HandleUnexpected,
+                     String::format("unexpected {}", token.desc()));
+        return;
+    }
+
     this->tkr->rewindTo(token.tokenIdx);
 
     // Try to parse an expression.
@@ -487,7 +494,7 @@ void Parser::parseStatement(StatementBlock* stmtBlock) {
                 return;
         } else {
             if (errorAtToken(this, token, ErrorTokenAction::HandleUnexpected,
-                             String::format("expected a statement; got {}", token.desc())))
+                             String::format("unexpected {}", token.desc())))
                 return;
         }
     }

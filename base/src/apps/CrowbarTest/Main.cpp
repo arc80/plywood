@@ -46,7 +46,7 @@ struct BuiltInStorage {
     BoundMethod boundPrint;
     bool true_ = true;
     bool false_ = false;
-    
+
     BuiltInStorage(ScriptOutStream* sos) {
         this->boundPrint = {AnyObject::bind(sos), AnyObject::bind(doPrint)};
     }
@@ -65,47 +65,66 @@ String parseAndTryCall(StringView src, StringView funcName, ArrayView<const AnyO
     parser.tkr = &tkr;
     MemOutStream errorOut;
     parser.error = [&errorOut](StringView message) { errorOut << message; };
+    parser.filter.allowFunctions = true;
+    parser.filter.allowInstructions = false;
+    LabelMap<Owned<Statement>> fnMap;
+    parser.functionHandler = [&parser, &fnMap](Owned<crowbar::Statement>&& stmt,
+                                               const ExpandedToken& nameToken) {
+        if (!parseParameterList(&parser, stmt->functionDefinition().get()))
+            return;
+
+        // Parse function body.
+        crowbar::Parser::Filter filter;
+        filter.keywordHandler = [](const KeywordParams&) { return KeywordResult::Illegal; };
+        filter.allowInstructions = true;
+        PLY_SET_IN_SCOPE(parser.filter, filter);
+        stmt->functionDefinition()->body =
+            parseStatementBlock(&
+                parser, {"function", "parameter list"});
+         
+        *fnMap.insert(nameToken.label) = std::move(stmt);
+    };
 
     // Parse the script.
-    Owned<StatementBlock> file = parser.parseFile();
+    crowbar::StatementBlockProperties props{"file"};
+    Owned<crowbar::StatementBlock> file = parseStatementBlockInner(&parser, props, true);
     if (parser.errorCount > 0)
         return errorOut.moveToString();
 
-    // Put functions in a namespace
-    LabelMap<const Statement::FunctionDefinition*> fnMap;
-    for (const Statement* stmt : file->statements) {
-        const Statement::FunctionDefinition* fnDef = stmt->functionDefinition().get();
-        *fnMap.insert(fnDef->name) = fnDef;
-    }
-
     // Invoke function if it exists
-    const Statement::FunctionDefinition** fnObj = fnMap.find(g_labelStorage.find(funcName));
-    if (fnObj) {
+    if (Owned<Statement>* stmt = fnMap.find(g_labelStorage.find(funcName))) {
+        const Statement::FunctionDefinition* fnDef = (*stmt)->functionDefinition().get();
         MemOutStream outs;
         ScriptOutStream sos{&outs};
         BuiltInStorage bis{&sos};
 
         // Create interpreter
         Interpreter interp;
-        interp.base.error = [&outs, &interp](StringView message) { logErrorWithStack(&outs, &interp, message); };
-        bis.addBuiltIns(interp.builtIns);
-        interp.hooks.resolveName = [&fnMap](Label identifier) -> AnyObject {
-            const Statement::FunctionDefinition** fnObj = fnMap.find(identifier);
-            return fnObj ? AnyObject::bind(*fnObj) : AnyObject{};
+        interp.base.error = [&outs, &interp](StringView message) {
+            logErrorWithStack(&outs, &interp, message);
+        };
+        LabelMap<AnyObject> biMap;
+        bis.addBuiltIns(biMap);
+        interp.resolveName = [&biMap, &fnMap](Label identifier) -> AnyObject {
+            if (AnyObject* builtIn = biMap.find(identifier))
+                return *builtIn;
+            if (Owned<Statement>* foundStmt = fnMap.find(identifier))
+                return AnyObject::bind((*foundStmt)->functionDefinition().get());
+            return {};
         };
 
         // Invoke function
         Interpreter::StackFrame frame;
         frame.interp = &interp;
-        frame.desc = [fnDef = *fnObj]() -> HybridString {
+        frame.desc = [fnDef]() -> HybridString {
             return String::format("function '{}'", g_labelStorage.view(fnDef->name));
         };
         frame.tkr = &tkr;
-        PLY_ASSERT((*fnObj)->parameterNames.numItems() == args.numItems);
+        PLY_ASSERT(fnDef->parameterNames.numItems() == args.numItems);
         for (u32 i = 0; i < args.numItems; i++) {
-            *frame.localVariableTable.insert((*fnObj)->parameterNames[i]) = args[i];
+            *frame.localVariableTable.insert(fnDef->parameterNames[i]) = args[i];
         }
-        execFunction(&frame, (*fnObj)->body);
+        execFunction(&frame, fnDef->body);
 
         return outs.moveToString();
     }

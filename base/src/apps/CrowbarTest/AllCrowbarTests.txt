@@ -82,7 +82,7 @@ result:
 fn foo
 
 result:
-(2, 1) error: expected '(' after function name 'foo'; got end-of-file
+(1, 7) error: expected '(' after function name 'foo'; got end-of-line
 
 ------------------------------------------------------------
 fn foo %
@@ -124,6 +124,7 @@ fn bar(a b {
 
 result:
 (1, 10) error: expected ',' or ')' after parameter 'a'; got '{'
+(3, 10) error: expected ',' or ')' after parameter 'a'; got 'b'
 
 ------------------------------------------------------------
 fn foo(a)
@@ -216,7 +217,7 @@ fn foo() {
 }
 
 result:
-(2, 5) error: expected a statement; got '/'
+(2, 5) error: unexpected '/'
 (3, 11) error: unexpected '$' after assignment
 
 ------------------------------------------------------------
@@ -346,8 +347,7 @@ fn test() {
 }
 
 result:
-error: 'bool' does not support binary operator '+'
-(2, 10) in function 'test'
+(2, 10) error: 'bool' does not support binary operator '+'
 
 ------------------------------------------------------------
 fn test() {
@@ -355,8 +355,7 @@ fn test() {
 }
 
 result:
-error: 'bool' does not support property lookup
-(2, 11) in function 'test'
+(2, 11) error: 'bool' does not support property lookup
 
 ------------------------------------------------------------
 fn test() {
@@ -364,8 +363,7 @@ fn test() {
 }
 
 result:
-error: cannot call 'u32' as a function
-(2, 6) in function 'test'
+(2, 6) error: cannot call 'u32' as a function
 
 ------------------------------------------------------------
 fn foo(x) {
@@ -381,12 +379,11 @@ fn test() {
 }
 
 result:
-error: cannot resolve identifier 'bar'
-(5, 9) in function 'foo'
-(3, 12) called from function 'foo'
-(3, 12) called from function 'foo'
-(3, 12) called from function 'foo'
-(10, 8) called from function 'test'
+(5, 9) error: cannot resolve identifier 'bar'
+(3, 12): called from function 'foo'
+(3, 12): called from function 'foo'
+(3, 12): called from function 'foo'
+(10, 8): called from function 'test'
 
 ------------------------------------------------------------
 fn somefunc(x) {
@@ -401,12 +398,11 @@ fn test() {
 }
 
 result:
-error: cannot resolve identifier 'bar'
-(3, 16) in function 'somefunc'
-(5, 32) called from function 'somefunc'
-(5, 32) called from function 'somefunc'
-(5, 32) called from function 'somefunc'
-(9, 19) called from function 'test'
+(3, 16) error: cannot resolve identifier 'bar'
+(5, 32): called from function 'somefunc'
+(5, 32): called from function 'somefunc'
+(5, 32): called from function 'somefunc'
+(9, 19): called from function 'test'
 
 ------------------------------------------------------------
 fn test() {
@@ -414,8 +410,7 @@ fn test() {
 }
 
 result:
-error: 'bool' does not support unary operator '-'
-(2, 11) in function 'test'
+(2, 11) error: 'bool' does not support unary operator '-'
 
 ------------------------------------------------------------
 fn test() {
