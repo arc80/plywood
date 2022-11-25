@@ -89,7 +89,7 @@ Owned<Expression> parseArgumentList(Parser* parser, Owned<Expression>&& callable
         } else {
             if (!errorAtToken(
                     parser, token, ErrorTokenAction::HandleUnexpected,
-                    String::format("expected ',' or ')' after argument; got {}", token.desc())))
+                    String::format("expected ',' or ')' after function argument; got {}", token.desc())))
                 return callExpr;
         }
     }
@@ -139,10 +139,11 @@ MethodTable::UnaryOp tokenToUnaryOp(TokenType tokenType) {
     }
 }
 
-void parseInterpolatedString(Parser* parser, Expression* expr) {
+void parseInterpolatedString(Parser* parser, Expression* expr, bool isMultiline) {
     auto& pieces = expr->interpolatedString().switchTo()->pieces;
 
     PLY_SET_IN_SCOPE(parser->tkr->behavior.insideString, true);
+    PLY_SET_IN_SCOPE(parser->tkr->behavior.isMultilineString, isMultiline);
     for (;;) {
         ExpandedToken token = parser->tkr->readToken();
         switch (token.type) {
@@ -216,7 +217,11 @@ Owned<Expression> Parser::parseExpression(u32 outerPrecendenceLevel, bool asStat
                 break;
             }
             case TokenType::BeginString: {
-                parseInterpolatedString(this, expr);
+                parseInterpolatedString(this, expr, false);
+                break;
+            }
+            case TokenType::BeginMultilineString: {
+                parseInterpolatedString(this, expr, true);
                 break;
             }
             default: {

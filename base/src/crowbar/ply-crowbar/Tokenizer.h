@@ -19,6 +19,7 @@ enum class TokenType {
     Identifier,
     NumericLiteral,
     BeginString,
+    BeginMultilineString,
     StringLiteral,
     BeginStringEmbed, // Closed by CloseCurly
     EndString,
@@ -107,6 +108,7 @@ struct Tokenizer {
     struct Behavior {
         bool tokenizeNewLine = true;
         bool insideString = false;
+        bool isMultilineString = false;
     };
     Behavior behavior;
 

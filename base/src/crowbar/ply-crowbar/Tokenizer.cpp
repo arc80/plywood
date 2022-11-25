@@ -27,6 +27,7 @@ StringView tokenRepr[] = {
     "",   // Identifier
     "",   // NumericLiteral
     "",   // BeginString
+    "",   // BeginMultilineString
     "",   // StringLiteral
     "",   // BeginStringEmbed
     "",   // EndString
@@ -135,8 +136,8 @@ PLY_NO_INLINE u32 expandTokenInternal(ExpandedToken& expToken, Tokenizer* tkr, u
         u32 compactLength = safeDemote<u32>(data - start);
         u32 endOffset = safeDemote<u32>(tkr->vin.cur - tkr->vin.start);
         if (data < tkr->tokenData.end()) {
-            endOffset = tkr->fileOffsetTable[(tokenIdx + 1) >> 8] +
-                        impl::LabelEncoder::decodeValue(data);
+            endOffset =
+                tkr->fileOffsetTable[(tokenIdx + 1) >> 8] + impl::LabelEncoder::decodeValue(data);
         }
         // FIXME: this text includes any whitespace between the two tokens
         expToken.text =
@@ -226,12 +227,24 @@ PLY_NO_INLINE void readString(ExpandedToken& expToken, Tokenizer* tkr) {
                 goto eofError;
             mout << tkr->vin.next();
         } else if (c == '"') {
-            if (mout.getSeekPos() == 0) {
+            if (tkr->behavior.isMultilineString) {
+                if ((sptr(tkr->vin.end - tkr->vin.cur) >= 3) && (tkr->vin.cur[0] == '"') &&
+                    (tkr->vin.cur[1] == '"') && (tkr->vin.cur[2] == '"')) {
+                    if (mout.getSeekPos() > 0)
+                        goto gotStringLiteral;
+                    tkr->vin.cur += 3;
+                    expToken.type = TokenType::EndString;
+                    return;
+                }
+                mout << c;
+                tkr->vin.next();
+            } else {
+                if (mout.getSeekPos() > 0)
+                    goto gotStringLiteral;
                 tkr->vin.next();
                 expToken.type = TokenType::EndString;
                 return;
             }
-            goto gotStringLiteral;
         } else if (c == '$') {
             tkr->vin.next();
             if (!tkr->vin.atEOF()) {
@@ -248,6 +261,9 @@ PLY_NO_INLINE void readString(ExpandedToken& expToken, Tokenizer* tkr) {
             }
             mout << '$';
         } else {
+            if ((c == '\n') && !tkr->behavior.isMultilineString) {
+                PLY_ASSERT(0); // FIXME: handle gracefully
+            }
             mout << c;
             tkr->vin.next();
         }
@@ -324,6 +340,17 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
             }
 
             case '"': {
+                if (sptr(this->vin.end - this->vin.cur) >= 2) {
+                    if ((this->vin.cur[0] == '"') && (this->vin.cur[1] == '"')) {
+                        this->vin.cur += 2;
+                        expToken.type = TokenType::BeginMultilineString;
+                        if (!this->vin.atEOF() && (this->vin.peek() == '\n')) {
+                            // Consume the initial newline
+                            this->vin.next();
+                        }
+                        goto result;
+                    }
+                }
                 expToken.type = TokenType::BeginString;
                 goto result;
             }

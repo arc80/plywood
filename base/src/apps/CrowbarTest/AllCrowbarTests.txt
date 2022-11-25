@@ -207,7 +207,7 @@ fn foo() {
 }
 
 result:
-(2, 11) error: expected ',' or ')' after argument; got 'b'
+(2, 11) error: expected ',' or ')' after function argument; got 'b'
 (3, 12) error: expected an expression; got ','
 
 ------------------------------------------------------------
@@ -435,4 +435,46 @@ fn test() {
 
 result:
 0
+
+------------------------------------------------------------
+fn test() {
+    print("""Multiline
+strings
+may
+contain
+"quotes".""")
+}
+
+result:
+Multiline
+strings
+may
+contain
+"quotes".
+
+------------------------------------------------------------
+fn test() {
+    print("""
+When a multiline string begins with a
+newline character, it is skipped.""")
+}
+
+result:
+When a multiline string begins with a
+newline character, it is skipped.
+
+------------------------------------------------------------
+fn test() {
+    print("""
+
+For a multiline string to begin with a blank
+line, two newlines are needed.
+""")
+}
+
+result:
+
+For a multiline string to begin with a blank
+line, two newlines are needed.
+
 
