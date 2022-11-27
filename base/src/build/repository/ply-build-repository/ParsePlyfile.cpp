@@ -134,6 +134,16 @@ crowbar::KeywordResult handleKeywordInsideModuleOrFunction(ExtendedParser* ep,
             g_repository->moduleConfigBlocks.append({ep->currentModule, std::move(customBlock)});
             return crowbar::KeywordResult::Block;
         }
+    } else if (kp.kwToken.label == g_common->generateKey) {
+        if (ep->currentModule) {
+            crowbar::Parser::Filter filter;
+            filter.keywordHandler = [](const crowbar::KeywordParams&) {
+                return crowbar::KeywordResult::Illegal;
+            };
+            filter.allowInstructions = true;
+            ep->currentModule->generateBlock = parseCustomBlock(ep, filter, kp.kwToken.label);
+            return crowbar::KeywordResult::Block;
+        }
     }
 
     return crowbar::KeywordResult::Illegal;
@@ -249,6 +259,7 @@ bool parsePlyfile(StringView path) {
     *parser.keywords.insert(g_common->compileOptionsKey) = true;
     *parser.keywords.insert(g_common->publicKey) = true;
     *parser.keywords.insert(g_common->privateKey) = true;
+    *parser.keywords.insert(g_common->generateKey) = true;
 
     // Extend the parser
     ExtendedParser ep;

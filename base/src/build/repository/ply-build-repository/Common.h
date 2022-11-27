@@ -28,6 +28,7 @@ struct Common {
     Label configListKey;
     Label configKey;
     Label optimizationKey;
+    Label generateKey;
 
     static void initialize();
 };

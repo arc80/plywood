@@ -16,7 +16,7 @@ module build_target {
     }
     include_directories {
         public "target"
-        private join_path(sys_build_folder, "codegen/ply-build-target")
+        private join_path(sys.build_folder, "codegen/ply-build-target")
     }
     dependencies {
         public build_common

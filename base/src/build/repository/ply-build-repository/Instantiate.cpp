@@ -255,11 +255,31 @@ MethodResult doJoinPath(const MethodArgs& args) {
             PLY_FORCE_CRASH();
         parts.append(*arg.cast<String>());
     }
-    String result = PathFormat{false}.joinAndNormalize(parts);
+    String result = NativePath::format().joinAndNormalize(parts);
     AnyObject* resultStorage =
         args.base->localVariableStorage.appendObject(getTypeDescriptor(&result));
     *resultStorage->cast<String>() = std::move(result);
     args.base->returnValue = *resultStorage;
+    return MethodResult::OK;
+}
+
+MethodResult doSaveIfDifferent(const MethodArgs& args) {
+    if (args.args.numItems != 2) {
+        args.base->error(String::format("'save_if_different' expects 2 arguments"));
+        return MethodResult::Error;
+    }
+    String* path = args.args[0].safeCast<String>();
+    if (!path) {
+        args.base->error(String::format("'save_if_different' argument 1 must be a string"));
+        return MethodResult::Error;
+    }
+    String* content = args.args[1].safeCast<String>();
+    if (!content) {
+        args.base->error(String::format("'save_if_different' argument 2 must be a string"));
+        return MethodResult::Error;
+    }
+
+    FileSystem::native()->makeDirsAndSaveBinaryIfDifferent(*path, *content);
     return MethodResult::OK;
 }
 
@@ -471,6 +491,74 @@ void inherit(Array<buildSteps::Node::Option>& dstOpts, const buildSteps::Node::O
     dstOpts[i].enabled.bits |= srcOpt.enabled.bits;
 }
 
+struct BuiltIns {
+    bool true_ = true;
+    bool false_ = false;
+    String value_arch = "x64";
+    String sys_build_folder;
+    String sys_cmake_path;
+    ReadOnlyDict dict_build{"build"};
+    ReadOnlyDict dict_sys{"sys"};
+    ReadOnlyDict dict_sys_fs{"sys.fs"};
+};
+
+void initBuiltIns(BuiltIns* bi, LabelMap<AnyObject>* biMap) {
+    *biMap->insert(g_labelStorage.insert("true")) = AnyObject::bind(&bi->true_);
+    *biMap->insert(g_labelStorage.insert("false")) = AnyObject::bind(&bi->false_);
+    *biMap->insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
+    *biMap->insert(g_labelStorage.insert("save_if_different")) = AnyObject::bind(doSaveIfDifferent);
+
+    // build dictionary
+    *bi->dict_build.map.insert(g_labelStorage.insert("arch")) = AnyObject::bind(&bi->value_arch);
+    *biMap->insert(g_labelStorage.insert("build")) = AnyObject::bind(&bi->dict_build);
+
+    // sys dictionary
+    *bi->dict_sys.map.insert(g_labelStorage.insert("build_folder")) =
+        AnyObject::bind(&bi->sys_build_folder);
+    *bi->dict_sys.map.insert(g_labelStorage.insert("cmake_path")) =
+        AnyObject::bind(&bi->sys_cmake_path);
+    *bi->dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) =
+        AnyObject::bind(getExternFolder);
+    *bi->dict_sys.map.insert(g_labelStorage.insert("download")) = AnyObject::bind(&sys_fs_download);
+    *biMap->insert(g_labelStorage.insert("sys")) = AnyObject::bind(&bi->dict_sys);
+
+    // sys.fs
+    *bi->dict_sys_fs.map.insert(g_labelStorage.insert("exists")) = AnyObject::bind(&sys_fs_exists);
+    *bi->dict_sys.map.insert(g_labelStorage.insert("fs")) = AnyObject::bind(&bi->dict_sys_fs);
+}
+
+MethodResult runGenerateBlock(latest::Repository::ModuleOrFunction* mod,
+                              StringView buildFolderPath) {
+    // Create new interpreter.
+    crowbar::Interpreter interp;
+    interp.base.error = [&interp](StringView message) {
+        OutStream outs = StdErr::text();
+        logErrorWithStack(&outs, &interp, message);
+    };
+
+    // Populate dictionaries.
+    BuiltIns bi;
+    bi.sys_build_folder = buildFolderPath;
+    bi.sys_cmake_path = PLY_CMAKE_PATH;
+    LabelMap<AnyObject> biMap;
+    initBuiltIns(&bi, &biMap);
+    interp.resolveName = [&biMap](Label identifier) -> AnyObject {
+        if (AnyObject* builtIn = biMap.find(identifier))
+            return *builtIn;
+        return {};
+    };
+
+    // Invoke generate block.
+    crowbar::Interpreter::StackFrame frame;
+    frame.interp = &interp;
+    frame.desc = [mod]() -> HybridString {
+        return String::format("module '{}'", g_labelStorage.view(mod->stmt->customBlock()->name));
+    };
+    frame.tkr = &mod->plyfile->tkr;
+    interp.currentFrame = &frame;
+    return execBlock(&frame, mod->generateBlock->customBlock()->body);
+}
+
 MethodResult instantiateModuleForCurrentConfig(buildSteps::Node** node, ModuleInstantiator* mi,
                                                Label moduleLabel) {
     StringView moduleName = g_labelStorage.view(moduleLabel);
@@ -512,6 +600,17 @@ MethodResult instantiateModuleForCurrentConfig(buildSteps::Node** node, ModuleIn
     if (!mod || !(*mod)->stmt->customBlock()) {
         PLY_FORCE_CRASH(); // FIXME: Handle gracefully
     }
+
+    // Run the generate block if it didn't run already.
+    if (!(*mod)->generatedOnce) {
+        if ((*mod)->generateBlock) {
+            MethodResult result = runGenerateBlock(*mod, mi->buildFolderPath);
+            if (result != MethodResult::OK)
+                return result;
+        }
+        (*mod)->generatedOnce = true;
+    }
+
     const crowbar::Statement::CustomBlock* moduleDef = (*mod)->stmt->customBlock().get();
     if (moduleDef->type == g_common->executableKey) {
         (*node)->type = buildSteps::Node::Type::Executable;
@@ -532,29 +631,12 @@ MethodResult instantiateModuleForCurrentConfig(buildSteps::Node** node, ModuleIn
     ii.node = *node;
 
     // Populate global & module namespaces.
-    LabelMap<AnyObject> builtIns;
-    bool true_ = true;
-    bool false_ = false;
-    *builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
-    *builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
-    *builtIns.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
-    *builtIns.insert(g_labelStorage.insert("sys_build_folder")) =
-        AnyObject::bind(&ii.mi->buildFolderPath);
-    ReadOnlyDict dict_build{"build"};
-    String value_arch = "x64";
-    *dict_build.map.insert(g_labelStorage.insert("arch")) = AnyObject::bind(&value_arch);
-    *builtIns.insert(g_labelStorage.insert("build")) = AnyObject::bind(&dict_build);
-    ReadOnlyDict dict_sys{"sys"};
-    *dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) =
-        AnyObject::bind(getExternFolder);
-    *dict_sys.map.insert(g_labelStorage.insert("download")) = AnyObject::bind(&sys_fs_download);
-    *builtIns.insert(g_labelStorage.insert("sys")) = AnyObject::bind(&dict_sys);
-    ReadOnlyDict dict_sys_fs{"sys.fs"};
-    *dict_sys_fs.map.insert(g_labelStorage.insert("exists")) = AnyObject::bind(&sys_fs_exists);
-    *dict_sys.map.insert(g_labelStorage.insert("fs")) = AnyObject::bind(&dict_sys_fs);
-    AnyObject::bind(&ii.mi->buildFolderPath);
-    ii.interp.resolveName = [&builtIns, &ii](Label identifier) -> AnyObject {
-        if (AnyObject* builtIn = builtIns.find(identifier))
+    BuiltIns bi;
+    bi.sys_build_folder = ii.mi->buildFolderPath;
+    LabelMap<AnyObject> biMap;
+    initBuiltIns(&bi, &biMap);
+    ii.interp.resolveName = [&biMap, &ii](Label identifier) -> AnyObject {
+        if (AnyObject* builtIn = biMap.find(identifier))
             return *builtIn;
         if (AnyObject* obj = ii.currentModule->currentOptions->map.find(identifier))
             return *obj;

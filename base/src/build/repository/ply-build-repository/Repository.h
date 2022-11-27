@@ -26,7 +26,9 @@ struct Repository {
         // ply reflect off
 
         Plyfile* plyfile = nullptr;
-        Owned<crowbar::Statement> stmt = nullptr;
+        Owned<crowbar::Statement> stmt;
+        Owned<crowbar::Statement> generateBlock;
+        bool generatedOnce = false;
         Owned<ConfigOptions> defaultOptions;
         Owned<ConfigOptions> currentOptions;
     };
