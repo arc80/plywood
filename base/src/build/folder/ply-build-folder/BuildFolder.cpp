@@ -465,7 +465,7 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
                                                          TextFormat::platformPreference());
 
     CMakeGeneratorOptions cmakeOptions;
-    cmakeOptions.generator = "Visual Studio 16 2019";
+    cmakeOptions.generator = "Visual Studio 17 2022";
     cmakeOptions.platform = "x64";
     generateCMakeProject(bf->getAbsPath(), cmakeOptions, {}, [&](StringView errMsg) {
         ErrorHandler::log(ErrorHandler::Error, errMsg);

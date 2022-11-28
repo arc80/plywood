@@ -21,6 +21,19 @@ module build_target {
     dependencies {
         public build_common
     }
+    generate {
+        src = """
+CMakeGeneratorOptions NativeToolchain = {
+    "Visual Studio 17 2022",
+    "x64",
+    "",
+    "",
+};
+String DefaultNativeConfig = "Debug";
+"""
+        save_if_different(join_path(sys.build_folder,
+                                    "codegen/ply-build-target/ply-build-target/NativeToolchain.inl"), src)
+    }
 }
 
 module build_provider {
