@@ -263,6 +263,25 @@ MethodResult doJoinPath(const MethodArgs& args) {
     return MethodResult::OK;
 }
 
+MethodResult doEscape(const MethodArgs& args) {
+    if (args.args.numItems != 1) {
+        args.base->error(String::format("'escape' expects 1 argument"));
+        return MethodResult::Error;
+    }
+    String* path = args.args[0].safeCast<String>();
+    if (!path) {
+        args.base->error(String::format("'escape' argument 1 must be a string"));
+        return MethodResult::Error;
+    }
+
+    String result = String::from(fmt::EscapedString{*path});
+    AnyObject* resultStorage =
+        args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
+    *resultStorage->cast<String>() = std::move(result);
+    args.base->returnValue = *resultStorage;
+    return MethodResult::OK;
+}
+
 MethodResult doSaveIfDifferent(const MethodArgs& args) {
     if (args.args.numItems != 2) {
         args.base->error(String::format("'save_if_different' expects 2 arguments"));
@@ -497,6 +516,7 @@ struct BuiltIns {
     String value_arch = "x64";
     String sys_build_folder;
     String sys_cmake_path;
+    String script_path;
     ReadOnlyDict dict_build{"build"};
     ReadOnlyDict dict_sys{"sys"};
     ReadOnlyDict dict_sys_fs{"sys.fs"};
@@ -506,6 +526,8 @@ void initBuiltIns(BuiltIns* bi, LabelMap<AnyObject>* biMap) {
     *biMap->insert(g_labelStorage.insert("true")) = AnyObject::bind(&bi->true_);
     *biMap->insert(g_labelStorage.insert("false")) = AnyObject::bind(&bi->false_);
     *biMap->insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
+    *biMap->insert(g_labelStorage.insert("script_path")) = AnyObject::bind(&bi->script_path);
+    *biMap->insert(g_labelStorage.insert("escape")) = AnyObject::bind(doEscape);
     *biMap->insert(g_labelStorage.insert("save_if_different")) = AnyObject::bind(doSaveIfDifferent);
 
     // build dictionary
@@ -540,6 +562,7 @@ MethodResult runGenerateBlock(latest::Repository::ModuleOrFunction* mod,
     BuiltIns bi;
     bi.sys_build_folder = buildFolderPath;
     bi.sys_cmake_path = PLY_CMAKE_PATH;
+    bi.script_path = mod->plyfile->tkr.fileLocationMap.path;
     LabelMap<AnyObject> biMap;
     initBuiltIns(&bi, &biMap);
     interp.resolveName = [&biMap](Label identifier) -> AnyObject {
