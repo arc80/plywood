@@ -7,8 +7,7 @@
 #include <ply-runtime/string/Label.h>
 
 namespace ply {
-namespace build {
-namespace latest {
+namespace build2 {
 
 // Common contains data that is shared between the parser and the interpreter.
 struct Common {
@@ -45,6 +44,5 @@ struct StatementAttributes {
     // ply reflect off
 };
 
-} // namespace latest
-} // namespace build
+} // namespace build2
 } // namespace ply

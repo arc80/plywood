@@ -2,17 +2,20 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <buildSteps/ToolChain.h>
+#include <buildSteps/Project.h>
 
-namespace buildSteps {
+namespace ply {
+namespace build2 {
 
-void translateOptionMSVC(ToolChain* tc, CompileOpts* copts, const buildSteps::ToolChainOpt& opt) {
-    PLY_ASSERT(opt.type == buildSteps::ToolChainOpt::Type::Generic);
+void (*translate_toolchain_option)(CompilerSpecificOptions* copts, const Option& opt) = nullptr;
+
+void translate_option_msvc(CompilerSpecificOptions* copts, const Option& opt) {
+    PLY_ASSERT(opt.type == Option::Generic);
     if (opt.key == "optimization") {
         if (opt.value == "size") {
-            copts->compileFlags.append("/Os");
+            copts->compile.append("/Os");
         } else if (opt.value == "speed") {
-            copts->compileFlags.append("/O2");
+            copts->compile.append("/O2");
         } else {
             // FIXME: Handle gracefully
             PLY_ASSERT(0);
@@ -23,10 +26,10 @@ void translateOptionMSVC(ToolChain* tc, CompileOpts* copts, const buildSteps::To
     }
 }
 
-Owned<ToolChain> createToolChainMSVC() {
-    auto tc = Owned<ToolChain>::create();
-    tc->translateOption = {translateOptionMSVC, tc.get()};
-    return tc;
+void init_toolchain_msvc() {
+    translate_toolchain_option = translate_option_msvc;
 }
 
-} // namespace buildSteps
+} // namespace build
+} // namespace ply
+

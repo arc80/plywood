@@ -7,8 +7,7 @@
 #include <ply-crowbar/ParseTree.h>
 
 namespace ply {
-namespace build {
-namespace latest {
+namespace build2 {
 
 struct Repository {
     struct Plyfile {
@@ -58,9 +57,8 @@ extern Repository* g_repository;
 
 bool parsePlyfile(StringView path);
 
-} // namespace latest
-} // namespace build
+} // namespace build2
 
-PLY_DECLARE_TYPE_DESCRIPTOR(build::latest::Repository::ConfigOptions)
+PLY_DECLARE_TYPE_DESCRIPTOR(build2::Repository::ConfigOptions)
 
 } // namespace ply

@@ -2,100 +2,91 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <buildSteps/FlatProject.h>
+#include <buildSteps/Project.h>
 #include <ply-runtime/algorithm/Find.h>
 
-namespace buildSteps {
+namespace ply {
+namespace build2 {
 
-void inherit(Array<Node::Option>& dstOpts, const Node::Option& srcOpt, u64 enabledBits,
-             u64 publicBits) {
-    s32 i = find(dstOpts, [&](const Node::Option& o) { return o.opt == srcOpt.opt; });
+void inherit_option(Array<Option>& options, const Option& srcOpt, u64 enabledBits, u64 publicBits) {
+    if ((srcOpt.enabled.bits & enabledBits) == 0)
+        return;
+
+    s32 i = find(options, [&](const Option& o) { return o == srcOpt; });
     if (i < 0) {
-        i = dstOpts.numItems();
-        dstOpts.append({srcOpt.opt, 0, 0});
+        i = options.numItems();
+        options.append({srcOpt.type, srcOpt.key, srcOpt.value});
     }
-    dstOpts[i].enabled.bits |= (srcOpt.enabled.bits & enabledBits);
-    dstOpts[i].isPublic.bits |= (srcOpt.isPublic.bits & publicBits);
+    options[i].enabled.bits |= (srcOpt.enabled.bits & enabledBits);
+    options[i].isPublic.bits |= (srcOpt.isPublic.bits & publicBits);
 }
 
-void inherit(Array<FlatNode::Dependency>& dstDeps, FlatNode* srcDep, u64 enabledBits) {
-    s32 i = find(dstDeps, [&](const FlatNode::Dependency& o) { return o.dep == srcDep; });
+void inherit_dependency(Array<Dependency>& dependencies, Target* srcTarget, u64 enabledBits) {
+    if (enabledBits == 0)
+        return;
+
+    s32 i = find(dependencies, [&](const Dependency& o) { return o.target == srcTarget; });
     if (i < 0) {
-        i = dstDeps.numItems();
-        dstDeps.append({srcDep, 0});
+        i = dependencies.numItems();
+        dependencies.append({srcTarget, 0});
     }
-    dstDeps[i].enabled.bits |= enabledBits;
+    dependencies[i].enabled.bits |= enabledBits;
 }
 
-void inherit(Array<Node::LinkerInput>& dstInputs, const Node::LinkerInput& srcInput,
-             u64 enabledBits) {
-    s32 i = find(dstInputs,
-                 [&](const Node::LinkerInput& o) { return o.path == srcInput.path; });
-    if (i < 0) {
-        i = dstInputs.numItems();
-        dstInputs.append({srcInput.path, 0});
-    }
-    dstInputs[i].enabled.bits |= (srcInput.enabled.bits & enabledBits);
-}
+void do_inheritance(Target* target) {
+    if (target->didInheritance)
+        return;
 
-FlatNode* flatten(FlatProject* flatProj, const Node* node) {
-    const Project* proj = flatProj->proj;
+    Array<Option> options;
+    Array<Dependency> dependencies;
 
-    Owned<FlatNode> flatNode;
-    {
-        auto cursor = flatProj->nodeMap.insertOrFind(node);
-        if (cursor.wasFound()) {
-            // FIXME: Handle more elegantly
-            PLY_ASSERT((*cursor)->initialized); // Circular dependency
-            return *cursor;
-        }
-        flatNode = new FlatNode;
-        flatNode->node = node;
-        PLY_ASSERT(*cursor == nullptr);
-        *cursor = flatNode;
-    }
+    // Initialize with project options.
+    options = Project.options;
 
-    flatNode->opts = proj->opts;
-    for (const Node::Option& opt : node->options) {
-        inherit(flatNode->opts, opt, Limits<u64>::Max, Limits<u64>::Max);
-    }
-    for (const Node::Dependency& dep : node->dependencies) {
-        if (dep.dep->type == Node::Type::Executable)
+    // Inherit from dependencies.
+    for (const Dependency& dep : target->dependencies) {
+        do_inheritance(dep.target);
+
+        if (dep.target->type == Target::Executable)
             continue;
 
-        FlatNode* flatDep = flatten(flatProj, dep.dep);
-        for (const Node::Option& opt : flatDep->opts) {
-            inherit(flatNode->opts, opt, dep.enabled.bits, dep.isPublic.bits);
+        // Inherit dependency's dependencies (for linker inputs).
+        for (const Dependency& dep2 : dep.target->dependencies) {
+            inherit_dependency(dependencies, dep2.target, dep.enabled.bits & dep2.enabled.bits);
         }
-        inherit(flatNode->dependencies, flatDep, dep.enabled.bits);
-        for (const FlatNode::Dependency& dep2 : flatDep->dependencies) {
-            inherit(flatNode->dependencies, dep2.dep, dep.enabled.bits & dep2.enabled.bits);
-        }
-        for (const Node::LinkerInput& prebuiltLib : flatDep->prebuiltLibs) {
-            inherit(flatNode->prebuiltLibs, prebuiltLib, dep.enabled.bits);
+        inherit_dependency(dependencies, dep.target, dep.enabled.bits);
+        
+        // Inherit dependency's options.
+        for (const Option& opt : dep.target->options) {
+            inherit_option(options, opt, dep.enabled.bits, dep.isPublic.bits);
         }
     }
 
-    flatNode->initialized = true;
-    FlatNode* result = flatNode;
-    flatProj->allFlatNodes.append(std::move(flatNode));
-    return result;
-}
-
-Owned<FlatProject> flatten(const Project* proj) {
-    PLY_ASSERT(proj->configNames.numItems() <= 64);
-    Owned<FlatProject> flatProj = new FlatProject;
-    flatProj->proj = proj;
-
-    for (const Node* root : proj->rootNodes) {
-        flatten(flatProj, root);
+    // Inherit target options.
+    for (const Option& opt : target->options) {
+        inherit_option(options, opt, Limits<u64>::Max, Limits<u64>::Max);
     }
 
-    return flatProj;
+    // Done.
+    target->options = std::move(options);
+    target->dependencies = std::move(dependencies);
+    target->didInheritance = true;
 }
 
-void destroy(FlatProject* mp) {
-    delete mp;
+Project_ Project;
+
+void do_inheritance() {
+    PLY_ASSERT(Project.name);
+    PLY_ASSERT(!Project.configNames.isEmpty());
+    PLY_ASSERT(Project.configNames.numItems() < 64);
+    PLY_ASSERT(!Project.didInheritance);
+
+    for (Target* target : Project.targets) {
+        do_inheritance(target);
+    }
+
+    Project.didInheritance = true;
 }
 
-} // namespace buildSteps
+} // namespace build2
+} // namespace ply

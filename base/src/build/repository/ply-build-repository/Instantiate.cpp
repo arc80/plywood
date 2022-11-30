@@ -14,8 +14,7 @@
 #endif
 
 namespace ply {
-namespace build {
-namespace latest {
+namespace build2 {
 
 //--------------------------------------------------------------
 
@@ -32,7 +31,7 @@ struct InstantiatingInterpreter {
     crowbar::Interpreter interp;
     ModuleInstantiator* mi = nullptr;
     Repository::ModuleOrFunction* currentModule = nullptr;
-    buildSteps::Node* node = nullptr;
+    Target* target = nullptr;
 
     String makeAbsPath(StringView relPath) {
         StringView plyfilePath =
@@ -79,16 +78,14 @@ bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes, 
     if (vis == Visibility::Error)
         return false;
 
-    buildSteps::ToolChainOpt tcOpt{buildSteps::ToolChainOpt::Type::Generic,
-                                   g_labelStorage.view(label),
-                                   *pc->interp->base.returnValue.cast<String>()};
-    int i = find(pc->node->options, [&](const auto& a) {
-        return (a.opt.type == tcOpt.type) && (a.opt.key == tcOpt.key);
-    });
+    Option tcOpt{Option::Generic, g_labelStorage.view(label),
+                 *pc->interp->base.returnValue.cast<String>()};
+    int i = find(pc->target->options,
+                 [&](const Option& o) { return (o.type == tcOpt.type) && (o.key == tcOpt.key); });
     if (i >= 0) {
-        pc->node->options.erase(i);
+        pc->target->options.erase(i);
     }
-    buildSteps::Node::Option& opt = pc->node->options.append(std::move(tcOpt));
+    Option& opt = pc->target->options.append(std::move(tcOpt));
     opt.enabled.bits |= pc->configBit;
     if (vis == Visibility::Public) {
         opt.isPublic.bits |= pc->configBit;
@@ -99,8 +96,8 @@ bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes, 
 bool onEvaluateSourceFile(InstantiatingInterpreter* ii, const AnyObject& attributes) {
     PLY_ASSERT(!attributes.data);
     String absPath = ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>());
-    buildSteps::Node::SourceGroup& srcGroup = appendOrFind(
-        ii->node->sourceGroups, absPath, [&](const auto& a) { return a.absPath == absPath; });
+    SourceGroup& srcGroup = appendOrFind(ii->target->sourceGroups, absPath,
+                                         [&](const auto& a) { return a.absPath == absPath; });
     bool needsCompilation = false;
     for (WalkTriple& triple : FileSystem::native()->walk(absPath, 0)) {
         for (const WalkTriple::FileInfo& file : triple.files) {
@@ -111,15 +108,15 @@ bool onEvaluateSourceFile(InstantiatingInterpreter* ii, const AnyObject& attribu
                 }
                 String relPath =
                     NativePath::makeRelative(absPath, NativePath::join(triple.dirPath, file.name));
-                buildSteps::Node::SourceFile& srcFile = appendOrFind(
-                    srcGroup.files, std::move(relPath),
-                    [&](const buildSteps::Node::SourceFile& a) { return a.relPath == relPath; });
+                SourceFile& srcFile =
+                    appendOrFind(srcGroup.files, std::move(relPath),
+                                 [&](const SourceFile& a) { return a.relPath == relPath; });
                 srcFile.enabled.bits |= ii->mi->configBit;
             }
         }
     }
     if (needsCompilation) {
-        ii->node->hasBuildStep.bits |= ii->mi->configBit;
+        ii->target->hasBuildStep.bits |= ii->mi->configBit;
     }
     return true;
 }
@@ -129,11 +126,10 @@ bool onEvaluateIncludeDirectory(PropertyCollector* pc, const AnyObject& attribut
     if (vis == Visibility::Error)
         return false;
 
-    buildSteps::ToolChainOpt tcOpt{
-        buildSteps::ToolChainOpt::Type::IncludeDir,
-        NativePath::join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
-    buildSteps::Node::Option& foundOpt = appendOrFind(
-        pc->node->options, std::move(tcOpt), [&](const auto& a) { return a.opt == tcOpt; });
+    Option opt{Option::IncludeDir,
+               NativePath::join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
+    Option& foundOpt = appendOrFind(pc->target->options, std::move(opt),
+                                    [&](const Option& o) { return o == opt; });
     foundOpt.enabled.bits |= pc->configBit;
     if (vis == Visibility::Public) {
         foundOpt.isPublic.bits |= pc->configBit;
@@ -154,12 +150,10 @@ bool onEvaluatePreprocessorDefinition(PropertyCollector* pc, const AnyObject& at
         key = key.left(i);
     }
 
-    buildSteps::ToolChainOpt tcOpt{buildSteps::ToolChainOpt::Type::PreprocessorDef, key, value};
-    buildSteps::Node::Option& foundOpt =
-        appendOrFind(pc->node->options, std::move(tcOpt), [&](const auto& a) {
-            return (a.opt.type == buildSteps::ToolChainOpt::Type::PreprocessorDef) &&
-                   (a.opt.key == tcOpt.key);
-        });
+    Option opt{Option::PreprocessorDef, key, value};
+    Option& foundOpt = appendOrFind(pc->target->options, std::move(opt), [&](const Option& o) {
+        return (o.type == Option::PreprocessorDef) && (o.key == opt.key);
+    });
     foundOpt.enabled.bits |= pc->configBit;
     if (vis == Visibility::Public) {
         foundOpt.isPublic.bits |= pc->configBit;
@@ -175,12 +169,12 @@ bool onEvaluateDependency(InstantiatingInterpreter* ii, const AnyObject& attribu
     // Instantiate the dependency
     Repository::ModuleOrFunction* mod =
         ii->interp.base.returnValue.cast<Repository::ModuleOrFunction>();
-    buildSteps::Node* dep;
-    if (instantiateModuleForCurrentConfig(&dep, ii->mi, mod->stmt->customBlock()->name) !=
+    Target* depTarget = nullptr;
+    if (instantiateModuleForCurrentConfig(&depTarget, ii->mi, mod->stmt->customBlock()->name) !=
         MethodResult::OK)
         return false;
-    buildSteps::Node::Dependency& foundDep =
-        appendOrFind(ii->node->dependencies, dep, [&](const auto& a) { return a.dep == dep; });
+    Dependency& foundDep = appendOrFind(ii->target->dependencies, depTarget,
+                                        [&](const Dependency& d) { return d.target == depTarget; });
     foundDep.enabled.bits |= ii->mi->configBit;
     if (vis == Visibility::Public) {
         foundDep.isPublic.bits |= ii->mi->configBit;
@@ -191,9 +185,10 @@ bool onEvaluateDependency(InstantiatingInterpreter* ii, const AnyObject& attribu
 bool onEvaluateLinkLibrary(PropertyCollector* pc, const AnyObject& attributes) {
     PLY_ASSERT(!attributes.data);
     String* path = pc->interp->base.returnValue.cast<String>();
-    buildSteps::Node::LinkerInput& li =
-        appendOrFind(pc->node->prebuiltLibs, *path, [&](const auto& a) { return a.path == *path; });
-    li.enabled.bits |= pc->configBit;
+    Option desiredOpt{Option::LinkerInput, *path, {}};
+    Option& opt = appendOrFind(pc->target->options, desiredOpt,
+                               [&](const Option& o) { return o == desiredOpt; });
+    opt.enabled.bits |= pc->configBit;
     return true;
 }
 
@@ -222,7 +217,7 @@ MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
     PropertyCollector pc;
     pc.interp = &ii->interp;
     pc.basePath = NativePath::split(ii->currentModule->plyfile->tkr.fileLocationMap.path).first;
-    pc.node = ii->node;
+    pc.target = ii->target;
     pc.configBit = ii->mi->configBit;
     pc.isModule = true;
 
@@ -313,9 +308,9 @@ MethodResult getExternFolder(const MethodArgs& args) {
         return MethodResult::Error;
     }
 
-    ExternFolder* externFolder = ExternFolderRegistry::get()->find(*name);
+    build::ExternFolder* externFolder = build::ExternFolderRegistry::get()->find(*name);
     if (!externFolder) {
-        externFolder = ExternFolderRegistry::get()->create(*name);
+        externFolder = build::ExternFolderRegistry::get()->create(*name);
         externFolder->save();
     }
 
@@ -334,11 +329,9 @@ struct ReadOnlyDict {
     }
 };
 
-} // namespace latest
-} // namespace build
-PLY_DECLARE_TYPE_DESCRIPTOR(build::latest::ReadOnlyDict)
-namespace build {
-namespace latest {
+} // namespace build2
+PLY_DECLARE_TYPE_DESCRIPTOR(build2::ReadOnlyDict)
+namespace build2 {
 
 MethodResult sys_fs_exists(const MethodArgs& args) {
     if (args.args.numItems != 1) {
@@ -501,11 +494,11 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
     return methods;
 }
 
-void inherit(Array<buildSteps::Node::Option>& dstOpts, const buildSteps::Node::Option& srcOpt) {
-    s32 i = find(dstOpts, [&](const buildSteps::Node::Option& o) { return o.opt == srcOpt.opt; });
+void inherit(Array<Option>& dstOpts, const Option& srcOpt) {
+    s32 i = find(dstOpts, [&](const Option& o) { return o == srcOpt; });
     if (i < 0) {
         i = dstOpts.numItems();
-        dstOpts.append({srcOpt.opt, 0, 0});
+        dstOpts.append({srcOpt.type, srcOpt.key, srcOpt.value});
     }
     dstOpts[i].enabled.bits |= srcOpt.enabled.bits;
 }
@@ -549,8 +542,7 @@ void initBuiltIns(BuiltIns* bi, LabelMap<AnyObject>* biMap) {
     *bi->dict_sys.map.insert(g_labelStorage.insert("fs")) = AnyObject::bind(&bi->dict_sys_fs);
 }
 
-MethodResult runGenerateBlock(latest::Repository::ModuleOrFunction* mod,
-                              StringView buildFolderPath) {
+MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod, StringView buildFolderPath) {
     // Create new interpreter.
     crowbar::Interpreter interp;
     interp.base.error = [&interp](StringView message) {
@@ -582,65 +574,67 @@ MethodResult runGenerateBlock(latest::Repository::ModuleOrFunction* mod,
     return execBlock(&frame, mod->generateBlock->customBlock()->body);
 }
 
-MethodResult instantiateModuleForCurrentConfig(buildSteps::Node** node, ModuleInstantiator* mi,
-                                               Label moduleLabel) {
-    StringView moduleName = g_labelStorage.view(moduleLabel);
-
-    // Check if a buildSteps::Node was already created for this moduleName.
+MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstantiator* mi,
+                                               Label name) {
+    // Check for an existing target; otherwise create one.
+    Target* target = nullptr;
     {
-        auto instCursor = mi->modules.insertOrFind(moduleName);
-        if (!instCursor.wasFound()) {
-            // No. Create a new one.
-            *node = new buildSteps::Node;
-            (*node)->name = moduleName;
-            instCursor->node = *node;
+        TargetWithStatus* tws = nullptr;
+        if (mi->moduleMap.insertOrFind(name, &tws)) {
+            // No existing target found. Create a new one.
+            tws->target = new Target;
+            tws->target->name = name;
+            Project.targets.append(tws->target);
         } else {
             // Yes. If the module was already fully instantiated in this config, return it.
-            *node = instCursor->node;
-            if (instCursor->statusInCurrentConfig == ModuleInstantiator::Instantiated)
+            if (tws->statusInCurrentConfig == Instantiated) {
+                *outTarget = tws->target;
                 return MethodResult::OK;
-            // Circular dependency check. FIXME: Handle gracefully
-            if (instCursor->statusInCurrentConfig == ModuleInstantiator::Instantiating) {
-                PLY_FORCE_CRASH();
             }
-            PLY_ASSERT(instCursor->statusInCurrentConfig == ModuleInstantiator::NotInstantiated);
+            // Circular dependency check. FIXME: Handle gracefully
+            if (tws->statusInCurrentConfig == Instantiating) {
+                PLY_ASSERT(0);
+            }
+            PLY_ASSERT(tws->statusInCurrentConfig == NotInstantiated);
         }
         // Set this module's status as Instantiating so that circular dependencies can be detected.
-        instCursor->statusInCurrentConfig = ModuleInstantiator::Instantiating;
+        tws->statusInCurrentConfig = Instantiating;
+        target = tws->target;
+        *outTarget = tws->target;
     }
 
     // Set node as active in this config.
     PLY_ASSERT(mi->configBit);
-    (*node)->enabled.bits |= mi->configBit;
+    target->enabled.bits |= mi->configBit;
 
     // Initialize node properties
-    for (const buildSteps::Node::Option& srcOpt : mi->initNode->options) {
-        inherit((*node)->options, srcOpt);
+    for (const Option& srcOpt : mi->initFromConfigTarget->options) {
+        inherit(target->options, srcOpt);
     }
 
     // Find module function by name.
-    latest::Repository::ModuleOrFunction** mod = g_repository->globalScope.find(moduleLabel);
-    if (!mod || !(*mod)->stmt->customBlock()) {
+    Repository::ModuleOrFunction** mod_ = g_repository->globalScope.find(name);
+    if (!mod_ || !(*mod_)->stmt->customBlock()) {
         PLY_FORCE_CRASH(); // FIXME: Handle gracefully
     }
+    Repository::ModuleOrFunction* mod = *mod_;
 
     // Run the generate block if it didn't run already.
-    if (!(*mod)->generatedOnce) {
-        if ((*mod)->generateBlock) {
-            MethodResult result = runGenerateBlock(*mod, mi->buildFolderPath);
+    if (!mod->generatedOnce) {
+        if (mod->generateBlock) {
+            MethodResult result = runGenerateBlock(mod, mi->buildFolderPath);
             if (result != MethodResult::OK)
                 return result;
         }
-        (*mod)->generatedOnce = true;
+        mod->generatedOnce = true;
     }
 
-    const crowbar::Statement::CustomBlock* moduleDef = (*mod)->stmt->customBlock().get();
+    const crowbar::Statement::CustomBlock* moduleDef = mod->stmt->customBlock().get();
     if (moduleDef->type == g_common->executableKey) {
-        (*node)->type = buildSteps::Node::Type::Executable;
-    } else if (moduleDef->type == g_common->moduleKey) {
-        (*node)->type = buildSteps::Node::Type::Lib;
+        target->type = Target::Executable;
     } else {
-        PLY_ASSERT(0);
+        PLY_ASSERT(moduleDef->type == g_common->moduleKey);
+        PLY_ASSERT(target->type == Target::Library);
     }
 
     // Create new interpreter.
@@ -650,8 +644,8 @@ MethodResult instantiateModuleForCurrentConfig(buildSteps::Node** node, ModuleIn
         logErrorWithStack(&outs, &ii.interp, message);
     };
     ii.mi = mi;
-    ii.currentModule = *mod;
-    ii.node = *node;
+    ii.currentModule = mod;
+    ii.target = target;
 
     // Populate global & module namespaces.
     BuiltIns bi;
@@ -663,8 +657,7 @@ MethodResult instantiateModuleForCurrentConfig(buildSteps::Node** node, ModuleIn
             return *builtIn;
         if (AnyObject* obj = ii.currentModule->currentOptions->map.find(identifier))
             return *obj;
-        if (latest::Repository::ModuleOrFunction** mod =
-                latest::g_repository->globalScope.find(identifier)) {
+        if (Repository::ModuleOrFunction** mod = g_repository->globalScope.find(identifier)) {
             if (auto fnDef = (*mod)->stmt->functionDefinition())
                 return AnyObject::bind(fnDef.get());
             else
@@ -680,9 +673,9 @@ MethodResult instantiateModuleForCurrentConfig(buildSteps::Node** node, ModuleIn
     frame.desc = [moduleDef]() -> HybridString {
         return String::format("module '{}'", g_labelStorage.view(moduleDef->name));
     };
-    frame.tkr = &(*mod)->plyfile->tkr;
+    frame.tkr = &mod->plyfile->tkr;
     MethodResult result = execFunction(&frame, moduleDef->body);
-    mi->modules.find(moduleName)->statusInCurrentConfig = ModuleInstantiator::Instantiated;
+    mi->moduleMap.find(name)->statusInCurrentConfig = Instantiated;
     return result;
 }
 
@@ -708,14 +701,13 @@ TypeKey TypeKey_ReadOnlyDict{
     TypeKey::alwaysEqualDescriptors,
 };
 
-} // namespace latest
-} // namespace build
+} // namespace build2
 } // namespace ply
 
-PLY_DEFINE_TYPE_DESCRIPTOR(ply::build::latest::ReadOnlyDict) {
+PLY_DEFINE_TYPE_DESCRIPTOR(ply::build2::ReadOnlyDict) {
     static TypeDescriptor typeDesc{
-        &ply::build::latest::TypeKey_ReadOnlyDict, (ply::build::latest::ReadOnlyDict*) nullptr,
-        NativeBindings::make<build::latest::ReadOnlyDict>()
-            PLY_METHOD_TABLES_ONLY(, build::latest::getMethodTable_ReadOnlyDict())};
+        &ply::build2::TypeKey_ReadOnlyDict, (ply::build2::ReadOnlyDict*) nullptr,
+        NativeBindings::make<ply::build2::ReadOnlyDict>()
+            PLY_METHOD_TABLES_ONLY(, ply::build2::getMethodTable_ReadOnlyDict())};
     return &typeDesc;
 }

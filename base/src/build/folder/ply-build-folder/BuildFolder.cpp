@@ -20,7 +20,7 @@
 #include <ply-build-provider/HostTools.h>
 #include <ply-runtime/container/Hash128.h>
 #include <ply-build-repository/Instantiate.h>
-#include <buildSteps/ToolChain.h>
+#include <buildSteps/Project.h>
 
 namespace ply {
 namespace build {
@@ -80,7 +80,7 @@ PLY_NO_INLINE Owned<BuildFolder> BuildFolder::load(StringView buildFolderName) {
     if (!aRoot->isValid())
         return nullptr;
 
-    Owned<BuildFolder> info = pylon::import<BuildFolder>(aRoot);
+    Owned<BuildFolder> info = pylon::import <BuildFolder>(aRoot);
     info->buildFolderName = buildFolderName;
     info->buildSystemSignature = aRoot->remove("buildSystemSignature");
     if (!info->buildSystemSignature) {
@@ -332,13 +332,13 @@ PLY_NO_INLINE bool BuildFolder::generate(StringView config,
 
 struct ConfigListInterpreter {
     crowbar::Interpreter interp;
-    latest::ModuleInstantiator* mi = nullptr;
+    build2::ModuleInstantiator* mi = nullptr;
     BuildFolder* buildFolder = nullptr;
 };
 
 MethodResult doCustomBlock(ConfigListInterpreter* cli,
                            const crowbar::Statement::CustomBlock* customBlock) {
-    PLY_ASSERT(customBlock->type == latest::g_common->configKey);
+    PLY_ASSERT(customBlock->type == build2::g_common->configKey);
 
     // Evaluate config name
     MethodResult result = eval(cli->interp.currentFrame, customBlock->expr);
@@ -347,8 +347,8 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     PLY_ASSERT(currentConfigName); // FIXME: Make robust
 
     // Initialize all Module::currentOptions
-    for (latest::Repository::ModuleOrFunction* mod : latest::g_repository->modules) {
-        auto newOptions = Owned<latest::Repository::ConfigOptions>::create();
+    for (build2::Repository::ModuleOrFunction* mod : build2::g_repository->modules) {
+        auto newOptions = Owned<build2::Repository::ConfigOptions>::create();
         for (const auto item : mod->defaultOptions->map) {
             AnyOwnedObject* dst = newOptions->map.insert(item.key);
             *dst = AnyOwnedObject::create(item.value.type);
@@ -357,60 +357,58 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
         mod->currentOptions = std::move(newOptions);
     }
 
-    // Create dummy Node that will be configured in script
-    Reference<buildSteps::Node> node = new buildSteps::Node;
+    // Create dummy Target that will be configured in script
+    Owned<build2::Target> dummyTarget = new build2::Target;
 
     // Execute config block
-    latest::PropertyCollector pc;
+    build2::PropertyCollector pc;
     pc.interp = &cli->interp;
     pc.basePath = NativePath::split(cli->interp.currentFrame->tkr->fileLocationMap.path).first;
-    pc.node = node;
-    u32 configIndex = cli->mi->project.configNames.numItems();
+    pc.target = dummyTarget;
+    u32 configIndex = build2::Project.configNames.numItems();
     PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
-    pc.configBit = u64{1} << configIndex;;
+    pc.configBit = u64{1} << configIndex;
     crowbar::Interpreter::Hooks hooks;
-    hooks.doCustomBlock = {latest::doCustomBlockInsideConfig, &pc};
+    hooks.doCustomBlock = {build2::doCustomBlockInsideConfig, &pc};
     PLY_SET_IN_SCOPE(cli->interp.currentFrame->hooks, hooks);
     result = execBlock(cli->interp.currentFrame, customBlock->body);
     if (result != MethodResult::OK)
         return result;
 
     // Add config to project
-    cli->mi->project.configNames.append(currentConfigName);
+    build2::Project.configNames.append(currentConfigName);
 
     // Instantiate all root modules in this config
     PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
-    PLY_SET_IN_SCOPE(cli->mi->initNode, node);
+    PLY_SET_IN_SCOPE(cli->mi->initFromConfigTarget, dummyTarget);
     for (StringView targetName : cli->buildFolder->rootTargets) {
-        buildSteps::Node* rootNode;
-        MethodResult result = latest::instantiateModuleForCurrentConfig(&rootNode, cli->mi, g_labelStorage.insert(targetName));
+        build2::Target* rootTarget = nullptr;
+        MethodResult result = build2::instantiateModuleForCurrentConfig(
+            &rootTarget, cli->mi, g_labelStorage.insert(targetName));
         if (result != MethodResult::OK)
             return result;
-        if (find(cli->mi->project.rootNodes, rootNode) < 0) {
-            cli->mi->project.rootNodes.append(rootNode);
-        }
     }
 
     // Reset state between configs.
     // Clear currentConfigName, Module::currentOptions, and set ModuleInstantiator status to
     // NotInstantiated.
-    for (latest::Repository::ModuleOrFunction* mod : latest::g_repository->modules) {
+    for (build2::Repository::ModuleOrFunction* mod : build2::g_repository->modules) {
         mod->currentOptions.clear();
     }
-    for (auto& item : cli->mi->modules) {
-        item.statusInCurrentConfig = latest::ModuleInstantiator::NotInstantiated;
+    for (auto& item : cli->mi->moduleMap) {
+        item.value.statusInCurrentConfig = build2::NotInstantiated;
     }
 
     return MethodResult::OK;
 }
 
 PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
-    latest::ModuleInstantiator mi{bf->getAbsPath()};
-    mi.project.name = bf->solutionName;
-    mi.project.tc = buildSteps::createToolChainMSVC();
+    build2::ModuleInstantiator mi{bf->getAbsPath()};
+    build2::Project.name = bf->solutionName;
+    build2::init_toolchain_msvc();
 
     // Execute the config_list block
-    latest::Repository::ConfigList* configList = latest::g_repository->configList;
+    build2::Repository::ConfigList* configList = build2::g_repository->configList;
     if (!configList) {
         ErrorHandler::log(ErrorHandler::Fatal, "No config_list block defined.\n");
     }
@@ -434,8 +432,8 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
         cli.interp.resolveName = [&builtIns, &cli](Label identifier) -> AnyObject {
             if (AnyObject* builtIn = builtIns.find(identifier))
                 return *builtIn;
-            if (latest::Repository::ModuleOrFunction** mod =
-                    latest::g_repository->globalScope.find(identifier)) {
+            if (build2::Repository::ModuleOrFunction** mod =
+                    build2::g_repository->globalScope.find(identifier)) {
                 if (auto fnDef = (*mod)->stmt->functionDefinition())
                     return AnyObject::bind(fnDef.get());
                 else
@@ -457,12 +455,9 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
         }
     }
 
-    Owned<buildSteps::FlatProject> flatProject = flatten(&mi.project);
-    MemOutStream outs;
-    writeCMakeLists(&outs, flatProject);
+    build2::do_inheritance();
     String cmakeListsPath = NativePath::join(bf->getAbsPath(), "CMakeLists.txt");
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(cmakeListsPath, outs.moveToString(),
-                                                         TextFormat::platformPreference());
+    build2::write_CMakeLists_txt_if_different(cmakeListsPath);
 
     CMakeGeneratorOptions cmakeOptions;
     cmakeOptions.generator = "Visual Studio 17 2022";

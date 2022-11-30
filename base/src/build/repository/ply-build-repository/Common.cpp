@@ -5,8 +5,7 @@
 #include <ply-build-repository/Common.h>
 
 namespace ply {
-namespace build {
-namespace latest {
+namespace build2 {
 
 Common* g_common = nullptr;
 
@@ -30,8 +29,7 @@ void Common::initialize() {
     g_common->generateKey = g_labelStorage.insert("generate");
 }
 
-} // namespace latest
-} // namespace build
+} // namespace build2
 } // namespace ply
 
 #include "codegen/Common.inl"

@@ -6,8 +6,7 @@
 #include <ply-crowbar/Interpreter.h>
 
 namespace ply {
-namespace build {
-namespace latest {
+namespace build2 {
 
 Repository* g_repository = nullptr;
 
@@ -141,15 +140,14 @@ TypeKey TypeKey_Repository_ConfigOptions{
     TypeKey::alwaysEqualDescriptors,
 };
 
-} // namespace latest
-} // namespace build
+} // namespace build2
 
-PLY_DEFINE_TYPE_DESCRIPTOR(build::latest::Repository::ConfigOptions) {
+PLY_DEFINE_TYPE_DESCRIPTOR(build2::Repository::ConfigOptions) {
     static TypeDescriptor typeDesc{
-        &build::latest::TypeKey_Repository_ConfigOptions,
-        (build::latest::Repository::ConfigOptions*) nullptr,
-        NativeBindings::make<build::latest::Repository::ConfigOptions>()
-            PLY_METHOD_TABLES_ONLY(, build::latest::getMethodTable_Repository_ConfigOptions())};
+        &build2::TypeKey_Repository_ConfigOptions,
+        (build2::Repository::ConfigOptions*) nullptr,
+        NativeBindings::make<build2::Repository::ConfigOptions>()
+            PLY_METHOD_TABLES_ONLY(, build2::getMethodTable_Repository_ConfigOptions())};
     return &typeDesc;
 }
 

@@ -6,8 +6,7 @@
 #include <ply-crowbar/Parser.h>
 
 namespace ply {
-namespace build {
-namespace latest {
+namespace build2 {
 
 struct ExtendedParser {
     crowbar::Parser* parser = nullptr;
@@ -285,6 +284,5 @@ bool parsePlyfile(StringView path) {
     return true;
 }
 
-} // namespace latest
-} // namespace build
+} // namespace build2
 } // namespace ply
