@@ -98,7 +98,6 @@ void init_toolchain_gcc();
 struct Project_ {
     String name;
     Array<String> configNames;
-    Array<Option> options;
     Array<Owned<Target>> targets;
     bool didInheritance = false;
 };

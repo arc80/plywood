@@ -40,9 +40,6 @@ void do_inheritance(Target* target) {
     Array<Option> options;
     Array<Dependency> dependencies;
 
-    // Initialize with project options.
-    options = Project.options;
-
     // Inherit from dependencies.
     for (const Dependency& dep : target->dependencies) {
         do_inheritance(dep.target);
