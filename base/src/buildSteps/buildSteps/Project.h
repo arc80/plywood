@@ -99,6 +99,7 @@ struct Project_ {
 
 extern Project_ Project;
 
+void append_option(Array<Option>& options, const Option& srcOpt);
 void do_inheritance();
 Array<Option> get_combined_options();
 void write_CMakeLists_txt_if_different(StringView path);

@@ -20,6 +20,14 @@ void translate_option_msvc(CompilerSpecificOptions* copts, const Option& opt) {
             // FIXME: Handle gracefully
             PLY_ASSERT(0);
         }
+    } else if (opt.key == "debug_info") {
+        if (opt.value == "true") {
+            copts->compile.append("/Zi");
+        } else if (!opt.value) {
+        } else {
+            // FIXME: Handle gracefully
+            PLY_ASSERT(0);
+        }
     } else {
         // FIXME: Handle gracefully
         PLY_ASSERT(0);

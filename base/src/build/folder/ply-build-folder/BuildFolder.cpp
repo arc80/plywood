@@ -357,13 +357,18 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
         mod->currentOptions = std::move(newOptions);
     }
 
+    // Enable debug info by default
+    u32 configIndex = build2::Project.configNames.numItems();
+    PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
+    build2::Option debugInfo{build2::Option::Generic, "debug_info", "true"};
+    debugInfo.enabledBits |= u64{1} << configIndex;
+    build2::append_option(build2::Project.perConfigOptions, debugInfo);
+
     // Execute config block
     build2::PropertyCollector pc;
     pc.interp = &cli->interp;
     pc.basePath = NativePath::split(cli->interp.currentFrame->tkr->fileLocationMap.path).first;
     pc.options = &build2::Project.perConfigOptions;
-    u32 configIndex = build2::Project.configNames.numItems();
-    PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
     pc.configBit = u64{1} << configIndex;
     crowbar::Interpreter::Hooks hooks;
     hooks.doCustomBlock = {build2::doCustomBlockInsideConfig, &pc};
