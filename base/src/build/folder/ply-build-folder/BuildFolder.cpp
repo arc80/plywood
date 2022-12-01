@@ -357,14 +357,11 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
         mod->currentOptions = std::move(newOptions);
     }
 
-    // Create dummy Target that will be configured in script
-    Owned<build2::Target> dummyTarget = new build2::Target;
-
     // Execute config block
     build2::PropertyCollector pc;
     pc.interp = &cli->interp;
     pc.basePath = NativePath::split(cli->interp.currentFrame->tkr->fileLocationMap.path).first;
-    pc.target = dummyTarget;
+    pc.options = &build2::Project.perConfigOptions;
     u32 configIndex = build2::Project.configNames.numItems();
     PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
     pc.configBit = u64{1} << configIndex;
@@ -380,7 +377,6 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
 
     // Instantiate all root modules in this config
     PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
-    PLY_SET_IN_SCOPE(cli->mi->initFromConfigTarget, dummyTarget);
     for (StringView targetName : cli->buildFolder->rootTargets) {
         build2::Target* rootTarget = nullptr;
         MethodResult result = build2::instantiateModuleForCurrentConfig(

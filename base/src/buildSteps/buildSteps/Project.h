@@ -98,6 +98,7 @@ void init_toolchain_gcc();
 struct Project_ {
     String name;
     Array<String> configNames;
+    Array<Option> perConfigOptions;
     Array<Owned<Target>> targets;
     bool didInheritance = false;
 };
@@ -105,6 +106,7 @@ struct Project_ {
 extern Project_ Project;
 
 void do_inheritance();
+Array<Option> get_combined_options();
 void write_CMakeLists_txt_if_different(StringView path);
 
 } // namespace build2

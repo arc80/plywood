@@ -26,8 +26,7 @@ struct ModuleInstantiator {
     String buildFolderPath;
     LabelMap<AnyObject> globalNamespace;
 
-    // These members are only used while the project is being instantiated.
-    Target* initFromConfigTarget = nullptr;
+    // These members are modified during instantiation.
     LabelMap<TargetWithStatus> moduleMap;
     u64 configBit = 0;
 
@@ -41,7 +40,7 @@ MethodResult instantiateModuleForCurrentConfig(Target** target, ModuleInstantiat
 struct PropertyCollector {
     crowbar::Interpreter* interp;
     String basePath;
-    Target* target = nullptr;
+    Array<Option>* options;
     u64 configBit = 0;
     bool isModule = false;
 };

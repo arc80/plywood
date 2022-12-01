@@ -80,12 +80,12 @@ bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes, 
 
     Option tcOpt{Option::Generic, g_labelStorage.view(label),
                  *pc->interp->base.returnValue.cast<String>()};
-    int i = find(pc->target->options,
+    int i = find(*pc->options,
                  [&](const Option& o) { return (o.type == tcOpt.type) && (o.key == tcOpt.key); });
     if (i >= 0) {
-        pc->target->options.erase(i);
+        pc->options->erase(i);
     }
-    Option& opt = pc->target->options.append(std::move(tcOpt));
+    Option& opt = pc->options->append(std::move(tcOpt));
     opt.enabled.bits |= pc->configBit;
     if (vis == Visibility::Public) {
         opt.isPublic.bits |= pc->configBit;
@@ -128,7 +128,7 @@ bool onEvaluateIncludeDirectory(PropertyCollector* pc, const AnyObject& attribut
 
     Option opt{Option::IncludeDir,
                NativePath::join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
-    Option& foundOpt = appendOrFind(pc->target->options, std::move(opt),
+    Option& foundOpt = appendOrFind(*pc->options, std::move(opt),
                                     [&](const Option& o) { return o == opt; });
     foundOpt.enabled.bits |= pc->configBit;
     if (vis == Visibility::Public) {
@@ -151,7 +151,7 @@ bool onEvaluatePreprocessorDefinition(PropertyCollector* pc, const AnyObject& at
     }
 
     Option opt{Option::PreprocessorDef, key, value};
-    Option& foundOpt = appendOrFind(pc->target->options, std::move(opt), [&](const Option& o) {
+    Option& foundOpt = appendOrFind(*pc->options, std::move(opt), [&](const Option& o) {
         return (o.type == Option::PreprocessorDef) && (o.key == opt.key);
     });
     foundOpt.enabled.bits |= pc->configBit;
@@ -186,7 +186,7 @@ bool onEvaluateLinkLibrary(PropertyCollector* pc, const AnyObject& attributes) {
     PLY_ASSERT(!attributes.data);
     String* path = pc->interp->base.returnValue.cast<String>();
     Option desiredOpt{Option::LinkerInput, *path, {}};
-    Option& opt = appendOrFind(pc->target->options, desiredOpt,
+    Option& opt = appendOrFind(*pc->options, desiredOpt,
                                [&](const Option& o) { return o == desiredOpt; });
     opt.enabled.bits |= pc->configBit;
     return true;
@@ -217,7 +217,7 @@ MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
     PropertyCollector pc;
     pc.interp = &ii->interp;
     pc.basePath = NativePath::split(ii->currentModule->plyfile->tkr.fileLocationMap.path).first;
-    pc.target = ii->target;
+    pc.options = &ii->target->options;
     pc.configBit = ii->mi->configBit;
     pc.isModule = true;
 
@@ -494,15 +494,6 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
     return methods;
 }
 
-void inherit(Array<Option>& dstOpts, const Option& srcOpt) {
-    s32 i = find(dstOpts, [&](const Option& o) { return o == srcOpt; });
-    if (i < 0) {
-        i = dstOpts.numItems();
-        dstOpts.append({srcOpt.type, srcOpt.key, srcOpt.value});
-    }
-    dstOpts[i].enabled.bits |= srcOpt.enabled.bits;
-}
-
 struct BuiltIns {
     bool true_ = true;
     bool false_ = false;
@@ -606,11 +597,6 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
     // Set node as active in this config.
     PLY_ASSERT(mi->configBit);
     target->enabled.bits |= mi->configBit;
-
-    // Initialize node properties
-    for (const Option& srcOpt : mi->initFromConfigTarget->options) {
-        inherit(target->options, srcOpt);
-    }
 
     // Find module function by name.
     Repository::ModuleOrFunction** mod_ = g_repository->globalScope.find(name);

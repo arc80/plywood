@@ -21,6 +21,31 @@ void inherit_option(Array<Option>& options, const Option& srcOpt, u64 enabledBit
     options[i].isPublic.bits |= (srcOpt.isPublic.bits & publicBits);
 }
 
+void append_option(Array<Option>& options, const Option& srcOpt) {
+    bool wasFound = false;
+    for (u32 i = 0; i < options.numItems(); i++) {
+        Option& dstOpt = options[i];
+        if ((dstOpt.type == srcOpt.type) && (dstOpt.key == srcOpt.key)) {
+            if (dstOpt.value == srcOpt.value) {
+                wasFound = true;
+                dstOpt.enabled.bits |= srcOpt.enabled.bits;
+                dstOpt.isPublic.bits |= srcOpt.isPublic.bits;
+            } else {
+                dstOpt.enabled.bits &= srcOpt.enabled.bits;
+                dstOpt.isPublic.bits &= srcOpt.enabled.bits;
+                if (dstOpt.enabled.bits == 0) {
+                    options.erase(i);
+                    i--;
+                    continue;
+                }
+            }
+        }
+    }
+    if (!wasFound) {
+        options.append(srcOpt);
+    }
+}
+
 void inherit_dependency(Array<Dependency>& dependencies, Target* srcTarget, u64 enabledBits) {
     if (enabledBits == 0)
         return;
@@ -40,6 +65,9 @@ void do_inheritance(Target* target) {
     Array<Option> options;
     Array<Dependency> dependencies;
 
+    // Inherit from config.
+    options = Project.perConfigOptions;
+
     // Inherit from dependencies.
     for (const Dependency& dep : target->dependencies) {
         do_inheritance(dep.target);
@@ -52,7 +80,7 @@ void do_inheritance(Target* target) {
             inherit_dependency(dependencies, dep2.target, dep.enabled.bits & dep2.enabled.bits);
         }
         inherit_dependency(dependencies, dep.target, dep.enabled.bits);
-        
+
         // Inherit dependency's options.
         for (const Option& opt : dep.target->options) {
             inherit_option(options, opt, dep.enabled.bits, dep.isPublic.bits);
@@ -83,6 +111,16 @@ void do_inheritance() {
     }
 
     Project.didInheritance = true;
+}
+
+Array<Option> get_combined_options() {
+    Array<Option> result;
+    for (Target* target : Project.targets) {
+        for (const Option& opt : target->options) {
+            append_option(result, opt);
+        }
+    }
+    return result;
 }
 
 } // namespace build2
