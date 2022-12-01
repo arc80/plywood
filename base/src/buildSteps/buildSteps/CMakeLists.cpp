@@ -128,7 +128,7 @@ endmacro()
 
         // Skip the CMake target when there are no source files
         if ((target->type == Target::Library) && target->sourceGroups.isEmpty()) {
-            PLY_ASSERT(!target->hasBuildStep.hasAnyBit());
+            PLY_ASSERT(target->hasBuildStepBits == 0);
             continue;
         }
 
@@ -143,14 +143,14 @@ endmacro()
             outs.format("AddSourceFiles({}_SOURCES \"{}\"\n", upperName,
                         CMakeEscape{PosixPath::from<NativePath>(srcGroup.absPath)});
             for (const SourceFile& srcFile : srcGroup.files) {
-                if (srcFile.enabled.hasAllBitsIn(target->enabled.bits)) {
+                if (hasAllBits(srcFile.enabledBits, target->enabledBits)) {
                     // This source file is enabled in all relevant configs.
                     outs.format("    \"{}\"\n",
                                 CMakeEscape{PosixPath::from<NativePath>(srcFile.relPath)});
                 } else {
                     // Use generator expressions to exclude source file from specific configs.
                     for (u32 i = 0; i < Project.configNames.numItems(); i++) {
-                        if (srcFile.enabled.hasBitAtIndex(i)) {
+                        if (hasBitAtIndex(srcFile.enabledBits, i)) {
                             outs.format("    \"$<$<CONFIG:{}>:{}>\"\n", Project.configNames[i],
                                         CMakeEscape{PosixPath::from<NativePath>(srcFile.relPath)});
                         }
@@ -162,7 +162,7 @@ endmacro()
         if (target->type == Target::Executable) {
             outs.format("add_executable({} ${{{}_SOURCES}})\n", name, upperName);
         } else if (target->type == Target::Library) {
-            if (target->hasBuildStep.hasAnyBit()) {
+            if (target->hasBuildStepBits != 0) {
                 // Note: This library target might still be disabled in specific configs.
                 outs.format("add_library({} ${{{}_SOURCES}})\n", name, upperName);
             } else {
@@ -173,12 +173,12 @@ endmacro()
             PLY_ASSERT(0);
         }
 
-        if (target->hasBuildStep.hasAnyBit()) {
+        if (target->hasBuildStepBits != 0) {
             // Write include directories
             outs.format("target_include_directories({} PRIVATE\n", name);
             for (const Option& opt : target->options) {
                 if (opt.type == Option::IncludeDir) {
-                    if (opt.enabled.hasAllBitsIn(target->enabled.bits)) {
+                    if (hasAllBits(opt.enabledBits, target->enabledBits)) {
                         // This include directory is enabled in all relevant configs.
                         outs.format("    \"{}\"\n",
                                     CMakeEscape{PosixPath::from<NativePath>(opt.key)});
@@ -186,7 +186,7 @@ endmacro()
                         // Use generator expressions to exclude include directory from specific
                         // configs.
                         for (u32 i = 0; i < Project.configNames.numItems(); i++) {
-                            if (opt.enabled.hasBitAtIndex(i)) {
+                            if (hasBitAtIndex(opt.enabledBits, i)) {
                                 outs.format("    \"$<$<CONFIG:{}>:{}>\"\n", Project.configNames[i],
                                             CMakeEscape{PosixPath::from<NativePath>(opt.key)});
                             }
@@ -204,14 +204,14 @@ endmacro()
                     if (opt.value) {
                         def = String::format("{}={}", opt.key, opt.value);
                     }
-                    if (opt.enabled.hasAllBitsIn(target->enabled.bits)) {
+                    if (hasAllBits(opt.enabledBits, target->enabledBits)) {
                         // This include directory is enabled in all relevant configs.
                         outs.format("    \"{}\"\n", CMakeEscape{def});
                     } else {
                         // Use generator expressions to exclude include directory from specific
                         // configs.
                         for (u32 i = 0; i < Project.configNames.numItems(); i++) {
-                            if (opt.enabled.hasBitAtIndex(i)) {
+                            if (hasBitAtIndex(opt.enabledBits, i)) {
                                 outs.format("    \"$<$<CONFIG:{}>:{}>\"\n", Project.configNames[i],
                                             CMakeEscape{def});
                             }
@@ -227,7 +227,7 @@ endmacro()
                 CompilerSpecificOptions copts;
                 for (const Option& opt : target->options) {
                     if (opt.type == Option::Generic) {
-                        if (opt.enabled.hasBitAtIndex(i)) {
+                        if (hasBitAtIndex(opt.enabledBits, i)) {
                             translate_toolchain_option(&copts, opt);
                         }
                     }
@@ -244,17 +244,17 @@ endmacro()
             outs.format("target_link_libraries({} PRIVATE\n", name);
             // ...from dependencies
             for (const Dependency& dep : target->dependencies) {
-                ConfigMask linkMask = dep.enabled;
-                linkMask.bits &= dep.target->hasBuildStep.bits;
-                if (linkMask.hasAllBitsIn(target->enabled.bits)) {
+                u64 linkMask = dep.enabledBits;
+                linkMask &= dep.target->hasBuildStepBits;
+                if (hasAllBits(linkMask, target->enabledBits)) {
                     // This module is enabled for linking in all relevant configs.
                     outs.format("    {}\n", g_labelStorage.view(dep.target->name));
-                } else if (linkMask.hasAnyBit()) {
+                } else if (linkMask != 0) {
                     // Use generator expressions to exclude module from linking in specific configs.
                     outs << "    \"$<$<CONFIG:";
                     bool first = true;
                     for (u32 i = 0; i < Project.configNames.numItems(); i++) {
-                        if (linkMask.hasBitAtIndex(i)) {
+                        if (hasBitAtIndex(linkMask, i)) {
                             if (!first) {
                                 outs << ",";
                             }
@@ -270,7 +270,7 @@ endmacro()
                 if (opt.type != Option::LinkerInput)
                     continue;
                 StringView libPath = opt.key;
-                if (opt.enabled.hasAllBitsIn(target->enabled.bits)) {
+                if (hasAllBits(opt.enabledBits, target->enabledBits)) {
                     // This lib is enabled for linking in all relevant configs.
                     outs.format("    {}\n", CMakeEscape{libPath});
                 } else {
@@ -278,7 +278,7 @@ endmacro()
                     outs << "    \"$<$<CONFIG:";
                     bool first = true;
                     for (u32 i = 0; i < Project.configNames.numItems(); i++) {
-                        if (opt.enabled.hasBitAtIndex(i)) {
+                        if (hasBitAtIndex(opt.enabledBits, i)) {
                             if (!first) {
                                 outs << ",";
                             }
@@ -297,7 +297,7 @@ endmacro()
                 CompilerSpecificOptions copts;
                 for (const Option& opt : target->options) {
                     if (opt.type == Option::Generic) {
-                        if (opt.enabled.hasBitAtIndex(i)) {
+                        if (hasBitAtIndex(opt.enabledBits, i)) {
                             translate_toolchain_option(&copts, opt);
                         }
                     }

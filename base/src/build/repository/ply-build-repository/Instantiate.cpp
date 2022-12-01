@@ -86,9 +86,9 @@ bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes, 
         pc->options->erase(i);
     }
     Option& opt = pc->options->append(std::move(tcOpt));
-    opt.enabled.bits |= pc->configBit;
+    opt.enabledBits |= pc->configBit;
     if (vis == Visibility::Public) {
-        opt.isPublic.bits |= pc->configBit;
+        opt.isPublicBits |= pc->configBit;
     }
     return true;
 }
@@ -111,12 +111,12 @@ bool onEvaluateSourceFile(InstantiatingInterpreter* ii, const AnyObject& attribu
                 SourceFile& srcFile =
                     appendOrFind(srcGroup.files, std::move(relPath),
                                  [&](const SourceFile& a) { return a.relPath == relPath; });
-                srcFile.enabled.bits |= ii->mi->configBit;
+                srcFile.enabledBits |= ii->mi->configBit;
             }
         }
     }
     if (needsCompilation) {
-        ii->target->hasBuildStep.bits |= ii->mi->configBit;
+        ii->target->hasBuildStepBits |= ii->mi->configBit;
     }
     return true;
 }
@@ -130,9 +130,9 @@ bool onEvaluateIncludeDirectory(PropertyCollector* pc, const AnyObject& attribut
                NativePath::join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
     Option& foundOpt = appendOrFind(*pc->options, std::move(opt),
                                     [&](const Option& o) { return o == opt; });
-    foundOpt.enabled.bits |= pc->configBit;
+    foundOpt.enabledBits |= pc->configBit;
     if (vis == Visibility::Public) {
-        foundOpt.isPublic.bits |= pc->configBit;
+        foundOpt.isPublicBits |= pc->configBit;
     }
     return true;
 }
@@ -154,9 +154,9 @@ bool onEvaluatePreprocessorDefinition(PropertyCollector* pc, const AnyObject& at
     Option& foundOpt = appendOrFind(*pc->options, std::move(opt), [&](const Option& o) {
         return (o.type == Option::PreprocessorDef) && (o.key == opt.key);
     });
-    foundOpt.enabled.bits |= pc->configBit;
+    foundOpt.enabledBits |= pc->configBit;
     if (vis == Visibility::Public) {
-        foundOpt.isPublic.bits |= pc->configBit;
+        foundOpt.isPublicBits |= pc->configBit;
     }
     return true;
 }
@@ -175,9 +175,9 @@ bool onEvaluateDependency(InstantiatingInterpreter* ii, const AnyObject& attribu
         return false;
     Dependency& foundDep = appendOrFind(ii->target->dependencies, depTarget,
                                         [&](const Dependency& d) { return d.target == depTarget; });
-    foundDep.enabled.bits |= ii->mi->configBit;
+    foundDep.enabledBits |= ii->mi->configBit;
     if (vis == Visibility::Public) {
-        foundDep.isPublic.bits |= ii->mi->configBit;
+        foundDep.isPublicBits |= ii->mi->configBit;
     }
     return true;
 }
@@ -188,7 +188,7 @@ bool onEvaluateLinkLibrary(PropertyCollector* pc, const AnyObject& attributes) {
     Option desiredOpt{Option::LinkerInput, *path, {}};
     Option& opt = appendOrFind(*pc->options, desiredOpt,
                                [&](const Option& o) { return o == desiredOpt; });
-    opt.enabled.bits |= pc->configBit;
+    opt.enabledBits |= pc->configBit;
     return true;
 }
 
@@ -596,7 +596,7 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
 
     // Set node as active in this config.
     PLY_ASSERT(mi->configBit);
-    target->enabled.bits |= mi->configBit;
+    target->enabledBits |= mi->configBit;
 
     // Find module function by name.
     Repository::ModuleOrFunction** mod_ = g_repository->globalScope.find(name);

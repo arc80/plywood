@@ -9,18 +9,12 @@
 namespace ply {
 namespace build2 {
 
-struct ConfigMask {
-    u64 bits = 0;
-    PLY_INLINE bool hasAllBitsIn(u64 mask) const {
-        return (this->bits & mask) == mask;
-    }
-    PLY_INLINE bool hasAnyBit() const {
-        return this->bits;
-    }
-    PLY_INLINE bool hasBitAtIndex(u32 idx) const {
-        return (this->bits & (u64{1} << idx)) != 0;
-    }
-};
+PLY_INLINE bool hasAllBits(u64 bitsToCheck, u64 desiredBits) {
+    return (bitsToCheck & desiredBits) == desiredBits;
+}
+PLY_INLINE bool hasBitAtIndex(u64 bitsToCheck, u32 index) {
+    return (bitsToCheck & (u64{1} << index)) != 0;
+}
 
 struct Option {
     enum Type {
@@ -35,8 +29,8 @@ struct Option {
     Type type = Type::IncludeDir;
     String key;
     String value;
-    ConfigMask enabled;  // whether option is enabled for each config
-    ConfigMask isPublic; // whether option is public/private for each config
+    u64 enabledBits = 0;  // whether option is enabled for each config
+    u64 isPublicBits = 0; // whether option is public/private for each config
 
     PLY_INLINE Option(Type type, StringView key, StringView value = {})
         : type{type}, key{key}, value{value} {
@@ -51,13 +45,13 @@ struct Target;
 
 struct Dependency {
     Target* target = nullptr;
-    ConfigMask enabled;  // whether dependency is enabled for each config
-    ConfigMask isPublic; // whether dependency is public/private for each config
+    u64 enabledBits = 0;  // whether dependency is enabled for each config
+    u64 isPublicBits = 0; // whether dependency is public/private for each config
 };
 
 struct SourceFile {
     String relPath;
-    ConfigMask enabled; // whether path is enabled for each config
+    u64 enabledBits = 0; // whether path is enabled for each config
 };
 
 struct SourceGroup {
@@ -72,8 +66,8 @@ struct Target {
     };
 
     Label name;
-    ConfigMask enabled;      // ie. must be built and/or has a dependent, per-config
-    ConfigMask hasBuildStep; // ie. contains .cpp files, per-config
+    u64 enabledBits = 0;      // ie. must be built and/or has a dependent, per-config
+    u64 hasBuildStepBits = 0; // ie. contains .cpp files, per-config
     Type type = Library;
     Array<Option> options;
     Array<Dependency> dependencies;
