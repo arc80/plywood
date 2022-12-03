@@ -403,6 +403,97 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     return MethodResult::OK;
 }
 
+template <typename T, typename U, typename Callable>
+void updateWith(Array<T>& arr, U&& item, const Callable& callable) {
+    for (u32 i = 0; i < arr.numItems(); i++) {
+        if (callable(arr[i])) {
+            arr[i] = std::forward<U>(item);
+            return;
+        }
+    }
+    return arr.append(std::forward<U>(item));
+}
+
+void write_bootstrap(StringView bfPath, u32 configIndex) {
+    // Write bulk.cpp
+    {
+        MemOutStream outs;
+        for (const build2::Target* target : build2::Project.targets) {
+            for (const build2::SourceGroup& sg : target->sourceGroups) {
+                for (const build2::SourceFile& sf : sg.files) {
+                    if (build2::hasBitAtIndex(sf.enabledBits, configIndex) && sf.relPath.endsWith(".cpp") &&
+                        !sf.relPath.endsWith(".modules.cpp")) {
+                        String includePath = PosixPath::from<NativePath>(NativePath::makeRelative(
+                            bfPath, NativePath::join(sg.absPath, sf.relPath)));
+                        outs.format("#include \"{}\"\n", includePath);
+                    }
+                }
+            }
+        }
+        FileSystem::native()->makeDirsAndSaveTextIfDifferent(NativePath::join(bfPath, "bulk.cpp"),
+                                                             outs.moveToString(),
+                                                             TextFormat::platformPreference());
+    }
+
+    // Write build.bat
+    {
+        Array<build2::Option> combinedOptions = build2::get_combined_options();
+        MemOutStream outs;
+        outs << "cl";
+
+        // Compilation options
+        build2::CompilerSpecificOptions copts;
+        for (const build2::Option& opt : combinedOptions) {
+            if (!build2::hasBitAtIndex(opt.enabledBits, configIndex))
+                continue;
+            if (opt.type == build2::Option::Generic) {
+                build2::translate_toolchain_option(&copts, opt);
+            }
+        }
+        for (StringView opt : copts.compile) {
+            outs << ' ' << opt;
+        }
+
+        // Preprocessor definitions
+        for (const build2::Option& opt : combinedOptions) {
+            if (!build2::hasBitAtIndex(opt.enabledBits, configIndex))
+                continue;
+            if (opt.type == build2::Option::PreprocessorDef) {
+                if (opt.value) {
+                    outs.format(" /D{}={}", opt.key, opt.value);
+                } else {
+                    outs.format(" /D{}", opt.key);
+                }
+            }
+        }
+
+        // Include directories
+        for (const build2::Option& opt : combinedOptions) {
+            if (!build2::hasBitAtIndex(opt.enabledBits, configIndex))
+                continue;
+            if (opt.type == build2::Option::IncludeDir) {
+                outs.format(" /I\"{}\"", opt.key);
+            }
+        }
+
+        outs << " bulk.cpp";
+
+        // Link options
+        if (copts.link) {
+            outs << " /link";
+            for (StringView opt : copts.link) {
+                outs << ' ' << opt;
+            }
+        }
+
+        outs << "\n";
+
+        FileSystem::native()->makeDirsAndSaveTextIfDifferent(NativePath::join(bfPath, "build.bat"),
+                                                             outs.moveToString(),
+                                                             TextFormat::platformPreference());
+    }
+}
+
 PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     build2::ModuleInstantiator mi{bf->getAbsPath()};
     build2::Project.name = bf->solutionName;
@@ -457,6 +548,9 @@ PLY_NO_INLINE bool generateLatest(BuildFolder* bf) {
     }
 
     build2::do_inheritance();
+    write_bootstrap(bf->getAbsPath(), 0);
+    return true;
+
     String cmakeListsPath = NativePath::join(bf->getAbsPath(), "CMakeLists.txt");
     build2::write_CMakeLists_txt_if_different(cmakeListsPath);
 
