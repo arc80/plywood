@@ -73,7 +73,6 @@ module build_folder {
     }
     dependencies {
         public build_repo
-        public build_repository
         public pylon_reflect
     }
 }
@@ -92,6 +91,7 @@ module build_repository {
         public build_common
         public build_provider
         public reflect
+        public build_folder
     }
     link_libraries {
         if true {

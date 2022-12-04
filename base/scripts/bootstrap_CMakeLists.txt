@@ -18,6 +18,8 @@ SetSourceFolders(PLYTOOL_SOURCES "${SRC_FOLDER}apps/plytool/plytool"
     "Command_Folder.cpp"
     "Command_Generate.cpp"
     "Command_Module.cpp"
+    "Command_NewBootstrap.cpp"
+    "Command_NewGenerate.cpp"
     "Command_Open.cpp"
     "Command_RPC.cpp"
     "Command_Run.cpp"
@@ -46,6 +48,7 @@ set_property(TARGET plytool PROPERTY ENABLE_EXPORTS TRUE)
 EnableCppExceptions(plytool FALSE)
 target_include_directories(plytool PRIVATE
     "${SRC_FOLDER}apps/plytool/plytool-client"
+    "${SRC_FOLDER}pylon/pylon"
     "${SRC_FOLDER}pylon/reflect"
     "${SRC_FOLDER}cpp"
     "${SRC_FOLDER}crowbar"
@@ -89,11 +92,8 @@ add_library(build-folder OBJECT
 )
 EnableCppExceptions(build-folder FALSE)
 target_include_directories(build-folder PRIVATE
-    "${SRC_FOLDER}pylon/reflect"
-    "${SRC_FOLDER}crowbar"
     "${SRC_FOLDER}pylon/pylon"
-    "${SRC_FOLDER}buildSteps"
-    "${SRC_FOLDER}build/repository"
+    "${SRC_FOLDER}pylon/reflect"
     "${SRC_FOLDER}build/provider"
     "${BUILD_FOLDER}codegen/ply-platform"
     "${SRC_FOLDER}platform"
@@ -668,6 +668,8 @@ EnableCppExceptions(build-repository FALSE)
 target_include_directories(build-repository PRIVATE
     "${SRC_FOLDER}build/provider"
     "${SRC_FOLDER}build/common"
+    "${SRC_FOLDER}build/folder"
+    "${SRC_FOLDER}build/target"
     "${SRC_FOLDER}crowbar"
     "${SRC_FOLDER}pylon/pylon"
     "${SRC_FOLDER}buildSteps"
@@ -687,11 +689,9 @@ target_compile_definitions(build-repository PRIVATE
 SetSourceFolders(BUILDSTEPS_SOURCES "${SRC_FOLDER}buildSteps/buildSteps"
     "CMakeLists.cpp"
     "Core.h"
-    "FlatProject.h"
     "Project.cpp"
     "Project.h"
     "ToolChain.cpp"
-    "ToolChain.h"
 )
 add_library(buildSteps
     ${BUILDSTEPS_SOURCES}

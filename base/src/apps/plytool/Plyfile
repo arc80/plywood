@@ -10,6 +10,7 @@ executable plytool {
         private cpp
         private pylon_reflect
         private plytool_client
+        private build_repository
     }
 }
 

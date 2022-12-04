@@ -70,7 +70,6 @@ void module_ply_build_folder(ModuleArgs* args) {
     args->addSourceFiles("folder/ply-build-folder");
     args->addIncludeDir(Visibility::Public, "folder");
     args->addTarget(Visibility::Public, "build-repo");
-    args->addTarget(Visibility::Public, "build-repository");
     args->addTarget(Visibility::Private, "pylon-reflect");
 }
 
@@ -84,6 +83,7 @@ void module_ply_build_repository(ModuleArgs* args) {
     args->addTarget(Visibility::Public, "crowbar");
     args->addTarget(Visibility::Public, "build-common");
     args->addTarget(Visibility::Public, "build-provider");
+    args->addTarget(Visibility::Public, "build-folder");
     if (args->projInst->env->toolchain->get("targetPlatform")->text() == "windows") {
         args->buildTarget->dep->libs.append("winhttp.lib");
     }

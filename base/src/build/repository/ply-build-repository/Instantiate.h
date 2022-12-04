@@ -7,6 +7,7 @@
 #include <buildSteps/Project.h>
 #include <ply-build-repository/Repository.h>
 #include <ply-crowbar/Interpreter.h>
+#include <ply-build-folder/BuildFolder.h>
 
 namespace ply {
 namespace build2 {
@@ -47,6 +48,7 @@ struct PropertyCollector {
 
 MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
                                        const crowbar::Statement::CustomBlock* cb);
+void instantiate_all_configs(build::BuildFolder* bf);
 
 } // namespace build2
 } // namespace ply

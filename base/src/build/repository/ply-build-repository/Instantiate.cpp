@@ -3,15 +3,9 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-build-repository/Instantiate.h>
-#include <ply-build-provider/ExternFolderRegistry.h>
-#include <ply-crowbar/Interpreter.h>
-#include <ply-reflect/methods/BoundMethod.h>
-#include <ply-runtime/string/WString.h>
-#include <ply-runtime/string/TextEncoding.h>
+#include <ply-build-repository/BuiltIns.h>
 #include <ply-runtime/algorithm/Find.h>
-#if PLY_TARGET_WIN32
-#include <winhttp.h>
-#endif
+#include <ply-build-repo/ErrorHandler.h>
 
 namespace ply {
 namespace build2 {
@@ -242,297 +236,6 @@ MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
     return execBlock(ii->interp.currentFrame, cb->body);
 }
 
-MethodResult doJoinPath(const MethodArgs& args) {
-    Array<StringView> parts;
-    parts.reserve(args.args.numItems);
-    for (const AnyObject& arg : args.args) {
-        if (!arg.is<String>())
-            PLY_FORCE_CRASH();
-        parts.append(*arg.cast<String>());
-    }
-    String result = NativePath::format().joinAndNormalize(parts);
-    AnyObject* resultStorage =
-        args.base->localVariableStorage.appendObject(getTypeDescriptor(&result));
-    *resultStorage->cast<String>() = std::move(result);
-    args.base->returnValue = *resultStorage;
-    return MethodResult::OK;
-}
-
-MethodResult doEscape(const MethodArgs& args) {
-    if (args.args.numItems != 1) {
-        args.base->error(String::format("'escape' expects 1 argument"));
-        return MethodResult::Error;
-    }
-    String* path = args.args[0].safeCast<String>();
-    if (!path) {
-        args.base->error(String::format("'escape' argument 1 must be a string"));
-        return MethodResult::Error;
-    }
-
-    String result = String::from(fmt::EscapedString{*path});
-    AnyObject* resultStorage =
-        args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
-    *resultStorage->cast<String>() = std::move(result);
-    args.base->returnValue = *resultStorage;
-    return MethodResult::OK;
-}
-
-MethodResult doSaveIfDifferent(const MethodArgs& args) {
-    if (args.args.numItems != 2) {
-        args.base->error(String::format("'save_if_different' expects 2 arguments"));
-        return MethodResult::Error;
-    }
-    String* path = args.args[0].safeCast<String>();
-    if (!path) {
-        args.base->error(String::format("'save_if_different' argument 1 must be a string"));
-        return MethodResult::Error;
-    }
-    String* content = args.args[1].safeCast<String>();
-    if (!content) {
-        args.base->error(String::format("'save_if_different' argument 2 must be a string"));
-        return MethodResult::Error;
-    }
-
-    FileSystem::native()->makeDirsAndSaveBinaryIfDifferent(*path, *content);
-    return MethodResult::OK;
-}
-
-MethodResult getExternFolder(const MethodArgs& args) {
-    if (args.args.numItems != 1) {
-        args.base->error(String::format("'get_extern_folder' expects 1 argument"));
-        return MethodResult::Error;
-    }
-    String* name = args.args[0].safeCast<String>();
-    if (!name) {
-        args.base->error(String::format("'get_extern_folder' argument must be a string"));
-        return MethodResult::Error;
-    }
-
-    build::ExternFolder* externFolder = build::ExternFolderRegistry::get()->find(*name);
-    if (!externFolder) {
-        externFolder = build::ExternFolderRegistry::get()->create(*name);
-        externFolder->save();
-    }
-
-    AnyObject* resultStorage =
-        args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
-    *resultStorage->cast<String>() = externFolder->path;
-    args.base->returnValue = *resultStorage;
-    return MethodResult::OK;
-}
-
-struct ReadOnlyDict {
-    String name;
-    LabelMap<AnyObject> map;
-
-    ReadOnlyDict(StringView name) : name{name} {
-    }
-};
-
-} // namespace build2
-PLY_DECLARE_TYPE_DESCRIPTOR(build2::ReadOnlyDict)
-namespace build2 {
-
-MethodResult sys_fs_exists(const MethodArgs& args) {
-    if (args.args.numItems != 1) {
-        args.base->error(String::format("'exists' expects 1 argument; got {}", args.args.numItems));
-        return MethodResult::Error;
-    }
-    String* path = args.args[0].safeCast<String>();
-    if (!path) {
-        args.base->error(String::format("'exists' argument must be a string"));
-        return MethodResult::Error;
-    }
-
-    ExistsResult result = FileSystem::native()->exists(*path);
-    AnyObject* resultStorage =
-        args.base->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-    *resultStorage->cast<bool>() = (result != ExistsResult::NotFound);
-    args.base->returnValue = *resultStorage;
-    return MethodResult::OK;
-}
-
-struct SplitURL {
-    bool https = false;
-    String hostname;
-    String resource;
-};
-
-bool splitURL(BaseInterpreter* base, SplitURL* split, StringView s) {
-    if (s.startsWith("https://")) {
-        split->https = true;
-        s.offsetHead(8);
-    } else if (s.startsWith("http://")) {
-        s.offsetHead(7);
-    } else {
-        base->error("URL must start with 'http://' or 'https://'");
-        return false;
-    }
-
-    s32 i = s.findByte('/');
-    if (i < 0) {
-        base->error("Expected '/' after hostname");
-        return false;
-    }
-
-    split->hostname = s.left(i);
-    split->resource = s.subStr(i);
-    return true;
-}
-
-PLY_NO_INLINE WString toWString(StringView str) {
-    MemOutStream outs;
-    while (str.numBytes > 0) {
-        DecodeResult decoded = UTF8::decodePoint(str);
-        outs.makeBytesAvailable(4);
-        u32 numEncodedBytes = UTF16_Native::encodePoint(outs.viewAvailable(), decoded.point);
-        outs.curByte += numEncodedBytes;
-        str.offsetHead(decoded.numBytes);
-    }
-    NativeEndianWriter{&outs}.write<u16>(0);
-    return WString::moveFromString(outs.moveToString());
-}
-
-void download(StringView dstPath, const SplitURL& split) {
-#if PLY_TARGET_WIN32
-    // FIXME: More graceful error handling
-    // This could also be an InPipe
-    HINTERNET hsess = WinHttpOpen(L"PlywoodSDK/0.1", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-                                  WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
-    PLY_ASSERT(hsess);
-    HINTERNET hconn =
-        WinHttpConnect(hsess, toWString(split.hostname),
-                       split.https ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT, 0);
-    PLY_ASSERT(hconn);
-    HINTERNET hreq =
-        WinHttpOpenRequest(hconn, L"GET", toWString(split.resource), NULL, WINHTTP_NO_REFERER,
-                           WINHTTP_DEFAULT_ACCEPT_TYPES, split.https ? WINHTTP_FLAG_SECURE : 0);
-    PLY_ASSERT(hreq);
-    BOOL rc = WinHttpSendRequest(hreq, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0,
-                                 0, 0);
-    PLY_ASSERT(rc);
-    rc = WinHttpReceiveResponse(hreq, NULL);
-    PLY_ASSERT(rc);
-
-    Owned<OutStream> outs = FileSystem::native()->openStreamForWrite(dstPath);
-    PLY_ASSERT(outs);
-    for (;;) {
-        DWORD size = 0;
-        rc = WinHttpQueryDataAvailable(hreq, &size);
-        PLY_ASSERT(rc);
-        if (size == 0)
-            break;
-
-        outs->tryMakeBytesAvailable();
-        MutableStringView dst = outs->viewAvailable();
-        DWORD downloaded = 0;
-        rc = WinHttpReadData(hreq, (LPVOID) dst.bytes, dst.numBytes, &downloaded);
-        PLY_ASSERT(rc);
-        PLY_ASSERT(downloaded <= dst.numBytes);
-        outs->curByte += downloaded;
-    }
-
-    WinHttpCloseHandle(hreq);
-    WinHttpCloseHandle(hconn);
-    WinHttpCloseHandle(hsess);
-#else
-    PLY_FORCE_CRASH(0); // Not implemented yet
-#endif
-}
-
-MethodResult sys_fs_download(const MethodArgs& args) {
-    if (args.args.numItems != 2) {
-        args.base->error(
-            String::format("'download' expects 2 arguments; got {}", args.args.numItems));
-        return MethodResult::Error;
-    }
-    String* path = args.args[0].safeCast<String>();
-    if (!path) {
-        args.base->error(String::format("first argument to 'download' must be a string"));
-        return MethodResult::Error;
-    }
-    String* url = args.args[1].safeCast<String>();
-    if (!url) {
-        args.base->error(String::format("second argument to 'download' must be a string"));
-        return MethodResult::Error;
-    }
-
-    StringView s = *url;
-    SplitURL split;
-    if (!splitURL(args.base, &split, *url))
-        return MethodResult::Error;
-    download(*path, split);
-    args.base->returnValue = {};
-    return MethodResult::OK;
-}
-
-PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
-    MethodTable methods;
-    methods.propertyLookup = [](BaseInterpreter* interp, const AnyObject& obj,
-                                StringView propertyName) -> MethodResult {
-        auto* dict = obj.cast<ReadOnlyDict>();
-        Label label = g_labelStorage.find(propertyName);
-        if (label) {
-            AnyObject* prop = dict->map.find(label);
-            if (prop) {
-                if (prop->is<Method>()) {
-                    AnyObject* bm =
-                        interp->localVariableStorage.appendObject(getTypeDescriptor<BoundMethod>());
-                    *bm->cast<BoundMethod>() = {obj, *prop};
-                    interp->returnValue = *bm;
-                } else {
-                    interp->returnValue = *prop;
-                }
-                return MethodResult::OK;
-            }
-        }
-
-        interp->returnValue = {};
-        interp->error(String::format("property '{}' not found in '{}'", propertyName, dict->name));
-        return MethodResult::Error;
-    };
-    return methods;
-}
-
-struct BuiltIns {
-    bool true_ = true;
-    bool false_ = false;
-    String value_arch = "x64";
-    String sys_build_folder;
-    String sys_cmake_path;
-    String script_path;
-    ReadOnlyDict dict_build{"build"};
-    ReadOnlyDict dict_sys{"sys"};
-    ReadOnlyDict dict_sys_fs{"sys.fs"};
-};
-
-void initBuiltIns(BuiltIns* bi, LabelMap<AnyObject>* biMap) {
-    *biMap->insert(g_labelStorage.insert("true")) = AnyObject::bind(&bi->true_);
-    *biMap->insert(g_labelStorage.insert("false")) = AnyObject::bind(&bi->false_);
-    *biMap->insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
-    *biMap->insert(g_labelStorage.insert("script_path")) = AnyObject::bind(&bi->script_path);
-    *biMap->insert(g_labelStorage.insert("escape")) = AnyObject::bind(doEscape);
-    *biMap->insert(g_labelStorage.insert("save_if_different")) = AnyObject::bind(doSaveIfDifferent);
-
-    // build dictionary
-    *bi->dict_build.map.insert(g_labelStorage.insert("arch")) = AnyObject::bind(&bi->value_arch);
-    *biMap->insert(g_labelStorage.insert("build")) = AnyObject::bind(&bi->dict_build);
-
-    // sys dictionary
-    *bi->dict_sys.map.insert(g_labelStorage.insert("build_folder")) =
-        AnyObject::bind(&bi->sys_build_folder);
-    *bi->dict_sys.map.insert(g_labelStorage.insert("cmake_path")) =
-        AnyObject::bind(&bi->sys_cmake_path);
-    *bi->dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) =
-        AnyObject::bind(getExternFolder);
-    *bi->dict_sys.map.insert(g_labelStorage.insert("download")) = AnyObject::bind(&sys_fs_download);
-    *biMap->insert(g_labelStorage.insert("sys")) = AnyObject::bind(&bi->dict_sys);
-
-    // sys.fs
-    *bi->dict_sys_fs.map.insert(g_labelStorage.insert("exists")) = AnyObject::bind(&sys_fs_exists);
-    *bi->dict_sys.map.insert(g_labelStorage.insert("fs")) = AnyObject::bind(&bi->dict_sys_fs);
-}
-
 MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod, StringView buildFolderPath) {
     // Create new interpreter.
     crowbar::Interpreter interp;
@@ -542,14 +245,11 @@ MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod, StringView buil
     };
 
     // Populate dictionaries.
-    BuiltIns bi;
-    bi.sys_build_folder = buildFolderPath;
-    bi.sys_cmake_path = PLY_CMAKE_PATH;
-    bi.script_path = mod->plyfile->tkr.fileLocationMap.path;
-    LabelMap<AnyObject> biMap;
-    initBuiltIns(&bi, &biMap);
-    interp.resolveName = [&biMap](Label identifier) -> AnyObject {
-        if (AnyObject* builtIn = biMap.find(identifier))
+    BuiltInStorage.sys_build_folder = buildFolderPath;
+    BuiltInStorage.sys_cmake_path = PLY_CMAKE_PATH;
+    BuiltInStorage.script_path = mod->plyfile->tkr.fileLocationMap.path;
+    interp.resolveName = [](Label identifier) -> AnyObject {
+        if (AnyObject* builtIn = BuiltInMap.find(identifier))
             return *builtIn;
         return {};
     };
@@ -634,12 +334,8 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
     ii.target = target;
 
     // Populate global & module namespaces.
-    BuiltIns bi;
-    bi.sys_build_folder = ii.mi->buildFolderPath;
-    LabelMap<AnyObject> biMap;
-    initBuiltIns(&bi, &biMap);
-    ii.interp.resolveName = [&biMap, &ii](Label identifier) -> AnyObject {
-        if (AnyObject* builtIn = biMap.find(identifier))
+    ii.interp.resolveName = [&ii](Label identifier) -> AnyObject {
+        if (AnyObject* builtIn = BuiltInMap.find(identifier))
             return *builtIn;
         if (AnyObject* obj = ii.currentModule->currentOptions->map.find(identifier))
             return *obj;
@@ -665,35 +361,136 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
     return result;
 }
 
-TypeKey TypeKey_ReadOnlyDict{
-    // getName
-    [](const TypeDescriptor* typeDesc) -> HybridString { //
-        return "ReadOnlyDict";
-    },
+// 
 
-    // write
-    nullptr, // Unimplemented
-
-    // writeFormat
-    nullptr, // Unimplemented
-
-    // read
-    nullptr, // Unimplemented
-
-    // hashDescriptor
-    TypeKey::hashEmptyDescriptor,
-
-    // equalDescriptors
-    TypeKey::alwaysEqualDescriptors,
+struct ConfigListInterpreter {
+    crowbar::Interpreter interp;
+    build2::ModuleInstantiator* mi = nullptr;
+    build::BuildFolder* buildFolder = nullptr;
 };
+
+MethodResult doCustomBlock(ConfigListInterpreter* cli,
+                           const crowbar::Statement::CustomBlock* customBlock) {
+    PLY_ASSERT(customBlock->type == build2::g_common->configKey);
+
+    // Evaluate config name
+    MethodResult result = eval(cli->interp.currentFrame, customBlock->expr);
+    PLY_ASSERT(result == MethodResult::OK); // FIXME: Make robust
+    String currentConfigName = *cli->interp.base.returnValue.cast<String>();
+    PLY_ASSERT(currentConfigName); // FIXME: Make robust
+
+    // Initialize all Module::currentOptions
+    for (build2::Repository::ModuleOrFunction* mod : build2::g_repository->modules) {
+        auto newOptions = Owned<build2::Repository::ConfigOptions>::create();
+        for (const auto item : mod->defaultOptions->map) {
+            AnyOwnedObject* dst = newOptions->map.insert(item.key);
+            *dst = AnyOwnedObject::create(item.value.type);
+            dst->copy(item.value);
+        }
+        mod->currentOptions = std::move(newOptions);
+    }
+
+    // Enable debug info by default
+    u32 configIndex = build2::Project.configNames.numItems();
+    PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
+    build2::Option debugInfo{build2::Option::Generic, "debug_info", "true"};
+    debugInfo.enabledBits |= u64{1} << configIndex;
+    build2::append_option(build2::Project.perConfigOptions, debugInfo);
+
+    // Execute config block
+    build2::PropertyCollector pc;
+    pc.interp = &cli->interp;
+    pc.basePath = NativePath::split(cli->interp.currentFrame->tkr->fileLocationMap.path).first;
+    pc.options = &build2::Project.perConfigOptions;
+    pc.configBit = u64{1} << configIndex;
+    crowbar::Interpreter::Hooks hooks;
+    hooks.doCustomBlock = {build2::doCustomBlockInsideConfig, &pc};
+    PLY_SET_IN_SCOPE(cli->interp.currentFrame->hooks, hooks);
+    result = execBlock(cli->interp.currentFrame, customBlock->body);
+    if (result != MethodResult::OK)
+        return result;
+
+    // Add config to project
+    build2::Project.configNames.append(currentConfigName);
+
+    // Instantiate all root modules in this config
+    PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
+    for (StringView targetName : cli->buildFolder->rootTargets) {
+        build2::Target* rootTarget = nullptr;
+        MethodResult result = build2::instantiateModuleForCurrentConfig(
+            &rootTarget, cli->mi, g_labelStorage.insert(targetName));
+        if (result != MethodResult::OK)
+            return result;
+    }
+
+    // Reset state between configs.
+    // Clear currentConfigName, Module::currentOptions, and set ModuleInstantiator status to
+    // NotInstantiated.
+    for (build2::Repository::ModuleOrFunction* mod : build2::g_repository->modules) {
+        mod->currentOptions.clear();
+    }
+    for (auto& item : cli->mi->moduleMap) {
+        item.value.statusInCurrentConfig = build2::NotInstantiated;
+    }
+
+    return MethodResult::OK;
+}
+
+PLY_NO_INLINE void instantiate_all_configs(build::BuildFolder* bf) {
+    build2::ModuleInstantiator mi{bf->getAbsPath()};
+    build2::Project.name = bf->solutionName;
+    build2::init_toolchain_msvc();
+
+    // Execute the config_list block
+    build2::Repository::ConfigList* configList = build2::g_repository->configList;
+    if (!configList) {
+        build::ErrorHandler::log(build::ErrorHandler::Fatal, "No config_list block defined.\n");
+    }
+
+    {
+        // Create new interpreter.
+        ConfigListInterpreter cli;
+        cli.interp.base.error = [&cli](StringView message) {
+            OutStream outs = StdErr::text();
+            logErrorWithStack(&outs, &cli.interp, message);
+        };
+        cli.mi = &mi;
+        cli.buildFolder = bf;
+
+        // Add builtin namespace.
+        LabelMap<AnyObject> builtIns;
+        bool true_ = true;
+        bool false_ = false;
+        *builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
+        *builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
+        cli.interp.resolveName = [&builtIns, &cli](Label identifier) -> AnyObject {
+            if (AnyObject* builtIn = builtIns.find(identifier))
+                return *builtIn;
+            if (build2::Repository::ModuleOrFunction** mod =
+                    build2::g_repository->globalScope.find(identifier)) {
+                if (auto fnDef = (*mod)->stmt->functionDefinition())
+                    return AnyObject::bind(fnDef.get());
+                else
+                    // FIXME: Don't resolve module names outside config {} block
+                    return AnyObject::bind((*mod)->currentOptions.get());
+            }
+            return {};
+        };
+
+        // Invoke block.
+        crowbar::Interpreter::StackFrame frame;
+        frame.interp = &cli.interp;
+        frame.desc = []() -> HybridString { return "config_list"; };
+        frame.tkr = &configList->plyfile->tkr;
+        frame.hooks.doCustomBlock = {doCustomBlock, &cli};
+        MethodResult result = execFunction(&frame, configList->blockStmt->customBlock()->body);
+        if (result == MethodResult::Error) {
+            exit(1);
+        }
+    }
+
+    build2::do_inheritance();
+}
 
 } // namespace build2
 } // namespace ply
-
-PLY_DEFINE_TYPE_DESCRIPTOR(ply::build2::ReadOnlyDict) {
-    static TypeDescriptor typeDesc{
-        &ply::build2::TypeKey_ReadOnlyDict, (ply::build2::ReadOnlyDict*) nullptr,
-        NativeBindings::make<ply::build2::ReadOnlyDict>()
-            PLY_METHOD_TABLES_ONLY(, ply::build2::getMethodTable_ReadOnlyDict())};
-    return &typeDesc;
-}

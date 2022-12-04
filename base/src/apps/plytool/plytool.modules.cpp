@@ -13,6 +13,7 @@ void module_plytool(ModuleArgs* args) {
     args->addTarget(Visibility::Private, "cpp");
     args->addTarget(Visibility::Private, "pylon-reflect");
     args->addTarget(Visibility::Private, "plytool-client");
+    args->addTarget(Visibility::Private, "build-repository");
 }
 
 // [ply module="plytool-client"]
