@@ -9,12 +9,6 @@
 
 namespace ply {
 
-struct BuiltInPair {
-    FormatKey key;
-    TypeDescriptor* type;
-};
-extern Array<BuiltInPair> BuiltInTypeDescs;
-
 // Currently, we just use a global hook for the app to install custom type synthesizers.
 // If needed, we could use a more flexible approach in the future:
 std::map<String, SynthFunc> g_TypeSynthRegistry;

@@ -16,7 +16,8 @@ struct ReadOnlyDict {
 struct BuiltInStorage_ {
     bool true_ = true;
     bool false_ = false;
-    String value_arch;
+    String sys_target_platform;
+    String sys_target_arch;
     String sys_build_folder;
     String sys_cmake_path;
     String script_path;

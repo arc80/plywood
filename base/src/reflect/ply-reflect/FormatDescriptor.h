@@ -44,6 +44,14 @@ enum class FormatKey {
     Switch
 };
 
+struct TypeDescriptor;
+struct BuiltInPair {
+    FormatKey key;
+    TypeDescriptor* type;
+};
+
+extern Array<BuiltInPair> BuiltInTypeDescs;
+
 struct FormatDescriptor {
     u8 formatKey;
 

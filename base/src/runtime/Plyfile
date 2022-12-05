@@ -8,16 +8,14 @@ module runtime {
     dependencies {
         public platform
     }
-    /*
     link_libraries {
-        if platform.name == "win32" {
+        if sys.target_platform == "windows" {
+            "shell32.lib"
             "ws2_32.lib"
         } else if platform.name == "macos" {
-            find_mac_framework("CoreServices")
+            //find_mac_framework("CoreServices")
         } else {
             "-ldl"
         }
     }
-    dynamic_link_prefix("PLL_DLL")
-    */
 }

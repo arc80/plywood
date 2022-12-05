@@ -161,7 +161,7 @@ function(DisableSafeSEH targetName)
 endfunction()
 
 if(WIN32)
-    set(PLY_RUNTIME_DEPENDENCIES "ws2_32.lib")
+    set(PLY_RUNTIME_DEPENDENCIES "ws2_32.lib;winhttp.lib")
 elseif(APPLE)
     find_library(CORESERVICES_FRAMEWORK CoreServices)
     set(PLY_RUNTIME_DEPENDENCIES ${CORESERVICES_FRAMEWORK})

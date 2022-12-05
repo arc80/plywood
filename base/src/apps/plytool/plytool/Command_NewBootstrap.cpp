@@ -73,12 +73,17 @@ void write_bootstrap(StringView bfPath, u32 configIndex) {
         }
 
         outs << " bulk.cpp";
+        outs << " /link";
 
         // Link options
         if (copts.link) {
-            outs << " /link";
             for (StringView opt : copts.link) {
                 outs << ' ' << opt;
+            }
+        }
+        for (const build2::Option& opt : combinedOptions) {
+            if (opt.type == build2::Option::LinkerInput) {
+                outs << ' ' << opt.key;
             }
         }
 

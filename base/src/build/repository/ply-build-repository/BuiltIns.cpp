@@ -261,7 +261,8 @@ void init_built_ins() {
     PLY_ASSERT(BuiltInMap.numItems() == 0);
     bool true_ = true;
     bool false_ = false;
-    BuiltInStorage.value_arch = "x64";
+    BuiltInStorage.sys_target_platform = "windows";
+    BuiltInStorage.sys_target_arch = "x64";
     BuiltInStorage.dict_build.name = "build";
     BuiltInStorage.dict_sys.name = "sys";
     BuiltInStorage.dict_sys_fs.name = "sys.fs";
@@ -275,13 +276,11 @@ void init_built_ins() {
     *BuiltInMap.insert(g_labelStorage.insert("save_if_different")) =
         AnyObject::bind(doSaveIfDifferent);
 
-    // build dictionary
-    *BuiltInStorage.dict_build.map.insert(g_labelStorage.insert("arch")) =
-        AnyObject::bind(&BuiltInStorage.value_arch);
-    *BuiltInMap.insert(g_labelStorage.insert("build")) =
-        AnyObject::bind(&BuiltInStorage.dict_build);
-
     // sys dictionary
+    *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("target_platform")) =
+        AnyObject::bind(&BuiltInStorage.sys_target_platform);
+    *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("target_arch")) =
+        AnyObject::bind(&BuiltInStorage.sys_target_arch);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("build_folder")) =
         AnyObject::bind(&BuiltInStorage.sys_build_folder);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("cmake_path")) =

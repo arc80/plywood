@@ -12,6 +12,11 @@ executable plytool {
         private plytool_client
         private build_repository
     }
+    link_libraries {
+        if sys.target_platform == "windows" {
+            "ole32.lib"
+        }
+    }
 }
 
 module plytool_client {

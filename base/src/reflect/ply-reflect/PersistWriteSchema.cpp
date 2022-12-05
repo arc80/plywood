@@ -14,10 +14,6 @@
 
 namespace ply {
 
-struct BuiltInPair {
-    FormatKey key;
-    TypeDescriptor* type;
-};
 Array<BuiltInPair> BuiltInTypeDescs = {{FormatKey::None, nullptr},
                                        {FormatKey::Indirect, nullptr},
                                        {FormatKey::Bool, getTypeDescriptor<bool>()},

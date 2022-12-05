@@ -35,8 +35,8 @@ SetSourceFolders(PLYTOOL_SOURCES "${SRC_FOLDER}apps/plytool/plytool"
 )
 add_executable(plytool
     ${PLYTOOL_SOURCES}
-    $<TARGET_OBJECTS:build-folder>
     $<TARGET_OBJECTS:build-repository>
+    $<TARGET_OBJECTS:build-folder>
     $<TARGET_OBJECTS:build-repo>
     $<TARGET_OBJECTS:build-provider>
     $<TARGET_OBJECTS:pylon>
@@ -47,14 +47,13 @@ add_executable(plytool
 set_property(TARGET plytool PROPERTY ENABLE_EXPORTS TRUE)
 EnableCppExceptions(plytool FALSE)
 target_include_directories(plytool PRIVATE
+    "${SRC_FOLDER}crowbar"
+    "${SRC_FOLDER}buildSteps"
+    "${SRC_FOLDER}build/repository"
     "${SRC_FOLDER}apps/plytool/plytool-client"
     "${SRC_FOLDER}pylon/pylon"
     "${SRC_FOLDER}pylon/reflect"
     "${SRC_FOLDER}cpp"
-    "${SRC_FOLDER}crowbar"
-    "${SRC_FOLDER}pylon/pylon"
-    "${SRC_FOLDER}buildSteps"
-    "${SRC_FOLDER}build/repository"
     "${SRC_FOLDER}build/provider"
     "${BUILD_FOLDER}codegen/ply-platform"
     "${SRC_FOLDER}platform"
@@ -72,9 +71,9 @@ target_compile_definitions(plytool PRIVATE
     "PYLON_EXPORTING=1"
 )
 target_link_libraries(plytool PRIVATE
-    "plytool-client"
     "crowbar"
     "buildSteps"
+    "plytool-client"
     "cpp"
     "pylon-reflect"
     ${PLY_RUNTIME_DEPENDENCIES}
@@ -651,8 +650,33 @@ target_compile_definitions(cpp PRIVATE
     "PLY_DLL_EXPORTING=1"
 )
 
+# plytool-client
+SetSourceFolders(PLYTOOL-CLIENT_SOURCES "${SRC_FOLDER}apps/plytool/plytool-client/plytool-client"
+    "Command.cpp"
+    "Command.h"
+    "Core.h"
+    "PlyToolClient.cpp"
+    "PlyToolClient.h"
+)
+add_library(plytool-client
+    ${PLYTOOL-CLIENT_SOURCES}
+)
+EnableCppExceptions(plytool-client FALSE)
+target_include_directories(plytool-client PRIVATE
+    "${BUILD_FOLDER}codegen/ply-platform"
+    "${SRC_FOLDER}platform"
+    "${SRC_FOLDER}runtime"
+    "${SRC_FOLDER}reflect"
+    "${SRC_FOLDER}apps/plytool/plytool-client"
+)
+target_compile_definitions(plytool-client PRIVATE
+    "PLY_DLL_EXPORTING=1"
+)
+
 # build-repository
 SetSourceFolders(BUILD-REPOSITORY_SOURCES "${SRC_FOLDER}build/repository/ply-build-repository"
+    "BuiltIns.cpp"
+    "BuiltIns.h"
     "Common.cpp"
     "Common.h"
     "Instantiate.cpp"
@@ -666,10 +690,11 @@ add_library(build-repository OBJECT
 )
 EnableCppExceptions(build-repository FALSE)
 target_include_directories(build-repository PRIVATE
+    "${SRC_FOLDER}build/target"
+    "${SRC_FOLDER}build/repo"
+    "${SRC_FOLDER}build/folder"
     "${SRC_FOLDER}build/provider"
     "${SRC_FOLDER}build/common"
-    "${SRC_FOLDER}build/folder"
-    "${SRC_FOLDER}build/target"
     "${SRC_FOLDER}crowbar"
     "${SRC_FOLDER}pylon/pylon"
     "${SRC_FOLDER}buildSteps"
@@ -734,28 +759,5 @@ target_include_directories(crowbar PRIVATE
     "${SRC_FOLDER}crowbar"
 )
 target_compile_definitions(crowbar PRIVATE
-    "PLY_DLL_EXPORTING=1"
-)
-
-# plytool-client
-SetSourceFolders(PLYTOOL-CLIENT_SOURCES "${SRC_FOLDER}apps/plytool/plytool-client/plytool-client"
-    "Command.cpp"
-    "Command.h"
-    "Core.h"
-    "PlyToolClient.cpp"
-    "PlyToolClient.h"
-)
-add_library(plytool-client
-    ${PLYTOOL-CLIENT_SOURCES}
-)
-EnableCppExceptions(plytool-client FALSE)
-target_include_directories(plytool-client PRIVATE
-    "${BUILD_FOLDER}codegen/ply-platform"
-    "${SRC_FOLDER}platform"
-    "${SRC_FOLDER}runtime"
-    "${SRC_FOLDER}reflect"
-    "${SRC_FOLDER}apps/plytool/plytool-client"
-)
-target_compile_definitions(plytool-client PRIVATE
     "PLY_DLL_EXPORTING=1"
 )
