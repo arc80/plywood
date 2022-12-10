@@ -31,6 +31,7 @@
 #include <ply-runtime/process/Subprocess.h>
 #include <ply-runtime/string/Label.h>
 #include <ply-runtime/string/String.h>
+#include <ply-runtime/thread/Affinity.h>
 #include <ply-runtime/thread/Atomic.h>
 #include <ply-runtime/thread/ConditionVariable.h>
 #include <ply-runtime/thread/Mutex.h>

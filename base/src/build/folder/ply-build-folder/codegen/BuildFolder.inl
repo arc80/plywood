@@ -1,4 +1,11 @@
-PLY_STRUCT_BEGIN(ply::build::BuildFolder)
+PLY_STRUCT_BEGIN(ply::build::CMakeGeneratorOptions)
+PLY_STRUCT_MEMBER(generator)
+PLY_STRUCT_MEMBER(platform)
+PLY_STRUCT_MEMBER(toolset)
+PLY_STRUCT_MEMBER(toolchainFile)
+PLY_STRUCT_END()
+
+PLY_STRUCT_BEGIN(ply::build::BuildFolder_)
 PLY_STRUCT_MEMBER(solutionName)
 PLY_STRUCT_MEMBER(cmakeOptions)
 PLY_STRUCT_MEMBER(rootTargets)

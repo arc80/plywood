@@ -1,7 +1,6 @@
 /data
 codegen/
-/plytool
-/plytool.exe
+/plytool*
 /workspace-settings.pylon
 *~
 .*

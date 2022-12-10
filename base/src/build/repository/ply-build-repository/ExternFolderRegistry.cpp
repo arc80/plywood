@@ -3,7 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-build-common/Core.h>
-#include <ply-build-provider/ExternFolderRegistry.h>
+#include <ply-build-repository/ExternFolderRegistry.h>
 #include <pylon/Parse.h>
 #include <pylon/Write.h>
 #include <pylon-reflect/Import.h>

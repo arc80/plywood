@@ -5,6 +5,7 @@
 #pragma once
 #include <ply-runtime/Base.h>
 #include <ply-reflect/TypeDescriptor.h>
+#include <ply-runtime/Error.h>
 
 #if PLY_BUILD_IMPORTING
 #define PLY_BUILD_ENTRY PLY_DLL_IMPORT

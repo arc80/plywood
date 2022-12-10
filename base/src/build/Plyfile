@@ -10,60 +10,6 @@ module build_common {
     }
 }
 
-module build_target {
-    source_files {
-        "target/ply-build-target"
-    }
-    include_directories {
-        public "target"
-        private join_path(sys.build_folder, "codegen/ply-build-target")
-    }
-    dependencies {
-        public build_common
-    }
-    generate {
-        src = """
-CMakeGeneratorOptions NativeToolchain = {
-    "Visual Studio 17 2022",
-    "x64",
-    "",
-    "",
-};
-String DefaultNativeConfig = "Debug";
-"""
-        save_if_different(join_path(sys.build_folder,
-                                    "codegen/ply-build-target/ply-build-target/NativeToolchain.inl"), src)
-    }
-}
-
-module build_provider {
-    source_files {
-        "provider/ply-build-provider"
-    }
-    include_directories {
-        public "provider"
-    }
-    dependencies {
-        public build_common
-        private pylon_reflect
-    }
-}
-
-module build_repo {
-    source_files {
-        "repo/ply-build-repo"
-    }
-    include_directories {
-        public "repo"
-    }
-    dependencies {
-        public build_target
-        public build_provider
-        private pylon_reflect
-        private cpp
-    }
-}
-
 module build_folder {
     source_files {
         "folder/ply-build-folder"
@@ -72,8 +18,8 @@ module build_folder {
         public "folder"
     }
     dependencies {
-        public build_repo
         public pylon_reflect
+        public build_common
     }
 }
 
@@ -89,7 +35,6 @@ module build_repository {
         public buildSteps
         public crowbar
         public build_common
-        public build_provider
         public reflect
         public build_folder
     }

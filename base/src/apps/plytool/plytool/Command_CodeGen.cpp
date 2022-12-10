@@ -11,9 +11,7 @@
 #include <ply-runtime/algorithm/Sort.h>
 #include <ReflectionHooks.h>
 #include <ConsoleUtils.h>
-
-namespace ply {
-namespace cpp {
+#include <Workspace.h>
 
 struct CodeGenerator {
     virtual ~CodeGenerator() {
@@ -21,7 +19,7 @@ struct CodeGenerator {
     virtual void write(OutStream* outs) = 0;
 };
 
-String getSwitchInl(SwitchInfo* switch_) {
+String getSwitchInl(cpp::SwitchInfo* switch_) {
     MemOutStream mout;
     mout << "enum class ID : u16 {\n";
     for (StringView state : switch_->states) {
@@ -49,7 +47,7 @@ String getSwitchInl(SwitchInfo* switch_) {
     return mout.moveToString();
 }
 
-void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
+void writeSwitchInl(cpp::SwitchInfo* switch_, const TextFormat& tff) {
     String absInlPath = NativePath::join(PLY_WORKSPACE_FOLDER, switch_->inlineInlPath);
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         absInlPath, getSwitchInl(switch_), tff);
@@ -61,14 +59,14 @@ void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
     }
 }
 
-String performSubsts(StringView absPath, ArrayView<Subst> substs) {
+String performSubsts(StringView absPath, ArrayView<cpp::Subst> substs) {
     String src = FileSystem::native()->loadTextAutodetect(absPath).first;
     if (FileSystem::native()->lastResult() != FSResult::OK)
         return {};
 
     MemOutStream mout;
     u32 prevEndPos = 0;
-    for (const Subst& subst : substs) {
+    for (const cpp::Subst& subst : substs) {
         PLY_ASSERT(subst.start >= prevEndPos);
         u32 endPos = subst.start + subst.numBytes;
         PLY_ASSERT(endPos < src.numBytes);
@@ -80,7 +78,7 @@ String performSubsts(StringView absPath, ArrayView<Subst> substs) {
     return mout.moveToString();
 }
 
-void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs, const TextFormat& tff) {
+void performSubstsAndSave(StringView absPath, ArrayView<cpp::Subst> substs, const TextFormat& tff) {
     // FIXME: Don't reload the file here!!!!!!!!!!
     // It may have changed, making the Substs invalid!!!!!!!!
     String srcWithSubst = performSubsts(absPath, substs);
@@ -95,8 +93,6 @@ void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs, const Tex
         }
     }
 }
-
-} // namespace cpp
 
 void generateAllCppInls(cpp::ReflectionInfoAggregator* agg, const TextFormat& tff) {
     struct CodeGenerator {
@@ -254,11 +250,11 @@ void command_codegen(PlyToolCommandEnv* env) {
                             &agg, NativePath::join(triple.dirPath, file.name));
                         if (sfri.second) {
                             for (cpp::SwitchInfo* switch_ : sfri.first.switches) {
-                                writeSwitchInl(switch_, env->workspace->getSourceTextFormat());
+                                writeSwitchInl(switch_, Workspace.getSourceTextFormat());
                             }
                             performSubstsAndSave(NativePath::join(triple.dirPath, file.name),
                                                  sfri.first.substsInParsedFile,
-                                                 env->workspace->getSourceTextFormat());
+                                                 Workspace.getSourceTextFormat());
                         }
                     }
                 skipIt:;
@@ -273,7 +269,5 @@ void command_codegen(PlyToolCommandEnv* env) {
         }
     }
 
-    generateAllCppInls(&agg, env->workspace->getSourceTextFormat());
+    generateAllCppInls(&agg, Workspace.getSourceTextFormat());
 }
-
-} // namespace ply

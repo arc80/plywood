@@ -12,27 +12,20 @@
 #include <shellapi.h>
 #endif
 
-namespace ply {
-
 bool command_open(PlyToolCommandEnv* env) {
     using namespace build;
 
     ensureTerminated(env->cl);
     env->cl->finalize();
 
-    const BuildFolder* folder = env->currentBuildFolder;
-    if (!folder) {
-        fatalError("Current build folder not set");
-    }
-
-    if (folder->cmakeOptions.generator == "Unix Makefiles") {
-        fatalError("No IDE to open for Unix Makefiles");
+    if (BuildFolder.cmakeOptions.generator == "Unix Makefiles") {
+        Error.log("No IDE to open for Unix Makefiles");
 #if PLY_TARGET_WIN32
-    } else if (folder->cmakeOptions.generator.startsWith("Visual Studio")) {
+    } else if (BuildFolder.cmakeOptions.generator.startsWith("Visual Studio")) {
         String slnPath =
-            NativePath::join(folder->getAbsPath(), "build", folder->solutionName + ".sln");
+            NativePath::join(BuildFolder.absPath, "build", BuildFolder.solutionName + ".sln");
         if (FileSystem::native()->exists(slnPath) != ExistsResult::File) {
-            fatalError(String::format("Can't find '{}'", slnPath));
+            Error.log(String::format("Can't find '{}'", slnPath));
         }
 
         // Convert to UTF-16 path
@@ -47,7 +40,7 @@ bool command_open(PlyToolCommandEnv* env) {
 
         // Open IDE
         if (CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE) != S_OK) {
-            fatalError("Unable to initialize COM");
+            Error.log("Unable to initialize COM");
         }
         return ((sptr) ShellExecuteW(NULL, L"open", wstr, NULL, NULL, SW_SHOWNORMAL) > 32);
 #endif // PLY_TARGET_WIN32
@@ -69,9 +62,7 @@ bool command_open(PlyToolCommandEnv* env) {
 #endif // PLY_TARGET_APPLE
     }
 
-    fatalError(String::format("Don't know how to open IDE for generator '{}'",
-                              folder->cmakeOptions.generator));
+    Error.log(String::format("Don't know how to open IDE for generator '{}'",
+                             BuildFolder.cmakeOptions.generator));
     return false;
 }
-
-} // namespace ply

@@ -2,13 +2,16 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-build-common/Core.h>
-#include <ply-build-target/TargetError.h>
+#pragma once
+#include <ply-runtime/Core.h>
+#include <ply-runtime/Base.h>
 
 namespace ply {
-namespace build {
 
-thread_local Functor<void(StringView)> TargetError::callback_;
+struct Error_ {
+    void log(StringView message);
+};
 
-} // namespace build
+extern Error_ Error;
+
 } // namespace ply

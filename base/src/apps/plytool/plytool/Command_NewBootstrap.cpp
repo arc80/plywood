@@ -6,9 +6,7 @@
 #include <ConsoleUtils.h>
 #include <ply-build-repository/Instantiate.h>
 #include <ply-build-repository/BuiltIns.h>
-
-namespace ply {
-namespace build2 {
+#include <ply-build-folder/BuildFolder.h>
 
 void write_bootstrap(StringView bfPath, u32 configIndex) {
     // Write bulk.cpp
@@ -95,14 +93,7 @@ void write_bootstrap(StringView bfPath, u32 configIndex) {
     }
 }
 
-} // namespace build2
-
 void command_new_bootstrap(PlyToolCommandEnv* env) {
-    using namespace build;
-    if (!env->currentBuildFolder) {
-        fatalError("Current build folder not set");
-    }
-
     ensureTerminated(env->cl);
     StringView configName =
         env->cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--config="); });
@@ -114,8 +105,6 @@ void command_new_bootstrap(PlyToolCommandEnv* env) {
     build2::Common::initialize();
     build2::init_built_ins();
     build2::Repository::create();
-    build2::instantiate_all_configs(env->currentBuildFolder);
-    build2::write_bootstrap(env->currentBuildFolder->getAbsPath(), 0);
+    build2::instantiate_all_configs();
+    write_bootstrap(build::BuildFolder.absPath, 0);
 }
-
-} // namespace ply

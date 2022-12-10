@@ -4,10 +4,9 @@
 ------------------------------------*/
 #include <Core.h>
 #include <ConsoleUtils.h>
+#include <Workspace.h>
 #include <ply-cpp/Preprocessor.h>
 #include <ply-cpp/ErrorFormatting.h>
-
-namespace ply {
 
 void checkFileHeader(StringView srcPath, StringView desiredHeader, const TextFormat& tff) {
     String src = FileSystem::native()->loadTextAutodetect(srcPath).first;
@@ -104,7 +103,5 @@ void command_cleanup(PlyToolCommandEnv* env) {
 ------------------------------------*/
 )";
     cleanupRepo(NativePath::join(PLY_WORKSPACE_FOLDER, "base/src"), desiredHeader, {},
-                env->workspace->getSourceTextFormat());
+                Workspace.getSourceTextFormat());
 }
-
-} // namespace ply

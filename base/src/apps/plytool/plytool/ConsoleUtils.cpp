@@ -5,23 +5,12 @@
 #include <Core.h>
 #include <ConsoleUtils.h>
 #include <ply-runtime/algorithm/Find.h>
-
-namespace ply {
+#include <ply-runtime/Error.h>
 
 bool prefixMatch(StringView input, StringView cmd, u32 minUnits) {
     if (input.numBytes < minUnits)
         return false;
     return cmd.startsWith(input);
-}
-
-void fatalError(StringView msg) {
-    OutStream stdErr = StdErr::text();
-    stdErr << "error: " << msg;
-    if (!msg.endsWith("\n")) {
-        stdErr << '\n';
-    }
-    stdErr.flushMem();
-    exit(1);
 }
 
 StringView CommandLine::readToken() {
@@ -50,7 +39,8 @@ StringView CommandLine::checkForSkippedOpt(const Functor<bool(StringView)>& matc
 void CommandLine::finalize() {
     PLY_ASSERT(!this->finalized);
     if (this->skippedOpts.numItems() > 0) {
-        fatalError(String::format("Unrecognized option '{}'\n", this->skippedOpts[0]));
+        Error.log(String::format("Unrecognized option '{}'\n", this->skippedOpts[0]));
+        exit(1);
     }
     this->finalized = true;
 }
@@ -58,42 +48,7 @@ void CommandLine::finalize() {
 void ensureTerminated(CommandLine* cl) {
     StringView token = cl->readToken();
     if (!token.isEmpty()) {
-        fatalError(String::format("Unexpected token \"{}\"", token));
+        Error.log(String::format("Unexpected token \"{}\"", token));
+        exit(1);
     }
 }
-
-void printCommands(OutStream* outs, const CommandList& commands) {
-    *outs << "Available commands:\n\n";
-
-    for (auto& d : commands) {
-        *outs << d.name;
-        for (s32 i = 0; i < 20 - (s32) d.name.numBytes; ++i) {
-            *outs << ' ';
-        }
-        *outs << d.description << "\n";
-    }
-}
-
-void printUsage(OutStream* outs, CommandList commands) {
-    *outs << "Usage: plytool <command>\n\n";
-
-    if (commands.numItems > 0) {
-        printCommands(outs, commands);
-    }
-
-    *outs << "\n";
-    outs->flush();
-}
-
-void printUsage(OutStream* outs, StringView command, CommandList commands) {
-    *outs << "Usage: plytool " << command << " [<command>]\n";
-
-    if (commands.numItems > 0) {
-        printCommands(outs, commands);
-    }
-
-    *outs << "\n";
-    outs->flush();
-}
-
-} // namespace ply

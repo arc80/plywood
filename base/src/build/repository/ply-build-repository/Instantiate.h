@@ -24,15 +24,11 @@ struct TargetWithStatus {
 };
 
 struct ModuleInstantiator {
-    String buildFolderPath;
     LabelMap<AnyObject> globalNamespace;
 
     // These members are modified during instantiation.
     LabelMap<TargetWithStatus> moduleMap;
     u64 configBit = 0;
-
-    ModuleInstantiator(StringView buildFolderPath) : buildFolderPath{buildFolderPath} {
-    }
 };
 
 MethodResult instantiateModuleForCurrentConfig(Target** target, ModuleInstantiator* mi,
@@ -48,7 +44,7 @@ struct PropertyCollector {
 
 MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
                                        const crowbar::Statement::CustomBlock* cb);
-void instantiate_all_configs(build::BuildFolder* bf);
+void instantiate_all_configs();
 
 } // namespace build2
 } // namespace ply

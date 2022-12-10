@@ -4,22 +4,30 @@
 ------------------------------------*/
 #pragma once
 #include <ply-build-common/Core.h>
-#include <ply-build-target/CMakeLists.h>
 #include <pylon/Node.h>
 
 namespace ply {
 namespace build {
 
-struct ProjectInstantiationEnv;
-struct ProjectInstantiationResult;
-struct DependencyTree;
-struct RepoRegistry;
-struct ExternFolderRegistry;
-struct ExternSelector;
+struct CMakeGeneratorOptions {
+    PLY_REFLECT()
+    String generator;     // passed directly to -G
+    String platform;      // passed directly to -A
+    String toolset;       // passed directly to -T
+    String toolchainFile; // currently "ios" or blank
+    // ply reflect off
 
-struct BuildFolder {
-    String buildFolderName;                  // Not saved to the .pylon file
-    Owned<pylon::Node> buildSystemSignature; // determines whether build system needs regenerating
+    template <typename Hasher>
+    void appendTo(Hasher& h) const {
+        h.append(this->generator);
+        h.append(this->platform);
+        h.append(this->toolset);
+        h.append(this->toolchainFile);
+    }
+};
+
+struct BuildFolder_ {
+    String absPath;
 
     PLY_REFLECT()
     String solutionName;
@@ -31,28 +39,13 @@ struct BuildFolder {
     String activeTarget;
     // ply reflect off
 
-    String getAbsPath() const;
-
     // BuildFolder management
-    static Owned<BuildFolder> create(StringView buildFolderName, StringView solutionName);
-    static Owned<BuildFolder> autocreate(StringView baseName);
-    static Owned<BuildFolder> load(StringView buildFolderName);
+    void load(StringView absPath);
     bool save() const;
-
-    // Operations
-    Owned<ProjectInstantiationEnv> createEnvironment() const;
-    ProjectInstantiationResult instantiateAllTargets(bool isGenerating) const;
-    DependencyTree buildDepTree() const;
-    u128 currentBuildSystemSignature() const;
-    bool isGenerated(StringView config) const;
-    bool generate(StringView config, const ProjectInstantiationResult* instResult);
-    bool generateLoop(StringView config);
-    bool build(StringView config, StringView targetName, bool captureOutput) const;
-
-    static Array<Owned<BuildFolder>> getList();
+    bool build(StringView config, StringView targetName) const;
 };
 
-Owned<pylon::Node> toolchainInfoFromCMakeOptions(const CMakeGeneratorOptions& cmakeOpts);
+extern BuildFolder_ BuildFolder;
 
 } // namespace build
 } // namespace ply

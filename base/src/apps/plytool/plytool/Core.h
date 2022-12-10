@@ -4,3 +4,4 @@
 ------------------------------------*/
 #pragma once
 #include <ply-reflect/Base.h>
+using namespace ply;

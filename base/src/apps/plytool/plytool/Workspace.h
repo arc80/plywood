@@ -4,11 +4,9 @@
 ------------------------------------*/
 #pragma once
 #include <Core.h>
-#include <ply-build-target/CMakeLists.h>
+#include <ply-build-folder/BuildFolder.h>
 
-namespace ply {
-
-struct WorkspaceSettings {
+struct Workspace_ {
     PLY_REFLECT()
     String currentBuildFolder;
     build::CMakeGeneratorOptions defaultCMakeOptions;
@@ -26,4 +24,4 @@ struct WorkspaceSettings {
     TextFormat getSourceTextFormat() const;
 };
 
-} // namespace ply
+extern Workspace_ Workspace;

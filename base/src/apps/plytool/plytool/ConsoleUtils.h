@@ -4,13 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <Core.h>
-#include <WorkspaceSettings.h>
-
-namespace ply {
-
-namespace build {
-struct BuildFolder;
-} // namespace build
+#include <ply-build-folder/BuildFolder.h>
 
 struct CommandLine {
     Array<StringView> args;
@@ -36,23 +30,7 @@ struct CommandLine {
 
 struct PlyToolCommandEnv {
     CommandLine* cl = nullptr;
-    WorkspaceSettings* workspace = nullptr;
-    Array<Owned<build::BuildFolder>> buildFolders;
-    build::BuildFolder* currentBuildFolder = nullptr;
 };
 
 bool prefixMatch(StringView input, StringView cmd, u32 minUnits = 2);
-void fatalError(StringView msg);
 void ensureTerminated(CommandLine* cl);
-
-struct CommandDescription {
-    StringView name;
-    StringView description;
-};
-
-using CommandList = ArrayView<const CommandDescription>;
-
-void printUsage(OutStream* outs, CommandList commands);
-void printUsage(OutStream* outs, StringView command, CommandList commands = {});
-
-} // namespace ply

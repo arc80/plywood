@@ -3,15 +3,15 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <Core.h>
-#include <WorkspaceSettings.h>
+#include <Workspace.h>
 #include <pylon/Parse.h>
 #include <pylon/Write.h>
 #include <pylon-reflect/Import.h>
 #include <pylon-reflect/Export.h>
 
-namespace ply {
+Workspace_ Workspace;
 
-PLY_NO_INLINE bool WorkspaceSettings::load() {
+PLY_NO_INLINE bool Workspace_::load() {
     String path = this->getPath();
     String strContents = FileSystem::native()->loadTextAutodetect(path).first;
     if (FileSystem::native()->lastResult() != FSResult::OK)
@@ -29,7 +29,7 @@ PLY_NO_INLINE bool WorkspaceSettings::load() {
     return true;
 }
 
-PLY_NO_INLINE bool WorkspaceSettings::save() const {
+PLY_NO_INLINE bool Workspace_::save() const {
     auto aRoot = pylon::exportObj(AnyObject::bind(this));
     String strContents = pylon::toString(aRoot);
     // FIXME: makeDirsAndSaveTextIfDifferent should write to temp file with atomic rename
@@ -42,7 +42,7 @@ PLY_NO_INLINE bool WorkspaceSettings::save() const {
     return true;
 }
 
-PLY_NO_INLINE TextFormat WorkspaceSettings::getSourceTextFormat() const {
+PLY_NO_INLINE TextFormat Workspace_::getSourceTextFormat() const {
     TextFormat tff = TextFormat::platformPreference();
     if (this->sourceNewLines == "crlf") {
         tff.newLine = TextFormat::NewLine::CRLF;
@@ -52,6 +52,4 @@ PLY_NO_INLINE TextFormat WorkspaceSettings::getSourceTextFormat() const {
     return tff;
 }
 
-} // namespace ply
-
-#include "codegen/WorkspaceSettings.inl" //%%
+#include "codegen/Workspace.inl" //%%

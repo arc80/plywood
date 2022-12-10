@@ -4,8 +4,8 @@
 ------------------------------------*/
 #include <ply-build-repository/Instantiate.h>
 #include <ply-build-repository/BuiltIns.h>
+#include <ply-build-folder/BuildFolder.h>
 #include <ply-runtime/algorithm/Find.h>
-#include <ply-build-repo/ErrorHandler.h>
 
 namespace ply {
 namespace build2 {
@@ -308,7 +308,7 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
     // Run the generate block if it didn't run already.
     if (!mod->generatedOnce) {
         if (mod->generateBlock) {
-            MethodResult result = runGenerateBlock(mod, mi->buildFolderPath);
+            MethodResult result = runGenerateBlock(mod, build::BuildFolder.absPath);
             if (result != MethodResult::OK)
                 return result;
         }
@@ -366,7 +366,6 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
 struct ConfigListInterpreter {
     crowbar::Interpreter interp;
     build2::ModuleInstantiator* mi = nullptr;
-    build::BuildFolder* buildFolder = nullptr;
 };
 
 MethodResult doCustomBlock(ConfigListInterpreter* cli,
@@ -415,7 +414,7 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
 
     // Instantiate all root modules in this config
     PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
-    for (StringView targetName : cli->buildFolder->rootTargets) {
+    for (StringView targetName : build::BuildFolder.rootTargets) {
         build2::Target* rootTarget = nullptr;
         MethodResult result = build2::instantiateModuleForCurrentConfig(
             &rootTarget, cli->mi, g_labelStorage.insert(targetName));
@@ -436,15 +435,15 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     return MethodResult::OK;
 }
 
-PLY_NO_INLINE void instantiate_all_configs(build::BuildFolder* bf) {
-    build2::ModuleInstantiator mi{bf->getAbsPath()};
-    build2::Project.name = bf->solutionName;
+PLY_NO_INLINE void instantiate_all_configs() {
+    build2::ModuleInstantiator mi{};
+    build2::Project.name = build::BuildFolder.solutionName;
     build2::init_toolchain_msvc();
 
     // Execute the config_list block
     build2::Repository::ConfigList* configList = build2::g_repository->configList;
     if (!configList) {
-        build::ErrorHandler::log(build::ErrorHandler::Fatal, "No config_list block defined.\n");
+        Error.log("No config_list block defined.\n");
     }
 
     {
@@ -455,7 +454,6 @@ PLY_NO_INLINE void instantiate_all_configs(build::BuildFolder* bf) {
             logErrorWithStack(&outs, &cli.interp, message);
         };
         cli.mi = &mi;
-        cli.buildFolder = bf;
 
         // Add builtin namespace.
         LabelMap<AnyObject> builtIns;
