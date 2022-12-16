@@ -21,11 +21,11 @@ Change to the directory you just cloned. This directory is known as the **worksp
 
     $ cd plywood
 
-## Building PlyTool
+## Building Crowbar
 
-The first thing you must do in a new Plywood workspace is to build [PlyTool](PlyTool). PlyTool is a command-line application upon which the entire Plywood workflow is based.
+The first thing you must do in a new Plywood workspace is to build [Crowbar](Crowbar). Crowbar is a command-line application upon which the entire Plywood workflow is based.
 
-To build PlyTool, you must run `Setup.cmake` using appropriate command-line arguments for your local machine. To figure out what command-line arguments to use, run `cmake -P Setup.cmake` first. It should display output similar to the following:
+To build Crowbar, you must run `Setup.cmake` using appropriate command-line arguments for your local machine. To figure out what command-line arguments to use, run `cmake -P Setup.cmake` first. It should display output similar to the following:
 
     $ cmake -P Setup.cmake
     *** Error: No generator chosen ***
@@ -51,6 +51,6 @@ Re-run `Setup.cmake` using the command line that applies to your case. For Visua
 
     $ cmake -DPRESET=vs2022 -P Setup.cmake
 
-This command will generate a build system for PlyTool, build PlyTool, then run PlyTool to generate code used by Plywood's reflection system. The entire process should take about 30 seconds to complete. Once it's finished, there will be a new executable `plytool` (or `plytool.exe` on Windows) in the workspace root.
+This command will generate a build system for Crowbar, build Crowbar, then run Crowbar to generate code used by Plywood's reflection system. The entire process should take about 30 seconds to complete. Once it's finished, there will be a new executable `crowbar` (or `crowbar.exe` on Windows) in the workspace root.
 
 To familiarize yourself further with Plywood, try building and running the [Hello World](HelloWorld) sample next!

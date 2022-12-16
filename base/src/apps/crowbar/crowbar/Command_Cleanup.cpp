@@ -94,7 +94,7 @@ void cleanupRepo(StringView repoPath, StringView desiredHeader, StringView clang
     }
 }
 
-void command_cleanup(PlyToolCommandEnv* env) {
+void command_cleanup(CrowbarCommandEnv* env) {
     ensureTerminated(env->cl);
     env->cl->finalize();
     StringView desiredHeader = R"(/*------------------------------------

@@ -197,7 +197,7 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg, const TextFormat& tf
     }
 }
 
-void command_codegen(PlyToolCommandEnv* env) {
+void command_codegen(CrowbarCommandEnv* env) {
     ensureTerminated(env->cl);
     env->cl->finalize();
 

@@ -12,7 +12,7 @@ struct DepTreeIndent {
     String children;
 };
 
-void command_target(PlyToolCommandEnv* env) {
+void command_target(CrowbarCommandEnv* env) {
     using namespace build;
 
     StringView cmd = env->cl->readToken();

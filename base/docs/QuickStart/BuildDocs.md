@@ -7,13 +7,13 @@ Building Plywood's documentation is similar to building and running the [Hello W
 
 Additionally, building the WebCooker requires choosing an [extern provider](KeyConcepts#extern-providers), which helps demonstrate how Plywood works with third-party libraries.
 
-Before you proceed, make sure you've built [PlyTool](PlyTool) using the steps described in [Quick Start](QuickStart).
+Before you proceed, make sure you've built [Crowbar](Crowbar) using the steps described in [Quick Start](QuickStart).
 
 ## 1. Build and run the WebCooker
 
-First, open a command shell and run the following command from the [workspace root](KeyConcepts#workspaces). If you're running on Linux or macOS, replace `plytool` with `./plytool` instead. (It doesn't really matter what the current directory is as long as your command shell finds the `plytool` executable.)
+First, open a command shell and run the following command from the [workspace root](KeyConcepts#workspaces). If you're running on Linux or macOS, replace `crowbar` with `./crowbar` instead. (It doesn't really matter what the current directory is as long as your command shell finds the `crowbar` executable.)
 
-    $ plytool run --auto WebCooker
+    $ crowbar run --auto WebCooker
 
 You should see output similar to the following:
 
@@ -22,17 +22,17 @@ You should see output similar to the following:
     1 compatible provider is available:
         libsass.prebuilt (not installed)
 
-This command created a new [build folder](KeyConcepts#build-folders) `WebCooker` and added the [root target](KeyConcepts#targets) `WebCooker` to that folder. However, it fails after that because we haven't told PlyTool where to get [LibSass](https://sass-lang.com/libsass).
+This command created a new [build folder](KeyConcepts#build-folders) `WebCooker` and added the [root target](KeyConcepts#targets) `WebCooker` to that folder. However, it fails after that because we haven't told Crowbar where to get [LibSass](https://sass-lang.com/libsass).
 
-To solve this problem, run the `plytool extern select --install` command using the name of the [provider](KeyConcepts#extern-providers) suggested in the previous output. On Windows, it will be `libsass.prebuilt`; on Debian/Ubuntu Linux, it will be `libsass.apt`; and on macOS, where [MacPorts](https://www.macports.org/) is currently needed, it'll be `libsass.macports`. New providers can be added in the future to support additional package managers or installation methods.
+To solve this problem, run the `crowbar extern select --install` command using the name of the [provider](KeyConcepts#extern-providers) suggested in the previous output. On Windows, it will be `libsass.prebuilt`; on Debian/Ubuntu Linux, it will be `libsass.apt`; and on macOS, where [MacPorts](https://www.macports.org/) is currently needed, it'll be `libsass.macports`. New providers can be added in the future to support additional package managers or installation methods.
 
-    $ plytool extern select --install libsass.prebuilt
+    $ crowbar extern select --install libsass.prebuilt
 
-<% note In the future, PlyTool will have a mechanism to automatically select and install appropriate extern providers for your system, so the above step will be performed automatically. %>
+<% note In the future, Crowbar will have a mechanism to automatically select and install appropriate extern providers for your system, so the above step will be performed automatically. %>
 
-Now run `plytool run --auto WebCooker` again. It will re-use the existing build folder, and this time it should successfully generate, build and run the WebCooker:
+Now run `crowbar run --auto WebCooker` again. It will re-use the existing build folder, and this time it should successfully generate, build and run the WebCooker:
 
-    $ plytool run --auto WebCooker
+    $ crowbar run --auto WebCooker
     Generating build system for 'WebCooker'...
     Successfully generated build system in folder 'WebCooker'.
     Building Debug configuration of 'WebCooker'...
@@ -45,9 +45,9 @@ Once the WebCooker finishes running, there will be a bunch of data files in the 
 
 ## 2. Build and run the WebServer
 
-Next, build and run the WebServer using the following command. Note that this time, we specify `--add` instead of `--auto`. The `--add` option makes PlyTool re-use the same build folder; `WebServer` is simply added an additional target. (We could use `--auto` here, in which case PlyTool will create a separate build folder, but `--add` is quicker because several required modules are already built in the existing folder.)
+Next, build and run the WebServer using the following command. Note that this time, we specify `--add` instead of `--auto`. The `--add` option makes Crowbar re-use the same build folder; `WebServer` is simply added an additional target. (We could use `--auto` here, in which case Crowbar will create a separate build folder, but `--add` is quicker because several required modules are already built in the existing folder.)
 
-    $ plytool run --add WebServer
+    $ crowbar run --add WebServer
     Added target 'WebServer' to folder 'WebCooker'.
     Generating build system for 'WebCooker'...
     Successfully generated build system in folder 'WebCooker'.
@@ -63,6 +63,6 @@ If everything went well, you'll be greeted with the Plywood documentation runnin
 
 If you chose **Visual Studio** or **Xcode** as your generator in [Quick Start](QuickStart), you may now find the generated project files (such as a Visual Studio `.sln` or Xcode `.xcodeproj`) in the `data/build/WebCooker/build` (or similar) relative to the workspace root.
 
-You can also open the project files automatically in your IDE from the PlyTool command line:
+You can also open the project files automatically in your IDE from the Crowbar command line:
 
-    $ plytool open
+    $ crowbar open

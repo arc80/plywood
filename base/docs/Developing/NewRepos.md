@@ -114,7 +114,7 @@ Repos are only allowed to use modules and extern providers defined inside themse
 
 In Plywood, files having the filename suffix `.modules.cpp` that are located anywhere within a repo are used to add [modules](KeyConcepts#modules) and [extern providers](KeyConcepts#extern-providers) to that repo. The file must begin with the directive `#include <ply-build-repo/Module.h>`.
 
-In this case, the [`PrimeSieve.modules.cpp`](https://github.com/arc80/primesieve/blob/main/src/PrimeSieve/PrimeSieve.modules.cpp) file contains a single C++ function. The comment before the function, `// [ply module="PrimeSieve"]`, tells PlyTool that the function is a **module function** that defines a new module named `PrimeSieve`:
+In this case, the [`PrimeSieve.modules.cpp`](https://github.com/arc80/primesieve/blob/main/src/PrimeSieve/PrimeSieve.modules.cpp) file contains a single C++ function. The comment before the function, `// [ply module="PrimeSieve"]`, tells Crowbar that the function is a **module function** that defines a new module named `PrimeSieve`:
 
     #include <ply-build-repo/Module.h>
 
@@ -125,10 +125,10 @@ In this case, the [`PrimeSieve.modules.cpp`](https://github.com/arc80/primesieve
         args->addTarget(Visibility::Private, "runtime");
     }
 
-Any time a target based on `PrimeSieve` is added to a build folder (by running `plytool target add PrimeSieve`) and a build system is generated for that build folder, PlyTool executes the C++ function provided here in order to initialize that target. In this case, the function does three things:
+Any time a target based on `PrimeSieve` is added to a build folder (by running `crowbar target add PrimeSieve`) and a build system is generated for that build folder, Crowbar executes the C++ function provided here in order to initialize that target. In this case, the function does three things:
 
 1. Marks the target as an executable.
-2. Adds all the source code in the current directory `"."` to the target. In this case, the current directory contains a single source file, `Main.cpp`. The `false` argument tells PlyTool not to recurse into subdirectories, which isn't relevant here since there aren't any subdirectories.
+2. Adds all the source code in the current directory `"."` to the target. In this case, the current directory contains a single source file, `Main.cpp`. The `false` argument tells Crowbar not to recurse into subdirectories, which isn't relevant here since there aren't any subdirectories.
 3. Adds a target named `runtime` as a dependency of the current target. Because `plywood` is listed as child repo of the current repo, the dependency target will be initialized from the `runtime` module located in the `plywood` repo.
 
 <% member src/PrimeSieve/Main.cpp %>
@@ -143,19 +143,19 @@ Because the `plywood.runtime` module was listed as a dependency of the the `Prim
 
 ## Building the `PrimeSieve` Application
 
-To build `PrimeSieve` in its own build folder, execute the following commands in the workspace root, where the `plytool` executable is located. (This executable was created when you [set up the Plywood workspace](QuickStart).) If you're running on Linux or macOS, replace `plytool` with `./plytool` instead:
+To build `PrimeSieve` in its own build folder, execute the following commands in the workspace root, where the `crowbar` executable is located. (This executable was created when you [set up the Plywood workspace](QuickStart).) If you're running on Linux or macOS, replace `crowbar` with `./crowbar` instead:
 
-    $ plytool folder create PrimeSieve
-    $ plytool target add PrimeSieve
-    $ plytool generate
+    $ crowbar folder create PrimeSieve
+    $ crowbar target add PrimeSieve
+    $ crowbar generate
 
-The `plytool folder create` command creates a new [build folder](KeyConcepts.md#build-folder). The name of the build folder is not important as long as it's unique.
+The `crowbar folder create` command creates a new [build folder](KeyConcepts.md#build-folder). The name of the build folder is not important as long as it's unique.
 
-The `plytool target add` command adds a new compilation target to the build folder based on the `PrimeSieve` module. The `PrimeSieve` module will be found in the `primesieve` repo because that's the only repo that contains a module with that name. If you ever have multiple repos that define modules with the same name, you'll have to specify the fully qualified name of the module, which in this case would be `primesieve.PrimeSieve`.
+The `crowbar target add` command adds a new compilation target to the build folder based on the `PrimeSieve` module. The `PrimeSieve` module will be found in the `primesieve` repo because that's the only repo that contains a module with that name. If you ever have multiple repos that define modules with the same name, you'll have to specify the fully qualified name of the module, which in this case would be `primesieve.PrimeSieve`.
 
-The `plytool generate` command creates a new build system in the build folder. This build system will contain a compilation target based on the `PrimeSieve` module as well as compilation targets for all dependencies of that module, which in this case are the `runtime` module (defined in the `plywood` repo) and the `platform` module (also defined in the `plywood` repo). Incidentally, you can view a tree diagram of the modules required by a build folder by running `plytool target graph`:
+The `crowbar generate` command creates a new build system in the build folder. This build system will contain a compilation target based on the `PrimeSieve` module as well as compilation targets for all dependencies of that module, which in this case are the `runtime` module (defined in the `plywood` repo) and the `platform` module (also defined in the `plywood` repo). Incidentally, you can view a tree diagram of the modules required by a build folder by running `crowbar target graph`:
 
-    $ plytool target graph
+    $ crowbar target graph
     Initializing repo registry...
     Dependency graph for folder 'PrimeSieve':
         PrimeSieve

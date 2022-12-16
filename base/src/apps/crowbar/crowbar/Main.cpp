@@ -8,18 +8,18 @@
 #include <ply-runtime/algorithm/Find.h>
 #include <Workspace.h>
 
-void command_target(PlyToolCommandEnv* env);
-void command_codegen(PlyToolCommandEnv* env);
-bool command_open(PlyToolCommandEnv* env);
-void command_new_generate(PlyToolCommandEnv* env);
-void command_new_bootstrap(PlyToolCommandEnv* env);
+void command_target(CrowbarCommandEnv* env);
+void command_codegen(CrowbarCommandEnv* env);
+bool command_open(CrowbarCommandEnv* env);
+void command_new_generate(CrowbarCommandEnv* env);
+void command_new_bootstrap(CrowbarCommandEnv* env);
 
 int main(int argc, char* argv[]) {
     using namespace ply;
 
     Workspace.load();
     CommandLine cl{argc, argv};
-    PlyToolCommandEnv env;
+    CrowbarCommandEnv env;
     env.cl = &cl;
 
     StringView category = cl.readToken();

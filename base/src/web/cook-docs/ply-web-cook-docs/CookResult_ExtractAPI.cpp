@@ -4,7 +4,7 @@
 ------------------------------------*/
 #include <ply-web-cook-docs/Core.h>
 #include <ply-cook/CookJob.h>
-#include <plytool-client/PlyToolClient.h>
+#include <crowbar-client/CrowbarClient.h>
 #include <ply-cpp/Parser.h>
 #include <ply-cpp/ParseAPI.h>
 #include <ply-cpp/ErrorFormatting.h>

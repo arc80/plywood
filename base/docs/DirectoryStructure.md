@@ -58,7 +58,7 @@ Every time you clone the Plywood repository, you effectively create a new **work
       <text y="495.362" x="159" fill="#4d4d4d">Setup.cmake</text>
       <text y="735.362" x="159" fill="#4d4d4d">repos</text>
       <text y="519.362" x="159" fill="#cf653a">workspace-settings.pylon</text>
-      <text y="543.362" x="159" fill="#cf653a">plytool</text>
+      <text y="543.362" x="159" fill="#cf653a">crowbar</text>
       <text y="567.362" x="159" fill="#cf653a">data</text>
       <text y="591.362" x="187" fill="#cf653a">build</text>
       <text y="615.362" x="215" fill="#cf653a">bootstrap</text>
@@ -97,15 +97,15 @@ Every time you clone the Plywood repository, you effectively create a new **work
 
 <% member Setup.cmake %>
 
-This is the first script to run immediately after cloning Plywood, as explained in [Quick Start](QuickStart). It's responsible for building `plytool`.
+This is the first script to run immediately after cloning Plywood, as explained in [Quick Start](QuickStart). It's responsible for building `crowbar`.
 
 <% member workspace-settings.pylon %>
 
-_(Not stored in Git)_ This file contains settings associated with the workspace, such as the current build folder and the default CMake generator for new build folders. It gets modified by certain PlyTool commands.
+_(Not stored in Git)_ This file contains settings associated with the workspace, such as the current build folder and the default CMake generator for new build folders. It gets modified by certain Crowbar commands.
 
-<% member plytool %>
+<% member crowbar %>
 
-_(Not stored in Git)_ This is a command-line application to perform various operations on the workspace, such as creating new build folders, installing externs and generating build systems. See [PlyTool Reference](PlyTool) for more info.
+_(Not stored in Git)_ This is a command-line application to perform various operations on the workspace, such as creating new build folders, installing externs and generating build systems. See [Crowbar Reference](Crowbar) for more info.
 
 <% endMembers %>
 
@@ -113,11 +113,11 @@ _(Not stored in Git)_ This is a command-line application to perform various oper
 
 The `data` directory, located immediately below the workspace root, can be seen as a local cache of transient data. It contains build folders, file downloads, and any other kind of data that is generated or required by Plywood apps. The `data` folder is excluded from Plywood's main Git repository.
 
-In theory, you could delete the entire `data` directory at any time and get it back by running PlyTool commands and/or other applications.
+In theory, you could delete the entire `data` directory at any time and get it back by running Crowbar commands and/or other applications.
 
 <% member build %>
 
-The `data/build` directory is reserved for Plywood build folders. Each build folder contains a special file, `info.pylon`, that contains information about the build folder. Each time you create a build folder, add a [root target](KeyConcepts#targets) or select an [extern provider](KeyConcepts#extern-providers) using PlyTool, it modifies one of these `info.pylon` files.
+The `data/build` directory is reserved for Plywood build folders. Each build folder contains a special file, `info.pylon`, that contains information about the build folder. Each time you create a build folder, add a [root target](KeyConcepts#targets) or select an [extern provider](KeyConcepts#extern-providers) using Crowbar, it modifies one of these `info.pylon` files.
 
 <% member extern %>
 

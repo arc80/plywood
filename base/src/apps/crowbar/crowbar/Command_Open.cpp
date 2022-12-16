@@ -12,7 +12,7 @@
 #include <shellapi.h>
 #endif
 
-bool command_open(PlyToolCommandEnv* env) {
+bool command_open(CrowbarCommandEnv* env) {
     using namespace build;
 
     ensureTerminated(env->cl);

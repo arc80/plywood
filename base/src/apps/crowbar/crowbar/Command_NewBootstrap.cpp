@@ -93,7 +93,7 @@ void write_bootstrap(StringView bfPath, u32 configIndex) {
     }
 }
 
-void command_new_bootstrap(PlyToolCommandEnv* env) {
+void command_new_bootstrap(CrowbarCommandEnv* env) {
     ensureTerminated(env->cl);
     StringView configName =
         env->cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--config="); });

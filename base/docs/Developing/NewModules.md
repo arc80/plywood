@@ -17,7 +17,7 @@ For example, the [`primesieve`](https://github.com/arc80/primesieve) add-on repo
 
 The name of the function itself (in this case, `module_PrimeSieve`) isn't really important, except that it must be unique across all `.modules.cpp` files in the current repo. By convention, the function name usually starts with `module_`.
 
-Each time PlyTool instantiates a [compilation target](KeyConcepts#targets), such as when running [`plytool generate`](PlyTool), it calls a module function like the one above to initialize the target.
+Each time Crowbar instantiates a [compilation target](KeyConcepts#targets), such as when running [`crowbar generate`](Crowbar), it calls a module function like the one above to initialize the target.
 
 ## Operations Performed by a Module Function
 
@@ -36,7 +36,7 @@ By default, every target has the type `BuildTargetType::Lib`, which means it wil
 
     args->buildTarget->targetType = BuildTargetType::EXE;
 
-It's also possible to build a shared library instead of a static library, but this is done by passing the `--shared` option to the [`plytool target add`](PlyTool) command. More documentation on shared libraries is forthcoming.
+It's also possible to build a shared library instead of a static library, but this is done by passing the `--shared` option to the [`crowbar target add`](Crowbar) command. More documentation on shared libraries is forthcoming.
 
 ### [Adding source files](#adding-source-files)
 
@@ -78,7 +78,7 @@ If the first argument is `Visibility::Public`, all include directories inherited
 
 The second argument specifies the name of the extern. An extern name is only valid if there is at least one [extern provider](KeyConcepts#extern-providers) using that name defined in the current repo or in any repo that the current repo depends on.
 
-Note that, any time a target depends on an extern, and that target is added to a build folder, the user must select an extern provider for that build folder before PlyTool can successfully generate a build system.
+Note that, any time a target depends on an extern, and that target is added to a build folder, the user must select an extern provider for that build folder before Crowbar can successfully generate a build system.
 
 ### [Other operations](#other-operations)
 

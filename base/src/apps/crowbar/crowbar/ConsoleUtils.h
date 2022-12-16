@@ -28,7 +28,7 @@ struct CommandLine {
     void finalize();
 };
 
-struct PlyToolCommandEnv {
+struct CrowbarCommandEnv {
     CommandLine* cl = nullptr;
 };
 

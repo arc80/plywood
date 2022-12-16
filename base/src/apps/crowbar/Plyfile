@@ -1,15 +1,15 @@
-executable plytool {
+executable crowbar {
     source_files {
-        "plytool"
+        "crowbar"
     }
     include_directories {
-        private "plytool"
+        private "crowbar"
     }
     dependencies {
         private build_folder
         private cpp
         private pylon_reflect
-        private plytool_client
+        private crowbar_client
         private build_repository
     }
     link_libraries {
@@ -19,12 +19,12 @@ executable plytool {
     }
 }
 
-module plytool_client {
+module crowbar_client {
     source_files {
-        "plytool-client/plytool-client"
+        "crowbar-client/crowbar-client"
     }
     include_directories {
-        public "plytool-client"
+        public "crowbar-client"
     }
     dependencies {
         public reflect

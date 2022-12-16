@@ -69,7 +69,7 @@ generateCMakeProject(StringView cmakeListsFolder, const build::CMakeGeneratorOpt
     return {rc, std::move(output)};
 }
 
-void command_new_generate(PlyToolCommandEnv* env) {
+void command_new_generate(CrowbarCommandEnv* env) {
     build2::Common::initialize();
     build2::init_built_ins();
     build2::Repository::create();

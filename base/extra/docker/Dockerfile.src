@@ -21,12 +21,12 @@ COPY plywood /home/plywood
 WORKDIR /home/plywood
 RUN sed -i 's/WEBCOOKDOCS_LINK_TO_GITHUB 0/WEBCOOKDOCS_LINK_TO_GITHUB 1/' repos/plywood/src/web/web.modules.cpp
 RUN cmake -DNO_BACKUP=1 -DPRESET=make -P Setup.cmake
-RUN ./plytool folder create docs
-RUN ./plytool target add WebCooker
-RUN ./plytool target add WebServer
-RUN ./plytool extern select libsass.apt
-RUN ./plytool run WebCooker
-RUN ./plytool build WebServer
+RUN ./crowbar folder create docs
+RUN ./crowbar target add WebCooker
+RUN ./crowbar target add WebServer
+RUN ./crowbar extern select libsass.apt
+RUN ./crowbar run WebCooker
+RUN ./crowbar build WebServer
 
 # Prepare Dockerfile for webserver
 WORKDIR /home/deploy
