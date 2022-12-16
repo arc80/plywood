@@ -2,14 +2,14 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-crowbar/Parser.h>
-#include <ply-crowbar/Interpreter.h>
+#include <ply-biscuit/Parser.h>
+#include <ply-biscuit/Interpreter.h>
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-test/TestSuite.h>
 #include <ply-reflect/methods/BoundMethod.h>
 
 using namespace ply;
-using namespace ply::crowbar;
+using namespace ply::biscuit;
 
 struct ScriptOutStream {
     PLY_REFLECT()
@@ -41,7 +41,7 @@ MethodResult doPrint(const MethodArgs& args) {
     return MethodResult::OK;
 }
 
-// FIXME: Move this to the crowbar module:
+// FIXME: Move this to the biscuit module:
 struct BuiltInStorage {
     BoundMethod boundPrint;
     bool true_ = true;
@@ -68,13 +68,13 @@ String parseAndTryCall(StringView src, StringView funcName, ArrayView<const AnyO
     parser.filter.allowFunctions = true;
     parser.filter.allowInstructions = false;
     LabelMap<Owned<Statement>> fnMap;
-    parser.functionHandler = [&parser, &fnMap](Owned<crowbar::Statement>&& stmt,
+    parser.functionHandler = [&parser, &fnMap](Owned<biscuit::Statement>&& stmt,
                                                const ExpandedToken& nameToken) {
         if (!parseParameterList(&parser, stmt->functionDefinition().get()))
             return;
 
         // Parse function body.
-        crowbar::Parser::Filter filter;
+        biscuit::Parser::Filter filter;
         filter.keywordHandler = [](const KeywordParams&) { return KeywordResult::Illegal; };
         filter.allowInstructions = true;
         PLY_SET_IN_SCOPE(parser.filter, filter);
@@ -86,8 +86,8 @@ String parseAndTryCall(StringView src, StringView funcName, ArrayView<const AnyO
     };
 
     // Parse the script.
-    crowbar::StatementBlockProperties props{"file"};
-    Owned<crowbar::StatementBlock> file = parseStatementBlockInner(&parser, props, true);
+    biscuit::StatementBlockProperties props{"file"};
+    Owned<biscuit::StatementBlock> file = parseStatementBlockInner(&parser, props, true);
     if (parser.errorCount > 0)
         return errorOut.moveToString();
 
@@ -132,7 +132,7 @@ String parseAndTryCall(StringView src, StringView funcName, ArrayView<const AnyO
     return {};
 }
 
-#define PLY_TEST_CASE_PREFIX Crowbar_
+#define PLY_TEST_CASE_PREFIX Biscuit_
 
 // Runtime reflection lets us access struct members from script.
 struct TestStruct {
@@ -196,7 +196,7 @@ void runTestSuite() {
 
     // Open input file
     String testSuitePath =
-        NativePath::join(PLY_WORKSPACE_FOLDER, "base/src/apps/CrowbarTest/AllCrowbarTests.txt");
+        NativePath::join(PLY_WORKSPACE_FOLDER, "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
     Tuple<String, TextFormat> allTests = FileSystem::native()->loadTextAutodetect(testSuitePath);
     SectionReader sr{allTests.first};
 
@@ -229,7 +229,7 @@ void runTestSuite() {
         }
     }
 
-    // Rewrite CrowbarTests.txt
+    // Rewrite BiscuitTests.txt
     FileSystem::native()->makeDirsAndSaveTextIfDifferent(testSuitePath, outs.moveToString(),
                                                          allTests.second);
 }

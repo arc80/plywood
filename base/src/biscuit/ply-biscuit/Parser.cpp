@@ -2,12 +2,12 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-crowbar/Core.h>
-#include <ply-crowbar/Parser.h>
-#include <ply-crowbar/ParseTree.h>
+#include <ply-biscuit/Core.h>
+#include <ply-biscuit/Parser.h>
+#include <ply-biscuit/ParseTree.h>
 
 namespace ply {
-namespace crowbar {
+namespace biscuit {
 
 PLY_NO_INLINE bool errorAtToken(Parser* parser, const ExpandedToken& errorToken,
                                 ErrorTokenAction tokenAction, StringView message) {
@@ -341,7 +341,7 @@ void handleFunction(Parser* parser, Owned<Statement>&& stmt, const ExpandedToken
         return;
 
     // Parse function body.
-    crowbar::Parser::Filter filter;
+    biscuit::Parser::Filter filter;
     filter.keywordHandler = [](const KeywordParams&) { return KeywordResult::Illegal; };
     filter.allowInstructions = true;
     PLY_SET_IN_SCOPE(parser->filter, filter);
@@ -587,5 +587,5 @@ Parser::Parser() {
     this->functionHandler = {handleFunction, this};
 }
 
-} // namespace crowbar
+} // namespace biscuit
 } // namespace ply

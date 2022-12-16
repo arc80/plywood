@@ -1,6 +1,6 @@
-module crowbar {
+module biscuit {
     source_files {
-        "ply-crowbar"
+        "ply-biscuit"
     }
     include_directories {
         public "."

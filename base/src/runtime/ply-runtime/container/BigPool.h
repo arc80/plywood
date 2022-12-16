@@ -7,7 +7,7 @@
 
 namespace ply {
 
-// FIXME: Implement a 32-bit friendly BigPool, especially for crowbar::Tokenizer
+// FIXME: Implement a 32-bit friendly BigPool, especially for biscuit::Tokenizer
 PLY_STATIC_ASSERT(PLY_PTR_SIZE == 8);
 
 struct BaseBigPool {

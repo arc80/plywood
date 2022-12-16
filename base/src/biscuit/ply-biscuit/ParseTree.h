@@ -3,11 +3,11 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-crowbar/Core.h>
-#include <ply-crowbar/Tokenizer.h>
+#include <ply-biscuit/Core.h>
+#include <ply-biscuit/Tokenizer.h>
 
 namespace ply {
-namespace crowbar {
+namespace biscuit {
 
 struct StatementBlock;
 
@@ -45,7 +45,7 @@ struct Expression {
         Owned<Expression> callable;
         Array<Owned<Expression>> args;
     };
-#include "codegen/switch-ply-crowbar-Expression.inl" //@@ply
+#include "codegen/switch-ply-biscuit-Expression.inl" //@@ply
 };
 
 struct Statement {
@@ -89,12 +89,12 @@ struct Statement {
         Owned<Expression> expr;
         Owned<StatementBlock> body;
     };
-#include "codegen/switch-ply-crowbar-Statement.inl" //@@ply
+#include "codegen/switch-ply-biscuit-Statement.inl" //@@ply
 };
 
 struct StatementBlock {
     Array<Owned<Statement>> statements;
 };
 
-} // namespace crowbar
+} // namespace biscuit
 } // namespace ply

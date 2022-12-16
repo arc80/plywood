@@ -3,11 +3,11 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-crowbar/Core.h>
+#include <ply-biscuit/Core.h>
 #include <ply-runtime/io/text/FileLocationMap.h>
 
 namespace ply {
-namespace crowbar {
+namespace biscuit {
 
 enum class TokenType {
     Invalid,
@@ -122,5 +122,5 @@ struct Tokenizer {
     }
 };
 
-} // namespace crowbar
+} // namespace biscuit
 } // namespace ply

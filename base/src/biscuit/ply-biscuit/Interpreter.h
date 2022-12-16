@@ -3,12 +3,12 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-crowbar/Core.h>
+#include <ply-biscuit/Core.h>
 #include <ply-reflect/methods/BaseInterpreter.h>
-#include <ply-crowbar/ParseTree.h>
+#include <ply-biscuit/ParseTree.h>
 
 namespace ply {
-namespace crowbar {
+namespace biscuit {
 
 struct Tokenizer;
 
@@ -42,5 +42,5 @@ MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* 
 MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block);
 MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr);
 
-} // namespace crowbar
+} // namespace biscuit
 } // namespace ply

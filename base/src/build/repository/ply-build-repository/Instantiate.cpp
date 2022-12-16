@@ -22,7 +22,7 @@ T& appendOrFind(Array<T>& arr, U&& item, const Callable& callable) {
 }
 
 struct InstantiatingInterpreter {
-    crowbar::Interpreter interp;
+    biscuit::Interpreter interp;
     ModuleInstantiator* mi = nullptr;
     Repository::ModuleOrFunction* currentModule = nullptr;
     Target* target = nullptr;
@@ -40,7 +40,7 @@ enum class Visibility {
     Private,
 };
 
-Visibility getVisibility(crowbar::Interpreter* interp, const AnyObject& attributes, bool isModule,
+Visibility getVisibility(biscuit::Interpreter* interp, const AnyObject& attributes, bool isModule,
                          StringView propertyType) {
     Visibility vis = Visibility::Private;
     s32 tokenIdx = -1;
@@ -58,7 +58,7 @@ Visibility getVisibility(crowbar::Interpreter* interp, const AnyObject& attribut
         }
     } else {
         if (tokenIdx >= 0) {
-            crowbar::ExpandedToken token = interp->currentFrame->tkr->expandToken(tokenIdx);
+            biscuit::ExpandedToken token = interp->currentFrame->tkr->expandToken(tokenIdx);
             interp->base.error(
                 String::format("'{}' cannot be used inside config block", token.text));
             return Visibility::Error;
@@ -187,8 +187,8 @@ bool onEvaluateLinkLibrary(PropertyCollector* pc, const AnyObject& attributes) {
 }
 
 MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
-                                       const crowbar::Statement::CustomBlock* cb) {
-    crowbar::Interpreter::Hooks hooks;
+                                       const biscuit::Statement::CustomBlock* cb) {
+    biscuit::Interpreter::Hooks hooks;
     if (cb->type == g_common->includeDirectoriesKey) {
         hooks.onEvaluate = {onEvaluateIncludeDirectory, pc};
     } else if (cb->type == g_common->preprocessorDefinitionsKey) {
@@ -207,7 +207,7 @@ MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
 }
 
 MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
-                                        const crowbar::Statement::CustomBlock* cb) {
+                                        const biscuit::Statement::CustomBlock* cb) {
     PropertyCollector pc;
     pc.interp = &ii->interp;
     pc.basePath = NativePath::split(ii->currentModule->plyfile->tkr.fileLocationMap.path).first;
@@ -215,7 +215,7 @@ MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
     pc.configBit = ii->mi->configBit;
     pc.isModule = true;
 
-    crowbar::Interpreter::Hooks hooks;
+    biscuit::Interpreter::Hooks hooks;
     if (cb->type == g_common->sourceFilesKey) {
         hooks.onEvaluate = {onEvaluateSourceFile, ii};
     } else if (cb->type == g_common->includeDirectoriesKey) {
@@ -238,7 +238,7 @@ MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
 
 MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod, StringView buildFolderPath) {
     // Create new interpreter.
-    crowbar::Interpreter interp;
+    biscuit::Interpreter interp;
     interp.base.error = [&interp](StringView message) {
         OutStream outs = StdErr::text();
         logErrorWithStack(&outs, &interp, message);
@@ -255,7 +255,7 @@ MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod, StringView buil
     };
 
     // Invoke generate block.
-    crowbar::Interpreter::StackFrame frame;
+    biscuit::Interpreter::StackFrame frame;
     frame.interp = &interp;
     frame.desc = [mod]() -> HybridString {
         return String::format("module '{}'", g_labelStorage.view(mod->stmt->customBlock()->name));
@@ -315,7 +315,7 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
         mod->generatedOnce = true;
     }
 
-    const crowbar::Statement::CustomBlock* moduleDef = mod->stmt->customBlock().get();
+    const biscuit::Statement::CustomBlock* moduleDef = mod->stmt->customBlock().get();
     if (moduleDef->type == g_common->executableKey) {
         target->type = Target::Executable;
     } else {
@@ -349,7 +349,7 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
     };
 
     // Invoke module function.
-    crowbar::Interpreter::StackFrame frame;
+    biscuit::Interpreter::StackFrame frame;
     frame.hooks.doCustomBlock = {doCustomBlockAtModuleScope, &ii};
     frame.interp = &ii.interp;
     frame.desc = [moduleDef]() -> HybridString {
@@ -364,12 +364,12 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
 // 
 
 struct ConfigListInterpreter {
-    crowbar::Interpreter interp;
+    biscuit::Interpreter interp;
     build2::ModuleInstantiator* mi = nullptr;
 };
 
 MethodResult doCustomBlock(ConfigListInterpreter* cli,
-                           const crowbar::Statement::CustomBlock* customBlock) {
+                           const biscuit::Statement::CustomBlock* customBlock) {
     PLY_ASSERT(customBlock->type == build2::g_common->configKey);
 
     // Evaluate config name
@@ -402,7 +402,7 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     pc.basePath = NativePath::split(cli->interp.currentFrame->tkr->fileLocationMap.path).first;
     pc.options = &build2::Project.perConfigOptions;
     pc.configBit = u64{1} << configIndex;
-    crowbar::Interpreter::Hooks hooks;
+    biscuit::Interpreter::Hooks hooks;
     hooks.doCustomBlock = {build2::doCustomBlockInsideConfig, &pc};
     PLY_SET_IN_SCOPE(cli->interp.currentFrame->hooks, hooks);
     result = execBlock(cli->interp.currentFrame, customBlock->body);
@@ -476,7 +476,7 @@ PLY_NO_INLINE void instantiate_all_configs() {
         };
 
         // Invoke block.
-        crowbar::Interpreter::StackFrame frame;
+        biscuit::Interpreter::StackFrame frame;
         frame.interp = &cli.interp;
         frame.desc = []() -> HybridString { return "config_list"; };
         frame.tkr = &configList->plyfile->tkr;

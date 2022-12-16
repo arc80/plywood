@@ -3,16 +3,16 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-crowbar/Core.h>
-#include <ply-crowbar/Tokenizer.h>
-#include <ply-crowbar/ParseTree.h>
+#include <ply-biscuit/Core.h>
+#include <ply-biscuit/Tokenizer.h>
+#include <ply-biscuit/ParseTree.h>
 
 namespace ply {
-namespace crowbar {
+namespace biscuit {
 
 struct KeywordParams {
-    crowbar::ExpandedToken kwToken;
-    crowbar::StatementBlock* stmtBlock = nullptr;
+    biscuit::ExpandedToken kwToken;
+    biscuit::StatementBlock* stmtBlock = nullptr;
     AnyOwnedObject* attributes;
 };
 enum class KeywordResult {
@@ -23,7 +23,7 @@ enum class KeywordResult {
 };
 typedef KeywordResult KeywordHandler(const KeywordParams& kp);
 typedef void ValidateAttribute(Statement* stmt);
-typedef void FunctionHandler(Owned<crowbar::Statement>&& stmt, const ExpandedToken& nameToken);
+typedef void FunctionHandler(Owned<biscuit::Statement>&& stmt, const ExpandedToken& nameToken);
 
 struct Parser {
     // Tokenizer.
@@ -92,5 +92,5 @@ Owned<StatementBlock> parseStatementBlockInner(Parser* parser,
                                                const StatementBlockProperties& props,
                                                bool fileScope = false);
 
-} // namespace crowbar
+} // namespace biscuit
 } // namespace ply

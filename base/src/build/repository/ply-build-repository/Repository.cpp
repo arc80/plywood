@@ -3,7 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-build-repository/Repository.h>
-#include <ply-crowbar/Interpreter.h>
+#include <ply-biscuit/Interpreter.h>
 
 namespace ply {
 namespace build2 {
@@ -11,7 +11,7 @@ namespace build2 {
 Repository* g_repository = nullptr;
 
 struct ConfigOptionsInterpreter {
-    crowbar::Interpreter interp;
+    biscuit::Interpreter interp;
     Repository::ConfigOptions* optionSet = nullptr;
 };
 
@@ -80,7 +80,7 @@ void Repository::create() {
         };
 
         // Invoke config_options block.
-        crowbar::Interpreter::StackFrame frame;
+        biscuit::Interpreter::StackFrame frame;
         frame.interp = &coi.interp;
         frame.hooks.assignToLocal = {doLocalAssignment, &coi};
         frame.desc = [mod = cb.mod]() -> HybridString {

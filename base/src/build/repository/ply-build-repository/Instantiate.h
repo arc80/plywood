@@ -6,7 +6,7 @@
 #include <ply-build-repository/Common.h>
 #include <buildSteps/Project.h>
 #include <ply-build-repository/Repository.h>
-#include <ply-crowbar/Interpreter.h>
+#include <ply-biscuit/Interpreter.h>
 #include <ply-build-folder/BuildFolder.h>
 
 namespace ply {
@@ -35,7 +35,7 @@ MethodResult instantiateModuleForCurrentConfig(Target** target, ModuleInstantiat
                                                Label moduleLabel);
 
 struct PropertyCollector {
-    crowbar::Interpreter* interp;
+    biscuit::Interpreter* interp;
     String basePath;
     Array<Option>* options;
     u64 configBit = 0;
@@ -43,7 +43,7 @@ struct PropertyCollector {
 };
 
 MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
-                                       const crowbar::Statement::CustomBlock* cb);
+                                       const biscuit::Statement::CustomBlock* cb);
 void instantiate_all_configs();
 
 } // namespace build2

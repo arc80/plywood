@@ -33,7 +33,7 @@ module build_repository {
     dependencies {
         public reflect
         public buildSteps
-        public crowbar
+        public biscuit
         public build_common
         public reflect
         public build_folder

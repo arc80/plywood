@@ -2,12 +2,12 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-crowbar/Core.h>
-#include <ply-crowbar/Interpreter.h>
+#include <ply-biscuit/Core.h>
+#include <ply-biscuit/Interpreter.h>
 #include <ply-reflect/methods/BoundMethod.h>
 
 namespace ply {
-namespace crowbar {
+namespace biscuit {
 
 void logErrorWithStack(OutStream* outs, const Interpreter* interp, StringView message) {
     Interpreter::StackFrame* frame = interp->currentFrame;
@@ -457,5 +457,5 @@ MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* 
     return result;
 }
 
-} // namespace crowbar
+} // namespace biscuit
 } // namespace ply

@@ -2,11 +2,11 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-crowbar/Core.h>
-#include <ply-crowbar/Parser.h>
+#include <ply-biscuit/Core.h>
+#include <ply-biscuit/Parser.h>
 
 namespace ply {
-namespace crowbar {
+namespace biscuit {
 
 bool okToStayInScope(Parser* parser, const ExpandedToken& token) {
     switch (token.type) {
@@ -113,5 +113,5 @@ PLY_NO_INLINE bool handleUnexpectedToken(Parser* parser, ExpandedToken* outClose
     }
 }
 
-} // namespace crowbar
+} // namespace biscuit
 } // namespace ply

@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-build-repository/Common.h>
-#include <ply-crowbar/ParseTree.h>
+#include <ply-biscuit/ParseTree.h>
 
 namespace ply {
 namespace build2 {
@@ -12,8 +12,8 @@ namespace build2 {
 struct Repository {
     struct Plyfile {
         String src;
-        crowbar::Tokenizer tkr; // For tokenData and FileLocationMap (only)
-        Owned<crowbar::StatementBlock> contents;
+        biscuit::Tokenizer tkr; // For tokenData and FileLocationMap (only)
+        Owned<biscuit::StatementBlock> contents;
     };
 
     struct ConfigOptions {
@@ -25,8 +25,8 @@ struct Repository {
         // ply reflect off
 
         Plyfile* plyfile = nullptr;
-        Owned<crowbar::Statement> stmt;
-        Owned<crowbar::Statement> generateBlock;
+        Owned<biscuit::Statement> stmt;
+        Owned<biscuit::Statement> generateBlock;
         bool generatedOnce = false;
         Owned<ConfigOptions> defaultOptions;
         Owned<ConfigOptions> currentOptions;
@@ -34,13 +34,13 @@ struct Repository {
 
     struct ModuleConfigBlock {
         ModuleOrFunction* mod = nullptr;
-        Owned<crowbar::Statement> block;
+        Owned<biscuit::Statement> block;
     };
 
     struct ConfigList {
         Plyfile* plyfile = nullptr;
         u32 fileOffset = 0;
-        Owned<crowbar::Statement> blockStmt;
+        Owned<biscuit::Statement> blockStmt;
     };
 
     Array<Owned<Plyfile>> plyfiles;
