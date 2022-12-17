@@ -7,6 +7,8 @@
 #include <ply-build-folder/BuildFolder.h>
 
 struct Workspace_ {
+    String path;
+
     PLY_REFLECT()
     String currentBuildFolder;
     build::CMakeGeneratorOptions defaultCMakeOptions;
@@ -14,12 +16,8 @@ struct Workspace_ {
     String sourceNewLines;
     // ply reflect off
 
-    static String getPath() {
-        return NativePath::join(PLY_WORKSPACE_FOLDER, "workspace-settings.pylon");
-    }
-
-    bool load();
-    bool save() const;
+    void load();
+    void save() const;
 
     TextFormat getSourceTextFormat() const;
 };
