@@ -204,7 +204,7 @@ struct ReflectionHooks : ParseSupervisor {
                         record->closeCurly.linearLoc, state.switch_->macro.linearLoc});
                 } else {
                     const PPVisitedFiles::SourceFile& srcFile = vf->sourceFiles[chain.fileOrExpIdx];
-                    String curAbsPath = NativePath::join(PLY_WORKSPACE_FOLDER, this->filePath);
+                    String curAbsPath = NativePath::join(Workspace.path, this->filePath);
                     // FIXME: Improve this if we ever start following includes while collecting
                     // reflection info:
                     PLY_ASSERT(srcFile.fileLocationMap.path == curAbsPath);
@@ -410,7 +410,7 @@ Tuple<SingleFileReflectionInfo, bool> extractReflection(ReflectionInfoAggregator
     visor.sfri = &sfri;
 
     cpp::PPVisitedFiles visitedFiles;
-    parsePlywoodSrcFile(NativePath::join(PLY_WORKSPACE_FOLDER, relPath), &visitedFiles, &visor);
+    parsePlywoodSrcFile(NativePath::join(Workspace.path, relPath), &visitedFiles, &visor);
 
     return {std::move(sfri), !visor.anyError};
 }

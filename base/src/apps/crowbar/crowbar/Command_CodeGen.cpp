@@ -48,7 +48,7 @@ String getSwitchInl(cpp::SwitchInfo* switch_) {
 }
 
 void writeSwitchInl(cpp::SwitchInfo* switch_, const TextFormat& tff) {
-    String absInlPath = NativePath::join(PLY_WORKSPACE_FOLDER, switch_->inlineInlPath);
+    String absInlPath = NativePath::join(Workspace.path, switch_->inlineInlPath);
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         absInlPath, getSwitchInl(switch_), tff);
     OutStream stdOut = StdOut::text();
@@ -180,7 +180,7 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg, const TextFormat& tf
 
     for (const Traits::Item& item : fileToGeneratorList) {
         PLY_ASSERT(item.cppInlPath.endsWith(".inl"));
-        String absPath = NativePath::join(PLY_WORKSPACE_FOLDER, item.cppInlPath);
+        String absPath = NativePath::join(Workspace.path, item.cppInlPath);
 
         MemOutStream mout;
         for (CodeGenerator* generator : item.sources) {
@@ -204,7 +204,7 @@ void command_codegen(CrowbarCommandEnv* env) {
     cpp::ReflectionInfoAggregator agg;
 
     u32 fileNum = 0;
-    for (const DirectoryEntry& entry : FileSystem::native()->listDir(PLY_WORKSPACE_FOLDER, 0)) {
+    for (const DirectoryEntry& entry : FileSystem::native()->listDir(Workspace.path, 0)) {
         if (!entry.isDir)
             continue;
         if (entry.name.startsWith("."))
@@ -213,7 +213,7 @@ void command_codegen(CrowbarCommandEnv* env) {
             continue;
 
         for (WalkTriple& triple :
-             FileSystem::native()->walk(NativePath::join(PLY_WORKSPACE_FOLDER, entry.name))) {
+             FileSystem::native()->walk(NativePath::join(Workspace.path, entry.name))) {
             // Sort child directories and filenames so that files are visited in a deterministic
             // order:
             sort(triple.dirNames);

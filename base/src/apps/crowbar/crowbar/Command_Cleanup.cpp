@@ -102,6 +102,6 @@ void command_cleanup(CrowbarCommandEnv* env) {
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 )";
-    cleanupRepo(NativePath::join(PLY_WORKSPACE_FOLDER, "base/src"), desiredHeader, {},
+    cleanupRepo(NativePath::join(Workspace.path, "base/src"), desiredHeader, {},
                 Workspace.getSourceTextFormat());
 }
