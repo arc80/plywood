@@ -2,8 +2,8 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-build-common/Core.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/Core.h>
+#include <ply-build-repo/BuildFolder.h>
 #include <pylon/Parse.h>
 #include <pylon/Write.h>
 #include <pylon-reflect/Import.h>

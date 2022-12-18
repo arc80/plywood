@@ -2,13 +2,13 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-build-repository/Instantiate.h>
-#include <ply-build-repository/BuiltIns.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/Instantiate.h>
+#include <ply-build-repo/BuiltIns.h>
+#include <ply-build-repo/BuildFolder.h>
 #include <ply-runtime/algorithm/Find.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 //--------------------------------------------------------------
 
@@ -122,8 +122,8 @@ bool onEvaluateIncludeDirectory(PropertyCollector* pc, const AnyObject& attribut
 
     Option opt{Option::IncludeDir,
                NativePath::join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
-    Option& foundOpt = appendOrFind(*pc->options, std::move(opt),
-                                    [&](const Option& o) { return o == opt; });
+    Option& foundOpt =
+        appendOrFind(*pc->options, std::move(opt), [&](const Option& o) { return o == opt; });
     foundOpt.enabledBits |= pc->configBit;
     if (vis == Visibility::Public) {
         foundOpt.isPublicBits |= pc->configBit;
@@ -180,8 +180,8 @@ bool onEvaluateLinkLibrary(PropertyCollector* pc, const AnyObject& attributes) {
     PLY_ASSERT(!attributes.data);
     String* path = pc->interp->base.returnValue.cast<String>();
     Option desiredOpt{Option::LinkerInput, *path, {}};
-    Option& opt = appendOrFind(*pc->options, desiredOpt,
-                               [&](const Option& o) { return o == desiredOpt; });
+    Option& opt =
+        appendOrFind(*pc->options, desiredOpt, [&](const Option& o) { return o == desiredOpt; });
     opt.enabledBits |= pc->configBit;
     return true;
 }
@@ -360,16 +360,16 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
     return result;
 }
 
-// 
+//
 
 struct ConfigListInterpreter {
     biscuit::Interpreter interp;
-    build2::ModuleInstantiator* mi = nullptr;
+    ModuleInstantiator* mi = nullptr;
 };
 
 MethodResult doCustomBlock(ConfigListInterpreter* cli,
                            const biscuit::Statement::CustomBlock* customBlock) {
-    PLY_ASSERT(customBlock->type == build2::g_common->configKey);
+    PLY_ASSERT(customBlock->type == g_common->configKey);
 
     // Evaluate config name
     MethodResult result = eval(cli->interp.currentFrame, customBlock->expr);
@@ -378,8 +378,8 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     PLY_ASSERT(currentConfigName); // FIXME: Make robust
 
     // Initialize all Module::currentOptions
-    for (build2::Repository::ModuleOrFunction* mod : build2::g_repository->modules) {
-        auto newOptions = Owned<build2::Repository::ConfigOptions>::create();
+    for (Repository::ModuleOrFunction* mod : g_repository->modules) {
+        auto newOptions = Owned<Repository::ConfigOptions>::create();
         for (const auto item : mod->defaultOptions->map) {
             AnyOwnedObject* dst = newOptions->map.insert(item.key);
             *dst = AnyOwnedObject::create(item.value.type);
@@ -389,34 +389,34 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     }
 
     // Enable debug info by default
-    u32 configIndex = build2::Project.configNames.numItems();
+    u32 configIndex = Project.configNames.numItems();
     PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
-    build2::Option debugInfo{build2::Option::Generic, "debug_info", "true"};
+    Option debugInfo{Option::Generic, "debug_info", "true"};
     debugInfo.enabledBits |= u64{1} << configIndex;
-    build2::append_option(build2::Project.perConfigOptions, debugInfo);
+    append_option(Project.perConfigOptions, debugInfo);
 
     // Execute config block
-    build2::PropertyCollector pc;
+    PropertyCollector pc;
     pc.interp = &cli->interp;
     pc.basePath = NativePath::split(cli->interp.currentFrame->tkr->fileLocationMap.path).first;
-    pc.options = &build2::Project.perConfigOptions;
+    pc.options = &Project.perConfigOptions;
     pc.configBit = u64{1} << configIndex;
     biscuit::Interpreter::Hooks hooks;
-    hooks.doCustomBlock = {build2::doCustomBlockInsideConfig, &pc};
+    hooks.doCustomBlock = {doCustomBlockInsideConfig, &pc};
     PLY_SET_IN_SCOPE(cli->interp.currentFrame->hooks, hooks);
     result = execBlock(cli->interp.currentFrame, customBlock->body);
     if (result != MethodResult::OK)
         return result;
 
     // Add config to project
-    build2::Project.configNames.append(currentConfigName);
+    Project.configNames.append(currentConfigName);
 
     // Instantiate all root modules in this config
     PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
-    for (StringView targetName : build::BuildFolder.rootTargets) {
-        build2::Target* rootTarget = nullptr;
-        MethodResult result = build2::instantiateModuleForCurrentConfig(
-            &rootTarget, cli->mi, g_labelStorage.insert(targetName));
+    for (StringView targetName : BuildFolder.rootTargets) {
+        Target* rootTarget = nullptr;
+        MethodResult result = instantiateModuleForCurrentConfig(&rootTarget, cli->mi,
+                                                                g_labelStorage.insert(targetName));
         if (result != MethodResult::OK)
             return result;
     }
@@ -424,23 +424,23 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     // Reset state between configs.
     // Clear currentConfigName, Module::currentOptions, and set ModuleInstantiator status to
     // NotInstantiated.
-    for (build2::Repository::ModuleOrFunction* mod : build2::g_repository->modules) {
+    for (Repository::ModuleOrFunction* mod : g_repository->modules) {
         mod->currentOptions.clear();
     }
     for (auto& item : cli->mi->moduleMap) {
-        item.value.statusInCurrentConfig = build2::NotInstantiated;
+        item.value.statusInCurrentConfig = NotInstantiated;
     }
 
     return MethodResult::OK;
 }
 
 PLY_NO_INLINE void instantiate_all_configs() {
-    build2::ModuleInstantiator mi{};
-    build2::Project.name = build::BuildFolder.solutionName;
-    build2::init_toolchain_msvc();
+    ModuleInstantiator mi{};
+    Project.name = BuildFolder.solutionName;
+    init_toolchain_msvc();
 
     // Execute the config_list block
-    build2::Repository::ConfigList* configList = build2::g_repository->configList;
+    Repository::ConfigList* configList = g_repository->configList;
     if (!configList) {
         Error.log("No config_list block defined.\n");
     }
@@ -463,8 +463,7 @@ PLY_NO_INLINE void instantiate_all_configs() {
         cli.interp.resolveName = [&builtIns, &cli](Label identifier) -> AnyObject {
             if (AnyObject* builtIn = builtIns.find(identifier))
                 return *builtIn;
-            if (build2::Repository::ModuleOrFunction** mod =
-                    build2::g_repository->globalScope.find(identifier)) {
+            if (Repository::ModuleOrFunction** mod = g_repository->globalScope.find(identifier)) {
                 if (auto fnDef = (*mod)->stmt->functionDefinition())
                     return AnyObject::bind(fnDef.get());
                 else
@@ -486,8 +485,8 @@ PLY_NO_INLINE void instantiate_all_configs() {
         }
     }
 
-    build2::do_inheritance();
+    do_inheritance();
 }
 
-} // namespace build2
+} // namespace build
 } // namespace ply

@@ -4,14 +4,16 @@
 ------------------------------------*/
 #pragma once
 #include <Core.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/BuildFolder.h>
+
+using namespace ply::build;
 
 struct Workspace_ {
     String path;
 
     PLY_REFLECT()
     String currentBuildFolder;
-    build::CMakeGeneratorOptions defaultCMakeOptions;
+    CMakeGeneratorOptions defaultCMakeOptions;
     String defaultConfig;
     String sourceNewLines;
     // ply reflect off

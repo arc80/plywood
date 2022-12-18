@@ -3,11 +3,11 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <buildSteps/Core.h>
+#include <ply-build-steps/Core.h>
 #include <pylon/Node.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 PLY_INLINE bool hasAllBits(u64 bitsToCheck, u64 desiredBits) {
     return (bitsToCheck & desiredBits) == desiredBits;
@@ -104,5 +104,5 @@ void do_inheritance();
 Array<Option> get_combined_options();
 void write_CMakeLists_txt_if_different(StringView path);
 
-} // namespace build2
+} // namespace build
 } // namespace ply

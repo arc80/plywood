@@ -3,11 +3,11 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-build-common/Core.h>
+#include <ply-build-repo/Core.h>
 #include <ply-runtime/string/Label.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 // Common contains data that is shared between the parser and the interpreter.
 struct Common {
@@ -44,5 +44,5 @@ struct StatementAttributes {
     // ply reflect off
 };
 
-} // namespace build2
+} // namespace build
 } // namespace ply

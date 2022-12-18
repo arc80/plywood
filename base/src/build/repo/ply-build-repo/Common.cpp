@@ -2,10 +2,10 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-build-repository/Common.h>
+#include <ply-build-repo/Common.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 Common* g_common = nullptr;
 
@@ -29,7 +29,7 @@ void Common::initialize() {
     g_common->generateKey = g_labelStorage.insert("generate");
 }
 
-} // namespace build2
+} // namespace build
 } // namespace ply
 
 #include "codegen/Common.inl"

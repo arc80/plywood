@@ -2,11 +2,11 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-build-repository/Repository.h>
+#include <ply-build-repo/Repository.h>
 #include <ply-biscuit/Parser.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 struct ExtendedParser {
     biscuit::Parser* parser = nullptr;
@@ -284,5 +284,5 @@ bool parsePlyfile(StringView path) {
     return true;
 }
 
-} // namespace build2
+} // namespace build
 } // namespace ply

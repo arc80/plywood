@@ -4,20 +4,22 @@
 ------------------------------------*/
 #include <Core.h>
 #include <ConsoleUtils.h>
-#include <ply-build-repository/Instantiate.h>
-#include <ply-build-repository/BuiltIns.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/Instantiate.h>
+#include <ply-build-repo/BuiltIns.h>
+#include <ply-build-repo/BuildFolder.h>
+
+using namespace ply::build;
 
 void write_bootstrap(u32 configIndex) {
     // Write bulk_crowbar.cpp
     {
         MemOutStream outs;
         String sourceDir = NativePath::join(Workspace.path, "base/scripts");
-        for (const build2::Target* target : build2::Project.targets) {
-            for (const build2::SourceGroup& sg : target->sourceGroups) {
-                for (const build2::SourceFile& sf : sg.files) {
-                    if (build2::hasBitAtIndex(sf.enabledBits, configIndex) &&
-                        sf.relPath.endsWith(".cpp") && !sf.relPath.endsWith(".modules.cpp")) {
+        for (const Target* target : Project.targets) {
+            for (const SourceGroup& sg : target->sourceGroups) {
+                for (const SourceFile& sf : sg.files) {
+                    if (hasBitAtIndex(sf.enabledBits, configIndex) && sf.relPath.endsWith(".cpp") &&
+                        !sf.relPath.endsWith(".modules.cpp")) {
                         String includePath = PosixPath::from<NativePath>(NativePath::makeRelative(
                             sourceDir, NativePath::join(sg.absPath, sf.relPath)));
                         outs.format("#include \"{}\"\n", includePath);
@@ -35,18 +37,18 @@ void write_bootstrap(u32 configIndex) {
 
     // Write build.bat
     {
-        Array<build2::Option> combinedOptions = build2::get_combined_options();
+        Array<Option> combinedOptions = get_combined_options();
         MemOutStream outs;
         outs << "@echo off\n";
         outs << "cl";
 
         // Compilation options
-        build2::CompilerSpecificOptions copts;
-        for (const build2::Option& opt : combinedOptions) {
-            if (!build2::hasBitAtIndex(opt.enabledBits, configIndex))
+        CompilerSpecificOptions copts;
+        for (const Option& opt : combinedOptions) {
+            if (!hasBitAtIndex(opt.enabledBits, configIndex))
                 continue;
-            if (opt.type == build2::Option::Generic) {
-                build2::translate_toolchain_option(&copts, opt);
+            if (opt.type == Option::Generic) {
+                translate_toolchain_option(&copts, opt);
             }
         }
         for (StringView opt : copts.compile) {
@@ -55,10 +57,10 @@ void write_bootstrap(u32 configIndex) {
         outs << " /Fd\"bulk_crowbar.pdb\"";
 
         // Preprocessor definitions
-        for (const build2::Option& opt : combinedOptions) {
-            if (!build2::hasBitAtIndex(opt.enabledBits, configIndex))
+        for (const Option& opt : combinedOptions) {
+            if (!hasBitAtIndex(opt.enabledBits, configIndex))
                 continue;
-            if (opt.type == build2::Option::PreprocessorDef) {
+            if (opt.type == Option::PreprocessorDef) {
                 if (opt.value) {
                     outs.format(" /D{}={}", opt.key, opt.value);
                 } else {
@@ -68,10 +70,10 @@ void write_bootstrap(u32 configIndex) {
         }
 
         // Include directories
-        for (const build2::Option& opt : combinedOptions) {
-            if (!build2::hasBitAtIndex(opt.enabledBits, configIndex))
+        for (const Option& opt : combinedOptions) {
+            if (!hasBitAtIndex(opt.enabledBits, configIndex))
                 continue;
-            if (opt.type == build2::Option::IncludeDir) {
+            if (opt.type == Option::IncludeDir) {
                 outs.format(" /I\"{}\"", NativePath::makeRelative(Workspace.path, opt.key));
             }
         }
@@ -85,8 +87,8 @@ void write_bootstrap(u32 configIndex) {
                 outs << ' ' << opt;
             }
         }
-        for (const build2::Option& opt : combinedOptions) {
-            if (opt.type == build2::Option::LinkerInput) {
+        for (const Option& opt : combinedOptions) {
+            if (opt.type == Option::LinkerInput) {
                 outs << ' ' << opt.key;
             }
         }
@@ -113,12 +115,12 @@ void command_new_bootstrap(CrowbarCommandEnv* env) {
     }
     env->cl->finalize();
 
-    build2::Common::initialize();
-    build2::init_built_ins();
-    build2::Repository::create();
-    build::BuildFolder.absPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/crowbar");
-    build::BuildFolder.solutionName = "crowbar";
-    build::BuildFolder.rootTargets.append("crowbar");
-    build2::instantiate_all_configs();
+    Common::initialize();
+    init_built_ins();
+    Repository::create();
+    BuildFolder.absPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/crowbar");
+    BuildFolder.solutionName = "crowbar";
+    BuildFolder.rootTargets.append("crowbar");
+    instantiate_all_configs();
     write_bootstrap(1);
 }

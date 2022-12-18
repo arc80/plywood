@@ -1,46 +1,31 @@
-module build_common {
+module build_repo {
     source_files {
-        "common/ply-build-common"
+        "repo/ply-build-repo"
     }
     include_directories {
-        public "common"
+        public "repo"
     }
     dependencies {
         public reflect
-    }
-}
-
-module build_folder {
-    source_files {
-        "folder/ply-build-folder"
-    }
-    include_directories {
-        public "folder"
-    }
-    dependencies {
-        public pylon_reflect
-        public build_common
-    }
-}
-
-module build_repository {
-    source_files {
-        "repository/ply-build-repository"
-    }
-    include_directories {
-        public "repository"
-    }
-    dependencies {
-        public reflect
-        public buildSteps
+        public build_steps
         public biscuit
-        public build_common
-        public reflect
-        public build_folder
     }
     link_libraries {
         if true {
             "winhttp.lib"
         }
+    }
+}
+
+module build_steps {
+    source_files {
+        "steps/ply-build-steps"
+    }
+    include_directories {
+        public "steps"
+    }
+    dependencies {
+        public runtime
+        public pylon
     }
 }

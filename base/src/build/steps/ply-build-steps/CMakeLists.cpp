@@ -2,11 +2,11 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <buildSteps/Project.h>
+#include <ply-build-steps/Project.h>
 #include <ply-runtime/algorithm/Map.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 struct CMakeEscape {
     StringView view;
@@ -14,14 +14,14 @@ struct CMakeEscape {
     }
 };
 
-} // namespace build2
+} // namespace build
 } // namespace ply
 
 namespace ply {
 namespace fmt {
 template <>
-struct TypePrinter<build2::CMakeEscape> {
-    static void print(OutStream* outs, const build2::CMakeEscape& value) {
+struct TypePrinter<build::CMakeEscape> {
+    static void print(OutStream* outs, const build::CMakeEscape& value) {
         StringView srcUnits = value.view;
         while (srcUnits.numBytes > 0) {
             char c = srcUnits.bytes[0];
@@ -52,7 +52,7 @@ struct TypePrinter<build2::CMakeEscape> {
 } // namespace ply
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 String escapeCMakeList(ArrayView<const StringView> copts) {
     MemOutStream mout;
@@ -313,5 +313,5 @@ endmacro()
                                                          TextFormat::platformPreference());
 }
 
-} // namespace build2
+} // namespace build
 } // namespace ply

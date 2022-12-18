@@ -3,14 +3,14 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-build-repository/Common.h>
-#include <buildSteps/Project.h>
-#include <ply-build-repository/Repository.h>
+#include <ply-build-repo/Common.h>
+#include <ply-build-steps/Project.h>
+#include <ply-build-repo/Repository.h>
 #include <ply-biscuit/Interpreter.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/BuildFolder.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 enum Status {
     NotInstantiated,
@@ -46,5 +46,5 @@ MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
                                        const biscuit::Statement::CustomBlock* cb);
 void instantiate_all_configs();
 
-} // namespace build2
+} // namespace build
 } // namespace ply

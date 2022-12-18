@@ -4,8 +4,10 @@
 ------------------------------------*/
 #include <Core.h>
 #include <ConsoleUtils.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/BuildFolder.h>
 #include <ply-runtime/io/text/TextConverter.h>
+
+using namespace ply::build;
 
 #if PLY_TARGET_WIN32
 #include <combaseapi.h>

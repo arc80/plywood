@@ -4,7 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <Core.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/BuildFolder.h>
 
 struct CommandLine {
     Array<StringView> args;

@@ -4,8 +4,10 @@
 ------------------------------------*/
 #include <Core.h>
 #include <ConsoleUtils.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/BuildFolder.h>
 #include <ply-runtime/algorithm/Find.h>
+
+using namespace ply::build;
 
 struct DepTreeIndent {
     String node;

@@ -2,11 +2,11 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-build-repository/Repository.h>
+#include <ply-build-repo/Repository.h>
 #include <ply-biscuit/Interpreter.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 Repository* g_repository = nullptr;
 
@@ -140,14 +140,14 @@ TypeKey TypeKey_Repository_ConfigOptions{
     TypeKey::alwaysEqualDescriptors,
 };
 
-} // namespace build2
+} // namespace build
 
-PLY_DEFINE_TYPE_DESCRIPTOR(build2::Repository::ConfigOptions) {
+PLY_DEFINE_TYPE_DESCRIPTOR(build::Repository::ConfigOptions) {
     static TypeDescriptor typeDesc{
-        &build2::TypeKey_Repository_ConfigOptions,
-        (build2::Repository::ConfigOptions*) nullptr,
-        NativeBindings::make<build2::Repository::ConfigOptions>()
-            PLY_METHOD_TABLES_ONLY(, build2::getMethodTable_Repository_ConfigOptions())};
+        &build::TypeKey_Repository_ConfigOptions,
+        (build::Repository::ConfigOptions*) nullptr,
+        NativeBindings::make<build::Repository::ConfigOptions>()
+            PLY_METHOD_TABLES_ONLY(, build::getMethodTable_Repository_ConfigOptions())};
     return &typeDesc;
 }
 

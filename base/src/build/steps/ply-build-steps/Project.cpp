@@ -2,11 +2,11 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <buildSteps/Project.h>
+#include <ply-build-steps/Project.h>
 #include <ply-runtime/algorithm/Find.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 void inherit_option(Array<Option>& options, const Option& srcOpt, u64 enabledBits, u64 publicBits) {
     if ((srcOpt.enabledBits & enabledBits) == 0)
@@ -123,5 +123,5 @@ Array<Option> get_combined_options() {
     return result;
 }
 
-} // namespace build2
+} // namespace build
 } // namespace ply

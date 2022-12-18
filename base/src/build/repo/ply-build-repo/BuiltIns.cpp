@@ -2,18 +2,18 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-build-repository/BuiltIns.h>
+#include <ply-build-repo/BuiltIns.h>
 #include <ply-reflect/methods/BoundMethod.h>
 #include <ply-runtime/string/WString.h>
 #include <ply-runtime/string/TextEncoding.h>
-#include <ply-build-repository/ExternFolderRegistry.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/ExternFolderRegistry.h>
+#include <ply-build-repo/BuildFolder.h>
 #if PLY_TARGET_WIN32
 #include <winhttp.h>
 #endif
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 BuiltInStorage_ BuiltInStorage;
 LabelMap<AnyObject> BuiltInMap;
@@ -84,9 +84,9 @@ MethodResult getExternFolder(const MethodArgs& args) {
         return MethodResult::Error;
     }
 
-    build::ExternFolder* externFolder = build::ExternFolderRegistry::get()->find(*name);
+    ExternFolder* externFolder = ExternFolderRegistry::get()->find(*name);
     if (!externFolder) {
-        externFolder = build::ExternFolderRegistry::get()->create(*name);
+        externFolder = ExternFolderRegistry::get()->create(*name);
         externFolder->save();
     }
 
@@ -283,7 +283,7 @@ void init_built_ins() {
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("target_arch")) =
         AnyObject::bind(&BuiltInStorage.sys_target_arch);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("build_folder")) =
-        AnyObject::bind(&build::BuildFolder.absPath);
+        AnyObject::bind(&BuildFolder.absPath);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("cmake_path")) =
         AnyObject::bind(&BuiltInStorage.sys_cmake_path);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) =
@@ -321,13 +321,13 @@ TypeKey TypeKey_ReadOnlyDict{
     TypeKey::alwaysEqualDescriptors,
 };
 
-} // namespace build2
+} // namespace build
 } // namespace ply
 
-PLY_DEFINE_TYPE_DESCRIPTOR(ply::build2::ReadOnlyDict) {
+PLY_DEFINE_TYPE_DESCRIPTOR(ply::build::ReadOnlyDict) {
     static TypeDescriptor typeDesc{
-        &ply::build2::TypeKey_ReadOnlyDict, (ply::build2::ReadOnlyDict*) nullptr,
-        NativeBindings::make<ply::build2::ReadOnlyDict>()
-            PLY_METHOD_TABLES_ONLY(, ply::build2::getMethodTable_ReadOnlyDict())};
+        &ply::build::TypeKey_ReadOnlyDict, (ply::build::ReadOnlyDict*) nullptr,
+        NativeBindings::make<ply::build::ReadOnlyDict>()
+            PLY_METHOD_TABLES_ONLY(, ply::build::getMethodTable_ReadOnlyDict())};
     return &typeDesc;
 }

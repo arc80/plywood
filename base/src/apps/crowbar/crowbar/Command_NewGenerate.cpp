@@ -4,9 +4,11 @@
 ------------------------------------*/
 #include <Core.h>
 #include <ConsoleUtils.h>
-#include <ply-build-repository/Instantiate.h>
-#include <ply-build-repository/BuiltIns.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/Instantiate.h>
+#include <ply-build-repo/BuiltIns.h>
+#include <ply-build-repo/BuildFolder.h>
+
+using namespace ply::build;
 
 bool isMultiConfigCMakeGenerator(StringView generator) {
     if (generator.startsWith("Visual Studio")) {
@@ -24,7 +26,7 @@ bool isMultiConfigCMakeGenerator(StringView generator) {
 }
 
 PLY_NO_INLINE Tuple<s32, String>
-generateCMakeProject(StringView cmakeListsFolder, const build::CMakeGeneratorOptions& generatorOpts,
+generateCMakeProject(StringView cmakeListsFolder, const CMakeGeneratorOptions& generatorOpts,
                      StringView config) {
     PLY_ASSERT(generatorOpts.generator);
     bool isMultiConfig = isMultiConfigCMakeGenerator(generatorOpts.generator);
@@ -70,17 +72,17 @@ generateCMakeProject(StringView cmakeListsFolder, const build::CMakeGeneratorOpt
 }
 
 void command_new_generate(CrowbarCommandEnv* env) {
-    build2::Common::initialize();
-    build2::init_built_ins();
-    build2::Repository::create();
-    build2::instantiate_all_configs();
-    String cmakeListsPath = NativePath::join(build::BuildFolder.absPath, "CMakeLists.txt");
-    build2::write_CMakeLists_txt_if_different(cmakeListsPath);
+    Common::initialize();
+    init_built_ins();
+    Repository::create();
+    instantiate_all_configs();
+    String cmakeListsPath = NativePath::join(BuildFolder.absPath, "CMakeLists.txt");
+    write_CMakeLists_txt_if_different(cmakeListsPath);
     Tuple<s32, String> result =
-        generateCMakeProject(build::BuildFolder.absPath, build::BuildFolder.cmakeOptions, {});
+        generateCMakeProject(BuildFolder.absPath, BuildFolder.cmakeOptions, {});
     if (result.first != 0) {
         Error.log(String::format("Failed to generate build system for '{}':\n",
-                                 build::BuildFolder.solutionName) +
+                                 BuildFolder.solutionName) +
                   result.second);
     }
 }

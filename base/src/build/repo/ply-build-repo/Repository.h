@@ -3,11 +3,11 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-build-repository/Common.h>
+#include <ply-build-repo/Common.h>
 #include <ply-biscuit/ParseTree.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 struct Repository {
     struct Plyfile {
@@ -57,8 +57,8 @@ extern Repository* g_repository;
 
 bool parsePlyfile(StringView path);
 
-} // namespace build2
+} // namespace build
 
-PLY_DECLARE_TYPE_DESCRIPTOR(build2::Repository::ConfigOptions)
+PLY_DECLARE_TYPE_DESCRIPTOR(build::Repository::ConfigOptions)
 
 } // namespace ply

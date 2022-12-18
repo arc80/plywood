@@ -2,10 +2,10 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <buildSteps/Project.h>
+#include <ply-build-steps/Project.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 void (*translate_toolchain_option)(CompilerSpecificOptions* copts, const Option& opt) = nullptr;
 

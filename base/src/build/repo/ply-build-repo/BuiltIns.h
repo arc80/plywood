@@ -3,10 +3,10 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-build-repository/Common.h>
+#include <ply-build-repo/Common.h>
 
 namespace ply {
-namespace build2 {
+namespace build {
 
 struct ReadOnlyDict {
     String name;
@@ -30,5 +30,5 @@ extern LabelMap<AnyObject> BuiltInMap;
 
 void init_built_ins();
 
-} // namespace build2
+} // namespace build
 } // namespace ply

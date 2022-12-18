@@ -6,27 +6,13 @@ executable crowbar {
         private "crowbar"
     }
     dependencies {
-        private build_folder
         private cpp
         private pylon_reflect
-        private crowbar_client
-        private build_repository
+        private build_repo
     }
     link_libraries {
         if sys.target_platform == "windows" {
             "ole32.lib"
         }
-    }
-}
-
-module crowbar_client {
-    source_files {
-        "crowbar-client/crowbar-client"
-    }
-    include_directories {
-        public "crowbar-client"
-    }
-    dependencies {
-        public reflect
     }
 }

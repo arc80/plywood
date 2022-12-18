@@ -4,7 +4,7 @@
 ------------------------------------*/
 #include <Core.h>
 #include <ConsoleUtils.h>
-#include <ply-build-folder/BuildFolder.h>
+#include <ply-build-repo/BuildFolder.h>
 #include <ply-runtime/algorithm/Find.h>
 #include <Workspace.h>
 
@@ -15,8 +15,6 @@ void command_new_generate(CrowbarCommandEnv* env);
 void command_new_bootstrap(CrowbarCommandEnv* env);
 
 int main(int argc, char* argv[]) {
-    using namespace ply;
-
     Workspace.load();
     CommandLine cl{argc, argv};
     CrowbarCommandEnv env;
