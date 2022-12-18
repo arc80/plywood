@@ -15,17 +15,18 @@ using namespace ply::build;
 #endif
 
 bool command_open(CommandLine* cl) {
-    using namespace build;
-
     ensureTerminated(cl);
     cl->finalize();
 
-    if (BuildFolder.cmakeOptions.generator == "Unix Makefiles") {
+    BuildFolder_t bf;
+    bf.load(NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/crowbar"));
+
+    if (bf.cmakeOptions.generator == "Unix Makefiles") {
         Error.log("No IDE to open for Unix Makefiles");
 #if PLY_TARGET_WIN32
-    } else if (BuildFolder.cmakeOptions.generator.startsWith("Visual Studio")) {
+    } else if (bf.cmakeOptions.generator.startsWith("Visual Studio")) {
         String slnPath =
-            NativePath::join(BuildFolder.absPath, "build", BuildFolder.solutionName + ".sln");
+            NativePath::join(bf.absPath, "build", bf.solutionName + ".sln");
         if (FileSystem::native()->exists(slnPath) != ExistsResult::File) {
             Error.log("Can't find '{}'", slnPath);
         }
@@ -43,6 +44,7 @@ bool command_open(CommandLine* cl) {
         // Open IDE
         if (CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE) != S_OK) {
             Error.log("Unable to initialize COM");
+            exit(1);
         }
         return ((sptr) ShellExecuteW(NULL, L"open", wstr, NULL, NULL, SW_SHOWNORMAL) > 32);
 #endif // PLY_TARGET_WIN32
@@ -64,6 +66,7 @@ bool command_open(CommandLine* cl) {
 #endif // PLY_TARGET_APPLE
     }
 
-    Error.log("Don't know how to open IDE for generator '{}'", BuildFolder.cmakeOptions.generator);
+    Error.log("Don't know how to open IDE for generator '{}'", bf.cmakeOptions.generator);
+    exit(1);
     return false;
 }

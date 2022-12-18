@@ -26,7 +26,7 @@ struct CMakeGeneratorOptions {
     }
 };
 
-struct BuildFolder_ {
+struct BuildFolder_t {
     String absPath;
 
     PLY_REFLECT()
@@ -45,7 +45,7 @@ struct BuildFolder_ {
     bool build(StringView config, StringView targetName) const;
 };
 
-extern BuildFolder_ BuildFolder;
+extern BuildFolder_t* BuildFolder;
 
 } // namespace build
 } // namespace ply

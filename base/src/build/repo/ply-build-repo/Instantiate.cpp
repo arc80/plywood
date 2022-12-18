@@ -360,8 +360,6 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
     return result;
 }
 
-//
-
 struct ConfigListInterpreter {
     biscuit::Interpreter interp;
     ModuleInstantiator* mi = nullptr;
@@ -413,7 +411,7 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
 
     // Instantiate all root modules in this config
     PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
-    for (StringView targetName : BuildFolder.rootTargets) {
+    for (StringView targetName : BuildFolder->rootTargets) {
         Target* rootTarget = nullptr;
         MethodResult result = instantiateModuleForCurrentConfig(&rootTarget, cli->mi,
                                                                 g_labelStorage.insert(targetName));
@@ -436,7 +434,7 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
 
 PLY_NO_INLINE void instantiate_all_configs() {
     ModuleInstantiator mi{};
-    Project.name = BuildFolder.solutionName;
+    Project.name = BuildFolder->solutionName;
     init_toolchain_msvc();
 
     // Execute the config_list block

@@ -6,7 +6,7 @@ module build_repo {
         public "repo"
     }
     dependencies {
-        public reflect
+        public pylon_reflect
         public build_steps
         public biscuit
     }

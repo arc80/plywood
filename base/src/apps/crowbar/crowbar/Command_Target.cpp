@@ -31,8 +31,6 @@ void command_target(CommandLine* cl) {
 
         ensureTerminated(cl);
         cl->finalize();
-
-        BuildFolder.save();
     } else {
         Error.log("Unrecognized target command '{}'", cmd);
     }

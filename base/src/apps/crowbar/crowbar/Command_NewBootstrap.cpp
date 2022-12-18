@@ -7,6 +7,7 @@
 #include <ply-build-repo/Instantiate.h>
 #include <ply-build-repo/BuiltIns.h>
 #include <ply-build-repo/BuildFolder.h>
+#include <Workspace.h>
 
 using namespace ply::build;
 
@@ -116,11 +117,15 @@ void command_new_bootstrap(CommandLine* cl) {
     cl->finalize();
 
     Common::initialize();
-    init_built_ins();
     Repository::create();
-    BuildFolder.absPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/crowbar");
-    BuildFolder.solutionName = "crowbar";
-    BuildFolder.rootTargets.append("crowbar");
+
+    BuildFolder_t bf;
+    bf.absPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/crowbar");
+    bf.solutionName = "crowbar";
+    bf.rootTargets.append("crowbar");
+    PLY_SET_IN_SCOPE(BuildFolder, &bf);
+
+    init_built_ins();
     instantiate_all_configs();
     write_bootstrap(1);
 }

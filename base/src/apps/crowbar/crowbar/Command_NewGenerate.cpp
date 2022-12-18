@@ -71,16 +71,24 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
 }
 
 void command_new_generate(CommandLine* cl) {
+    ensureTerminated(cl);
+    cl->finalize();
+
     Common::initialize();
-    init_built_ins();
     Repository::create();
+
+    BuildFolder_t bf;
+    bf.load(NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/crowbar"));
+    PLY_SET_IN_SCOPE(BuildFolder, &bf);
+
+    init_built_ins();
     instantiate_all_configs();
-    String cmakeListsPath = NativePath::join(BuildFolder.absPath, "CMakeLists.txt");
+    String cmakeListsPath = NativePath::join(BuildFolder->absPath, "CMakeLists.txt");
     write_CMakeLists_txt_if_different(cmakeListsPath);
     Tuple<s32, String> result =
-        generateCMakeProject(BuildFolder.absPath, BuildFolder.cmakeOptions, {});
+        generateCMakeProject(BuildFolder->absPath, BuildFolder->cmakeOptions, {});
     if (result.first != 0) {
-        Error.log("Failed to generate build system for '{}':\n{}", BuildFolder.solutionName,
+        Error.log("Failed to generate build system for '{}':\n{}", BuildFolder->solutionName,
                   result.second);
     }
 }

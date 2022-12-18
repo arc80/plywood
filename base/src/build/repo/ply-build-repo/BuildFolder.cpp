@@ -14,9 +14,9 @@
 namespace ply {
 namespace build {
 
-BuildFolder_ BuildFolder;
+BuildFolder_t* BuildFolder = nullptr;
 
-PLY_NO_INLINE void BuildFolder_::load(StringView absPath) {
+PLY_NO_INLINE void BuildFolder_t::load(StringView absPath) {
     String infoPath = NativePath::join(absPath, "info.pylon");
     String strContents = FileSystem::native()->loadTextAutodetect(infoPath).first;
     if (FileSystem::native()->lastResult() != FSResult::OK) {
@@ -34,7 +34,7 @@ PLY_NO_INLINE void BuildFolder_::load(StringView absPath) {
     pylon::importInto(AnyObject::bind(this), aRoot);
 }
 
-PLY_NO_INLINE bool BuildFolder_::save() const {
+PLY_NO_INLINE bool BuildFolder_t::save() const {
     Owned<pylon::Node> aRoot = pylon::exportObj(AnyObject::bind(this));
     String strContents = pylon::toString(aRoot);
     String infoPath = NativePath::join(this->absPath, "info.pylon");
@@ -141,7 +141,7 @@ String getTargetOutputPath(BuildTargetType targetType, StringView targetName,
 }
 */
 
-PLY_NO_INLINE bool BuildFolder_::build(StringView config, StringView targetName) const {
+PLY_NO_INLINE bool BuildFolder_t::build(StringView config, StringView targetName) const {
     // Note: Should we check that targetName actually exists in the build folder before invoking
     // CMake? If targetName isn't a root target, this would require us to instaniate all
     // dependencies first.

@@ -4,6 +4,7 @@
 ------------------------------------*/
 #include <Core.h>
 #include <ReflectionHooks.h>
+#include <Workspace.h>
 #include <ply-cpp/Parser.h>
 #include <ply-cpp/ErrorFormatting.h>
 

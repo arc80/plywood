@@ -282,8 +282,9 @@ void init_built_ins() {
         AnyObject::bind(&BuiltInStorage.sys_target_platform);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("target_arch")) =
         AnyObject::bind(&BuiltInStorage.sys_target_arch);
+    PLY_ASSERT(BuildFolder->absPath);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("build_folder")) =
-        AnyObject::bind(&BuildFolder.absPath);
+        AnyObject::bind(&BuildFolder->absPath);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("cmake_path")) =
         AnyObject::bind(&BuiltInStorage.sys_cmake_path);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) =

@@ -4,7 +4,3 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Base.h>
-
-namespace buildSteps {
-using namespace ply;
-} // namespace buildSteps
