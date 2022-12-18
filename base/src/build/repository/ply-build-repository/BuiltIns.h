@@ -18,7 +18,6 @@ struct BuiltInStorage_ {
     bool false_ = false;
     String sys_target_platform;
     String sys_target_arch;
-    String sys_build_folder;
     String sys_cmake_path;
     String script_path;
     ReadOnlyDict dict_build;

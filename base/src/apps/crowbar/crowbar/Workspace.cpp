@@ -12,30 +12,31 @@
 Workspace_ Workspace;
 
 PLY_NO_INLINE void Workspace_::load() {
-    String dir = FileSystem::native()->getWorkingDirectory();
+    this->path = FileSystem::native()->getWorkingDirectory();
     static const StringView fileName = "workspace-settings.pylon";
+    String settingsPath;
 
     // Search each parent directory for workspace-settings.pylon:
     while (true) {
-        this->path = NativePath::join(this->path, fileName);
-        if (FileSystem::native()->exists(this->path) == ExistsResult::File)
+        settingsPath = NativePath::join(this->path, fileName);
+        if (FileSystem::native()->exists(settingsPath) == ExistsResult::File)
             break;
-        String nextDir = NativePath::split(dir).first;
-        if (dir == nextDir) {
+        String nextDir = NativePath::split(this->path).first;
+        if (this->path == nextDir) {
             // We've reached the topmost directory.
             Error.log(String::format("Can't locate {}", fileName));
             exit(1);
         }
-        dir = nextDir;
+        this->path = nextDir;
     }
 
-    String contents = FileSystem::native()->loadTextAutodetect(this->path).first;
+    String contents = FileSystem::native()->loadTextAutodetect(settingsPath).first;
     if (FileSystem::native()->lastResult() != FSResult::OK) {
-        Error.log(String::format("Can't read {}", this->path));
+        Error.log(String::format("Can't read {}", settingsPath));
         exit(1);
     }
 
-    auto aRoot = pylon::Parser{}.parse(this->path, contents).root;
+    auto aRoot = pylon::Parser{}.parse(settingsPath, contents).root;
     if (!aRoot->isValid()) {
         exit(1);
     }

@@ -7,6 +7,7 @@
 #include <ply-runtime/string/WString.h>
 #include <ply-runtime/string/TextEncoding.h>
 #include <ply-build-repository/ExternFolderRegistry.h>
+#include <ply-build-folder/BuildFolder.h>
 #if PLY_TARGET_WIN32
 #include <winhttp.h>
 #endif
@@ -282,7 +283,7 @@ void init_built_ins() {
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("target_arch")) =
         AnyObject::bind(&BuiltInStorage.sys_target_arch);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("build_folder")) =
-        AnyObject::bind(&BuiltInStorage.sys_build_folder);
+        AnyObject::bind(&build::BuildFolder.absPath);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("cmake_path")) =
         AnyObject::bind(&BuiltInStorage.sys_cmake_path);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) =

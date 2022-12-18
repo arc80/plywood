@@ -26,9 +26,9 @@ int main(int argc, char* argv[]) {
     bool success = true;
     if (prefixMatch(category, "target")) {
         command_target(&env);
-    } else if (prefixMatch(category, "new_generate")) {
+    } else if (prefixMatch(category, "generate")) {
         command_new_generate(&env);
-    } else if (prefixMatch(category, "new_bootstrap")) {
+    } else if (prefixMatch(category, "bootstrap")) {
         command_new_bootstrap(&env);
     } else if (prefixMatch(category, "open")) {
         success = command_open(&env);

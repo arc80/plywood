@@ -236,7 +236,7 @@ MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
     return execBlock(ii->interp.currentFrame, cb->body);
 }
 
-MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod, StringView buildFolderPath) {
+MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod) {
     // Create new interpreter.
     biscuit::Interpreter interp;
     interp.base.error = [&interp](StringView message) {
@@ -245,7 +245,6 @@ MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod, StringView buil
     };
 
     // Populate dictionaries.
-    BuiltInStorage.sys_build_folder = buildFolderPath;
     BuiltInStorage.sys_cmake_path = PLY_CMAKE_PATH;
     BuiltInStorage.script_path = mod->plyfile->tkr.fileLocationMap.path;
     interp.resolveName = [](Label identifier) -> AnyObject {
@@ -308,7 +307,7 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
     // Run the generate block if it didn't run already.
     if (!mod->generatedOnce) {
         if (mod->generateBlock) {
-            MethodResult result = runGenerateBlock(mod, build::BuildFolder.absPath);
+            MethodResult result = runGenerateBlock(mod);
             if (result != MethodResult::OK)
                 return result;
         }
