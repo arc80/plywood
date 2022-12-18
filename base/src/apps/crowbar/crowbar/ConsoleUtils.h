@@ -28,9 +28,5 @@ struct CommandLine {
     void finalize();
 };
 
-struct CrowbarCommandEnv {
-    CommandLine* cl = nullptr;
-};
-
 bool prefixMatch(StringView input, StringView cmd, u32 minUnits = 2);
 void ensureTerminated(CommandLine* cl);

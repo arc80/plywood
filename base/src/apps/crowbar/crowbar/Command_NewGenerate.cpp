@@ -71,7 +71,7 @@ generateCMakeProject(StringView cmakeListsFolder, const CMakeGeneratorOptions& g
     return {rc, std::move(output)};
 }
 
-void command_new_generate(CrowbarCommandEnv* env) {
+void command_new_generate(CommandLine* cl) {
     Common::initialize();
     init_built_ins();
     Repository::create();

@@ -106,14 +106,14 @@ void write_bootstrap(u32 configIndex) {
     }
 }
 
-void command_new_bootstrap(CrowbarCommandEnv* env) {
-    ensureTerminated(env->cl);
+void command_new_bootstrap(CommandLine* cl) {
+    ensureTerminated(cl);
     StringView configName =
-        env->cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--config="); });
+        cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--config="); });
     if (configName) {
         configName = configName.subStr(9);
     }
-    env->cl->finalize();
+    cl->finalize();
 
     Common::initialize();
     init_built_ins();

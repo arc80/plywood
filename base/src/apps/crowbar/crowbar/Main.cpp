@@ -8,30 +8,28 @@
 #include <ply-runtime/algorithm/Find.h>
 #include <Workspace.h>
 
-void command_target(CrowbarCommandEnv* env);
-void command_codegen(CrowbarCommandEnv* env);
-bool command_open(CrowbarCommandEnv* env);
-void command_new_generate(CrowbarCommandEnv* env);
-void command_new_bootstrap(CrowbarCommandEnv* env);
+void command_target(CommandLine* cl);
+void command_codegen(CommandLine* cl);
+bool command_open(CommandLine* cl);
+void command_new_generate(CommandLine* cl);
+void command_new_bootstrap(CommandLine* cl);
 
 int main(int argc, char* argv[]) {
     Workspace.load();
     CommandLine cl{argc, argv};
-    CrowbarCommandEnv env;
-    env.cl = &cl;
 
     StringView category = cl.readToken();
     bool success = true;
     if (prefixMatch(category, "target")) {
-        command_target(&env);
+        command_target(&cl);
     } else if (prefixMatch(category, "generate")) {
-        command_new_generate(&env);
+        command_new_generate(&cl);
     } else if (prefixMatch(category, "bootstrap")) {
-        command_new_bootstrap(&env);
+        command_new_bootstrap(&cl);
     } else if (prefixMatch(category, "open")) {
-        success = command_open(&env);
+        success = command_open(&cl);
     } else if (prefixMatch(category, "codegen")) {
-        command_codegen(&env);
+        command_codegen(&cl);
     } else {
         Error.log(String::format("Unrecognized command \"{}\"", category));
         success = false;

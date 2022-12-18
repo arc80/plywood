@@ -14,23 +14,23 @@ struct DepTreeIndent {
     String children;
 };
 
-void command_target(CrowbarCommandEnv* env) {
+void command_target(CommandLine* cl) {
     using namespace build;
 
-    StringView cmd = env->cl->readToken();
+    StringView cmd = cl->readToken();
     if (cmd.isEmpty()) {
         exit(1);
     }
 
     if (prefixMatch(cmd, "add")) {
-        StringView targetName = env->cl->readToken();
+        StringView targetName = cl->readToken();
         if (targetName.isEmpty()) {
             Error.log("Expected target name");
             exit(1);
         }
 
-        ensureTerminated(env->cl);
-        env->cl->finalize();
+        ensureTerminated(cl);
+        cl->finalize();
 
         BuildFolder.save();
     } else {

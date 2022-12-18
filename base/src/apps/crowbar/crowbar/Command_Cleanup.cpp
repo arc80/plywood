@@ -94,9 +94,9 @@ void cleanupRepo(StringView repoPath, StringView desiredHeader, StringView clang
     }
 }
 
-void command_cleanup(CrowbarCommandEnv* env) {
-    ensureTerminated(env->cl);
-    env->cl->finalize();
+void command_cleanup(CommandLine* cl) {
+    ensureTerminated(cl);
+    cl->finalize();
     StringView desiredHeader = R"(/*------------------------------------
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/

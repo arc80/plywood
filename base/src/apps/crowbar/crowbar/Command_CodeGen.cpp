@@ -197,9 +197,9 @@ void generateAllCppInls(cpp::ReflectionInfoAggregator* agg, const TextFormat& tf
     }
 }
 
-void command_codegen(CrowbarCommandEnv* env) {
-    ensureTerminated(env->cl);
-    env->cl->finalize();
+void command_codegen(CommandLine* cl) {
+    ensureTerminated(cl);
+    cl->finalize();
 
     cpp::ReflectionInfoAggregator agg;
 

@@ -14,11 +14,11 @@ using namespace ply::build;
 #include <shellapi.h>
 #endif
 
-bool command_open(CrowbarCommandEnv* env) {
+bool command_open(CommandLine* cl) {
     using namespace build;
 
-    ensureTerminated(env->cl);
-    env->cl->finalize();
+    ensureTerminated(cl);
+    cl->finalize();
 
     if (BuildFolder.cmakeOptions.generator == "Unix Makefiles") {
         Error.log("No IDE to open for Unix Makefiles");
