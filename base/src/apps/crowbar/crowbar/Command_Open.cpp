@@ -27,7 +27,7 @@ bool command_open(CommandLine* cl) {
         String slnPath =
             NativePath::join(BuildFolder.absPath, "build", BuildFolder.solutionName + ".sln");
         if (FileSystem::native()->exists(slnPath) != ExistsResult::File) {
-            Error.log(String::format("Can't find '{}'", slnPath));
+            Error.log("Can't find '{}'", slnPath);
         }
 
         // Convert to UTF-16 path
@@ -64,7 +64,6 @@ bool command_open(CommandLine* cl) {
 #endif // PLY_TARGET_APPLE
     }
 
-    Error.log(String::format("Don't know how to open IDE for generator '{}'",
-                             BuildFolder.cmakeOptions.generator));
+    Error.log("Don't know how to open IDE for generator '{}'", BuildFolder.cmakeOptions.generator);
     return false;
 }

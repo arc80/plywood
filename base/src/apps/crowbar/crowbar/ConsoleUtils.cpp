@@ -39,7 +39,7 @@ StringView CommandLine::checkForSkippedOpt(const Functor<bool(StringView)>& matc
 void CommandLine::finalize() {
     PLY_ASSERT(!this->finalized);
     if (this->skippedOpts.numItems() > 0) {
-        Error.log(String::format("Unrecognized option '{}'\n", this->skippedOpts[0]));
+        Error.log("Unrecognized option '{}'\n", this->skippedOpts[0]);
         exit(1);
     }
     this->finalized = true;
@@ -48,7 +48,7 @@ void CommandLine::finalize() {
 void ensureTerminated(CommandLine* cl) {
     StringView token = cl->readToken();
     if (!token.isEmpty()) {
-        Error.log(String::format("Unexpected token \"{}\"", token));
+        Error.log("Unexpected token \"{}\"", token);
         exit(1);
     }
 }

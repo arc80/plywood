@@ -25,9 +25,9 @@ bool isMultiConfigCMakeGenerator(StringView generator) {
     }
 }
 
-PLY_NO_INLINE Tuple<s32, String>
-generateCMakeProject(StringView cmakeListsFolder, const CMakeGeneratorOptions& generatorOpts,
-                     StringView config) {
+PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolder,
+                                                      const CMakeGeneratorOptions& generatorOpts,
+                                                      StringView config) {
     PLY_ASSERT(generatorOpts.generator);
     bool isMultiConfig = isMultiConfigCMakeGenerator(generatorOpts.generator);
     PLY_ASSERT(isMultiConfig || config);
@@ -39,7 +39,7 @@ generateCMakeProject(StringView cmakeListsFolder, const CMakeGeneratorOptions& g
     }
     FSResult result = FileSystem::native()->makeDirs(buildFolder);
     if (result != FSResult::OK && result != FSResult::AlreadyExists) {
-        Error.log(String::format("Can't create folder '{}'\n", buildFolder));
+        Error.log("Can't create folder '{}'\n", buildFolder);
         return {-1, ""};
     }
     PLY_ASSERT(!generatorOpts.generator.isEmpty());
@@ -65,8 +65,7 @@ generateCMakeProject(StringView cmakeListsFolder, const CMakeGeneratorOptions& g
                         ->readRemainingContents();
     s32 rc = sub->join();
     if (rc != 0) {
-        Error.log(String::format("Error generating build system using CMake for folder '{}'\n",
-                                 buildFolder));
+        Error.log("Error generating build system using CMake for folder '{}'\n", buildFolder);
     }
     return {rc, std::move(output)};
 }
@@ -81,8 +80,7 @@ void command_new_generate(CommandLine* cl) {
     Tuple<s32, String> result =
         generateCMakeProject(BuildFolder.absPath, BuildFolder.cmakeOptions, {});
     if (result.first != 0) {
-        Error.log(String::format("Failed to generate build system for '{}':\n",
-                                 BuildFolder.solutionName) +
+        Error.log("Failed to generate build system for '{}':\n{}", BuildFolder.solutionName,
                   result.second);
     }
 }

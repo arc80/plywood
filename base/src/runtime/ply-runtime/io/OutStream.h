@@ -17,6 +17,30 @@ template <typename T>
 struct TypePrinter;
 } // namespace fmt
 
+struct FormatArg {
+    void (*func)(OutStream*, const void*) = nullptr;
+    const void* value = nullptr;
+
+    template <typename T>
+    static PLY_NO_INLINE void format_thunk(OutStream* outs, const void* arg) {
+        fmt::TypePrinter<T>::print(outs, *(const T*) arg);
+    }
+    static PLY_INLINE void collect_internal(FormatArg*) {
+    }
+    template <typename T, typename... Rest>
+    static PLY_INLINE void collect_internal(FormatArg* argList, const T& arg, const Rest&... rest) {
+        argList->func = format_thunk<T>;
+        argList->value = &arg;
+        collect_internal(argList + 1, rest...);
+    }
+    template <typename... Args>
+    static PLY_INLINE auto collect(const Args&... args) {
+        FixedArray<FormatArg, sizeof...(args)> argList;
+        collect_internal(argList.items, args...);
+        return argList;
+    }
+};
+
 //------------------------------------------------------------------------------------------------
 /*!
 `OutStream` performs buffered output to an arbitrary output destination.
@@ -241,29 +265,8 @@ public:
         return this->status.eof == 0;
     }
 
-private:
-    struct Arg {
-        void (*formatter)(OutStream*, const void*) = nullptr;
-        const void* pvalue = nullptr;
-        template <typename T>
-        static PLY_NO_INLINE void formatFunc(OutStream* outs, const void* arg) {
-            fmt::TypePrinter<T>::print(outs, *(const T*) arg);
-        }
-    };
+    PLY_DLL_ENTRY void formatInternal(StringView fmt, ArrayView<const FormatArg> args);
 
-    // Convert variable number of arguments into array of Arg:
-    static PLY_INLINE void prepareArgList(Arg*) {
-    }
-    template <typename T, typename... Rest>
-    static PLY_INLINE void prepareArgList(Arg* argList, const T& arg, const Rest&... rest) {
-        argList->formatter = Arg::formatFunc<T>;
-        argList->pvalue = &arg;
-        prepareArgList(argList + 1, rest...);
-    }
-
-    PLY_DLL_ENTRY void formatInternal(StringView fmt, ArrayView<const Arg> args);
-
-public:
     /*!
     Template function that expands the format string `fmt` using the given arguments and writes the
     result to the output stream.
@@ -276,8 +279,7 @@ public:
     */
     template <typename... Args>
     PLY_NO_INLINE void format(StringView fmt, const Args&... args) {
-        FixedArray<Arg, sizeof...(args)> argList;
-        prepareArgList(argList.items, args...);
+        auto argList = FormatArg::collect(args...);
         this->formatInternal(fmt, argList);
     }
 

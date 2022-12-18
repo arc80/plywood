@@ -8,10 +8,15 @@
 
 namespace ply {
 
-struct Error_ {
-    void log(StringView message);
+struct Error_t {
+    void log_internal(StringView fmt, ArrayView<const FormatArg> args);
+    template <typename... Args>
+    PLY_INLINE void log(StringView fmt, const Args&... args) {
+        auto argList = FormatArg::collect(args...);
+        this->log_internal(fmt, argList);
+    }
 };
 
-extern Error_ Error;
+extern Error_t Error;
 
 } // namespace ply

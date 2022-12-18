@@ -34,6 +34,6 @@ void command_target(CommandLine* cl) {
 
         BuildFolder.save();
     } else {
-        Error.log(String::format("Unrecognized target command '{}'", cmd));
+        Error.log("Unrecognized target command '{}'", cmd);
     }
 }

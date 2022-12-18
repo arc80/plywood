@@ -24,7 +24,7 @@ PLY_NO_INLINE void Workspace_::load() {
         String nextDir = NativePath::split(this->path).first;
         if (this->path == nextDir) {
             // We've reached the topmost directory.
-            Error.log(String::format("Can't locate {}", fileName));
+            Error.log("Can't locate {}", fileName);
             exit(1);
         }
         this->path = nextDir;
@@ -32,7 +32,7 @@ PLY_NO_INLINE void Workspace_::load() {
 
     String contents = FileSystem::native()->loadTextAutodetect(settingsPath).first;
     if (FileSystem::native()->lastResult() != FSResult::OK) {
-        Error.log(String::format("Can't read {}", settingsPath));
+        Error.log("Can't read {}", settingsPath);
         exit(1);
     }
 
@@ -55,7 +55,7 @@ PLY_NO_INLINE void Workspace_::save() const {
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         this->path, contents, this->getSourceTextFormat());
     if (result != FSResult::OK && result != FSResult::Unchanged) {
-        Error.log(String::format("Can't save workspace settings to {}", this->path));
+        Error.log("Can't save workspace settings to {}", this->path);
     }
 }
 

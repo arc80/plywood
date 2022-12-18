@@ -6,12 +6,12 @@
 
 namespace ply {
 
-Error_ Error;
+Error_t Error;
 
-void Error_::log(StringView message) {
+void Error_t::log_internal(StringView fmt, ArrayView<const FormatArg> args) {
     OutStream outs = StdErr::text();
-    outs << message;
-    if (!message.endsWith('\n')) {
+    outs.formatInternal(fmt, args);
+    if (!fmt.endsWith('\n')) {
         outs << '\n';
     }
 }

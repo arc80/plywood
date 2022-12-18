@@ -31,7 +31,7 @@ void write_bootstrap(u32 configIndex) {
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
             sourcePath, outs.moveToString(), TextFormat::platformPreference());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
-            Error.log(String::format("Error writing {}", sourcePath));
+            Error.log("Error writing {}", sourcePath);
         }
     }
 
@@ -101,7 +101,7 @@ void write_bootstrap(u32 configIndex) {
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
             batPath, outs.moveToString(), TextFormat::platformPreference());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
-            Error.log(String::format("Error writing {}", batPath));
+            Error.log("Error writing {}", batPath);
         }
     }
 }

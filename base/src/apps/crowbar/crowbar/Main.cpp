@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     } else if (prefixMatch(category, "codegen")) {
         command_codegen(&cl);
     } else {
-        Error.log(String::format("Unrecognized command \"{}\"", category));
+        Error.log("Unrecognized command \"{}\"", category);
         success = false;
     }
 

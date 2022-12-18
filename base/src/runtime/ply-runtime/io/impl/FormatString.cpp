@@ -106,7 +106,7 @@ PLY_NO_INLINE void printString(OutStream* outs, double value, u32 radix, bool ca
 //----------------------------------------------------------------
 // OutStream
 //----------------------------------------------------------------
-PLY_NO_INLINE void OutStream::formatInternal(StringView fmt, ArrayView<const OutStream::Arg> args) {
+PLY_NO_INLINE void OutStream::formatInternal(StringView fmt, ArrayView<const FormatArg> args) {
     u32 argIndex = 0;
     while (fmt.numBytes > 0) {
         if (fmt[0] == '{') {
@@ -120,7 +120,7 @@ PLY_NO_INLINE void OutStream::formatInternal(StringView fmt, ArrayView<const Out
             } else if (fmt[0] == '}') {
                 PLY_ASSERT(argIndex <
                            args.numItems); // Not enough arguments provided for format string!
-                args[argIndex].formatter(this, args[argIndex].pvalue);
+                args[argIndex].func(this, args[argIndex].value);
                 argIndex++;
             } else {
                 PLY_ASSERT(0); // Invalid format string!

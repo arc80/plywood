@@ -20,13 +20,13 @@ PLY_NO_INLINE void BuildFolder_::load(StringView absPath) {
     String infoPath = NativePath::join(absPath, "info.pylon");
     String strContents = FileSystem::native()->loadTextAutodetect(infoPath).first;
     if (FileSystem::native()->lastResult() != FSResult::OK) {
-        Error.log(String::format("Unable to read file '{}'", infoPath));
+        Error.log("Unable to read file '{}'", infoPath);
         return;
     }
 
     Owned<pylon::Node> aRoot = pylon::Parser{}.parse(infoPath, strContents).root;
     if (!aRoot->isValid()) {
-        Error.log(String::format("Unable to parse the contents of '{}'", infoPath));
+        Error.log("Unable to parse the contents of '{}'", infoPath);
         return;
     }
 
@@ -41,7 +41,7 @@ PLY_NO_INLINE bool BuildFolder_::save() const {
     FSResult rc = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         infoPath, strContents, TextFormat::platformPreference());
     if ((rc != FSResult::OK) && (rc != FSResult::Unchanged)) {
-        Error.log(String::format("Unable to save file '{}'", infoPath));
+        Error.log("Unable to save file '{}'", infoPath);
         return false;
     }
     return true;
@@ -151,8 +151,8 @@ PLY_NO_INLINE bool BuildFolder_::build(StringView config, StringView targetName)
             Error.log("Active config not set");
         }
     }
-    Error.log(String::format("Building {} configuration of '{}'...\n", config,
-                             targetName ? targetName : this->solutionName.view()));
+    Error.log("Building {} configuration of '{}'...\n", config,
+              targetName ? targetName : this->solutionName.view());
 
     s32 rc = buildCMakeProject(this->absPath, this->cmakeOptions, config, targetName);
     if (rc != 0) {
