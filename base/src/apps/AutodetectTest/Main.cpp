@@ -46,7 +46,7 @@ Tuple<bool, TextFormat> extractFormatFromName(StringView name) {
 
 bool runTestSuite() {
     String testsFolder =
-        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/AutodetectTest/tests");
+        Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/AutodetectTest/tests");
     OutStream outs = StdOut::text();
     u32 succeeded = 0;
     u32 failed = 0;
@@ -64,7 +64,7 @@ bool runTestSuite() {
             }
             auto contents =
                 FileSystem::native()
-                    ->loadTextAutodetect(NativePath::join(testsFolder, entry.name));
+                    ->loadTextAutodetect(Path.join(testsFolder, entry.name));
             if (!(contents.second == expected.second)) {
                 outs << "***format detection failed***\n";
                 failed++;
@@ -74,7 +74,7 @@ bool runTestSuite() {
 
             auto compareTo = 
                 FileSystem::native()
-                    ->loadTextAutodetect(NativePath::join(testsFolder, entry.name.splitByte('.')[0] + ".utf8.crlf.bom.txt"));
+                    ->loadTextAutodetect(Path.join(testsFolder, entry.name.splitByte('.')[0] + ".utf8.crlf.bom.txt"));
             if (contents.first != compareTo.first) {
                 outs << "***bad contents***\n";
                 failed++;

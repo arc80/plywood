@@ -140,18 +140,18 @@ endmacro()
         outs.format("# {}\n", name);
         for (const SourceGroup& srcGroup : target->sourceGroups) {
             outs.format("AddSourceFiles({}_SOURCES \"{}\"\n", upperName,
-                        CMakeEscape{PosixPath::from<NativePath>(srcGroup.absPath)});
+                        CMakeEscape{PosixPath.from(Path, srcGroup.absPath)});
             for (const SourceFile& srcFile : srcGroup.files) {
                 if (hasAllBits(srcFile.enabledBits, target->enabledBits)) {
                     // This source file is enabled in all relevant configs.
                     outs.format("    \"{}\"\n",
-                                CMakeEscape{PosixPath::from<NativePath>(srcFile.relPath)});
+                                CMakeEscape{PosixPath.from(Path, srcFile.relPath)});
                 } else {
                     // Use generator expressions to exclude source file from specific configs.
                     for (u32 i = 0; i < Project.configNames.numItems(); i++) {
                         if (hasBitAtIndex(srcFile.enabledBits, i)) {
                             outs.format("    \"$<$<CONFIG:{}>:{}>\"\n", Project.configNames[i],
-                                        CMakeEscape{PosixPath::from<NativePath>(srcFile.relPath)});
+                                        CMakeEscape{PosixPath.from(Path, srcFile.relPath)});
                         }
                     }
                 }
@@ -180,14 +180,14 @@ endmacro()
                     if (hasAllBits(opt.enabledBits, target->enabledBits)) {
                         // This include directory is enabled in all relevant configs.
                         outs.format("    \"{}\"\n",
-                                    CMakeEscape{PosixPath::from<NativePath>(opt.key)});
+                                    CMakeEscape{PosixPath.from(Path, opt.key)});
                     } else {
                         // Use generator expressions to exclude include directory from specific
                         // configs.
                         for (u32 i = 0; i < Project.configNames.numItems(); i++) {
                             if (hasBitAtIndex(opt.enabledBits, i)) {
                                 outs.format("    \"$<$<CONFIG:{}>:{}>\"\n", Project.configNames[i],
-                                            CMakeEscape{PosixPath::from<NativePath>(opt.key)});
+                                            CMakeEscape{PosixPath.from(Path, opt.key)});
                             }
                         }
                     }

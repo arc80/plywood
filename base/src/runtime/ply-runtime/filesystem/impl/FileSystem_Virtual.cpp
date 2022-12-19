@@ -16,9 +16,9 @@ struct FileSystem_Virtual : FileSystem {
 
     PLY_NO_INLINE String convertToTargetPath(StringView path) const {
         // FIXME: should also detect and prohibit ".."
-        PathFormat pathFmt = this->targetFS->pathFormat();
+        Path_t pathFmt = this->targetFS->pathFormat();
         PLY_ASSERT(!pathFmt.isAbsolute(path));
-        return pathFmt.join(this->targetRoot, PosixPath::from(pathFmt, path));
+        return pathFmt.join(this->targetRoot, PosixPath.from(pathFmt, path));
     }
 
     static PLY_NO_INLINE Directory listDir(FileSystem* fs_, StringView path, u32 flags) {

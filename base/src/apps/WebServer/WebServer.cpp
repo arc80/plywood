@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     AllParams allParams;
     allParams.fileSys.rootDir = dataRoot;
     allParams.docs.init(dataRoot);
-    allParams.sourceCode.rootDir = NativePath::normalize(PLY_WORKSPACE_FOLDER);
+    allParams.sourceCode.rootDir = Path.normalize(PLY_WORKSPACE_FOLDER);
     if (!runServer(port, {&allParams, myRequestHandler})) {
         exit(1);
     }

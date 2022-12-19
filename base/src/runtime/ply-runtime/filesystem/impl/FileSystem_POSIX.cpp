@@ -74,7 +74,7 @@ PLY_NO_INLINE FSResult FileSystem_POSIX::DirImpl::nextImpl(ply::Directory::Impl*
 
             if (dirImpl->flags != 0) {
                 // Get additional information requested by flags
-                String joinedPath = PosixPath::join(dirImpl->dirPath, dirImpl->entry.name);
+                String joinedPath = PosixPath.join(dirImpl->dirPath, dirImpl->entry.name);
                 struct stat buf;
                 int rc = stat(joinedPath.withNullTerminator().bytes, &buf);
                 if (rc != 0) {
@@ -268,7 +268,7 @@ PLY_NO_INLINE FSResult FileSystem_POSIX::deleteFile(FileSystem*, StringView path
 
 PLY_NO_INLINE FSResult FileSystem_POSIX::removeDirTree(FileSystem* fs, StringView dirPath) {   
     for (const DirectoryEntry& dirEntry : fs->listDir(dirPath)) {
-        String joined = PosixPath::join(dirPath, dirEntry.name);
+        String joined = PosixPath.join(dirPath, dirEntry.name);
         if (dirEntry.isDir) {
             FSResult fsResult = fs->removeDirTree(joined);
             if (fsResult != FSResult::OK) {

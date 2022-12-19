@@ -28,8 +28,8 @@ struct InstantiatingInterpreter {
 
     String makeAbsPath(StringView relPath) {
         StringView plyfilePath =
-            NativePath::split(this->currentModule->plyfile->tkr.fileLocationMap.path).first;
-        return NativePath::join(plyfilePath, relPath);
+            Path.split(this->currentModule->plyfile->tkr.fileLocationMap.path).first;
+        return Path.join(plyfilePath, relPath);
     }
 };
 
@@ -99,8 +99,7 @@ bool onEvaluateSourceFile(InstantiatingInterpreter* ii, const AnyObject& attribu
                 if (!needsCompilation && file.name.endsWith(".cpp")) {
                     needsCompilation = true;
                 }
-                String relPath =
-                    NativePath::makeRelative(absPath, NativePath::join(triple.dirPath, file.name));
+                String relPath = Path.makeRelative(absPath, Path.join(triple.dirPath, file.name));
                 SourceFile& srcFile =
                     appendOrFind(srcGroup.files, std::move(relPath),
                                  [&](const SourceFile& a) { return a.relPath == relPath; });
@@ -120,7 +119,7 @@ bool onEvaluateIncludeDirectory(PropertyCollector* pc, const AnyObject& attribut
         return false;
 
     Option opt{Option::IncludeDir,
-               NativePath::join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
+               Path.join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
     Option& foundOpt =
         appendOrFind(*pc->options, std::move(opt), [&](const Option& o) { return o == opt; });
     foundOpt.enabledBits |= pc->configBit;
@@ -209,7 +208,7 @@ MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
                                         const biscuit::Statement::CustomBlock* cb) {
     PropertyCollector pc;
     pc.interp = &ii->interp;
-    pc.basePath = NativePath::split(ii->currentModule->plyfile->tkr.fileLocationMap.path).first;
+    pc.basePath = Path.split(ii->currentModule->plyfile->tkr.fileLocationMap.path).first;
     pc.options = &ii->target->options;
     pc.configBit = ii->mi->configBit;
     pc.isModule = true;
@@ -395,7 +394,7 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     // Execute config block
     PropertyCollector pc;
     pc.interp = &cli->interp;
-    pc.basePath = NativePath::split(cli->interp.currentFrame->tkr->fileLocationMap.path).first;
+    pc.basePath = Path.split(cli->interp.currentFrame->tkr->fileLocationMap.path).first;
     pc.options = &Project.perConfigOptions;
     pc.configBit = u64{1} << configIndex;
     biscuit::Interpreter::Hooks hooks;

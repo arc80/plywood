@@ -78,9 +78,8 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
 
 // FIXME: Just call this once per parsed file
 String makeInlRelPath(StringView relPath) {
-    auto splitPath = NativePath::split(relPath);
-    return NativePath::join(splitPath.first, "codegen",
-                            NativePath::splitExt(splitPath.second).first + ".inl");
+    auto splitPath = Path.split(relPath);
+    return Path.join(splitPath.first, "codegen", Path.splitExt(splitPath.second).first + ".inl");
 }
 
 Subst insertDirectiveSubst(StringView view, const char* marker, String&& replacement) {
@@ -268,7 +267,7 @@ struct ReflectionHooks : cpp::ParseSupervisor {
                 } else {
                     const cpp::PPVisitedFiles::SourceFile& srcFile =
                         vf->sourceFiles[chain.fileOrExpIdx];
-                    String curAbsPath = NativePath::join(Workspace.path, this->filePath);
+                    String curAbsPath = Path.join(Workspace.path, this->filePath);
                     // FIXME: Improve this if we ever start following includes while collecting
                     // reflection info:
                     PLY_ASSERT(srcFile.fileLocationMap.path == curAbsPath);
@@ -277,8 +276,8 @@ struct ReflectionHooks : cpp::ParseSupervisor {
                         (lmItem.offset + record->closeCurly.linearLoc - lmItem.linearLoc);
                     PLY_ASSERT(*endCurly == '}');
                     String genFileName = String::format("switch-{}.inl", this->getClassName("-"));
-                    state.switch_->inlineInlPath = NativePath::join(
-                        NativePath::split(this->filePath).first, "codegen", genFileName);
+                    state.switch_->inlineInlPath =
+                        Path.join(Path.split(this->filePath).first, "codegen", genFileName);
                     this->sfri->substsInParsedFile.append(insertDirectiveSubst(
                         srcFile.contents, endCurly,
                         String::format("#include \"codegen/{}\" //@@ply\n", genFileName)));
@@ -477,7 +476,7 @@ Tuple<SingleFileReflectionInfo, bool> extractReflection(ReflectionInfoAggregator
     visor.sfri = &sfri;
 
     cpp::PPVisitedFiles visitedFiles;
-    parsePlywoodSrcFile(NativePath::join(Workspace.path, relPath), &visitedFiles, &visor);
+    parsePlywoodSrcFile(Path.join(Workspace.path, relPath), &visitedFiles, &visor);
 
     return {std::move(sfri), !visor.anyError};
 }
@@ -523,7 +522,7 @@ String getSwitchInl(SwitchInfo* switch_) {
 }
 
 void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
-    String absInlPath = NativePath::join(Workspace.path, switch_->inlineInlPath);
+    String absInlPath = Path.join(Workspace.path, switch_->inlineInlPath);
     FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         absInlPath, getSwitchInl(switch_), tff);
     OutStream stdOut = StdOut::text();
@@ -655,7 +654,7 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
 
     for (const Traits::Item& item : fileToGeneratorList) {
         PLY_ASSERT(item.cppInlPath.endsWith(".inl"));
-        String absPath = NativePath::join(Workspace.path, item.cppInlPath);
+        String absPath = Path.join(Workspace.path, item.cppInlPath);
 
         MemOutStream mout;
         for (CodeGenerator* generator : item.sources) {
@@ -685,7 +684,7 @@ void do_codegen() {
             continue;
 
         for (WalkTriple& triple :
-             FileSystem::native()->walk(NativePath::join(Workspace.path, entry.name))) {
+             FileSystem::native()->walk(Path.join(Workspace.path, entry.name))) {
             // Sort child directories and filenames so that files are visited in a deterministic
             // order:
             sort(triple.dirNames);
@@ -719,12 +718,12 @@ void do_codegen() {
                         fileNum++;
 
                         Tuple<SingleFileReflectionInfo, bool> sfri =
-                            extractReflection(&agg, NativePath::join(triple.dirPath, file.name));
+                            extractReflection(&agg, Path.join(triple.dirPath, file.name));
                         if (sfri.second) {
                             for (SwitchInfo* switch_ : sfri.first.switches) {
                                 writeSwitchInl(switch_, Workspace.getSourceTextFormat());
                             }
-                            performSubstsAndSave(NativePath::join(triple.dirPath, file.name),
+                            performSubstsAndSave(Path.join(triple.dirPath, file.name),
                                                  sfri.first.substsInParsedFile,
                                                  Workspace.getSourceTextFormat());
                         }

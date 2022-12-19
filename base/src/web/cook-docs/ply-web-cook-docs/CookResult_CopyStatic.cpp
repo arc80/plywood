@@ -13,8 +13,8 @@ void cook_CopyStatic(cook::CookResult* cookResult, AnyObject) {
 
     // Create destination folder(s) if missing
     String dstPath =
-        NativePath::join(PLY_WORKSPACE_FOLDER, "data/docsite/static", cookResult->job->id.desc);
-    FSResult r = FileSystem::native()->makeDirs(NativePath::split(dstPath).first);
+        Path.join(PLY_WORKSPACE_FOLDER, "data/docsite/static", cookResult->job->id.desc);
+    FSResult r = FileSystem::native()->makeDirs(Path.split(dstPath).first);
     if (r != FSResult::OK && r != FSResult::AlreadyExists) {
         // FIXME: add reason from r
         cookResult->addError(String::format("unable to create '{}'", dstPath));
@@ -22,7 +22,7 @@ void cook_CopyStatic(cook::CookResult* cookResult, AnyObject) {
     }
 
     // Create Dependency on source file
-    String srcPath = NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/web/theme",
+    String srcPath = Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/web/theme",
                                       cookResult->job->id.desc);
     cook::CookResult::FileDepScope fdScope = cookResult->createFileDependency(srcPath);
     PLY_UNUSED(fdScope);

@@ -16,7 +16,7 @@ namespace build {
 BuildFolder_t* BuildFolder = nullptr;
 
 PLY_NO_INLINE void BuildFolder_t::load(StringView absPath) {
-    String infoPath = NativePath::join(absPath, "info.pylon");
+    String infoPath = Path.join(absPath, "info.pylon");
     String strContents = FileSystem::native()->loadTextAutodetect(infoPath).first;
     if (FileSystem::native()->lastResult() != FSResult::OK) {
         Error.log("Unable to read file '{}'", infoPath);
@@ -36,7 +36,7 @@ PLY_NO_INLINE void BuildFolder_t::load(StringView absPath) {
 PLY_NO_INLINE bool BuildFolder_t::save() const {
     Owned<pylon::Node> aRoot = pylon::exportObj(AnyObject::bind(this));
     String strContents = pylon::toString(aRoot);
-    String infoPath = NativePath::join(this->absPath, "info.pylon");
+    String infoPath = Path.join(this->absPath, "info.pylon");
     FSResult rc = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
         infoPath, strContents, TextFormat::platformPreference());
     if ((rc != FSResult::OK) && (rc != FSResult::Unchanged)) {
@@ -66,10 +66,10 @@ PLY_NO_INLINE s32 buildCMakeProject(StringView cmakeListsFolder,
                                     StringView targetName) {
     PLY_ASSERT(generatorOpts.generator);
     PLY_ASSERT(config);
-    String buildFolder = NativePath::join(cmakeListsFolder, "build");
+    String buildFolder = Path.join(cmakeListsFolder, "build");
     bool isMultiConfig = isMultiConfigCMakeGenerator(generatorOpts.generator);
     if (!isMultiConfig) {
-        buildFolder = NativePath::join(buildFolder, config);
+        buildFolder = Path.join(buildFolder, config);
     }
     Subprocess::Output outputType = Subprocess::Output::inherit();
     Owned<Subprocess> sub;
@@ -136,7 +136,7 @@ String getTargetOutputPath(BuildTargetType targetType, StringView targetName,
     Array<StringView> pathComponents = {buildFolderPath, "build", config};
     String fullName = filePrefix + targetName + fileExtension;
     pathComponents.append(fullName);
-    return NativePath::format().joinAndNormalize(Array<StringView>{pathComponents});
+    return Path.joinArray(Array<StringView>{pathComponents});
 }
 */
 

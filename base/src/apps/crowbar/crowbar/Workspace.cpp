@@ -18,10 +18,10 @@ PLY_NO_INLINE void Workspace_::load() {
 
     // Search each parent directory for workspace-settings.pylon:
     while (true) {
-        settingsPath = NativePath::join(this->path, fileName);
+        settingsPath = Path.join(this->path, fileName);
         if (FileSystem::native()->exists(settingsPath) == ExistsResult::File)
             break;
-        String nextDir = NativePath::split(this->path).first;
+        String nextDir = Path.split(this->path).first;
         if (this->path == nextDir) {
             // We've reached the topmost directory.
             Error.log("Can't locate {}", fileName);

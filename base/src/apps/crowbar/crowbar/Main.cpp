@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
     if (prefixMatch(category, "tidy")) {
         ensureTerminated(&cl);
         cl.finalize();
-        tidy_repo(NativePath::join(Workspace.path, "base/src"), {},
+        tidy_repo(Path.join(Workspace.path, "base/src"), {},
                   Workspace.getSourceTextFormat());
     } else if (prefixMatch(category, "target")) {
         StringView cmd = cl.readToken();
@@ -62,12 +62,12 @@ int main(int argc, char* argv[]) {
         Repository::create();
 
         BuildFolder_t bf;
-        bf.load(NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/crowbar"));
+        bf.load(Path.join(PLY_WORKSPACE_FOLDER, "data/build/crowbar"));
         PLY_SET_IN_SCOPE(BuildFolder, &bf);
 
         init_built_ins();
         instantiate_all_configs();
-        String cmakeListsPath = NativePath::join(BuildFolder->absPath, "CMakeLists.txt");
+        String cmakeListsPath = Path.join(BuildFolder->absPath, "CMakeLists.txt");
         write_CMakeLists_txt_if_different(cmakeListsPath);
         Tuple<s32, String> result =
             generateCMakeProject(BuildFolder->absPath, BuildFolder->cmakeOptions, {});
@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
         Repository::create();
 
         BuildFolder_t bf;
-        bf.absPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/crowbar");
+        bf.absPath = Path.join(PLY_WORKSPACE_FOLDER, "data/build/crowbar");
         bf.solutionName = "crowbar";
         bf.rootTargets.append("crowbar");
         PLY_SET_IN_SCOPE(BuildFolder, &bf);

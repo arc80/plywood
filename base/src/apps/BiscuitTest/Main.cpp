@@ -195,7 +195,7 @@ void runTestSuite() {
 
     // Open input file
     String testSuitePath =
-        NativePath::join(PLY_WORKSPACE_FOLDER, "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
+        Path.join(PLY_WORKSPACE_FOLDER, "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
     Tuple<String, TextFormat> allTests = FileSystem::native()->loadTextAutodetect(testSuitePath);
     SectionReader sr{allTests.first};
 

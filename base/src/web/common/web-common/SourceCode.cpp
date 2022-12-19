@@ -12,10 +12,10 @@ PLY_NO_INLINE void SourceCode::serve(const SourceCode* params, StringView reques
                                      ResponseIface* responseIface) {
     // FIXME: Use FileSystem_Virtual and make really, really sure an adversary can't read files
     // outside the rootDir
-    String normRequestPath = NativePath::normalize(requestPath.ltrim(NativePath::isSepByte));
+    String normRequestPath = Path.normalize(requestPath.ltrim(Path.isSepByte));
     Owned<InStream> ins =
         FileSystem::native()
-            ->openTextForReadAutodetect(NativePath::join(params->rootDir, normRequestPath))
+            ->openTextForReadAutodetect(Path.join(params->rootDir, normRequestPath))
             .first;
     if (!ins) {
         // file could not be loaded
@@ -31,7 +31,7 @@ PLY_NO_INLINE void SourceCode::serve(const SourceCode* params, StringView reques
 <head>
 <title>{}</title>
 )#",
-                 fmt::XMLEscape{NativePath::split(normRequestPath).second});
+                 fmt::XMLEscape{Path.split(normRequestPath).second});
     *outs << R"#(<link href="/static/stylesheet.css" rel="stylesheet" type="text/css" />
 <script>
 var highlighted = null;

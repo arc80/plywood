@@ -48,7 +48,7 @@ PLY_NO_INLINE void DirectoryWatcher_Win32::runWatcher() {
             DWORD attribs;
             {
                 // FIXME: Avoid some of the UTF-8 <--> UTF-16 conversions done here
-                String fullPath = WindowsPath::join(m_root, path);
+                String fullPath = WindowsPath.join(m_root, path);
                 attribs = GetFileAttributesW(win32PathArg(fullPath));
             }
             if (attribs == INVALID_FILE_ATTRIBUTES) {

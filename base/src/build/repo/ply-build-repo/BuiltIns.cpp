@@ -26,7 +26,7 @@ MethodResult doJoinPath(const MethodArgs& args) {
             PLY_FORCE_CRASH();
         parts.append(*arg.cast<String>());
     }
-    String result = NativePath::format().joinAndNormalize(parts);
+    String result = Path.joinArray(parts);
     AnyObject* resultStorage =
         args.base->localVariableStorage.appendObject(getTypeDescriptor(&result));
     *resultStorage->cast<String>() = std::move(result);

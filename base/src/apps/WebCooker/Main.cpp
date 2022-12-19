@@ -34,9 +34,9 @@ Array<Reference<cook::CookJob>> copyStaticFiles(cook::CookContext* ctx, StringVi
     Array<Reference<cook::CookJob>> copyJobs;
     for (WalkTriple& triple : FileSystem::native()->walk(srcRoot)) {
         for (const WalkTriple::FileInfo& file : triple.files) {
-            String relativeDir = NativePath::makeRelative(srcRoot, triple.dirPath);
+            String relativeDir = Path.makeRelative(srcRoot, triple.dirPath);
             copyJobs.append(ctx->cook(
-                {&ply::docs::CookJobType_CopyStatic, NativePath::join(relativeDir, file.name)}));
+                {&ply::docs::CookJobType_CopyStatic, Path.join(relativeDir, file.name)}));
         }
     }
     return copyJobs;
@@ -61,8 +61,8 @@ Array<String> getSourceFileKeys(StringView srcRoot) {
                 }
                 {
                     String relativeDir =
-                        NativePath::makeRelative(PLY_WORKSPACE_FOLDER, triple.dirPath);
-                    srcKeys.append(NativePath::join(relativeDir, file.name));
+                        Path.makeRelative(PLY_WORKSPACE_FOLDER, triple.dirPath);
+                    srcKeys.append(Path.join(relativeDir, file.name));
                 }
             skipIt:;
             }
@@ -80,10 +80,10 @@ Array<String> getSourceFileKeys(StringView srcRoot) {
 Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, StringView relPath) {
     PLY_ASSERT(relPath.startsWith("/"));
     Reference<cook::CookJob> pageMetaJob = ctx->depTracker->getOrCreateCookJob(
-        {&docs::CookJobType_ExtractPageMeta, PosixPath::join(relPath, "index")});
+        {&docs::CookJobType_ExtractPageMeta, PosixPath.join(relPath, "index")});
     Array<Reference<cook::CookJob>> childJobs;
     String absPath =
-        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/docs", relPath.subStr(1));
+        Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/docs", relPath.subStr(1));
 
     // By default, sort child pages by filename
     // The order can be overridden for each page using the <% childOrder %> tag
@@ -97,11 +97,11 @@ Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, Stri
     // Add child entries
     for (const DirectoryEntry& entry : allEntries) {
         if (entry.isDir) {
-            childJobs.append(extractPageMetasFromFolder(ctx, PosixPath::join(relPath, entry.name)));
+            childJobs.append(extractPageMetasFromFolder(ctx, PosixPath.join(relPath, entry.name)));
         } else if (entry.name.endsWith(".md") && entry.name != "index.md") {
             StringView baseName = entry.name.shortenedBy(3);
             childJobs.append(ctx->cook(
-                {&docs::CookJobType_ExtractPageMeta, PosixPath::join(relPath, baseName)}));
+                {&docs::CookJobType_ExtractPageMeta, PosixPath.join(relPath, baseName)}));
         }
     }
 
@@ -142,7 +142,7 @@ int main() {
     docs::WebCookerIndex* wci = new docs::WebCookerIndex;
     wci->globalScope = new docs::SemaEntity;
     db.userData = AnyOwnedObject::bind(wci);
-    // String dbPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/docsite-cache/depTracker.db");
+    // String dbPath = Path.join(PLY_WORKSPACE_FOLDER, "data/docsite-cache/depTracker.db");
 
     cook::CookContext ctx;
     ctx.depTracker = &db;
@@ -150,20 +150,20 @@ int main() {
 
     // Copy static files
     Array<Reference<cook::CookJob>> copyJobs = copyStaticFiles(
-        &ctx, NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/web/theme"));
+        &ctx, Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/web/theme"));
 
     // Extract API documentation from the source code
     Array<Reference<cook::CookJob>> rootRefs;
     Array<String> srcKeys = getSourceFileKeys(
-        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/io"));
+        Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/io"));
     srcKeys.extend(getSourceFileKeys(
-        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/container")));
+        Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/container")));
     srcKeys.extend(getSourceFileKeys(
-        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/string")));
-    srcKeys.extend(getSourceFileKeys(NativePath::join(
+        Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/string")));
+    srcKeys.extend(getSourceFileKeys(Path.join(
         PLY_WORKSPACE_FOLDER, "repos/plywood/src/runtime/ply-runtime/filesystem")));
     srcKeys.extend(getSourceFileKeys(
-        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/math/math/ply-math")));
+        Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/math/math/ply-math")));
     for (StringView srcKey : srcKeys) {
         rootRefs.append(ctx.cook({&ply::docs::CookJobType_ExtractAPI, srcKey}));
     }
@@ -192,7 +192,7 @@ int main() {
         MemOutStream mout;
         pylon::write(&mout, aRoot);
         FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-            NativePath::join(PLY_WORKSPACE_FOLDER, "data/docsite/contents.pylon"),
+            Path.join(PLY_WORKSPACE_FOLDER, "data/docsite/contents.pylon"),
             mout.moveToString(), TextFormat::unixUTF8());
     }
 

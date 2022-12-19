@@ -45,7 +45,7 @@ PLY_NO_INLINE void dirEntryFromFindData(FileSystem_Win32::DirImpl* dirImpl) {
 }
 
 PLY_NO_INLINE FSResult FileSystem_Win32::DirImpl::begin(StringView path) {
-    String pattern = WindowsPath::join(path, "*");
+    String pattern = WindowsPath.join(path, "*");
     this->hFind = FindFirstFileW(win32PathArg(pattern), &this->findData);
     if (this->hFind == INVALID_HANDLE_VALUE) {
         this->entry = {};
@@ -315,8 +315,8 @@ PLY_NO_INLINE FSResult FileSystem_Win32::deleteFile(FileSystem*, StringView path
 
 PLY_NO_INLINE FSResult FileSystem_Win32::removeDirTree(FileSystem* fs, StringView dirPath) {
     HybridString absPath = dirPath;
-    if (!WindowsPath::isAbsolute(dirPath)) {
-        absPath = WindowsPath::normalize(fs->funcs->getWorkingDirectory(fs), dirPath);
+    if (!WindowsPath.isAbsolute(dirPath)) {
+        absPath = WindowsPath.join(fs->funcs->getWorkingDirectory(fs), dirPath);
     }
     MemOutStream mout;
     StringView srcView = absPath.view();

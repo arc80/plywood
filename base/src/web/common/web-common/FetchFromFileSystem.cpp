@@ -34,7 +34,7 @@ PLY_NO_INLINE void FetchFromFileSystem::serve(const FetchFromFileSystem* params,
         requestPath = requestPath.subStr(0, getPos);
     }
 
-    String filename = NativePath::split(requestPath).second;
+    String filename = Path.split(requestPath).second;
     s32 dotPos = filename.findByte('.');
     if (dotPos <= 0) {
         // no file extension
@@ -50,7 +50,7 @@ PLY_NO_INLINE void FetchFromFileSystem::serve(const FetchFromFileSystem* params,
     }
 
     String nativePath =
-        NativePath::join(params->rootDir, requestPath.ltrim([](char c) { return c == '/'; }));
+        Path.join(params->rootDir, requestPath.ltrim([](char c) { return c == '/'; }));
 
     // FIXME: Don't load the whole file completely in memory first.
     // Could open the raw pipe and feed it to outs.

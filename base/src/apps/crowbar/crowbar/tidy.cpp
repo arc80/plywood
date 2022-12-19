@@ -91,7 +91,7 @@ void tidy_repo(StringView repoPath, StringView clangFormatPath, const TextFormat
                 }
 
                 // Check file header
-                check_file_header(NativePath::join(triple.dirPath, file.name), desiredHeader, tff);
+                check_file_header(Path.join(triple.dirPath, file.name), desiredHeader, tff);
             }
         }
     }

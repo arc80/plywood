@@ -43,10 +43,10 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
     PLY_ASSERT(generatorOpts.generator);
     bool isMultiConfig = isMultiConfigCMakeGenerator(generatorOpts.generator);
     PLY_ASSERT(isMultiConfig || config);
-    String buildFolder = NativePath::join(cmakeListsFolder, "build");
+    String buildFolder = Path.join(cmakeListsFolder, "build");
     String relPathToCMakeLists = "..";
     if (!isMultiConfig) {
-        buildFolder = NativePath::join(buildFolder, config);
+        buildFolder = Path.join(buildFolder, config);
         relPathToCMakeLists = "../..";
     }
     FSResult result = FileSystem::native()->makeDirs(buildFolder);
@@ -92,20 +92,20 @@ void write_bootstrap(u32 configIndex) {
     // Write crowbar_bulk.cpp
     {
         MemOutStream outs;
-        String sourceDir = NativePath::join(Workspace.path, "base/scripts");
+        String sourceDir = Path.join(Workspace.path, "base/scripts");
         for (const Target* target : Project.targets) {
             for (const SourceGroup& sg : target->sourceGroups) {
                 for (const SourceFile& sf : sg.files) {
                     if (hasBitAtIndex(sf.enabledBits, configIndex) && sf.relPath.endsWith(".cpp") &&
                         !sf.relPath.endsWith(".modules.cpp")) {
-                        String includePath = PosixPath::from<NativePath>(NativePath::makeRelative(
-                            sourceDir, NativePath::join(sg.absPath, sf.relPath)));
+                        String includePath = PosixPath.from(
+                            Path, Path.makeRelative(sourceDir, Path.join(sg.absPath, sf.relPath)));
                         outs.format("#include \"{}\"\n", includePath);
                     }
                 }
             }
         }
-        String sourcePath = NativePath::join(sourceDir, "crowbar_bulk.cpp");
+        String sourcePath = Path.join(sourceDir, "crowbar_bulk.cpp");
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
             sourcePath, outs.moveToString(), TextFormat::platformPreference());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
@@ -152,7 +152,7 @@ void write_bootstrap(u32 configIndex) {
             if (!hasBitAtIndex(opt.enabledBits, configIndex))
                 continue;
             if (opt.type == Option::IncludeDir) {
-                outs.format(" /I\"{}\"", NativePath::makeRelative(Workspace.path, opt.key));
+                outs.format(" /I\"{}\"", Path.makeRelative(Workspace.path, opt.key));
             }
         }
 
@@ -175,7 +175,7 @@ void write_bootstrap(u32 configIndex) {
         outs << "del crowbar_bulk.obj\n";
         outs << "del crowbar_bulk.pdb\n";
 
-        String batPath = NativePath::join(Workspace.path, "setup.bat");
+        String batPath = Path.join(Workspace.path, "setup.bat");
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
             batPath, outs.moveToString(), TextFormat::platformPreference());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
@@ -192,14 +192,13 @@ void write_bootstrap(u32 configIndex) {
 
 bool command_open() {
     BuildFolder_t bf;
-    bf.load(NativePath::join(PLY_WORKSPACE_FOLDER, "data/build/crowbar"));
+    bf.load(Path.join(PLY_WORKSPACE_FOLDER, "data/build/crowbar"));
 
     if (bf.cmakeOptions.generator == "Unix Makefiles") {
         Error.log("No IDE to open for Unix Makefiles");
 #if PLY_TARGET_WIN32
     } else if (bf.cmakeOptions.generator.startsWith("Visual Studio")) {
-        String slnPath =
-            NativePath::join(bf.absPath, "build", bf.solutionName + ".sln");
+        String slnPath = Path.join(bf.absPath, "build", bf.solutionName + ".sln");
         if (FileSystem::native()->exists(slnPath) != ExistsResult::File) {
             Error.log("Can't find '{}'", slnPath);
         }
@@ -224,7 +223,7 @@ bool command_open() {
 #if PLY_TARGET_APPLE
     } else if (folder->cmakeOptions.generator == "Xcode") {
         String projPath =
-            NativePath::join(folder->getAbsPath(), "build", folder->solutionName + ".xcodeproj");
+            Path.join(folder->getAbsPath(), "build", folder->solutionName + ".xcodeproj");
         if (FileSystem::native()->exists(projPath) != ExistsResult::Directory) {
             fatalError(String::format("Can't find '{}'", projPath));
         }

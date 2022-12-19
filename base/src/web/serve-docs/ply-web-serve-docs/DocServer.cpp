@@ -60,7 +60,7 @@ void DocServer::init(StringView dataRoot) {
     FileSystem* fs = FileSystem::native();
 
     this->dataRoot = dataRoot;
-    this->contentsPath = NativePath::join(dataRoot, "contents.pylon");
+    this->contentsPath = Path.join(dataRoot, "contents.pylon");
     FileStatus contentsStatus = fs->getFileStatus(this->contentsPath);
     if (contentsStatus.result == FSResult::OK) {
         this->reloadContents();
@@ -103,19 +103,19 @@ void DocServer::reloadContents() {
 
 String getPageSource(DocServer* ds, StringView requestPath, ResponseIface* responseIface) {
     FileSystem* fs = FileSystem::native();
-    if (NativePath::isAbsolute(requestPath)) {
+    if (Path.isAbsolute(requestPath)) {
         responseIface->respondGeneric(ResponseCode::NotFound);
         return {};
     }
-    String absPath = NativePath::join(ds->dataRoot, "pages", requestPath);
+    String absPath = Path.join(ds->dataRoot, "pages", requestPath);
     ExistsResult exists = FileSystem::native()->exists(absPath);
     if (exists == ExistsResult::Directory) {
-        absPath = NativePath::join(absPath, "index.html");
+        absPath = Path.join(absPath, "index.html");
     } else {
         absPath += ".html";
     }
     String pageHtml =
-        fs->loadText(NativePath::join(ds->dataRoot, "pages", absPath), TextFormat::unixUTF8());
+        fs->loadText(Path.join(ds->dataRoot, "pages", absPath), TextFormat::unixUTF8());
     if (!pageHtml) {
         responseIface->respondGeneric(ResponseCode::NotFound);
         return {};

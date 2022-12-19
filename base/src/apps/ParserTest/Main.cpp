@@ -63,13 +63,13 @@ void runTest(StringView testPath) {
 
 void runTestSuite() {
     String testsFolder =
-        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/ParserTest/tests");
+        Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/ParserTest/tests");
     OutStream outs = StdOut::text();
     for (const DirectoryEntry& entry : FileSystem::native()->listDir(testsFolder)) {
         if (!entry.isDir && entry.name.endsWith(".txt")) {
             outs << entry.name << '\n';
             outs.flushMem();
-            runTest(NativePath::join(testsFolder, entry.name));
+            runTest(Path.join(testsFolder, entry.name));
         }
     }
 }

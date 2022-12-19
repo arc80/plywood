@@ -279,9 +279,9 @@ void dumpExtractedMembers(OutStream& htmlWriter, SemaEntity* classEnt) {
             dumpMemberTitle(title, htmlWriter, prependClassName, lookupCtx);
 
             // Close <code> tag, write optional permalink & source code link, close <div>
-            PLY_ASSERT(title.srcPath.startsWith(NativePath::normalize(PLY_WORKSPACE_FOLDER)));
-            String srcPath = PosixPath::from<NativePath>(
-                NativePath::makeRelative(PLY_WORKSPACE_FOLDER, title.srcPath));
+            PLY_ASSERT(title.srcPath.startsWith(Path.normalize(PLY_WORKSPACE_FOLDER)));
+            String srcPath = PosixPath.from<NativePath>(
+                Path.makeRelative(PLY_WORKSPACE_FOLDER, title.srcPath));
 #if WEBCOOKDOCS_LINK_TO_GITHUB
             // FIXME: Link to a specific commit
             StringView srcLinkPrefix = "https://github.com/arc80/plywood/tree/main/";
@@ -395,7 +395,7 @@ void Page_cook(cook::CookResult* cookResult_, AnyObject) {
     Owned<InStream> ins = pageResult->openFileAsDependency(pageSrcPath);
     if (!ins) {
         // FIXME: Shouldn't create CookJobs for pages that don't exist
-        if (NativePath::split(pageSrcPath).second != "index.md") {
+        if (Path.split(pageSrcPath).second != "index.md") {
             pageResult->addError(String::format("Unable to open \"{}\"\n", pageSrcPath));
         }
         return;
@@ -519,7 +519,7 @@ void Page_cook(cook::CookResult* cookResult_, AnyObject) {
     flushMarkdown();
     String finalHtml = String::format("{}\n", extractMetaResult->title) + htmlWriter.moveToString();
     PLY_ASSERT(pageResult->job->id.desc.startsWith("/"));
-    String htmlPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/docsite/pages",
+    String htmlPath = Path.join(PLY_WORKSPACE_FOLDER, "data/docsite/pages",
                                        pageResult->job->id.desc.subStr(1) + ".html");
     FileSystem::native()->makeDirsAndSaveTextIfDifferent(htmlPath, finalHtml,
                                                          TextFormat::unixUTF8());

@@ -58,7 +58,7 @@ int main() {
         }
     }
     FileSystem::native()->makeDirsAndSaveTextIfDifferent(
-        NativePath::join(PLY_WORKSPACE_FOLDER,
+        Path.join(PLY_WORKSPACE_FOLDER,
                          "repos/plywood/src/apps/StringReaderTest/result.txt"),
         mout.moveToString(), TextFormat::platformPreference());
     return 0;

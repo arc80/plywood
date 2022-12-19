@@ -126,7 +126,7 @@ You can access the native filesystem by calling `FileSystem::native()`.
 A `FileSystem` object expects either Windows paths or POSIX-style paths, depending on its
 implementation. The `NativePath` class always manipulate paths in the appropriate format for the
 native filesystem. When working with an abstract `FileSystem` where the path format is unknown,
-`pathFormat()` will return a `PathFormat` object suitable for manipulating paths in the expected
+`pathFormat()` will return a `Path_t` object suitable for manipulating paths in the expected
 format. See [Manipulating Paths](ManipulatingPaths) for more information.
 
 You can create a virtual filesystem by calling `createVirtual()`, or even implement your own.
@@ -188,7 +188,7 @@ struct FileSystem {
     };
 
     struct Funcs {
-        PathFormat pathFmt;
+        Path_t pathFmt;
         Directory (*listDir)(FileSystem* fs, StringView path, u32 flags) = nullptr;
         FSResult (*makeDir)(FileSystem* fs, StringView path) = nullptr;
         FSResult (*setWorkingDirectory)(FileSystem* fs_, StringView path) = nullptr;
@@ -217,10 +217,10 @@ struct FileSystem {
     }
 
     /*!
-    Returns a `PathFormat` describing the filesystem's expected path format. This object can be used
+    Returns a `Path_t` describing the filesystem's expected path format. This object can be used
     to [manipulate paths](ManipulatingPaths) in the expected format.
     */
-    PLY_INLINE PathFormat pathFormat() const {
+    PLY_INLINE Path_t pathFormat() const {
         return this->funcs->pathFmt;
     }
 

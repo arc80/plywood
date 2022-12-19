@@ -31,9 +31,9 @@ void cook_ExtractPageMeta(cook::CookResult* cookResult_, AnyObject jobArg) {
 
     {
         // Set default page title && linkID
-        auto splitPath = PosixPath::split(cookResult_->job->id.desc);
+        auto splitPath = PosixPath.split(cookResult_->job->id.desc);
         if (splitPath.second == "index") {
-            extractPageMetaResult->title = PosixPath::split(splitPath.first).second;
+            extractPageMetaResult->title = PosixPath.split(splitPath.first).second;
         } else {
             extractPageMetaResult->title = splitPath.second;
         }

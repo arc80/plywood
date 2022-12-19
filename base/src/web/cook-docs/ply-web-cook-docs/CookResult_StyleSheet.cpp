@@ -14,7 +14,7 @@ void StyleSheet_cook(cook::CookResult* cookResult, AnyObject) {
 
     // Add dependency
     String filePath =
-        NativePath::join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/web/theme/style.scss");
+        Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/web/theme/style.scss");
     cook::CookResult::FileDepScope fdScope = cookResult->createFileDependency(filePath);
     PLY_UNUSED(fdScope);
 
@@ -29,7 +29,7 @@ void StyleSheet_cook(cook::CookResult* cookResult, AnyObject) {
 
     // Save result
     // FIXME: Implement strategy to delete orphaned CSS files
-    String cssPath = NativePath::join(PLY_WORKSPACE_FOLDER, "data/docsite/static/stylesheet.css");
+    String cssPath = Path.join(PLY_WORKSPACE_FOLDER, "data/docsite/static/stylesheet.css");
     StringView cssText = sass_context_get_output_string((Sass_Context*) result.context);
     FileSystem::native()->makeDirsAndSaveTextIfDifferent(cssPath, cssText, TextFormat::unixUTF8());
 }
