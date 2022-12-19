@@ -2,13 +2,12 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <Core.h>
-#include <ConsoleUtils.h>
-#include <Workspace.h>
+#include "core.h"
+#include "workspace.h"
 #include <ply-cpp/Preprocessor.h>
 #include <ply-cpp/ErrorFormatting.h>
 
-void checkFileHeader(StringView srcPath, StringView desiredHeader, const TextFormat& tff) {
+void check_file_header(StringView srcPath, StringView desiredHeader, const TextFormat& tff) {
     String src = FileSystem::native()->loadTextAutodetect(srcPath).first;
     if (FileSystem::native()->lastResult() != FSResult::OK)
         return;
@@ -72,8 +71,12 @@ void checkFileHeader(StringView srcPath, StringView desiredHeader, const TextFor
     FileSystem::native()->makeDirsAndSaveTextIfDifferent(srcPath, withHeader, tff);
 }
 
-void cleanupRepo(StringView repoPath, StringView desiredHeader, StringView clangFormatPath,
-                 const TextFormat& tff) {
+void tidy_repo(StringView repoPath, StringView clangFormatPath, const TextFormat& tff) {
+    StringView desiredHeader = R"(/*------------------------------------
+  ///\  Plywood C++ Framework
+  \\\/  https://plywood.arc80.com/
+------------------------------------*/
+)";
     for (WalkTriple& triple : FileSystem::native()->walk(repoPath)) {
         for (const WalkTriple::FileInfo& file : triple.files) {
             if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
@@ -88,20 +91,8 @@ void cleanupRepo(StringView repoPath, StringView desiredHeader, StringView clang
                 }
 
                 // Check file header
-                checkFileHeader(NativePath::join(triple.dirPath, file.name), desiredHeader, tff);
+                check_file_header(NativePath::join(triple.dirPath, file.name), desiredHeader, tff);
             }
         }
     }
-}
-
-void command_cleanup(CommandLine* cl) {
-    ensureTerminated(cl);
-    cl->finalize();
-    StringView desiredHeader = R"(/*------------------------------------
-  ///\  Plywood C++ Framework
-  \\\/  https://plywood.arc80.com/
-------------------------------------*/
-)";
-    cleanupRepo(NativePath::join(Workspace.path, "base/src"), desiredHeader, {},
-                Workspace.getSourceTextFormat());
 }

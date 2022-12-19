@@ -2,8 +2,8 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <Core.h>
-#include <Workspace.h>
+#include "core.h"
+#include "workspace.h"
 #include <pylon/Parse.h>
 #include <pylon/Write.h>
 #include <pylon-reflect/Import.h>
@@ -69,4 +69,4 @@ PLY_NO_INLINE TextFormat Workspace_::getSourceTextFormat() const {
     return tff;
 }
 
-#include "codegen/Workspace.inl" //%%
+#include "codegen/workspace.inl" //%%

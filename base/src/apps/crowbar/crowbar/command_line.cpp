@@ -2,8 +2,8 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <Core.h>
-#include <ConsoleUtils.h>
+#include "core.h"
+#include "command_line.h"
 #include <ply-runtime/algorithm/Find.h>
 #include <ply-runtime/Error.h>
 

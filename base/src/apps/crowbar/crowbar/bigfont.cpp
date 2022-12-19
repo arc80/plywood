@@ -2,8 +2,7 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <Core.h>
-#include <ConsoleUtils.h>
+#include "core.h"
 
 char* GlyphData[] = {
 // clang-format off
@@ -92,19 +91,4 @@ void print_bigfont(StringView text) {
         }
         outs << '\n';
     }
-}
-
-void command_bigfont(CommandLine* cl) {
-    using namespace build;
-
-    MemOutStream outs;
-    while (StringView word = cl->readToken()) {
-        if (outs.getSeekPos() > 0) {
-            outs << " ";
-        }
-        outs << word;
-    }
-    cl->finalize();
-
-    print_bigfont(outs.moveToString());
 }

@@ -3,7 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <Core.h>
+#include "core.h"
 #include <ply-build-repo/BuildFolder.h>
 
 using namespace ply::build;

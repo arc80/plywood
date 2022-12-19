@@ -3,8 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <Core.h>
-#include <ply-build-repo/BuildFolder.h>
+#include "core.h"
 
 struct CommandLine {
     Array<StringView> args;

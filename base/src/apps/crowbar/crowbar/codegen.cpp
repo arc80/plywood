@@ -1,18 +1,82 @@
-/*------------------------------------
+﻿/*------------------------------------
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <Core.h>
-#include <ReflectionHooks.h>
-#include <Workspace.h>
+#include "core.h"
+#include "workspace.h"
 #include <ply-cpp/Parser.h>
+#include <ply-cpp/Preprocessor.h>
+#include <ply-cpp/PPVisitedFiles.h>
+#include <ply-runtime/io/text/TextFormat.h>
+#include <ply-runtime/algorithm/Find.h>
+#include <ply-runtime/algorithm/Sort.h>
 #include <ply-cpp/ErrorFormatting.h>
+
+//                              ▄▄
+//  ▄▄▄▄▄   ▄▄▄▄  ▄▄▄▄▄   ▄▄▄▄  ▄▄ ▄▄▄▄▄   ▄▄▄▄▄
+//  ██  ██  ▄▄▄██ ██  ▀▀ ▀█▄▄▄  ██ ██  ██ ██  ██
+//  ██▄▄█▀ ▀█▄▄██ ██      ▄▄▄█▀ ██ ██  ██ ▀█▄▄██
+//  ██                                     ▄▄▄█▀
+
+struct Subst {
+    u32 start = 0;
+    u32 numBytes = 0;
+    String replacement;
+
+    PLY_INLINE bool operator<(const Subst& other) const {
+        return (this->start < other.start) ||
+               (this->start == other.start && this->numBytes < other.numBytes);
+    }
+};
+
+struct ReflectedClass {
+    PLY_REFLECT()
+    String cppInlPath;
+    String name;
+    Array<String> members;
+    // ply reflect off
+};
+
+// FIXME: The parser actually fills in Enum_::enumerators, making this struct redundant.
+// Find a way to simplify.
+struct ReflectedEnum {
+    PLY_REFLECT()
+    String cppInlPath;
+    String namespacePrefix;
+    String enumName;
+    Array<String> enumerators;
+    // ply reflect off
+};
+
+struct SwitchInfo {
+    PLY_REFLECT()
+    cpp::Token macro;
+    String inlineInlPath;
+    String cppInlPath;
+    String name;
+    bool isReflected = false;
+    Array<String> states;
+    // ply reflect off
+};
+
+struct ReflectionInfoAggregator {
+    Array<Owned<ReflectedClass>> classes;
+    Array<Owned<ReflectedEnum>> enums;
+    Array<Owned<SwitchInfo>> switches;
+};
+
+struct SingleFileReflectionInfo {
+    // May later need to generalize to multiple files
+    Array<Subst> substsInParsedFile;
+    Array<SwitchInfo*> switches;
+};
 
 namespace ply {
 namespace cpp {
-
 void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFiles,
-                         ParseSupervisor* visor);
+                         cpp::ParseSupervisor* visor);
+} // namespace cpp
+} // namespace ply
 
 // FIXME: Just call this once per parsed file
 String makeInlRelPath(StringView relPath) {
@@ -53,7 +117,7 @@ Subst insertDirectiveSubst(StringView view, const char* marker, String&& replace
     return subst;
 }
 
-struct ReflectionHookError : BaseError {
+struct ReflectionHookError : cpp::BaseError {
     enum Type {
         // ply reflect enum
         Unknown,
@@ -70,22 +134,22 @@ struct ReflectionHookError : BaseError {
 
     PLY_REFLECT()
     Type type = Unknown;
-    LinearLocation linearLoc = -1;
-    LinearLocation otherLoc = -1;
+    cpp::LinearLocation linearLoc = -1;
+    cpp::LinearLocation otherLoc = -1;
     // ply reflect off
 
-    PLY_INLINE ReflectionHookError(Type type, LinearLocation linearLoc,
-                                   LinearLocation otherLoc = -1)
+    PLY_INLINE ReflectionHookError(Type type, cpp::LinearLocation linearLoc,
+                                   cpp::LinearLocation otherLoc = -1)
         : type{type}, linearLoc{linearLoc}, otherLoc{otherLoc} {
     }
-    virtual void writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const override;
+    virtual void writeMessage(OutStream* outs,
+                              const cpp::PPVisitedFiles* visitedFiles) const override;
 };
 
-} // namespace cpp
-PLY_DECLARE_TYPE_DESCRIPTOR(cpp::ReflectionHookError::Type)
-namespace cpp {
+PLY_DECLARE_TYPE_DESCRIPTOR(ReflectionHookError::Type)
 
-void ReflectionHookError::writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const {
+void ReflectionHookError::writeMessage(OutStream* outs,
+                                       const cpp::PPVisitedFiles* visitedFiles) const {
     outs->format("{}: error: ", expandFileLocation(visitedFiles, this->linearLoc).toString());
     switch (this->type) {
         case ReflectionHookError::SwitchMayOnlyContainStructs: {
@@ -135,13 +199,13 @@ void ReflectionHookError::writeMessage(OutStream* outs, const PPVisitedFiles* vi
     }
 }
 
-struct ReflectionHooks : ParseSupervisor {
+struct ReflectionHooks : cpp::ParseSupervisor {
     struct State {
         ReflectedClass* clazz = nullptr;
-        Token captureMembersToken;
+        cpp::Token captureMembersToken;
         Owned<SwitchInfo> switch_ = nullptr;
         Owned<ReflectedEnum> enum_ = nullptr;
-        Token keepReflectedEnumToken;
+        cpp::Token keepReflectedEnumToken;
     };
     Array<State> stack;
     StringView filePath;
@@ -152,7 +216,7 @@ struct ReflectionHooks : ParseSupervisor {
     virtual void enter(AnyObject node) override {
         State& state = this->stack.append();
 
-        if (node.is<grammar::DeclSpecifier::Enum_>()) {
+        if (node.is<cpp::grammar::DeclSpecifier::Enum_>()) {
             state.enum_ = new ReflectedEnum;
             state.enum_->cppInlPath = makeInlRelPath(this->filePath);
             state.enum_->namespacePrefix = this->getNamespacePrefix();
@@ -164,7 +228,7 @@ struct ReflectionHooks : ParseSupervisor {
             State& parentState = this->stack.back(-2);
 
             if (parentState.switch_) {
-                auto* record = node.safeCast<grammar::DeclSpecifier::Record>();
+                auto* record = node.safeCast<cpp::grammar::DeclSpecifier::Record>();
                 if (!record || record->classKey.identifier == "union") {
                     this->parser->pp->errorHandler(
                         new ReflectionHookError{ReflectionHookError::SwitchMayOnlyContainStructs,
@@ -190,21 +254,22 @@ struct ReflectionHooks : ParseSupervisor {
         }
 
         if (state.switch_) {
-            auto* record = node.safeCast<grammar::DeclSpecifier::Record>();
+            auto* record = node.safeCast<cpp::grammar::DeclSpecifier::Record>();
             PLY_ASSERT(record);                                 // guaranteed by enter()
             PLY_ASSERT(record->classKey.identifier != "union"); // guaranteed by enter()
             if (record->closeCurly.isValid()) {
-                PPVisitedFiles* vf = this->parser->pp->visitedFiles;
+                cpp::PPVisitedFiles* vf = this->parser->pp->visitedFiles;
                 auto iter = vf->locationMap.findLastLessThan(record->closeCurly.linearLoc + 1);
-                const PPVisitedFiles::LocationMapTraits::Item& lmItem = iter.getItem();
-                const PPVisitedFiles::IncludeChain& chain =
+                const cpp::PPVisitedFiles::LocationMapTraits::Item& lmItem = iter.getItem();
+                const cpp::PPVisitedFiles::IncludeChain& chain =
                     vf->includeChains[lmItem.includeChainIdx];
                 if (chain.isMacroExpansion) {
                     this->parser->pp->errorHandler(new ReflectionHookError{
                         ReflectionHookError::CannotInjectCodeIntoMacro,
                         record->closeCurly.linearLoc, state.switch_->macro.linearLoc});
                 } else {
-                    const PPVisitedFiles::SourceFile& srcFile = vf->sourceFiles[chain.fileOrExpIdx];
+                    const cpp::PPVisitedFiles::SourceFile& srcFile =
+                        vf->sourceFiles[chain.fileOrExpIdx];
                     String curAbsPath = NativePath::join(Workspace.path, this->filePath);
                     // FIXME: Improve this if we ever start following includes while collecting
                     // reflection info:
@@ -229,12 +294,13 @@ struct ReflectionHooks : ParseSupervisor {
         stack.pop();
     }
 
-    virtual void onGotDeclaration(const grammar::Declaration& decl) override {
+    virtual void onGotDeclaration(const cpp::grammar::Declaration& decl) override {
         State& state = this->stack.back();
         if (state.captureMembersToken.isValid()) {
             if (auto simple = decl.simple()) {
                 if (!simple->initDeclarators.isEmpty()) {
-                    const grammar::InitDeclaratorWithComma& initDecl = simple->initDeclarators[0];
+                    const cpp::grammar::InitDeclaratorWithComma& initDecl =
+                        simple->initDeclarators[0];
                     if (!initDecl.dcor.isFunction()) {
                         state.clazz->members.append(initDecl.dcor.qid.toString());
                     }
@@ -243,14 +309,14 @@ struct ReflectionHooks : ParseSupervisor {
         }
     }
 
-    virtual void onGotEnumerator(const grammar::InitEnumeratorWithComma* initEnor) override {
+    virtual void onGotEnumerator(const cpp::grammar::InitEnumeratorWithComma* initEnor) override {
         State& state = this->stack.back();
         PLY_ASSERT(state.enum_);
         state.enum_->enumerators.append(initEnor->identifier.identifier);
     }
 
     virtual void onGotInclude(StringView directive) override {
-        const Preprocessor::StackItem& ppItem = this->parser->pp->stack.back();
+        const cpp::Preprocessor::StackItem& ppItem = this->parser->pp->stack.back();
         const char* ppItemStartUnit = (const char*) ppItem.vins.getStartByte();
         PLY_ASSERT(directive.bytes >= ppItemStartUnit &&
                    directive.end() <= (const char*) ppItem.vins.endByte);
@@ -267,7 +333,7 @@ struct ReflectionHooks : ParseSupervisor {
         subst.numBytes = safeDemote<u32>((directive.bytes + directive.numBytes) - startOfLine);
     }
 
-    void beginCapture(const Token& token) {
+    void beginCapture(const cpp::Token& token) {
         State& state = this->stack.back();
         if (state.clazz) {
             // Already have a PLY_REFLECT macro
@@ -284,8 +350,8 @@ struct ReflectionHooks : ParseSupervisor {
         state.captureMembersToken = token;
     }
 
-    virtual void gotMacroOrComment(Token token) override {
-        if (token.type == Token::Macro) {
+    virtual void gotMacroOrComment(cpp::Token token) override {
+        if (token.type == cpp::Token::Macro) {
             if (token.identifier == "PLY_STATE_REFLECT" || token.identifier == "PLY_REFLECT") {
                 if (!this->parser->atDeclarationScope) {
                     this->parser->pp->errorHandler(new ReflectionHookError{
@@ -293,7 +359,8 @@ struct ReflectionHooks : ParseSupervisor {
                         token.linearLoc});
                     return;
                 }
-                auto* record = this->scopeStack.back().safeCast<grammar::DeclSpecifier::Record>();
+                auto* record =
+                    this->scopeStack.back().safeCast<cpp::grammar::DeclSpecifier::Record>();
                 if (!record || record->classKey.identifier == "union") {
                     this->parser->pp->errorHandler(new ReflectionHookError{
                         ReflectionHookError::CommandCanOnlyBeUsedInClassOrStruct, token.linearLoc});
@@ -301,7 +368,7 @@ struct ReflectionHooks : ParseSupervisor {
                 }
                 this->beginCapture(token);
             }
-        } else if (token.type == Token::LineComment) {
+        } else if (token.type == cpp::Token::LineComment) {
             ViewInStream commentReader{token.identifier};
             PLY_ASSERT(commentReader.viewAvailable().startsWith("//"));
             commentReader.advanceByte(2);
@@ -334,7 +401,7 @@ struct ReflectionHooks : ParseSupervisor {
                         return;
                     }
                     auto* record =
-                        this->scopeStack.back().safeCast<grammar::DeclSpecifier::Record>();
+                        this->scopeStack.back().safeCast<cpp::grammar::DeclSpecifier::Record>();
                     if (!record || record->classKey.identifier == "union") {
                         this->parser->pp->errorHandler(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedInClassOrStruct,
@@ -371,7 +438,8 @@ struct ReflectionHooks : ParseSupervisor {
                     }
                     state.captureMembersToken = {};
                 } else if (fixed == "// ply reflect enum\n") {
-                    auto* enum_ = this->scopeStack.back().safeCast<grammar::DeclSpecifier::Enum_>();
+                    auto* enum_ =
+                        this->scopeStack.back().safeCast<cpp::grammar::DeclSpecifier::Enum_>();
                     if (!enum_) {
                         this->parser->pp->errorHandler(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedInsideEnum, token.linearLoc});
@@ -416,7 +484,266 @@ Tuple<SingleFileReflectionInfo, bool> extractReflection(ReflectionInfoAggregator
     return {std::move(sfri), !visor.anyError};
 }
 
-} // namespace cpp
-} // namespace ply
+//                   ▄▄
+//   ▄▄▄▄  ▄▄▄▄   ▄▄▄██  ▄▄▄▄   ▄▄▄▄▄  ▄▄▄▄  ▄▄▄▄▄
+//  ██    ██  ██ ██  ██ ██▄▄██ ██  ██ ██▄▄██ ██  ██
+//  ▀█▄▄▄ ▀█▄▄█▀ ▀█▄▄██ ▀█▄▄▄  ▀█▄▄██ ▀█▄▄▄  ██  ██
+//                              ▄▄▄█▀
 
-#include "codegen/ReflectionHooks.inl" //%%
+struct CodeGenerator {
+    virtual ~CodeGenerator() {
+    }
+    virtual void write(OutStream* outs) = 0;
+};
+
+String getSwitchInl(SwitchInfo* switch_) {
+    MemOutStream mout;
+    mout << "enum class ID : u16 {\n";
+    for (StringView state : switch_->states) {
+        mout.format("    {},\n", state);
+    }
+    mout << "    Count,\n";
+    mout << "};\n";
+    mout << "union Storage_ {\n";
+    for (StringView state : switch_->states) {
+        mout.format("    {} {}{};\n", state, state.left(1).lowerAsc(), state.subStr(1));
+    }
+    mout << "    PLY_INLINE Storage_() {}\n";
+    mout << "    PLY_INLINE ~Storage_() {}\n";
+    mout << "};\n";
+    StringView className = switch_->name.splitByte(':').back(); // FIXME: more elegant
+    // FIXME: Log an error if there are no states
+    mout.format("SWITCH_FOOTER({}, {})\n", className, switch_->states[0]);
+    for (StringView state : switch_->states) {
+        mout.format("SWITCH_ACCESSOR({}, {}{})\n", state, state.left(1).lowerAsc(),
+                    state.subStr(1));
+    }
+    if (switch_->isReflected) {
+        mout << "PLY_SWITCH_REFLECT()\n";
+    }
+    return mout.moveToString();
+}
+
+void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
+    String absInlPath = NativePath::join(Workspace.path, switch_->inlineInlPath);
+    FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+        absInlPath, getSwitchInl(switch_), tff);
+    OutStream stdOut = StdOut::text();
+    if (result == FSResult::OK) {
+        stdOut.format("Wrote {}\n", absInlPath);
+    } else if (result != FSResult::Unchanged) {
+        stdOut.format("Error writing {}\n", absInlPath);
+    }
+}
+
+String performSubsts(StringView absPath, ArrayView<Subst> substs) {
+    String src = FileSystem::native()->loadTextAutodetect(absPath).first;
+    if (FileSystem::native()->lastResult() != FSResult::OK)
+        return {};
+
+    MemOutStream mout;
+    u32 prevEndPos = 0;
+    for (const Subst& subst : substs) {
+        PLY_ASSERT(subst.start >= prevEndPos);
+        u32 endPos = subst.start + subst.numBytes;
+        PLY_ASSERT(endPos < src.numBytes);
+        mout.write({src.bytes + prevEndPos, subst.start - prevEndPos});
+        mout.write(subst.replacement);
+        prevEndPos = endPos;
+    }
+    mout.write({src.bytes + prevEndPos, src.numBytes - prevEndPos});
+    return mout.moveToString();
+}
+
+void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs, const TextFormat& tff) {
+    // FIXME: Don't reload the file here!!!!!!!!!!
+    // It may have changed, making the Substs invalid!!!!!!!!
+    String srcWithSubst = performSubsts(absPath, substs);
+    if (FileSystem::native()->lastResult() == FSResult::OK) {
+        FSResult result =
+            FileSystem::native()->makeDirsAndSaveTextIfDifferent(absPath, srcWithSubst, tff);
+        OutStream stdOut = StdOut::text();
+        if (result == FSResult::OK) {
+            stdOut.format("Wrote {}\n", absPath);
+        } else if (result != FSResult::Unchanged) {
+            stdOut.format("Error writing {}\n", absPath);
+        }
+    }
+}
+
+void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
+    struct CodeGenerator {
+        virtual ~CodeGenerator() {
+        }
+        virtual void write(OutStream* outs) = 0;
+    };
+
+    struct Traits {
+        using Key = StringView;
+        struct Item {
+            String cppInlPath;
+            Array<Owned<CodeGenerator>> sources;
+            Item(const Key& key) : cppInlPath{key} {
+            }
+        };
+        static PLY_INLINE bool match(const Item& item, Key key) {
+            return item.cppInlPath == key;
+        }
+    };
+    HashMap<Traits> fileToGeneratorList;
+
+    for (ReflectedClass* clazz : agg->classes) {
+        struct StructGenerator : CodeGenerator {
+            ReflectedClass* clazz;
+            virtual void write(OutStream* outs) override {
+                outs->format("PLY_STRUCT_BEGIN({})\n", this->clazz->name);
+                for (StringView member : this->clazz->members) {
+                    outs->format("PLY_STRUCT_MEMBER({})\n", member);
+                }
+                *outs << "PLY_STRUCT_END()\n\n";
+            }
+            StructGenerator(ReflectedClass* clazz) : clazz{clazz} {
+            }
+        };
+        auto cursor = fileToGeneratorList.insertOrFind(clazz->cppInlPath);
+        cursor->sources.append(new StructGenerator{clazz});
+    }
+
+    for (ReflectedEnum* enum_ : agg->enums) {
+        struct EnumGenerator : CodeGenerator {
+            ReflectedEnum* enum_;
+            virtual void write(OutStream* outs) override {
+                outs->format("PLY_ENUM_BEGIN({}, {})\n", this->enum_->namespacePrefix,
+                             this->enum_->enumName);
+                for (u32 i : range(this->enum_->enumerators.numItems())) {
+                    StringView enumerator = this->enum_->enumerators[i];
+                    if ((i != this->enum_->enumerators.numItems() - 1) || (enumerator != "Count")) {
+                        outs->format("PLY_ENUM_IDENTIFIER({})\n", enumerator);
+                    }
+                }
+                outs->format("PLY_ENUM_END()\n\n");
+            }
+            EnumGenerator(ReflectedEnum* enum_) : enum_{enum_} {
+            }
+        };
+        auto cursor = fileToGeneratorList.insertOrFind(enum_->cppInlPath);
+        cursor->sources.append(new EnumGenerator{enum_});
+    }
+
+    for (SwitchInfo* switch_ : agg->switches) {
+        struct SwitchGenerator : CodeGenerator {
+            SwitchInfo* switch_;
+            virtual void write(OutStream* outs) override {
+                outs->format("SWITCH_TABLE_BEGIN({})\n", this->switch_->name);
+                for (StringView state : this->switch_->states) {
+                    outs->format("SWITCH_TABLE_STATE({}, {})\n", this->switch_->name, state);
+                }
+                outs->format("SWITCH_TABLE_END({})\n\n", this->switch_->name);
+
+                if (this->switch_->isReflected) {
+                    outs->format("PLY_SWITCH_BEGIN({})\n", this->switch_->name);
+                    for (StringView state : this->switch_->states) {
+                        outs->format("PLY_SWITCH_MEMBER({})\n", state);
+                    }
+                    outs->format("PLY_SWITCH_END()\n\n");
+                }
+            }
+            SwitchGenerator(SwitchInfo* switch_) : switch_{switch_} {
+            }
+        };
+        auto cursor = fileToGeneratorList.insertOrFind(switch_->cppInlPath);
+        cursor->sources.append(new SwitchGenerator{switch_});
+    }
+
+    for (const Traits::Item& item : fileToGeneratorList) {
+        PLY_ASSERT(item.cppInlPath.endsWith(".inl"));
+        String absPath = NativePath::join(Workspace.path, item.cppInlPath);
+
+        MemOutStream mout;
+        for (CodeGenerator* generator : item.sources) {
+            generator->write(&mout);
+        }
+        FSResult result =
+            FileSystem::native()->makeDirsAndSaveTextIfDifferent(absPath, mout.moveToString(), tff);
+        OutStream stdOut = StdOut::text();
+        if (result == FSResult::OK) {
+            stdOut.format("Wrote {}\n", absPath);
+        } else if (result != FSResult::Unchanged) {
+            stdOut.format("Error writing {}\n", absPath);
+        }
+    }
+}
+
+void do_codegen() {
+    ReflectionInfoAggregator agg;
+
+    u32 fileNum = 0;
+    for (const DirectoryEntry& entry : FileSystem::native()->listDir(Workspace.path, 0)) {
+        if (!entry.isDir)
+            continue;
+        if (entry.name.startsWith("."))
+            continue;
+        if (entry.name == "data")
+            continue;
+
+        for (WalkTriple& triple :
+             FileSystem::native()->walk(NativePath::join(Workspace.path, entry.name))) {
+            // Sort child directories and filenames so that files are visited in a deterministic
+            // order:
+            sort(triple.dirNames);
+            sort(triple.files, [](const WalkTriple::FileInfo& a, const WalkTriple::FileInfo& b) {
+                return a.name < b.name;
+            });
+
+            if (find(triple.files,
+                     [](const auto& fileInfo) { return fileInfo.name == "nocodegen"; }) >= 0) {
+                triple.dirNames.clear();
+                continue;
+            }
+
+            for (const WalkTriple::FileInfo& file : triple.files) {
+                if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
+                    if (file.name.endsWith(".modules.cpp"))
+                        continue;
+                    // FIXME: Eliminate exclusions
+                    for (StringView exclude : {
+                             "Sort.h",
+                             "Functor.h",
+                             "DirectoryWatcher_Mac.h",
+                             "DirectoryWatcher_Win32.h",
+                             "Heap.cpp",
+                             "Pool.h",
+                         }) {
+                        if (file.name == exclude)
+                            goto skipIt;
+                    }
+                    {
+                        fileNum++;
+
+                        Tuple<SingleFileReflectionInfo, bool> sfri =
+                            extractReflection(&agg, NativePath::join(triple.dirPath, file.name));
+                        if (sfri.second) {
+                            for (SwitchInfo* switch_ : sfri.first.switches) {
+                                writeSwitchInl(switch_, Workspace.getSourceTextFormat());
+                            }
+                            performSubstsAndSave(NativePath::join(triple.dirPath, file.name),
+                                                 sfri.first.substsInParsedFile,
+                                                 Workspace.getSourceTextFormat());
+                        }
+                    }
+                skipIt:;
+                }
+            }
+            for (StringView exclude : {"Shell_iOS", "opengl-support"}) {
+                s32 i = find(triple.dirNames, exclude);
+                if (i >= 0) {
+                    triple.dirNames.erase(i);
+                }
+            }
+        }
+    }
+
+    generateAllCppInls(&agg, Workspace.getSourceTextFormat());
+}
+
+#include "codegen/codegen.inl" //%%
