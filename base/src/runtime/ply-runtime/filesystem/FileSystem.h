@@ -6,7 +6,7 @@
 #include <ply-runtime/Core.h>
 #include <ply-runtime/thread/ThreadLocal.h>
 #include <ply-runtime/string/String.h>
-#include <ply-runtime/filesystem/Path.h>
+#include <ply-runtime/Path.h>
 #include <ply-runtime/container/Array.h>
 #include <ply-runtime/container/Tuple.h>
 #include <ply-runtime/container/Owned.h>

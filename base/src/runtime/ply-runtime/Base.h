@@ -20,7 +20,7 @@
 #include <ply-runtime/container/Tuple.h>
 #include <ply-runtime/container/WeakRef.h>
 #include <ply-runtime/filesystem/FileSystem.h>
-#include <ply-runtime/filesystem/Path.h>
+#include <ply-runtime/Path.h>
 #include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
 #include <ply-runtime/io/StdIO.h>

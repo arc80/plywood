@@ -7,7 +7,7 @@
 #if PLY_TARGET_WIN32
 
 #include <ply-runtime/process/Subprocess.h>
-#include <ply-runtime/filesystem/Path.h>
+#include <ply-runtime/Path.h>
 #include <ply-runtime/io/impl/Pipe_Win32.h>
 #include <ply-runtime/io/text/TextConverter.h> // for WString
 

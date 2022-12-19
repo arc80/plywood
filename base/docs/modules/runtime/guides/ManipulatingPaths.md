@@ -36,7 +36,7 @@ See [Unicode Support](Unicode) for more information.
 
 ## Header File
 
-`#include <ply-runtime/filesystem/Path.h>`
+`#include <ply-runtime/Path.h>`
 
 Also included from `<ply-runtime/Base.h>`.
 
