@@ -13,8 +13,12 @@ void command_codegen(CommandLine* cl);
 bool command_open(CommandLine* cl);
 void command_new_generate(CommandLine* cl);
 void command_new_bootstrap(CommandLine* cl);
+void command_bigfont(CommandLine* cl);
 
 int main(int argc, char* argv[]) {
+#if PLY_TARGET_WIN32
+    SetConsoleOutputCP(CP_UTF8);
+#endif
     Workspace.load();
     CommandLine cl{argc, argv};
 
@@ -30,6 +34,8 @@ int main(int argc, char* argv[]) {
         success = command_open(&cl);
     } else if (prefixMatch(category, "codegen")) {
         command_codegen(&cl);
+    } else if (prefixMatch(category, "bigfont")) {
+        command_bigfont(&cl);
     } else {
         Error.log("Unrecognized command \"{}\"", category);
         success = false;

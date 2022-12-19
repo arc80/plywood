@@ -1,3 +1,4 @@
+#include "../src/apps/crowbar/crowbar/Command_BigFont.cpp"
 #include "../src/apps/crowbar/crowbar/Command_Cleanup.cpp"
 #include "../src/apps/crowbar/crowbar/Command_CodeGen.cpp"
 #include "../src/apps/crowbar/crowbar/Command_NewBootstrap.cpp"
