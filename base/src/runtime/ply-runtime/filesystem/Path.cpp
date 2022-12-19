@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/filesystem/Path.h>
-#include <ply-runtime/algorithm/Range.h>
 #include <ply-runtime/io/text/TextConverter.h>
 
 namespace ply {

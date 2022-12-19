@@ -3,8 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-runtime/algorithm/Range.h>
-#include <ply-runtime/algorithm/Random.h>
+#include <ply-runtime/Algorithm.h>
 #include <ply-runtime/container/Array.h>
 #include <ply-runtime/container/EnumIndexedArray.h>
 #include <ply-runtime/container/FixedArray.h>

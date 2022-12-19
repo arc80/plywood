@@ -3,7 +3,6 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-codec/Muxer.h>
-#include <ply-runtime/algorithm/Sort.h>
 
 using namespace ply;
 

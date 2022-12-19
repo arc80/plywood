@@ -6,7 +6,6 @@
 #include <ply-web-cook-docs/CookResult_ExtractPageMeta.h>
 #include <ply-runtime/io/text/LiquidTags.h>
 #include <ply-web-cook-docs/WebCookerIndex.h>
-#include <ply-runtime/algorithm/Find.h>
 
 namespace ply {
 namespace docs {

@@ -3,7 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
-#include <ply-runtime/algorithm/Random.h>
+#include <ply-runtime/Random.h>
 #include <ply-runtime/time/DateTime.h>
 #include <ply-runtime/time/CPUTimer.h>
 #include <ply-platform/Util.h>

@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include "core.h"
 #include "command_line.h"
-#include <ply-runtime/algorithm/Find.h>
 #include <ply-runtime/Error.h>
 
 bool prefixMatch(StringView input, StringView cmd, u32 minUnits) {

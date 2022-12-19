@@ -3,10 +3,6 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-test/TestSuite.h>
-#include <ply-runtime/algorithm/Map.h>
-#include <ply-runtime/algorithm/Range.h>
-#include <ply-runtime/algorithm/Find.h>
-#include <ply-runtime/algorithm/Sum.h>
 
 namespace ply {
 namespace tests {

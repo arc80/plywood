@@ -10,7 +10,6 @@
 #include <ply-cpp/ErrorFormatting.h>
 #include <ply-web-cook-docs/SemaEntity.h>
 #include <ply-web-cook-docs/WebCookerIndex.h>
-#include <ply-runtime/algorithm/Find.h>
 
 namespace ply {
 namespace cpp {

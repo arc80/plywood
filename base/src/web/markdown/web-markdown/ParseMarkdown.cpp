@@ -5,7 +5,6 @@
 #include <web-markdown/Core.h>
 #include <web-markdown/Markdown.h>
 #include <ply-runtime/string/TextEncoding.h>
-#include <ply-runtime/algorithm/Find.h>
 
 namespace ply {
 namespace markdown {

@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <ply-cook/Core.h>
 #include <ply-cook/CookJob.h>
-#include <ply-runtime/algorithm/Find.h>
 #include <ply-reflect/Asset.h>
 
 namespace ply {

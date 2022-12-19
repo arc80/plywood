@@ -15,9 +15,7 @@
 #include <ply-web-cook-docs/SemaEntity.h>
 #include <ply-web-cook-docs/WebCookerIndex.h>
 #include <ply-web-cook-docs/CookResult_ExtractPageMeta.h>
-#include <ply-runtime/algorithm/Find.h>
 #include <web-documentation/Contents.h>
-#include <ply-runtime/algorithm/Sort.h>
 
 namespace ply {
 namespace docs {

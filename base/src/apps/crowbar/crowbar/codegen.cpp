@@ -8,8 +8,6 @@
 #include <ply-cpp/Preprocessor.h>
 #include <ply-cpp/PPVisitedFiles.h>
 #include <ply-runtime/io/text/TextFormat.h>
-#include <ply-runtime/algorithm/Find.h>
-#include <ply-runtime/algorithm/Sort.h>
 #include <ply-cpp/ErrorFormatting.h>
 
 //                              ▄▄

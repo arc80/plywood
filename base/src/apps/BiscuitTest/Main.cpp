@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <ply-biscuit/Parser.h>
 #include <ply-biscuit/Interpreter.h>
-#include <ply-runtime/algorithm/Find.h>
 #include <ply-test/TestSuite.h>
 #include <ply-reflect/methods/BoundMethod.h>
 
