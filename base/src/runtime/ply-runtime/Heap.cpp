@@ -96,35 +96,35 @@ ureg Heap_t::getSize(void* ptr) {
 // imported across DLL boundaries (ie. even when PLY_DLL_IMPORTING=1).
 //---------------------------------------------------------------------------
 void* operator new(std::size_t size) {
-    return Heap.alloc(size);
+    return ply::Heap.alloc(size);
 }
 
 void* operator new[](std::size_t size) {
-    return Heap.alloc(size);
+    return ply::Heap.alloc(size);
 }
 
 void operator delete(void* ptr) noexcept {
-    Heap.free(ptr);
+    ply::Heap.free(ptr);
 }
 
 void operator delete[](void* ptr) noexcept {
-    Heap.free(ptr);
+    ply::Heap.free(ptr);
 }
 
 #if PLY_WITH_EXCEPTIONS
 void* operator new(std::size_t size, std::nothrow_t const&) noexcept {
-    return Heap.alloc(size);
+    return ply::Heap.alloc(size);
 }
 
 void* operator new[](std::size_t size, std::nothrow_t const&) noexcept {
-    return Heap.alloc(size);
+    return ply::Heap.alloc(size);
 }
 
 void operator delete(void* ptr, std::nothrow_t const&) noexcept {
-    Heap.free(ptr);
+    ply::Heap.free(ptr);
 }
 
 void operator delete[](void* ptr, std::nothrow_t const&) noexcept {
-    Heap.free(ptr);
+    ply::Heap.free(ptr);
 }
 #endif // PLY_WITH_EXCEPTIONS

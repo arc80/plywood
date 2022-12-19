@@ -3,6 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
+#include <ply-runtime/Algorithm.h>
 #include <ply-runtime/filesystem/Path.h>
 #include <ply-runtime/io/text/TextConverter.h>
 

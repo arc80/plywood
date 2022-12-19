@@ -5,6 +5,7 @@
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/container/Pool.h>
 #include <algorithm>
+#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 
