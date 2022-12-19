@@ -303,7 +303,7 @@ inline void BasePool::baseReserve(u32 newSize, u32 itemSize) {
     m_allocated = (u32) roundUpPowerOf2(
         max<u32>(newSize, 8));    // FIXME: Generalize to other resize strategies when needed
     PLY_ASSERT(m_allocated != 0); // Overflow check
-    m_items = PLY_HEAP.realloc(
+    m_items = Heap.realloc(
         m_items, itemSize * m_allocated); // FIXME: Generalize to other heaps when needed
 }
 
@@ -332,7 +332,7 @@ inline void BasePool::baseFree(u32 index, u32 itemSize) {
 }
 
 inline void BasePool::baseClear() {
-    PLY_HEAP.free(m_items);
+    Heap.free(m_items);
     m_items = nullptr;
     m_size = 0;
     m_allocated = 0;

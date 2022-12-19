@@ -47,7 +47,7 @@ struct WString {
     }
     PLY_INLINE ~WString() {
         if (units) {
-            PLY_HEAP.free(units);
+            Heap.free(units);
         }
     }
     PLY_INLINE void operator=(WString&& other) {
@@ -70,7 +70,7 @@ struct WString {
     }
     PLY_INLINE static WString allocate(u32 numUnits) {
         WString result;
-        result.units = (char16_t*) PLY_HEAP.alloc(numUnits << 1);
+        result.units = (char16_t*) Heap.alloc(numUnits << 1);
         result.numUnits = numUnits;
         return result;
     }

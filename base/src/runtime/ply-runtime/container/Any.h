@@ -19,7 +19,7 @@ struct Any {
     PLY_INLINE Any(T*, Args&&... args) {
         T* target = (T*) &storage;
         if (sizeof(T) > sizeof(storage)) {
-            storage = (uptr) PLY_HEAP.alloc(sizeof(T));
+            storage = (uptr) Heap.alloc(sizeof(T));
             target = (T*) storage;
         }
         new (target) T{std::forward<Args>(args)...};
@@ -44,7 +44,7 @@ struct Any {
     PLY_INLINE void destruct() {
         subst::destructByMember(get<T>());
         if (sizeof(T) > sizeof(storage)) {
-            PLY_HEAP.free((void*) storage);
+            Heap.free((void*) storage);
         }
     }
 };

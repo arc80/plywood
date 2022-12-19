@@ -46,7 +46,7 @@ PLY_NO_INLINE HashMap::CellGroup* HashMap::createTable(const Callbacks* cb, u32 
     PLY_ASSERT(size >= 4 && isPowerOf2(size));
     u32 cellGroupSize = sizeof(CellGroup) + cb->itemSize * 4;
     u32 allocSize = cellGroupSize * (size >> 2);
-    CellGroup* cellGroups = (CellGroup*) PLY_HEAP.alloc(allocSize);
+    CellGroup* cellGroups = (CellGroup*) Heap.alloc(allocSize);
     for (u32 i = 0; i < (size >> 2); i++) {
         u32* cell = (u32*) PLY_PTR_OFFSET(cellGroups, cellGroupSize * i);
         *cell = (u32) -1;
@@ -66,7 +66,7 @@ PLY_NO_INLINE void HashMap::destroyTable(const Callbacks* cb, CellGroup* cellGro
             }
         }
     }
-    PLY_HEAP.free(cellGroups);
+    Heap.free(cellGroups);
 }
 
 PLY_NO_INLINE void HashMap::migrateToNewTable(const Callbacks* cb) {
@@ -88,7 +88,7 @@ PLY_NO_INLINE void HashMap::migrateToNewTable(const Callbacks* cb) {
             cb->destruct(srcItem);
         }
     }
-    PLY_HEAP.free(srcCellGroups);
+    Heap.free(srcCellGroups);
 }
 
 PLY_NO_INLINE HashMap::FindResult HashMap::findNext(FindInfo* info, const Callbacks* cb,

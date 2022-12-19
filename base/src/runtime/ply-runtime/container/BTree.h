@@ -30,14 +30,14 @@ private:
         bool isLeaf;
 
         static Node* createInnerNode() {
-            Node* node = (Node*) PLY_HEAP.allocAligned(
+            Node* node = (Node*) Heap.allocAligned(
                 sizeof(Node) + sizeof(Link) * Traits::NodeCapacity, Traits::NodeCapacity);
             new (node) Node{nullptr, 0, false};
             return node;
         }
 
         static Node* createLeaf() {
-            Node* node = (Node*) PLY_HEAP.allocAligned(
+            Node* node = (Node*) Heap.allocAligned(
                 sizeof(Node) + sizeof(Item) * Traits::NodeCapacity, Traits::NodeCapacity);
             new (node) Node{nullptr, 0, true};
             return node;
@@ -309,7 +309,7 @@ private:
                 }
             }
             size += rs;
-            PLY_HEAP.freeAligned(rightSibling);
+            Heap.freeAligned(rightSibling);
             return this;
         }
 
@@ -327,7 +327,7 @@ private:
                     links[i].~Link();
                 }
             }
-            PLY_HEAP.freeAligned(this);
+            Heap.freeAligned(this);
         }
 
 #if PLY_BTREE_VALIDATE
@@ -406,7 +406,7 @@ private:
             Link* links = parent->getLinks();
             u32 pos = parent->findLink(node);
             if (node->size == 0) {
-                PLY_HEAP.freeAligned(node);
+                Heap.freeAligned(node);
                 parent->deleteLink(pos);
                 tryCompact(parent);
             } else {
@@ -439,7 +439,7 @@ private:
                 m_root = node->getLinks()[0].child;
                 m_root->parent = nullptr;
                 node->deleteLink(0);
-                PLY_HEAP.freeAligned(node);
+                Heap.freeAligned(node);
             }
         }
     }

@@ -23,7 +23,7 @@ NativeBindings& getNativeBindings_Reference() {
             if (target) {
                 referenceType->decRef(target);
             }
-            PLY_HEAP.free(obj.data);
+            Heap.free(obj.data);
         },
         // construct
         [](AnyObject obj) {

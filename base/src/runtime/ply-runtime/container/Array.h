@@ -6,7 +6,7 @@
 #include <ply-runtime/Core.h>
 #include <ply-runtime/container/ArrayView.h>
 #include <ply-runtime/container/impl/BaseArray.h>
-#include <ply-runtime/memory/Heap.h>
+#include <ply-runtime/Heap.h>
 #include <ply-runtime/string/StringMixin.h>
 
 namespace ply {
@@ -127,7 +127,7 @@ public:
         PLY_STATIC_ASSERT(sizeof(Array) ==
                           sizeof(impl::BaseArray)); // Sanity check binary compatibility
         subst::destructArray(this->items, this->numItems_);
-        PLY_HEAP.free(this->items);
+        Heap.free(this->items);
     }
 
     /*!
@@ -142,7 +142,7 @@ public:
         ArrayView<T> arrayToFree = {this->items, this->numItems_};
         new (this) Array{other};
         subst::destructArray(arrayToFree.items, arrayToFree.numItems);
-        PLY_HEAP.free(arrayToFree.items);
+        Heap.free(arrayToFree.items);
     }
 
     /*!
@@ -154,7 +154,7 @@ public:
         ArrayView<T> arrayToFree = {this->items, this->numItems_};
         new (this) Array{std::move(other)};
         subst::destructArray(arrayToFree.items, arrayToFree.numItems);
-        PLY_HEAP.free(arrayToFree.items);
+        Heap.free(arrayToFree.items);
     }
 
     /*!
@@ -192,7 +192,7 @@ public:
         ArrayView<T> arrayToFree = {this->items, this->numItems_};
         new (this) Array{std::forward<Other>(other)};
         subst::destructArray(arrayToFree.items, arrayToFree.numItems);
-        PLY_HEAP.free(arrayToFree.items);
+        Heap.free(arrayToFree.items);
     }
 
     /*!
@@ -305,7 +305,7 @@ public:
     */
     PLY_NO_INLINE void clear() {
         subst::destructArray(this->items, this->numItems_);
-        PLY_HEAP.free(this->items);
+        Heap.free(this->items);
         this->items = nullptr;
         this->numItems_ = 0;
         this->allocated = 0;

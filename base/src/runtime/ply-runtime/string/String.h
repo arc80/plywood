@@ -5,7 +5,7 @@
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/string/StringMixin.h>
-#include <ply-runtime/memory/Heap.h>
+#include <ply-runtime/Heap.h>
 
 namespace ply {
 
@@ -88,7 +88,7 @@ struct String : StringMixin<String> {
 
     PLY_INLINE ~String() {
         if (this->bytes) {
-            PLY_HEAP.free(this->bytes);
+            Heap.free(this->bytes);
         }
     }
 
@@ -101,7 +101,7 @@ struct String : StringMixin<String> {
         char* bytesToFree = this->bytes;
         new (this) String{other};
         if (bytesToFree) {
-            PLY_HEAP.free(bytesToFree);
+            Heap.free(bytesToFree);
         }
     }
 
@@ -138,7 +138,7 @@ struct String : StringMixin<String> {
     */
     PLY_INLINE void clear() {
         if (this->bytes) {
-            PLY_HEAP.free(this->bytes);
+            Heap.free(this->bytes);
         }
         this->bytes = nullptr;
         this->numBytes = 0;
@@ -375,7 +375,7 @@ struct HybridString : StringMixin<HybridString> {
 
     PLY_INLINE ~HybridString() {
         if (this->isOwner) {
-            PLY_HEAP.free(this->bytes);
+            Heap.free(this->bytes);
         }
     }
 

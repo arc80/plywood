@@ -4,7 +4,7 @@
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/container/BlockList.h>
-#include <ply-runtime/memory/Heap.h>
+#include <ply-runtime/Heap.h>
 #include <ply-runtime/io/OutStream.h>
 
 namespace ply {
@@ -18,7 +18,7 @@ PLY_NO_INLINE void BlockList::Footer::onRefCountZero() {
         BlockList::Footer* nextBlock = blockToFree->nextBlock.release();
         // The destructor of this->nextBlock is now trivial, so we can skip it, and when we free the
         // block data from the heap, it also frees the footer.
-        PLY_HEAP.free(blockToFree->bytes);
+        Heap.free(blockToFree->bytes);
         if (nextBlock) {
             nextBlock->prevBlock = nullptr;
             PLY_ASSERT(nextBlock->refCount > 0);
@@ -48,7 +48,7 @@ PLY_NO_INLINE Reference<BlockList::Footer> BlockList::createBlock(u32 numBytes) 
     PLY_ASSERT(numBytes > 100);
     u32 alignedNumBytes = alignPowerOf2(numBytes, (u32) alignof(BlockList::Footer));
     u32 allocSize = alignedNumBytes + sizeof(BlockList::Footer);
-    char* bytes = (char*) PLY_HEAP.alloc(allocSize);
+    char* bytes = (char*) Heap.alloc(allocSize);
     BlockList::Footer* block = (BlockList::Footer*) (bytes + alignedNumBytes);
     new (block) BlockList::Footer; // Construct in-place
     block->bytes = bytes;
@@ -115,7 +115,7 @@ PLY_NO_INLINE String BlockList::toString(Ref&& start, const WeakRef& end) {
     // we can truncate this block and return it as a String directly.
     if (!start.block->nextBlock && start.block->refCount == 1 && start.block->bytes == start.byte) {
         u32 numBytes = start.block->numBytesUsed;
-        char* bytes = (char*) PLY_HEAP.realloc(start.byte, numBytes);
+        char* bytes = (char*) Heap.realloc(start.byte, numBytes);
         String result = String::adopt(bytes, numBytes);
         start.block.release();
         start.byte = nullptr;

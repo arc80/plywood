@@ -29,7 +29,7 @@ NativeBindings& getNativeBindings_Owned() {
             TypeDescriptor_Owned* ownedType = obj.type->cast<TypeDescriptor_Owned>();
             // Note: This is type punning Owned<T> with void*
             AnyObject targetObj = AnyObject{*(void**) obj.data, ownedType->targetType};
-            targetObj.destroy(); // Note: This assumes operator new() uses PLY_HEAP.alloc
+            targetObj.destroy(); // Note: This assumes operator new() uses Heap.alloc
         },
         // move
         [](AnyObject dst, AnyObject src) {

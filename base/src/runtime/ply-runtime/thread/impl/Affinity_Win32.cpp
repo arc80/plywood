@@ -7,7 +7,7 @@
 #if PLY_TARGET_WIN32 && !PLY_DLL_IMPORTING
 
 #include <ply-runtime/thread/impl/Affinity_Win32.h>
-#include <ply-runtime/memory/Heap.h>
+#include <ply-runtime/Heap.h>
 
 namespace ply {
 
@@ -22,7 +22,7 @@ Affinity_Win32::Affinity_Win32() {
     DWORD length = 0;
     BOOL result = GetLogicalProcessorInformation(NULL, &length);
     if (result == FALSE && GetLastError() == ERROR_INSUFFICIENT_BUFFER && length > 0) {
-        startProcessorInfo = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION*) PLY_HEAP.alloc(length);
+        startProcessorInfo = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION*) Heap.alloc(length);
         result = GetLogicalProcessorInformation(startProcessorInfo, &length);
         if (result == TRUE) {
             m_isAccurate = true;

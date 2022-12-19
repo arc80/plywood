@@ -38,7 +38,7 @@ NativeBindings& getNativeBindings_SynthesizedStruct() {
     static NativeBindings bindings{
         // create
         [](TypeDescriptor* typeDesc) -> AnyObject {
-            void* data = PLY_HEAP.alloc(typeDesc->fixedSize);
+            void* data = Heap.alloc(typeDesc->fixedSize);
             AnyObject obj{data, typeDesc};
             obj.construct();
             return obj;
@@ -46,7 +46,7 @@ NativeBindings& getNativeBindings_SynthesizedStruct() {
         // destroy
         [](AnyObject obj) {
             obj.destruct();
-            PLY_HEAP.free(obj.data);
+            Heap.free(obj.data);
         },
         // construct
         [](AnyObject obj) {

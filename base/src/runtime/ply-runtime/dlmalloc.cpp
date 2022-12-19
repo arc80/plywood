@@ -1,26 +1,17 @@
-/*------------------------------------
-  ///\  Plywood C++ Framework
-  \\\/  https://plywood.arc80.com/
-------------------------------------*/
-
 // Based on Doug Lea's malloc
 // http://gee.cs.oswego.edu/dl/html/malloc.html
 
 #include <ply-runtime/Precomp.h>
-
-#if PLY_USE_DLMALLOC && !PLY_DLL_IMPORTING
-
-#include <ply-runtime/memory/impl/Heap_DL.h>
-#include <ply-runtime/memory/MemPage.h>
+#include <ply-runtime/Heap.h>
+#include <ply-runtime/MemPage.h>
 #include <ply-runtime/thread/impl/Mutex_LazyInit.h>
 #include <stdlib.h>
 #include <memory.h>
-// FIXME: Define a configurable strategy for failed platform calls in Plywood, and
-// make MALLOC_FAILURE_ACTION follow it.
 #include <errno.h>
 
 // clang-format off
 
+#define PLY_DLMALLOC_DEBUG_CHECKS 0
 #define HAVE_MMAP 1
 #define HAVE_MORECORE 0
 
@@ -1610,7 +1601,7 @@ static void do_check_malloc_state(mstate m) {
 /* ----------------------------- statistics ------------------------------ */
 
 #if !NO_MALLOC_STATS
-static void internal_malloc_stats(mstate m, Stats& stats) {
+static void internal_malloc_stats(mstate m, HeapStats& stats) {
   ensure_initialization();
   if (!PREACTION(m)) {
     size_t maxfp = 0;
@@ -3375,7 +3366,7 @@ size_t dlmalloc_set_footprint_limit(size_t bytes, mstate gm) {
 }
 
 #if !NO_MALLOC_STATS
-void dlmalloc_stats(mstate gm, Stats& stats) {
+void dlmalloc_stats(mstate gm, HeapStats& stats) {
   internal_malloc_stats(gm, stats);
 }
 #endif /* NO_MALLOC_STATS */
@@ -3391,5 +3382,3 @@ size_t dlmalloc_usable_size(void* mem) {
 
 } // namespace memory_dl
 } // namespace ply
-
-#endif // PLY_USE_DLMALLOC && !PLY_DLL_IMPORTING

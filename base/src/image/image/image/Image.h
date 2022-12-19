@@ -154,7 +154,7 @@ struct OwnImage : Image {
 
     void alloc(s32 w, s32 h, Format fmt) {
         if (data) {
-            PLY_HEAP.free(data);
+            Heap.free(data);
         }
         PLY_ASSERT(fmt < Format::NumFormats);
         bytespp = FormatToBPP[(u8) fmt];
@@ -162,12 +162,12 @@ struct OwnImage : Image {
         height = h;
         stride = width * bytespp;
         format = fmt;
-        data = (char*) PLY_HEAP.alloc(stride * height);
+        data = (char*) Heap.alloc(stride * height);
     }
 
     ~OwnImage() {
         if (data) {
-            PLY_HEAP.free(data);
+            Heap.free(data);
         }
     }
 
@@ -194,7 +194,7 @@ struct OwnImage : Image {
 
     void operator=(OwnImage&& other) {
         if (data) {
-            PLY_HEAP.free(data);
+            Heap.free(data);
         }
         data = other.data;
         stride = other.stride;

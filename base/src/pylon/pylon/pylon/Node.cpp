@@ -66,19 +66,19 @@ Owned<Node> Node::copy() const {
 }
 
 PLY_NO_INLINE Owned<Node> Node::createInvalid() {
-    Owned<Node> node = (Node*) PLY_HEAP.alloc(PLY_MEMBER_OFFSET(Node, text_));
+    Owned<Node> node = (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, text_));
     node->type = (u64) Type::Invalid;
     node->fileOfs = 0;
     return node;
 }
 
 PLY_NO_INLINE Owned<Node> Node::allocText() {
-    return (Node*) PLY_HEAP.alloc(PLY_MEMBER_OFFSET(Node, text_) + sizeof(Node::text_));
+    return (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, text_) + sizeof(Node::text_));
 }
 
 PLY_NO_INLINE Owned<Node> Node::createArray(u64 fileOfs) {
     Owned<Node> node =
-        (Node*) PLY_HEAP.alloc(PLY_MEMBER_OFFSET(Node, array_) + sizeof(Node::array_));
+        (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, array_) + sizeof(Node::array_));
     node->type = (u64) Type::Array;
     node->fileOfs = fileOfs;
     new (&node->array_) decltype(node->array_);
@@ -87,7 +87,7 @@ PLY_NO_INLINE Owned<Node> Node::createArray(u64 fileOfs) {
 
 PLY_NO_INLINE Owned<Node> Node::createObject(u64 fileOfs) {
     Owned<Node> node =
-        (Node*) PLY_HEAP.alloc(PLY_MEMBER_OFFSET(Node, object_) + sizeof(Node::object_));
+        (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, object_) + sizeof(Node::object_));
     node->type = (u64) Type::Object;
     node->fileOfs = fileOfs;
     new (&node->object_) decltype(node->object_);

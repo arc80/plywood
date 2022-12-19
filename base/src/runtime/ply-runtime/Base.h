@@ -26,7 +26,7 @@
 #include <ply-runtime/io/OutStream.h>
 #include <ply-runtime/io/StdIO.h>
 #include <ply-runtime/log/Log.h>
-#include <ply-runtime/memory/Heap.h>
+#include <ply-runtime/Heap.h>
 #include <ply-runtime/network/Socket.h>
 #include <ply-runtime/process/Subprocess.h>
 #include <ply-runtime/string/Label.h>

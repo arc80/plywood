@@ -42,12 +42,12 @@ bool run() {
         StdOut::text().format("[{}/{}] {}... ", (i + 1), testCases.numItems(), testCases[i].name);
         gTestState.success = true;
 #if PLY_USE_DLMALLOC
-        auto beginStats = PLY_HEAP.getStats();
+        auto beginStats = Heap.getStats();
 #endif
         testCases[i].func();
 #if PLY_USE_DLMALLOC
         // Check for memory leaks
-        auto endStats = PLY_HEAP.getStats();
+        auto endStats = Heap.getStats();
         if (beginStats.inUseBytes != endStats.inUseBytes) {
             gTestState.success = false;
         }

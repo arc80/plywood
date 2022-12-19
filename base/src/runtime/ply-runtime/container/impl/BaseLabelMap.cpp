@@ -11,7 +11,7 @@ namespace impl {
 void construct(BaseLabelMap* map, const BaseLabelMap::TypeInfo* typeInfo) {
     new (map) BaseLabelMap;
     u32 numBytes = sizeof(BaseLabelMap::Cell) + (typeInfo->valueSize * 4);
-    map->cells = (BaseLabelMap::Cell*) PLY_HEAP.alloc(numBytes);
+    map->cells = (BaseLabelMap::Cell*) Heap.alloc(numBytes);
     memset(map->cells, 0, numBytes);
     map->population = 0;
     map->capacity = 4;
@@ -33,7 +33,7 @@ void destruct(BaseLabelMap* map, const BaseLabelMap::TypeInfo* typeInfo) {
         }
         cell = (BaseLabelMap::Cell*) PLY_PTR_OFFSET(cell, cellSize);
     }
-    PLY_HEAP.free(map->cells);
+    Heap.free(map->cells);
 }
 
 PLY_INLINE u32 bestLabelMapCapacity(u32 population) {
@@ -54,7 +54,7 @@ void repopulate(BaseLabelMap* map, u32 newCapacity, const BaseLabelMap::TypeInfo
     u32 valueSize = typeInfo->valueSize;
     u32 cellSize = sizeof(BaseLabelMap::Cell) + valueSize * 4;
     u32 newNumBytes = cellSize * (newCapacity >> 2);
-    newMap.cells = (BaseLabelMap::Cell*) PLY_HEAP.alloc(newNumBytes);
+    newMap.cells = (BaseLabelMap::Cell*) Heap.alloc(newNumBytes);
     memset(newMap.cells, 0, newNumBytes);
     newMap.population = map->population;
     newMap.capacity = newCapacity;
@@ -75,7 +75,7 @@ void repopulate(BaseLabelMap* map, u32 newCapacity, const BaseLabelMap::TypeInfo
         cell = (BaseLabelMap::Cell*) PLY_PTR_OFFSET(cell, cellSize);
     }
 
-    PLY_HEAP.free(map->cells);
+    Heap.free(map->cells);
     *map = newMap; // Copy each member to the previous map
 }
 

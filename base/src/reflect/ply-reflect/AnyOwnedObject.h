@@ -51,7 +51,7 @@ struct AnyOwnedObject : AnyObject {
         return bind(new T{std::forward<Args>(args)...});
     }
     static AnyOwnedObject create(TypeDescriptor* typeDesc) {
-        void* data = PLY_HEAP.alloc(typeDesc->fixedSize);
+        void* data = Heap.alloc(typeDesc->fixedSize);
         AnyOwnedObject result{data, typeDesc};
         result.construct();
         return result;

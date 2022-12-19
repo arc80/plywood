@@ -22,7 +22,7 @@ PLY_NO_INLINE void DirectoryWatcher_Win32::runWatcher() {
     HANDLE hChangeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     PLY_ASSERT(hChangeEvent != INVALID_HANDLE_VALUE);
     static const DWORD notifyInfoSize = 65536;
-    FILE_NOTIFY_INFORMATION* notifyInfo = (FILE_NOTIFY_INFORMATION*) PLY_HEAP.alloc(notifyInfoSize);
+    FILE_NOTIFY_INFORMATION* notifyInfo = (FILE_NOTIFY_INFORMATION*) Heap.alloc(notifyInfoSize);
     for (;;) {
         OVERLAPPED overlapped;
         memset(&overlapped, 0, sizeof(overlapped));
@@ -70,7 +70,7 @@ PLY_NO_INLINE void DirectoryWatcher_Win32::runWatcher() {
             r = (FILE_NOTIFY_INFORMATION*) PLY_PTR_OFFSET(r, r->NextEntryOffset);
         }
     }
-    PLY_HEAP.free(notifyInfo);
+    Heap.free(notifyInfo);
     CloseHandle(hChangeEvent);
     CloseHandle(hDirectory);
 }

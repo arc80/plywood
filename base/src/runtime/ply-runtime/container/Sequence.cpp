@@ -18,7 +18,7 @@ PLY_NO_INLINE void destructSequence(Reference<BlockList::Footer>* headRef,
         BlockList::Footer* nextBlock = blockToFree->nextBlock.release();
         // The destructor of this->nextBlock is now trivial, so we can skip it, and when we free the
         // block data from the heap, it also frees the footer.
-        PLY_HEAP.free(blockToFree->bytes);
+        Heap.free(blockToFree->bytes);
         blockToFree = nextBlock;
     }
 }

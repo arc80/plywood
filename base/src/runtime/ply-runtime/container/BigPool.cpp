@@ -4,7 +4,7 @@
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/container/BigPool.h>
-#include <ply-runtime/memory/MemPage.h>
+#include <ply-runtime/MemPage.h>
 
 namespace ply {
 

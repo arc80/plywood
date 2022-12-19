@@ -37,7 +37,7 @@ PLY_NO_INLINE void TypedArray::operator=(TypedArray&& other) {
     if (m_array.m_numItems > 0) {
         view().destruct();
     }
-    PLY_HEAP.free(m_array.m_items);
+    Heap.free(m_array.m_items);
     m_array.m_items = other.m_array.m_items;
     m_array.m_numItems = other.m_array.m_numItems;
     m_array.m_allocated = other.m_array.m_allocated;
