@@ -12,7 +12,7 @@
 using namespace ply::build;
 
 void write_bootstrap(u32 configIndex) {
-    // Write bulk_crowbar.cpp
+    // Write crowbar_bulk.cpp
     {
         MemOutStream outs;
         String sourceDir = NativePath::join(Workspace.path, "base/scripts");
@@ -28,7 +28,7 @@ void write_bootstrap(u32 configIndex) {
                 }
             }
         }
-        String sourcePath = NativePath::join(sourceDir, "bulk_crowbar.cpp");
+        String sourcePath = NativePath::join(sourceDir, "crowbar_bulk.cpp");
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
             sourcePath, outs.moveToString(), TextFormat::platformPreference());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
@@ -55,7 +55,7 @@ void write_bootstrap(u32 configIndex) {
         for (StringView opt : copts.compile) {
             outs << ' ' << opt;
         }
-        outs << " /Fd\"bulk_crowbar.pdb\"";
+        outs << " /Fd\"crowbar_bulk.pdb\"";
 
         // Preprocessor definitions
         for (const Option& opt : combinedOptions) {
@@ -79,7 +79,7 @@ void write_bootstrap(u32 configIndex) {
             }
         }
 
-        outs << " base\\scripts\\bulk_crowbar.cpp";
+        outs << " base\\scripts\\crowbar_bulk.cpp";
         outs << " /link";
 
         // Link options
@@ -94,9 +94,9 @@ void write_bootstrap(u32 configIndex) {
             }
         }
 
-        outs << " /incremental:no /out:crowbar-new.exe\n";
-        outs << "del bulk_crowbar.obj\n";
-        outs << "del bulk_crowbar.pdb\n";
+        outs << " /incremental:no /out:crowbar.exe\n";
+        outs << "del crowbar_bulk.obj\n";
+        outs << "del crowbar_bulk.pdb\n";
 
         String batPath = NativePath::join(Workspace.path, "setup.bat");
         FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
@@ -107,7 +107,7 @@ void write_bootstrap(u32 configIndex) {
     }
 }
 
-void command_new_bootstrap(CommandLine* cl) {
+void command_bootstrap(CommandLine* cl) {
     ensureTerminated(cl);
     StringView configName =
         cl->checkForSkippedOpt([](StringView arg) { return arg.startsWith("--config="); });

@@ -70,7 +70,7 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
     return {rc, std::move(output)};
 }
 
-void command_new_generate(CommandLine* cl) {
+void command_generate(CommandLine* cl) {
     ensureTerminated(cl);
     cl->finalize();
 
