@@ -22,7 +22,7 @@ struct ParserTestSupervisor : cpp::ParseSupervisor {
 };
 
 void runTest(StringView testPath) {
-    String testFileContents = FileSystem::native()->loadTextAutodetect(testPath).first;
+    String testFileContents = FileSystem.loadTextAutodetect(testPath).first;
 
     // Find the line with five dashes
     ViewInStream vins{testFileContents};
@@ -58,14 +58,14 @@ void runTest(StringView testPath) {
         err->writeMessage(&mout, &visitedFiles);
     }
     mout.flushMem();
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(testPath, mout.moveToString(), TextFormat::platformPreference());
+    FileSystem.makeDirsAndSaveTextIfDifferent(testPath, mout.moveToString(), TextFormat::platformPreference());
 }
 
 void runTestSuite() {
     String testsFolder =
         Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/ParserTest/tests");
     OutStream outs = StdOut::text();
-    for (const DirectoryEntry& entry : FileSystem::native()->listDir(testsFolder)) {
+    for (const DirectoryEntry& entry : FileSystem.listDir(testsFolder)) {
         if (!entry.isDir && entry.name.endsWith(".txt")) {
             outs << entry.name << '\n';
             outs.flushMem();

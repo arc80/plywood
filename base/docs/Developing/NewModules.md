@@ -84,7 +84,7 @@ Note that, any time a target depends on an extern, and that target is added to a
 
 It's possible to do other work inside a module function. For example, the [`platform` module function](https://github.com/arc80/plywood/blob/main/repos/plywood/src/platform/platform.modules.cpp) in the `plywood` repo generates a configuration header file and writes it to the build folder whenever a build system is generated using this module:
 
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+    FileSystem.makeDirsAndSaveTextIfDifferent(
         Path.join(args->projInst->env->buildFolderPath,
                          "codegen/ply-platform/ply-platform/Config.h"),
         configFile, TextFormat::platformPreference());

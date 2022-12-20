@@ -32,7 +32,7 @@ using namespace ply;
 
 Array<Reference<cook::CookJob>> copyStaticFiles(cook::CookContext* ctx, StringView srcRoot) {
     Array<Reference<cook::CookJob>> copyJobs;
-    for (WalkTriple& triple : FileSystem::native()->walk(srcRoot)) {
+    for (WalkTriple& triple : FileSystem.walk(srcRoot)) {
         for (const WalkTriple::FileInfo& file : triple.files) {
             String relativeDir = Path.makeRelative(srcRoot, triple.dirPath);
             copyJobs.append(ctx->cook(
@@ -44,7 +44,7 @@ Array<Reference<cook::CookJob>> copyStaticFiles(cook::CookContext* ctx, StringVi
 
 Array<String> getSourceFileKeys(StringView srcRoot) {
     Array<String> srcKeys;
-    for (WalkTriple& triple : FileSystem::native()->walk(srcRoot)) {
+    for (WalkTriple& triple : FileSystem.walk(srcRoot)) {
         for (const WalkTriple::FileInfo& file : triple.files) {
             if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
                 // FIXME: Eliminate exclusions
@@ -88,7 +88,7 @@ Reference<cook::CookJob> extractPageMetasFromFolder(cook::CookContext* ctx, Stri
     // By default, sort child pages by filename
     // The order can be overridden for each page using the <% childOrder %> tag
     Array<DirectoryEntry> allEntries;
-    for (const DirectoryEntry& entry : FileSystem::native()->listDir(absPath)) {
+    for (const DirectoryEntry& entry : FileSystem.listDir(absPath)) {
         allEntries.append(entry);
     }
     sort(allEntries,
@@ -191,7 +191,7 @@ int main() {
         auto aRoot = pylon::exportObj(AnyObject::bind(&contents));
         MemOutStream mout;
         pylon::write(&mout, aRoot);
-        FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+        FileSystem.makeDirsAndSaveTextIfDifferent(
             Path.join(PLY_WORKSPACE_FOLDER, "data/docsite/contents.pylon"),
             mout.moveToString(), TextFormat::unixUTF8());
     }

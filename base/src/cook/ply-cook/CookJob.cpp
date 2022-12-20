@@ -54,7 +54,7 @@ DependencyType DependencyType_File = {
     [](Dependency* dep_, CookResult* result, AnyObject) -> bool { //
         // FIXME: Use a safe cast once reflection supports derived classes
         Dependency_File* depFile = static_cast<Dependency_File*>(dep_);
-        FileStatus stat = FileSystem::native()->getFileStatus(depFile->path);
+        FileStatus stat = FileSystem.getFileStatus(depFile->path);
         PLY_ASSERT(stat.result == FSResult::OK);
         if (stat.modificationTime != depFile->modificationTime) {
             SLOG(Cook, "Recooking \"{}\" because \"{}\" changed", result->job->id.str(),
@@ -78,7 +78,7 @@ CookResult::FileDepScope CookResult::createFileDependency(StringView path) {
     fds.depFile->path = path;
     this->dependencies.append(fds.depFile);
 
-    FileStatus status = FileSystem::native()->getFileStatus(path);
+    FileStatus status = FileSystem.getFileStatus(path);
     if (status.result == FSResult::OK) {
         fds.modificationTime = status.modificationTime;
     } else {
@@ -93,7 +93,7 @@ Owned<InStream> CookResult::openFileAsDependency(StringView path) {
         return nullptr;
     }
 
-    Owned<InStream> ins = FileSystem::native()->openStreamForRead(path);
+    Owned<InStream> ins = FileSystem.openStreamForRead(path);
     if (!ins) {
         this->errors.append(String::format("error opening {}\n", path));
         return nullptr;

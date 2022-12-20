@@ -40,7 +40,7 @@ PLY_TEST_CASE("map() from range()") {
 PLY_TEST_CASE("map() from FileSystem::listDir()") {
     auto pair = Path.split(__FILE__);
     Array<String> result =
-        map(FileSystem::native()->listDir(pair.first), [](const auto& e) { return e.name; });
+        map(FileSystem.listDir(pair.first), [](const auto& e) { return e.name; });
     PLY_TEST_CHECK(find(result, pair.second) >= 0);
 }
 

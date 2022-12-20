@@ -8,8 +8,8 @@
 #include <ply-cpp/ErrorFormatting.h>
 
 void check_file_header(StringView srcPath, StringView desiredHeader, const TextFormat& tff) {
-    String src = FileSystem::native()->loadTextAutodetect(srcPath).first;
-    if (FileSystem::native()->lastResult() != FSResult::OK)
+    String src = FileSystem.loadTextAutodetect(srcPath).first;
+    if (FileSystem.lastResult() != FSResult::OK)
         return;
 
     using namespace cpp;
@@ -68,7 +68,7 @@ void check_file_header(StringView srcPath, StringView desiredHeader, const TextF
     StringView restOfFile =
         StringView::fromRange(existingFileHeader.end(), srcFile.contents.view().end());
     String withHeader = desiredHeader + restOfFile;
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(srcPath, withHeader, tff);
+    FileSystem.makeDirsAndSaveTextIfDifferent(srcPath, withHeader, tff);
 }
 
 void tidy_repo(StringView repoPath, StringView clangFormatPath, const TextFormat& tff) {
@@ -77,8 +77,8 @@ void tidy_repo(StringView repoPath, StringView clangFormatPath, const TextFormat
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 )";
-    for (WalkTriple& triple : FileSystem::native()->walk(repoPath)) {
-        for (const WalkTriple::FileInfo& file : triple.files) {
+    for (WalkTriple& triple : FileSystem.walk(repoPath)) {
+        for (const FileInfo& file : triple.files) {
             if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
                 // Run clang-format
                 if (clangFormatPath) {

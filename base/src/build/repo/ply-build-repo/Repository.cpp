@@ -28,7 +28,7 @@ void Repository::create() {
     g_repository = new Repository;
 
     bool anyError = false;
-    for (const DirectoryEntry& entry : FileSystem::native()->listDir(PLY_WORKSPACE_FOLDER, 0)) {
+    for (const FileInfo& entry : FileSystem.listDir(PLY_WORKSPACE_FOLDER, 0)) {
         if (!entry.isDir)
             continue;
         if (entry.name.startsWith("."))
@@ -38,8 +38,8 @@ void Repository::create() {
 
         // Recursively find all Plyfiles
         String repoFolder = Path.join(PLY_WORKSPACE_FOLDER, entry.name);
-        for (const WalkTriple& triple : FileSystem::native()->walk(repoFolder)) {
-            for (const WalkTriple::FileInfo& file : triple.files) {
+        for (const WalkTriple& triple : FileSystem.walk(repoFolder)) {
+            for (const FileInfo& file : triple.files) {
                 if (file.name == "Plyfile") {
                     if (!parsePlyfile(Path.join(triple.dirPath, file.name))) {
                         anyError = true;

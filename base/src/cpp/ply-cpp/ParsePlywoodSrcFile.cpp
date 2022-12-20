@@ -17,8 +17,8 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
 
     u32 sourceFileIdx = visitedFiles->sourceFiles.numItems();
     PPVisitedFiles::SourceFile& srcFile = visitedFiles->sourceFiles.append();
-    String src = FileSystem::native()->loadTextAutodetect(absSrcPath).first;
-    if (FileSystem::native()->lastResult() != FSResult::OK) {
+    String src = FileSystem.loadTextAutodetect(absSrcPath).first;
+    if (FileSystem.lastResult() != FSResult::OK) {
         struct ErrorWrapper : BaseError {
             String msg;
             PLY_INLINE ErrorWrapper(String&& msg) : msg{std::move(msg)} {

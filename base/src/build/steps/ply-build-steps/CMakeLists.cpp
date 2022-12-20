@@ -144,8 +144,7 @@ endmacro()
             for (const SourceFile& srcFile : srcGroup.files) {
                 if (hasAllBits(srcFile.enabledBits, target->enabledBits)) {
                     // This source file is enabled in all relevant configs.
-                    outs.format("    \"{}\"\n",
-                                CMakeEscape{PosixPath.from(Path, srcFile.relPath)});
+                    outs.format("    \"{}\"\n", CMakeEscape{PosixPath.from(Path, srcFile.relPath)});
                 } else {
                     // Use generator expressions to exclude source file from specific configs.
                     for (u32 i = 0; i < Project.configNames.numItems(); i++) {
@@ -179,8 +178,7 @@ endmacro()
                 if (opt.type == Option::IncludeDir) {
                     if (hasAllBits(opt.enabledBits, target->enabledBits)) {
                         // This include directory is enabled in all relevant configs.
-                        outs.format("    \"{}\"\n",
-                                    CMakeEscape{PosixPath.from(Path, opt.key)});
+                        outs.format("    \"{}\"\n", CMakeEscape{PosixPath.from(Path, opt.key)});
                     } else {
                         // Use generator expressions to exclude include directory from specific
                         // configs.
@@ -308,8 +306,8 @@ endmacro()
         }
     }
 
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(path, outs.moveToString(),
-                                                         TextFormat::platformPreference());
+    FileSystem.makeDirsAndSaveTextIfDifferent(path, outs.moveToString(),
+                                              TextFormat::platformPreference());
 }
 
 } // namespace build

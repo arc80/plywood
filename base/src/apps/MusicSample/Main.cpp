@@ -201,7 +201,7 @@ Array<Event> events = {
 };
 
 int main() {
-    Owned<OutPipe> out = FileSystem::native()->openPipeForWrite("music-sample.mp3");
+    Owned<OutPipe> out = FileSystem.openPipeForWrite("music-sample.mp3");
     AudioOptions audioOpts;
     Owned<Muxer> muxer = createMuxer(out, nullptr, &audioOpts, "mp3");
 

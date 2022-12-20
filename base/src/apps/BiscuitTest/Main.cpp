@@ -196,7 +196,7 @@ void runTestSuite() {
     // Open input file
     String testSuitePath =
         Path.join(PLY_WORKSPACE_FOLDER, "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
-    Tuple<String, TextFormat> allTests = FileSystem::native()->loadTextAutodetect(testSuitePath);
+    Tuple<String, TextFormat> allTests = FileSystem.loadTextAutodetect(testSuitePath);
     SectionReader sr{allTests.first};
 
     // Iterate over test cases.
@@ -229,7 +229,7 @@ void runTestSuite() {
     }
 
     // Rewrite BiscuitTests.txt
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(testSuitePath, outs.moveToString(),
+    FileSystem.makeDirsAndSaveTextIfDifferent(testSuitePath, outs.moveToString(),
                                                          allTests.second);
 }
 

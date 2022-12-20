@@ -14,7 +14,7 @@ void cook_CopyStatic(cook::CookResult* cookResult, AnyObject) {
     // Create destination folder(s) if missing
     String dstPath =
         Path.join(PLY_WORKSPACE_FOLDER, "data/docsite/static", cookResult->job->id.desc);
-    FSResult r = FileSystem::native()->makeDirs(Path.split(dstPath).first);
+    FSResult r = FileSystem.makeDirs(Path.split(dstPath).first);
     if (r != FSResult::OK && r != FSResult::AlreadyExists) {
         // FIXME: add reason from r
         cookResult->addError(String::format("unable to create '{}'", dstPath));
@@ -28,7 +28,7 @@ void cook_CopyStatic(cook::CookResult* cookResult, AnyObject) {
     PLY_UNUSED(fdScope);
 
     // Open source file
-    Owned<InPipe> inPipe = FileSystem::native()->openPipeForRead(srcPath);
+    Owned<InPipe> inPipe = FileSystem.openPipeForRead(srcPath);
     if (!inPipe) {
         // FIXME: add reason from lastResult()
         cookResult->addError(String::format("can't open '{}'", srcPath));
@@ -40,7 +40,7 @@ void cook_CopyStatic(cook::CookResult* cookResult, AnyObject) {
 
     // Open destination file
     // FIXME: Copy to temporary file first, then rename it
-    Owned<OutPipe> outPipe = FileSystem::native()->openPipeForWrite(dstPath);
+    Owned<OutPipe> outPipe = FileSystem.openPipeForWrite(dstPath);
     if (!outPipe) {
         // FIXME: add reason from lastResult()
         cookResult->addError(String::format("unable to create '{}'", dstPath));

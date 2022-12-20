@@ -54,8 +54,8 @@ PLY_NO_INLINE void FetchFromFileSystem::serve(const FetchFromFileSystem* params,
 
     // FIXME: Don't load the whole file completely in memory first.
     // Could open the raw pipe and feed it to outs.
-    String bin = FileSystem::native()->loadBinary(nativePath);
-    if (FileSystem::native()->lastResult() != FSResult::OK) {
+    String bin = FileSystem.loadBinary(nativePath);
+    if (FileSystem.lastResult() != FSResult::OK) {
         // file could not be loaded
         responseIface->respondGeneric(ResponseCode::NotFound);
         return;

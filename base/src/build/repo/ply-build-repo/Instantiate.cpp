@@ -92,8 +92,8 @@ bool onEvaluateSourceFile(InstantiatingInterpreter* ii, const AnyObject& attribu
     SourceGroup& srcGroup = appendOrFind(ii->target->sourceGroups, absPath,
                                          [&](const auto& a) { return a.absPath == absPath; });
     bool needsCompilation = false;
-    for (WalkTriple& triple : FileSystem::native()->walk(absPath, 0)) {
-        for (const WalkTriple::FileInfo& file : triple.files) {
+    for (WalkTriple& triple : FileSystem.walk(absPath, 0)) {
+        for (const FileInfo& file : triple.files) {
             if ((file.name.endsWith(".cpp") && !file.name.endsWith(".modules.cpp")) ||
                 file.name.endsWith(".h")) {
                 if (!needsCompilation && file.name.endsWith(".cpp")) {

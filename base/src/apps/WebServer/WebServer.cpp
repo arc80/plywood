@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
             if (dataRoot) {
                 writeMsgAndExit("Too many arguments");
             }
-            if (!FileSystem::native()->isDir(arg)) {
+            if (!FileSystem.isDir(arg)) {
                 writeMsgAndExit(String::format("Can't access directory at {}", arg));
             }
             dataRoot = arg;

@@ -49,7 +49,7 @@ PLY_NO_INLINE Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolde
         buildFolder = Path.join(buildFolder, config);
         relPathToCMakeLists = "../..";
     }
-    FSResult result = FileSystem::native()->makeDirs(buildFolder);
+    FSResult result = FileSystem.makeDirs(buildFolder);
     if (result != FSResult::OK && result != FSResult::AlreadyExists) {
         Error.log("Can't create folder '{}'\n", buildFolder);
         return {-1, ""};
@@ -106,7 +106,7 @@ void write_bootstrap(u32 configIndex) {
             }
         }
         String sourcePath = Path.join(sourceDir, "crowbar_bulk.cpp");
-        FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+        FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
             sourcePath, outs.moveToString(), TextFormat::platformPreference());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
             Error.log("Error writing {}", sourcePath);
@@ -176,7 +176,7 @@ void write_bootstrap(u32 configIndex) {
         outs << "del crowbar_bulk.pdb\n";
 
         String batPath = Path.join(Workspace.path, "setup.bat");
-        FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+        FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
             batPath, outs.moveToString(), TextFormat::platformPreference());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
             Error.log("Error writing {}", batPath);
@@ -199,7 +199,7 @@ bool command_open() {
 #if PLY_TARGET_WIN32
     } else if (bf.cmakeOptions.generator.startsWith("Visual Studio")) {
         String slnPath = Path.join(bf.absPath, "build", bf.solutionName + ".sln");
-        if (FileSystem::native()->exists(slnPath) != ExistsResult::File) {
+        if (FileSystem.exists(slnPath) != ExistsResult::File) {
             Error.log("Can't find '{}'", slnPath);
         }
 
@@ -224,7 +224,7 @@ bool command_open() {
     } else if (folder->cmakeOptions.generator == "Xcode") {
         String projPath =
             Path.join(folder->getAbsPath(), "build", folder->solutionName + ".xcodeproj");
-        if (FileSystem::native()->exists(projPath) != ExistsResult::Directory) {
+        if (FileSystem.exists(projPath) != ExistsResult::Directory) {
             fatalError(String::format("Can't find '{}'", projPath));
         }
 

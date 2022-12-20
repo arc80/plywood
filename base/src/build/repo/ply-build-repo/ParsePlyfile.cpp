@@ -232,8 +232,8 @@ void handlePlyfileFunction(ExtendedParser* ep, Owned<biscuit::Statement>&& stmt,
 }
 
 bool parsePlyfile(StringView path) {
-    String src = FileSystem::native()->loadTextAutodetect(path).first;
-    if (FileSystem::native()->lastResult() != FSResult::OK) {
+    String src = FileSystem.loadTextAutodetect(path).first;
+    if (FileSystem.lastResult() != FSResult::OK) {
         PLY_FORCE_CRASH();
     }
 

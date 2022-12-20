@@ -521,7 +521,7 @@ void Page_cook(cook::CookResult* cookResult_, AnyObject) {
     PLY_ASSERT(pageResult->job->id.desc.startsWith("/"));
     String htmlPath = Path.join(PLY_WORKSPACE_FOLDER, "data/docsite/pages",
                                        pageResult->job->id.desc.subStr(1) + ".html");
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(htmlPath, finalHtml,
+    FileSystem.makeDirsAndSaveTextIfDifferent(htmlPath, finalHtml,
                                                          TextFormat::unixUTF8());
 }
 

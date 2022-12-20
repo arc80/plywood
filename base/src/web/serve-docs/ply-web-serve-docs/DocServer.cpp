@@ -108,7 +108,7 @@ String getPageSource(DocServer* ds, StringView requestPath, ResponseIface* respo
         return {};
     }
     String absPath = Path.join(ds->dataRoot, "pages", requestPath);
-    ExistsResult exists = FileSystem::native()->exists(absPath);
+    ExistsResult exists = FileSystem.exists(absPath);
     if (exists == ExistsResult::Directory) {
         absPath = Path.join(absPath, "index.html");
     } else {

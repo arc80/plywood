@@ -9,7 +9,7 @@ using namespace ply;
 static constexpr u32 NumPoints = 1000;
 
 int main() {
-    Owned<OutPipe> out = FileSystem::native()->openPipeForWrite("vector-animation.mp4");
+    Owned<OutPipe> out = FileSystem.openPipeForWrite("vector-animation.mp4");
     VideoOptions videoOpts{240, 240};
     Owned<Muxer> muxer = createMuxer(out, &videoOpts, nullptr, "mp4");
     for (u32 j = 0; j < 120; j++) {

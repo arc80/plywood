@@ -17,8 +17,8 @@ BuildFolder_t* BuildFolder = nullptr;
 
 PLY_NO_INLINE void BuildFolder_t::load(StringView absPath) {
     String infoPath = Path.join(absPath, "info.pylon");
-    String strContents = FileSystem::native()->loadTextAutodetect(infoPath).first;
-    if (FileSystem::native()->lastResult() != FSResult::OK) {
+    String strContents = FileSystem.loadTextAutodetect(infoPath).first;
+    if (FileSystem.lastResult() != FSResult::OK) {
         Error.log("Unable to read file '{}'", infoPath);
         return;
     }
@@ -37,7 +37,7 @@ PLY_NO_INLINE bool BuildFolder_t::save() const {
     Owned<pylon::Node> aRoot = pylon::exportObj(AnyObject::bind(this));
     String strContents = pylon::toString(aRoot);
     String infoPath = Path.join(this->absPath, "info.pylon");
-    FSResult rc = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+    FSResult rc = FileSystem.makeDirsAndSaveTextIfDifferent(
         infoPath, strContents, TextFormat::platformPreference());
     if ((rc != FSResult::OK) && (rc != FSResult::Unchanged)) {
         Error.log("Unable to save file '{}'", infoPath);

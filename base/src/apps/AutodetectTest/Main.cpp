@@ -50,7 +50,7 @@ bool runTestSuite() {
     OutStream outs = StdOut::text();
     u32 succeeded = 0;
     u32 failed = 0;
-    for (const DirectoryEntry& entry : FileSystem::native()->listDir(testsFolder)) {
+    for (const DirectoryEntry& entry : FileSystem.listDir(testsFolder)) {
         // if (entry.name == "japanese.utf8.lf.bom.txt")
         //    PLY_DEBUG_BREAK();
         if (!entry.isDir && entry.name.endsWith(".txt")) {

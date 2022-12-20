@@ -31,7 +31,7 @@ void StyleSheet_cook(cook::CookResult* cookResult, AnyObject) {
     // FIXME: Implement strategy to delete orphaned CSS files
     String cssPath = Path.join(PLY_WORKSPACE_FOLDER, "data/docsite/static/stylesheet.css");
     StringView cssText = sass_context_get_output_string((Sass_Context*) result.context);
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(cssPath, cssText, TextFormat::unixUTF8());
+    FileSystem.makeDirsAndSaveTextIfDifferent(cssPath, cssText, TextFormat::unixUTF8());
 }
 
 cook::CookJobType CookJobType_StyleSheetID = {

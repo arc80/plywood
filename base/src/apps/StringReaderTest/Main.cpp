@@ -57,7 +57,7 @@ int main() {
             }
         }
     }
-    FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+    FileSystem.makeDirsAndSaveTextIfDifferent(
         Path.join(PLY_WORKSPACE_FOLDER,
                          "repos/plywood/src/apps/StringReaderTest/result.txt"),
         mout.moveToString(), TextFormat::platformPreference());

@@ -69,7 +69,7 @@ MethodResult doSaveIfDifferent(const MethodArgs& args) {
         return MethodResult::Error;
     }
 
-    FileSystem::native()->makeDirsAndSaveBinaryIfDifferent(*path, *content);
+    FileSystem.makeDirsAndSaveBinaryIfDifferent(*path, *content);
     return MethodResult::OK;
 }
 
@@ -108,7 +108,7 @@ MethodResult sys_fs_exists(const MethodArgs& args) {
         return MethodResult::Error;
     }
 
-    ExistsResult result = FileSystem::native()->exists(*path);
+    ExistsResult result = FileSystem.exists(*path);
     AnyObject* resultStorage =
         args.base->localVariableStorage.appendObject(getTypeDescriptor<bool>());
     *resultStorage->cast<bool>() = (result != ExistsResult::NotFound);
@@ -178,7 +178,7 @@ void download(StringView dstPath, const SplitURL& split) {
     rc = WinHttpReceiveResponse(hreq, NULL);
     PLY_ASSERT(rc);
 
-    Owned<OutStream> outs = FileSystem::native()->openStreamForWrite(dstPath);
+    Owned<OutStream> outs = FileSystem.openStreamForWrite(dstPath);
     PLY_ASSERT(outs);
     for (;;) {
         DWORD size = 0;

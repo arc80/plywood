@@ -523,7 +523,7 @@ String getSwitchInl(SwitchInfo* switch_) {
 
 void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
     String absInlPath = Path.join(Workspace.path, switch_->inlineInlPath);
-    FSResult result = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+    FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
         absInlPath, getSwitchInl(switch_), tff);
     OutStream stdOut = StdOut::text();
     if (result == FSResult::OK) {
@@ -534,8 +534,8 @@ void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
 }
 
 String performSubsts(StringView absPath, ArrayView<Subst> substs) {
-    String src = FileSystem::native()->loadTextAutodetect(absPath).first;
-    if (FileSystem::native()->lastResult() != FSResult::OK)
+    String src = FileSystem.loadTextAutodetect(absPath).first;
+    if (FileSystem.lastResult() != FSResult::OK)
         return {};
 
     MemOutStream mout;
@@ -556,9 +556,9 @@ void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs, const Tex
     // FIXME: Don't reload the file here!!!!!!!!!!
     // It may have changed, making the Substs invalid!!!!!!!!
     String srcWithSubst = performSubsts(absPath, substs);
-    if (FileSystem::native()->lastResult() == FSResult::OK) {
+    if (FileSystem.lastResult() == FSResult::OK) {
         FSResult result =
-            FileSystem::native()->makeDirsAndSaveTextIfDifferent(absPath, srcWithSubst, tff);
+            FileSystem.makeDirsAndSaveTextIfDifferent(absPath, srcWithSubst, tff);
         OutStream stdOut = StdOut::text();
         if (result == FSResult::OK) {
             stdOut.format("Wrote {}\n", absPath);
@@ -661,7 +661,7 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
             generator->write(&mout);
         }
         FSResult result =
-            FileSystem::native()->makeDirsAndSaveTextIfDifferent(absPath, mout.moveToString(), tff);
+            FileSystem.makeDirsAndSaveTextIfDifferent(absPath, mout.moveToString(), tff);
         OutStream stdOut = StdOut::text();
         if (result == FSResult::OK) {
             stdOut.format("Wrote {}\n", absPath);
@@ -675,7 +675,7 @@ void do_codegen() {
     ReflectionInfoAggregator agg;
 
     u32 fileNum = 0;
-    for (const DirectoryEntry& entry : FileSystem::native()->listDir(Workspace.path, 0)) {
+    for (const FileInfo& entry : FileSystem.listDir(Workspace.path, 0)) {
         if (!entry.isDir)
             continue;
         if (entry.name.startsWith("."))
@@ -684,11 +684,11 @@ void do_codegen() {
             continue;
 
         for (WalkTriple& triple :
-             FileSystem::native()->walk(Path.join(Workspace.path, entry.name))) {
+             FileSystem.walk(Path.join(Workspace.path, entry.name))) {
             // Sort child directories and filenames so that files are visited in a deterministic
             // order:
             sort(triple.dirNames);
-            sort(triple.files, [](const WalkTriple::FileInfo& a, const WalkTriple::FileInfo& b) {
+            sort(triple.files, [](const FileInfo& a, const FileInfo& b) {
                 return a.name < b.name;
             });
 
@@ -698,7 +698,7 @@ void do_codegen() {
                 continue;
             }
 
-            for (const WalkTriple::FileInfo& file : triple.files) {
+            for (const FileInfo& file : triple.files) {
                 if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
                     if (file.name.endsWith(".modules.cpp"))
                         continue;

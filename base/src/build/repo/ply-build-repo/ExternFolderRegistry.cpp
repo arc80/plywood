@@ -16,8 +16,8 @@ Owned<ExternFolderRegistry> ExternFolderRegistry::instance_;
 
 PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
     String infoPath = Path.join(path, "info.pylon");
-    String strContents = FileSystem::native()->loadTextAutodetect(infoPath).first;
-    if (FileSystem::native()->lastResult() != FSResult::OK)
+    String strContents = FileSystem.loadTextAutodetect(infoPath).first;
+    if (FileSystem.lastResult() != FSResult::OK)
         return nullptr;
 
     auto aRoot = pylon::Parser{}.parse(infoPath, strContents).root;
@@ -34,7 +34,7 @@ PLY_NO_INLINE bool ExternFolder::save() const {
     auto aRoot = pylon::exportObj(AnyObject::bind(this));
     String strContents = pylon::toString(aRoot);
     String infoPath = Path.join(this->path, "info.pylon");
-    FSResult rc = FileSystem::native()->makeDirsAndSaveTextIfDifferent(
+    FSResult rc = FileSystem.makeDirsAndSaveTextIfDifferent(
         infoPath, strContents, TextFormat::platformPreference());
     return (rc == FSResult::OK || rc == FSResult::Unchanged);
 }
@@ -46,7 +46,7 @@ Owned<ExternFolderRegistry> ExternFolderRegistry::create() {
     String buildFolderRoot = Path.join(PLY_WORKSPACE_FOLDER, "data/extern");
     // FIXME: Use native() or compat() consistently
     // FIXME: Detect and report duplicate extern folders
-    for (const DirectoryEntry& entry : FileSystem::native()->listDir(buildFolderRoot, 0)) {
+    for (const FileInfo& entry : FileSystem.listDir(buildFolderRoot, 0)) {
         if (!entry.isDir)
             continue;
         PLY_ASSERT(!entry.name.isEmpty());
@@ -72,7 +72,7 @@ PLY_NO_INLINE String makeUniqueFileName(StringView parentFolder, StringView pref
     String suffix;
     for (;;) {
         String path = Path.join(parentFolder, prefix + suffix);
-        if (FileSystem::native()->exists(path) == ExistsResult::NotFound)
+        if (FileSystem.exists(path) == ExistsResult::NotFound)
             return path;
         number++;
         suffix = String::from(number);
@@ -85,7 +85,7 @@ PLY_NO_INLINE ExternFolder* ExternFolderRegistry::create(StringView desc) {
     // Make directory
     String folderPath =
         makeUniqueFileName(Path.join(PLY_WORKSPACE_FOLDER, "data/extern"), desc);
-    FSResult fsResult = FileSystem::native()->makeDirs(folderPath);
+    FSResult fsResult = FileSystem.makeDirs(folderPath);
     if (!(fsResult == FSResult::OK || fsResult == FSResult::AlreadyExists)) {
         PLY_ASSERT(0);  // Don't bother to handle gracefully; this module will be deleted soon
         return nullptr;
