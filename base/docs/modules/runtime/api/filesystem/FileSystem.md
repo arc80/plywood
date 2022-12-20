@@ -6,7 +6,7 @@ FileSystem.
 
 ## Header File
 
-`#include <ply-runtime/filesystem/FileSystem.h>`
+`#include <ply-runtime/FileSystem.h>`
 
 Also included from `<ply-runtime/Base.h>`.
 

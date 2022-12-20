@@ -6,7 +6,7 @@
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 
 #include <ply-runtime/Precomp.h>
-#include <ply-runtime/filesystem/FileSystem.h>
+#include <ply-runtime/FileSystem.h>
 #include <ply-runtime/io/Pipe.h>
 
 #if PLY_TARGET_WIN32
