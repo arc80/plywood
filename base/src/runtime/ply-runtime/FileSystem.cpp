@@ -26,10 +26,10 @@ namespace ply {
 ThreadLocal<FSResult> FileSystemIface::lastResult_;
 FileSystem_t FileSystem;
 
-//  ▄▄   ▄▄        ▄▄▄  ▄▄
-//  ██ ▄ ██  ▄▄▄▄   ██  ██  ▄▄  ▄▄▄▄  ▄▄▄▄▄
-//  ▀█▄█▄█▀  ▄▄▄██  ██  ██▄█▀  ██▄▄██ ██  ▀▀
-//   ██▀██  ▀█▄▄██ ▄██▄ ██ ▀█▄ ▀█▄▄▄  ██
+//  ▄▄    ▄▄        ▄▄▄  ▄▄
+//  ██ ▄▄ ██  ▄▄▄▄   ██  ██  ▄▄  ▄▄▄▄  ▄▄▄▄▄
+//  ▀█▄██▄█▀  ▄▄▄██  ██  ██▄█▀  ██▄▄██ ██  ▀▀
+//   ██▀▀██  ▀█▄▄██ ▄██▄ ██ ▀█▄ ▀█▄▄▄  ██
 //
 
 void FileSystemWalker::visit(StringView dirPath) {
@@ -219,10 +219,10 @@ FSResult FileSystemIface::makeDirsAndSaveTextIfDifferent(StringView path, String
 
 #if PLY_TARGET_WIN32
 
-//  ▄▄   ▄▄ ▄▄            ▄▄
-//  ██ ▄ ██ ▄▄ ▄▄▄▄▄   ▄▄▄██  ▄▄▄▄  ▄▄    ▄▄  ▄▄▄▄
-//  ▀█▄█▄█▀ ██ ██  ██ ██  ██ ██  ██ ██ ██ ██ ▀█▄▄▄
-//   ██▀██  ██ ██  ██ ▀█▄▄██ ▀█▄▄█▀  ██▀▀██   ▄▄▄█▀
+//  ▄▄    ▄▄ ▄▄            ▄▄
+//  ██ ▄▄ ██ ▄▄ ▄▄▄▄▄   ▄▄▄██  ▄▄▄▄  ▄▄    ▄▄  ▄▄▄▄
+//  ▀█▄██▄█▀ ██ ██  ██ ██  ██ ██  ██ ██ ██ ██ ▀█▄▄▄
+//   ██▀▀██  ██ ██  ██ ▀█▄▄██ ▀█▄▄█▀  ██▀▀██   ▄▄▄█▀
 //
 
 #define PLY_FSWIN32_ALLOW_UKNOWN_ERRORS 0
