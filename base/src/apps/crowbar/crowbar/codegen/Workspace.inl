@@ -1,4 +1,4 @@
-PLY_STRUCT_BEGIN(Workspace_)
+PLY_STRUCT_BEGIN(Workspace_t)
 PLY_STRUCT_MEMBER(currentBuildFolder)
 PLY_STRUCT_MEMBER(defaultCMakeOptions)
 PLY_STRUCT_MEMBER(defaultConfig)

@@ -360,6 +360,7 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
 
 struct ConfigListInterpreter {
     biscuit::Interpreter interp;
+    BuildFolder_t* build_folder = nullptr;
     ModuleInstantiator* mi = nullptr;
 };
 
@@ -409,7 +410,7 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
 
     // Instantiate all root modules in this config
     PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
-    for (StringView targetName : BuildFolder->rootTargets) {
+    for (StringView targetName : cli->build_folder->rootTargets) {
         Target* rootTarget = nullptr;
         MethodResult result = instantiateModuleForCurrentConfig(&rootTarget, cli->mi,
                                                                 g_labelStorage.insert(targetName));
@@ -430,9 +431,9 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     return MethodResult::OK;
 }
 
-PLY_NO_INLINE void instantiate_all_configs() {
+PLY_NO_INLINE void instantiate_all_configs(BuildFolder_t* build_folder) {
     ModuleInstantiator mi{};
-    Project.name = BuildFolder->solutionName;
+    Project.name = build_folder->solutionName;
     init_toolchain_msvc();
 
     // Execute the config_list block
@@ -456,6 +457,7 @@ PLY_NO_INLINE void instantiate_all_configs() {
         bool false_ = false;
         *builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
         *builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
+        cli.build_folder = build_folder;
         cli.interp.resolveName = [&builtIns, &cli](Label identifier) -> AnyObject {
             if (AnyObject* builtIn = builtIns.find(identifier))
                 return *builtIn;

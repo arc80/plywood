@@ -9,9 +9,9 @@
 #include <pylon-reflect/Import.h>
 #include <pylon-reflect/Export.h>
 
-Workspace_ Workspace;
+Workspace_t Workspace;
 
-PLY_NO_INLINE void Workspace_::load() {
+PLY_NO_INLINE void Workspace_t::load() {
     this->path = FileSystem.getWorkingDirectory();
     static const StringView fileName = "workspace-settings.pylon";
     String settingsPath;
@@ -44,22 +44,26 @@ PLY_NO_INLINE void Workspace_::load() {
     importInto(AnyObject::bind(this), aRoot);
     if (!this->sourceNewLines) {
         this->sourceNewLines =
-            (TextFormat::platformPreference().newLine == TextFormat::NewLine::CRLF ? "crlf" : "lf");
+            (TextFormat::platformPreference().newLine == TextFormat::NewLine::CRLF
+                 ? "crlf"
+                 : "lf");
     }
 }
 
-PLY_NO_INLINE void Workspace_::save() const {
+PLY_NO_INLINE bool Workspace_t::save() const {
+    static const StringView fileName = "workspace-settings.pylon";
     auto aRoot = pylon::exportObj(AnyObject::bind(this));
     String contents = pylon::toString(aRoot);
-    // FIXME: makeDirsAndSaveTextIfDifferent should write to temp file with atomic rename
     FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
-        this->path, contents, this->getSourceTextFormat());
+        Path.join(this->path, fileName), contents, this->getSourceTextFormat());
     if (result != FSResult::OK && result != FSResult::Unchanged) {
         Error.log("Can't save workspace settings to {}", this->path);
+        return false;
     }
+    return true;
 }
 
-PLY_NO_INLINE TextFormat Workspace_::getSourceTextFormat() const {
+PLY_NO_INLINE TextFormat Workspace_t::getSourceTextFormat() const {
     TextFormat tff = TextFormat::platformPreference();
     if (this->sourceNewLines == "crlf") {
         tff.newLine = TextFormat::NewLine::CRLF;

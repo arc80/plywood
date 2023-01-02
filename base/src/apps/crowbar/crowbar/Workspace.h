@@ -1,15 +1,18 @@
-/*------------------------------------
-  ///\  Plywood C++ Framework
-  \\\/  https://plywood.arc80.com/
-------------------------------------*/
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                    ┃
+┃    ╱   ╱╲    Plywood C++ Development Kit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/           ┃
+┃    └──┴┴┴┘                                  ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+
 #pragma once
 #include "core.h"
 #include <ply-build-repo/BuildFolder.h>
 
 using namespace ply::build;
 
-struct Workspace_ {
-    String path;
+struct Workspace_t {
+    String path; // absolute path to folder
 
     PLY_REFLECT()
     String currentBuildFolder;
@@ -19,9 +22,9 @@ struct Workspace_ {
     // ply reflect off
 
     void load();
-    void save() const;
+    bool save() const;
 
     TextFormat getSourceTextFormat() const;
 };
 
-extern Workspace_ Workspace;
+extern Workspace_t Workspace;

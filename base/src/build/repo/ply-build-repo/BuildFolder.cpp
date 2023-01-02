@@ -15,22 +15,23 @@ namespace build {
 
 BuildFolder_t* BuildFolder = nullptr;
 
-PLY_NO_INLINE void BuildFolder_t::load(StringView absPath) {
+PLY_NO_INLINE bool BuildFolder_t::load(StringView absPath) {
     String infoPath = Path.join(absPath, "info.pylon");
     String strContents = FileSystem.loadTextAutodetect(infoPath).first;
     if (FileSystem.lastResult() != FSResult::OK) {
         Error.log("Unable to read file '{}'", infoPath);
-        return;
+        return false;
     }
 
     Owned<pylon::Node> aRoot = pylon::Parser{}.parse(infoPath, strContents).root;
     if (!aRoot->isValid()) {
         Error.log("Unable to parse the contents of '{}'", infoPath);
-        return;
+        return false;
     }
 
     this->absPath = absPath;
     pylon::importInto(AnyObject::bind(this), aRoot);
+    return true;
 }
 
 PLY_NO_INLINE bool BuildFolder_t::save() const {

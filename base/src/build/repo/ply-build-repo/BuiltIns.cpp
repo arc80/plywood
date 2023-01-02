@@ -258,7 +258,7 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
     return methods;
 }
 
-void init_built_ins() {
+void init_built_ins(BuildFolder_t* build_folder) {
     PLY_ASSERT(BuiltInMap.numItems() == 0);
     bool true_ = true;
     bool false_ = false;
@@ -282,9 +282,9 @@ void init_built_ins() {
         AnyObject::bind(&BuiltInStorage.sys_target_platform);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("target_arch")) =
         AnyObject::bind(&BuiltInStorage.sys_target_arch);
-    PLY_ASSERT(BuildFolder->absPath);
+    PLY_ASSERT(build_folder->absPath);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("build_folder")) =
-        AnyObject::bind(&BuildFolder->absPath);
+        AnyObject::bind(&build_folder->absPath);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("cmake_path")) =
         AnyObject::bind(&BuiltInStorage.sys_cmake_path);
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) =

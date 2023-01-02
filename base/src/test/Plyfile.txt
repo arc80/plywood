@@ -1,0 +1,20 @@
+executable PlywoodTests {
+    source_files {
+        "PlywoodTests"
+    }
+    dependencies {
+        private test
+    }
+}
+
+module test {
+    source_files {
+        "test/ply-test"
+    }
+    include_directories {
+        "test"
+    }
+    dependencies {
+        public runtime
+    }
+}

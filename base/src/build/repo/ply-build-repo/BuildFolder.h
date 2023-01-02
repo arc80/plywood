@@ -40,12 +40,10 @@ struct BuildFolder_t {
     // ply reflect off
 
     // BuildFolder management
-    void load(StringView absPath);
+    bool load(StringView absPath);
     bool save() const;
     bool build(StringView config, StringView targetName) const;
 };
-
-extern BuildFolder_t* BuildFolder;
 
 } // namespace build
 } // namespace ply

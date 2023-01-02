@@ -59,7 +59,8 @@ void FileSystemWalker::Iterator::operator++() {
     while (!this->walker->stack.isEmpty()) {
         StackItem& item = this->walker->stack.back();
         if (item.dirIndex < item.dirNames.numItems()) {
-            this->walker->visit(this->walker->fs->pathFormat().join(item.path, item.dirNames[item.dirIndex]));
+            this->walker->visit(this->walker->fs->pathFormat().join(
+                item.path, item.dirNames[item.dirIndex]));
             item.dirIndex++;
             return;
         }
@@ -117,7 +118,8 @@ Owned<OutStream> FileSystemIface::openStreamForWrite(StringView path) {
     return new OutStream{std::move(outPipe)};
 }
 
-Owned<InStream> FileSystemIface::openTextForRead(StringView path, const TextFormat& textFormat) {
+Owned<InStream> FileSystemIface::openTextForRead(StringView path,
+                                                 const TextFormat& textFormat) {
     Owned<InStream> ins = this->openStreamForRead(path);
     if (!ins)
         return nullptr;
@@ -163,19 +165,19 @@ Tuple<String, TextFormat> FileSystemIface::loadTextAutodetect(StringView path) {
     return {contents, tuple.second};
 }
 
-Owned<OutStream> FileSystemIface::openTextForWrite(StringView path, const TextFormat& textFormat) {
+Owned<OutStream> FileSystemIface::openTextForWrite(StringView path,
+                                                   const TextFormat& textFormat) {
     Owned<OutStream> outs = this->openStreamForWrite(path);
     if (!outs)
         return nullptr;
     return textFormat.createExporter(std::move(outs));
 }
 
-FSResult FileSystemIface::makeDirsAndSaveBinaryIfDifferent(StringView path, StringView view) {
-    // FIXME: This could be optimized
-    // We don't really need to load the existing file as a binary. We could read and compare it to
-    // view incrementally.
-
-    // Load existing contents
+FSResult FileSystemIface::makeDirsAndSaveBinaryIfDifferent(StringView path,
+                                                           StringView view) {
+    // Load existing contents.
+    // FIXME: We shouldn't need to load the whole file in memory first. Instead, compare
+    // as we go.
     String existingContents = this->loadBinary(path);
     FSResult existingResult = this->lastResult();
     if (existingResult == FSResult::OK && existingContents == view) {
@@ -193,7 +195,7 @@ FSResult FileSystemIface::makeDirsAndSaveBinaryIfDifferent(StringView path, Stri
     }
 
     // Save file
-    // FIXME: Use temporary file
+    // FIXME: Write to temporary file first, then rename atomically
     Owned<OutPipe> outPipe = this->openPipeForWrite(path);
     result = this->lastResult();
     if (result != FSResult::OK) {
@@ -203,12 +205,9 @@ FSResult FileSystemIface::makeDirsAndSaveBinaryIfDifferent(StringView path, Stri
     return result;
 }
 
-FSResult FileSystemIface::makeDirsAndSaveTextIfDifferent(StringView path, StringView strContents,
+FSResult FileSystemIface::makeDirsAndSaveTextIfDifferent(StringView path,
+                                                         StringView strContents,
                                                          const TextFormat& textFormat) {
-    // FIXME: This could be optimized
-    // We don't really need to convert strContents to raw data as a String. We could create an
-    // exporter and compare to the existing file incrementally.
-
     MemOutStream memOut;
     Owned<OutStream> outs = textFormat.createExporter(borrow(&memOut));
     *outs << strContents;
@@ -355,7 +354,8 @@ String FileSystem_t::getWorkingDirectory() {
         WString win32Path = WString::allocate(numUnitsWithNullTerm);
         DWORD rc;
         {
-            // This RWLock is used to mitigate data race issues with SetCurrentDirectoryW:
+            // This RWLock is used to mitigate data race issues with
+            // SetCurrentDirectoryW:
             // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setcurrentdirectory
             SharedLockGuard<RWLock> guard{this->workingDirLock};
             rc = GetCurrentDirectoryW(numUnitsWithNullTerm, (LPWSTR) win32Path.units);
@@ -367,22 +367,24 @@ String FileSystem_t::getWorkingDirectory() {
         }
         PLY_ASSERT(rc != numUnitsWithNullTerm);
         if (rc < numUnitsWithNullTerm) {
-            // GetCurrentDirectoryW: If the function succeeds, the return value specifies the
-            // number of characters that are written to the buffer, not including the
-            // terminating null character.
+            // GetCurrentDirectoryW: If the function succeeds, the return value
+            // specifies the number of characters that are written to the buffer, not
+            // including the terminating null character.
             WStringView truncatedWin32Path = {win32Path.units, rc};
-            if (truncatedWin32Path.numUnits >= 4 && truncatedWin32Path.stringView().left(8) ==
-                                                        StringView{(const char*) L"\\\\?\\", 8}) {
+            if (truncatedWin32Path.numUnits >= 4 &&
+                truncatedWin32Path.stringView().left(8) ==
+                    StringView{(const char*) L"\\\\?\\", 8}) {
                 // Drop leading "\\\\?\\":
                 truncatedWin32Path.units += 4;
                 truncatedWin32Path.numUnits -= 4;
             }
             this->setLastResult(FSResult::OK);
-            return TextConverter::convert<UTF8, UTF16_Native>(truncatedWin32Path.stringView());
+            return TextConverter::convert<UTF8, UTF16_Native>(
+                truncatedWin32Path.stringView());
         }
-        // GetCurrentDirectoryW: If the buffer that is pointed to by lpBuffer is not large
-        // enough, the return value specifies the required size of the buffer, in characters,
-        // including the null-terminating character.
+        // GetCurrentDirectoryW: If the buffer that is pointed to by lpBuffer is not
+        // large enough, the return value specifies the required size of the buffer, in
+        // characters, including the null-terminating character.
         numUnitsWithNullTerm = rc;
     }
 }
@@ -454,8 +456,8 @@ Owned<InPipe> FileSystem_t::openPipeForRead(StringView path) {
 HANDLE FileSystem_t::openHandleForWrite(StringView path) {
     // FIXME: Needs graceful handling of ERROR_SHARING_VIOLATION
     // Should this use FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE?
-    HANDLE handle = CreateFileW(win32PathArg(path), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
-                                FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE handle = CreateFileW(win32PathArg(path), GENERIC_WRITE, 0, NULL,
+                                CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (handle != INVALID_HANDLE_VALUE) {
         this->setLastResult(FSResult::OK);
     } else {
@@ -492,7 +494,8 @@ Owned<OutPipe> FileSystem_t::openPipeForWrite(StringView path) {
 }
 
 FSResult FileSystem_t::moveFile(StringView srcPath, StringView dstPath) {
-    BOOL rc = MoveFileExW(win32PathArg(srcPath), win32PathArg(dstPath), MOVEFILE_REPLACE_EXISTING);
+    BOOL rc = MoveFileExW(win32PathArg(srcPath), win32PathArg(dstPath),
+                          MOVEFILE_REPLACE_EXISTING);
     if (rc) {
         return this->setLastResult(FSResult::OK);
     } else {
@@ -632,7 +635,8 @@ Array<FileInfo> FileSystem_t::listDir(StringView path, u32 flags) {
             info.isDir = false;
         } else if (rde->d_type == DT_DIR) {
             if (rde->d_name[0] == '.') {
-                if (rde->d_name[1] == 0 || (rde->d_name[1] == '.' && rde->d_name[2] == 0))
+                if (rde->d_name[1] == 0 ||
+                    (rde->d_name[1] == '.' && rde->d_name[2] == 0))
                     continue;
             }
             info.isDir = true;
@@ -734,7 +738,8 @@ PLY_NO_INLINE ExistsResult FileSystem_t::exists(StringView path) {
     struct stat buf;
     int rc = stat(path.withNullTerminator().bytes, &buf);
     if (rc == 0)
-        return (buf.st_mode & S_IFMT) == S_IFDIR ? ExistsResult::Directory : ExistsResult::File;
+        return (buf.st_mode & S_IFMT) == S_IFDIR ? ExistsResult::Directory
+                                                 : ExistsResult::File;
     if (errno != ENOENT) {
         PLY_ASSERT(PLY_FSPOSIX_ALLOW_UNKNOWN_ERRORS);
     }
@@ -772,8 +777,8 @@ PLY_NO_INLINE Owned<InPipe> FileSystem_t::openPipeForRead(StringView path) {
 }
 
 PLY_NO_INLINE int FileSystem_t::openFDForWrite(StringView path) {
-    int fd = open(path.withNullTerminator().bytes, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
-                  mode_t(0644));
+    int fd = open(path.withNullTerminator().bytes,
+                  O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, mode_t(0644));
     if (fd != -1) {
         FileSystem::setLastResult(FSResult::OK);
     } else {
@@ -802,9 +807,9 @@ PLY_NO_INLINE Owned<OutPipe> FileSystem_t::openPipeForWrite(StringView path) {
     return new OutPipe_FD{fd};
 }
 
-PLY_NO_INLINE FSResult FileSystem_t::moveFile(StringView srcPath,
-                                                  StringView dstPath) {
-    int rc = rename(srcPath.withNullTerminator().bytes, dstPath.withNullTerminator().bytes);
+PLY_NO_INLINE FSResult FileSystem_t::moveFile(StringView srcPath, StringView dstPath) {
+    int rc =
+        rename(srcPath.withNullTerminator().bytes, dstPath.withNullTerminator().bytes);
     if (rc != 0) {
         PLY_ASSERT(PLY_FSPOSIX_ALLOW_UNKNOWN_ERRORS);
         return FileSystem::setLastResult(FSResult::Unknown);

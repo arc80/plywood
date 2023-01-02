@@ -1,31 +1,31 @@
-/*------------------------------------
-  ///\  Plywood C++ Framework
-  \\\/  https://plywood.arc80.com/
-------------------------------------*/
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                    ┃
+┃    ╱   ╱╲    Plywood C++ Development Kit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/           ┃
+┃    └──┴┴┴┘                                  ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+
 #pragma once
 #include "core.h"
 
 struct CommandLine {
+    struct Option {
+        StringView key;
+        StringView value;
+        bool checked = false;
+    };
+
     Array<StringView> args;
-    u32 index = 1;
-    Array<StringView> skippedOpts;
-    bool finalized = false;
+    u32 arg_index = 0;
+    Array<Option> options;
+    bool error_checked = false;
 
-    CommandLine(int argc, char* argv[])
-        : args{ArrayView<const char*>{(const char**) argv, (u32) argc}} {
-    }
-    ~CommandLine() {
-        PLY_ASSERT(this->finalized);
-    }
+    CommandLine(int argc, char* argv[]);
+    ~CommandLine();
 
-    StringView readToken();
-    StringView checkForSkippedOpt(const Functor<bool(StringView)>& matcher);
-    PLY_INLINE bool checkForSkippedOpt(StringView argToMatch) {
-        return !this->checkForSkippedOpt(
-            [argToMatch](StringView arg) -> bool { return arg == argToMatch; });
-    }
-    void finalize();
+    StringView next_arg();
+    bool find_option(StringView key, StringView* out_value = nullptr);
+    void check_for_unused_args();
 };
 
-bool prefixMatch(StringView input, StringView cmd, u32 minUnits = 2);
-void ensureTerminated(CommandLine* cl);
+bool prefix_match(StringView input, StringView cmd, u32 min_units = 2);

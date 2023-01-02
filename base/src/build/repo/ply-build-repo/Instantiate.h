@@ -44,7 +44,7 @@ struct PropertyCollector {
 
 MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
                                        const biscuit::Statement::CustomBlock* cb);
-void instantiate_all_configs();
+void instantiate_all_configs(BuildFolder_t* build_folder);
 
 } // namespace build
 } // namespace ply

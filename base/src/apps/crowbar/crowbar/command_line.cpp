@@ -1,53 +1,71 @@
-/*------------------------------------
-  ///\  Plywood C++ Framework
-  \\\/  https://plywood.arc80.com/
-------------------------------------*/
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                   ┃
+┃    ╱   ╱╲    Plywood Multimedia Toolkit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/          ┃
+┃    └──┴┴┴┘                                 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+
 #include "core.h"
 #include "command_line.h"
 #include <ply-runtime/Error.h>
 
-bool prefixMatch(StringView input, StringView cmd, u32 minUnits) {
-    if (input.numBytes < minUnits)
+CommandLine::CommandLine(int argc, char* argv[]) {
+    for (int i = 1; i < argc; i++) {
+        StringView arg = argv[i];
+        if (arg.startsWith("-")) {
+            StringView key = arg.subStr(arg.startsWith("--") ? 2 : 1);
+            s32 e = key.findByte('=');
+            if (e > 0) {
+                this->options.append({key.left(e), key.subStr(e + 1)});
+            } else {
+                this->options.append({key});
+            }
+        } else {
+            this->args.append(arg);
+        }
+    }
+}
+
+CommandLine::~CommandLine() {
+    PLY_ASSERT(this->error_checked);
+}
+
+bool prefix_match(StringView input, StringView cmd, u32 min_units) {
+    if (input.numBytes < min_units)
         return false;
     return cmd.startsWith(input);
 }
 
-StringView CommandLine::readToken() {
-    while (this->index < this->args.numItems()) {
-        StringView arg = this->args[this->index];
-        this->index++;
-        if (arg.startsWith("-")) {
-            this->skippedOpts.append(arg);
-        } else {
-            return arg;
+StringView CommandLine::next_arg() {
+    if (this->arg_index < this->args.numItems()) {
+        return this->args[arg_index++];
+    }
+    return {};
+}
+
+bool CommandLine::find_option(StringView key, StringView* out_value) {
+    s32 i = find(this->options, [&](const Option& o) { return o.key == key; });
+    if (i >= 0) {
+        this->options[i].checked = true;
+        if (out_value) {
+            *out_value = this->options[i].value;
+        }
+        return true;
+    }
+    return false;
+}
+
+void CommandLine::check_for_unused_args() {
+    PLY_ASSERT(!this->error_checked);
+    if (this->arg_index < this->args.numItems()) {
+        Error.log("Unused argument '{}'\n", this->args[this->arg_index]);
+        exit(1);
+    }
+    for (const Option& option : this->options) {
+        if (!option.checked) {
+            Error.log("Unrecognized option '{}'\n", option.key);
+            exit(1);
         }
     }
-    return {};
-}
-
-StringView CommandLine::checkForSkippedOpt(const Functor<bool(StringView)>& matcher) {
-    s32 i = find(this->skippedOpts, matcher);
-    if (i >= 0) {
-        StringView matched = this->skippedOpts[i];
-        this->skippedOpts.erase(i);
-        return matched;
-    }
-    return {};
-}
-
-void CommandLine::finalize() {
-    PLY_ASSERT(!this->finalized);
-    if (this->skippedOpts.numItems() > 0) {
-        Error.log("Unrecognized option '{}'\n", this->skippedOpts[0]);
-        exit(1);
-    }
-    this->finalized = true;
-}
-
-void ensureTerminated(CommandLine* cl) {
-    StringView token = cl->readToken();
-    if (!token.isEmpty()) {
-        Error.log("Unexpected token \"{}\"", token);
-        exit(1);
-    }
+    this->error_checked = true;
 }

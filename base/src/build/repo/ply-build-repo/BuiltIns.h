@@ -4,6 +4,7 @@
 ------------------------------------*/
 #pragma once
 #include <ply-build-repo/Common.h>
+#include <ply-build-repo/BuildFolder.h>
 
 namespace ply {
 namespace build {
@@ -28,7 +29,7 @@ struct BuiltInStorage_ {
 extern BuiltInStorage_ BuiltInStorage;
 extern LabelMap<AnyObject> BuiltInMap;
 
-void init_built_ins();
+void init_built_ins(BuildFolder_t* build_folder);
 
 } // namespace build
 } // namespace ply
