@@ -124,8 +124,7 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
             for (const SourceGroup& sg : target->sourceGroups) {
                 for (const SourceFile& sf : sg.files) {
                     if (hasBitAtIndex(sf.enabledBits, configIndex) &&
-                        sf.relPath.endsWith(".cpp") &&
-                        !sf.relPath.endsWith(".modules.cpp")) {
+                        sf.relPath.endsWith(".cpp")) {
                         String includePath = PosixPath.from(
                             Path, Path.makeRelative(sourceDir,
                                                     Path.join(sg.absPath, sf.relPath)));

@@ -8,7 +8,7 @@ executable PlywoodTests {
     }
 }
 
-module test {
+library test {
     source_files {
         "test/ply-test"
     }

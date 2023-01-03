@@ -1,4 +1,4 @@
-module reflect {
+library reflect {
     source_files {
         "ply-reflect"
     }

@@ -11,7 +11,7 @@ namespace build {
 struct ExtendedParser {
     biscuit::Parser* parser = nullptr;
     Repository::Plyfile* currentPlyfile = nullptr;
-    Repository::ModuleOrFunction* currentModule = nullptr;
+    Repository::Function* target_func = nullptr;
 };
 
 Owned<biscuit::Statement> parseCustomBlock(ExtendedParser* ep,
@@ -27,7 +27,7 @@ Owned<biscuit::Statement> parseCustomBlock(ExtendedParser* ep,
     return customBlock;
 }
 
-biscuit::KeywordResult handleKeywordInsideModuleOrFunction(ExtendedParser* ep,
+biscuit::KeywordResult handleKeywordInsideTargetOrFunction(ExtendedParser* ep,
                                                            const biscuit::KeywordParams& kp);
 biscuit::KeywordResult handleKeywordInsideConfigList(ExtendedParser* ep,
                                                      const biscuit::KeywordParams& kp);
@@ -36,16 +36,16 @@ biscuit::KeywordResult handleKeywordPublicPrivate(ExtendedParser* ep,
 
 biscuit::KeywordResult handleKeywordAtFileScope(ExtendedParser* ep,
                                                 const biscuit::KeywordParams& kp) {
-    if ((kp.kwToken.label == g_common->moduleKey) ||
+    if ((kp.kwToken.label == g_common->libraryKey) ||
         (kp.kwToken.label == g_common->executableKey)) {
-        // Create new Repository::Module
-        auto ownedMod = Owned<Repository::ModuleOrFunction>::create();
-        ownedMod->plyfile = ep->currentPlyfile;
-        ownedMod->stmt = Owned<biscuit::Statement>::create();
-        auto cb = ownedMod->stmt->customBlock().switchTo();
+        // Create new Repository::Target
+        auto target = Owned<Repository::Function>::create();
+        target->plyfile = ep->currentPlyfile;
+        target->stmt = Owned<biscuit::Statement>::create();
+        auto cb = target->stmt->customBlock().switchTo();
         cb->type = kp.kwToken.label;
 
-        // Parse module name.
+        // Parse library name.
         biscuit::ExpandedToken nameToken = ep->parser->tkr->readToken();
         if (nameToken.type == biscuit::TokenType::Identifier) {
             cb->name = nameToken.label;
@@ -56,10 +56,10 @@ biscuit::KeywordResult handleKeywordAtFileScope(ExtendedParser* ep,
         }
 
         // Add to Repository
-        Repository::ModuleOrFunction** prevMod = nullptr;
-        if (!g_repository->globalScope.insertOrFind(cb->name, &prevMod)) {
+        Repository::Function** prev_target = nullptr;
+        if (!g_repository->globalScope.insertOrFind(cb->name, &prev_target)) {
             StringView type = "function";
-            if (auto prevCB = (*prevMod)->stmt->customBlock()) {
+            if (auto prevCB = (*prev_target)->stmt->customBlock()) {
                 type = g_labelStorage.view(prevCB->type);
             }
             errorAtToken(ep->parser, kp.kwToken, biscuit::ErrorTokenAction::DoNothing,
@@ -67,20 +67,20 @@ biscuit::KeywordResult handleKeywordAtFileScope(ExtendedParser* ep,
             ep->parser->recovery.muteErrors = false;
             ep->parser->error(
                 String::format("{}: ... see previous definition\n",
-                               (*prevMod)->plyfile->tkr.fileLocationMap.formatFileLocation(
-                                   (*prevMod)->stmt->fileOffset)));
+                               (*prev_target)->plyfile->tkr.fileLocationMap.formatFileLocation(
+                                   (*prev_target)->stmt->fileOffset)));
         }
-        (*prevMod) = ownedMod;
+        (*prev_target) = target;
 
-        PLY_SET_IN_SCOPE(ep->currentModule, ownedMod);
+        PLY_SET_IN_SCOPE(ep->target_func, target);
         biscuit::Parser::Filter filter;
-        filter.keywordHandler = {handleKeywordInsideModuleOrFunction, ep};
+        filter.keywordHandler = {handleKeywordInsideTargetOrFunction, ep};
         filter.allowInstructions = true;
-        ownedMod->stmt->customBlock()->body =
+        target->stmt->customBlock()->body =
             std::move(parseCustomBlock(ep, filter, kp.kwToken.label, kp.kwToken.text + " name")
                           ->customBlock()
                           ->body);
-        g_repository->modules.append(std::move(ownedMod));
+        g_repository->targets.append(std::move(target));
         return biscuit::KeywordResult::Block;
     } else if (kp.kwToken.label == g_common->configListKey) {
         Repository::ConfigList* configList = g_repository->configList;
@@ -109,7 +109,7 @@ biscuit::KeywordResult handleKeywordAtFileScope(ExtendedParser* ep,
     return biscuit::KeywordResult::Illegal;
 }
 
-biscuit::KeywordResult handleKeywordInsideModuleOrFunction(ExtendedParser* ep,
+biscuit::KeywordResult handleKeywordInsideTargetOrFunction(ExtendedParser* ep,
                                                            const biscuit::KeywordParams& kp) {
     if ((kp.kwToken.label == g_common->sourceFilesKey) ||
         (kp.kwToken.label == g_common->includeDirectoriesKey) ||
@@ -123,24 +123,24 @@ biscuit::KeywordResult handleKeywordInsideModuleOrFunction(ExtendedParser* ep,
         kp.stmtBlock->statements.append(parseCustomBlock(ep, filter, kp.kwToken.label));
         return biscuit::KeywordResult::Block;
     } else if (kp.kwToken.label == g_common->configOptionsKey) {
-        if (ep->currentModule) {
+        if (ep->target_func) {
             biscuit::Parser::Filter filter;
             filter.keywordHandler = [](const biscuit::KeywordParams&) {
                 return biscuit::KeywordResult::Illegal;
             };
             filter.allowInstructions = true;
             Owned<biscuit::Statement> customBlock = parseCustomBlock(ep, filter, kp.kwToken.label);
-            g_repository->moduleConfigBlocks.append({ep->currentModule, std::move(customBlock)});
+            g_repository->targetConfigBlocks.append({ep->target_func, std::move(customBlock)});
             return biscuit::KeywordResult::Block;
         }
     } else if (kp.kwToken.label == g_common->generateKey) {
-        if (ep->currentModule) {
+        if (ep->target_func) {
             biscuit::Parser::Filter filter;
             filter.keywordHandler = [](const biscuit::KeywordParams&) {
                 return biscuit::KeywordResult::Illegal;
             };
             filter.allowInstructions = true;
-            ep->currentModule->generateBlock = parseCustomBlock(ep, filter, kp.kwToken.label);
+            ep->target_func->generateBlock = parseCustomBlock(ep, filter, kp.kwToken.label);
             return biscuit::KeywordResult::Block;
         }
     }
@@ -156,7 +156,7 @@ biscuit::KeywordResult handleKeywordInsideConfigList(ExtendedParser* ep,
         Owned<biscuit::Expression> expr = ep->parser->parseExpression();
 
         biscuit::Parser::Filter filter;
-        filter.keywordHandler = {handleKeywordInsideModuleOrFunction, ep};
+        filter.keywordHandler = {handleKeywordInsideTargetOrFunction, ep};
         filter.allowInstructions = true;
         Owned<biscuit::Statement> cb = parseCustomBlock(ep, filter, kp.kwToken.label);
         cb->customBlock()->expr = std::move(expr);
@@ -194,10 +194,10 @@ void handlePlyfileFunction(ExtendedParser* ep, Owned<biscuit::Statement>&& stmt,
                            const biscuit::ExpandedToken& nameToken) {
     bool accept = true;
     auto fnDef = stmt->functionDefinition();
-    Repository::ModuleOrFunction** prevMod = g_repository->globalScope.find(fnDef->name);
-    if (prevMod) {
+    Repository::Function** prev_target = g_repository->globalScope.find(fnDef->name);
+    if (prev_target) {
         StringView type = "function";
-        if (auto prevCB = (*prevMod)->stmt->customBlock()) {
+        if (auto prevCB = (*prev_target)->stmt->customBlock()) {
             type = g_labelStorage.view(prevCB->type);
         }
         errorAtToken(ep->parser, nameToken, biscuit::ErrorTokenAction::DoNothing,
@@ -205,8 +205,8 @@ void handlePlyfileFunction(ExtendedParser* ep, Owned<biscuit::Statement>&& stmt,
         ep->parser->recovery.muteErrors = false;
         ep->parser->error(
             String::format("{}: ... see previous definition\n",
-                           (*prevMod)->plyfile->tkr.fileLocationMap.formatFileLocation(
-                               (*prevMod)->stmt->fileOffset)));
+                           (*prev_target)->plyfile->tkr.fileLocationMap.formatFileLocation(
+                               (*prev_target)->stmt->fileOffset)));
         accept = false;
     }
 
@@ -215,19 +215,19 @@ void handlePlyfileFunction(ExtendedParser* ep, Owned<biscuit::Statement>&& stmt,
 
     // Parse function body.
     biscuit::Parser::Filter filter;
-    filter.keywordHandler = {handleKeywordInsideModuleOrFunction, ep};
+    filter.keywordHandler = {handleKeywordInsideTargetOrFunction, ep};
     filter.allowInstructions = true;
     PLY_SET_IN_SCOPE(ep->parser->filter, filter);
     fnDef->body = parseStatementBlock(ep->parser, {"function", "parameter list"});
 
-    // Create module
+    // Create library
     if (accept) {
-        auto ownedMod = Owned<Repository::ModuleOrFunction>::create();
-        ownedMod->plyfile = ep->currentPlyfile;
-        ownedMod->stmt = std::move(stmt);
+        auto target = Owned<Repository::Function>::create();
+        target->plyfile = ep->currentPlyfile;
+        target->stmt = std::move(stmt);
 
-        *g_repository->globalScope.insert(fnDef->name) = ownedMod;
-        g_repository->functions.append(std::move(ownedMod));
+        *g_repository->globalScope.insert(fnDef->name) = target;
+        g_repository->functions.append(std::move(target));
     }
 }
 
@@ -245,7 +245,7 @@ bool parsePlyfile(StringView path) {
     biscuit::Parser parser;
 
     // Add parser keywords.
-    *parser.keywords.insert(g_common->moduleKey) = true;
+    *parser.keywords.insert(g_common->libraryKey) = true;
     *parser.keywords.insert(g_common->executableKey) = true;
     *parser.keywords.insert(g_common->sourceFilesKey) = true;
     *parser.keywords.insert(g_common->includeDirectoriesKey) = true;

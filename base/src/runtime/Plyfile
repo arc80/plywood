@@ -1,4 +1,4 @@
-module runtime {
+library runtime {
     source_files {
         "ply-runtime"
     }
@@ -20,7 +20,7 @@ module runtime {
     }
 }
 
-module runtime_tests {
+library runtime_tests {
     source_files {
         "tests"
     }

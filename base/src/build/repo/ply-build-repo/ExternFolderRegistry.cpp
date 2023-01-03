@@ -87,7 +87,7 @@ PLY_NO_INLINE ExternFolder* ExternFolderRegistry::create(StringView desc) {
         makeUniqueFileName(Path.join(PLY_WORKSPACE_FOLDER, "data/extern"), desc);
     FSResult fsResult = FileSystem.makeDirs(folderPath);
     if (!(fsResult == FSResult::OK || fsResult == FSResult::AlreadyExists)) {
-        PLY_ASSERT(0);  // Don't bother to handle gracefully; this module will be deleted soon
+        PLY_ASSERT(0);  // Don't bother to handle gracefully; this library will be deleted soon
         return nullptr;
     }
 

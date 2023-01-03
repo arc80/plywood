@@ -11,9 +11,9 @@ namespace build {
 
 // Common contains data that is shared between the parser and the interpreter.
 struct Common {
-    // String keys for all the extra keywords used by build system scripts: 'module',
+    // String keys for all the extra keywords used by build system scripts: 'library',
     // 'include_directories', 'dependencies', etc.
-    Label moduleKey;
+    Label libraryKey;
     Label executableKey;
     Label sourceFilesKey;
     Label includeDirectoriesKey;

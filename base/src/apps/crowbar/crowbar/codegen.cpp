@@ -700,8 +700,6 @@ void do_codegen() {
 
             for (const FileInfo& file : triple.files) {
                 if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
-                    if (file.name.endsWith(".modules.cpp"))
-                        continue;
                     // FIXME: Eliminate exclusions
                     for (StringView exclude : {
                              "Sort.h",

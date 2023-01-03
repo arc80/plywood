@@ -22,13 +22,13 @@ T& appendOrFind(Array<T>& arr, U&& item, const Callable& callable) {
 
 struct InstantiatingInterpreter {
     biscuit::Interpreter interp;
-    ModuleInstantiator* mi = nullptr;
-    Repository::ModuleOrFunction* currentModule = nullptr;
+    TargetInstantiator* mi = nullptr;
+    Repository::Function* target_func = nullptr;
     Target* target = nullptr;
 
     String makeAbsPath(StringView relPath) {
         StringView plyfilePath =
-            Path.split(this->currentModule->plyfile->tkr.fileLocationMap.path).first;
+            Path.split(this->target_func->plyfile->tkr.fileLocationMap.path).first;
         return Path.join(plyfilePath, relPath);
     }
 };
@@ -39,8 +39,8 @@ enum class Visibility {
     Private,
 };
 
-Visibility getVisibility(biscuit::Interpreter* interp, const AnyObject& attributes, bool isModule,
-                         StringView propertyType) {
+Visibility getVisibility(biscuit::Interpreter* interp, const AnyObject& attributes,
+                         bool isTarget, StringView propertyType) {
     Visibility vis = Visibility::Private;
     s32 tokenIdx = -1;
     if (const StatementAttributes* sa = attributes.cast<StatementAttributes>()) {
@@ -49,15 +49,16 @@ Visibility getVisibility(biscuit::Interpreter* interp, const AnyObject& attribut
             vis = Visibility::Public;
         }
     }
-    if (isModule) {
+    if (isTarget) {
         if (tokenIdx < 0) {
-            interp->base.error(
-                String::format("{} must have 'public' or 'private' attribute", propertyType));
+            interp->base.error(String::format(
+                "{} must have 'public' or 'private' attribute", propertyType));
             return Visibility::Error;
         }
     } else {
         if (tokenIdx >= 0) {
-            biscuit::ExpandedToken token = interp->currentFrame->tkr->expandToken(tokenIdx);
+            biscuit::ExpandedToken token =
+                interp->currentFrame->tkr->expandToken(tokenIdx);
             interp->base.error(
                 String::format("'{}' cannot be used inside config block", token.text));
             return Visibility::Error;
@@ -66,15 +67,18 @@ Visibility getVisibility(biscuit::Interpreter* interp, const AnyObject& attribut
     return vis;
 }
 
-bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes, Label label) {
-    Visibility vis = getVisibility(pc->interp, attributes, pc->isModule, "compile options");
+bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes,
+                            Label label) {
+    Visibility vis =
+        getVisibility(pc->interp, attributes, pc->isTarget, "compile options");
     if (vis == Visibility::Error)
         return false;
 
     Option tcOpt{Option::Generic, g_labelStorage.view(label),
                  *pc->interp->base.returnValue.cast<String>()};
-    int i = find(*pc->options,
-                 [&](const Option& o) { return (o.type == tcOpt.type) && (o.key == tcOpt.key); });
+    int i = find(*pc->options, [&](const Option& o) {
+        return (o.type == tcOpt.type) && (o.key == tcOpt.key);
+    });
     if (i >= 0) {
         pc->options->erase(i);
     }
@@ -89,20 +93,21 @@ bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes, 
 bool onEvaluateSourceFile(InstantiatingInterpreter* ii, const AnyObject& attributes) {
     PLY_ASSERT(!attributes.data);
     String absPath = ii->makeAbsPath(*ii->interp.base.returnValue.cast<String>());
-    SourceGroup& srcGroup = appendOrFind(ii->target->sourceGroups, absPath,
-                                         [&](const auto& a) { return a.absPath == absPath; });
+    SourceGroup& srcGroup =
+        appendOrFind(ii->target->sourceGroups, absPath,
+                     [&](const auto& a) { return a.absPath == absPath; });
     bool needsCompilation = false;
     for (WalkTriple& triple : FileSystem.walk(absPath, 0)) {
         for (const FileInfo& file : triple.files) {
-            if ((file.name.endsWith(".cpp") && !file.name.endsWith(".modules.cpp")) ||
-                file.name.endsWith(".h")) {
+            if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
                 if (!needsCompilation && file.name.endsWith(".cpp")) {
                     needsCompilation = true;
                 }
-                String relPath = Path.makeRelative(absPath, Path.join(triple.dirPath, file.name));
-                SourceFile& srcFile =
-                    appendOrFind(srcGroup.files, std::move(relPath),
-                                 [&](const SourceFile& a) { return a.relPath == relPath; });
+                String relPath =
+                    Path.makeRelative(absPath, Path.join(triple.dirPath, file.name));
+                SourceFile& srcFile = appendOrFind(
+                    srcGroup.files, std::move(relPath),
+                    [&](const SourceFile& a) { return a.relPath == relPath; });
                 srcFile.enabledBits |= ii->mi->configBit;
             }
         }
@@ -114,14 +119,15 @@ bool onEvaluateSourceFile(InstantiatingInterpreter* ii, const AnyObject& attribu
 }
 
 bool onEvaluateIncludeDirectory(PropertyCollector* pc, const AnyObject& attributes) {
-    Visibility vis = getVisibility(pc->interp, attributes, pc->isModule, "include directory");
+    Visibility vis =
+        getVisibility(pc->interp, attributes, pc->isTarget, "include directory");
     if (vis == Visibility::Error)
         return false;
 
     Option opt{Option::IncludeDir,
                Path.join(pc->basePath, *pc->interp->base.returnValue.cast<String>())};
-    Option& foundOpt =
-        appendOrFind(*pc->options, std::move(opt), [&](const Option& o) { return o == opt; });
+    Option& foundOpt = appendOrFind(*pc->options, std::move(opt),
+                                    [&](const Option& o) { return o == opt; });
     foundOpt.enabledBits |= pc->configBit;
     if (vis == Visibility::Public) {
         foundOpt.isPublicBits |= pc->configBit;
@@ -129,8 +135,10 @@ bool onEvaluateIncludeDirectory(PropertyCollector* pc, const AnyObject& attribut
     return true;
 }
 
-bool onEvaluatePreprocessorDefinition(PropertyCollector* pc, const AnyObject& attributes) {
-    Visibility vis = getVisibility(pc->interp, attributes, pc->isModule, "preprocessor definition");
+bool onEvaluatePreprocessorDefinition(PropertyCollector* pc,
+                                      const AnyObject& attributes) {
+    Visibility vis =
+        getVisibility(pc->interp, attributes, pc->isTarget, "preprocessor definition");
     if (vis == Visibility::Error)
         return false;
 
@@ -159,14 +167,15 @@ bool onEvaluateDependency(InstantiatingInterpreter* ii, const AnyObject& attribu
         return false;
 
     // Instantiate the dependency
-    Repository::ModuleOrFunction* mod =
-        ii->interp.base.returnValue.cast<Repository::ModuleOrFunction>();
+    Repository::Function* target =
+        ii->interp.base.returnValue.cast<Repository::Function>();
     Target* depTarget = nullptr;
-    if (instantiateModuleForCurrentConfig(&depTarget, ii->mi, mod->stmt->customBlock()->name) !=
-        MethodResult::OK)
+    if (instantiateTargetForCurrentConfig(
+            &depTarget, ii->mi, target->stmt->customBlock()->name) != MethodResult::OK)
         return false;
-    Dependency& foundDep = appendOrFind(ii->target->dependencies, depTarget,
-                                        [&](const Dependency& d) { return d.target == depTarget; });
+    Dependency& foundDep =
+        appendOrFind(ii->target->dependencies, depTarget,
+                     [&](const Dependency& d) { return d.target == depTarget; });
     foundDep.enabledBits |= ii->mi->configBit;
     if (vis == Visibility::Public) {
         foundDep.isPublicBits |= ii->mi->configBit;
@@ -178,8 +187,8 @@ bool onEvaluateLinkLibrary(PropertyCollector* pc, const AnyObject& attributes) {
     PLY_ASSERT(!attributes.data);
     String* path = pc->interp->base.returnValue.cast<String>();
     Option desiredOpt{Option::LinkerInput, *path, {}};
-    Option& opt =
-        appendOrFind(*pc->options, desiredOpt, [&](const Option& o) { return o == desiredOpt; });
+    Option& opt = appendOrFind(*pc->options, desiredOpt,
+                               [&](const Option& o) { return o == desiredOpt; });
     opt.enabledBits |= pc->configBit;
     return true;
 }
@@ -196,22 +205,23 @@ MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
     } else if (cb->type == g_common->linkLibrariesKey) {
         hooks.onEvaluate = {onEvaluateLinkLibrary, pc};
     } else {
-        // FIXME: Make this a runtime error instead of an assert because the config block can call a
-        // function that contains, for example, a dependencies {} block
+        // FIXME: Make this a runtime error instead of an assert because the config
+        // block can call a function that contains, for example, a dependencies {} block
         PLY_ASSERT(0); // Shouldn't get here
     }
     PLY_SET_IN_SCOPE(pc->interp->currentFrame->hooks, hooks);
     return execBlock(pc->interp->currentFrame, cb->body);
 }
 
-MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
+MethodResult doCustomBlockAtTargetScope(InstantiatingInterpreter* ii,
                                         const biscuit::Statement::CustomBlock* cb) {
     PropertyCollector pc;
     pc.interp = &ii->interp;
-    pc.basePath = Path.split(ii->currentModule->plyfile->tkr.fileLocationMap.path).first;
+    pc.basePath =
+        Path.split(ii->target_func->plyfile->tkr.fileLocationMap.path).first;
     pc.options = &ii->target->options;
     pc.configBit = ii->mi->configBit;
-    pc.isModule = true;
+    pc.isTarget = true;
 
     biscuit::Interpreter::Hooks hooks;
     if (cb->type == g_common->sourceFilesKey) {
@@ -234,7 +244,7 @@ MethodResult doCustomBlockAtModuleScope(InstantiatingInterpreter* ii,
     return execBlock(ii->interp.currentFrame, cb->body);
 }
 
-MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod) {
+MethodResult runGenerateBlock(Repository::Function* target) {
     // Create new interpreter.
     biscuit::Interpreter interp;
     interp.base.error = [&interp](StringView message) {
@@ -244,7 +254,7 @@ MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod) {
 
     // Populate dictionaries.
     BuiltInStorage.sys_cmake_path = PLY_CMAKE_PATH;
-    BuiltInStorage.script_path = mod->plyfile->tkr.fileLocationMap.path;
+    BuiltInStorage.script_path = target->plyfile->tkr.fileLocationMap.path;
     interp.resolveName = [](Label identifier) -> AnyObject {
         if (AnyObject* builtIn = BuiltInMap.find(identifier))
             return *builtIn;
@@ -254,27 +264,29 @@ MethodResult runGenerateBlock(Repository::ModuleOrFunction* mod) {
     // Invoke generate block.
     biscuit::Interpreter::StackFrame frame;
     frame.interp = &interp;
-    frame.desc = [mod]() -> HybridString {
-        return String::format("module '{}'", g_labelStorage.view(mod->stmt->customBlock()->name));
+    frame.desc = [target]() -> HybridString {
+        return String::format("library '{}'",
+                              g_labelStorage.view(target->stmt->customBlock()->name));
     };
-    frame.tkr = &mod->plyfile->tkr;
+    frame.tkr = &target->plyfile->tkr;
     interp.currentFrame = &frame;
-    return execBlock(&frame, mod->generateBlock->customBlock()->body);
+    return execBlock(&frame, target->generateBlock->customBlock()->body);
 }
 
-MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstantiator* mi,
-                                               Label name) {
+MethodResult instantiateTargetForCurrentConfig(Target** outTarget,
+                                               TargetInstantiator* mi, Label name) {
     // Check for an existing target; otherwise create one.
     Target* target = nullptr;
     {
         TargetWithStatus* tws = nullptr;
-        if (mi->moduleMap.insertOrFind(name, &tws)) {
+        if (mi->targetMap.insertOrFind(name, &tws)) {
             // No existing target found. Create a new one.
             tws->target = new Target;
             tws->target->name = name;
             Project.targets.append(tws->target);
         } else {
-            // Yes. If the module was already fully instantiated in this config, return it.
+            // Yes. If the library was already fully instantiated in this config, return
+            // it.
             if (tws->statusInCurrentConfig == Instantiated) {
                 *outTarget = tws->target;
                 return MethodResult::OK;
@@ -285,7 +297,8 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
             }
             PLY_ASSERT(tws->statusInCurrentConfig == NotInstantiated);
         }
-        // Set this module's status as Instantiating so that circular dependencies can be detected.
+        // Set this library's status as Instantiating so that circular dependencies can
+        // be detected.
         tws->statusInCurrentConfig = Instantiating;
         target = tws->target;
         *outTarget = tws->target;
@@ -295,28 +308,28 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
     PLY_ASSERT(mi->configBit);
     target->enabledBits |= mi->configBit;
 
-    // Find module function by name.
-    Repository::ModuleOrFunction** mod_ = g_repository->globalScope.find(name);
-    if (!mod_ || !(*mod_)->stmt->customBlock()) {
+    // Find library function by name.
+    Repository::Function** func_ = g_repository->globalScope.find(name);
+    if (!func_ || !(*func_)->stmt->customBlock()) {
         PLY_FORCE_CRASH(); // FIXME: Handle gracefully
     }
-    Repository::ModuleOrFunction* mod = *mod_;
+    Repository::Function* target_func = *func_;
 
     // Run the generate block if it didn't run already.
-    if (!mod->generatedOnce) {
-        if (mod->generateBlock) {
-            MethodResult result = runGenerateBlock(mod);
+    if (!target_func->generatedOnce) {
+        if (target_func->generateBlock) {
+            MethodResult result = runGenerateBlock(target_func);
             if (result != MethodResult::OK)
                 return result;
         }
-        mod->generatedOnce = true;
+        target_func->generatedOnce = true;
     }
 
-    const biscuit::Statement::CustomBlock* moduleDef = mod->stmt->customBlock().get();
-    if (moduleDef->type == g_common->executableKey) {
+    const biscuit::Statement::CustomBlock* targetDef = target_func->stmt->customBlock().get();
+    if (targetDef->type == g_common->executableKey) {
         target->type = Target::Executable;
     } else {
-        PLY_ASSERT(moduleDef->type == g_common->moduleKey);
+        PLY_ASSERT(targetDef->type == g_common->libraryKey);
         PLY_ASSERT(target->type == Target::Library);
     }
 
@@ -327,41 +340,42 @@ MethodResult instantiateModuleForCurrentConfig(Target** outTarget, ModuleInstant
         logErrorWithStack(&outs, &ii.interp, message);
     };
     ii.mi = mi;
-    ii.currentModule = mod;
+    ii.target_func = target_func;
     ii.target = target;
 
-    // Populate global & module namespaces.
+    // Populate global & library namespaces.
     ii.interp.resolveName = [&ii](Label identifier) -> AnyObject {
         if (AnyObject* builtIn = BuiltInMap.find(identifier))
             return *builtIn;
-        if (AnyObject* obj = ii.currentModule->currentOptions->map.find(identifier))
+        if (AnyObject* obj = ii.target_func->currentOptions->map.find(identifier))
             return *obj;
-        if (Repository::ModuleOrFunction** mod = g_repository->globalScope.find(identifier)) {
-            if (auto fnDef = (*mod)->stmt->functionDefinition())
+        if (Repository::Function** target =
+                g_repository->globalScope.find(identifier)) {
+            if (auto fnDef = (*target)->stmt->functionDefinition())
                 return AnyObject::bind(fnDef.get());
             else
-                return AnyObject::bind(*mod);
+                return AnyObject::bind(*target);
         }
         return {};
     };
 
-    // Invoke module function.
+    // Invoke library function.
     biscuit::Interpreter::StackFrame frame;
-    frame.hooks.doCustomBlock = {doCustomBlockAtModuleScope, &ii};
+    frame.hooks.doCustomBlock = {doCustomBlockAtTargetScope, &ii};
     frame.interp = &ii.interp;
-    frame.desc = [moduleDef]() -> HybridString {
-        return String::format("module '{}'", g_labelStorage.view(moduleDef->name));
+    frame.desc = [targetDef]() -> HybridString {
+        return String::format("library '{}'", g_labelStorage.view(targetDef->name));
     };
-    frame.tkr = &mod->plyfile->tkr;
-    MethodResult result = execFunction(&frame, moduleDef->body);
-    mi->moduleMap.find(name)->statusInCurrentConfig = Instantiated;
+    frame.tkr = &target_func->plyfile->tkr;
+    MethodResult result = execFunction(&frame, targetDef->body);
+    mi->targetMap.find(name)->statusInCurrentConfig = Instantiated;
     return result;
 }
 
 struct ConfigListInterpreter {
     biscuit::Interpreter interp;
     BuildFolder_t* build_folder = nullptr;
-    ModuleInstantiator* mi = nullptr;
+    TargetInstantiator* mi = nullptr;
 };
 
 MethodResult doCustomBlock(ConfigListInterpreter* cli,
@@ -374,15 +388,15 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     String currentConfigName = *cli->interp.base.returnValue.cast<String>();
     PLY_ASSERT(currentConfigName); // FIXME: Make robust
 
-    // Initialize all Module::currentOptions
-    for (Repository::ModuleOrFunction* mod : g_repository->modules) {
+    // Initialize all Target::currentOptions
+    for (Repository::Function* target : g_repository->targets) {
         auto newOptions = Owned<Repository::ConfigOptions>::create();
-        for (const auto item : mod->defaultOptions->map) {
+        for (const auto item : target->defaultOptions->map) {
             AnyOwnedObject* dst = newOptions->map.insert(item.key);
             *dst = AnyOwnedObject::create(item.value.type);
             dst->copy(item.value);
         }
-        mod->currentOptions = std::move(newOptions);
+        target->currentOptions = std::move(newOptions);
     }
 
     // Enable debug info by default
@@ -408,23 +422,23 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     // Add config to project
     Project.configNames.append(currentConfigName);
 
-    // Instantiate all root modules in this config
+    // Instantiate all root targets in this config
     PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
     for (StringView targetName : cli->build_folder->rootTargets) {
         Target* rootTarget = nullptr;
-        MethodResult result = instantiateModuleForCurrentConfig(&rootTarget, cli->mi,
-                                                                g_labelStorage.insert(targetName));
+        MethodResult result = instantiateTargetForCurrentConfig(
+            &rootTarget, cli->mi, g_labelStorage.insert(targetName));
         if (result != MethodResult::OK)
             return result;
     }
 
     // Reset state between configs.
-    // Clear currentConfigName, Module::currentOptions, and set ModuleInstantiator status to
-    // NotInstantiated.
-    for (Repository::ModuleOrFunction* mod : g_repository->modules) {
-        mod->currentOptions.clear();
+    // Clear currentConfigName, Target::currentOptions, and set TargetInstantiator
+    // status to NotInstantiated.
+    for (Repository::Function* target : g_repository->targets) {
+        target->currentOptions.clear();
     }
-    for (auto& item : cli->mi->moduleMap) {
+    for (auto& item : cli->mi->targetMap) {
         item.value.statusInCurrentConfig = NotInstantiated;
     }
 
@@ -432,7 +446,7 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
 }
 
 PLY_NO_INLINE void instantiate_all_configs(BuildFolder_t* build_folder) {
-    ModuleInstantiator mi{};
+    TargetInstantiator mi{};
     Project.name = build_folder->solutionName;
     init_toolchain_msvc();
 
@@ -461,12 +475,13 @@ PLY_NO_INLINE void instantiate_all_configs(BuildFolder_t* build_folder) {
         cli.interp.resolveName = [&builtIns, &cli](Label identifier) -> AnyObject {
             if (AnyObject* builtIn = builtIns.find(identifier))
                 return *builtIn;
-            if (Repository::ModuleOrFunction** mod = g_repository->globalScope.find(identifier)) {
-                if (auto fnDef = (*mod)->stmt->functionDefinition())
+            if (Repository::Function** target =
+                    g_repository->globalScope.find(identifier)) {
+                if (auto fnDef = (*target)->stmt->functionDefinition())
                     return AnyObject::bind(fnDef.get());
                 else
-                    // FIXME: Don't resolve module names outside config {} block
-                    return AnyObject::bind((*mod)->currentOptions.get());
+                    // FIXME: Don't resolve library names outside config {} block
+                    return AnyObject::bind((*target)->currentOptions.get());
             }
             return {};
         };
@@ -477,7 +492,8 @@ PLY_NO_INLINE void instantiate_all_configs(BuildFolder_t* build_folder) {
         frame.desc = []() -> HybridString { return "config_list"; };
         frame.tkr = &configList->plyfile->tkr;
         frame.hooks.doCustomBlock = {doCustomBlock, &cli};
-        MethodResult result = execFunction(&frame, configList->blockStmt->customBlock()->body);
+        MethodResult result =
+            execFunction(&frame, configList->blockStmt->customBlock()->body);
         if (result == MethodResult::Error) {
             exit(1);
         }

@@ -40,7 +40,7 @@ MethodResult doPrint(const MethodArgs& args) {
     return MethodResult::OK;
 }
 
-// FIXME: Move this to the biscuit module:
+// FIXME: Move this to the biscuit library:
 struct BuiltInStorage {
     BoundMethod boundPrint;
     bool true_ = true;

@@ -1,4 +1,4 @@
-module cpp {
+library cpp {
     source_files {
         "ply-cpp"
     }

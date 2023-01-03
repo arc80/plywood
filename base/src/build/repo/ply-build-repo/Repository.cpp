@@ -15,7 +15,8 @@ struct ConfigOptionsInterpreter {
     Repository::ConfigOptions* optionSet = nullptr;
 };
 
-bool doLocalAssignment(ConfigOptionsInterpreter* coi, const AnyObject& attributes, Label label) {
+bool doLocalAssignment(ConfigOptionsInterpreter* coi, const AnyObject& attributes,
+                       Label label) {
     PLY_ASSERT(!attributes.data);
     AnyOwnedObject* obj;
     coi->optionSet->map.insertOrFind(label, &obj);
@@ -54,18 +55,18 @@ void Repository::create() {
     }
 
     // Initialize all config_options
-    for (ModuleOrFunction* mod : g_repository->modules) {
-        mod->defaultOptions = Owned<ConfigOptions>::create();
+    for (Function* target : g_repository->targets) {
+        target->defaultOptions = Owned<ConfigOptions>::create();
     }
 
-    for (const ModuleConfigBlock& cb : g_repository->moduleConfigBlocks) {
+    for (const TargetConfigBlock& cb : g_repository->targetConfigBlocks) {
         // Create new interpreter.
         ConfigOptionsInterpreter coi;
         coi.interp.base.error = [&coi](StringView message) {
             OutStream outs = StdErr::text();
             logErrorWithStack(&outs, &coi.interp, message);
         };
-        coi.optionSet = cb.mod->defaultOptions;
+        coi.optionSet = cb.target_func->defaultOptions;
 
         // Add builtin namespace.
         LabelMap<AnyObject> builtIns;
@@ -83,12 +84,12 @@ void Repository::create() {
         biscuit::Interpreter::StackFrame frame;
         frame.interp = &coi.interp;
         frame.hooks.assignToLocal = {doLocalAssignment, &coi};
-        frame.desc = [mod = cb.mod]() -> HybridString {
+        frame.desc = [tf = cb.target_func]() -> HybridString {
             return String::format("config_options for {} '{}'",
-                                  g_labelStorage.view(mod->stmt->customBlock()->type),
-                                  g_labelStorage.view(mod->stmt->customBlock()->name));
+                                  g_labelStorage.view(tf->stmt->customBlock()->type),
+                                  g_labelStorage.view(tf->stmt->customBlock()->name));
         };
-        frame.tkr = &cb.mod->plyfile->tkr;
+        frame.tkr = &cb.target_func->plyfile->tkr;
         MethodResult result = execFunction(&frame, cb.block->customBlock()->body);
         if (result == MethodResult::Error) {
             exit(1);
@@ -111,8 +112,8 @@ PLY_NO_INLINE MethodTable getMethodTable_Repository_ConfigOptions() {
         // read-only access?
 
         interp->returnValue = {};
-        interp->error(
-            String::format("configuration option '{}' not found in module", propertyName));
+        interp->error(String::format("configuration option '{}' not found in library",
+                                     propertyName));
         return MethodResult::Error;
     };
     return methods;

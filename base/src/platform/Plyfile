@@ -1,4 +1,4 @@
-module platform {
+library platform {
     config_options {
         with_asserts = false
     }

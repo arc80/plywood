@@ -1,4 +1,4 @@
-module pylon {
+library pylon {
     source_files {
         "pylon/pylon"
     }
@@ -10,7 +10,7 @@ module pylon {
     }
 }
 
-module pylon_reflect {
+library pylon_reflect {
     source_files {
         "reflect/pylon-reflect"
     }

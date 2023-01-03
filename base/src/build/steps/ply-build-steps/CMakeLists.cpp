@@ -121,7 +121,7 @@ endmacro()
         allConfigBits = (u64{1} << Project.configNames.numItems()) - 1;
     }
 
-    // For each module, output a CMake target
+    // For each library, output a CMake target
     for (s32 j = Project.targets.numItems() - 1; j >= 0; j--) {
         const Target* target = Project.targets[j];
 
@@ -164,7 +164,7 @@ endmacro()
                 // Note: This library target might still be disabled in specific configs.
                 outs.format("add_library({} ${{{}_SOURCES}})\n", name, upperName);
             } else {
-                // This module will never invoke the compiler in any config.
+                // This library will never invoke the compiler in any config.
                 outs.format("add_custom_target({} ${{{}_SOURCES}})\n", name, upperName);
             }
         } else {
@@ -244,10 +244,10 @@ endmacro()
                 u64 linkMask = dep.enabledBits;
                 linkMask &= dep.target->hasBuildStepBits;
                 if (hasAllBits(linkMask, target->enabledBits)) {
-                    // This module is enabled for linking in all relevant configs.
+                    // This library is enabled for linking in all relevant configs.
                     outs.format("    {}\n", g_labelStorage.view(dep.target->name));
                 } else if (linkMask != 0) {
-                    // Use generator expressions to exclude module from linking in specific configs.
+                    // Use generator expressions to exclude library from linking in specific configs.
                     outs << "    \"$<$<CONFIG:";
                     bool first = true;
                     for (u32 i = 0; i < Project.configNames.numItems(); i++) {

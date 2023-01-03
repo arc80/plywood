@@ -1,4 +1,4 @@
-module cairo {
+library cairo {
     download_cairo_for_windows()
 }
 

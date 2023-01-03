@@ -1,4 +1,4 @@
-module biscuit {
+library biscuit {
     source_files {
         "ply-biscuit"
     }

@@ -1,4 +1,4 @@
-module build_repo {
+library build_repo {
     source_files {
         "repo/ply-build-repo"
     }
@@ -17,7 +17,7 @@ module build_repo {
     }
 }
 
-module build_steps {
+library build_steps {
     source_files {
         "steps/ply-build-steps"
     }

@@ -12,7 +12,7 @@ Common* g_common = nullptr;
 void Common::initialize() {
     PLY_ASSERT(!g_common);
     g_common = new Common;
-    g_common->moduleKey = g_labelStorage.insert("module");
+    g_common->libraryKey = g_labelStorage.insert("library");
     g_common->executableKey = g_labelStorage.insert("executable");
     g_common->includeDirectoriesKey = g_labelStorage.insert("include_directories");
     g_common->preprocessorDefinitionsKey = g_labelStorage.insert("preprocessor_definitions");

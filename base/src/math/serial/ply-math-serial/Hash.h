@@ -8,7 +8,7 @@
 
 namespace ply {
 
-// These functions should be made part of the math module, but enabled as an optional feature that
+// These functions should be made part of the math library, but enabled as an optional feature that
 // implies a dependency on ply-runtime. However, that'll require changes to the build system first.
 
 PLY_INLINE Hasher& operator<<(Hasher& hasher, const Float2& v) {

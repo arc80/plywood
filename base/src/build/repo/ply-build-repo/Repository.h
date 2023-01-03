@@ -20,7 +20,7 @@ struct Repository {
         LabelMap<AnyOwnedObject> map;
     };
 
-    struct ModuleOrFunction {
+    struct Function {
         PLY_REFLECT()
         // ply reflect off
 
@@ -32,8 +32,8 @@ struct Repository {
         Owned<ConfigOptions> currentOptions;
     };
 
-    struct ModuleConfigBlock {
-        ModuleOrFunction* mod = nullptr;
+    struct TargetConfigBlock {
+        Function* target_func = nullptr;
         Owned<biscuit::Statement> block;
     };
 
@@ -44,10 +44,10 @@ struct Repository {
     };
 
     Array<Owned<Plyfile>> plyfiles;
-    Array<Owned<ModuleOrFunction>> modules;
-    Array<Owned<ModuleOrFunction>> functions;
-    LabelMap<ModuleOrFunction*> globalScope; // Maps names to modules & functions
-    Array<ModuleConfigBlock> moduleConfigBlocks;
+    Array<Owned<Function>> targets;
+    Array<Owned<Function>> functions;
+    LabelMap<Function*> globalScope; // Maps names to targets & functions
+    Array<TargetConfigBlock> targetConfigBlocks;
     Owned<ConfigList> configList;
 
     static void create();

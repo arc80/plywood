@@ -23,23 +23,23 @@ struct TargetWithStatus {
     Status statusInCurrentConfig = NotInstantiated;
 };
 
-struct ModuleInstantiator {
+struct TargetInstantiator {
     LabelMap<AnyObject> globalNamespace;
 
     // These members are modified during instantiation.
-    LabelMap<TargetWithStatus> moduleMap;
+    LabelMap<TargetWithStatus> targetMap;
     u64 configBit = 0;
 };
 
-MethodResult instantiateModuleForCurrentConfig(Target** target, ModuleInstantiator* mi,
-                                               Label moduleLabel);
+MethodResult instantiateTargetForCurrentConfig(Target** target, TargetInstantiator* mi,
+                                               Label name);
 
 struct PropertyCollector {
     biscuit::Interpreter* interp;
     String basePath;
     Array<Option>* options;
     u64 configBit = 0;
-    bool isModule = false;
+    bool isTarget = false;
 };
 
 MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,

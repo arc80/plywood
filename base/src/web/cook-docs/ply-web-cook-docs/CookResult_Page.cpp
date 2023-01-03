@@ -8,7 +8,7 @@
 #include <web-markdown/Markdown.h>
 #include <ply-runtime/io/text/LiquidTags.h>
 #include <ply-web-cook-docs/SemaToString.h>
-#include <ply-runtime/io/text/FileLocationMap.h> // This should be moved to a different module
+#include <ply-runtime/io/text/FileLocationMap.h> // This should be moved to a different library
 
 namespace ply {
 namespace docs {
