@@ -19,3 +19,13 @@ module runtime {
         }
     }
 }
+
+module runtime_tests {
+    source_files {
+        "tests"
+    }
+    dependencies {
+        public runtime
+        public test
+    }
+}

@@ -3,6 +3,7 @@ executable PlywoodTests {
         "PlywoodTests"
     }
     dependencies {
+        private runtime_tests
         private test
     }
 }
@@ -12,7 +13,7 @@ module test {
         "test/ply-test"
     }
     include_directories {
-        "test"
+        public "test"
     }
     dependencies {
         public runtime

@@ -156,7 +156,8 @@ struct FileSystem_t : FileSystemIface {
     FileInfo getFileInfo(HANDLE handle);
 #endif
 
-    virtual Array<FileInfo> listDir(StringView path, u32 flags) override;
+    virtual Array<FileInfo> listDir(StringView path,
+                                    u32 flags = WithSizes | WithTimes) override;
     virtual FSResult makeDir(StringView path) override;
     virtual Path_t pathFormat() override;
     virtual String getWorkingDirectory() override;
