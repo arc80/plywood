@@ -73,6 +73,17 @@ MethodResult doSaveIfDifferent(const MethodArgs& args) {
     return MethodResult::OK;
 }
 
+MethodResult fn_link_objects_directly(const MethodArgs& args) {
+    if (args.args.numItems != 0) {
+        args.base->error(String::format("'link_objects_directly' takes no arguments"));
+        return MethodResult::Error;
+    }
+
+    // ...
+
+    return MethodResult::OK;
+}
+
 MethodResult getExternFolder(const MethodArgs& args) {
     if (args.args.numItems != 1) {
         args.base->error(String::format("'get_extern_folder' expects 1 argument"));
@@ -276,6 +287,8 @@ void init_built_ins(BuildFolder_t* build_folder) {
     *BuiltInMap.insert(g_labelStorage.insert("escape")) = AnyObject::bind(doEscape);
     *BuiltInMap.insert(g_labelStorage.insert("save_if_different")) =
         AnyObject::bind(doSaveIfDifferent);
+    *BuiltInMap.insert(g_labelStorage.insert("link_objects_directly")) =
+        AnyObject::bind(fn_link_objects_directly);
 
     // sys dictionary
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("target_platform")) =

@@ -28,6 +28,7 @@ struct Common {
     Label configKey;
     Label optimizationKey;
     Label generateKey;
+    Label linkObjectsDirectlyKey;
 
     static void initialize();
 };

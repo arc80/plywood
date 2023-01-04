@@ -162,7 +162,7 @@ void cmd_folder(CommandLine& cl) {
         }
         cl.check_for_unused_args();
         if (create_build_folder(name)) {
-            StdOut::text().format("Current build folder is now '{}'", name);
+            StdOut::text().format("Current build folder is now '{}'\n", name);
         }
         return;
 
@@ -189,7 +189,7 @@ void cmd_folder(CommandLine& cl) {
         }
         cl.check_for_unused_args();
         if (set_build_folder(name)) {
-            StdOut::text().format("Current build folder is now '{}'", name);
+            StdOut::text().format("Current build folder is now '{}'\n", name);
         }
         return;
 

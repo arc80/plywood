@@ -74,19 +74,13 @@ bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes,
     if (vis == Visibility::Error)
         return false;
 
-    Option tcOpt{Option::Generic, g_labelStorage.view(label),
+    Option opt{Option::Generic, g_labelStorage.view(label),
                  *pc->interp->base.returnValue.cast<String>()};
-    int i = find(*pc->options, [&](const Option& o) {
-        return (o.type == tcOpt.type) && (o.key == tcOpt.key);
-    });
-    if (i >= 0) {
-        pc->options->erase(i);
-    }
-    Option& opt = pc->options->append(std::move(tcOpt));
     opt.enabledBits |= pc->configBit;
     if (vis == Visibility::Public) {
         opt.isPublicBits |= pc->configBit;
     }
+    append_option(*pc->options, opt);
     return true;
 }
 
@@ -193,8 +187,8 @@ bool onEvaluateLinkLibrary(PropertyCollector* pc, const AnyObject& attributes) {
     return true;
 }
 
-MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
-                                       const biscuit::Statement::CustomBlock* cb) {
+MethodResult custom_block_inside_config(PropertyCollector* pc,
+                                        const biscuit::Statement::CustomBlock* cb) {
     biscuit::Interpreter::Hooks hooks;
     if (cb->type == g_common->includeDirectoriesKey) {
         hooks.onEvaluate = {onEvaluateIncludeDirectory, pc};
@@ -213,12 +207,12 @@ MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
     return execBlock(pc->interp->currentFrame, cb->body);
 }
 
-MethodResult doCustomBlockAtTargetScope(InstantiatingInterpreter* ii,
-                                        const biscuit::Statement::CustomBlock* cb) {
+MethodResult
+custom_block_inside_target_function(InstantiatingInterpreter* ii,
+                                    const biscuit::Statement::CustomBlock* cb) {
     PropertyCollector pc;
     pc.interp = &ii->interp;
-    pc.basePath =
-        Path.split(ii->target_func->plyfile->tkr.fileLocationMap.path).first;
+    pc.basePath = Path.split(ii->target_func->plyfile->tkr.fileLocationMap.path).first;
     pc.options = &ii->target->options;
     pc.configBit = ii->mi->configBit;
     pc.isTarget = true;
@@ -325,7 +319,8 @@ MethodResult instantiateTargetForCurrentConfig(Target** outTarget,
         target_func->generatedOnce = true;
     }
 
-    const biscuit::Statement::CustomBlock* targetDef = target_func->stmt->customBlock().get();
+    const biscuit::Statement::CustomBlock* targetDef =
+        target_func->stmt->customBlock().get();
     if (targetDef->type == g_common->executableKey) {
         target->type = Target::Executable;
     } else {
@@ -361,7 +356,7 @@ MethodResult instantiateTargetForCurrentConfig(Target** outTarget,
 
     // Invoke library function.
     biscuit::Interpreter::StackFrame frame;
-    frame.hooks.doCustomBlock = {doCustomBlockAtTargetScope, &ii};
+    frame.hooks.doCustomBlock = {custom_block_inside_target_function, &ii};
     frame.interp = &ii.interp;
     frame.desc = [targetDef]() -> HybridString {
         return String::format("library '{}'", g_labelStorage.view(targetDef->name));
@@ -378,12 +373,13 @@ struct ConfigListInterpreter {
     TargetInstantiator* mi = nullptr;
 };
 
-MethodResult doCustomBlock(ConfigListInterpreter* cli,
-                           const biscuit::Statement::CustomBlock* customBlock) {
-    PLY_ASSERT(customBlock->type == g_common->configKey);
+MethodResult
+custom_block_inside_config_list(ConfigListInterpreter* cli,
+                                const biscuit::Statement::CustomBlock* cb) {
+    PLY_ASSERT(cb->type == g_common->configKey);
 
     // Evaluate config name
-    MethodResult result = eval(cli->interp.currentFrame, customBlock->expr);
+    MethodResult result = eval(cli->interp.currentFrame, cb->expr);
     PLY_ASSERT(result == MethodResult::OK); // FIXME: Make robust
     String currentConfigName = *cli->interp.base.returnValue.cast<String>();
     PLY_ASSERT(currentConfigName); // FIXME: Make robust
@@ -399,12 +395,17 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
         target->currentOptions = std::move(newOptions);
     }
 
-    // Enable debug info by default
+    // By default, enable debug info and disable optimization
     u32 configIndex = Project.configNames.numItems();
     PLY_ASSERT(configIndex < 64); // FIXME: Handle elegantly
-    Option debugInfo{Option::Generic, "debug_info", "true"};
-    debugInfo.enabledBits |= u64{1} << configIndex;
-    append_option(Project.perConfigOptions, debugInfo);
+    {
+        Option debugInfo{Option::Generic, "debug_info", "true"};
+        debugInfo.enabledBits |= u64{1} << configIndex;
+        append_option(Project.perConfigOptions, debugInfo);
+        Option optim{Option::Generic, "optimization", "none"};
+        optim.enabledBits |= u64{1} << configIndex;
+        append_option(Project.perConfigOptions, optim);
+    }
 
     // Execute config block
     PropertyCollector pc;
@@ -413,9 +414,9 @@ MethodResult doCustomBlock(ConfigListInterpreter* cli,
     pc.options = &Project.perConfigOptions;
     pc.configBit = u64{1} << configIndex;
     biscuit::Interpreter::Hooks hooks;
-    hooks.doCustomBlock = {doCustomBlockInsideConfig, &pc};
+    hooks.doCustomBlock = {custom_block_inside_config, &pc};
     PLY_SET_IN_SCOPE(cli->interp.currentFrame->hooks, hooks);
-    result = execBlock(cli->interp.currentFrame, customBlock->body);
+    result = execBlock(cli->interp.currentFrame, cb->body);
     if (result != MethodResult::OK)
         return result;
 
@@ -491,7 +492,7 @@ PLY_NO_INLINE void instantiate_all_configs(BuildFolder_t* build_folder) {
         frame.interp = &cli.interp;
         frame.desc = []() -> HybridString { return "config_list"; };
         frame.tkr = &configList->plyfile->tkr;
-        frame.hooks.doCustomBlock = {doCustomBlock, &cli};
+        frame.hooks.doCustomBlock = {custom_block_inside_config_list, &cli};
         MethodResult result =
             execFunction(&frame, configList->blockStmt->customBlock()->body);
         if (result == MethodResult::Error) {

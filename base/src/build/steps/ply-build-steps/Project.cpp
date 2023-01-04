@@ -30,8 +30,8 @@ void append_option(Array<Option>& options, const Option& srcOpt) {
                 dstOpt.enabledBits |= srcOpt.enabledBits;
                 dstOpt.isPublicBits |= srcOpt.isPublicBits;
             } else {
-                dstOpt.enabledBits &= srcOpt.enabledBits;
-                dstOpt.isPublicBits &= srcOpt.enabledBits;
+                dstOpt.enabledBits &= ~srcOpt.enabledBits;
+                dstOpt.isPublicBits &= ~srcOpt.enabledBits;
                 if (dstOpt.enabledBits == 0) {
                     options.erase(i);
                     i--;

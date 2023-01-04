@@ -7,12 +7,15 @@
 namespace ply {
 namespace build {
 
-void (*translate_toolchain_option)(CompilerSpecificOptions* copts, const Option& opt) = nullptr;
+void (*translate_toolchain_option)(CompilerSpecificOptions* copts,
+                                   const Option& opt) = nullptr;
 
 void translate_option_msvc(CompilerSpecificOptions* copts, const Option& opt) {
     PLY_ASSERT(opt.type == Option::Generic);
     if (opt.key == "optimization") {
-        if (opt.value == "size") {
+        if (opt.value == "none") {
+            copts->compile.append("/Od");
+        } else if (opt.value == "size") {
             copts->compile.append("/Os");
         } else if (opt.value == "speed") {
             copts->compile.append("/O2");
@@ -41,4 +44,3 @@ void init_toolchain_msvc() {
 
 } // namespace build
 } // namespace ply
-
