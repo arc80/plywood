@@ -87,7 +87,7 @@ void print_bigfont(StringView text) {
                     outs << u8"▄";
                 } else if (p == '#') {
                     outs << u8"█";
-                } else if (p == '*') {
+                } else if (p == '`') {
                     outs << u8"▀";
                 }
             }
