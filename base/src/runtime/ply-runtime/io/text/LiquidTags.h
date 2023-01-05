@@ -6,11 +6,11 @@
 #include <ply-runtime/Core.h>
 #include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
-#include <ply-runtime/container/Functor.h>
+#include <ply-runtime/container/Func.h>
 
 namespace ply {
 
 void extractLiquidTags(OutStream* outs, ViewInStream* ins,
-                       Functor<void(StringView, StringView)> tagHandler);
+                       Func<void(StringView, StringView)> tagHandler);
 
 } // namespace ply

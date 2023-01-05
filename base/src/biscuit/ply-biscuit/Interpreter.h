@@ -14,16 +14,16 @@ struct Tokenizer;
 
 struct Interpreter {
     struct Hooks {
-        Functor<MethodResult(const Statement::CustomBlock* customBlock)> doCustomBlock;
-        Functor<bool(const AnyObject& attributes)> onEvaluate = [](const AnyObject&) {
+        Func<MethodResult(const Statement::CustomBlock* customBlock)> doCustomBlock;
+        Func<bool(const AnyObject& attributes)> onEvaluate = [](const AnyObject&) {
             return true;
         };
-        Functor<bool(const AnyObject& attributes, Label label)> assignToLocal;
+        Func<bool(const AnyObject& attributes, Label label)> assignToLocal;
     };
 
     struct StackFrame {
         Interpreter* interp = nullptr;
-        Functor<HybridString()> desc;
+        Func<HybridString()> desc;
         LabelMap<AnyObject> localVariableTable;
         Tokenizer* tkr = nullptr;
         const Statement::CustomBlock* customBlock = nullptr;
@@ -33,7 +33,7 @@ struct Interpreter {
     };
 
     BaseInterpreter base;
-    Functor<AnyObject(Label identifier)> resolveName;
+    Func<AnyObject(Label identifier)> resolveName;
     StackFrame* currentFrame = nullptr;
 };
 

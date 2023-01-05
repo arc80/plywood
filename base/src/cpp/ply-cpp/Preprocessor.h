@@ -42,7 +42,7 @@ struct Preprocessor {
                                   const PPVisitedFiles* visitedFiles) const override;
     };
 
-    Functor<void(Owned<BaseError>&&)> errorHandler;
+    Func<void(Owned<BaseError>&&)> errorHandler;
     PPVisitedFiles* visitedFiles = nullptr;
 
     struct StackItem {
@@ -71,7 +71,7 @@ struct Preprocessor {
     // It'll remain valid until the next call to readToken.
     Array<Token> macroArgs;
 
-    Functor<void(StringView directive)> includeCallback;
+    Func<void(StringView directive)> includeCallback;
 
     PLY_INLINE void error(Error&& err) {
         this->errorHandler(new Error{std::move(err)});

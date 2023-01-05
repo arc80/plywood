@@ -9,10 +9,10 @@
 namespace ply {
 
 template <typename>
-class Functor;
+class Func;
 
 template <typename Return, typename... Args>
-class Functor<Return(Args...)> {
+class Func<Return(Args...)> {
 private:
     typedef Return Handler(void*, Args...);
 
@@ -20,18 +20,18 @@ private:
     void* storedArg = nullptr;
 
 public:
-    Functor() = default;
+    Func() = default;
 
-    PLY_INLINE Functor(const Functor& other) : handler{other.handler}, storedArg{other.storedArg} {
+    PLY_INLINE Func(const Func& other) : handler{other.handler}, storedArg{other.storedArg} {
     }
 
     template <typename T>
-    PLY_INLINE Functor(Return (*handler)(T*, Args...), T* storedArg)
+    PLY_INLINE Func(Return (*handler)(T*, Args...), T* storedArg)
         : handler{(Handler*) handler}, storedArg{(void*) storedArg} {
     }
 
     template <typename T>
-    PLY_INLINE Functor(Return (T::*handler)(Args...), T* target) : storedArg{(void*) target} {
+    PLY_INLINE Func(Return (T::*handler)(Args...), T* target) : storedArg{(void*) target} {
         this->handler = [this](void* target, Args... args) {
             return ((T*) target)->*(this->hiddenArg)(std::forward<Args>(args)...);
         };
@@ -40,13 +40,13 @@ public:
     // Support lambda expressions
     template <typename Callable,
               typename = void_t<decltype(std::declval<Callable>()(std::declval<Args>()...))>>
-    Functor(const Callable& callable) : storedArg{(void*) &callable} {
+    Func(const Callable& callable) : storedArg{(void*) &callable} {
         this->handler = [](void* callable, Args... args) -> Return {
             return (*(const Callable*) callable) (std::forward<Args>(args)...);
         };
     }
 
-    PLY_INLINE void operator=(const Functor& other) {
+    PLY_INLINE void operator=(const Func& other) {
         this->handler = other.handler;
         this->storedArg = other.storedArg;
     }

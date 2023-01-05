@@ -64,7 +64,7 @@ private:
         }
     };
 
-    Functor<void(const ParseError& err)> errorCallback;
+    Func<void(const ParseError& err)> errorCallback;
     FileLocationMap fileLocMap;
     bool anyError_ = false;
     StringView srcView;
@@ -115,7 +115,7 @@ public:
     PLY_INLINE void setTabSize(int tabSize_) {
         tabSize = tabSize_;
     }
-    PLY_INLINE void setErrorCallback(Functor<void(const ParseError& err)>&& cb) {
+    PLY_INLINE void setErrorCallback(Func<void(const ParseError& err)>&& cb) {
         this->errorCallback = std::move(cb);
     }
     PLY_INLINE bool anyError() const {

@@ -30,7 +30,7 @@ struct Parser {
     Tokenizer* tkr = nullptr;
 
     // Error reporting.
-    Functor<void(StringView message)> error;
+    Func<void(StringView message)> error;
     u32 errorCount = 0;
 
     // Error recovery.
@@ -48,13 +48,13 @@ struct Parser {
     // Properties and hooks for extensibility.
     LabelMap<bool> keywords;
     struct Filter {
-        Functor<KeywordHandler> keywordHandler;
-        Functor<ValidateAttribute> validateAttributes;
+        Func<KeywordHandler> keywordHandler;
+        Func<ValidateAttribute> validateAttributes;
         bool allowFunctions = false;
         bool allowInstructions = false;
     };
     Filter filter;
-    Functor<FunctionHandler> functionHandler;
+    Func<FunctionHandler> functionHandler;
     Statement* outerScope = nullptr;
 
     Parser();

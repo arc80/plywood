@@ -12,7 +12,7 @@ namespace ply {
 struct BaseInterpreter {
     ObjectStack localVariableStorage;
     AnyObject returnValue;
-    Functor<void(StringView message)> error;
+    Func<void(StringView message)> error;
 };
 
 } // namespace ply

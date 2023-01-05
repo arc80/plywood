@@ -6,7 +6,7 @@
 #include <ply-runtime/Core.h>
 #include <ply-runtime/log/Log.h>
 #include <ply-runtime/thread/Thread.h>
-#include <ply-runtime/container/Functor.h>
+#include <ply-runtime/container/Func.h>
 
 namespace ply {
 
@@ -19,15 +19,15 @@ private:
 
     Thread m_watcherThread;
     String m_root;
-    Functor<Callback> m_callback;
+    Func<Callback> m_callback;
     HANDLE m_endEvent = INVALID_HANDLE_VALUE;
 
     void runWatcher();
 
 public:
     PLY_DLL_ENTRY DirectoryWatcher_Win32();
-    PLY_DLL_ENTRY void start(StringView root, Functor<Callback>&& callback);
-    PLY_INLINE DirectoryWatcher_Win32(StringView root, Functor<Callback>&& callback)
+    PLY_DLL_ENTRY void start(StringView root, Func<Callback>&& callback);
+    PLY_INLINE DirectoryWatcher_Win32(StringView root, Func<Callback>&& callback)
         : DirectoryWatcher_Win32{} {
         start(root, std::move(callback));
     }

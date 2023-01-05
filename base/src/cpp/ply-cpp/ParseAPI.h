@@ -19,7 +19,7 @@ struct PreprocessorDefinition {
 
 grammar::TranslationUnit parse(StringView path, String&& sourceCode, PPVisitedFiles* visitedFiles,
                                ArrayView<const PreprocessorDefinition> ppDefs = {},
-                               const Functor<void(StringView directive)>& includeCallback = {},
+                               const Func<void(StringView directive)>& includeCallback = {},
                                ParseSupervisor* visor = nullptr);
 
 Tuple<grammar::Declaration::Simple, Array<Owned<BaseError>>>

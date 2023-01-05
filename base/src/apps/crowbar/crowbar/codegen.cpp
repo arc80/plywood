@@ -703,7 +703,7 @@ void do_codegen() {
                     // FIXME: Eliminate exclusions
                     for (StringView exclude : {
                              "Sort.h",
-                             "Functor.h",
+                             "Func.h",
                              "DirectoryWatcher_Mac.h",
                              "DirectoryWatcher_Win32.h",
                              "Heap.cpp",

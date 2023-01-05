@@ -7,7 +7,7 @@
 #include <ply-runtime/container/Array.h>
 #include <ply-runtime/container/EnumIndexedArray.h>
 #include <ply-runtime/container/FixedArray.h>
-#include <ply-runtime/container/Functor.h>
+#include <ply-runtime/container/Func.h>
 #include <ply-runtime/container/HashMap.h>
 #include <ply-runtime/container/Int128.h>
 #include <ply-runtime/container/LabelMap.h>

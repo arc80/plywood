@@ -97,7 +97,7 @@ struct PathCompIterator {
     char firstComp[3] = {0};
 
     PLY_NO_INLINE void iterateOver(const Path_t* pathFmt, ArrayView<const StringView> components,
-                                   const Functor<void(StringView)>& callback) {
+                                   const Func<void(StringView)>& callback) {
         s32 absoluteIndex = -1;
         s32 driveLetterIndex = -1;
         for (s32 i = components.numItems - 1; i >= 0; i--) {

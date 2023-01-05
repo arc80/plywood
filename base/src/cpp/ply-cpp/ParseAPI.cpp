@@ -13,7 +13,7 @@ namespace cpp {
 
 grammar::TranslationUnit parse(StringView path, String&& sourceCode, PPVisitedFiles* visitedFiles,
                                ArrayView<const PreprocessorDefinition> ppDefs,
-                               const Functor<void(StringView directive)>& includeCallback,
+                               const Func<void(StringView directive)>& includeCallback,
                                ParseSupervisor* visor) {
     // Create preprocessor
     Preprocessor pp;

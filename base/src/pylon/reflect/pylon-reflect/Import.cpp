@@ -12,9 +12,9 @@ namespace pylon {
 
 struct PylonTypeImporter {
     TypeDescriptorOwner* typeOwner = nullptr;
-    const Functor<TypeFromName>& typeFromName;
+    const Func<TypeFromName>& typeFromName;
 
-    PylonTypeImporter(const Functor<TypeFromName>& typeFromName) : typeFromName{typeFromName} {
+    PylonTypeImporter(const Func<TypeFromName>& typeFromName) : typeFromName{typeFromName} {
     }
 
     PLY_NO_INLINE TypeDescriptor* convertType(const Node* aNode) {
@@ -92,7 +92,7 @@ struct PylonTypeImporter {
 };
 
 PLY_NO_INLINE TypeDescriptorOwner* convertTypeFrom(const Node* aNode,
-                                                   const Functor<TypeFromName>& typeFromName) {
+                                                   const Func<TypeFromName>& typeFromName) {
     PylonTypeImporter importer{typeFromName};
     importer.typeOwner = new TypeDescriptorOwner;
     importer.typeOwner->setRootType(importer.convertType(aNode));
@@ -100,7 +100,7 @@ PLY_NO_INLINE TypeDescriptorOwner* convertTypeFrom(const Node* aNode,
 }
 
 PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
-                               const Functor<TypeFromName>& typeFromName) {
+                               const Func<TypeFromName>& typeFromName) {
     auto error = [&] {}; // FIXME: Decide where these go
 
     PLY_ASSERT(aNode->isValid());
@@ -255,14 +255,14 @@ PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
 }
 
 PLY_NO_INLINE AnyOwnedObject import(TypeDescriptor* typeDesc, const Node* aRoot,
-                                    const Functor<TypeFromName>& typeFromName) {
+                                    const Func<TypeFromName>& typeFromName) {
     AnyOwnedObject result = AnyObject::create(typeDesc);
     convertFrom(result, aRoot, typeFromName);
     return result;
 }
 
 PLY_NO_INLINE void importInto(AnyObject obj, const Node* aRoot,
-                              const Functor<TypeFromName>& typeFromName) {
+                              const Func<TypeFromName>& typeFromName) {
     convertFrom(obj, aRoot, typeFromName);
 }
 
