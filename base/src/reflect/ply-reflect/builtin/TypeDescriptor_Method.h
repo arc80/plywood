@@ -11,12 +11,12 @@
 
 namespace ply {
 
-struct MethodArgs {
+struct FnParams {
     BaseInterpreter* base;
     AnyObject self;
     ArrayView<const AnyObject> args;
 };
-using Method = FnResult(const MethodArgs& args);
+using Method = FnResult(const FnParams& params);
 
 PLY_DLL_ENTRY extern TypeKey TypeKey_Method;
 

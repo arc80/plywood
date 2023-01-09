@@ -18,54 +18,54 @@ namespace build {
 BuiltInStorage_ BuiltInStorage;
 LabelMap<AnyObject> BuiltInMap;
 
-FnResult doJoinPath(const MethodArgs& args) {
+FnResult doJoinPath(const FnParams& params) {
     Array<StringView> parts;
-    parts.reserve(args.args.numItems);
-    for (const AnyObject& arg : args.args) {
+    parts.reserve(params.args.numItems);
+    for (const AnyObject& arg : params.args) {
         if (!arg.is<String>())
             PLY_FORCE_CRASH();
         parts.append(*arg.cast<String>());
     }
     String result = Path.joinArray(parts);
     AnyObject* resultStorage =
-        args.base->localVariableStorage.appendObject(getTypeDescriptor(&result));
+        params.base->localVariableStorage.appendObject(getTypeDescriptor(&result));
     *resultStorage->cast<String>() = std::move(result);
-    args.base->returnValue = *resultStorage;
+    params.base->returnValue = *resultStorage;
     return Fn_OK;
 }
 
-FnResult doEscape(const MethodArgs& args) {
-    if (args.args.numItems != 1) {
-        args.base->error(String::format("'escape' expects 1 argument"));
+FnResult doEscape(const FnParams& params) {
+    if (params.args.numItems != 1) {
+        params.base->error(String::format("'escape' expects 1 argument"));
         return Fn_Error;
     }
-    String* path = args.args[0].safeCast<String>();
+    String* path = params.args[0].safeCast<String>();
     if (!path) {
-        args.base->error(String::format("'escape' argument 1 must be a string"));
+        params.base->error(String::format("'escape' argument 1 must be a string"));
         return Fn_Error;
     }
 
     String result = String::from(fmt::EscapedString{*path});
     AnyObject* resultStorage =
-        args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
+        params.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
     *resultStorage->cast<String>() = std::move(result);
-    args.base->returnValue = *resultStorage;
+    params.base->returnValue = *resultStorage;
     return Fn_OK;
 }
 
-FnResult doSaveIfDifferent(const MethodArgs& args) {
-    if (args.args.numItems != 2) {
-        args.base->error(String::format("'save_if_different' expects 2 arguments"));
+FnResult doSaveIfDifferent(const FnParams& params) {
+    if (params.args.numItems != 2) {
+        params.base->error(String::format("'save_if_different' expects 2 arguments"));
         return Fn_Error;
     }
-    String* path = args.args[0].safeCast<String>();
+    String* path = params.args[0].safeCast<String>();
     if (!path) {
-        args.base->error(String::format("'save_if_different' argument 1 must be a string"));
+        params.base->error(String::format("'save_if_different' argument 1 must be a string"));
         return Fn_Error;
     }
-    String* content = args.args[1].safeCast<String>();
+    String* content = params.args[1].safeCast<String>();
     if (!content) {
-        args.base->error(String::format("'save_if_different' argument 2 must be a string"));
+        params.base->error(String::format("'save_if_different' argument 2 must be a string"));
         return Fn_Error;
     }
 
@@ -73,9 +73,9 @@ FnResult doSaveIfDifferent(const MethodArgs& args) {
     return Fn_OK;
 }
 
-FnResult fn_link_objects_directly(const MethodArgs& args) {
-    if (args.args.numItems != 0) {
-        args.base->error(String::format("'link_objects_directly' takes no arguments"));
+FnResult fn_link_objects_directly(const FnParams& params) {
+    if (params.args.numItems != 0) {
+        params.base->error(String::format("'link_objects_directly' takes no arguments"));
         return Fn_Error;
     }
 
@@ -84,14 +84,14 @@ FnResult fn_link_objects_directly(const MethodArgs& args) {
     return Fn_OK;
 }
 
-FnResult getExternFolder(const MethodArgs& args) {
-    if (args.args.numItems != 1) {
-        args.base->error(String::format("'get_extern_folder' expects 1 argument"));
+FnResult getExternFolder(const FnParams& params) {
+    if (params.args.numItems != 1) {
+        params.base->error(String::format("'get_extern_folder' expects 1 argument"));
         return Fn_Error;
     }
-    String* name = args.args[0].safeCast<String>();
+    String* name = params.args[0].safeCast<String>();
     if (!name) {
-        args.base->error(String::format("'get_extern_folder' argument must be a string"));
+        params.base->error(String::format("'get_extern_folder' argument must be a string"));
         return Fn_Error;
     }
 
@@ -102,28 +102,28 @@ FnResult getExternFolder(const MethodArgs& args) {
     }
 
     AnyObject* resultStorage =
-        args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
+        params.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
     *resultStorage->cast<String>() = externFolder->path;
-    args.base->returnValue = *resultStorage;
+    params.base->returnValue = *resultStorage;
     return Fn_OK;
 }
 
-FnResult sys_fs_exists(const MethodArgs& args) {
-    if (args.args.numItems != 1) {
-        args.base->error(String::format("'exists' expects 1 argument; got {}", args.args.numItems));
+FnResult sys_fs_exists(const FnParams& params) {
+    if (params.args.numItems != 1) {
+        params.base->error(String::format("'exists' expects 1 argument; got {}", params.args.numItems));
         return Fn_Error;
     }
-    String* path = args.args[0].safeCast<String>();
+    String* path = params.args[0].safeCast<String>();
     if (!path) {
-        args.base->error(String::format("'exists' argument must be a string"));
+        params.base->error(String::format("'exists' argument must be a string"));
         return Fn_Error;
     }
 
     ExistsResult result = FileSystem.exists(*path);
     AnyObject* resultStorage =
-        args.base->localVariableStorage.appendObject(getTypeDescriptor<bool>());
+        params.base->localVariableStorage.appendObject(getTypeDescriptor<bool>());
     *resultStorage->cast<bool>() = (result != ExistsResult::NotFound);
-    args.base->returnValue = *resultStorage;
+    params.base->returnValue = *resultStorage;
     return Fn_OK;
 }
 
@@ -215,29 +215,29 @@ void download(StringView dstPath, const SplitURL& split) {
 #endif
 }
 
-FnResult sys_fs_download(const MethodArgs& args) {
-    if (args.args.numItems != 2) {
-        args.base->error(
-            String::format("'download' expects 2 arguments; got {}", args.args.numItems));
+FnResult sys_fs_download(const FnParams& params) {
+    if (params.args.numItems != 2) {
+        params.base->error(
+            String::format("'download' expects 2 arguments; got {}", params.args.numItems));
         return Fn_Error;
     }
-    String* path = args.args[0].safeCast<String>();
+    String* path = params.args[0].safeCast<String>();
     if (!path) {
-        args.base->error(String::format("first argument to 'download' must be a string"));
+        params.base->error(String::format("first argument to 'download' must be a string"));
         return Fn_Error;
     }
-    String* url = args.args[1].safeCast<String>();
+    String* url = params.args[1].safeCast<String>();
     if (!url) {
-        args.base->error(String::format("second argument to 'download' must be a string"));
+        params.base->error(String::format("second argument to 'download' must be a string"));
         return Fn_Error;
     }
 
     StringView s = *url;
     SplitURL split;
-    if (!splitURL(args.base, &split, *url))
+    if (!splitURL(params.base, &split, *url))
         return Fn_Error;
     download(*path, split);
-    args.base->returnValue = {};
+    params.base->returnValue = {};
     return Fn_OK;
 }
 

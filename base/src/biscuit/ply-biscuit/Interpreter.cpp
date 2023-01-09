@@ -189,11 +189,11 @@ FnResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* call) 
         return execFunction(&newFrame, functionDef->body);
     } else if (Method* method = callee.safeCast<Method>()) {
         // Function is implemented in C++.
-        MethodArgs ma;
-        ma.base = base;
-        ma.self = self;
-        ma.args = args;
-        return method(ma);
+        FnParams params;
+        params.base = base;
+        params.self = self;
+        params.args = args;
+        return method(params);
     }
 
     // Object is not callable

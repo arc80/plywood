@@ -17,16 +17,16 @@ struct ScriptOutStream {
     OutStream* outs;
 };
 
-FnResult doPrint(const MethodArgs& args) {
+FnResult doPrint(const FnParams& params) {
     ScriptOutStream* sos = args.self.cast<ScriptOutStream>();
 
-    if (args.args.numItems != 1) {
-        args.base->error("'print' expects exactly one argument");
+    if (params.args.numItems != 1) {
+        params.base->error("'print' expects exactly one argument");
         return Fn_Error;
     }
 
-    const AnyObject& arg = args.args[0];
-    args.base->returnValue = {};
+    const AnyObject& arg = params.args[0];
+    params.base->returnValue = {};
     if (arg.is<u32>()) {
         *sos->outs << *arg.cast<u32>() << '\n';
     } else if (arg.is<bool>()) {
@@ -34,7 +34,7 @@ FnResult doPrint(const MethodArgs& args) {
     } else if (arg.is<String>()) {
         *sos->outs << *arg.cast<String>() << '\n';
     } else {
-        args.base->error(String::format("'{}' does not support printing", arg.type->getName()));
+        params.base->error(String::format("'{}' does not support printing", arg.type->getName()));
         return Fn_Error;
     }
     return Fn_OK;
