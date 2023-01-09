@@ -18,7 +18,7 @@ namespace build {
 BuiltInStorage_ BuiltInStorage;
 LabelMap<AnyObject> BuiltInMap;
 
-MethodResult doJoinPath(const MethodArgs& args) {
+FnResult doJoinPath(const MethodArgs& args) {
     Array<StringView> parts;
     parts.reserve(args.args.numItems);
     for (const AnyObject& arg : args.args) {
@@ -31,18 +31,18 @@ MethodResult doJoinPath(const MethodArgs& args) {
         args.base->localVariableStorage.appendObject(getTypeDescriptor(&result));
     *resultStorage->cast<String>() = std::move(result);
     args.base->returnValue = *resultStorage;
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
-MethodResult doEscape(const MethodArgs& args) {
+FnResult doEscape(const MethodArgs& args) {
     if (args.args.numItems != 1) {
         args.base->error(String::format("'escape' expects 1 argument"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
     String* path = args.args[0].safeCast<String>();
     if (!path) {
         args.base->error(String::format("'escape' argument 1 must be a string"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
 
     String result = String::from(fmt::EscapedString{*path});
@@ -50,49 +50,49 @@ MethodResult doEscape(const MethodArgs& args) {
         args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
     *resultStorage->cast<String>() = std::move(result);
     args.base->returnValue = *resultStorage;
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
-MethodResult doSaveIfDifferent(const MethodArgs& args) {
+FnResult doSaveIfDifferent(const MethodArgs& args) {
     if (args.args.numItems != 2) {
         args.base->error(String::format("'save_if_different' expects 2 arguments"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
     String* path = args.args[0].safeCast<String>();
     if (!path) {
         args.base->error(String::format("'save_if_different' argument 1 must be a string"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
     String* content = args.args[1].safeCast<String>();
     if (!content) {
         args.base->error(String::format("'save_if_different' argument 2 must be a string"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
 
     FileSystem.makeDirsAndSaveBinaryIfDifferent(*path, *content);
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
-MethodResult fn_link_objects_directly(const MethodArgs& args) {
+FnResult fn_link_objects_directly(const MethodArgs& args) {
     if (args.args.numItems != 0) {
         args.base->error(String::format("'link_objects_directly' takes no arguments"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
 
     // ...
 
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
-MethodResult getExternFolder(const MethodArgs& args) {
+FnResult getExternFolder(const MethodArgs& args) {
     if (args.args.numItems != 1) {
         args.base->error(String::format("'get_extern_folder' expects 1 argument"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
     String* name = args.args[0].safeCast<String>();
     if (!name) {
         args.base->error(String::format("'get_extern_folder' argument must be a string"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
 
     ExternFolder* externFolder = ExternFolderRegistry::get()->find(*name);
@@ -105,18 +105,18 @@ MethodResult getExternFolder(const MethodArgs& args) {
         args.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
     *resultStorage->cast<String>() = externFolder->path;
     args.base->returnValue = *resultStorage;
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
-MethodResult sys_fs_exists(const MethodArgs& args) {
+FnResult sys_fs_exists(const MethodArgs& args) {
     if (args.args.numItems != 1) {
         args.base->error(String::format("'exists' expects 1 argument; got {}", args.args.numItems));
-        return MethodResult::Error;
+        return Fn_Error;
     }
     String* path = args.args[0].safeCast<String>();
     if (!path) {
         args.base->error(String::format("'exists' argument must be a string"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
 
     ExistsResult result = FileSystem.exists(*path);
@@ -124,7 +124,7 @@ MethodResult sys_fs_exists(const MethodArgs& args) {
         args.base->localVariableStorage.appendObject(getTypeDescriptor<bool>());
     *resultStorage->cast<bool>() = (result != ExistsResult::NotFound);
     args.base->returnValue = *resultStorage;
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
 struct SplitURL {
@@ -215,36 +215,36 @@ void download(StringView dstPath, const SplitURL& split) {
 #endif
 }
 
-MethodResult sys_fs_download(const MethodArgs& args) {
+FnResult sys_fs_download(const MethodArgs& args) {
     if (args.args.numItems != 2) {
         args.base->error(
             String::format("'download' expects 2 arguments; got {}", args.args.numItems));
-        return MethodResult::Error;
+        return Fn_Error;
     }
     String* path = args.args[0].safeCast<String>();
     if (!path) {
         args.base->error(String::format("first argument to 'download' must be a string"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
     String* url = args.args[1].safeCast<String>();
     if (!url) {
         args.base->error(String::format("second argument to 'download' must be a string"));
-        return MethodResult::Error;
+        return Fn_Error;
     }
 
     StringView s = *url;
     SplitURL split;
     if (!splitURL(args.base, &split, *url))
-        return MethodResult::Error;
+        return Fn_Error;
     download(*path, split);
     args.base->returnValue = {};
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
 PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
     MethodTable methods;
     methods.propertyLookup = [](BaseInterpreter* interp, const AnyObject& obj,
-                                StringView propertyName) -> MethodResult {
+                                StringView propertyName) -> FnResult {
         auto* dict = obj.cast<ReadOnlyDict>();
         Label label = g_labelStorage.find(propertyName);
         if (label) {
@@ -258,13 +258,13 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
                 } else {
                     interp->returnValue = *prop;
                 }
-                return MethodResult::OK;
+                return Fn_OK;
             }
         }
 
         interp->returnValue = {};
         interp->error(String::format("property '{}' not found in '{}'", propertyName, dict->name));
-        return MethodResult::Error;
+        return Fn_Error;
     };
     return methods;
 }

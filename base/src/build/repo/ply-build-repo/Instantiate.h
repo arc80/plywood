@@ -31,7 +31,7 @@ struct TargetInstantiator {
     u64 configBit = 0;
 };
 
-MethodResult instantiateTargetForCurrentConfig(Target** target, TargetInstantiator* mi,
+FnResult instantiateTargetForCurrentConfig(Target** target, TargetInstantiator* mi,
                                                Label name);
 
 struct PropertyCollector {
@@ -42,7 +42,7 @@ struct PropertyCollector {
     bool isTarget = false;
 };
 
-MethodResult doCustomBlockInsideConfig(PropertyCollector* pc,
+FnResult doCustomBlockInsideConfig(PropertyCollector* pc,
                                        const biscuit::Statement::CustomBlock* cb);
 void instantiate_all_configs(BuildFolder_t* build_folder);
 

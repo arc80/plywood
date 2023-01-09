@@ -18,28 +18,28 @@ struct BoolMethodTable {
     static PLY_INLINE MethodTable make() {
         MethodTable methods;
         methods.binaryOp = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
-                              const AnyObject& first, const AnyObject& second) -> MethodResult {
+                              const AnyObject& first, const AnyObject& second) -> FnResult {
             switch (op) {
                 case MethodTable::BinaryOp::DoubleEqual: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
                     *interp->returnValue.cast<bool>() =
                         (*first.cast<bool>() == *second.cast<bool>());
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::LogicalAnd: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
                     *interp->returnValue.cast<bool>() =
                         (*first.cast<bool>() && *second.cast<bool>());
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::LogicalOr: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
                     *interp->returnValue.cast<bool>() =
                         (*first.cast<bool>() || *second.cast<bool>());
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 default: {
                     return MethodTable::unsupportedBinaryOp(interp, op, first, second);
@@ -47,13 +47,13 @@ struct BoolMethodTable {
             }
         };
         methods.unaryOp = [](BaseInterpreter* interp, MethodTable::UnaryOp op,
-                             const AnyObject& obj) -> MethodResult {
+                             const AnyObject& obj) -> FnResult {
             switch (op) {
                 case MethodTable::UnaryOp::LogicalNot: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
                     *interp->returnValue.cast<bool>() = !*obj.cast<bool>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 default: {
                     return MethodTable::unsupportedUnaryOp(interp, op, obj);

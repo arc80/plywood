@@ -14,7 +14,7 @@ struct Tokenizer;
 
 struct Interpreter {
     struct Hooks {
-        Func<MethodResult(const Statement::CustomBlock* customBlock)> doCustomBlock;
+        Func<FnResult(const Statement::CustomBlock* customBlock)> doCustomBlock;
         Func<bool(const AnyObject& attributes)> onEvaluate = [](const AnyObject&) {
             return true;
         };
@@ -38,9 +38,9 @@ struct Interpreter {
 };
 
 void logErrorWithStack(OutStream* outs, const Interpreter* interp, StringView message);
-MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
-MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block);
-MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr);
+FnResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
+FnResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block);
+FnResult eval(Interpreter::StackFrame* frame, const Expression* expr);
 
 } // namespace biscuit
 } // namespace ply

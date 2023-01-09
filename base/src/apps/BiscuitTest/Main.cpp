@@ -17,12 +17,12 @@ struct ScriptOutStream {
     OutStream* outs;
 };
 
-MethodResult doPrint(const MethodArgs& args) {
+FnResult doPrint(const MethodArgs& args) {
     ScriptOutStream* sos = args.self.cast<ScriptOutStream>();
 
     if (args.args.numItems != 1) {
         args.base->error("'print' expects exactly one argument");
-        return MethodResult::Error;
+        return Fn_Error;
     }
 
     const AnyObject& arg = args.args[0];
@@ -35,9 +35,9 @@ MethodResult doPrint(const MethodArgs& args) {
         *sos->outs << *arg.cast<String>() << '\n';
     } else {
         args.base->error(String::format("'{}' does not support printing", arg.type->getName()));
-        return MethodResult::Error;
+        return Fn_Error;
     }
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
 // FIXME: Move this to the biscuit library:

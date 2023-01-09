@@ -90,8 +90,8 @@ void Repository::create() {
                                   g_labelStorage.view(tf->stmt->customBlock()->name));
         };
         frame.tkr = &cb.target_func->plyfile->tkr;
-        MethodResult result = execFunction(&frame, cb.block->customBlock()->body);
-        if (result == MethodResult::Error) {
+        FnResult result = execFunction(&frame, cb.block->customBlock()->body);
+        if (result == Fn_Error) {
             exit(1);
         }
     }
@@ -100,21 +100,21 @@ void Repository::create() {
 PLY_NO_INLINE MethodTable getMethodTable_Repository_ConfigOptions() {
     MethodTable methods;
     methods.propertyLookup = [](BaseInterpreter* interp, const AnyObject& obj,
-                                StringView propertyName) -> MethodResult {
+                                StringView propertyName) -> FnResult {
         Label label = g_labelStorage.find(propertyName);
         if (label) {
             auto* configOpts = obj.cast<Repository::ConfigOptions>();
             AnyOwnedObject* prop;
             configOpts->map.insertOrFind(label, &prop);
             interp->returnValue = *prop;
-            return MethodResult::OK;
+            return Fn_OK;
         }
         // read-only access?
 
         interp->returnValue = {};
         interp->error(String::format("configuration option '{}' not found in library",
                                      propertyName));
-        return MethodResult::Error;
+        return Fn_Error;
     };
     return methods;
 }

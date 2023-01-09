@@ -20,67 +20,67 @@ struct ArithmeticMethodTable {
     static PLY_INLINE MethodTable make() {
         MethodTable methods;
         methods.binaryOp = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
-                              const AnyObject& first, const AnyObject& second) -> MethodResult {
+                              const AnyObject& first, const AnyObject& second) -> FnResult {
             switch (op) {
                 case MethodTable::BinaryOp::Multiply: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
                     *interp->returnValue.cast<T>() = *first.cast<T>() * *second.cast<T>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::Divide: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
                     *interp->returnValue.cast<T>() = *first.cast<T>() / *second.cast<T>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::Modulo: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
                     *interp->returnValue.cast<T>() = *first.cast<T>() % *second.cast<T>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::Add: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
                     *interp->returnValue.cast<T>() = *first.cast<T>() + *second.cast<T>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::Subtract: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
                     *interp->returnValue.cast<T>() = *first.cast<T>() - *second.cast<T>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::DoubleEqual: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
                     *interp->returnValue.cast<bool>() = (*first.cast<T>() == *second.cast<T>());
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::LessThan: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
                     *interp->returnValue.cast<bool>() = (*first.cast<T>() < *second.cast<T>());
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::LessThanOrEqual: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
                     *interp->returnValue.cast<bool>() = (*first.cast<T>() <= *second.cast<T>());
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::GreaterThan: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
                     *interp->returnValue.cast<bool>() = (*first.cast<T>() > *second.cast<T>());
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::GreaterThanOrEqual: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
                     *interp->returnValue.cast<bool>() = (*first.cast<T>() >= *second.cast<T>());
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 default: {
                     return MethodTable::unsupportedBinaryOp(interp, op, first, second);
@@ -88,25 +88,25 @@ struct ArithmeticMethodTable {
             }
         };
         methods.unaryOp = [](BaseInterpreter* interp, MethodTable::UnaryOp op,
-                             const AnyObject& obj) -> MethodResult {
+                             const AnyObject& obj) -> FnResult {
             switch (op) {
                 case MethodTable::UnaryOp::Negate: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
                     *interp->returnValue.cast<T>() = -*obj.cast<T>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::UnaryOp::LogicalNot: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
                     *interp->returnValue.cast<T>() = !*obj.cast<T>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::UnaryOp::BitComplement: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
                     *interp->returnValue.cast<T>() = ~*obj.cast<T>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 default: {
                     return MethodTable::unsupportedUnaryOp(interp, op, obj);

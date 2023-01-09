@@ -37,41 +37,41 @@ StringView MethodTable::binaryOpToString(MethodTable::BinaryOp op) {
     return "???";
 }
 
-MethodResult MethodTable::unsupportedUnaryOp(BaseInterpreter* interp, UnaryOp op,
+FnResult MethodTable::unsupportedUnaryOp(BaseInterpreter* interp, UnaryOp op,
                                              const AnyObject& obj) {
     interp->returnValue = {};
     interp->error(String::format("'{}' does not support unary operator '{}'", obj.type->getName(),
                                  MethodTable::unaryOpToString(op)));
-    return MethodResult::Error;
+    return Fn_Error;
 }
 
-MethodResult MethodTable::unsupportedBinaryOp(BaseInterpreter* interp, MethodTable::BinaryOp op,
+FnResult MethodTable::unsupportedBinaryOp(BaseInterpreter* interp, MethodTable::BinaryOp op,
                                               const AnyObject& first, const AnyObject& second) {
     interp->returnValue = {};
     interp->error(String::format("'{}' does not support binary operator '{}'",
                                  first.type->getName(), MethodTable::binaryOpToString(op)));
-    return MethodResult::Error;
+    return Fn_Error;
 }
 
-MethodResult MethodTable::unsupportedPropertyLookup(BaseInterpreter* interp, const AnyObject& obj,
+FnResult MethodTable::unsupportedPropertyLookup(BaseInterpreter* interp, const AnyObject& obj,
                                                     StringView propertyName) {
     interp->returnValue = {};
     interp->error(String::format("'{}' does not support property lookup", obj.type->getName()));
-    return MethodResult::Error;
+    return Fn_Error;
 }
 
-MethodResult MethodTable::unsupportedSubscript(BaseInterpreter* interp, const AnyObject& obj,
+FnResult MethodTable::unsupportedSubscript(BaseInterpreter* interp, const AnyObject& obj,
                                                u32 index) {
     interp->returnValue = {};
     interp->error(String::format("'{}' does not support array indexing", obj.type->getName()));
-    return MethodResult::Error;
+    return Fn_Error;
 }
 
-MethodResult MethodTable::unsupportedPrint(BaseInterpreter* interp, const AnyObject& obj,
+FnResult MethodTable::unsupportedPrint(BaseInterpreter* interp, const AnyObject& obj,
                                            StringView formatSpec) {
     interp->returnValue = {};
     interp->error(String::format("'{}' does not support printing", obj.type->getName()));
-    return MethodResult::Error;
+    return Fn_Error;
 }
 
 PLY_NO_INLINE MethodTable::MethodTable()

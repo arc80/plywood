@@ -30,7 +30,7 @@ AnyObject find(const LabelMap<AnyObject>& map, Label identifier) {
     return value ? *value : AnyObject{};
 }
 
-MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
+FnResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
 
 // FIXME: Generalize this:
 void write(OutStream& outs, const AnyObject& arg) {
@@ -45,7 +45,7 @@ void write(OutStream& outs, const AnyObject& arg) {
     }
 }
 
-MethodResult evalString(Interpreter::StackFrame* frame,
+FnResult evalString(Interpreter::StackFrame* frame,
                         const Expression::InterpolatedString* stringExp) {
     BaseInterpreter* base = &frame->interp->base;
 
@@ -53,8 +53,8 @@ MethodResult evalString(Interpreter::StackFrame* frame,
     for (const Expression::InterpolatedString::Piece& piece : stringExp->pieces) {
         mout << piece.literal;
         if (piece.embed) {
-            MethodResult result = eval(frame, piece.embed);
-            if (result != MethodResult::OK)
+            FnResult result = eval(frame, piece.embed);
+            if (result != Fn_OK)
                 return result;
             write(mout, base->returnValue);
             base->returnValue = {};
@@ -65,7 +65,7 @@ MethodResult evalString(Interpreter::StackFrame* frame,
     AnyObject* stringObj = base->localVariableStorage.appendObject(getTypeDescriptor<String>());
     *stringObj->cast<String>() = mout.moveToString();
     base->returnValue = *stringObj;
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
 PLY_INLINE bool isReturnValueOnTopOfStack(BaseInterpreter* base) {
@@ -73,13 +73,13 @@ PLY_INLINE bool isReturnValueOnTopOfStack(BaseInterpreter* base) {
            (base->localVariableStorage.items.tail() == base->returnValue);
 }
 
-MethodResult evalPropertyLookup(Interpreter::StackFrame* frame,
+FnResult evalPropertyLookup(Interpreter::StackFrame* frame,
                                 const Expression::PropertyLookup* propLookup) {
     BaseInterpreter* base = &frame->interp->base;
 
     // Evaluate left side.
-    MethodResult result = eval(frame, propLookup->obj);
-    if (result != MethodResult::OK)
+    FnResult result = eval(frame, propLookup->obj);
+    if (result != Fn_OK)
         return result;
     AnyObject obj = base->returnValue;
     base->returnValue = {};
@@ -90,19 +90,19 @@ MethodResult evalPropertyLookup(Interpreter::StackFrame* frame,
                                             g_labelStorage.view(propLookup->propertyName));
 }
 
-MethodResult evalBinaryOp(Interpreter::StackFrame* frame, const Expression::BinaryOp* binaryOp) {
+FnResult evalBinaryOp(Interpreter::StackFrame* frame, const Expression::BinaryOp* binaryOp) {
     BaseInterpreter* base = &frame->interp->base;
 
     // Evaluate left side.
-    MethodResult result = eval(frame, binaryOp->left);
-    if (result != MethodResult::OK)
+    FnResult result = eval(frame, binaryOp->left);
+    if (result != Fn_OK)
         return result;
     AnyObject left = base->returnValue;
     base->returnValue = {};
 
     // Evaluate right side.
     result = eval(frame, binaryOp->right);
-    if (result != MethodResult::OK)
+    if (result != Fn_OK)
         return result;
     AnyObject right = base->returnValue;
     base->returnValue = {};
@@ -111,12 +111,12 @@ MethodResult evalBinaryOp(Interpreter::StackFrame* frame, const Expression::Bina
     return left.type->methods.binaryOp(base, binaryOp->op, left, right);
 }
 
-MethodResult evalUnaryOp(Interpreter::StackFrame* frame, const Expression::UnaryOp* unaryOp) {
+FnResult evalUnaryOp(Interpreter::StackFrame* frame, const Expression::UnaryOp* unaryOp) {
     BaseInterpreter* base = &frame->interp->base;
 
     // Evaluate subexpression.
-    MethodResult result = eval(frame, unaryOp->expr);
-    if (result != MethodResult::OK)
+    FnResult result = eval(frame, unaryOp->expr);
+    if (result != Fn_OK)
         return result;
     AnyObject obj = base->returnValue;
     base->returnValue = {};
@@ -125,12 +125,12 @@ MethodResult evalUnaryOp(Interpreter::StackFrame* frame, const Expression::Unary
     return obj.type->methods.unaryOp(base, unaryOp->op, obj);
 }
 
-MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* call) {
+FnResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* call) {
     BaseInterpreter* base = &frame->interp->base;
 
     // Evaluate callable.
-    MethodResult result = eval(frame, call->callable);
-    if (result != MethodResult::OK)
+    FnResult result = eval(frame, call->callable);
+    if (result != Fn_OK)
         return result;
     AnyObject callee = base->returnValue;
     base->returnValue = {};
@@ -139,7 +139,7 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
     Array<AnyObject> args;
     for (const Expression* argExpr : call->args) {
         result = eval(frame, argExpr);
-        if (result != MethodResult::OK)
+        if (result != Fn_OK)
             return result;
 
         AnyObject* arg;
@@ -165,7 +165,7 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
         callee = bm->func;
     }
 
-    // Invoke the callee with with provided arguments.
+    // Invoke the callee with the provided arguments.
     if (const auto* functionDef = callee.safeCast<Statement::FunctionDefinition>()) {
         // Function is implemented in script.
         PLY_ASSERT(!self); // Not possible to define classes in script yet
@@ -198,7 +198,7 @@ MethodResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* ca
 
     // Object is not callable
     base->error(String::format("cannot call '{}' as a function", callee.type->getName()));
-    return MethodResult::Error;
+    return Fn_Error;
 }
 
 AnyObject lookupName(Interpreter::StackFrame* frame, Label name) {
@@ -211,7 +211,7 @@ AnyObject lookupName(Interpreter::StackFrame* frame, Label name) {
     return frame->interp->resolveName(name);
 }
 
-MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
+FnResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
     BaseInterpreter* base = &frame->interp->base;
     PLY_SET_IN_SCOPE(frame->tokenIdx, expr->tokenIdx);
 
@@ -221,14 +221,14 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
             if (!base->returnValue.data) {
                 base->error(String::format("cannot resolve identifier '{}'",
                                            g_labelStorage.view(expr->nameLookup()->name)));
-                return MethodResult::Error;
+                return Fn_Error;
             }
-            return MethodResult::OK;
+            return Fn_OK;
         }
 
         case Expression::ID::IntegerLiteral: {
             base->returnValue = AnyObject::bind(&expr->integerLiteral()->value);
-            return MethodResult::OK;
+            return Fn_OK;
         }
 
         case Expression::ID::InterpolatedString: {
@@ -253,18 +253,18 @@ MethodResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
 
         default: {
             PLY_ASSERT(0);
-            return MethodResult::Error;
+            return Fn_Error;
         }
     }
 }
 
-MethodResult execIf(Interpreter::StackFrame* frame, const Statement::If_* if_) {
+FnResult execIf(Interpreter::StackFrame* frame, const Statement::If_* if_) {
     BaseInterpreter* base = &frame->interp->base;
 
     // Evaluate condition.
     ObjectStack::Boundary localVariableStorageBoundary = base->localVariableStorage.end();
-    MethodResult result = eval(frame, if_->condition);
-    if (result != MethodResult::OK)
+    FnResult result = eval(frame, if_->condition);
+    if (result != Fn_OK)
         return result;
     // FIXME: Do implicit conversion to bool
     bool wasTrue = (*base->returnValue.cast<bool>() != 0);
@@ -278,17 +278,17 @@ MethodResult execIf(Interpreter::StackFrame* frame, const Statement::If_* if_) {
     const StatementBlock* block = (wasTrue ? if_->trueBlock : if_->falseBlock);
     if (block)
         return execBlock(frame, block);
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
-MethodResult execWhile(Interpreter::StackFrame* frame, const Statement::While_* while_) {
+FnResult execWhile(Interpreter::StackFrame* frame, const Statement::While_* while_) {
     BaseInterpreter* base = &frame->interp->base;
 
     for (;;) {
         // Evaluate condition.
         ObjectStack::Boundary localVariableStorageBoundary = base->localVariableStorage.end();
-        MethodResult result = eval(frame, while_->condition);
-        if (result != MethodResult::OK)
+        FnResult result = eval(frame, while_->condition);
+        if (result != Fn_OK)
             return result;
         // FIXME: Do implicit conversion to bool
         bool wasTrue = (*base->returnValue.cast<bool>() != 0);
@@ -299,30 +299,30 @@ MethodResult execWhile(Interpreter::StackFrame* frame, const Statement::While_* 
 
         // Either stop, or execute the child block.
         if (!wasTrue)
-            return MethodResult::OK;
+            return Fn_OK;
         result = execBlock(frame, while_->block);
-        if (result != MethodResult::OK)
+        if (result != Fn_OK)
             return result;
     }
 }
 
-MethodResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignment* assign) {
+FnResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignment* assign) {
     BaseInterpreter* base = &frame->interp->base;
     ObjectStack::Boundary localVariableStorageBoundary = base->localVariableStorage.end();
 
     // Evaluate left side.
     AnyObject left;
     if (assign->left->id != Expression::ID::NameLookup) {
-        MethodResult result = eval(frame, assign->left);
-        if (result != MethodResult::OK)
+        FnResult result = eval(frame, assign->left);
+        if (result != Fn_OK)
             return result;
         left = base->returnValue;
         base->returnValue = {};
     }
 
     // Evaluate right side.
-    MethodResult result = eval(frame, assign->right);
-    if (result != MethodResult::OK)
+    FnResult result = eval(frame, assign->right);
+    if (result != Fn_OK)
         return result;
 
     // Perform assignment.
@@ -330,7 +330,7 @@ MethodResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignm
         PLY_ASSERT(!left.data);
         Label name = assign->left->nameLookup()->name;
         if (frame->hooks.assignToLocal(assign->attributes, name))
-            return MethodResult::OK;
+            return Fn_OK;
 
         AnyObject* value;
         if (frame->localVariableTable.insertOrFind(name, &value)) {
@@ -365,10 +365,10 @@ MethodResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignm
         base->localVariableStorage.deleteRange(localVariableStorageBoundary,
                                                base->localVariableStorage.items.end());
     }
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
-MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block) {
+FnResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block) {
     BaseInterpreter* base = &frame->interp->base;
 
     // Execute each statement in this block.
@@ -376,28 +376,28 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
         frame->tokenIdx = statement->tokenIdx;
         switch (statement->id) {
             case Statement::ID::If_: {
-                MethodResult result = execIf(frame, statement->if_().get());
-                if (result != MethodResult::OK)
+                FnResult result = execIf(frame, statement->if_().get());
+                if (result != Fn_OK)
                     return result;
                 break;
             }
             case Statement::ID::While_: {
-                MethodResult result = execWhile(frame, statement->while_().get());
-                if (result != MethodResult::OK)
+                FnResult result = execWhile(frame, statement->while_().get());
+                if (result != Fn_OK)
                     return result;
                 break;
             }
             case Statement::ID::Assignment: {
-                MethodResult result = execAssign(frame, statement->assignment().get());
-                if (result != MethodResult::OK)
+                FnResult result = execAssign(frame, statement->assignment().get());
+                if (result != Fn_OK)
                     return result;
                 break;
             }
             case Statement::ID::Evaluate: {
                 ObjectStack::Boundary localVariableStorageBoundary =
                     base->localVariableStorage.end();
-                MethodResult result = eval(frame, statement->evaluate()->expr);
-                if (result != MethodResult::OK)
+                FnResult result = eval(frame, statement->evaluate()->expr);
+                if (result != Fn_OK)
                     return result;
                 bool hookResult = frame->hooks.onEvaluate(statement->evaluate()->attributes);
                 base->returnValue = {};
@@ -405,41 +405,41 @@ MethodResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* blo
                 base->localVariableStorage.deleteRange(localVariableStorageBoundary,
                                                        base->localVariableStorage.items.end());
                 if (!hookResult)
-                    return MethodResult::Error;
+                    return Fn_Error;
                 break;
             }
             case Statement::ID::Return_: {
-                MethodResult result = eval(frame, statement->return_()->expr);
-                if (result != MethodResult::OK)
+                FnResult result = eval(frame, statement->return_()->expr);
+                if (result != Fn_OK)
                     return result;
-                return MethodResult::Return;
+                return Fn_Return;
             }
             case Statement::ID::CustomBlock: {
                 const Statement::CustomBlock* cb = statement->customBlock().get();
-                MethodResult result = frame->hooks.doCustomBlock(cb);
-                if (result != MethodResult::OK)
+                FnResult result = frame->hooks.doCustomBlock(cb);
+                if (result != Fn_OK)
                     return result;
                 break;
             }
             default: {
                 PLY_ASSERT(0);
-                return MethodResult::Error;
+                return Fn_Error;
             }
         }
     }
 
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
-MethodResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block) {
+FnResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block) {
     BaseInterpreter* base = &frame->interp->base;
     PLY_SET_IN_SCOPE(frame->interp->currentFrame, frame);
     ObjectStack::Boundary endOfPreviousFrameStorage = base->localVariableStorage.end();
 
     // Execute function body.
-    MethodResult result = execBlock(frame, block);
-    if (result == MethodResult::Return)
-        result = MethodResult::OK;
+    FnResult result = execBlock(frame, block);
+    if (result == Fn_Return)
+        result = Fn_OK;
 
     // Destroy all local variables in this stack frame.
     WeakSequenceRef<AnyObject> deleteTo = base->localVariableStorage.items.end();

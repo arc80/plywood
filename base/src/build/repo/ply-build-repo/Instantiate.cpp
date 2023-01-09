@@ -165,7 +165,7 @@ bool onEvaluateDependency(InstantiatingInterpreter* ii, const AnyObject& attribu
         ii->interp.base.returnValue.cast<Repository::Function>();
     Target* depTarget = nullptr;
     if (instantiateTargetForCurrentConfig(
-            &depTarget, ii->mi, target->stmt->customBlock()->name) != MethodResult::OK)
+            &depTarget, ii->mi, target->stmt->customBlock()->name) != Fn_OK)
         return false;
     Dependency& foundDep =
         appendOrFind(ii->target->dependencies, depTarget,
@@ -187,7 +187,7 @@ bool onEvaluateLinkLibrary(PropertyCollector* pc, const AnyObject& attributes) {
     return true;
 }
 
-MethodResult custom_block_inside_config(PropertyCollector* pc,
+FnResult custom_block_inside_config(PropertyCollector* pc,
                                         const biscuit::Statement::CustomBlock* cb) {
     biscuit::Interpreter::Hooks hooks;
     if (cb->type == g_common->includeDirectoriesKey) {
@@ -207,7 +207,7 @@ MethodResult custom_block_inside_config(PropertyCollector* pc,
     return execBlock(pc->interp->currentFrame, cb->body);
 }
 
-MethodResult
+FnResult
 custom_block_inside_target_function(InstantiatingInterpreter* ii,
                                     const biscuit::Statement::CustomBlock* cb) {
     PropertyCollector pc;
@@ -238,7 +238,7 @@ custom_block_inside_target_function(InstantiatingInterpreter* ii,
     return execBlock(ii->interp.currentFrame, cb->body);
 }
 
-MethodResult runGenerateBlock(Repository::Function* target) {
+FnResult runGenerateBlock(Repository::Function* target) {
     // Create new interpreter.
     biscuit::Interpreter interp;
     interp.base.error = [&interp](StringView message) {
@@ -267,7 +267,7 @@ MethodResult runGenerateBlock(Repository::Function* target) {
     return execBlock(&frame, target->generateBlock->customBlock()->body);
 }
 
-MethodResult instantiateTargetForCurrentConfig(Target** outTarget,
+FnResult instantiateTargetForCurrentConfig(Target** outTarget,
                                                TargetInstantiator* mi, Label name) {
     // Check for an existing target; otherwise create one.
     Target* target = nullptr;
@@ -283,7 +283,7 @@ MethodResult instantiateTargetForCurrentConfig(Target** outTarget,
             // it.
             if (tws->statusInCurrentConfig == Instantiated) {
                 *outTarget = tws->target;
-                return MethodResult::OK;
+                return Fn_OK;
             }
             // Circular dependency check. FIXME: Handle gracefully
             if (tws->statusInCurrentConfig == Instantiating) {
@@ -312,8 +312,8 @@ MethodResult instantiateTargetForCurrentConfig(Target** outTarget,
     // Run the generate block if it didn't run already.
     if (!target_func->generatedOnce) {
         if (target_func->generateBlock) {
-            MethodResult result = runGenerateBlock(target_func);
-            if (result != MethodResult::OK)
+            FnResult result = runGenerateBlock(target_func);
+            if (result != Fn_OK)
                 return result;
         }
         target_func->generatedOnce = true;
@@ -362,7 +362,7 @@ MethodResult instantiateTargetForCurrentConfig(Target** outTarget,
         return String::format("library '{}'", g_labelStorage.view(targetDef->name));
     };
     frame.tkr = &target_func->plyfile->tkr;
-    MethodResult result = execFunction(&frame, targetDef->body);
+    FnResult result = execFunction(&frame, targetDef->body);
     mi->targetMap.find(name)->statusInCurrentConfig = Instantiated;
     return result;
 }
@@ -373,14 +373,14 @@ struct ConfigListInterpreter {
     TargetInstantiator* mi = nullptr;
 };
 
-MethodResult
+FnResult
 custom_block_inside_config_list(ConfigListInterpreter* cli,
                                 const biscuit::Statement::CustomBlock* cb) {
     PLY_ASSERT(cb->type == g_common->configKey);
 
     // Evaluate config name
-    MethodResult result = eval(cli->interp.currentFrame, cb->expr);
-    PLY_ASSERT(result == MethodResult::OK); // FIXME: Make robust
+    FnResult result = eval(cli->interp.currentFrame, cb->expr);
+    PLY_ASSERT(result == Fn_OK); // FIXME: Make robust
     String currentConfigName = *cli->interp.base.returnValue.cast<String>();
     PLY_ASSERT(currentConfigName); // FIXME: Make robust
 
@@ -417,7 +417,7 @@ custom_block_inside_config_list(ConfigListInterpreter* cli,
     hooks.doCustomBlock = {custom_block_inside_config, &pc};
     PLY_SET_IN_SCOPE(cli->interp.currentFrame->hooks, hooks);
     result = execBlock(cli->interp.currentFrame, cb->body);
-    if (result != MethodResult::OK)
+    if (result != Fn_OK)
         return result;
 
     // Add config to project
@@ -427,9 +427,9 @@ custom_block_inside_config_list(ConfigListInterpreter* cli,
     PLY_SET_IN_SCOPE(cli->mi->configBit, pc.configBit);
     for (StringView targetName : cli->build_folder->rootTargets) {
         Target* rootTarget = nullptr;
-        MethodResult result = instantiateTargetForCurrentConfig(
+        FnResult result = instantiateTargetForCurrentConfig(
             &rootTarget, cli->mi, g_labelStorage.insert(targetName));
-        if (result != MethodResult::OK)
+        if (result != Fn_OK)
             return result;
     }
 
@@ -443,7 +443,7 @@ custom_block_inside_config_list(ConfigListInterpreter* cli,
         item.value.statusInCurrentConfig = NotInstantiated;
     }
 
-    return MethodResult::OK;
+    return Fn_OK;
 }
 
 PLY_NO_INLINE void instantiate_all_configs(BuildFolder_t* build_folder) {
@@ -493,9 +493,9 @@ PLY_NO_INLINE void instantiate_all_configs(BuildFolder_t* build_folder) {
         frame.desc = []() -> HybridString { return "config_list"; };
         frame.tkr = &configList->plyfile->tkr;
         frame.hooks.doCustomBlock = {custom_block_inside_config_list, &cli};
-        MethodResult result =
+        FnResult result =
             execFunction(&frame, configList->blockStmt->customBlock()->body);
-        if (result == MethodResult::Error) {
+        if (result == Fn_Error) {
             exit(1);
         }
     }

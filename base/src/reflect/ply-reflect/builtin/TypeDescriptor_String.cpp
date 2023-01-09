@@ -27,21 +27,21 @@ struct StringMethodTable {
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<String>());
                     *interp->returnValue.cast<String>() =
                         *first.cast<String>() + *second.cast<String>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::Multiply: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<String>());
                     *interp->returnValue.cast<String>() =
                         *first.cast<String>() * *second.cast<u32>();
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 case MethodTable::BinaryOp::DoubleEqual: {
                     interp->returnValue =
                         *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
                     *interp->returnValue.cast<bool>() =
                         (*first.cast<String>() == *second.cast<String>());
-                    return MethodResult::OK;
+                    return Fn_OK;
                 }
                 default: {
                     return MethodTable::unsupportedBinaryOp(interp, op, first, second);

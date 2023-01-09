@@ -17,17 +17,17 @@ namespace ply {
 PLY_NO_INLINE MethodTable getMethodTable_Struct() {
     MethodTable methods;
     methods.propertyLookup = [](BaseInterpreter* interp, const AnyObject& obj,
-                                StringView propertyName) -> MethodResult {
+                                StringView propertyName) -> FnResult {
         const TypeDescriptor_Struct* structType = obj.type->cast<TypeDescriptor_Struct>();
         const TypeDescriptor_Struct::Member* member = structType->findMember(propertyName);
         if (!member) {
             interp->returnValue = {};
             interp->error(String::format("property '{}' not found in type '{}'", propertyName,
                                          obj.type->getName()));
-            return MethodResult::Error;
+            return Fn_Error;
         }
         interp->returnValue = {PLY_PTR_OFFSET(obj.data, member->offset), member->type};
-        return MethodResult::OK;
+        return Fn_OK;
     };
     return methods;
 }

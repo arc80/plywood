@@ -12,10 +12,10 @@ namespace ply {
 struct BaseInterpreter;
 struct AnyObject;
 
-enum class MethodResult {
-    OK,
-    Return,
-    Error,
+enum FnResult {
+    Fn_OK,
+    Fn_Return,
+    Fn_Error,
 };
 
 struct MethodTable {
@@ -69,25 +69,25 @@ struct MethodTable {
     // Static member functions
     static StringView unaryOpToString(UnaryOp op);
     static StringView binaryOpToString(BinaryOp op);
-    static MethodResult unsupportedUnaryOp(BaseInterpreter* interp, UnaryOp op,
+    static FnResult unsupportedUnaryOp(BaseInterpreter* interp, UnaryOp op,
                                            const AnyObject& obj);
-    static MethodResult unsupportedBinaryOp(BaseInterpreter* interp, MethodTable::BinaryOp op,
+    static FnResult unsupportedBinaryOp(BaseInterpreter* interp, MethodTable::BinaryOp op,
                                             const AnyObject& first, const AnyObject& second);
-    static MethodResult unsupportedPropertyLookup(BaseInterpreter* interp, const AnyObject& obj,
+    static FnResult unsupportedPropertyLookup(BaseInterpreter* interp, const AnyObject& obj,
                                                   StringView propertyName);
-    static MethodResult unsupportedSubscript(BaseInterpreter* interp, const AnyObject& obj,
+    static FnResult unsupportedSubscript(BaseInterpreter* interp, const AnyObject& obj,
                                              u32 index);
-    static MethodResult unsupportedPrint(BaseInterpreter* interp, const AnyObject& obj,
+    static FnResult unsupportedPrint(BaseInterpreter* interp, const AnyObject& obj,
                                          StringView formatSpec);
 
     // Member variables
-    MethodResult (*unaryOp)(BaseInterpreter* interp, UnaryOp op, const AnyObject& obj) = nullptr;
-    MethodResult (*binaryOp)(BaseInterpreter* interp, BinaryOp op, const AnyObject& first,
+    FnResult (*unaryOp)(BaseInterpreter* interp, UnaryOp op, const AnyObject& obj) = nullptr;
+    FnResult (*binaryOp)(BaseInterpreter* interp, BinaryOp op, const AnyObject& first,
                              const AnyObject& second) = nullptr;
-    MethodResult (*propertyLookup)(BaseInterpreter* interp, const AnyObject& obj,
+    FnResult (*propertyLookup)(BaseInterpreter* interp, const AnyObject& obj,
                                    StringView propertyName) = nullptr;
-    MethodResult (*subscript)(BaseInterpreter* interp, const AnyObject& obj, u32 index) = nullptr;
-    MethodResult (*print)(BaseInterpreter* interp, const AnyObject& obj,
+    FnResult (*subscript)(BaseInterpreter* interp, const AnyObject& obj, u32 index) = nullptr;
+    FnResult (*print)(BaseInterpreter* interp, const AnyObject& obj,
                           StringView formatSpec) = nullptr;
 
     // Constructor

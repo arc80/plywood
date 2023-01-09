@@ -16,7 +16,7 @@ struct MethodArgs {
     AnyObject self;
     ArrayView<const AnyObject> args;
 };
-using Method = MethodResult(const MethodArgs& args);
+using Method = FnResult(const MethodArgs& args);
 
 PLY_DLL_ENTRY extern TypeKey TypeKey_Method;
 
