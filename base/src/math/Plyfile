@@ -1,0 +1,22 @@
+library math {
+    source_files {
+        "math/ply-math"
+    }
+    include_directories {
+        public "math"
+    }
+    dependencies {
+        public platform
+    }
+}
+
+library math_tests {
+    link_objects_directly()
+    source_files {
+        "tests"
+    }
+    dependencies {
+        public math
+        public test
+    }
+}

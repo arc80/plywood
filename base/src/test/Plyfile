@@ -4,6 +4,7 @@ executable PlywoodTests {
     }
     dependencies {
         private runtime_tests
+        private math_tests
         private test
     }
 }
