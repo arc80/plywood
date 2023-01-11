@@ -75,7 +75,7 @@ bool assignToCompileOptions(PropertyCollector* pc, const AnyObject& attributes,
         return false;
 
     Option opt{Option::Generic, g_labelStorage.view(label),
-                 *pc->interp->base.returnValue.cast<String>()};
+               *pc->interp->base.returnValue.cast<String>()};
     opt.enabledBits |= pc->configBit;
     if (vis == Visibility::Public) {
         opt.isPublicBits |= pc->configBit;
@@ -164,8 +164,8 @@ bool onEvaluateDependency(InstantiatingInterpreter* ii, const AnyObject& attribu
     Repository::Function* target =
         ii->interp.base.returnValue.cast<Repository::Function>();
     Target* depTarget = nullptr;
-    if (instantiateTargetForCurrentConfig(
-            &depTarget, ii->mi, target->stmt->customBlock()->name) != Fn_OK)
+    if (instantiateTargetForCurrentConfig(&depTarget, ii->mi,
+                                          target->stmt->customBlock()->name) != Fn_OK)
         return false;
     Dependency& foundDep =
         appendOrFind(ii->target->dependencies, depTarget,
@@ -188,7 +188,7 @@ bool onEvaluateLinkLibrary(PropertyCollector* pc, const AnyObject& attributes) {
 }
 
 FnResult custom_block_inside_config(PropertyCollector* pc,
-                                        const biscuit::Statement::CustomBlock* cb) {
+                                    const biscuit::Statement::CustomBlock* cb) {
     biscuit::Interpreter::Hooks hooks;
     if (cb->type == g_common->includeDirectoriesKey) {
         hooks.onEvaluate = {onEvaluateIncludeDirectory, pc};
@@ -267,8 +267,26 @@ FnResult runGenerateBlock(Repository::Function* target) {
     return execBlock(&frame, target->generateBlock->customBlock()->body);
 }
 
-FnResult instantiateTargetForCurrentConfig(Target** outTarget,
-                                               TargetInstantiator* mi, Label name) {
+FnResult fn_link_objects_directly(InstantiatingInterpreter* ii,
+                                  const FnParams& params) {
+    if (params.args.numItems != 0) {
+        params.base->error(
+            String::format("'link_objects_directly' takes no arguments"));
+        return Fn_Error;
+    }
+
+    if (ii->target->type == Target::Executable) {
+        params.base->error("Target must be a library");
+        return Fn_Error;
+    }
+
+    ii->target->type = Target::ObjectLibrary;
+
+    return Fn_OK;
+}
+
+FnResult instantiateTargetForCurrentConfig(Target** outTarget, TargetInstantiator* mi,
+                                           Label name) {
     // Check for an existing target; otherwise create one.
     Target* target = nullptr;
     {
@@ -325,7 +343,8 @@ FnResult instantiateTargetForCurrentConfig(Target** outTarget,
         target->type = Target::Executable;
     } else {
         PLY_ASSERT(targetDef->type == g_common->libraryKey);
-        PLY_ASSERT(target->type == Target::Library);
+        PLY_ASSERT(target->type == Target::Library ||
+                   target->type == Target::ObjectLibrary);
     }
 
     // Create new interpreter.
@@ -344,6 +363,12 @@ FnResult instantiateTargetForCurrentConfig(Target** outTarget,
             return *builtIn;
         if (AnyObject* obj = ii.target_func->currentOptions->map.find(identifier))
             return *obj;
+        if (identifier == g_common->linkObjectsDirectlyKey) {
+            AnyObject* obj = ii.interp.base.localVariableStorage.appendObject(
+                getTypeDescriptor<BoundNativeMethod>());
+            *obj->cast<BoundNativeMethod>() = {&ii, fn_link_objects_directly};
+            return *obj;
+        }
         if (Repository::Function** target =
                 g_repository->globalScope.find(identifier)) {
             if (auto fnDef = (*target)->stmt->functionDefinition())
@@ -373,9 +398,8 @@ struct ConfigListInterpreter {
     TargetInstantiator* mi = nullptr;
 };
 
-FnResult
-custom_block_inside_config_list(ConfigListInterpreter* cli,
-                                const biscuit::Statement::CustomBlock* cb) {
+FnResult custom_block_inside_config_list(ConfigListInterpreter* cli,
+                                         const biscuit::Statement::CustomBlock* cb) {
     PLY_ASSERT(cb->type == g_common->configKey);
 
     // Evaluate config name

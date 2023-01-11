@@ -16,25 +16,43 @@ struct FnParams {
     AnyObject self;
     ArrayView<const AnyObject> args;
 };
-using Method = FnResult(const FnParams& params);
 
-PLY_DLL_ENTRY extern TypeKey TypeKey_Method;
+using NativeFunction = FnResult(const FnParams& params);
+template <typename T>
+using NativeMethod = FnResult(T* self, const FnParams& params);
 
-PLY_DLL_ENTRY NativeBindings& getNativeBindings_Method();
+struct BoundNativeMethod {
+    void* self = nullptr;
+    NativeMethod<void>* func = nullptr;
 
-struct TypeDescriptor_Method : TypeDescriptor {
-    PLY_DLL_ENTRY static TypeKey* typeKey;
-
-    PLY_INLINE TypeDescriptor_Method()
-        : TypeDescriptor{&TypeKey_Method, (void**) nullptr,
-                         getNativeBindings_Method() PLY_METHOD_TABLES_ONLY(, {})} {
+    template <typename T>
+    BoundNativeMethod(T* obj, NativeMethod<T>* func)
+        : self{obj}, func{(NativeMethod<void>*) func} {
     }
 };
 
+PLY_DLL_ENTRY extern TypeKey TypeKey_NativeFunction;
+PLY_DLL_ENTRY NativeBindings& getNativeBindings_NativeFunction();
 template <>
-struct TypeDescriptorSpecializer<Method> {
-    static PLY_NO_INLINE TypeDescriptor_Method* get() {
-        static TypeDescriptor_Method typeDesc;
+struct TypeDescriptorSpecializer<NativeFunction> {
+    static PLY_NO_INLINE TypeDescriptor* get() {
+        static TypeDescriptor typeDesc{&TypeKey_NativeFunction,
+                                       (void**) nullptr,
+                                       getNativeBindings_NativeFunction(),
+                                       {}};
+        return &typeDesc;
+    }
+};
+
+PLY_DLL_ENTRY extern TypeKey TypeKey_BoundNativeMethod;
+PLY_DLL_ENTRY NativeBindings& getNativeBindings_BoundNativeMethod();
+template <>
+struct TypeDescriptorSpecializer<BoundNativeMethod> {
+    static PLY_NO_INLINE TypeDescriptor* get() {
+        static TypeDescriptor typeDesc{&TypeKey_BoundNativeMethod,
+                                       (void**) nullptr,
+                                       getNativeBindings_BoundNativeMethod(),
+                                       {}};
         return &typeDesc;
     }
 };

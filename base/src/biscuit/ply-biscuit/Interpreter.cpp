@@ -187,13 +187,18 @@ FnResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* call) 
 
         // Execute function body and clean up stack frame.
         return execFunction(&newFrame, functionDef->body);
-    } else if (Method* method = callee.safeCast<Method>()) {
-        // Function is implemented in C++.
+    } else if (NativeFunction* func = callee.safeCast<NativeFunction>()) {
         FnParams params;
         params.base = base;
         params.self = self;
         params.args = args;
-        return method(params);
+        return func(params);
+    } else if (BoundNativeMethod* bnm = callee.safeCast<BoundNativeMethod>()) {
+        FnParams params;
+        params.base = base;
+        params.self = self;
+        params.args = args;
+        return bnm->func(bnm->self, params);
     }
 
     // Object is not callable

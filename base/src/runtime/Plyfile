@@ -21,6 +21,7 @@ library runtime {
 }
 
 library runtime_tests {
+    link_objects_directly()
     source_files {
         "tests"
     }
@@ -28,5 +29,4 @@ library runtime_tests {
         public runtime
         public test
     }
-    link_objects_directly()
 }

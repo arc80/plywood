@@ -63,6 +63,7 @@ struct Target {
     enum Type {
         Executable,
         Library,
+        ObjectLibrary,
     };
 
     Label name;

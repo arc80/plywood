@@ -73,17 +73,6 @@ FnResult doSaveIfDifferent(const FnParams& params) {
     return Fn_OK;
 }
 
-FnResult fn_link_objects_directly(const FnParams& params) {
-    if (params.args.numItems != 0) {
-        params.base->error(String::format("'link_objects_directly' takes no arguments"));
-        return Fn_Error;
-    }
-
-    // ...
-
-    return Fn_OK;
-}
-
 FnResult getExternFolder(const FnParams& params) {
     if (params.args.numItems != 1) {
         params.base->error(String::format("'get_extern_folder' expects 1 argument"));
@@ -250,7 +239,7 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
         if (label) {
             AnyObject* prop = dict->map.find(label);
             if (prop) {
-                if (prop->is<Method>()) {
+                if (prop->is<NativeFunction>()) {
                     AnyObject* bm =
                         interp->localVariableStorage.appendObject(getTypeDescriptor<BoundMethod>());
                     *bm->cast<BoundMethod>() = {obj, *prop};
@@ -287,8 +276,6 @@ void init_built_ins(BuildFolder_t* build_folder) {
     *BuiltInMap.insert(g_labelStorage.insert("escape")) = AnyObject::bind(doEscape);
     *BuiltInMap.insert(g_labelStorage.insert("save_if_different")) =
         AnyObject::bind(doSaveIfDifferent);
-    *BuiltInMap.insert(g_labelStorage.insert("link_objects_directly")) =
-        AnyObject::bind(fn_link_objects_directly);
 
     // sys dictionary
     *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("target_platform")) =
