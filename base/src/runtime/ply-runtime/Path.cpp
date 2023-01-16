@@ -188,22 +188,22 @@ PLY_NO_INLINE String Path_t::joinArray(ArrayView<const StringView> components) c
             return ".";
         }
     } else {
-        MemOutStream mout;
+        MemOutStream out;
         bool needSep = false;
         for (StringView comp : normComps) {
             if (needSep) {
-                mout << this->sepByte();
+                out << this->sepByte();
             } else {
                 if (comp.numBytes > 0) {
                     needSep = !this->isSepByte(comp[comp.numBytes - 1]);
                 }
             }
-            mout << comp;
+            out << comp;
         }
         if ((components.back().isEmpty() || this->isSepByte(components.back().back())) && needSep) {
-            mout << this->sepByte();
+            out << this->sepByte();
         }
-        return mout.moveToString();
+        return out.moveToString();
     }
 }
 
@@ -234,35 +234,35 @@ PLY_NO_INLINE String Path_t::makeRelative(StringView ancestor, StringView descen
     }
 
     // Form relative path (or absolute path if drive letters mismatch)
-    MemOutStream mout;
+    MemOutStream out;
     bool needSep = false;
     for (u32 i = 0; i < upFolders; i++) {
         if (needSep) {
-            mout << this->sepByte();
+            out << this->sepByte();
         }
-        mout << "..";
+        out << "..";
         needSep = true;
     }
     for (u32 i = mc; i < descendantComps.numItems(); i++) {
         if (needSep) {
-            mout << this->sepByte();
+            out << this->sepByte();
         }
-        mout << descendantComps[i];
+        out << descendantComps[i];
         needSep = !this->isSepByte(descendantComps[i].back());
     }
 
     // .
-    if (mout.getSeekPos() == 0) {
-        mout << ".";
+    if (out.get_seek_pos() == 0) {
+        out << ".";
         needSep = true;
     }
 
     // Trailing slash
     if (descendant.numBytes > 0 && this->isSepByte(descendant.back()) && needSep) {
-        mout << this->sepByte();
+        out << this->sepByte();
     }
 
-    return mout.moveToString();
+    return out.moveToString();
 }
 
 PLY_NO_INLINE HybridString Path_t::from(const Path_t& srcFormat, StringView srcPath) const {
@@ -279,21 +279,21 @@ PLY_NO_INLINE HybridString Path_t::from(const Path_t& srcFormat, StringView srcP
 }
 
 PLY_NO_INLINE WString win32PathArg(StringView path, bool allowExtended) {
-    MemOutStream outs;
+    MemOutStream out;
     if (allowExtended && WindowsPath.isAbsolute(path)) {
-        outs.write(ArrayView<const char16_t>{u"\\\\?\\", 4}.stringView());
+        out.write(ArrayView<const char16_t>{u"\\\\?\\", 4}.stringView());
     }
     while (path.numBytes > 0) {
         DecodeResult decoded = UTF8::decodePoint(path);
-        outs.tryMakeBytesAvailable(4);
+        out.ensure_contiguous(4);
         u32 numEncodedBytes = UTF16_Native::encodePoint(
-            outs.viewAvailable(), decoded.point == '/' ? '\\' : decoded.point);
-        outs.curByte += numEncodedBytes;
+            out.view_writable(), decoded.point == '/' ? '\\' : decoded.point);
+        out.cur_byte += numEncodedBytes;
         path.bytes += decoded.numBytes;
         path.numBytes -= decoded.numBytes;
     }
-    NativeEndianWriter{&outs}.write<u16>(0);
-    return WString::moveFromString(outs.moveToString());
+    NativeEndianWriter{out}.write<u16>(0);
+    return WString::moveFromString(out.moveToString());
 }
 
 } // namespace ply

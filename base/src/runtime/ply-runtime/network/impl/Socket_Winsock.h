@@ -68,10 +68,10 @@ struct TCPConnection_Winsock {
         return inPipe.socket;
     }
     PLY_INLINE InStream createInStream() {
-        return InStream{borrow(&this->inPipe)};
+        return InStream{&this->inPipe, false};
     }
     PLY_INLINE OutStream createOutStream() {
-        return OutStream{borrow(&this->outPipe)};
+        return OutStream{&this->outPipe, false};
     }
 };
 

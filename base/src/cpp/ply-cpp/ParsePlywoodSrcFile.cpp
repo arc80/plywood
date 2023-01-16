@@ -17,14 +17,14 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
 
     u32 sourceFileIdx = visitedFiles->sourceFiles.numItems();
     PPVisitedFiles::SourceFile& srcFile = visitedFiles->sourceFiles.append();
-    String src = FileSystem.loadTextAutodetect(absSrcPath).first;
+    String src = FileSystem.loadTextAutodetect(absSrcPath);
     if (FileSystem.lastResult() != FSResult::OK) {
         struct ErrorWrapper : BaseError {
             String msg;
             PLY_INLINE ErrorWrapper(String&& msg) : msg{std::move(msg)} {
             }
-            void writeMessage(OutStream* outs, const PPVisitedFiles*) const override {
-                *outs << msg;
+            void writeMessage(OutStream& out, const PPVisitedFiles*) const override {
+                out << msg;
             }
         };
         visor->handleError(new ErrorWrapper{String::format("Can't open '{}'\n", absSrcPath)});
@@ -40,7 +40,7 @@ void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFile
 
     Preprocessor::StackItem& item = pp.stack.append();
     item.includeChainIdx = includeChainIdx;
-    item.vins = ViewInStream{srcFile.contents};
+    item.in = ViewInStream{srcFile.contents};
     pp.linearLocAtEndOfStackTop = srcFile.contents.numBytes;
 
     PPVisitedFiles::LocationMapTraits::Item locMapItem;

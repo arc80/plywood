@@ -94,7 +94,7 @@ struct WriteObjectContext {
 //
 
 void writeObject(AnyObject obj, WriteObjectContext* context);
-void resolveLinksAndWriteLinkTable(MutableStringView view, OutStream* outs,
+void resolveLinksAndWriteLinkTable(MutStringView view, OutStream& out,
                                    SavedPtrResolver* ptrResolver);
 
 } // namespace ply

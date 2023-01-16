@@ -11,7 +11,7 @@
 namespace ply {
 
 template <typename Encoding>
-void writeText(OutStream* outs, CPUTimer::Duration duration){};
+void writeText(OutStream& out, CPUTimer::Duration duration){};
 
 struct LogChannel {
     StringView channelName;

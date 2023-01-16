@@ -139,58 +139,58 @@ struct ReflectionHookError : cpp::BaseError {
                                    cpp::LinearLocation otherLoc = -1)
         : type{type}, linearLoc{linearLoc}, otherLoc{otherLoc} {
     }
-    virtual void writeMessage(OutStream* outs,
+    virtual void writeMessage(OutStream& out,
                               const cpp::PPVisitedFiles* visitedFiles) const override;
 };
 
 PLY_DECLARE_TYPE_DESCRIPTOR(ReflectionHookError::Type)
 
-void ReflectionHookError::writeMessage(OutStream* outs,
+void ReflectionHookError::writeMessage(OutStream& out,
                                        const cpp::PPVisitedFiles* visitedFiles) const {
-    outs->format("{}: error: ", expandFileLocation(visitedFiles, this->linearLoc).toString());
+    out.format("{}: error: ", expandFileLocation(visitedFiles, this->linearLoc).toString());
     switch (this->type) {
         case ReflectionHookError::SwitchMayOnlyContainStructs: {
-            *outs << "a switch may only contain structs\n";
+            out << "a switch may only contain structs\n";
             break;
         }
         case ReflectionHookError::MissingReflectOffCommand: {
-            *outs << "can't find matching // ply reflect off\n";
+            out << "can't find matching // ply reflect off\n";
             break;
         }
         case ReflectionHookError::UnexpectedReflectOffCommand: {
-            *outs << "unexpected // ply reflect off\n";
+            out << "unexpected // ply reflect off\n";
             break;
         }
         case ReflectionHookError::CannotInjectCodeIntoMacro: {
-            *outs << "can't inject code inside macro\n";
-            outs->format("{}: note: for code injected by this command\n",
+            out << "can't inject code inside macro\n";
+            out.format("{}: note: for code injected by this command\n",
                          expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case ReflectionHookError::DuplicateCommand: {
-            *outs << "duplicate command\n";
-            outs->format("{}: note: see previous command\n",
+            out << "duplicate command\n";
+            out.format("{}: note: see previous command\n",
                          expandFileLocation(visitedFiles, this->otherLoc).toString());
             break;
         }
         case ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope: {
-            *outs << "command can only be used at declaration scope\n";
+            out << "command can only be used at declaration scope\n";
             break;
         }
         case ReflectionHookError::CommandCanOnlyBeUsedInClassOrStruct: {
-            *outs << "command can only be used inside a class or struct\n";
+            out << "command can only be used inside a class or struct\n";
             break;
         }
         case ReflectionHookError::CommandCanOnlyBeUsedInsideEnum: {
-            *outs << "command can only be used inside an enum\n";
+            out << "command can only be used inside an enum\n";
             break;
         }
         case ReflectionHookError::UnrecognizedCommand: {
-            *outs << "unrecognized command\n";
+            out << "unrecognized command\n";
             break;
         }
         default: {
-            *outs << "error message not implemented!\n";
+            out << "error message not implemented!\n";
             break;
         }
     }
@@ -314,9 +314,9 @@ struct ReflectionHooks : cpp::ParseSupervisor {
 
     virtual void onGotInclude(StringView directive) override {
         const cpp::Preprocessor::StackItem& ppItem = this->parser->pp->stack.back();
-        const char* ppItemStartUnit = (const char*) ppItem.vins.getStartByte();
+        const char* ppItemStartUnit = (const char*) ppItem.in.cur_byte;
         PLY_ASSERT(directive.bytes >= ppItemStartUnit &&
-                   directive.end() <= (const char*) ppItem.vins.endByte);
+                   directive.end() <= (const char*) ppItem.in.end_byte);
         if (!directive.rtrim([](char c) { return isWhite(c); }).endsWith("//@@ply"))
             return;
 
@@ -367,11 +367,11 @@ struct ReflectionHooks : cpp::ParseSupervisor {
             }
         } else if (token.type == cpp::Token::LineComment) {
             ViewInStream commentReader{token.identifier};
-            PLY_ASSERT(commentReader.viewAvailable().startsWith("//"));
-            commentReader.advanceByte(2);
+            PLY_ASSERT(commentReader.view_readable().startsWith("//"));
+            commentReader.cur_byte += 2;
             commentReader.parse<fmt::Whitespace>();
-            if (commentReader.viewAvailable().startsWith("%%")) {
-                commentReader.advanceByte(2);
+            if (commentReader.view_readable().startsWith("%%")) {
+                commentReader.cur_byte += 2;
                 commentReader.parse<fmt::Whitespace>();
                 StringView cmd = commentReader.readView<fmt::Identifier>();
                 if (cmd == "end") {
@@ -384,9 +384,10 @@ struct ReflectionHooks : cpp::ParseSupervisor {
                         state.captureMembersToken = {};
                     }
                 }
-            } else if (commentReader.viewAvailable().startsWith("ply ")) {
+            } else if (commentReader.view_readable().startsWith("ply ")) {
                 String fixed = String::format(
-                    "// {}\n", StringView{" "}.join(commentReader.viewAvailable()
+                    "// {}\n",
+                    StringView{" "}.join(commentReader.view_readable()
                                                         .rtrim([](char c) { return isWhite(c); })
                                                         .splitByte(' ')));
                 if (fixed == "// ply make switch\n" || fixed == "// ply make reflected switch\n") {
@@ -461,8 +462,8 @@ struct ReflectionHooks : cpp::ParseSupervisor {
 
     virtual bool handleError(Owned<cpp::BaseError>&& err) override {
         this->anyError = true;
-        OutStream outs = StdErr::text();
-        err->writeMessage(&outs, this->parser->pp->visitedFiles);
+        OutStream out = Console.error();
+        err->writeMessage(out, this->parser->pp->visitedFiles);
         return true;
     }
 };
@@ -490,7 +491,7 @@ Tuple<SingleFileReflectionInfo, bool> extractReflection(ReflectionInfoAggregator
 struct CodeGenerator {
     virtual ~CodeGenerator() {
     }
-    virtual void write(OutStream* outs) = 0;
+    virtual void write(OutStream& out) = 0;
 };
 
 String getSwitchInl(SwitchInfo* switch_) {
@@ -525,7 +526,7 @@ void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
     String absInlPath = Path.join(Workspace.path, switch_->inlineInlPath);
     FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
         absInlPath, getSwitchInl(switch_), tff);
-    OutStream stdOut = StdOut::text();
+    OutStream stdOut = Console.out();
     if (result == FSResult::OK) {
         stdOut.format("Wrote {}\n", absInlPath);
     } else if (result != FSResult::Unchanged) {
@@ -534,7 +535,7 @@ void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
 }
 
 String performSubsts(StringView absPath, ArrayView<Subst> substs) {
-    String src = FileSystem.loadTextAutodetect(absPath).first;
+    String src = FileSystem.loadTextAutodetect(absPath);
     if (FileSystem.lastResult() != FSResult::OK)
         return {};
 
@@ -559,7 +560,7 @@ void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs, const Tex
     if (FileSystem.lastResult() == FSResult::OK) {
         FSResult result =
             FileSystem.makeDirsAndSaveTextIfDifferent(absPath, srcWithSubst, tff);
-        OutStream stdOut = StdOut::text();
+        OutStream stdOut = Console.out();
         if (result == FSResult::OK) {
             stdOut.format("Wrote {}\n", absPath);
         } else if (result != FSResult::Unchanged) {
@@ -572,7 +573,7 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
     struct CodeGenerator {
         virtual ~CodeGenerator() {
         }
-        virtual void write(OutStream* outs) = 0;
+        virtual void write(OutStream& out) = 0;
     };
 
     struct Traits {
@@ -592,12 +593,12 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
     for (ReflectedClass* clazz : agg->classes) {
         struct StructGenerator : CodeGenerator {
             ReflectedClass* clazz;
-            virtual void write(OutStream* outs) override {
-                outs->format("PLY_STRUCT_BEGIN({})\n", this->clazz->name);
+            virtual void write(OutStream& out) override {
+                out.format("PLY_STRUCT_BEGIN({})\n", this->clazz->name);
                 for (StringView member : this->clazz->members) {
-                    outs->format("PLY_STRUCT_MEMBER({})\n", member);
+                    out.format("PLY_STRUCT_MEMBER({})\n", member);
                 }
-                *outs << "PLY_STRUCT_END()\n\n";
+                out << "PLY_STRUCT_END()\n\n";
             }
             StructGenerator(ReflectedClass* clazz) : clazz{clazz} {
             }
@@ -609,16 +610,16 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
     for (ReflectedEnum* enum_ : agg->enums) {
         struct EnumGenerator : CodeGenerator {
             ReflectedEnum* enum_;
-            virtual void write(OutStream* outs) override {
-                outs->format("PLY_ENUM_BEGIN({}, {})\n", this->enum_->namespacePrefix,
+            virtual void write(OutStream& out) override {
+                out.format("PLY_ENUM_BEGIN({}, {})\n", this->enum_->namespacePrefix,
                              this->enum_->enumName);
                 for (u32 i : range(this->enum_->enumerators.numItems())) {
                     StringView enumerator = this->enum_->enumerators[i];
                     if ((i != this->enum_->enumerators.numItems() - 1) || (enumerator != "Count")) {
-                        outs->format("PLY_ENUM_IDENTIFIER({})\n", enumerator);
+                        out.format("PLY_ENUM_IDENTIFIER({})\n", enumerator);
                     }
                 }
-                outs->format("PLY_ENUM_END()\n\n");
+                out.format("PLY_ENUM_END()\n\n");
             }
             EnumGenerator(ReflectedEnum* enum_) : enum_{enum_} {
             }
@@ -630,19 +631,19 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
     for (SwitchInfo* switch_ : agg->switches) {
         struct SwitchGenerator : CodeGenerator {
             SwitchInfo* switch_;
-            virtual void write(OutStream* outs) override {
-                outs->format("SWITCH_TABLE_BEGIN({})\n", this->switch_->name);
+            virtual void write(OutStream& out) override {
+                out.format("SWITCH_TABLE_BEGIN({})\n", this->switch_->name);
                 for (StringView state : this->switch_->states) {
-                    outs->format("SWITCH_TABLE_STATE({}, {})\n", this->switch_->name, state);
+                    out.format("SWITCH_TABLE_STATE({}, {})\n", this->switch_->name, state);
                 }
-                outs->format("SWITCH_TABLE_END({})\n\n", this->switch_->name);
+                out.format("SWITCH_TABLE_END({})\n\n", this->switch_->name);
 
                 if (this->switch_->isReflected) {
-                    outs->format("PLY_SWITCH_BEGIN({})\n", this->switch_->name);
+                    out.format("PLY_SWITCH_BEGIN({})\n", this->switch_->name);
                     for (StringView state : this->switch_->states) {
-                        outs->format("PLY_SWITCH_MEMBER({})\n", state);
+                        out.format("PLY_SWITCH_MEMBER({})\n", state);
                     }
-                    outs->format("PLY_SWITCH_END()\n\n");
+                    out.format("PLY_SWITCH_END()\n\n");
                 }
             }
             SwitchGenerator(SwitchInfo* switch_) : switch_{switch_} {
@@ -658,11 +659,11 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
 
         MemOutStream mout;
         for (CodeGenerator* generator : item.sources) {
-            generator->write(&mout);
+            generator->write(mout);
         }
         FSResult result =
             FileSystem.makeDirsAndSaveTextIfDifferent(absPath, mout.moveToString(), tff);
-        OutStream stdOut = StdOut::text();
+        OutStream stdOut = Console.out();
         if (result == FSResult::OK) {
             stdOut.format("Wrote {}\n", absPath);
         } else if (result != FSResult::Unchanged) {

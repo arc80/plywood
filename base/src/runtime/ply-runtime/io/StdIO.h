@@ -7,66 +7,23 @@
 #include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
 
-#if !defined(PLY_IMPL_STDPIPES_PATH)
-#if PLY_TARGET_WIN32
-#define PLY_IMPL_STDPIPES_PATH "impl/StdPipes_Win32.h"
-#define PLY_IMPL_STDPIPES_TYPE StdPipes_Win32
-#define PLY_WITH_STDPIPES_WIN32 1
-#elif PLY_TARGET_POSIX
-#define PLY_IMPL_STDPIPES_PATH "impl/StdPipes_FD.h"
-#define PLY_IMPL_STDPIPES_TYPE StdPipes_FD
-#define PLY_WITH_STDPIPES_FD 1
-#else
-#define PLY_IMPL_STDPIPES_PATH "*** Unable to select a default StdPipes implementation ***"
-#endif
-#endif
-
-#include PLY_IMPL_STDPIPES_PATH
-
 namespace ply {
 
-using StdPipes = PLY_IMPL_STDPIPES_TYPE;
-
-struct StdIn {
-    static PLY_INLINE Borrowed<InPipe> pipe() {
-        return StdPipes::stdIn();
-    }
-    static PLY_INLINE InStream binary() {
-        return InStream{StdPipes::stdIn()};
-    }
-    static PLY_DLL_ENTRY InStream text();
-
-    // FIXME: Remove these declarations later:
-    static InStream createStream() = delete;       // call binary() instead
-    static InStream createStringReader() = delete; // call text() instead
+InPipe* get_console_in_pipe();
+OutPipe* get_console_out_pipe();
+OutPipe* get_console_error_pipe();
+    
+enum ConsoleMode {
+    CM_Text,
+    CM_Binary,
 };
 
-struct StdOut {
-    static PLY_INLINE Borrowed<OutPipe> pipe() {
-        return StdPipes::stdOut();
-    }
-    static PLY_INLINE OutStream binary() {
-        return OutStream{StdPipes::stdOut()};
-    }
-    static PLY_DLL_ENTRY OutStream text();
-
-    // FIXME: Remove these declarations later:
-    static InStream createStream() = delete;       // call binary() instead
-    static InStream createStringWriter() = delete; // call text() instead
+struct Console_t {
+    InStream in(ConsoleMode mode = CM_Text);
+    OutStream out(ConsoleMode mode = CM_Text);
+    OutStream error(ConsoleMode mode = CM_Text);
 };
 
-struct StdErr {
-    static PLY_INLINE Borrowed<OutPipe> pipe() {
-        return StdPipes::stdErr();
-    }
-    static PLY_INLINE OutStream binary() {
-        return OutStream{StdPipes::stdErr()};
-    }
-    static PLY_DLL_ENTRY OutStream text();
-
-    // FIXME: Remove these declarations later:
-    static InStream createStream() = delete;       // call binary() instead
-    static InStream createStringWriter() = delete; // call text() instead
-};
+extern Console_t Console;
 
 } // namespace ply

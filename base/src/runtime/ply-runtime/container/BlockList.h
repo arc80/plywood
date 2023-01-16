@@ -57,7 +57,7 @@ struct BlockList {
         PLY_INLINE StringView viewUsedBytes() const {
             return {this->start(), this->numBytesUsed - this->startOffset};
         }
-        PLY_INLINE MutableStringView viewUnusedBytes() {
+        PLY_INLINE MutStringView viewUnusedBytes() {
             return {this->unused(), this->blockSize - this->numBytesUsed};
         }
         // Returns a WeakRef to next block, and the next byte after the last byte in this block,

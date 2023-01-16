@@ -9,7 +9,7 @@
 namespace ply {
 
 struct StringView;
-struct MutableStringView;
+struct MutStringView;
 
 //------------------------------------------------------------------------------------------------
 /*!
@@ -75,20 +75,20 @@ struct ArrayView {
 
     /*!
     \beginGroup
-    Explicitly create an `ArrayView` from a `StringView` or `MutableStringView`.
+    Explicitly create an `ArrayView` from a `StringView` or `MutStringView`.
     */
     static PLY_INLINE ArrayView<const T> from(StringView view);
-    static PLY_INLINE ArrayView<T> from(MutableStringView view);
+    static PLY_INLINE ArrayView<T> from(MutStringView view);
     /*!
     \endGroup
     */
 
     /*!
     \beginGroup
-    Explicitly convert the `ArrayView` to a `StringView` or `MutableStringView`.
+    Explicitly convert the `ArrayView` to a `StringView` or `MutStringView`.
     */
     PLY_INLINE StringView stringView() const;
-    PLY_INLINE MutableStringView mutableStringView();
+    PLY_INLINE MutStringView mutableStringView();
     /*!
     \endGroup
     */

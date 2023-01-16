@@ -8,39 +8,39 @@
 namespace pylon {
 
 struct WriteContext {
-    OutStream* outs;
+    OutStream& out;
     int depth = 0;
 
-    PLY_INLINE WriteContext(OutStream* outs) : outs{outs } {
+    PLY_INLINE WriteContext(OutStream& out) : out{out} {
     }
 
     PLY_NO_INLINE void indent() {
         for (int i = 0; i < depth; i++) {
-            *this->outs << "  ";
+            this->out << "  ";
         }
     }
 
     PLY_NO_INLINE void write(const Node* aNode) {
         if (aNode->isObject()) {
-            *this->outs << "{\n";
+            this->out << "{\n";
             this->depth++;
             const Node::Object& objNode = aNode->object();
             u32 numItems = objNode.items.numItems();
             for (u32 i : range(numItems)) {
                 const Node::Object::Item& objItem = objNode.items[i];
                 indent();
-                this->outs->format("\"{}\": ", fmt::EscapedString{objItem.key});
+                this->out.format("\"{}\": ", fmt::EscapedString{objItem.key});
                 write(objItem.value);
                 if (i + 1 < numItems) {
-                    *this->outs << ',';
+                    this->out << ',';
                 }
-                *this->outs << '\n';
+                this->out << '\n';
             }
             this->depth--;
             indent();
-            *this->outs << '}';
+            this->out << '}';
         } else if (aNode->isArray()) {
-            *this->outs << "[\n";
+            this->out << "[\n";
             this->depth++;
             ArrayView<const Node* const> arrNode = aNode->arrayView();
             u32 numItems = arrNode.numItems;
@@ -48,30 +48,30 @@ struct WriteContext {
                 indent();
                 write(arrNode[i]);
                 if (i + 1 < numItems) {
-                    *this->outs << ',';
+                    this->out << ',';
                 }
-                *this->outs << '\n';
+                this->out << '\n';
             }
             this->depth--;
             indent();
-            *this->outs << ']';
+            this->out << ']';
         } else if (aNode->isText()) {
-            this->outs->format("\"{}\"", fmt::EscapedString{aNode->text()});
+            this->out.format("\"{}\"", fmt::EscapedString{aNode->text()});
         } else {
             PLY_ASSERT(0);  // unsupported
         }
     }
 };
 
-PLY_NO_INLINE void write(OutStream* outs, const Node* aNode) {
-    WriteContext ctx{outs};
+PLY_NO_INLINE void write(OutStream& out, const Node* aNode) {
+    WriteContext ctx{out};
     ctx.write(aNode);
 }
 
 PLY_NO_INLINE String toString(const Node* aNode) {
-    MemOutStream mout;
-    write(&mout, aNode);
-    return mout.moveToString();
+    MemOutStream out;
+    write(out, aNode);
+    return out.moveToString();
 }
 
 } // namespace pylon

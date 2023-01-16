@@ -10,10 +10,10 @@
 namespace ply {
 namespace cpp {
 
-void dumpParseTree(OutStream* outs, AnyObject any, u32 indent, const PPVisitedFiles* visitedFiles) {
+void dumpParseTree(OutStream& out, AnyObject any, u32 indent, const PPVisitedFiles* visitedFiles) {
     auto doIndent = [&]() {
         for (u32 i = 0; i < indent; i++) {
-            *outs << "  ";
+            out << "  ";
         }
     };
     indent++;
@@ -23,19 +23,19 @@ void dumpParseTree(OutStream* outs, AnyObject any, u32 indent, const PPVisitedFi
         if (structType->name == "ply::cpp::Token") {
             const Token* token = (const Token*) any.data;
             if (token->linearLoc >= 0 && visitedFiles) {
-                outs->format("{}: ", expandFileLocation(visitedFiles, token->linearLoc).toString());
+                out.format("{}: ", expandFileLocation(visitedFiles, token->linearLoc).toString());
             }
-            outs->format("\"{}\"\n", fmt::EscapedString{token->identifier});
+            out.format("\"{}\"\n", fmt::EscapedString{token->identifier});
         } else if (structType->name == "ply::cpp::grammar::QualifiedID") {
-            outs->format("\"{}\"", ((grammar::QualifiedID*) any.data)->toString());
-            *outs << '\n';
+            out.format("\"{}\"", ((grammar::QualifiedID*) any.data)->toString());
+            out << '\n';
         } else {
-            *outs << structType->name << '\n';
+            out << structType->name << '\n';
             for (const TypeDescriptor_Struct::Member& member : structType->members) {
                 doIndent();
-                outs->format("{}: ", member.name);
+                out.format("{}: ", member.name);
                 AnyObject anyMember{PLY_PTR_OFFSET(any.data, member.offset), member.type};
-                dumpParseTree(outs, anyMember, indent, visitedFiles);
+                dumpParseTree(out, anyMember, indent, visitedFiles);
             }
         }
     } else if (typeKey == TypeDescriptor_Enum::typeKey) {
@@ -50,35 +50,35 @@ void dumpParseTree(OutStream* outs, AnyObject any, u32 indent, const PPVisitedFi
         } else {
             PLY_ASSERT(0);
         }
-        outs->format("{}::{}\n", enumType->name, enumType->findValue(runTimeValue)->name);
+        out.format("{}::{}\n", enumType->name, enumType->findValue(runTimeValue)->name);
     } else if (typeKey == TypeDescriptor_Array::typeKey) {
         TypeDescriptor_Array* arrayType = any.type->cast<TypeDescriptor_Array>();
         TypeDescriptor* itemType = arrayType->itemType;
-        *outs << "[]\n";
+        out << "[]\n";
         impl::BaseArray* arr = (impl::BaseArray*) any.data;
         void* item = arr->m_items;
         for (u32 i = 0; i < arr->m_numItems; i++) {
             doIndent();
-            outs->format("[{}] ", i);
-            dumpParseTree(outs, AnyObject{item, itemType}, indent, visitedFiles);
+            out.format("[{}] ", i);
+            dumpParseTree(out, AnyObject{item, itemType}, indent, visitedFiles);
             item = PLY_PTR_OFFSET(item, itemType->fixedSize);
         }
     } else if (typeKey == TypeDescriptor_Switch::typeKey) {
         TypeDescriptor_Switch* switchType = any.type->cast<TypeDescriptor_Switch>();
         u16 id = *(u16*) any.data;
         void* buf = PLY_PTR_OFFSET(any.data, switchType->storageOffset);
-        dumpParseTree(outs, AnyObject{buf, switchType->states[id].structType}, indent - 1,
+        dumpParseTree(out, AnyObject{buf, switchType->states[id].structType}, indent - 1,
                       visitedFiles);
     } else if (typeKey == TypeDescriptor_Owned::typeKey) {
         TypeDescriptor_Owned* ownedType = any.type->cast<TypeDescriptor_Owned>();
         AnyObject targetObj = AnyObject{*(void**) any.data, ownedType->targetType};
         if (targetObj.data) {
-            dumpParseTree(outs, targetObj, indent - 1, visitedFiles);
+            dumpParseTree(out, targetObj, indent - 1, visitedFiles);
         } else {
-            *outs << "(null)\n";
+            out << "(null)\n";
         }
     } else if (typeKey == &TypeKey_Bool) {
-        *outs << (*(bool*) any.data ? "true\n" : "false\n");
+        out << (*(bool*) any.data ? "true\n" : "false\n");
     } else {
         PLY_ASSERT(0);
     }

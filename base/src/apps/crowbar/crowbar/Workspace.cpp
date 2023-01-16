@@ -30,7 +30,7 @@ PLY_NO_INLINE void Workspace_t::load() {
         this->path = nextDir;
     }
 
-    String contents = FileSystem.loadTextAutodetect(settingsPath).first;
+    String contents = FileSystem.loadTextAutodetect(settingsPath);
     if (FileSystem.lastResult() != FSResult::OK) {
         Error.log("Can't read {}", settingsPath);
         exit(1);

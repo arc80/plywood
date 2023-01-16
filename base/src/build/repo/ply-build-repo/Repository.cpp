@@ -63,8 +63,8 @@ void Repository::create() {
         // Create new interpreter.
         ConfigOptionsInterpreter coi;
         coi.interp.base.error = [&coi](StringView message) {
-            OutStream outs = StdErr::text();
-            logErrorWithStack(&outs, &coi.interp, message);
+            OutStream out = Console.error();
+            logErrorWithStack(out, &coi.interp, message);
         };
         coi.optionSet = cb.target_func->defaultOptions;
 

@@ -145,16 +145,16 @@ bool splitURL(BaseInterpreter* base, SplitURL* split, StringView s) {
 }
 
 PLY_NO_INLINE WString toWString(StringView str) {
-    MemOutStream outs;
+    MemOutStream out;
     while (str.numBytes > 0) {
         DecodeResult decoded = UTF8::decodePoint(str);
-        outs.makeBytesAvailable(4);
-        u32 numEncodedBytes = UTF16_Native::encodePoint(outs.viewAvailable(), decoded.point);
-        outs.curByte += numEncodedBytes;
+        out.ensure_contiguous(4);
+        u32 numEncodedBytes = UTF16_Native::encodePoint(out.view_writable(), decoded.point);
+        out.cur_byte += numEncodedBytes;
         str.offsetHead(decoded.numBytes);
     }
-    NativeEndianWriter{&outs}.write<u16>(0);
-    return WString::moveFromString(outs.moveToString());
+    NativeEndianWriter{out}.write<u16>(0);
+    return WString::moveFromString(out.moveToString());
 }
 
 void download(StringView dstPath, const SplitURL& split) {
@@ -178,8 +178,8 @@ void download(StringView dstPath, const SplitURL& split) {
     rc = WinHttpReceiveResponse(hreq, NULL);
     PLY_ASSERT(rc);
 
-    Owned<OutStream> outs = FileSystem.openStreamForWrite(dstPath);
-    PLY_ASSERT(outs);
+    OutStream out = FileSystem.openStreamForWrite(dstPath);
+    PLY_ASSERT(out);
     for (;;) {
         DWORD size = 0;
         rc = WinHttpQueryDataAvailable(hreq, &size);
@@ -187,13 +187,13 @@ void download(StringView dstPath, const SplitURL& split) {
         if (size == 0)
             break;
 
-        outs->tryMakeBytesAvailable();
-        MutableStringView dst = outs->viewAvailable();
+        out.ensure_writable();
+        MutStringView dst = out.view_writable();
         DWORD downloaded = 0;
         rc = WinHttpReadData(hreq, (LPVOID) dst.bytes, dst.numBytes, &downloaded);
         PLY_ASSERT(rc);
         PLY_ASSERT(downloaded <= dst.numBytes);
-        outs->curByte += downloaded;
+        out.cur_byte += downloaded;
     }
 
     WinHttpCloseHandle(hreq);

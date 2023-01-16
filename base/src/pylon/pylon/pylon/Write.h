@@ -9,7 +9,7 @@
 
 namespace pylon {
 
-void write(OutStream* outs, const Node* aNode);
+void write(OutStream& out, const Node* aNode);
 String toString(const Node* aNode);
 
 } // namespace pylon

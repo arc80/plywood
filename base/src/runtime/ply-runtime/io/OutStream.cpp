@@ -1,145 +1,105 @@
-/*------------------------------------
-  ///\  Plywood C++ Framework
-  \\\/  https://plywood.arc80.com/
-------------------------------------*/
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                           ┃
+┃    ╱   ╱╲    Plywood Multimedia Development Kit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/                  ┃
+┃    └──┴┴┴┘                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/io/OutStream.h>
 
 namespace ply {
 
-//------------------------------------------------------------------
-// OutStream
-//------------------------------------------------------------------
-PLY_NO_INLINE void OutStream::initFirstBlock() {
-    u32 blockSize = this->getBlockSize();
-    new (&this->block) Reference<BlockList::Footer>{BlockList::createBlock(blockSize)};
-    this->curByte = this->block->bytes;
-    this->endByte = this->block->end();
+OutStream::OutStream(OutStream&& other) : status{other.status} {
+    this->start_byte = other.start_byte;
+    this->cur_byte = other.cur_byte;
+    this->end_byte = other.end_byte;
+    this->block = std::move(other.block);
+    this->head_block = std::move(other.head_block);
+    this->out_pipe = other.out_pipe;
+    this->status = other.status;
+    other.start_byte = nullptr;
+    other.cur_byte = nullptr;
+    other.end_byte = nullptr;
+    other.out_pipe = nullptr;
+    other.status = {};
 }
 
-PLY_NO_INLINE void makeNull(OutStream* outs) {
-    outs->startByte = nullptr;
-    outs->curByte = nullptr;
-    outs->endByte = nullptr;
-    outs->reserved = nullptr;
-    outs->status = OutStream::Status{OutStream::Type::View, 0};
-}
+OutStream::OutStream(OutPipe* out_piipe, bool is_pipe_owner) {
+    this->status.is_pipe_owner = is_pipe_owner;
+    this->out_pipe = out_pipe;
 
-PLY_NO_INLINE OutStream::OutStream(OutStream&& other) : status{other.status} {
-    this->curByte = other.curByte;
-    this->endByte = other.endByte;
-    this->startByte = other.startByte; // Assume all union members are same size
-    this->reserved = other.reserved;   // Assume all union members are same size
-    makeNull(&other);
-}
-
-PLY_NO_INLINE OutStream::OutStream(OptionallyOwned<OutPipe>&& outPipe, u32 blockSizeExp)
-    : status{Type::Pipe, blockSizeExp} {
-    PLY_ASSERT(outPipe);
-    this->status.isPipeOwner = outPipe.isOwned() ? 1 : 0;
-    this->outPipe = outPipe.release();
-    this->initFirstBlock();
-}
-
-PLY_NO_INLINE void OutStream::destructInternal() {
-    PLY_ASSERT(this->status.type != (u32) Type::View);
-    this->flushMem();
-    destruct(this->block);
-    if (this->status.type == (u32) Type::Pipe) {
-        if (this->status.isPipeOwner) {
-            delete this->outPipe;
-        }
-    } else {
-        PLY_ASSERT(this->status.type == (u32) Type::Mem);
-        destruct(this->headBlock);
+    if (out_pipe) {
+        // Init first block.
+        this->block = BlockList::createBlock(this->status.block_size);
+        this->start_byte = this->block->bytes;
+        this->cur_byte = this->block->bytes;
+        this->end_byte = this->block->end();
     }
 }
 
-PLY_NO_INLINE bool OutStream::flushInternal() {
-    if (this->status.type == (u32) Type::View)
-        return true;
-
-    // this->block->numBytesUsed is the last flushed offset
-    PLY_ASSERT(this->endByte == this->block->bytes + this->block->blockSize);
-    u32 newWritePos = safeDemote<u32>(this->curByte - this->block->bytes);
-    PLY_ASSERT(newWritePos >= this->block->numBytesUsed);
-    PLY_ASSERT(newWritePos <= this->block->blockSize);
-    if (newWritePos > this->block->numBytesUsed) {
-        if (this->status.type == (u32) Type::Pipe && this->status.eof == 0) {
-            if (!this->outPipe->write({this->block->bytes + this->block->numBytesUsed,
-                                       newWritePos - this->block->numBytesUsed})) {
-                this->status.eof = 1;
-            }
-        }
-        this->block->numBytesUsed = newWritePos;
-    }
-
-    return this->status.eof == 0;
-}
-
-PLY_NO_INLINE bool OutStream::flush(bool toDevice) {
-    this->flushInternal();
-    bool rc = true;
-    if (this->status.type == (u32) Type::Pipe) {
-        rc = this->outPipe->flush(toDevice);
-    }
-    return rc;
-}
-
-PLY_NO_INLINE u64 OutStream::getSeekPos() const {
-    if (this->status.type == (u32) Type::View) {
-        return safeDemote<u64>(this->curByte - this->startByte);
-    } else {
-        return this->block->fileOffset + safeDemote<u64>(this->curByte - this->block->bytes);
+OutStream::~OutStream() {
+    if (this->status.is_pipe_owner) {
+        delete this->out_pipe;
     }
 }
 
-PLY_NO_INLINE u32 OutStream::tryMakeBytesAvailableInternal(s32 numBytes) {
-    // If argument is positive, function is allowed to make fewer bytes available in case of
-    // EOF/error, and the actual number is returned. If argument is negative, function must always
-    // make (at least) the requested number of bytes available for write, even if EOF/error is
-    // encountered. You must call atEOF() later to determine whether EOF/error was actually
-    // encountered. It is currently illegal to pass a negative argument to a ViewOutStream, but
-    // support is possible to add later if needed.
-    PLY_ASSERT(numBytes != 0);
+u64 OutStream::get_seek_pos() const {
+    u64 relative_to = this->block ? this->block->fileOffset : 0;
+    return relative_to + (this->cur_byte - this->start_byte);
+}
 
-    if (this->status.type == (u32) Type::View) {
-        // Currently illegal to pass a negative argument to a ViewOutStream, but support could be
-        // added later if needed.
-        PLY_ASSERT(numBytes > 0);
-        u32 bytesToReturn = safeDemote<u32>(this->endByte - this->curByte);
-        if (bytesToReturn < (u32) numBytes) {
+void OutStream::flush(bool hard) {
+    if (this->out_pipe) {
+        // Write buffered data to the pipe.
+        if (!this->out_pipe->write(
+                StringView::fromRange(this->block->unused(), this->cur_byte))) {
             this->status.eof = 1;
         }
-        return bytesToReturn;
+        // Forward flush command to the pipe.
+        this->out_pipe->flush(hard);
     }
-
-    if (this->status.eof && numBytes > 0) {
-        return 0;
+    if (this->block) {
+        // Update the block's write position.
+        this->block->numBytesUsed = safeDemote<u32>(this->cur_byte - this->start_byte);
     }
-
-    if (!this->flushInternal() && numBytes > 0) {
-        this->endByte = this->curByte;
-        return 0;
-    }
-
-    // Get a new block to write to
-    BlockList::appendBlockWithRecycle(this->block, max(this->getBlockSize(), (u32) abs(numBytes)));
-    this->curByte = this->block->bytes;
-    this->endByte = this->block->bytes + this->block->blockSize;
-    return this->block->blockSize;
 }
 
-PLY_NO_INLINE bool OutStream::writeSlowPath(StringView src) {
-    if (this->status.eof)
-        return false;
+bool OutStream::make_writable() {
+    if (this->cur_byte < this->end_byte)
+        return true; // We already have writable space.
 
-    while (src.numBytes > 0) {
-        if (!this->tryMakeBytesAvailable())
+    if (!this->block)
+        return false; // No blocks. We reached the end of a MutStringView.
+
+    // Consistency checks. Existing pointers should match the current block.
+    PLY_ASSERT(this->start_byte == this->block->bytes);
+    PLY_ASSERT(this->end_byte == this->block->bytes + this->block->blockSize);
+
+    if (this->out_pipe) {
+        // Write buffered data to the pipe.
+        if (!this->out_pipe->write(
+                StringView::fromRange(this->block->unused(), this->cur_byte))) {
+            this->status.eof = 1;
             return false;
-        u32 toCopy = min<u32>(this->numBytesAvailable(), src.numBytes);
-        memcpy(this->curByte, src.bytes, toCopy);
-        this->curByte += toCopy;
+        }
+    }
+
+    // Append a new block.
+    BlockList::appendBlockWithRecycle(this->block, this->status.block_size);
+    this->start_byte = this->block->bytes;
+    this->cur_byte = this->block->bytes;
+    this->end_byte = this->block->bytes + this->block->blockSize;
+    return true;
+}
+
+bool OutStream::write_internal(StringView src) {
+    while (src.numBytes > 0) {
+        if (!this->ensure_writable())
+            return false;
+        u32 toCopy = min<u32>(this->num_writable_bytes(), src.numBytes);
+        memcpy(this->cur_byte, src.bytes, toCopy);
+        this->cur_byte += toCopy;
         src.offsetHead(toCopy);
     }
 
@@ -149,28 +109,30 @@ PLY_NO_INLINE bool OutStream::writeSlowPath(StringView src) {
 //------------------------------------------------------------------
 // MemOutStream
 //------------------------------------------------------------------
-PLY_NO_INLINE MemOutStream::MemOutStream(u32 blockSizeExp) : OutStream{Type::Mem, blockSizeExp} {
-    this->initFirstBlock();
-    new (&this->headBlock) Reference<BlockList::Footer>{this->block};
+MemOutStream::MemOutStream() {
+    // Init first block.
+    this->head_block = BlockList::createBlock(this->status.block_size);
+    this->block = this->head_block;
+    this->start_byte = this->block->bytes;
+    this->cur_byte = this->block->bytes;
+    this->end_byte = this->block->end();
 }
 
-PLY_NO_INLINE String MemOutStream::moveToString() {
-    PLY_ASSERT(this->status.type == (u32) Type::Mem);
+String MemOutStream::moveToString() {
+    PLY_ASSERT(this->head_block);
 
-    // "Flush" the current write position to the block's numBytesUsed.
-    u32 newWritePos = safeDemote<u32>(this->curByte - this->block->bytes);
-    PLY_ASSERT(newWritePos >= this->block->numBytesUsed);
-    PLY_ASSERT(newWritePos <= this->block->blockSize);
-    this->block->numBytesUsed = newWritePos;
+    // Update the current block's write position.
+    this->block->numBytesUsed = safeDemote<u32>(this->cur_byte - this->start_byte);
 
-    // Release block references and create the String. Releasing the references allows
-    // BlockList::toString() to optimize the case where there's only one block.
+    // Release block references and create the String. Releasing the references
+    // allows BlockList::toString() to optimize the case where there's only one
+    // block.
     this->block = nullptr;
-    char* bytes = this->headBlock->bytes;
-    String result = BlockList::toString({std::move(this->headBlock), bytes});
+    char* bytes = this->head_block->bytes;
+    String result = BlockList::toString({std::move(this->head_block), bytes});
 
-    // Leave this stream in the state of a null ViewOutStream
-    makeNull(this);
+    // Reset to an empty stream.
+    this->close();
 
     return result;
 }

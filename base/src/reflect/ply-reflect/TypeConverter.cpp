@@ -100,11 +100,11 @@ struct TypeConverter {
     };
 };
 
-void makeConversionRecipe(OutStream* outs, const TypeConverter::WriteContext& writeCtx,
+void makeConversionRecipe(OutStream& out, const TypeConverter::WriteContext& writeCtx,
                           const TypeDescriptor* typeDesc, const TypeDescriptor* srcTypeDesc) {
     if (typeDesc->typeKey == &TypeKey_Float) {
         PLY_ASSERT(srcTypeDesc->typeKey == &TypeKey_Float);
-        NativeEndianWriter{outs}.write(TypeConverter::BaseCmd{TypeConverter::Cmd::Copy32,
+        NativeEndianWriter{out}.write(TypeConverter::BaseCmd{TypeConverter::Cmd::Copy32,
                                                               safeDemote<u16>(writeCtx.dstOffset),
                                                               safeDemote<u16>(writeCtx.srcOffset)});
     } else if (typeDesc->typeKey == &TypeKey_FixedArray) {
@@ -120,14 +120,14 @@ void makeConversionRecipe(OutStream* outs, const TypeConverter::WriteContext& wr
                 dstFixedArrayType->stride == sizeof(float) &&
                 srcFixedArrayType->stride == sizeof(float)) {
                 // Fast path: FixedArray of float with default stride
-                NativeEndianWriter{outs}.write(TypeConverter::Copy32Range{
+                NativeEndianWriter{out}.write(TypeConverter::Copy32Range{
                     TypeConverter::Cmd::Copy32Range, safeDemote<u16>(writeCtx.dstOffset),
                     safeDemote<u16>(writeCtx.srcOffset), safeDemote<u16>(itemsToCopy)});
             } else {
                 // Slow path
                 TypeConverter::WriteContext childWriteCtx = writeCtx;
                 for (u32 i = 0; i < itemsToCopy; i++) {
-                    makeConversionRecipe(outs, childWriteCtx, dstFixedArrayType->itemType,
+                    makeConversionRecipe(out, childWriteCtx, dstFixedArrayType->itemType,
                                          srcFixedArrayType->itemType);
                     childWriteCtx.dstOffset += dstFixedArrayType->stride;
                     childWriteCtx.srcOffset += srcFixedArrayType->stride;
@@ -135,7 +135,7 @@ void makeConversionRecipe(OutStream* outs, const TypeConverter::WriteContext& wr
             }
         } else if (srcTypeDesc->typeKey == &TypeKey_Array) {
             const TypeDescriptor_Array* srcArrType = srcTypeDesc->cast<TypeDescriptor_Array>();
-            NativeEndianWriter{outs}.write(TypeConverter::IterateArrayToFixedArray{
+            NativeEndianWriter{out}.write(TypeConverter::IterateArrayToFixedArray{
                 TypeConverter::Cmd::IterateArrayToFixedArray,
                 safeDemote<u16>(writeCtx.dstOffset),
                 safeDemote<u16>(writeCtx.srcOffset),
@@ -143,8 +143,8 @@ void makeConversionRecipe(OutStream* outs, const TypeConverter::WriteContext& wr
                 safeDemote<u16>(srcArrType->itemType->fixedSize),
                 safeDemote<u16>(dstFixedArrayType->numItems),
             });
-            makeConversionRecipe(outs, {0, 0}, dstFixedArrayType->itemType, srcArrType->itemType);
-            NativeEndianWriter{outs}.write(TypeConverter::Cmd::EndScope);
+            makeConversionRecipe(out, {0, 0}, dstFixedArrayType->itemType, srcArrType->itemType);
+            NativeEndianWriter{out}.write(TypeConverter::Cmd::EndScope);
         } else {
             PLY_FORCE_CRASH(); // unsupported srcTypeDesc
         }
@@ -153,17 +153,17 @@ void makeConversionRecipe(OutStream* outs, const TypeConverter::WriteContext& wr
     }
 }
 
-void createConversionRecipe(OutStream* outs, const TypeDescriptor_Struct* dstStruct,
+void createConversionRecipe(OutStream& out, const TypeDescriptor_Struct* dstStruct,
                             const ArrayView<TypeDescriptor_Struct*>& srcStructs) {
     for (const auto& dstMember : dstStruct->members) {
         for (u32 s = 0; s < srcStructs.numItems; s++) {
             TypeDescriptor_Struct* srcStruct = srcStructs[s];
             for (const auto& srcMember : srcStruct->members) {
                 if (dstMember.name == srcMember.name) {
-                    NativeEndianWriter{outs}.write(TypeConverter::SetRootSourceIndex{
+                    NativeEndianWriter{out}.write(TypeConverter::SetRootSourceIndex{
                         TypeConverter::Cmd::SetRootSourceIndex, safeDemote<u16>(s)});
                     TypeConverter::WriteContext writeCtx = {dstMember.offset, srcMember.offset};
-                    makeConversionRecipe(outs, writeCtx, dstMember.type, srcMember.type);
+                    makeConversionRecipe(out, writeCtx, dstMember.type, srcMember.type);
                     goto found;
                 }
             }
@@ -171,7 +171,7 @@ void createConversionRecipe(OutStream* outs, const TypeDescriptor_Struct* dstStr
         PLY_ASSERT(0); // No match for dstMember
     found:;
     }
-    NativeEndianWriter{outs}.write(TypeConverter::Cmd::EndScope);
+    NativeEndianWriter{out}.write(TypeConverter::Cmd::EndScope);
 }
 
 template <class T>

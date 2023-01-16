@@ -17,7 +17,7 @@ BuildFolder_t* BuildFolder = nullptr;
 
 PLY_NO_INLINE bool BuildFolder_t::load(StringView absPath) {
     String infoPath = Path.join(absPath, "info.pylon");
-    String strContents = FileSystem.loadTextAutodetect(infoPath).first;
+    String strContents = FileSystem.loadTextAutodetect(infoPath);
     if (FileSystem.lastResult() != FSResult::OK) {
         Error.log("Unable to read file '{}'", infoPath);
         return false;

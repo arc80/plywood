@@ -130,16 +130,16 @@ void cmd_codegen(CommandLine& cl) {
 //             ▄▄▄█▀
 
 void cmd_bigfont(CommandLine& cl) {
-    MemOutStream outs;
+    MemOutStream out;
     if (StringView word = cl.next_arg()) {
-        outs << word;
+        out << word;
     }
     while (StringView word = cl.next_arg()) {
-        outs << " " << word;
+        out << " " << word;
     }
     cl.check_for_unused_args();
 
-    print_bigfont(outs.moveToString());
+    print_bigfont(out.moveToString());
 }
 
 //    ▄▄▄        ▄▄▄      ▄▄
@@ -162,7 +162,7 @@ void cmd_folder(CommandLine& cl) {
         }
         cl.check_for_unused_args();
         if (create_build_folder(name)) {
-            StdOut::text().format("Current build folder is now '{}'\n", name);
+            Console.out().format("Current build folder is now '{}'\n", name);
         }
         return;
 
@@ -170,13 +170,13 @@ void cmd_folder(CommandLine& cl) {
         // list
         cl.check_for_unused_args();
         Array<String> folder_names = get_build_folders();
-        OutStream outs = StdOut::text();
+        OutStream out = Console.out();
         for (StringView name : folder_names) {
-            outs << name;
+            out << name;
             if (name == Workspace.currentBuildFolder) {
-                outs << " (current)";
+                out << " (current)";
             }
-            outs << '\n';
+            out << '\n';
         }
         return;
 
@@ -189,7 +189,7 @@ void cmd_folder(CommandLine& cl) {
         }
         cl.check_for_unused_args();
         if (set_build_folder(name)) {
-            StdOut::text().format("Current build folder is now '{}'\n", name);
+            Console.out().format("Current build folder is now '{}'\n", name);
         }
         return;
 

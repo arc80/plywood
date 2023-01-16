@@ -9,17 +9,17 @@
 namespace ply {
 namespace biscuit {
 
-void logErrorWithStack(OutStream* outs, const Interpreter* interp, StringView message) {
+void logErrorWithStack(OutStream& out, const Interpreter* interp, StringView message) {
     Interpreter::StackFrame* frame = interp->currentFrame;
     ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
-    outs->format("{} error: {}\n",
+    out.format("{} error: {}\n",
                  frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset), message);
     for (;;) {
         frame = frame->prevFrame;
         if (!frame)
             break;
         ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
-        outs->format("{}: called from {}\n",
+        out.format("{}: called from {}\n",
                      frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
                      frame->desc());
     }
@@ -33,13 +33,13 @@ AnyObject find(const LabelMap<AnyObject>& map, Label identifier) {
 FnResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
 
 // FIXME: Generalize this:
-void write(OutStream& outs, const AnyObject& arg) {
+void write(OutStream& out, const AnyObject& arg) {
     if (arg.is<u32>()) {
-        outs << *arg.cast<u32>();
+        out << *arg.cast<u32>();
     } else if (arg.is<bool>()) {
-        outs << *arg.cast<bool>();
+        out << *arg.cast<bool>();
     } else if (arg.is<String>()) {
-        outs << *arg.cast<String>();
+        out << *arg.cast<String>();
     } else {
         PLY_ASSERT(0);
     }

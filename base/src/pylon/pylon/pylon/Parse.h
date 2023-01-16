@@ -101,7 +101,7 @@ private:
     void error(u32 fileOfs, HybridString&& message);
     void advanceChar();
     Token readPlainToken(Token::Type type);
-    bool readEscapedHex(OutStream* outs, u32 escapeFileOfs);
+    bool readEscapedHex(OutStream& out, u32 escapeFileOfs);
     Token readQuotedString();
     Token readLiteral();
     Token readToken(bool tokenizeNewLine = false);
@@ -127,7 +127,7 @@ public:
         FileLocationMap fileLocMap;
     };
 
-    void dumpError(const ParseError& error, OutStream& outs) const;
+    void dumpError(const ParseError& error, OutStream& out) const;
 
     Result parse(StringView path, StringView srcView_);
 };

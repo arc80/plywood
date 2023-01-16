@@ -30,8 +30,8 @@ struct Subprocess {
         }
         static PLY_INLINE Output inherit() {
             Output h;
-            h.stdOutPipe = StdOut::pipe();
-            h.stdErrPipe = StdErr::pipe();
+            h.stdOutPipe = get_console_out_pipe();
+            h.stdErrPipe = get_console_error_pipe();
             return h;
         }
         static PLY_INLINE Output openSeparate() {
@@ -61,7 +61,7 @@ struct Subprocess {
             return {};
         }
         static PLY_INLINE Input inherit() {
-            return {Pipe::Redirect, StdIn::pipe()};
+            return {Pipe::Redirect, get_console_in_pipe()};
         }
         static PLY_INLINE Input open() {
             return {Pipe::Open, nullptr};

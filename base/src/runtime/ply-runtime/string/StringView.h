@@ -89,14 +89,14 @@ struct StringView {
     to `const char8_t*` (after C++20). `StringView` simply interprets such literals as `const
     char*`.
     */
-    PLY_INLINE StringView(const char* s)
+    StringView(const char* s)
         : bytes{s}, numBytes{(u32) std::char_traits<char>::length(s)} {
         PLY_ASSERT(s[numBytes] == 0); // Sanity check; numBytes must fit within 32-bit field
     }
 
-    template <typename U, std::size_t N,
+    template <typename U, u32 N,
               std::enable_if_t<std::is_same<U, std::decay_t<decltype(*u8"")>>::value, bool> = false>
-    PLY_INLINE StringView(const U (&s)[N]) : StringView((const char*) s) {
+    StringView(const U (&s)[N]) : bytes{s}, numBytes{N} {
     }
     /*!
     \endGroup
@@ -466,7 +466,7 @@ Returns a new `String` containing the contents of the given `StringView` repeate
 */
 PLY_DLL_ENTRY String operator*(StringView str, u32 count);
 
-struct MutableStringView {
+struct MutStringView {
     /*!
     The first byte in the mutable memory range.
     */
@@ -478,28 +478,28 @@ struct MutableStringView {
     u32 numBytes = 0;
 
     /*!
-    Constructs an empty `MutableStringView`.
+    Constructs an empty `MutStringView`.
     */
-    PLY_INLINE MutableStringView() = default;
+    PLY_INLINE MutStringView() = default;
 
     /*!
-    Constructs a `MutableStringView` explicitly from the arguments. The string memory is expected to
-    remain valid for the lifetime of the `MutableStringView`.
+    Constructs a `MutStringView` explicitly from the arguments. The string memory is expected to
+    remain valid for the lifetime of the `MutStringView`.
     */
-    PLY_INLINE MutableStringView(char* bytes, u32 numBytes) : bytes{bytes}, numBytes{numBytes} {
+    PLY_INLINE MutStringView(char* bytes, u32 numBytes) : bytes{bytes}, numBytes{numBytes} {
     }
 
     /*!
-    Returns a `MutableStringView` referencing an mutable range of memory between two pointers. The
+    Returns a `MutStringView` referencing an mutable range of memory between two pointers. The
     number of bytes in the memory range is given by `endByte` - `startByte`, and `endByte` is
     considered a pointer to the first byte _after_ the memory range.
     */
-    static PLY_INLINE MutableStringView fromRange(char* startByte, char* endByte) {
+    static PLY_INLINE MutStringView fromRange(char* startByte, char* endByte) {
         return {startByte, safeDemote<u32>(endByte - startByte)};
     }
 
     /*!
-    Conversion operator. Makes `MutableStringView` implicitly convertible to `StringView`.
+    Conversion operator. Makes `MutStringView` implicitly convertible to `StringView`.
     */
     PLY_INLINE operator const StringView&() const {
         return reinterpret_cast<const StringView&>(*this);
@@ -531,7 +531,7 @@ PLY_INLINE ArrayView<const T> ArrayView<T>::from(StringView view) {
 }
 
 template <typename T>
-PLY_INLINE ArrayView<T> ArrayView<T>::from(MutableStringView view) {
+PLY_INLINE ArrayView<T> ArrayView<T>::from(MutStringView view) {
     u32 numItems = view.numBytes / sizeof(T); // Divide by constant is fast
     return {(T*) view.bytes, numItems};
 }
@@ -542,7 +542,7 @@ PLY_INLINE StringView ArrayView<T>::stringView() const {
 }
 
 template <typename T>
-PLY_INLINE MutableStringView ArrayView<T>::mutableStringView() {
+PLY_INLINE MutStringView ArrayView<T>::mutableStringView() {
     return {(char*) items, safeDemote<u32>(numItems * sizeof(T))};
 }
 

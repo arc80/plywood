@@ -75,7 +75,7 @@ struct FixedArray {
         return {items, Size};
     }
 
-    PLY_INLINE MutableStringView mutableStringView() {
+    PLY_INLINE MutStringView mutableStringView() {
         return {reinterpret_cast<char*>(items), safeDemote<u32>(Size * sizeof(T))};
     }
 

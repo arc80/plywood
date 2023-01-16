@@ -242,8 +242,8 @@ FnResult runGenerateBlock(Repository::Function* target) {
     // Create new interpreter.
     biscuit::Interpreter interp;
     interp.base.error = [&interp](StringView message) {
-        OutStream outs = StdErr::text();
-        logErrorWithStack(&outs, &interp, message);
+        OutStream out = Console.error();
+        logErrorWithStack(out, &interp, message);
     };
 
     // Populate dictionaries.
@@ -350,8 +350,8 @@ FnResult instantiateTargetForCurrentConfig(Target** outTarget, TargetInstantiato
     // Create new interpreter.
     InstantiatingInterpreter ii;
     ii.interp.base.error = [&ii](StringView message) {
-        OutStream outs = StdErr::text();
-        logErrorWithStack(&outs, &ii.interp, message);
+        OutStream out = Console.error();
+        logErrorWithStack(out, &ii.interp, message);
     };
     ii.mi = mi;
     ii.target_func = target_func;
@@ -485,8 +485,8 @@ PLY_NO_INLINE void instantiate_all_configs(BuildFolder_t* build_folder) {
         // Create new interpreter.
         ConfigListInterpreter cli;
         cli.interp.base.error = [&cli](StringView message) {
-            OutStream outs = StdErr::text();
-            logErrorWithStack(&outs, &cli.interp, message);
+            OutStream out = Console.error();
+            logErrorWithStack(out, &cli.interp, message);
         };
         cli.mi = &mi;
 

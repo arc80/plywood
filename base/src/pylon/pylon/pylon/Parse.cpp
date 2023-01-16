@@ -13,32 +13,32 @@ bool isAlnumUnit(u32 c) {
            (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c >= 128);
 }
 
-void Parser::dumpError(const ParseError& error, OutStream& outs) const {
+void Parser::dumpError(const ParseError& error, OutStream& out) const {
     FileLocation errorLoc = this->fileLocMap.getFileLocation(error.fileOfs);
-    outs.format("({}, {}): error: {}\n", errorLoc.lineNumber, errorLoc.columnNumber, error.message);
+    out.format("({}, {}): error: {}\n", errorLoc.lineNumber, errorLoc.columnNumber, error.message);
     for (u32 i = 0; i < error.context.numItems(); i++) {
         const ParseError::Scope& scope = error.context.back(-(s32) i - 1);
         FileLocation contextLoc = this->fileLocMap.getFileLocation(scope.fileOfs);
-        outs.format("({}, {}) ", contextLoc.lineNumber, contextLoc.columnNumber);
+        out.format("({}, {}) ", contextLoc.lineNumber, contextLoc.columnNumber);
         switch (scope.type) {
             case ParseError::Scope::Object:
-                outs << "while reading object started here";
+                out << "while reading object started here";
                 break;
 
             case ParseError::Scope::Property:
-                outs << "while reading property " << scope.name << " started here";
+                out << "while reading property " << scope.name << " started here";
                 break;
 
             case ParseError::Scope::Duplicate:
-                outs << "existing property was defined here";
+                out << "existing property was defined here";
                 break;
 
             case ParseError::Scope::Array:
-                outs << "while reading item " << scope.index
+                out << "while reading item " << scope.index
                    << " of the array started here (index is zero-based)";
                 break;
         }
-        outs << '\n';
+        out << '\n';
     }
 }
 
@@ -65,7 +65,7 @@ Parser::Token Parser::readPlainToken(Token::Type type) {
     return result;
 }
 
-bool Parser::readEscapedHex(OutStream* outs, u32 escapeFileOfs) {
+bool Parser::readEscapedHex(OutStream& out, u32 escapeFileOfs) {
     PLY_ASSERT(0); // FIXME
     return false;
 }
@@ -73,8 +73,8 @@ bool Parser::readEscapedHex(OutStream* outs, u32 escapeFileOfs) {
 Parser::Token Parser::readQuotedString() {
     PLY_ASSERT(nextUnit == '"' || nextUnit == '\'');
     Token token = {Token::Type::Text, this->readOfs, {}};
-    MemOutStream outs;
-    NativeEndianWriter wr{&outs};
+    MemOutStream out;
+    NativeEndianWriter wr{out};
     s32 endByte = nextUnit;
     u32 quoteRun = 1;
     bool multiline = false;
@@ -173,7 +173,7 @@ Parser::Token Parser::readQuotedString() {
                         }
 
                         case 'x': {
-                            if (!readEscapedHex(&outs, escapeFileOfs))
+                            if (!readEscapedHex(out, escapeFileOfs))
                                 return {}; // FIXME: Would be better to continue reading the
                                            // rest of the string
                             break;
@@ -198,7 +198,7 @@ Parser::Token Parser::readQuotedString() {
         }
     }
 
-    token.text = outs.moveToString();
+    token.text = out.moveToString();
     return token;
 }
 

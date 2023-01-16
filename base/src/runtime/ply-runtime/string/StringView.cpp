@@ -126,7 +126,7 @@ PLY_NO_INLINE String StringView::reversedUTF8() const {
     // return the same string.
     String result = String::allocate(this->numBytes);
     StringView srcView = *this;
-    MutableStringView dstView{result.bytes, result.numBytes};
+    MutStringView dstView{result.bytes, result.numBytes};
     while (dstView.numBytes > 0) {
         u32 bytesToCopy = UTF8::backNumBytes(srcView);
         PLY_ASSERT(bytesToCopy > 0);

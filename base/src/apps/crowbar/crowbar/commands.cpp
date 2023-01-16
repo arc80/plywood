@@ -81,10 +81,9 @@ generateCMakeProject(StringView cmakeListsFolder,
     Owned<Subprocess> sub =
         Subprocess::exec(PLY_CMAKE_PATH, Array<StringView>{args}, buildFolder,
                          Subprocess::Output::openMerged());
-    String output =
-        TextFormat::platformPreference()
-            .createImporter(Owned<InStream>::create(sub->readFromStdOut.borrow()))
-            ->readRemainingContents();
+    String output = TextFormat::platformPreference()
+                        .createImporter({sub->readFromStdOut, false})
+                        .read_remaining_contents();
     s32 rc = sub->join();
     if (rc != 0) {
         Error.log("Error generating build system using CMake for folder '{}'\n",
@@ -118,7 +117,7 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
 
     // Write crowbar_bulk.cpp
     {
-        MemOutStream outs;
+        MemOutStream out;
         String sourceDir = Path.join(Workspace.path, "base/scripts");
         for (const Target* target : Project.targets) {
             for (const SourceGroup& sg : target->sourceGroups) {
@@ -128,14 +127,14 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
                         String includePath = PosixPath.from(
                             Path, Path.makeRelative(sourceDir,
                                                     Path.join(sg.absPath, sf.relPath)));
-                        outs.format("#include \"{}\"\n", includePath);
+                        out.format("#include \"{}\"\n", includePath);
                     }
                 }
             }
         }
         String sourcePath = Path.join(sourceDir, "crowbar_bulk.cpp");
         FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
-            sourcePath, outs.moveToString(), TextFormat::platformPreference());
+            sourcePath, out.moveToString(), TextFormat::platformPreference());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
             Error.log("Error writing {}", sourcePath);
         }
@@ -144,9 +143,9 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
     // Write build.bat
     {
         Array<Option> combinedOptions = get_combined_options();
-        MemOutStream outs;
-        outs << "@echo off\n";
-        outs << "cl";
+        MemOutStream out;
+        out << "@echo off\n";
+        out << "cl";
 
         // Compilation options
         CompilerSpecificOptions copts;
@@ -158,9 +157,9 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
             }
         }
         for (StringView opt : copts.compile) {
-            outs << ' ' << opt;
+            out << ' ' << opt;
         }
-        outs << " /Fd\"crowbar_bulk.pdb\"";
+        out << " /Fd\"crowbar_bulk.pdb\"";
 
         // Preprocessor definitions
         for (const Option& opt : combinedOptions) {
@@ -168,9 +167,9 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
                 continue;
             if (opt.type == Option::PreprocessorDef) {
                 if (opt.value) {
-                    outs.format(" /D{}={}", opt.key, opt.value);
+                    out.format(" /D{}={}", opt.key, opt.value);
                 } else {
-                    outs.format(" /D{}", opt.key);
+                    out.format(" /D{}", opt.key);
                 }
             }
         }
@@ -180,32 +179,32 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
             if (!hasBitAtIndex(opt.enabledBits, configIndex))
                 continue;
             if (opt.type == Option::IncludeDir) {
-                outs.format(" /I\"{}\"", Path.makeRelative(Workspace.path, opt.key));
+                out.format(" /I\"{}\"", Path.makeRelative(Workspace.path, opt.key));
             }
         }
 
-        outs << " base\\scripts\\crowbar_bulk.cpp";
-        outs << " /link";
+        out << " base\\scripts\\crowbar_bulk.cpp";
+        out << " /link";
 
         // Link options
         if (copts.link) {
             for (StringView opt : copts.link) {
-                outs << ' ' << opt;
+                out << ' ' << opt;
             }
         }
         for (const Option& opt : combinedOptions) {
             if (opt.type == Option::LinkerInput) {
-                outs << ' ' << opt.key;
+                out << ' ' << opt.key;
             }
         }
 
-        outs << " /incremental:no /out:crowbar.exe\n";
-        outs << "del crowbar_bulk.obj\n";
-        outs << "del crowbar_bulk.pdb\n";
+        out << " /incremental:no /out:crowbar.exe\n";
+        out << "del crowbar_bulk.obj\n";
+        out << "del crowbar_bulk.pdb\n";
 
         String batPath = Path.join(Workspace.path, "setup.bat");
         FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
-            batPath, outs.moveToString(), TextFormat::platformPreference());
+            batPath, out.moveToString(), TextFormat::platformPreference());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
             Error.log("Error writing {}", batPath);
         }
@@ -231,11 +230,11 @@ void command_open(BuildFolder_t* bf) {
         // Convert to UTF-16 path
         WString wstr;
         {
-            MemOutStream mout;
+            MemOutStream out;
             StringView srcView = slnPath.view();
-            TextConverter::create<UTF16_Native, UTF8>().writeTo(&mout, &srcView, true);
-            mout << StringView{"\0\0", 2}; // null terminated
-            wstr = WString::moveFromString(mout.moveToString());
+            TextConverter::create<UTF16_Native, UTF8>().writeTo(out, &srcView, true);
+            out << StringView{"\0\0", 2}; // null terminated
+            wstr = WString::moveFromString(out.moveToString());
         }
 
         // Open IDE

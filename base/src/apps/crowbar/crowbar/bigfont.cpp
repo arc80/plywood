@@ -64,9 +64,9 @@ void print_bigfont(StringView text) {
         }
     }
 
-    OutStream outs = StdOut::text();
+    OutStream out = Console.out(CM_Text);
     for (u32 i = 0; i < BigGlyph::height; i++) {
-        outs << "// ";
+        out << "// ";
         for (u32 j = 0; j < text.numBytes; j++) {
             // Look up glyph
             char c = text[j];
@@ -77,21 +77,21 @@ void print_bigfont(StringView text) {
                 continue;
 
             // Print current row of glyph
-            outs << ' ';
+            out << ' ';
             const char* data = GlyphData[glyph.row * BigGlyph::height + i] + glyph.col;
             for (u32 k = 0; k < glyph.width; k++) {
                 char p = data[k];
                 if (p == ' ') {
-                    outs << ' ';
+                    out << ' ';
                 } else if (p == ',') {
-                    outs << u8"▄";
+                    out << u8"▄";
                 } else if (p == '#') {
-                    outs << u8"█";
+                    out << u8"█";
                 } else if (p == '`') {
-                    outs << u8"▀";
+                    out << u8"▀";
                 }
             }
         }
-        outs << '\n';
+        out << '\n';
     }
 }

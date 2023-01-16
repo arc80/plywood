@@ -38,7 +38,7 @@ struct Preprocessor {
         PLY_INLINE Error(Type type, LinearLocation linearLoc, LinearLocation otherLoc = -1)
             : type{type}, linearLoc{linearLoc}, otherLoc{otherLoc} {
         }
-        virtual void writeMessage(OutStream* outs,
+        virtual void writeMessage(OutStream& out,
                                   const PPVisitedFiles* visitedFiles) const override;
     };
 
@@ -47,7 +47,7 @@ struct Preprocessor {
 
     struct StackItem {
         u32 includeChainIdx = 0;
-        ViewInStream vins;
+        ViewInStream in;
     };
     Array<StackItem> stack;
     LinearLocation linearLocAtEndOfStackTop = -1;

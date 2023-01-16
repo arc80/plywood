@@ -1,7 +1,10 @@
-/*------------------------------------
-  ///\  Plywood C++ Framework
-  \\\/  https://plywood.arc80.com/
-------------------------------------*/
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                   ┃
+┃    ╱   ╱╲    Plywood Multimedia Toolkit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/          ┃
+┃    └──┴┴┴┘                                 ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+
 #pragma once
 #include <ply-runtime/Core.h>
 
@@ -14,24 +17,30 @@
 
 namespace ply {
 
-//------------------------------------------------------------------
-// InPipe_Winsock
-//------------------------------------------------------------------
+// ┏━━━━━━━━━━━━━━━━━━┓
+// ┃  InPipe_Winsock  ┃
+// ┗━━━━━━━━━━━━━━━━━━┛
 struct InPipe_Winsock : InPipe {
-    static Funcs Funcs_;
+    static constexpr char* Type = "Winsock";
     SOCKET socket = INVALID_SOCKET;
 
-    PLY_DLL_ENTRY InPipe_Winsock(SOCKET socket);
+    InPipe_Winsock(SOCKET s) : InPipe{Type}, socket{s} {
+    }
+    virtual ~InPipe_Winsock();
+    virtual u32 read(MutStringView buf) override;
 };
 
-//------------------------------------------------------------------
-// OutPipe_Winsock
-//------------------------------------------------------------------
+// ┏━━━━━━━━━━━━━━━━━━━┓
+// ┃  OutPipe_Winsock  ┃
+// ┗━━━━━━━━━━━━━━━━━━━┛
 struct OutPipe_Winsock : OutPipe {
-    static Funcs Funcs_;
+    static constexpr char* Type = "Winsock";
     SOCKET socket = INVALID_SOCKET;
 
-    PLY_DLL_ENTRY OutPipe_Winsock(SOCKET socket);
+    OutPipe_Winsock(SOCKET s) : OutPipe{Type}, socket{s} {
+    }
+    virtual ~OutPipe_Winsock();
+    virtual bool write(StringView buf) override;
 };
 
 } // namespace ply

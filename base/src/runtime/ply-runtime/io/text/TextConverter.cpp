@@ -16,7 +16,7 @@ PLY_NO_INLINE TextConverter::TextConverter(const TextEncoding* dstEncoding,
     : dstEncoding{dstEncoding}, srcEncoding{srcEncoding} {
 }
 
-PLY_NO_INLINE bool TextConverter::convert(MutableStringView* dstBuf, StringView* srcBuf,
+PLY_NO_INLINE bool TextConverter::convert(MutStringView* dstBuf, StringView* srcBuf,
                                           bool flush) {
     bool wroteAnything = false;
 
@@ -140,16 +140,16 @@ PLY_NO_INLINE bool TextConverter::convert(MutableStringView* dstBuf, StringView*
     return wroteAnything;
 }
 
-PLY_NO_INLINE bool TextConverter::writeTo(OutStream* outs, StringView* srcBuf, bool flush) {
+PLY_NO_INLINE bool TextConverter::writeTo(OutStream& out, StringView* srcBuf, bool flush) {
     bool anyWorkDone = false;
     for (;;) {
-        if (!outs->tryMakeBytesAvailable())
+        if (!out.ensure_writable())
             break;
 
         // Write as much output as we can
-        MutableStringView dstBuf = outs->viewAvailable();
+        MutStringView dstBuf = out.view_writable();
         bool didWork = this->convert(&dstBuf, srcBuf, flush);
-        outs->curByte = dstBuf.bytes;
+        out.cur_byte = dstBuf.bytes;
         if (!didWork)
             break;
         anyWorkDone = true;
@@ -157,20 +157,17 @@ PLY_NO_INLINE bool TextConverter::writeTo(OutStream* outs, StringView* srcBuf, b
     return anyWorkDone;
 }
 
-PLY_NO_INLINE u32 TextConverter::readFrom(InStream* ins, MutableStringView* dstBuf) {
+PLY_NO_INLINE u32 TextConverter::readFrom(InStream& in, MutStringView* dstBuf) {
     u32 totalBytesWritten = 0;
     for (;;) {
-        // FIXME: Make this algorithm tighter!
-        // Advancing the input is a potentially blocking operation, so only do it if we
-        // absolutely have to:
-        ins->tryMakeBytesAvailable(4); // will return less than 4 on EOF/error *ONLY*
+        in.ensure_contiguous(4);
 
         // Filter as much input as we can:
         char* dstBefore = dstBuf->bytes;
-        StringView srcBuf = ins->viewAvailable();
-        bool flush = ins->atEOF();
+        StringView srcBuf = in.view_readable();
+        bool flush = in.at_eof();
         this->convert(dstBuf, &srcBuf, flush);
-        ins->curByte = srcBuf.bytes;
+        in.cur_byte = srcBuf.bytes;
         s32 numBytesWritten = safeDemote<s32>(dstBuf->bytes - dstBefore);
         totalBytesWritten += numBytesWritten;
 
@@ -179,7 +176,7 @@ PLY_NO_INLINE u32 TextConverter::readFrom(InStream* ins, MutableStringView* dstB
             break;
         // If input was exhausted, stop.
         if (flush) {
-            PLY_ASSERT(ins->numBytesAvailable() == 0);
+            PLY_ASSERT(in.num_bytes_readable() == 0);
             break;
         }
     }
@@ -189,70 +186,31 @@ PLY_NO_INLINE u32 TextConverter::readFrom(InStream* ins, MutableStringView* dstB
 PLY_NO_INLINE String TextConverter::convertInternal(const TextEncoding* dstEncoding,
                                                     const TextEncoding* srcEncoding,
                                                     StringView srcText) {
-    MemOutStream outs;
+    MemOutStream out;
     TextConverter converter{dstEncoding, srcEncoding};
-    converter.writeTo(&outs, &srcText, true);
+    converter.writeTo(out, &srcText, true);
     PLY_ASSERT(dstEncoding->unitSize > 0);
-    return outs.moveToString();
+    return out.moveToString();
 }
 
 //-----------------------------------------------------------------------
 // InPipe_TextConverter
 //-----------------------------------------------------------------------
-PLY_NO_INLINE void InPipe_TextConverter_destroy(InPipe* inPipe_) {
-    InPipe_TextConverter* inPipe = static_cast<InPipe_TextConverter*>(inPipe_);
-    destruct(inPipe->ins);
-}
-
-PLY_NO_INLINE u32 InPipe_TextConverter_readSome(InPipe* inPipe_, MutableStringView dstBuf) {
-    InPipe_TextConverter* inPipe = static_cast<InPipe_TextConverter*>(inPipe_);
-    return inPipe->converter.readFrom(inPipe->ins, &dstBuf);
-}
-
-InPipe::Funcs InPipe_TextConverter::Funcs_ = {
-    InPipe_TextConverter_destroy,
-    InPipe_TextConverter_readSome,
-    InPipe::getFileSize_Unsupported,
-};
-
-PLY_NO_INLINE InPipe_TextConverter::InPipe_TextConverter(OptionallyOwned<InStream>&& ins,
-                                                         const TextEncoding* dstEncoding,
-                                                         const TextEncoding* srcEncoding)
-    : InPipe{&Funcs_}, ins{std::move(ins)}, converter{dstEncoding, srcEncoding} {
+u32 InPipe_TextConverter::read(MutStringView buf) {
+    return this->converter.readFrom(this->in, &buf);
 }
 
 //-----------------------------------------------------------------------
 // OutPipe_TextConverter
 //-----------------------------------------------------------------------
-PLY_NO_INLINE void OutPipe_TextConverter_destroy(OutPipe* outPipe_) {
-    OutPipe_TextConverter* outPipe = static_cast<OutPipe_TextConverter*>(outPipe_);
-    destruct(outPipe->outs);
+bool OutPipe_TextConverter::write(StringView buf) {
+    return this->converter.writeTo(this->out, &buf, false);
 }
 
-PLY_NO_INLINE bool OutPipe_TextConverter_write(OutPipe* outPipe_, StringView srcBuf) {
-    OutPipe_TextConverter* outPipe = static_cast<OutPipe_TextConverter*>(outPipe_);
-    outPipe->converter.writeTo(outPipe->outs, &srcBuf, false);
-    return !outPipe->outs->atEOF();
-}
-
-PLY_NO_INLINE bool OutPipe_TextConverter_flush(OutPipe* outPipe_, bool toDevice) {
-    OutPipe_TextConverter* outPipe = static_cast<OutPipe_TextConverter*>(outPipe_);
+void OutPipe_TextConverter::flush(bool hard) {
     StringView emptySrcBuf;
-    outPipe->converter.writeTo(outPipe->outs, &emptySrcBuf, true);
-    return outPipe->outs->flush(toDevice);
-}
-
-OutPipe::Funcs OutPipe_TextConverter::Funcs_ = {
-    OutPipe_TextConverter_destroy,
-    OutPipe_TextConverter_write,
-    OutPipe_TextConverter_flush,
-    OutPipe::seek_Empty,
-};
-
-PLY_NO_INLINE OutPipe_TextConverter::OutPipe_TextConverter(OptionallyOwned<OutStream>&& outs,
-                                                           const TextEncoding* dstEncoding,
-                                                           const TextEncoding* srcEncoding)
-    : OutPipe{&Funcs_}, outs{std::move(outs)}, converter{dstEncoding, srcEncoding} {
+    this->converter.writeTo(this->out, &emptySrcBuf, true);
+    this->out.flush(hard);
 }
 
 } // namespace ply

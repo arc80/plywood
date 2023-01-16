@@ -8,7 +8,7 @@
 #include <ply-cpp/ErrorFormatting.h>
 
 void check_file_header(StringView srcPath, StringView desiredHeader, const TextFormat& tff) {
-    String src = FileSystem.loadTextAutodetect(srcPath).first;
+    String src = FileSystem.loadTextAutodetect(srcPath);
     if (FileSystem.lastResult() != FSResult::OK)
         return;
 
@@ -31,7 +31,7 @@ void check_file_header(StringView srcPath, StringView desiredHeader, const TextF
 
     Preprocessor::StackItem& item = pp.stack.append();
     item.includeChainIdx = includeChainIdx;
-    item.vins = ViewInStream{srcFile.contents};
+    item.in = ViewInStream{srcFile.contents};
     pp.linearLocAtEndOfStackTop = srcFile.contents.numBytes;
 
     PPVisitedFiles::LocationMapTraits::Item locMapItem;

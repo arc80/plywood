@@ -20,7 +20,7 @@ namespace ply {
 namespace fmt {
 template <>
 struct TypePrinter<build::CMakeEscape> {
-    static void print(OutStream* outs, const build::CMakeEscape& value) {
+    static void print(OutStream& out, const build::CMakeEscape& value) {
         StringView srcUnits = value.view;
         while (srcUnits.numBytes > 0) {
             char c = srcUnits.bytes[0];
@@ -35,14 +35,14 @@ struct TypePrinter<build::CMakeEscape> {
                 case '\\':
                 case ';':
                 case ',': {
-                    *outs << '\\';
+                    out << '\\';
                     break;
                 }
                 default: {
                     break;
                 }
             }
-            *outs << c;
+            out << c;
             srcUnits.offsetHead(1);
         }
     }
@@ -72,37 +72,37 @@ void write_CMakeLists_txt_if_different(StringView path) {
     PLY_ASSERT(Project.configNames.numItems() < 64);
     PLY_ASSERT(Project.didInheritance);
 
-    MemOutStream outs;
+    MemOutStream out;
 
     // Write header with list of configuration names
-    outs << "cmake_minimum_required(VERSION 3.12)\n";
-    outs.format(
+    out << "cmake_minimum_required(VERSION 3.12)\n";
+    out.format(
         "set(CMAKE_CONFIGURATION_TYPES \"{}\" CACHE INTERNAL \"Build configs\")\n",
         StringView{";"}.join(Array<StringView>{Project.configNames}));
     // CMAKE_SUPPRESS_REGENERATION requires 3.12, but is harmless to set otherwise
-    outs << "set(CMAKE_SUPPRESS_REGENERATION true)\n";
-    outs << "set_property(GLOBAL PROPERTY USE_FOLDERS ON)\n";
-    outs.format("project({})\n", Project.name);
+    out << "set(CMAKE_SUPPRESS_REGENERATION true)\n";
+    out << "set_property(GLOBAL PROPERTY USE_FOLDERS ON)\n";
+    out.format("project({})\n", Project.name);
 
     // Reset CMake's default compiler options
-    outs << "\n";
-    outs << "# Initialize compiler options\n";
-    outs.format("set(CMAKE_C_FLAGS \"\")\n");
-    outs.format("set(CMAKE_CXX_FLAGS \"\")\n");
-    outs.format("set(CMAKE_EXE_LINKER_FLAGS \"\")\n");
-    outs.format("set(CMAKE_STATIC_LINKER_FLAGS \"\")\n");
-    outs.format("set(CMAKE_SHARED_LINKER_FLAGS \"\")\n");
+    out << "\n";
+    out << "# Initialize compiler options\n";
+    out.format("set(CMAKE_C_FLAGS \"\")\n");
+    out.format("set(CMAKE_CXX_FLAGS \"\")\n");
+    out.format("set(CMAKE_EXE_LINKER_FLAGS \"\")\n");
+    out.format("set(CMAKE_STATIC_LINKER_FLAGS \"\")\n");
+    out.format("set(CMAKE_SHARED_LINKER_FLAGS \"\")\n");
     for (StringView configName : Project.configNames) {
         String upperName = configName.upperAsc();
-        outs.format("set(CMAKE_C_FLAGS_{} \"\")\n", upperName);
-        outs.format("set(CMAKE_CXX_FLAGS_{} \"\")\n", upperName);
-        outs.format("set(CMAKE_EXE_LINKER_FLAGS_{} \"\")\n", upperName);
-        outs.format("set(CMAKE_STATIC_LINKER_FLAGS_{} \"\")\n", upperName);
-        outs.format("set(CMAKE_SHARED_LINKER_FLAGS_{} \"\")\n", upperName);
+        out.format("set(CMAKE_C_FLAGS_{} \"\")\n", upperName);
+        out.format("set(CMAKE_CXX_FLAGS_{} \"\")\n", upperName);
+        out.format("set(CMAKE_EXE_LINKER_FLAGS_{} \"\")\n", upperName);
+        out.format("set(CMAKE_STATIC_LINKER_FLAGS_{} \"\")\n", upperName);
+        out.format("set(CMAKE_SHARED_LINKER_FLAGS_{} \"\")\n", upperName);
     }
 
     // Helper functions
-    outs << R"%(
+    out << R"%(
 # Helper functions
 macro(AddSourceFiles varName root)
     foreach(relFile ${ARGN})
@@ -137,43 +137,43 @@ endmacro()
         String upperName = name.upperAsc();
 
         // Write source file list
-        outs << "\n";
-        outs.format("# {}\n", name);
+        out << "\n";
+        out.format("# {}\n", name);
         for (const SourceGroup& srcGroup : target->sourceGroups) {
-            outs.format("AddSourceFiles({}_SOURCES \"{}\"\n", upperName,
-                        CMakeEscape{PosixPath.from(Path, srcGroup.absPath)});
+            out.format("AddSourceFiles({}_SOURCES \"{}\"\n", upperName,
+                       CMakeEscape{PosixPath.from(Path, srcGroup.absPath)});
             for (const SourceFile& srcFile : srcGroup.files) {
                 if (hasAllBits(srcFile.enabledBits, target->enabledBits)) {
                     // This source file is enabled in all relevant configs.
-                    outs.format("    \"{}\"\n",
-                                CMakeEscape{PosixPath.from(Path, srcFile.relPath)});
+                    out.format("    \"{}\"\n",
+                               CMakeEscape{PosixPath.from(Path, srcFile.relPath)});
                 } else {
                     // Use generator expressions to exclude source file from specific
                     // configs.
                     for (u32 i = 0; i < Project.configNames.numItems(); i++) {
                         if (hasBitAtIndex(srcFile.enabledBits, i)) {
-                            outs.format(
+                            out.format(
                                 "    \"$<$<CONFIG:{}>:{}>\"\n", Project.configNames[i],
                                 CMakeEscape{PosixPath.from(Path, srcFile.relPath)});
                         }
                     }
                 }
             }
-            outs << ")\n";
+            out << ")\n";
         }
         if (target->type == Target::Executable) {
-            outs.format("add_executable({} ${{{}_SOURCES}})\n", name, upperName);
+            out.format("add_executable({} ${{{}_SOURCES}})\n", name, upperName);
         } else if (target->type == Target::Library ||
                    target->type == Target::ObjectLibrary) {
             if (target->hasBuildStepBits != 0) {
                 // Note: This library target might still be disabled in specific
                 // configs.
-                outs.format("add_library({}{} ${{{}_SOURCES}})\n", name,
-                            target->type == Target::ObjectLibrary ? " OBJECT" : "",
-                            upperName);
+                out.format("add_library({}{} ${{{}_SOURCES}})\n", name,
+                           target->type == Target::ObjectLibrary ? " OBJECT" : "",
+                           upperName);
             } else {
                 // This library will never invoke the compiler in any config.
-                outs.format("add_custom_target({} ${{{}_SOURCES}})\n", name, upperName);
+                out.format("add_custom_target({} ${{{}_SOURCES}})\n", name, upperName);
             }
         } else {
             PLY_ASSERT(0);
@@ -181,30 +181,30 @@ endmacro()
 
         if (target->hasBuildStepBits != 0) {
             // Write include directories
-            outs.format("target_include_directories({} PRIVATE\n", name);
+            out.format("target_include_directories({} PRIVATE\n", name);
             for (const Option& opt : target->options) {
                 if (opt.type == Option::IncludeDir) {
                     if (hasAllBits(opt.enabledBits, target->enabledBits)) {
                         // This include directory is enabled in all relevant configs.
-                        outs.format("    \"{}\"\n",
-                                    CMakeEscape{PosixPath.from(Path, opt.key)});
+                        out.format("    \"{}\"\n",
+                                   CMakeEscape{PosixPath.from(Path, opt.key)});
                     } else {
                         // Use generator expressions to exclude include directory from
                         // specific configs.
                         for (u32 i = 0; i < Project.configNames.numItems(); i++) {
                             if (hasBitAtIndex(opt.enabledBits, i)) {
-                                outs.format("    \"$<$<CONFIG:{}>:{}>\"\n",
-                                            Project.configNames[i],
-                                            CMakeEscape{PosixPath.from(Path, opt.key)});
+                                out.format("    \"$<$<CONFIG:{}>:{}>\"\n",
+                                           Project.configNames[i],
+                                           CMakeEscape{PosixPath.from(Path, opt.key)});
                             }
                         }
                     }
                 }
             }
-            outs << ")\n";
+            out << ")\n";
 
             // Write preprocessor definitions
-            outs.format("target_compile_definitions({} PRIVATE\n", name);
+            out.format("target_compile_definitions({} PRIVATE\n", name);
             for (const Option& opt : target->options) {
                 if (opt.type == Option::PreprocessorDef) {
                     HybridString def = opt.key;
@@ -213,23 +213,23 @@ endmacro()
                     }
                     if (hasAllBits(opt.enabledBits, target->enabledBits)) {
                         // This include directory is enabled in all relevant configs.
-                        outs.format("    \"{}\"\n", CMakeEscape{def});
+                        out.format("    \"{}\"\n", CMakeEscape{def});
                     } else {
                         // Use generator expressions to exclude include directory from
                         // specific configs.
                         for (u32 i = 0; i < Project.configNames.numItems(); i++) {
                             if (hasBitAtIndex(opt.enabledBits, i)) {
-                                outs.format("    \"$<$<CONFIG:{}>:{}>\"\n",
-                                            Project.configNames[i], CMakeEscape{def});
+                                out.format("    \"$<$<CONFIG:{}>:{}>\"\n",
+                                           Project.configNames[i], CMakeEscape{def});
                             }
                         }
                     }
                 }
             }
-            outs << ")\n";
+            out << ")\n";
 
             // Write compile options
-            outs.format("set_property(TARGET {} PROPERTY COMPILE_OPTIONS\n", name);
+            out.format("set_property(TARGET {} PROPERTY COMPILE_OPTIONS\n", name);
             for (u32 i = 0; i < Project.configNames.numItems(); i++) {
                 CompilerSpecificOptions copts;
                 for (const Option& opt : target->options) {
@@ -240,15 +240,15 @@ endmacro()
                     }
                 }
 
-                outs.format("    \"$<$<CONFIG:{}>:{}>\"\n", Project.configNames[i],
-                            escapeCMakeList(Array<StringView>{copts.compile}));
+                out.format("    \"$<$<CONFIG:{}>:{}>\"\n", Project.configNames[i],
+                           escapeCMakeList(Array<StringView>{copts.compile}));
             }
-            outs << ")\n";
+            out << ")\n";
         }
 
         if (target->type == Target::Executable) {
             // Write libraries to link with
-            outs.format("target_link_libraries({} PRIVATE\n", name);
+            out.format("target_link_libraries({} PRIVATE\n", name);
             // ...from dependencies
             for (const Dependency& dep : target->dependencies) {
                 u64 linkMask = dep.enabledBits;
@@ -258,20 +258,20 @@ endmacro()
                     target_name = String::format("$<TARGET_OBJECTS:{}>", target_name);
                 }
                 if (hasAllBits(linkMask, target->enabledBits)) {
-                    outs.format("    {}\n", target_name);
+                    out.format("    {}\n", target_name);
                 } else if (linkMask != 0) {
                     // Use generator expressions to exclude library from linking in
                     // specific configs.
-                    outs << "    \"$<$<CONFIG:";
+                    out << "    \"$<$<CONFIG:";
                     bool first = true;
                     for (u32 i = 0; i < Project.configNames.numItems(); i++) {
                         if (hasBitAtIndex(linkMask, i)) {
                             if (!first) {
-                                outs << ",";
+                                out << ",";
                             }
-                            outs << CMakeEscape{Project.configNames[i]};
+                            out << CMakeEscape{Project.configNames[i]};
                         }
-                        outs.format(">:{}>\"\n", target_name);
+                        out.format(">:{}>\"\n", target_name);
                         first = false;
                     }
                 }
@@ -283,28 +283,28 @@ endmacro()
                 StringView libPath = opt.key;
                 if (hasAllBits(opt.enabledBits, target->enabledBits)) {
                     // This lib is enabled for linking in all relevant configs.
-                    outs.format("    {}\n", CMakeEscape{libPath});
+                    out.format("    {}\n", CMakeEscape{libPath});
                 } else {
                     // Use generator expressions to exclude lib from linking in specific
                     // configs.
-                    outs << "    \"$<$<CONFIG:";
+                    out << "    \"$<$<CONFIG:";
                     bool first = true;
                     for (u32 i = 0; i < Project.configNames.numItems(); i++) {
                         if (hasBitAtIndex(opt.enabledBits, i)) {
                             if (!first) {
-                                outs << ",";
+                                out << ",";
                             }
-                            outs << CMakeEscape{Project.configNames[i]};
+                            out << CMakeEscape{Project.configNames[i]};
                         }
-                        outs.format(">:{}>\"\n", CMakeEscape{libPath});
+                        out.format(">:{}>\"\n", CMakeEscape{libPath});
                         first = false;
                     }
                 }
             }
-            outs << ")\n";
+            out << ")\n";
 
             // Write link options
-            outs.format("set_target_properties({} PROPERTIES\n", name);
+            out.format("set_target_properties({} PROPERTIES\n", name);
             for (u32 i = 0; i < Project.configNames.numItems(); i++) {
                 CompilerSpecificOptions copts;
                 for (const Option& opt : target->options) {
@@ -314,15 +314,15 @@ endmacro()
                         }
                     }
                 }
-                outs.format("    LINK_FLAGS_{} \"{}\"\n",
-                            Project.configNames[i].upperAsc(),
-                            escapeCMakeList(Array<StringView>{copts.link}));
+                out.format("    LINK_FLAGS_{} \"{}\"\n",
+                           Project.configNames[i].upperAsc(),
+                           escapeCMakeList(Array<StringView>{copts.link}));
             }
-            outs << ")\n";
+            out << ")\n";
         }
     }
 
-    FileSystem.makeDirsAndSaveTextIfDifferent(path, outs.moveToString(),
+    FileSystem.makeDirsAndSaveTextIfDifferent(path, out.moveToString(),
                                               TextFormat::platformPreference());
 }
 

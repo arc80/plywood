@@ -230,7 +230,7 @@ PLY_NO_INLINE void readString(ExpandedToken& expToken, Tokenizer* tkr) {
             if (tkr->behavior.isMultilineString) {
                 if ((sptr(tkr->vin.end - tkr->vin.cur) >= 3) && (tkr->vin.cur[0] == '"') &&
                     (tkr->vin.cur[1] == '"') && (tkr->vin.cur[2] == '"')) {
-                    if (mout.getSeekPos() > 0)
+                    if (mout.get_seek_pos() > 0)
                         goto gotStringLiteral;
                     tkr->vin.cur += 3;
                     expToken.type = TokenType::EndString;
@@ -239,7 +239,7 @@ PLY_NO_INLINE void readString(ExpandedToken& expToken, Tokenizer* tkr) {
                 mout << c;
                 tkr->vin.next();
             } else {
-                if (mout.getSeekPos() > 0)
+                if (mout.get_seek_pos() > 0)
                     goto gotStringLiteral;
                 tkr->vin.next();
                 expToken.type = TokenType::EndString;
@@ -250,7 +250,7 @@ PLY_NO_INLINE void readString(ExpandedToken& expToken, Tokenizer* tkr) {
             if (!tkr->vin.atEOF()) {
                 c = tkr->vin.peek();
                 if (c == '{') {
-                    if (mout.getSeekPos() == 0) {
+                    if (mout.get_seek_pos() == 0) {
                         expToken.type = TokenType::BeginStringEmbed;
                         tkr->vin.next();
                         return;

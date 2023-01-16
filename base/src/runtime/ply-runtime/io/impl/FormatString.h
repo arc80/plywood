@@ -94,8 +94,8 @@ struct CmdLineArg_WinCrt {
 //----------------------------------------------------
 template <typename DstType, typename SrcType>
 struct TypePrinter_Cast {
-    static PLY_INLINE void print(OutStream* outs, const SrcType& value) {
-        TypePrinter<DstType>::print(outs, value);
+    static PLY_INLINE void print(OutStream& out, const SrcType& value) {
+        TypePrinter<DstType>::print(out, value);
     }
 };
 
@@ -119,75 +119,75 @@ template <>
 struct TypePrinter<HybridString> : TypePrinter_Cast<StringView, HybridString> {};
 template <>
 struct TypePrinter<char> {
-    static PLY_INLINE void print(OutStream* outs, char c) {
-        outs->writeByte(c);
+    static PLY_INLINE void print(OutStream& out, char c) {
+        out << c;
     }
 };
 template <>
 struct TypePrinter<StringView> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, StringView value);
+    static PLY_DLL_ENTRY void print(OutStream& out, StringView value);
 };
 template <int N>
 struct TypePrinter<char[N]> {
-    static PLY_INLINE void print(OutStream* outs, const char* c) {
+    static PLY_INLINE void print(OutStream& out, const char* c) {
         PLY_ASSERT(c[N - 1] == 0); // must be a null-terminated string literal
-        TypePrinter<StringView>::print(outs, {c, N - 1});
+        TypePrinter<StringView>::print(out, {c, N - 1});
     }
 };
 template <>
 struct TypePrinter<char*> {
-    static PLY_INLINE void print(OutStream* outs, const char* c) {
-        TypePrinter<StringView>::print(outs, c);
+    static PLY_INLINE void print(OutStream& out, const char* c) {
+        TypePrinter<StringView>::print(out, c);
     }
 };
 template <>
 struct TypePrinter<const char*> {
-    static PLY_INLINE void print(OutStream* outs, const char* c) {
-        TypePrinter<StringView>::print(outs, c);
+    static PLY_INLINE void print(OutStream& out, const char* c) {
+        TypePrinter<StringView>::print(out, c);
     }
 };
 
 template <>
 struct TypePrinter<WithRadix> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, const WithRadix& value);
+    static PLY_DLL_ENTRY void print(OutStream& out, const WithRadix& value);
 };
 template <>
 struct TypePrinter<Hex> {
-    static PLY_INLINE void print(OutStream* outs, const Hex& value) {
-        TypePrinter<WithRadix>::print(outs, value);
+    static PLY_INLINE void print(OutStream& out, const Hex& value) {
+        TypePrinter<WithRadix>::print(out, value);
     }
 };
 template <>
 struct TypePrinter<u64> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, u64 value);
+    static PLY_DLL_ENTRY void print(OutStream& out, u64 value);
 };
 template <>
 struct TypePrinter<s64> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, s64 value);
+    static PLY_DLL_ENTRY void print(OutStream& out, s64 value);
 };
 template <>
 struct TypePrinter<double> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, double value);
+    static PLY_DLL_ENTRY void print(OutStream& out, double value);
 };
 template <>
 struct TypePrinter<bool> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, bool value);
+    static PLY_DLL_ENTRY void print(OutStream& out, bool value);
 };
 template <>
 struct TypePrinter<CPUTimer::Duration> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, CPUTimer::Duration value);
+    static PLY_DLL_ENTRY void print(OutStream& out, CPUTimer::Duration value);
 };
 template <>
 struct TypePrinter<EscapedString> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, const EscapedString& value);
+    static PLY_DLL_ENTRY void print(OutStream& out, const EscapedString& value);
 };
 template <>
 struct TypePrinter<XMLEscape> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, const XMLEscape& value);
+    static PLY_DLL_ENTRY void print(OutStream& out, const XMLEscape& value);
 };
 template <>
 struct TypePrinter<CmdLineArg_WinCrt> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, const CmdLineArg_WinCrt& value);
+    static PLY_DLL_ENTRY void print(OutStream& out, const CmdLineArg_WinCrt& value);
 };
 
 } // namespace fmt

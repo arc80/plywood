@@ -19,7 +19,7 @@ PLY_NO_INLINE void InPipe_FD_destroy(InPipe* inPipe_) {
     }
 }
 
-PLY_NO_INLINE u32 InPipe_FD_readSome(InPipe* inPipe_, MutableStringView buf) {
+PLY_NO_INLINE u32 InPipe_FD_readSome(InPipe* inPipe_, MutStringView buf) {
     InPipe_FD* inPipe = static_cast<InPipe_FD*>(inPipe_);
     PLY_ASSERT(inPipe->fd >= 0);
     // Retry as long as read() keeps failing due to EINTR caused by the debugger:

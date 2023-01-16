@@ -17,7 +17,7 @@ void writeObject(AnyObject obj, WriteObjectContext* writeObjectContext) {
     obj.type->typeKey->write(obj, writeObjectContext);
 }
 
-void resolveLinksAndWriteLinkTable(MutableStringView view, OutStream* outs,
+void resolveLinksAndWriteLinkTable(MutStringView view, OutStream& out,
                                    SavedPtrResolver* ptrResolver) {
     u32 linkIndex = 0;
     for (const SavedPtrResolver::WeakPointerToResolve& weakInfo : ptrResolver->weakPtrsToResolve) {
@@ -39,13 +39,13 @@ void resolveLinksAndWriteLinkTable(MutableStringView view, OutStream* outs,
     }
 
     // Write link table
-    NativeEndianWriter out{outs};
-    out.write(linkIndex); // Number of linkable Owned pointers
+    NativeEndianWriter nw{out};
+    nw.write(linkIndex); // Number of linkable Owned pointers
     u32 entriesWritten = 0;
     for (const SavedPtrResolver::SavedOwnedPtr& savedOwnedPtr : ptrResolver->savedOwnedPtrs) {
         if (savedOwnedPtr.linkIndex >= 0) {
             PLY_ASSERT(entriesWritten == (u32) savedOwnedPtr.linkIndex);
-            out.write(savedOwnedPtr.fileOffset);
+            nw.write(savedOwnedPtr.fileOffset);
             entriesWritten++;
         }
     }

@@ -232,7 +232,7 @@ void handlePlyfileFunction(ExtendedParser* ep, Owned<biscuit::Statement>&& stmt,
 }
 
 bool parsePlyfile(StringView path) {
-    String src = FileSystem.loadTextAutodetect(path).first;
+    String src = FileSystem.loadTextAutodetect(path);
     if (FileSystem.lastResult() != FSResult::OK) {
         PLY_FORCE_CRASH();
     }
@@ -265,7 +265,7 @@ bool parsePlyfile(StringView path) {
     ep.parser = &parser;
     ep.currentPlyfile = plyfile;
     parser.tkr = &plyfile->tkr;
-    parser.error = [](StringView message) { StdErr::text() << message; };
+    parser.error = [](StringView message) { Console.error() << message; };
     biscuit::Parser::Filter filter;
     filter.keywordHandler = {handleKeywordAtFileScope, &ep};
     filter.allowFunctions = true;

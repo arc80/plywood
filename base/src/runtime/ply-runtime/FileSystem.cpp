@@ -10,11 +10,9 @@
 #include <ply-runtime/io/Pipe.h>
 
 #if PLY_TARGET_WIN32
-#include <ply-runtime/io/impl/Pipe_Win32.h>
 #include <ply-runtime/io/text/TextConverter.h>
 #include <shellapi.h>
 #else
-#include <ply-runtime/io/impl/Pipe_FD.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -104,42 +102,38 @@ FSResult FileSystemIface::makeDirs(StringView path) {
     }
 }
 
-Owned<InStream> FileSystemIface::openStreamForRead(StringView path) {
-    Owned<InPipe> inPipe = this->openPipeForRead(path);
-    if (!inPipe)
-        return nullptr;
-    return new InStream{std::move(inPipe)};
+InStream FileSystemIface::openStreamForRead(StringView path) {
+    return {this->openPipeForRead(path), true};
 }
 
-Owned<OutStream> FileSystemIface::openStreamForWrite(StringView path) {
-    Owned<OutPipe> outPipe = this->openPipeForWrite(path);
-    if (!outPipe)
-        return nullptr;
-    return new OutStream{std::move(outPipe)};
+OutStream FileSystemIface::openStreamForWrite(StringView path) {
+    return {this->openPipeForWrite(path), true};
 }
 
-Owned<InStream> FileSystemIface::openTextForRead(StringView path,
-                                                 const TextFormat& textFormat) {
-    Owned<InStream> ins = this->openStreamForRead(path);
-    if (!ins)
-        return nullptr;
-    return textFormat.createImporter(std::move(ins));
+InStream FileSystemIface::openTextForRead(StringView path,
+                                          const TextFormat& textFormat) {
+    if (InStream in = this->openStreamForRead(path))
+        return textFormat.createImporter(std::move(in));
+    return {};
 }
 
-PLY_DLL_ENTRY Tuple<Owned<InStream>, TextFormat>
-FileSystemIface::openTextForReadAutodetect(StringView path) {
-    Owned<InStream> ins = this->openStreamForRead(path);
-    if (!ins)
-        return {nullptr, TextFormat{}};
-    TextFormat textFormat = TextFormat::autodetect(ins);
-    return {textFormat.createImporter(std::move(ins)), textFormat};
+InStream FileSystemIface::openTextForReadAutodetect(StringView path,
+                                                    TextFormat* out_format) {
+    if (InStream in = this->openStreamForRead(path)) {
+        TextFormat textFormat = TextFormat::autodetect(in);
+        if (out_format) {
+            *out_format = textFormat;
+        }
+        return textFormat.createImporter(std::move(in));
+    }
+    return {};
 }
 
 String FileSystemIface::loadBinary(StringView path) {
     String result;
     Owned<InPipe> inPipe = this->openPipeForRead(path);
     if (inPipe) {
-        u64 fileSize = inPipe->getFileSize();
+        u64 fileSize = inPipe->get_file_size();
         // Files >= 4GB cannot be loaded this way:
         result.resize(safeDemote<u32>(fileSize));
         inPipe->read({result.bytes, result.numBytes});
@@ -148,29 +142,23 @@ String FileSystemIface::loadBinary(StringView path) {
 }
 
 String FileSystemIface::loadText(StringView path, const TextFormat& textFormat) {
-    Owned<InStream> ins = this->openTextForRead(path, textFormat);
-    String contents;
-    if (ins) {
-        contents = ins->readRemainingContents();
-    }
-    return contents;
+    if (InStream in = this->openTextForRead(path, textFormat))
+        return in.read_remaining_contents();
+    return {};
 }
 
-Tuple<String, TextFormat> FileSystemIface::loadTextAutodetect(StringView path) {
-    Tuple<Owned<InStream>, TextFormat> tuple = this->openTextForReadAutodetect(path);
-    String contents;
-    if (tuple.first) {
-        contents = tuple.first->readRemainingContents();
+String FileSystemIface::loadTextAutodetect(StringView path, TextFormat* out_format) {
+    if (InStream in = this->openTextForReadAutodetect(path, out_format)) {
+        return in.read_remaining_contents();
     }
-    return {contents, tuple.second};
+    return {};
 }
 
-Owned<OutStream> FileSystemIface::openTextForWrite(StringView path,
-                                                   const TextFormat& textFormat) {
-    Owned<OutStream> outs = this->openStreamForWrite(path);
-    if (!outs)
-        return nullptr;
-    return textFormat.createExporter(std::move(outs));
+OutStream FileSystemIface::openTextForWrite(StringView path,
+                                            const TextFormat& textFormat) {
+    if (OutStream out = this->openStreamForWrite(path))
+        return textFormat.createExporter(std::move(out));
+    return {};
 }
 
 FSResult FileSystemIface::makeDirsAndSaveBinaryIfDifferent(StringView path,
@@ -208,11 +196,12 @@ FSResult FileSystemIface::makeDirsAndSaveBinaryIfDifferent(StringView path,
 FSResult FileSystemIface::makeDirsAndSaveTextIfDifferent(StringView path,
                                                          StringView strContents,
                                                          const TextFormat& textFormat) {
-    MemOutStream memOut;
-    Owned<OutStream> outs = textFormat.createExporter(borrow(&memOut));
-    *outs << strContents;
-    outs.clear();
-    String rawContents = memOut.moveToString();
+    MemOutStream mem_out;
+    // FIXME: This could be an OutPipe instead of an OutStream
+    OutStream out = textFormat.createExporter(std::move(mem_out));
+    out << strContents;
+    out.flush();
+    String rawContents = mem_out.moveToString();
     return this->makeDirsAndSaveBinaryIfDifferent(path, rawContents);
 }
 
@@ -450,7 +439,7 @@ Owned<InPipe> FileSystem_t::openPipeForRead(StringView path) {
     HANDLE handle = openHandleForRead(path);
     if (handle == INVALID_HANDLE_VALUE)
         return nullptr;
-    return new InPipe_Win32{handle};
+    return new InPipe_Handle{handle};
 }
 
 HANDLE FileSystem_t::openHandleForWrite(StringView path) {
@@ -490,7 +479,7 @@ Owned<OutPipe> FileSystem_t::openPipeForWrite(StringView path) {
     HANDLE handle = openHandleForWrite(path);
     if (handle == INVALID_HANDLE_VALUE)
         return nullptr;
-    return new OutPipe_Win32{handle};
+    return new OutPipe_Handle{handle};
 }
 
 FSResult FileSystem_t::moveFile(StringView srcPath, StringView dstPath) {
@@ -521,11 +510,11 @@ FSResult FileSystem_t::removeDirTree(StringView dirPath) {
     if (!WindowsPath.isAbsolute(dirPath)) {
         absPath = WindowsPath.join(this->getWorkingDirectory(), dirPath);
     }
-    MemOutStream mout;
+    MemOutStream out;
     StringView srcView = absPath.view();
-    TextConverter::create<UTF16_Native, UTF8>().writeTo(&mout, &srcView, true);
-    mout << StringView{"\0\0\0\0", 4}; // double null terminated
-    WString wstr = WString::moveFromString(mout.moveToString());
+    TextConverter::create<UTF16_Native, UTF8>().writeTo(out, &srcView, true);
+    out << StringView{"\0\0\0\0", 4}; // double null terminated
+    WString wstr = WString::moveFromString(out.moveToString());
     SHFILEOPSTRUCTW shfo;
     memset(&shfo, 0, sizeof(shfo));
     shfo.hwnd = NULL;

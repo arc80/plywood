@@ -9,10 +9,10 @@ namespace ply {
 Error_t Error;
 
 void Error_t::log_internal(StringView fmt, ArrayView<const FormatArg> args) {
-    OutStream outs = StdErr::text();
-    outs.formatInternal(fmt, args);
+    OutStream out = Console.error();
+    out.format_args(fmt, args);
     if (!fmt.endsWith('\n')) {
-        outs << '\n';
+        out << '\n';
     }
 }
 

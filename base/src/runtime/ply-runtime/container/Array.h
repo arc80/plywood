@@ -543,12 +543,12 @@ public:
     */
     /*!
     \beginGroup
-    Explicitly creeate a `StringView` or `MutableStringView` into the array.
+    Explicitly creeate a `StringView` or `MutStringView` into the array.
     */
     PLY_INLINE StringView stringView() const {
         return {(const char*) this->items, safeDemote<u32>(this->numItems_ * sizeof(T))};
     }
-    PLY_INLINE MutableStringView mutableStringView() const {
+    PLY_INLINE MutStringView mutableStringView() const {
         return {(char*) this->items, safeDemote<u32>(this->numItems_ * sizeof(T))};
     }
     /*!

@@ -48,84 +48,68 @@ struct NewLineFilter {
 //-----------------------------------------------------------------------
 
 struct InPipe_NewLineFilter : InPipe {
-    static Funcs Funcs_;
-    OptionallyOwned<InStream> ins;
+    InStream in;
     NewLineFilter filter;
-    InPipe_NewLineFilter();
+
+    InPipe_NewLineFilter(InStream&& in) : in{std::move(in)} {
+    }
+    virtual u32 read(MutStringView buf) override;
 };
 
-PLY_NO_INLINE void InPipe_NewLineFilter_destroy(InPipe* inPipe_) {
-    InPipe_NewLineFilter* inPipe = static_cast<InPipe_NewLineFilter*>(inPipe_);
-    destruct(inPipe->ins);
-}
-
-PLY_NO_INLINE u32 InPipe_NewLineFilter_readSome(InPipe* inPipe_, MutableStringView buf) {
-    InPipe_NewLineFilter* inPipe = static_cast<InPipe_NewLineFilter*>(inPipe_);
+u32 InPipe_NewLineFilter::read(MutStringView buf) {
     PLY_ASSERT(buf.numBytes > 0);
 
     NewLineFilter::Params params;
     params.dstByte = buf.bytes;
     params.dstEndByte = buf.bytes + buf.numBytes;
     for (;;) {
-        params.srcByte = inPipe->ins->curByte;
-        params.srcEndByte = inPipe->ins->endByte;
-        inPipe->filter.process(&params);
+        params.srcByte = this->in.cur_byte;
+        params.srcEndByte = this->in.end_byte;
+        this->filter.process(&params);
 
-        inPipe->ins->curByte = params.srcByte;
+        this->in.cur_byte = params.srcByte;
         u32 numBytesWritten = safeDemote<u32>(params.dstByte - buf.bytes);
         if (numBytesWritten > 0)
             return numBytesWritten;
 
-        PLY_ASSERT(inPipe->ins->numBytesAvailable() == 0);
-        if (!inPipe->ins->tryMakeBytesAvailable())
+        PLY_ASSERT(this->in.num_bytes_readable() == 0);
+        if (!this->in.ensure_readable())
             return 0;
     }
 }
 
-InPipe::Funcs InPipe_NewLineFilter::Funcs_ = {
-    InPipe_NewLineFilter_destroy,
-    InPipe_NewLineFilter_readSome,
-    InPipe::getFileSize_Unsupported,
-};
-
-PLY_NO_INLINE InPipe_NewLineFilter::InPipe_NewLineFilter() : InPipe{&Funcs_} {
-}
-
-Owned<InPipe> createInNewLineFilter(OptionallyOwned<InStream>&& ins) {
-    InPipe_NewLineFilter* inPipe = new InPipe_NewLineFilter;
-    inPipe->ins = std::move(ins);
-    return inPipe;
+Owned<InPipe> createInNewLineFilter(InStream&& in) {
+    return new InPipe_NewLineFilter{std::move(in)};
 }
 
 //-----------------------------------------------------------------------
 
 struct OutPipe_NewLineFilter : OutPipe {
-    static Funcs Funcs_;
-    OptionallyOwned<OutStream> outs;
+    OutStream out;
     NewLineFilter filter;
-    OutPipe_NewLineFilter();
+
+    OutPipe_NewLineFilter(OutStream&& out, bool writeCRLF) : out{std::move(out)} {
+        this->filter.crlf = writeCRLF;
+    }
+    virtual bool write(StringView buf) override;
+    virtual void flush(bool hard);
 };
 
-PLY_NO_INLINE void OutPipe_NewLineFilter_destroy(OutPipe* outPipe_) {
-    OutPipe_NewLineFilter* outPipe = static_cast<OutPipe_NewLineFilter*>(outPipe_);
-    destruct(outPipe->outs);
-}
-
-PLY_NO_INLINE bool OutPipe_NewLineFilter_write(OutPipe* outPipe_, StringView buf) {
-    OutPipe_NewLineFilter* outPipe = static_cast<OutPipe_NewLineFilter*>(outPipe_);
+bool OutPipe_NewLineFilter::write(StringView buf) {
     u32 desiredTotalBytesRead = buf.numBytes;
     u32 totalBytesRead = 0;
     for (;;) {
-        outPipe->outs->tryMakeBytesAvailable();
+        this->out.ensure_writable();
 
-        // If tryMakeBytesAvailable fails, process() will do nothing and we'll simply return below:
+        // If tryMakeBytesAvailable fails, process() will do nothing and we'll simply
+        // return below:
         NewLineFilter::Params params;
         params.srcByte = buf.bytes;
         params.srcEndByte = buf.bytes + buf.numBytes;
-        params.dstByte = outPipe->outs->curByte;
-        params.dstEndByte = outPipe->outs->endByte;
-        outPipe->filter.process(&params);
-        outPipe->outs->curByte = params.dstByte;
+        params.dstByte = this->out.cur_byte;
+        params.dstEndByte = this->out.end_byte;
+        this->filter.process(&params);
+        this->out.cur_byte = params.dstByte;
         u32 numBytesRead = safeDemote<u32>(params.srcByte - buf.bytes);
         if (numBytesRead == 0) {
             PLY_ASSERT(totalBytesRead <= desiredTotalBytesRead);
@@ -136,26 +120,12 @@ PLY_NO_INLINE bool OutPipe_NewLineFilter_write(OutPipe* outPipe_, StringView buf
     }
 }
 
-PLY_NO_INLINE bool OutPipe_NewLineFilter_flush(OutPipe* outPipe_, bool toDevice) {
-    OutPipe_NewLineFilter* outPipe = static_cast<OutPipe_NewLineFilter*>(outPipe_);
-    return outPipe->outs->flush(toDevice);
+void OutPipe_NewLineFilter::flush(bool hard) {
+    this->out.flush(hard);
 };
 
-OutPipe::Funcs OutPipe_NewLineFilter::Funcs_ = {
-    OutPipe_NewLineFilter_destroy,
-    OutPipe_NewLineFilter_write,
-    OutPipe_NewLineFilter_flush,
-    OutPipe::seek_Empty,
-};
-
-PLY_NO_INLINE OutPipe_NewLineFilter::OutPipe_NewLineFilter() : OutPipe{&Funcs_} {
-}
-
-Owned<OutPipe> createOutNewLineFilter(OptionallyOwned<OutStream>&& outs, bool writeCRLF) {
-    OutPipe_NewLineFilter* outPipe = new OutPipe_NewLineFilter;
-    outPipe->outs = std::move(outs);
-    outPipe->filter.crlf = writeCRLF;
-    return outPipe;
+Owned<OutPipe> createOutNewLineFilter(OutStream&& out, bool writeCRLF) {
+    return new OutPipe_NewLineFilter{std::move(out), writeCRLF};
 }
 
 } // namespace ply

@@ -102,12 +102,12 @@ struct Node {
         return this->type == (u64) Type::Array;
     }
 
-    PLY_INLINE Borrowed<Node> get(u32 i) {
+    PLY_INLINE Node* get(u32 i) {
         if (this->type != (u64) Type::Array)
             return (Node*) &InvalidNodeHeader;
         if (i >= this->array_.numItems())
             return (Node*) &InvalidNodeHeader;
-        return this->array_[i].borrow();
+        return this->array_[i];
     }
 
     PLY_INLINE const Node* get(u32 i) const {
@@ -135,11 +135,11 @@ struct Node {
         return this->type == (u64) Type::Object;
     }
 
-    PYLON_ENTRY Borrowed<Node> get(StringView key);
+    PYLON_ENTRY Node* get(StringView key);
     PLY_INLINE const Node* get(StringView key) const {
         return const_cast<Node*>(this)->get(key);
     }
-    PLY_NO_INLINE Borrowed<Node> set(HybridString&& key, Owned<Node>&& value);
+    PLY_NO_INLINE Node* set(HybridString&& key, Owned<Node>&& value);
     PLY_NO_INLINE Owned<Node> remove(StringView key);
 
     PLY_INLINE const Object& object() const {

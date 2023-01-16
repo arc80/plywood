@@ -8,31 +8,32 @@
 
 namespace ply {
 
-PLY_NO_INLINE void extractLiquidTags(OutStream* outs, ViewInStream* vins,
+PLY_NO_INLINE void extractLiquidTags(OutStream& out, ViewInStream& vin,
                                      Func<void(StringView, StringView)> tagHandler) {
     // advanceByte consumes the current byte from the InStream and returns true if there is
-    // another byte available. Note that the return value is the same as vins->isValid(), so you
-    // can ignore it and just test vins->isValid() later.
+    // another byte available. Note that the return value is the same as vin.isValid(), so you
+    // can ignore it and just test vin.isValid() later.
     auto advanceByte = [&]() -> bool {
-        PLY_ASSERT(vins->numBytesAvailable() > 0);
-        vins->curByte++;
-        return vins->tryMakeBytesAvailable() > 0;
+        PLY_ASSERT(vin.num_bytes_readable() > 0);
+        vin.cur_byte++;
+        return vin.ensure_readable();
     };
 
-    if (vins->tryMakeBytesAvailable() == 0)
+    if (vin.ensure_readable() == 0)
         return; // Empty file
 
     for (;;) {
-        PLY_ASSERT(vins->numBytesAvailable() >
-                   0); // At start of this loop, there is always a byte available to read
-        u8 unit = *vins->curByte;
+        PLY_ASSERT(
+            vin.num_bytes_readable() >
+            0); // At start of this loop, there is always a byte available to read
+        u8 unit = *vin.cur_byte;
         if (unit == '<') {
-            const char* startByte = vins->curByte;
+            const char* startByte = vin.cur_byte;
             if (!advanceByte()) {
-                outs->writeByte(unit);
+                out << unit;
                 return;
             }
-            if (*vins->curByte == '%') {
+            if (*vin.cur_byte == '%') {
                 // Start of tag
                 if (!advanceByte()) {
                     // FIXME: Raise error: EOF between tags
@@ -41,25 +42,24 @@ PLY_NO_INLINE void extractLiquidTags(OutStream* outs, ViewInStream* vins,
                 MemOutStream mout;
                 // read everything up to %>
                 for (;;) {
-                    PLY_ASSERT(
-                        vins->numBytesAvailable() >
+                    PLY_ASSERT(vin.num_bytes_readable() >
                         0); // At start of this loop, there is always a byte available to read
-                    unit = *vins->curByte;
+                    unit = *vin.cur_byte;
                     if (unit == '%') {
                         if (!advanceByte()) {
                             // FIXME: Raise error: EOF between tags
                             return;
                         }
-                        if (*vins->curByte == '>') {
+                        if (*vin.cur_byte == '>') {
                             advanceByte();
                             // End of tag
                             break;
                         } else {
-                            mout.writeByte(unit);
-                            mout.writeByte(*vins->curByte);
+                            mout << unit;
+                            mout << *vin.cur_byte;
                         }
                     } else {
-                        mout.writeByte(unit);
+                        mout << unit;
                         if (!advanceByte()) {
                             // FIXME: Raise error: EOF between tags
                             break;
@@ -67,20 +67,20 @@ PLY_NO_INLINE void extractLiquidTags(OutStream* outs, ViewInStream* vins,
                     }
                 }
 
-                tagHandler(StringView::fromRange(startByte, vins->curByte), mout.moveToString());
+                tagHandler(StringView::fromRange(startByte, vin.cur_byte), mout.moveToString());
 
-                if (vins->atEOF()) {
+                if (vin.at_eof()) {
                     // EOF encountered immediately after closing tag
                     return;
                 }
             } else {
-                outs->writeByte(unit);
-                outs->writeByte(*vins->curByte);
+                out << unit;
+                out << *vin.cur_byte;
                 if (!advanceByte())
                     return; // EOF
             }
         } else {
-            outs->writeByte(unit);
+            out << unit;
             if (!advanceByte())
                 return; // EOF
         }

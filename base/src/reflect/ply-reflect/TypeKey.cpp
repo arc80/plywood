@@ -389,7 +389,7 @@ TypeKey TypeKey_Owned{
         u32 savedOwnedPtrIdx = context->ptrResolver.savedOwnedPtrs.numItems();
         SavedPtrResolver::SavedOwnedPtr& savedInfo = context->ptrResolver.savedOwnedPtrs.append();
         savedInfo.obj = targetObj;
-        savedInfo.fileOffset = safeDemote<u32>(context->out.outs->getSeekPos());
+        savedInfo.fileOffset = safeDemote<u32>(context->out.out.get_seek_pos());
         auto cursor = context->ptrResolver.addrToSaveInfo.insertOrFind(
             targetObj.data, &context->ptrResolver.savedOwnedPtrs);
         PLY_ASSERT(!cursor.wasFound());
@@ -422,7 +422,7 @@ TypeKey TypeKey_Owned{
             LoadPtrResolver::LinkTableEntry& linkEntry =
                 context->ptrResolver.linkTable[context->ptrResolver.linkTableIndex];
             u32 seekPos =
-                safeDemote<u32>(context->in.ins->getSeekPos()) - context->ptrResolver.objDataOffset;
+                safeDemote<u32>(context->in.ins->get_seek_pos()) - context->ptrResolver.objDataOffset;
             if (linkEntry.fileOffset > seekPos)
                 break; // No weak pointers link here
 
@@ -727,7 +727,7 @@ TypeKey TypeKey_RawPtr{
         SavedPtrResolver::WeakPointerToResolve& weakInfo =
             context->ptrResolver.weakPtrsToResolve.append();
         weakInfo.obj = targetObj;
-        weakInfo.fileOffset = safeDemote<u32>(context->out.outs->getSeekPos());
+        weakInfo.fileOffset = safeDemote<u32>(context->out.out.get_seek_pos());
 
         // Serialize temporary placeholder value
         context->out.write<u32>(0);

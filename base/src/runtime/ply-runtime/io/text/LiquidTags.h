@@ -10,7 +10,7 @@
 
 namespace ply {
 
-void extractLiquidTags(OutStream* outs, ViewInStream* ins,
+void extractLiquidTags(OutStream& out, ViewInStream* ins,
                        Func<void(StringView, StringView)> tagHandler);
 
 } // namespace ply

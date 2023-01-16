@@ -103,7 +103,7 @@ PLY_NO_INLINE Tuple<bool, double> Node::numeric() const {
     return {!vins.anyParseError(), value};
 }
 
-PLY_NO_INLINE Borrowed<Node> Node::get(StringView key) {
+PLY_NO_INLINE Node* Node::get(StringView key) {
     if (this->type != (u64) Type::Object)
         return (Node*) &InvalidNodeHeader;
 
@@ -111,11 +111,11 @@ PLY_NO_INLINE Borrowed<Node> Node::get(StringView key) {
     if (!cursor.wasFound())
         return (Node*) &InvalidNodeHeader;
 
-    return this->object_.items[*cursor].value.borrow();
+    return this->object_.items[*cursor].value;
 }
 
-PLY_NO_INLINE Borrowed<Node> Node::set(HybridString&& key, Owned<Node>&& value) {
-    Borrowed<Node> result = value.borrow();
+PLY_NO_INLINE Node* Node::set(HybridString&& key, Owned<Node>&& value) {
+    Node* result = value;
     if (this->type != (u64) Type::Object)
         return result;
 

@@ -91,75 +91,75 @@ String ExpandedFileLocation::toString() const {
                           this->fileLoc.lineNumber, this->fileLoc.columnNumber);
 }
 
-void ParseError::writeMessage(OutStream* outs, const PPVisitedFiles* visitedFiles) const {
-    outs->format("{}: error: ",
+void ParseError::writeMessage(OutStream& out, const PPVisitedFiles* visitedFiles) const {
+    out.format("{}: error: ",
                  expandFileLocation(visitedFiles, this->errorToken.linearLoc).toString());
     switch (this->type) {
         case ParseError::UnexpectedEOF: {
             PLY_ASSERT(this->errorToken.type == Token::EndOfFile);
-            *outs << "unexpected end-of-file\n";
+            out << "unexpected end-of-file\n";
             break;
         }
         case ParseError::Expected: {
-            outs->format("expected {} before '{}'\n", getExpectedTokenDesc(this->expected),
+            out.format("expected {} before '{}'\n", getExpectedTokenDesc(this->expected),
                          this->errorToken.toString());
             break;
         }
         case ParseError::UnclosedToken: {
-            outs->format("expected '{}'\n",
+            out.format("expected '{}'\n",
                          getPunctuationString((Token::Type) ((u32) this->precedingToken.type + 1)));
             PLY_ASSERT(this->precedingToken.isValid());
-            outs->format(
+            out.format(
                 "{}: note: to match this '{}'\n",
                 expandFileLocation(visitedFiles, this->precedingToken.linearLoc).toString(),
                 this->precedingToken.toString());
             break;
         }
         case ParseError::MissingCommaAfterEnumerator: {
-            *outs << "missing ',' between enumerators\n";
+            out << "missing ',' between enumerators\n";
             break;
         }
         case ParseError::QualifierNotAllowedHere: {
-            outs->format("'{}' qualifier not allowed here\n", this->errorToken.identifier);
+            out.format("'{}' qualifier not allowed here\n", this->errorToken.identifier);
             break;
         }
         case ParseError::TypeIDCannotHaveName: {
             // FIXME: It would be nice to somehow store the entire qualified-id in the error
             // somehow, and write it in the error message. (Currently, we only store the first
             // token.)
-            *outs << "type-id cannot have a name\n";
+            out << "type-id cannot have a name\n";
             break;
         }
         case ParseError::NestedNameNotAllowedHere: {
             // FIXME: It would be nice to somehow store the entire nested-name-prefix in the error
             // somehow, and write it in the error message. (Currently, we only store the first
             // token.)
-            outs->format("'{}' cannot have a nested name prefix\n", this->errorToken.toString());
+            out.format("'{}' cannot have a nested name prefix\n", this->errorToken.toString());
             break;
         }
         case ParseError::TooManyTypeSpecifiers: {
-            *outs << "too many type specifiers\n";
+            out << "too many type specifiers\n";
             break;
         }
         case ParseError::ExpectedFunctionBodyAfterMemberInitList: {
-            *outs << "expected function body after member initializer list\n";
+            out << "expected function body after member initializer list\n";
             break;
         }
         case ParseError::CantMixFunctionDefAndDecl: {
-            *outs << "can't mix function definitions with other declarations\n";
+            out << "can't mix function definitions with other declarations\n";
             break;
         }
         case ParseError::MissingDeclaration: {
             // FIXME: This should only be a warning, but we don't have a warning system yet
-            *outs << "declaration does not declare anything\n";
+            out << "declaration does not declare anything\n";
             break;
         }
         case ParseError::DuplicateVirtSpecifier: {
-            outs->format("'{}' used more than once\n", this->errorToken.identifier);
+            out.format("'{}' used more than once\n", this->errorToken.identifier);
             break;
         }
         default: {
-            *outs << "error message not implemented!\n";
+            out << "error message not implemented!\n";
             break;
         }
     }

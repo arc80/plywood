@@ -21,12 +21,13 @@ struct TextConverter {
         char bytes[4] = {0};
         u8 numBytes = 0;
 
-        PLY_INLINE MutableStringView view() {
+        PLY_INLINE MutStringView view() {
             return {(char*) this->bytes, this->numBytes};
         }
         PLY_INLINE void popFront(u32 numBytesToPop) {
             PLY_ASSERT(numBytesToPop <= this->numBytes);
-            memmove(this->bytes, this->bytes + numBytesToPop, this->numBytes - numBytesToPop);
+            memmove(this->bytes, this->bytes + numBytesToPop,
+                    this->numBytes - numBytesToPop);
             this->numBytes -= numBytesToPop;
         }
     };
@@ -36,7 +37,8 @@ struct TextConverter {
     SmallBuffer srcSmallBuf;
     SmallBuffer dstSmallBuf;
 
-    PLY_DLL_ENTRY TextConverter(const TextEncoding* dstEncoding, const TextEncoding* srcEncoding);
+    PLY_DLL_ENTRY TextConverter(const TextEncoding* dstEncoding,
+                                const TextEncoding* srcEncoding);
     template <typename DstEnc, typename SrcEnc>
     PLY_INLINE static TextConverter create() {
         return {TextEncoding::get<DstEnc>(), TextEncoding::get<SrcEnc>()};
@@ -44,16 +46,16 @@ struct TextConverter {
 
     // Convert using memory buffers
     // Returns true if any work done (reading or writing)
-    // When flush is true, consumes as much srcBuf as possible, even if it contains a partially
-    // encoded point.
-    PLY_DLL_ENTRY bool convert(MutableStringView* dstBuf, StringView* srcBuf, bool flush);
+    // When flush is true, consumes as much srcBuf as possible, even if it contains a
+    // partially encoded point.
+    PLY_DLL_ENTRY bool convert(MutStringView* dstBuf, StringView* srcBuf, bool flush);
 
     // Read/write to a Stream
     // Returns true if any work done (reading or writing)
-    // When flush is true, consumes as much srcBuf as possible, even if it contains a partially
-    // encoded point.
-    PLY_DLL_ENTRY bool writeTo(OutStream* outs, StringView* srcBuf, bool flush);
-    PLY_DLL_ENTRY u32 readFrom(InStream* ins, MutableStringView* dstBuf);
+    // When flush is true, consumes as much srcBuf as possible, even if it contains a
+    // partially encoded point.
+    PLY_DLL_ENTRY bool writeTo(OutStream& out, StringView* srcBuf, bool flush);
+    PLY_DLL_ENTRY u32 readFrom(InStream& in, MutStringView* dstBuf);
 
     // Convert a string
     PLY_DLL_ENTRY static String convertInternal(const TextEncoding* dstEncoding,
@@ -61,7 +63,8 @@ struct TextConverter {
                                                 StringView srcText);
     template <typename DstEnc, typename SrcEnc>
     PLY_INLINE static String convert(StringView srcText) {
-        return convertInternal(TextEncoding::get<DstEnc>(), TextEncoding::get<SrcEnc>(), srcText);
+        return convertInternal(TextEncoding::get<DstEnc>(), TextEncoding::get<SrcEnc>(),
+                               srcText);
     }
 };
 
@@ -69,26 +72,29 @@ struct TextConverter {
 // InPipe_TextConverter
 //-----------------------------------------------------------------------
 struct InPipe_TextConverter : InPipe {
-    static Funcs Funcs_;
-    OptionallyOwned<InStream> ins;
+    InStream in;
     TextConverter converter;
 
-    PLY_DLL_ENTRY InPipe_TextConverter(OptionallyOwned<InStream>&& ins,
-                                       const TextEncoding* dstEncoding,
-                                       const TextEncoding* srcEncoding);
+    InPipe_TextConverter(InStream&& in, const TextEncoding* dstEncoding,
+                         const TextEncoding* srcEncoding)
+        : in{std::move(in)}, converter{dstEncoding, srcEncoding} {
+    }
+    virtual u32 read(MutStringView buf) override;
 };
 
 //-----------------------------------------------------------------------
 // OutPipe_TextConverter
 //-----------------------------------------------------------------------
 struct OutPipe_TextConverter : OutPipe {
-    static Funcs Funcs_;
-    OptionallyOwned<OutStream> outs;
+    OutStream out;
     TextConverter converter;
 
-    PLY_DLL_ENTRY OutPipe_TextConverter(OptionallyOwned<OutStream>&& outs,
-                                        const TextEncoding* dstEncoding,
-                                        const TextEncoding* srcEncoding);
+    OutPipe_TextConverter(OutStream&& out, const TextEncoding* dstEncoding,
+                          const TextEncoding* srcEncoding)
+        : out{std::move(out)}, converter{dstEncoding, srcEncoding} {
+    }
+    virtual bool write(StringView buf) override;
+    virtual void flush(bool hard);
 };
 
 } // namespace ply

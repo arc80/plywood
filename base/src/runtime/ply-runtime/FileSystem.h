@@ -41,10 +41,10 @@ struct FileInfo {
     FSResult result = FSResult::Unknown; // Result of getFileInfo()
     String name;
     bool isDir = false;
-    u64 fileSize = 0;                    // Size of the file in bytes
-    double creationTime = 0;             // The file's POSIX creation time
-    double accessTime = 0;               // The file's POSIX access time
-    double modificationTime = 0;         // The file's POSIX modification time
+    u64 fileSize = 0;            // Size of the file in bytes
+    double creationTime = 0;     // The file's POSIX creation time
+    double accessTime = 0;       // The file's POSIX access time
+    double modificationTime = 0; // The file's POSIX modification time
 };
 
 struct WalkTriple {
@@ -81,7 +81,7 @@ public:
         PLY_INLINE WalkTriple& operator*() {
             return this->walker->triple;
         }
-        PLY_DLL_ENTRY void operator++();
+        void operator++();
         PLY_INLINE bool operator!=(const Iterator&) const {
             return !this->walker->triple.dirPath.isEmpty();
         }
@@ -116,7 +116,8 @@ struct FileSystemIface {
     virtual FSResult setWorkingDirectory(StringView path) = 0;
     virtual String getWorkingDirectory() = 0;
     virtual ExistsResult exists(StringView path) = 0;
-    virtual Array<FileInfo> listDir(StringView path, u32 flags = WithSizes | WithTimes) = 0;
+    virtual Array<FileInfo> listDir(StringView path,
+                                    u32 flags = WithSizes | WithTimes) = 0;
     virtual FSResult makeDir(StringView path) = 0;
     virtual FSResult moveFile(StringView srcPath, StringView dstPath) = 0;
     virtual FSResult deleteFile(StringView path) = 0;
@@ -129,19 +130,20 @@ struct FileSystemIface {
         return this->exists(path) == ExistsResult::Directory;
     }
 
-    PLY_DLL_ENTRY FileSystemWalker walk(StringView top, u32 flags = WithSizes | WithTimes);
-    PLY_DLL_ENTRY FSResult makeDirs(StringView path);
-    PLY_DLL_ENTRY Owned<InStream> openStreamForRead(StringView path);
-    PLY_DLL_ENTRY Owned<OutStream> openStreamForWrite(StringView path);
-    PLY_DLL_ENTRY Owned<InStream> openTextForRead(StringView path, const TextFormat& textFormat);
-    PLY_DLL_ENTRY Owned<OutStream> openTextForWrite(StringView path, const TextFormat& textFormat);
-    PLY_DLL_ENTRY Tuple<Owned<InStream>, TextFormat> openTextForReadAutodetect(StringView path);
-    PLY_DLL_ENTRY String loadBinary(StringView path);
-    PLY_DLL_ENTRY String loadText(StringView path, const TextFormat& textFormat);
-    PLY_DLL_ENTRY Tuple<String, TextFormat> loadTextAutodetect(StringView path);
-    PLY_DLL_ENTRY FSResult makeDirsAndSaveBinaryIfDifferent(StringView path, StringView contents);
-    PLY_DLL_ENTRY FSResult makeDirsAndSaveTextIfDifferent(StringView path, StringView strContents,
-                                                          const TextFormat& textFormat);
+    FileSystemWalker walk(StringView top, u32 flags = WithSizes | WithTimes);
+    FSResult makeDirs(StringView path);
+    InStream openStreamForRead(StringView path);
+    OutStream openStreamForWrite(StringView path);
+    InStream openTextForRead(StringView path, const TextFormat& textFormat);
+    OutStream openTextForWrite(StringView path, const TextFormat& textFormat);
+    InStream openTextForReadAutodetect(StringView path,
+                                       TextFormat* out_format = nullptr);
+    String loadBinary(StringView path);
+    String loadText(StringView path, const TextFormat& textFormat);
+    String loadTextAutodetect(StringView path, TextFormat* out_format = nullptr);
+    FSResult makeDirsAndSaveBinaryIfDifferent(StringView path, StringView contents);
+    FSResult makeDirsAndSaveTextIfDifferent(StringView path, StringView strContents,
+                                            const TextFormat& textFormat);
 };
 
 struct FileSystem_t : FileSystemIface {
@@ -170,7 +172,8 @@ struct FileSystem_t : FileSystemIface {
     virtual FSResult removeDirTree(StringView dirPath) override;
     virtual FileInfo getFileInfo(StringView path) override;
 
-    virtual ~FileSystem_t() {}
+    virtual ~FileSystem_t() {
+    }
 };
 
 extern FileSystem_t FileSystem;

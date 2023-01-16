@@ -37,7 +37,7 @@ struct Interpreter {
     StackFrame* currentFrame = nullptr;
 };
 
-void logErrorWithStack(OutStream* outs, const Interpreter* interp, StringView message);
+void logErrorWithStack(OutStream& out, const Interpreter* interp, StringView message);
 FnResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
 FnResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block);
 FnResult eval(Interpreter::StackFrame* frame, const Expression* expr);

@@ -48,7 +48,7 @@ struct Enc_Bytes {
         return 1;
     }
 
-    static PLY_INLINE u32 encodePoint(MutableStringView view, u32 point) {
+    static PLY_INLINE u32 encodePoint(MutStringView view, u32 point) {
         if (view.numBytes > 0) {
             view.bytes[0] = point < 256 ? (u8) point : 0x95;
             return 1;
@@ -97,7 +97,7 @@ struct UTF8 {
             return 4;
     }
 
-    static PLY_INLINE u32 encodePoint(MutableStringView view, u32 point) {
+    static PLY_INLINE u32 encodePoint(MutStringView view, u32 point) {
         if (point < 0x80) {
             if (view.numBytes >= 1) {
                 view.bytes[0] = u8(point);
@@ -196,7 +196,7 @@ struct UTF16 {
             return 4;
     }
 
-    static PLY_INLINE u32 encodePoint(MutableStringView view, u32 point) {
+    static PLY_INLINE u32 encodePoint(MutStringView view, u32 point) {
         if (point < 0x10000) {
             if (view.numBytes >= 2) {
                 putUnit(view.bytes, u16(point));
@@ -224,7 +224,7 @@ using UTF16_Native = UTF16<PLY_IS_BIG_ENDIAN>;
 //-------------------------------------------------------------------
 struct TextEncoding {
     DecodeResult (*decodePoint)(StringView view) = nullptr;
-    u32 (*encodePoint)(MutableStringView view, u32 point) = nullptr;
+    u32 (*encodePoint)(MutStringView view, u32 point) = nullptr;
     u32 unitSize = 0;
 
     template <typename>
