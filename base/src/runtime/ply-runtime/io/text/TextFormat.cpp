@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/io/text/TextFormat.h>
-#include <ply-runtime/io/text/TextConverter.h>
 #include <ply-runtime/io/text/NewLineFilter.h>
 #include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
@@ -54,98 +53,78 @@ struct TextFileStats {
     }
 };
 
-const TextEncoding* encodingFromEnum(TextFormat::Encoding enc) {
-    switch (enc) {
-        default:
-            PLY_ASSERT(0);
-        case TextFormat::Encoding::Bytes:
-            return TextEncoding::get<Enc_Bytes>();
-        case TextFormat::Encoding::UTF8:
-            return TextEncoding::get<UTF8>();
-        case TextFormat::Encoding::UTF16_be:
-            return TextEncoding::get<UTF16<true>>();
-        case TextFormat::Encoding::UTF16_le:
-            return TextEncoding::get<UTF16<false>>();
-    }
-};
-
-PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream& in,
-                               const TextEncoding* encoding, u32 maxBytes) {
+PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream& in, Unicode& decoder,
+                               u32 maxBytes) {
     bool prevWasCR = false;
-    u32 numBytes = 0;
-    while (numBytes < maxBytes) {
-        in.ensure_contiguous(4);
-        DecodeResult decoded = encoding->decodePoint(in.view_readable());
-        if (decoded.status == DecodeResult::Status::Truncated)
+    while (in.get_seek_pos() < maxBytes) {
+        s32 codepoint = decoder.decode_point(in);
+        if (codepoint < 0)
             break; // EOF/error
-        PLY_ASSERT(decoded.point >= 0 && decoded.numBytes > 0);
-        in.cur_byte += decoded.numBytes;
-        numBytes += decoded.numBytes;
         stats->numPoints++;
-        if (decoded.status == DecodeResult::Status::Valid) {
+        if (decoder.status == DS_OK) {
             stats->numValidPoints++;
-            stats->totalPointValue += decoded.point;
-            if (decoded.point < 32) {
-                if (decoded.point == '\n') {
+            stats->totalPointValue += codepoint;
+            if (codepoint < 32) {
+                if (codepoint == '\n') {
                     stats->numPlainAscii++;
                     stats->numLines++;
                     stats->numWhitespace++;
                     if (prevWasCR) {
                         stats->numCRLF++;
                     }
-                } else if (decoded.point == '\t') {
+                } else if (codepoint == '\t') {
                     stats->numPlainAscii++;
                     stats->numWhitespace++;
-                } else if (decoded.point == '\r') {
+                } else if (codepoint == '\r') {
                     stats->numPlainAscii++;
                 } else {
                     stats->numControl++;
-                    if (decoded.point == 0) {
+                    if (codepoint == 0) {
                         stats->numNull++;
                     }
                 }
-            } else if (decoded.point < 127) {
+            } else if (codepoint < 127) {
                 stats->numPlainAscii++;
-                if (decoded.point == ' ') {
+                if (codepoint == ' ') {
                     stats->numWhitespace++;
                 }
-            } else if (decoded.point >= 65536) {
+            } else if (codepoint >= 65536) {
                 stats->numExtended++;
             }
         }
-        prevWasCR = (decoded.point == '\r');
+        prevWasCR = (codepoint == '\r');
     }
     if (stats->numPoints > 0) {
         stats->ooNumPoints = 1.f / stats->numPoints;
     }
-    return numBytes;
+    return in.get_seek_pos();
 }
 
 PLY_NO_INLINE TextFormat guessFileEncoding(InStream& in) {
     TextFileStats stats8;
-    BlockList::Ref start = in.getBlockRef();
+    BlockList::Ref start = in.get_save_point();
 
     // Try UTF8 first:
-    u32 numBytesRead = scanTextFile(&stats8, in, TextEncoding::get<UTF8>(),
-                                    TextFormat::NumBytesForAutodetect);
+    u32 numBytesRead =
+        scanTextFile(&stats8, in, Unicode{UTF8}, TextFormat::NumBytesForAutodetect);
     if (numBytesRead == 0) {
         // Empty file
-        return {TextFormat::Encoding::UTF8, TextFormat::NewLine::LF, false};
+        return {UTF8, TextFormat::NewLine::LF, false};
     }
     in.rewind(start);
     if (stats8.numInvalidPoints() == 0 && stats8.numControl == 0) {
         // No UTF-8 encoding errors, and no weird control characters/nulls. Pick UTF-8.
-        return {TextFormat::Encoding::UTF8, stats8.getNewLineType(), false};
+        return {UTF8, stats8.getNewLineType(), false};
     }
 
     // If more than 20% of the high bytes in UTF-8 are encoding errors, reinterpret
     // UTF-8 as just bytes.
-    TextFormat::Encoding encoding8 = TextFormat::Encoding::UTF8;
+    UnicodeType encoding8 = UTF8;
     {
         u32 numHighBytes = numBytesRead - stats8.numPlainAscii - stats8.numControl;
         if (stats8.numInvalidPoints() >= numHighBytes * 0.2f) {
             // Too many UTF-8 errors. Consider it bytes.
-            encoding8 = TextFormat::Encoding::Bytes;
+            encoding8 = NotUnicode;
             stats8.numPoints = numBytesRead;
             stats8.numValidPoints = numBytesRead;
         }
@@ -153,21 +132,19 @@ PLY_NO_INLINE TextFormat guessFileEncoding(InStream& in) {
 
     // Examine both UTF16 endianness:
     TextFileStats stats16_le;
-    scanTextFile(&stats16_le, in, TextEncoding::get<UTF16_LE>(),
-                 TextFormat::NumBytesForAutodetect);
+    scanTextFile(&stats16_le, in, Unicode{UTF16_LE}, TextFormat::NumBytesForAutodetect);
     in.rewind(start);
 
     TextFileStats stats16_be;
-    scanTextFile(&stats16_be, in, TextEncoding::get<UTF16_BE>(),
-                 TextFormat::NumBytesForAutodetect);
+    scanTextFile(&stats16_be, in, Unicode{UTF16_BE}, TextFormat::NumBytesForAutodetect);
     in.rewind(start);
 
     // Choose the better UTF16 candidate:
     TextFileStats* stats = &stats16_le;
-    TextFormat::Encoding encoding = TextFormat::Encoding::UTF16_le;
+    UnicodeType encoding = UTF16_LE;
     if (stats16_be.getScore() > stats16_le.getScore()) {
         stats = &stats16_be;
-        encoding = TextFormat::Encoding::UTF16_be;
+        encoding = UTF16_BE;
     }
 
     // Choose between the UTF16 and 8-bit encoding:
@@ -182,21 +159,21 @@ PLY_NO_INLINE TextFormat guessFileEncoding(InStream& in) {
 
 PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream& in) {
     TextFormat tff;
-    BlockList::Ref start = in.getBlockRef();
+    BlockList::Ref start = in.get_save_point();
     u8 h[3] = {0};
     h[0] = in.read_byte();
     h[1] = in.read_byte();
     if (h[0] == 0xef && h[1] == 0xbb) {
         h[2] = in.read_byte();
         if (h[2] == 0xbf) {
-            tff.encoding = TextFormat::Encoding::UTF8;
+            tff.encoding = UTF8;
             tff.bom = true;
         }
     } else if (h[0] == 0xfe && h[1] == 0xff) {
-        tff.encoding = TextFormat::Encoding::UTF16_be;
+        tff.encoding = UTF16_BE;
         tff.bom = true;
     } else if (h[0] == 0xff && h[1] == 0xfe) {
-        tff.encoding = TextFormat::Encoding::UTF16_le;
+        tff.encoding = UTF16_LE;
         tff.bom = true;
     }
     in.rewind(start);
@@ -204,9 +181,9 @@ PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream& in) {
         return guessFileEncoding(in);
     } else {
         // Detect LF or CRLF
-        BlockList::Ref start = in.getBlockRef();
+        BlockList::Ref start = in.get_save_point();
         TextFileStats stats;
-        scanTextFile(&stats, in, encodingFromEnum(tff.encoding), NumBytesForAutodetect);
+        scanTextFile(&stats, in, Unicode{tff.encoding}, NumBytesForAutodetect);
         in.rewind(start);
         tff.newLine = stats.getNewLineType();
         return tff;
@@ -216,28 +193,27 @@ PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream& in) {
 //-----------------------------------------------------------------------
 
 PLY_NO_INLINE InStream TextFormat::createImporter(InStream&& in) const {
-    using Enc = TextFormat::Encoding;
     if (this->bom) {
-        BlockList::Ref start = in.getBlockRef();
+        BlockList::Ref start = in.get_save_point();
         bool gotBom = false;
         switch (this->encoding) {
-            case Enc::Bytes: {
+            case NotUnicode: {
                 PLY_ASSERT(0); // Bytes format shouldn't have a BOM
                 break;
             }
-            case Enc::UTF8: {
+            case UTF8: {
                 char h[3] = {0};
                 bool valid = in.read({h, PLY_STATIC_ARRAY_SIZE(h)});
                 gotBom = valid && memcmp(h, "\xef\xbb\xbf", 3) == 0;
                 break;
             }
-            case Enc::UTF16_be: {
+            case UTF16_BE: {
                 char h[2] = {0};
                 bool valid = in.read({h, PLY_STATIC_ARRAY_SIZE(h)});
                 gotBom = valid && memcmp(h, "\xfe\xff", 2) == 0;
                 break;
             }
-            case Enc::UTF16_le: {
+            case UTF16_LE: {
                 char h[2] = {0};
                 bool valid = in.read({h, PLY_STATIC_ARRAY_SIZE(h)});
                 gotBom = valid && memcmp(h, "\xff\xfe", 2) == 0;
@@ -253,12 +229,10 @@ PLY_NO_INLINE InStream TextFormat::createImporter(InStream&& in) const {
 
     // Install converter from UTF-16 if needed
     InStream importer;
-    if (this->encoding == TextFormat::Encoding::UTF8) {
+    if (this->encoding == UTF8) {
         importer = std::move(in);
     } else {
-        importer = {new InPipe_TextConverter{std::move(in), TextEncoding::get<UTF8>(),
-                                             encodingFromEnum(this->encoding)},
-                    true};
+        importer = {new InPipe_ConvertUnicode{std::move(in), this->encoding}, true};
     }
 
     // Install newline filter (basically just eats \r)
@@ -270,35 +244,31 @@ PLY_NO_INLINE OutStream TextFormat::createExporter(OutStream&& out) const {
     OutStream exporter = std::move(out);
 
     switch (this->encoding) {
-        case TextFormat::Encoding::Bytes: { // FIXME: Bytes needs to be converted
+        case NotUnicode: { // FIXME: Bytes needs to be converted
             break;
         }
 
-        case TextFormat::Encoding::UTF8: {
+        case UTF8: {
             if (this->bom) {
                 exporter.write({"\xef\xbb\xbf", 3});
             }
             break;
         }
 
-        case TextFormat::Encoding::UTF16_be: {
+        case UTF16_BE: {
             if (this->bom) {
                 exporter.write({"\xfe\xff", 2});
             }
-            exporter = {new OutPipe_TextConverter{std::move(exporter),
-                                                  TextEncoding::get<UTF16_BE>(),
-                                                  TextEncoding::get<UTF8>()},
+            exporter = {new OutPipe_ConvertUnicode{std::move(exporter), UTF16_BE},
                         true};
             break;
         }
 
-        case TextFormat::Encoding::UTF16_le: {
+        case UTF16_LE: {
             if (this->bom) {
                 exporter.write({"\xff\xfe", 2});
             }
-            exporter = {new OutPipe_TextConverter{std::move(exporter),
-                                                  TextEncoding::get<UTF16_LE>(),
-                                                  TextEncoding::get<UTF8>()},
+            exporter = {new OutPipe_ConvertUnicode{std::move(exporter), UTF16_LE},
                         true};
             break;
         }

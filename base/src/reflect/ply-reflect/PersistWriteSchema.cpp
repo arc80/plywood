@@ -53,7 +53,7 @@ void WriteFormatContext::writeChildFormatDesc(TypeDescriptor* typeDesc) {
     }
 }
 
-WriteFormatContext::WriteFormatContext(OutStream* out) : m_out{out} {
+WriteFormatContext::WriteFormatContext(OutStream& out) : m_out{out} {
     // Initialize m_typeToFormatID with built-in types
     PLY_ASSERT(BuiltInTypeDescs.numItems() == (u32) FormatKey::StartUserKeyRange);
     for (u32 builtinIndex : range(BuiltInTypeDescs.numItems())) {

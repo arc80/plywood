@@ -64,7 +64,7 @@ struct TypeParser_Integral {
         DstType result = (DstType) fullValue;
         if (result != fullValue) {
             result = 0;
-            in.status.parseError = 1;
+            in.status.parse_error = 1;
         }
         return result;
     }

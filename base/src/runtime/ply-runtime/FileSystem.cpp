@@ -10,7 +10,8 @@
 #include <ply-runtime/io/Pipe.h>
 
 #if PLY_TARGET_WIN32
-#include <ply-runtime/io/text/TextConverter.h>
+#include <ply-runtime/string/WString.h>
+#include <ply-runtime/string/TextEncoding.h>
 #include <shellapi.h>
 #else
 #include <sys/stat.h>
@@ -221,8 +222,7 @@ PLY_INLINE double windowsToPosixTime(const FILETIME& fileTime) {
 }
 
 void fileInfoFromData(FileInfo* info, WIN32_FIND_DATAW findData, u32 flags) {
-    WStringView fnView{findData.cFileName};
-    info->name = TextConverter::convert<UTF8, UTF16_Native>(fnView.stringView());
+    info->name = fromWString(findData.cFileName);
     info->isDir = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
     if (flags & FileSystemIface::WithSizes) {
         info->fileSize = u64(findData.nFileSizeHigh) << 32 | findData.nFileSizeLow;
@@ -361,15 +361,14 @@ String FileSystem_t::getWorkingDirectory() {
             // including the terminating null character.
             WStringView truncatedWin32Path = {win32Path.units, rc};
             if (truncatedWin32Path.numUnits >= 4 &&
-                truncatedWin32Path.stringView().left(8) ==
+                truncatedWin32Path.raw_bytes().left(8) ==
                     StringView{(const char*) L"\\\\?\\", 8}) {
                 // Drop leading "\\\\?\\":
                 truncatedWin32Path.units += 4;
                 truncatedWin32Path.numUnits -= 4;
             }
             this->setLastResult(FSResult::OK);
-            return TextConverter::convert<UTF8, UTF16_Native>(
-                truncatedWin32Path.stringView());
+            return fromWString(truncatedWin32Path);
         }
         // GetCurrentDirectoryW: If the buffer that is pointed to by lpBuffer is not
         // large enough, the return value specifies the required size of the buffer, in
@@ -510,11 +509,10 @@ FSResult FileSystem_t::removeDirTree(StringView dirPath) {
     if (!WindowsPath.isAbsolute(dirPath)) {
         absPath = WindowsPath.join(this->getWorkingDirectory(), dirPath);
     }
-    MemOutStream out;
-    StringView srcView = absPath.view();
-    TextConverter::create<UTF16_Native, UTF8>().writeTo(out, &srcView, true);
-    out << StringView{"\0\0\0\0", 4}; // double null terminated
-    WString wstr = WString::moveFromString(out.moveToString());
+    OutPipe_ConvertUnicode out{MemOutStream{}, UTF16_LE};
+    out.write(absPath.view());
+    out.out << StringView{"\0\0\0\0", 4}; // double null terminated
+    WString wstr = WString::moveFromString(out.out.moveToString());
     SHFILEOPSTRUCTW shfo;
     memset(&shfo, 0, sizeof(shfo));
     shfo.hwnd = NULL;

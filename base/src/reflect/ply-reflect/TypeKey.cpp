@@ -422,7 +422,7 @@ TypeKey TypeKey_Owned{
             LoadPtrResolver::LinkTableEntry& linkEntry =
                 context->ptrResolver.linkTable[context->ptrResolver.linkTableIndex];
             u32 seekPos =
-                safeDemote<u32>(context->in.ins->get_seek_pos()) - context->ptrResolver.objDataOffset;
+                safeDemote<u32>(context->in.in.get_seek_pos()) - context->ptrResolver.objDataOffset;
             if (linkEntry.fileOffset > seekPos)
                 break; // No weak pointers link here
 

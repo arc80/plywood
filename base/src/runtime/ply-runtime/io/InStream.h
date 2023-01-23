@@ -57,7 +57,9 @@ struct InStream {
     // ┃  Methods  ┃
     // ┗━━━━━━━━━━━┛
     u64 get_seek_pos() const;
-    BlockList::Ref getBlockRef() const;
+    BlockList::Ref get_save_point() const {
+        return {this->block, const_cast<char*>(this->cur_byte)};
+    }
     void rewind(const BlockList::WeakRef& pos);
 
     bool is_open() const {
@@ -94,6 +96,12 @@ struct InStream {
         memcpy(dst.bytes, this->cur_byte, dst.numBytes);
         this->cur_byte += dst.numBytes;
         return true;
+    }
+    template <typename T>
+    T raw_read() {
+        T result;
+        this->read({(char*) &result, sizeof(T)});
+        return result;
     }
     char read_byte_internal();
     char read_byte() {
@@ -134,27 +142,10 @@ struct ViewInStream : InStream {
     ViewInStream() = default;
     explicit ViewInStream(StringView view);
 
-    struct SavePoint {
-        const char* start_byte = nullptr;
-
-        PLY_INLINE SavePoint(const ViewInStream& in) : start_byte{in.cur_byte} {
-        }
-    };
-
-    PLY_INLINE SavePoint savePoint() const {
-        return {*this};
-    }
-
-    PLY_INLINE StringView getViewFrom(const SavePoint& savePoint) const {
-        PLY_ASSERT(uptr(this->cur_byte - savePoint.start_byte) <=
+    PLY_INLINE StringView getViewFrom(const BlockList::WeakRef& savePoint) const {
+        PLY_ASSERT(uptr(this->cur_byte - savePoint.byte) <=
                    uptr(this->end_byte - this->start_byte));
-        return StringView::fromRange(savePoint.start_byte, this->cur_byte);
-    }
-
-    PLY_INLINE void restore(const SavePoint& savePoint) {
-        PLY_ASSERT(uptr(this->cur_byte - savePoint.start_byte) <=
-                   uptr(this->end_byte - this->start_byte));
-        this->cur_byte = savePoint.start_byte;
+        return StringView::fromRange(savePoint.byte, this->cur_byte);
     }
 
     template <typename Type>
@@ -182,18 +173,28 @@ struct ViewInStream : InStream {
 //------------------------------------------------------------------
 class NativeEndianReader {
 public:
-    InStream* ins;
+    InStream& in;
 
-    PLY_INLINE NativeEndianReader(InStream* ins) : ins{ins} {
+    PLY_INLINE NativeEndianReader(InStream& in) : in{in} {
     }
 
     template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
     PLY_INLINE T read() {
         T value;
-        ins->read({(char*) &value, sizeof(value)});
+        in.read({(char*) &value, sizeof(value)});
         return value;
     }
 };
+
+template <typename T>
+PLY_NO_INLINE T StringView::to(const T& defaultValue) const {
+    ViewInStream vins{this->trim(isWhite)};
+    T value = vins.parse<T>();
+    if (vins.at_eof() && !vins.anyParseError()) {
+        return value;
+    }
+    return defaultValue;
+}
 
 } // namespace ply
 

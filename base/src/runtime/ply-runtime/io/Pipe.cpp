@@ -16,8 +16,18 @@ u64 InPipe::get_file_size() {
     return 0;
 }
 
+void InPipe::seek(s64 offset, SeekDirection dir) {
+    // This method is unsupported by the subclass. Do not call.
+    PLY_ASSERT(0);
+}
+
 void OutPipe::flush(bool) {
     // Does nothing.
+}
+
+void OutPipe::seek(s64 offset, SeekDirection dir) {
+    // This method is unsupported by the subclass. Do not call.
+    PLY_ASSERT(0);
 }
 
 bool fill_buffer(MutStringView to_buf, InPipe* from_pipe) {

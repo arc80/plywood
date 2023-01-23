@@ -34,7 +34,7 @@ grammar::TranslationUnit parse(StringView path, String&& sourceCode, PPVisitedFi
     // Create preprocessor stack
     Preprocessor::StackItem& item = pp.stack.append();
     item.includeChainIdx = includeChainIdx;
-    item.vins = ViewInStream{srcFile.contents};
+    item.in = ViewInStream{srcFile.contents};
     pp.linearLocAtEndOfStackTop = srcFile.contents.numBytes;
 
     // Initialize location map
@@ -82,7 +82,7 @@ parseSimpleDeclaration(StringView sourceCode, LinearLocation linearLocOfs) {
     // Create preprocessor stack
     Preprocessor::StackItem& item = pp.stack.append();
     item.includeChainIdx = includeChainIdx;
-    item.vins = ViewInStream{srcFile.contents};
+    item.in = ViewInStream{srcFile.contents};
     pp.linearLocAtEndOfStackTop = linearLocOfs + srcFile.contents.numBytes;
 
     // Create parser

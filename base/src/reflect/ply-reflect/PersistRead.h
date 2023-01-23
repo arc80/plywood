@@ -26,7 +26,7 @@ public:
     virtual TypeDescriptor* getType(FormatDescriptor* formatDesc) = 0;
 };
 
-void readSchema(Schema& schema, InStream* in);
+void readSchema(Schema& schema, InStream& in);
 
 #define PLY_VALIDATE_RESOLVED_PTR_TYPES 1
 
@@ -68,7 +68,7 @@ struct ReadObjectContext {
     PersistentTypeResolver* typeResolver;
     LoadPtrResolver ptrResolver;
 
-    ReadObjectContext(const Schema* schema, InStream* in, PersistentTypeResolver* typeResolver)
+    ReadObjectContext(const Schema* schema, InStream& in, PersistentTypeResolver* typeResolver)
         : schema(schema), in(in), typeResolver(typeResolver) {
     }
 };

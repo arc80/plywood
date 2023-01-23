@@ -221,8 +221,8 @@ fmt::TypePrinter<fmt::EscapedString>::print(OutStream& out,
             out << "...";
             break;
         }
-        DecodeResult decoded = UTF8::decodePoint(srcUnits);
-        switch (decoded.point) {
+        char c = srcUnits.bytes[0];
+        switch (c) {
             case '"': {
                 out << "\\\"";
                 break;
@@ -244,20 +244,19 @@ fmt::TypePrinter<fmt::EscapedString>::print(OutStream& out,
                 break;
             }
             default: {
-                if (decoded.point >= 32) {
+                if (c >= 32) {
                     // This will preserve badly encoded UTF8 characters exactly as they
                     // are in the source string:
-                    out.write(srcUnits.left(decoded.numBytes));
+                    out << c;
                 } else {
                     static const char* digits = "0123456789abcdef";
-                    out << '\\' << digits[(decoded.point >> 4) & 0xf]
-                        << digits[decoded.point & 0xf];
+                    out << '\\' << digits[(c >> 4) & 0xf] << digits[c & 0xf];
                 }
                 break;
             }
         }
         points++;
-        srcUnits.offsetHead(decoded.numBytes);
+        srcUnits.offsetHead(1);
     }
 }
 
@@ -270,8 +269,8 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::XMLEscape>::print(OutStream& out,
             out << "...";
             break;
         }
-        DecodeResult decoded = UTF8::decodePoint(srcUnits);
-        switch (decoded.point) {
+        char c = srcUnits.bytes[0];
+        switch (c) {
             case '<': {
                 out << "&lt;";
                 break;
@@ -289,14 +288,12 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::XMLEscape>::print(OutStream& out,
                 break;
             }
             default: {
-                // This will preserve badly encoded UTF8 characters exactly as they are
-                // in the source string:
-                out.write(srcUnits.left(decoded.numBytes));
+                out << c;
                 break;
             }
         }
         points++;
-        srcUnits.offsetHead(decoded.numBytes);
+        srcUnits.offsetHead(1);
     }
 }
 

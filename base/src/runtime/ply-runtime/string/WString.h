@@ -19,7 +19,7 @@ struct WStringView {
     PLY_INLINE WStringView() = default;
     PLY_INLINE WStringView(const char16_t* units, u32 numUnits) : units{units}, numUnits{numUnits} {
     }
-    PLY_INLINE StringView stringView() const {
+    PLY_INLINE StringView raw_bytes() const {
         return {(const char*) this->units, this->numUnits << 1};
     }
 #if PLY_TARGET_WIN32
@@ -82,5 +82,8 @@ struct WString {
     }
 #endif
 };
+
+WString toWString(StringView str);
+String fromWString(WStringView str);
 
 } // namespace ply

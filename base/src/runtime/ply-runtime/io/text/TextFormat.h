@@ -6,6 +6,7 @@
 #include <ply-runtime/Core.h>
 #include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
+#include <ply-runtime/string/TextEncoding.h>
 
 namespace ply {
 
@@ -22,13 +23,6 @@ no byte order mark (BOM).
 For more information, see [Unicode Support](Unicode).
 */
 struct TextFormat {
-    // FIXME: Maybe remove this Encoding enum and just use TextEncoding
-    enum class Encoding {
-        Bytes,
-        UTF8,
-        UTF16_be,
-        UTF16_le,
-    };
     enum class NewLine {
         LF,
         CRLF,
@@ -38,7 +32,7 @@ struct TextFormat {
     /*!
     Possible values are `Bytes`, `UTF8`, `UTF16_be` and `UTF16_le`.
     */
-    Encoding encoding = Encoding::UTF8;
+    UnicodeType encoding = UTF8;
 
     /*!
     Possible values are `LF` and `CRLF`.
@@ -54,7 +48,7 @@ struct TextFormat {
     Returns a `TextFormat` with `UTF8`, `LF` and no BOM.
     */
     static PLY_INLINE TextFormat unixUTF8() {
-        return {TextFormat::Encoding::UTF8, TextFormat::NewLine::LF, false};
+        return {UTF8, TextFormat::NewLine::LF, false};
     }
 
     /*!

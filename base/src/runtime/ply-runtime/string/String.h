@@ -284,11 +284,6 @@ PLY_INLINE String StringMixin<Derived>::reversedBytes() const {
 }
 
 template <typename Derived>
-PLY_INLINE String StringMixin<Derived>::reversedUTF8() const {
-    return static_cast<const Derived*>(this)->view().reversedUTF();
-}
-
-template <typename Derived>
 PLY_INLINE String StringMixin<Derived>::filterBytes(char (*filterFunc)(char)) const {
     return static_cast<const Derived*>(this)->view().filterBytes(filterFunc);
 }

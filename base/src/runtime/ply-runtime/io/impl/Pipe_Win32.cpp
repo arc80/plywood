@@ -35,6 +35,18 @@ u64 InPipe_Handle::get_file_size() {
     return fileSize.QuadPart;
 }
 
+void InPipe_Handle::seek(s64 offset, SeekDirection dir) {
+    DWORD move_method = FILE_BEGIN;
+    if (dir == Seek_Relative) {
+        move_method = FILE_CURRENT;
+    } else if (dir == Seek_End) {
+        move_method = FILE_END;
+    }
+    LARGE_INTEGER distance;
+    distance.QuadPart = offset;
+    SetFilePointerEx(this->handle, distance, NULL, move_method);
+}
+
 // ┏━━━━━━━━━━━━━━━━━━┓
 // ┃  OutPipe_Handle  ┃
 // ┗━━━━━━━━━━━━━━━━━━┛
@@ -63,7 +75,7 @@ void OutPipe_Handle::flush(bool hard) {
     }
 }
 
-u64 OutPipe_Handle::seek(s64 offset, SeekDirection dir) {
+void OutPipe_Handle::seek(s64 offset, SeekDirection dir) {
     DWORD move_method = FILE_BEGIN;
     if (dir == Seek_Relative) {
         move_method = FILE_CURRENT;
@@ -72,10 +84,7 @@ u64 OutPipe_Handle::seek(s64 offset, SeekDirection dir) {
     }
     LARGE_INTEGER distance;
     distance.QuadPart = offset;
-    LARGE_INTEGER new_file_pos;
-    new_file_pos.QuadPart = 0;
-    SetFilePointerEx(this->handle, distance, &new_file_pos, move_method);
-    return new_file_pos.QuadPart;
+    SetFilePointerEx(this->handle, distance, NULL, move_method);
 }
 
 } // namespace ply

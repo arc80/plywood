@@ -16,7 +16,7 @@ Owned<ExternFolderRegistry> ExternFolderRegistry::instance_;
 
 PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
     String infoPath = Path.join(path, "info.pylon");
-    String strContents = FileSystem.loadTextAutodetect(infoPath).first;
+    String strContents = FileSystem.loadTextAutodetect(infoPath);
     if (FileSystem.lastResult() != FSResult::OK)
         return nullptr;
 

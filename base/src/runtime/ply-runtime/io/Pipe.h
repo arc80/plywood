@@ -38,7 +38,7 @@ struct InPipe {
     // read() only returns 0 at EOF. Otherwise, it blocks.
     virtual u32 read(MutStringView buf) = 0;
     virtual u64 get_file_size();
-    virtual u64 seek(s64 offset, SeekDirection dir);
+    virtual void seek(s64 offset, SeekDirection dir);
 };
 
 bool fill_buffer(MutStringView to_buf, InPipe* from_pipe);
@@ -57,7 +57,7 @@ struct InPipe_Handle : InPipe {
     virtual ~InPipe_Handle();
     virtual u32 read(MutStringView buf) override;
     virtual u64 get_file_size() override;
-    virtual u64 seek(s64 offset, SeekDirection dir) override;
+    virtual void seek(s64 offset, SeekDirection dir) override;
 };
 
 #endif // PLY_TARGET_WIN32
@@ -82,7 +82,7 @@ struct OutPipe {
     // write() may block if connected to a blocked reader.
     virtual bool write(StringView buf) = 0;
     virtual void flush(bool hard);
-    virtual u64 seek(s64 offset, SeekDirection dir);
+    virtual void seek(s64 offset, SeekDirection dir);
 };
 
 #if PLY_TARGET_WIN32
@@ -99,7 +99,7 @@ struct OutPipe_Handle : OutPipe {
     virtual ~OutPipe_Handle();
     virtual bool write(StringView buf) override;
     virtual void flush(bool hard) override;
-    virtual u64 seek(s64 offset, SeekDirection dir) override;
+    virtual void seek(s64 offset, SeekDirection dir) override;
 };
 
 #endif // PLY_TARGET_WIN32

@@ -12,10 +12,10 @@ namespace ply {
 // Write
 //
 
-void writeAsset(OutStream* out, AnyObject obj) {
+void writeAsset(OutStream& out, AnyObject obj) {
     WriteFormatContext writeFormatContext{out};
     MemOutStream memOut;
-    WriteObjectContext writeObjectContext{&memOut, &writeFormatContext};
+    WriteObjectContext writeObjectContext{memOut, &writeFormatContext};
     writeObject(obj, &writeObjectContext);
     writeFormatContext.endSchema();
 
@@ -24,19 +24,19 @@ void writeAsset(OutStream* out, AnyObject obj) {
     resolveLinksAndWriteLinkTable({bin.bytes, bin.numBytes}, out, &writeObjectContext.ptrResolver);
 
     // Write object data
-    out->write(bin);
+    out.write(bin);
 }
 
 //--------------------------------------------------------------------
 // Read
 //
 
-AnyObject readAsset(InStream* ins, PersistentTypeResolver* resolver) {
+AnyObject readAsset(InStream& in, PersistentTypeResolver* resolver) {
     Schema schema;
-    readSchema(schema, ins);
-    ReadObjectContext context{&schema, ins, resolver};
+    readSchema(schema, in);
+    ReadObjectContext context{&schema, in, resolver};
     readLinkTable(&context.in, &context.ptrResolver);
-    context.ptrResolver.objDataOffset = safeDemote<u32>(ins->getSeekPos());
+    context.ptrResolver.objDataOffset = safeDemote<u32>(in.get_seek_pos());
     AnyObject obj = readObject(&context);
     resolveLinks(&context.ptrResolver);
     return obj;

@@ -89,17 +89,18 @@ u64 InStream::get_seek_pos() const {
     return relative_to + (this->cur_byte - this->start_byte);
 }
 
-BlockList::Ref InStream::getBlockRef() const {
-    PLY_ASSERT(!this->block || this->block->viewUsedBytes().contains(this->cur_byte));
-    return {this->block, const_cast<char*>(this->cur_byte)};
-}
-
 void InStream::rewind(const BlockList::WeakRef& pos) {
-    PLY_ASSERT(pos.block->viewUsedBytes().contains(pos.byte));
-    this->block = pos.block;
-    this->start_byte = pos.block->bytes;
     this->cur_byte = pos.byte;
-    this->end_byte = pos.block->bytes + pos.block->numBytesUsed;
+    if (pos.block) {
+        PLY_ASSERT(this->block);
+        this->block = pos.block;
+        this->start_byte = pos.block->bytes;
+        this->end_byte = pos.block->bytes + pos.block->numBytesUsed;
+    } else {
+        PLY_ASSERT(!this->block);
+    }
+    PLY_ASSERT(this->cur_byte >= this->start_byte);
+    PLY_ASSERT(this->cur_byte >= this->end_byte);
     this->status.eof = 0;
 }
 
@@ -126,13 +127,19 @@ bool InStream::read_internal(MutStringView dst) {
 }
 
 String InStream::read_remaining_contents() {
-    BlockList::Ref startPos = this->getBlockRef();
+    BlockList::Ref save_point = this->get_save_point();
     while (this->ensure_readable()) {
         this->cur_byte = this->end_byte;
     }
     PLY_ASSERT(this->status.eof);
     this->close();
-    return BlockList::toString(std::move(startPos));
+    return BlockList::toString(std::move(save_point));
+}
+
+ViewInStream::ViewInStream(StringView view) {
+    this->start_byte = view.bytes;
+    this->cur_byte = view.bytes;
+    this->end_byte = view.end();
 }
 
 } // namespace ply

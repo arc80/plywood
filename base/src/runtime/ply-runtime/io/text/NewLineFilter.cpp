@@ -121,6 +121,7 @@ bool OutPipe_NewLineFilter::write(StringView buf) {
 }
 
 void OutPipe_NewLineFilter::flush(bool hard) {
+    // Forward flush command down the output chain.
     this->out.flush(hard);
 };
 

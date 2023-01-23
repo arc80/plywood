@@ -378,13 +378,6 @@ struct StringView {
     */
     PLY_DLL_ENTRY String reversedBytes() const;
 
-    // FIXME: Make sure this documentation string is OK
-    /*!
-    Returns a new `String` with UTF-8 characters reversed. For example, if `s` contains the string
-    `"😋🍺🍕"` encoded as UTF-8, `s.reversedUTF8()` returns the string `"🍕🍺😋"` encoded as UTF-8.
-    */
-    PLY_DLL_ENTRY String reversedUTF8() const;
-
     /*!
     Returns a new `String` with each byte passed through the provided `filterFunc`. It's safe to
     call this function on UTF-8 encoded strings as long as `filterFunc` leaves byte values greater
@@ -487,6 +480,10 @@ struct MutStringView {
     remain valid for the lifetime of the `MutStringView`.
     */
     PLY_INLINE MutStringView(char* bytes, u32 numBytes) : bytes{bytes}, numBytes{numBytes} {
+    }
+
+    char* end() {
+        return this->bytes + this->numBytes;
     }
 
     /*!

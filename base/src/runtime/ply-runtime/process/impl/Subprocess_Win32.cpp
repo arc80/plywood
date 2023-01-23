@@ -8,7 +8,7 @@
 
 #include <ply-runtime/process/Subprocess.h>
 #include <ply-runtime/Path.h>
-#include <ply-runtime/io/text/TextConverter.h> // for WString
+#include <ply-runtime/string/WString.h>
 
 namespace ply {
 
@@ -237,8 +237,7 @@ Owned<Subprocess> Subprocess::execArgStr(StringView exePath, StringView argStr,
         cmdLine << ' ' << argStr;
     }
     cmdLine << '\0';
-    WString wCmdLine = WString::moveFromString(
-        TextConverter::convert<UTF16_Native, UTF8>(cmdLine.moveToString()));
+    WString wCmdLine = toWString(cmdLine.moveToString());
 
     // Create the child process:
     WString win32Dir;

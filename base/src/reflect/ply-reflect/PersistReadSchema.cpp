@@ -36,7 +36,7 @@ public:
     Schema* m_schema;
     NativeEndianReader m_in;
 
-    SchemaLoader(Schema* schema, InStream* in) : m_schema(schema), m_in(in) {
+    SchemaLoader(Schema* schema, InStream& in) : m_schema(schema), m_in(in) {
         PLY_ASSERT(BuiltInFormats.numItems() == int(FormatKey::StartUserKeyRange));
     }
 
@@ -146,7 +146,7 @@ public:
     }
 };
 
-void readSchema(Schema& schema, InStream* in) {
+void readSchema(Schema& schema, InStream& in) {
     SchemaLoader loader{&schema, in};
     loader.readSchema();
 }

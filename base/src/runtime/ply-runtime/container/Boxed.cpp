@@ -9,10 +9,10 @@ namespace ply {
 
 String Boxed<String>::read(NativeEndianReader& rd) {
     u32 numBytes = rd.read<u32>();
-    if (rd.ins->at_eof())
+    if (rd.in.at_eof())
         return {};
     String bin = String::allocate(numBytes);
-    rd.ins->read({bin.bytes, bin.numBytes});
+    rd.in.read({bin.bytes, bin.numBytes});
     return bin;
 }
 

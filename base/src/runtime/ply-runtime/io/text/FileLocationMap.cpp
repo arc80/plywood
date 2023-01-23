@@ -10,6 +10,8 @@
 namespace ply {
 
 FileLocationMap FileLocationMap::fromView(StringView path, StringView src) {
+    ViewInStream src_in{src};
+
     FileLocationMap result;
     result.path = path;
     result.view = src;
@@ -24,23 +26,22 @@ FileLocationMap FileLocationMap::fromView(StringView path, StringView src) {
         if (src.numBytes == 0)
             break;
 
-        DecodeResult decoded = UTF8::decodePoint(src);
-        u32 nextOfs = ofs + decoded.numBytes;
+        s32 codepoint = Unicode{UTF8}.decode_point(src_in);
+        u32 nextOfs = safeDemote<u32>(src_in.cur_byte - src_in.start_byte);
         if (nextOfs > nextChunkOfs) {
             result.table.append({lineNumber, nextChunkOfs - lineStartOfs, columnNumber, ofs - 256});
             nextChunkOfs += 256;
         }
         ofs = nextOfs;
-        src.offsetHead(decoded.numBytes);
 
-        if (decoded.point == '\n') {
+        if (codepoint == '\n') {
             lineNumber++;
             columnNumber = 1;
             lineStartOfs = ofs;
-        } else if (decoded.point == '\t') {
+        } else if (codepoint == '\t') {
             u32 tabSize = 4;
             columnNumber += tabSize - (columnNumber % tabSize);
-        } else if (decoded.point == '\r') {
+        } else if (codepoint == '\r') {
         } else {
             columnNumber++;
         }
@@ -55,28 +56,28 @@ FileLocation FileLocationMap::getFileLocation(u32 offset) const {
     const char* lineStart = this->view.bytes + (chunkOfs - fileLoc.numBytesIntoLine);
     StringView src = this->view;
     src.offsetHead(chunkOfs - fileLoc.numBytesIntoColumn);
+    ViewInStream src_in{src};
     const char* target = this->view.bytes + offset;
     u32 lineNumber = fileLoc.lineNumber;
     u32 columnNumber = fileLoc.columnNumber;
 
     for (;;) {
-        if (src.bytes >= target) {
+        if (src_in.cur_byte >= target) {
             u32 nb = safeDemote<u32>(target - src.bytes);
             return {lineNumber, safeDemote<u32>(target - lineStart), columnNumber, nb};
         }
 
         // FIXME: Unify with similar code in previous function
-        DecodeResult decoded = UTF8::decodePoint(src);
-        src.offsetHead(decoded.numBytes);
+        u32 codepoint = Unicode{UTF8}.decode_point(src_in);
 
-        if (decoded.point == '\n') {
+        if (codepoint == '\n') {
             lineNumber++;
             columnNumber = 1;
             lineStart = src.bytes;
-        } else if (decoded.point == '\t') {
+        } else if (codepoint == '\t') {
             u32 tabSize = 4; // FIXME: Make configurable somewhere
             columnNumber += tabSize - (columnNumber % tabSize);
-        } else if (decoded.point == '\r') {
+        } else if (codepoint == '\r') {
         } else {
             columnNumber++;
         }

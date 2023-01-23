@@ -120,26 +120,6 @@ PLY_NO_INLINE String StringView::join(ArrayView<const StringView> comps) const {
     return mout.moveToString();
 }
 
-PLY_NO_INLINE String StringView::reversedUTF8() const {
-    // When reversing badly-encoded UTF-8 strings, we just reverse the bad bytes.
-    // That means, when dealing with bad UTF-8 strings, two calls to reversedUTF8() *might* not
-    // return the same string.
-    String result = String::allocate(this->numBytes);
-    StringView srcView = *this;
-    MutStringView dstView{result.bytes, result.numBytes};
-    while (dstView.numBytes > 0) {
-        u32 bytesToCopy = UTF8::backNumBytes(srcView);
-        PLY_ASSERT(bytesToCopy > 0);
-        for (u32 i = 0; i < bytesToCopy; i++) {
-            dstView.bytes[i] = srcView.bytes[srcView.numBytes - (s32) bytesToCopy + i];
-        }
-        dstView.offsetHead(bytesToCopy);
-        srcView.offsetBack(-(s32) bytesToCopy);
-    }
-    PLY_ASSERT(srcView.numBytes == 0);
-    return result;
-}
-
 PLY_NO_INLINE HybridString StringView::withNullTerminator() const {
     if (this->includesNullTerminator()) {
         return *this;

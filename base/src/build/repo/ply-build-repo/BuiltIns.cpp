@@ -144,19 +144,6 @@ bool splitURL(BaseInterpreter* base, SplitURL* split, StringView s) {
     return true;
 }
 
-PLY_NO_INLINE WString toWString(StringView str) {
-    MemOutStream out;
-    while (str.numBytes > 0) {
-        DecodeResult decoded = UTF8::decodePoint(str);
-        out.ensure_contiguous(4);
-        u32 numEncodedBytes = UTF16_Native::encodePoint(out.view_writable(), decoded.point);
-        out.cur_byte += numEncodedBytes;
-        str.offsetHead(decoded.numBytes);
-    }
-    NativeEndianWriter{out}.write<u16>(0);
-    return WString::moveFromString(out.moveToString());
-}
-
 void download(StringView dstPath, const SplitURL& split) {
 #if PLY_TARGET_WIN32
     // FIXME: More graceful error handling

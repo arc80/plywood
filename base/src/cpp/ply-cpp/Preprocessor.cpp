@@ -145,7 +145,7 @@ void readPreprocessorDirective(ViewInStream& in, Preprocessor* pp) {
     PLY_ASSERT(avail);
     PLY_UNUSED(avail);
     PLY_ASSERT(*in.cur_byte == '#');
-    auto savePoint = in.savePoint();
+    auto savePoint = in.get_save_point();
     in.cur_byte++;
 
     // Skip whitespace
@@ -449,7 +449,7 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
     Token token;
     while (pp->stack.numItems() > 0) {
         item = &pp->stack.back();
-        auto savePoint = item->in.savePoint();
+        auto savePoint = item->in.get_save_point();
         if (!item->in.ensure_readable()) {
             pp->stack.pop();
             if (pp->stack.numItems() > 0) {
@@ -823,11 +823,11 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
                     pp->macroArgs.clear();
                     if (exp.takesArgs) {
                         // This macro expects arguments
-                        auto savePoint = item->in.savePoint();
+                        auto savePoint = item->in.get_save_point();
                         pp->macroArgs = readMacroArguments(pp, item->in);
                         if (!pp->macroArgs) {
                             // No arguments were provided, so just return a plain token
-                            item->in.restore(savePoint);
+                            item->in.rewind(savePoint);
                             token.type = Token::Identifier;
                             goto gotToken;
                         }

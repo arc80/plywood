@@ -8,7 +8,7 @@
 
 #include <ply-runtime/filesystem/impl/DirectoryWatcher_Win32.h>
 #include <ply-runtime/Path.h>
-#include <ply-runtime/io/text/TextConverter.h> // for WString
+#include <ply-runtime/string/WString.h>
 
 namespace ply {
 
@@ -42,8 +42,7 @@ PLY_NO_INLINE void DirectoryWatcher_Win32::runWatcher() {
         for (;;) {
             // "The file name is in the Unicode character format and is not null-terminated."
             // https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-_file_notify_information
-            WStringView win32Path{r->FileName, r->FileNameLength / sizeof(WCHAR)};
-            String path = TextConverter::convert<UTF8, UTF16_Native>(win32Path.stringView());
+            String path = fromWString({r->FileName, r->FileNameLength / sizeof(WCHAR)});
             bool isDirectory = false;
             DWORD attribs;
             {

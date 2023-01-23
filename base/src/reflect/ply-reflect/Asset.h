@@ -14,13 +14,13 @@ namespace ply {
 // Write
 //
 
-PLY_DLL_ENTRY void writeAsset(OutStream* out, AnyObject obj);
+PLY_DLL_ENTRY void writeAsset(OutStream& out, AnyObject obj);
 
 //--------------------------------------------------------------------
 // Read
 //
 
-PLY_DLL_ENTRY AnyObject readAsset(InStream* in, PersistentTypeResolver* resolver);
+PLY_DLL_ENTRY AnyObject readAsset(InStream& in, PersistentTypeResolver* resolver);
 
 class ExpectedTypeResolver : public PersistentTypeResolver {
 public:
@@ -32,13 +32,13 @@ public:
     virtual TypeDescriptor* getType(FormatDescriptor* formatDesc) override;
 };
 
-inline AnyObject readExpectedAsset(InStream* in, TypeDescriptor* expected) {
+inline AnyObject readExpectedAsset(InStream& in, TypeDescriptor* expected) {
     ExpectedTypeResolver expectedResolver{expected};
     return readAsset(in, &expectedResolver);
 }
 
 template <typename T>
-inline AnyObject readExpectedAsset(InStream* in) {
+inline AnyObject readExpectedAsset(InStream& in) {
     return readExpectedAsset(in, getTypeDescriptor<T>());
 }
 

@@ -5,7 +5,9 @@
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/Algorithm.h>
 #include <ply-runtime/Path.h>
-#include <ply-runtime/io/text/TextConverter.h>
+#include <ply-runtime/io/InStream.h>
+#include <ply-runtime/string/TextEncoding.h>
+#include <ply-runtime/string/WString.h>
 
 namespace ply {
 
@@ -279,20 +281,21 @@ PLY_NO_INLINE HybridString Path_t::from(const Path_t& srcFormat, StringView srcP
 }
 
 PLY_NO_INLINE WString win32PathArg(StringView path, bool allowExtended) {
+    ViewInStream path_in{path};
     MemOutStream out;
     if (allowExtended && WindowsPath.isAbsolute(path)) {
         out.write(ArrayView<const char16_t>{u"\\\\?\\", 4}.stringView());
     }
-    while (path.numBytes > 0) {
-        DecodeResult decoded = UTF8::decodePoint(path);
-        out.ensure_contiguous(4);
-        u32 numEncodedBytes = UTF16_Native::encodePoint(
-            out.view_writable(), decoded.point == '/' ? '\\' : decoded.point);
-        out.cur_byte += numEncodedBytes;
-        path.bytes += decoded.numBytes;
-        path.numBytes -= decoded.numBytes;
+    while (true) {
+        s32 codepoint = Unicode{UTF8}.decode_point(path_in);
+        if (codepoint < 0)
+            break;
+        if (codepoint == '/') {
+            codepoint = '\\'; // Fix slashes.
+        }
+        Unicode{UTF16_LE}.encode_point(out, codepoint);
     }
-    NativeEndianWriter{out}.write<u16>(0);
+    out.raw_write<u16>(0); // Null terminator.
     return WString::moveFromString(out.moveToString());
 }
 

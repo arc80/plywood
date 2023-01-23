@@ -56,7 +56,7 @@ void OutStream::flush(bool hard) {
                 StringView::fromRange(this->block->unused(), this->cur_byte))) {
             this->status.eof = 1;
         }
-        // Forward flush command to the pipe.
+        // Forward flush command down the output chain.
         this->out_pipe->flush(hard);
     }
     if (this->block) {
@@ -93,10 +93,13 @@ bool OutStream::make_writable() {
     return true;
 }
 
-bool OutStream::write_internal(StringView src) {
+bool OutStream::write(StringView src) {
+    // Loop over the input in case we need to copy data to different blocks.
     while (src.numBytes > 0) {
         if (!this->ensure_writable())
-            return false;
+            return false; // EOF
+
+        // Copy as much data as possible to the current block.
         u32 toCopy = min<u32>(this->num_writable_bytes(), src.numBytes);
         memcpy(this->cur_byte, src.bytes, toCopy);
         this->cur_byte += toCopy;
@@ -106,19 +109,8 @@ bool OutStream::write_internal(StringView src) {
     return true;
 }
 
-//------------------------------------------------------------------
-// MemOutStream
-//------------------------------------------------------------------
-MemOutStream::MemOutStream() {
-    // Init first block.
-    this->head_block = BlockList::createBlock(this->status.block_size);
-    this->block = this->head_block;
-    this->start_byte = this->block->bytes;
-    this->cur_byte = this->block->bytes;
-    this->end_byte = this->block->end();
-}
-
-String MemOutStream::moveToString() {
+String OutStream::moveToString() {
+    // Must be a MemOutStream.
     PLY_ASSERT(this->head_block);
 
     // Update the current block's write position.
@@ -135,6 +127,27 @@ String MemOutStream::moveToString() {
     this->close();
 
     return result;
+}
+
+// ┏━━━━━━━━━━━━━━━━┓
+// ┃  MemOutStream  ┃
+// ┗━━━━━━━━━━━━━━━━┛
+MemOutStream::MemOutStream() {
+    // Init first block.
+    this->head_block = BlockList::createBlock(this->status.block_size);
+    this->block = this->head_block;
+    this->start_byte = this->block->bytes;
+    this->cur_byte = this->block->bytes;
+    this->end_byte = this->block->end();
+}
+
+// ┏━━━━━━━━━━━━━━━━━┓
+// ┃  ViewOutStream  ┃
+// ┗━━━━━━━━━━━━━━━━━┛
+ViewOutStream::ViewOutStream(MutStringView view) {
+    this->start_byte = view.bytes;
+    this->cur_byte = view.bytes;
+    this->end_byte = view.end();
 }
 
 } // namespace ply

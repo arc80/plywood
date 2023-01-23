@@ -53,10 +53,11 @@ struct FormatArg {
 
 struct OutStream {
     struct Status {
-        u32 block_size : 30;
+        u32 block_size : 29;
         u32 is_pipe_owner : 1;
+        u32 auto_shim : 1;
         u32 eof : 1;
-        Status() : block_size{4096}, is_pipe_owner{0}, eof{0} {
+        Status() : block_size{4096}, is_pipe_owner{0}, auto_shim{0}, eof{0} {
         }
     };
 
@@ -113,22 +114,31 @@ struct OutStream {
             return true;
         return this->make_writable();
     }
-    bool write_internal(StringView src);
-    bool write(StringView src) {
-        if ((s32) src.numBytes > this->end_byte - this->cur_byte)
-            return write_internal(src);
-        memcpy(this->cur_byte, src.bytes, src.numBytes);
-        this->cur_byte += src.numBytes;
+    bool write(char c) {
+        if (this->cur_byte >= this->end_byte) {
+            if (!this->make_writable())
+                return false;
+        }
+        *this->cur_byte++ = c;
         return true;
     }
+    bool write(StringView src);
+    template <typename T>
+    void raw_write(const T& value) {
+        this->write({(const char*) &value, sizeof(T)});
+    }
     OutStream& operator<<(char c) {
-        if (uptr(this->end_byte - this->cur_byte) < sizeof(c)) {
-            this->flush();
+        if (this->cur_byte >= this->end_byte) {
+            if (!this->make_writable())
+                return *this;
         }
         *this->cur_byte++ = c;
         return *this;
     }
-    OutStream& operator<<(StringView buf);
+    OutStream& operator<<(StringView buf) {
+        this->write(buf);
+        return *this;
+    }
     template <typename T>
     PLY_NO_INLINE OutStream& operator<<(const T& value) {
         fmt::TypePrinter<T>::print(*this, value);
@@ -140,16 +150,20 @@ struct OutStream {
         auto argList = FormatArg::collect(args...);
         this->format_args(fmt, argList);
     }
+    String moveToString(); // Must be a MemOutStream.
 };
 
 struct MemOutStream : OutStream {
     MemOutStream();
-    String moveToString();
 
     BlockList::Ref get_head_ref() {
         PLY_ASSERT(this->head_block);
         return {this->head_block, this->head_block->start()};
     }
+};
+
+struct ViewOutStream : OutStream {
+    ViewOutStream(MutStringView view);
 };
 
 //------------------------------------------------------------------

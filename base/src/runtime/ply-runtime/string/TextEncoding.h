@@ -1,255 +1,108 @@
-/*------------------------------------
-  ///\  Plywood C++ Framework
-  \\\/  https://plywood.arc80.com/
-------------------------------------*/
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                           ┃
+┃    ╱   ╱╲    Plywood Multimedia Development Kit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/                  ┃
+┃    └──┴┴┴┘                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/string/StringView.h>
+#include <ply-runtime/io/InStream.h>
+#include <ply-runtime/io/OutStream.h>
+#include <ply-runtime/container/HashMap.h>
 
 namespace ply {
 
-struct DecodeResult {
-    enum class Status : u8 {
-        Truncated, // StringView wasn't long enough to read a valid point. A (invalid) point may be
-                   // available anyway, such as when flushing the last few bytes of a UTF-8 file.
-        Invalid, // Invalid byte sequence was encountered. Such sequences are typically decoded one
-                 // code unit at a time.
-        Valid,
+// ┏━━━━━━━━━━━┓
+// ┃  Unicode  ┃
+// ┗━━━━━━━━━━━┛
+enum UnicodeType {
+    NotUnicode,
+    UTF8,
+    UTF16_Native,
+    UTF16_Reversed,
+#if PLY_IS_BIG_ENDIAN
+    UTF16_LE = UTF16_Reversed,
+    UTF16_BE = UTF16_Native,
+#else
+    UTF16_LE = UTF16_Native,
+    UTF16_BE = UTF16_Reversed,
+#endif
+};
+
+struct ExtendedTextParams {
+    struct ReverseLUTTraits {
+        using Key = u32;
+        struct Item {
+            u32 key;
+            u8 value;
+        };
+        static bool match(const Item& item, Key key) {
+            return item.key == key;
+        }
     };
 
-    // (point >= 0) if and only if (numBytes > 0), which means that a code point is available to
-    // read (even if status is Invalid or Truncated).
-    s32 point = -1;
-    Status status = Status::Truncated;
-    u8 numBytes = 0;
+    ArrayView<s32> lut; // Lookup table: byte -> Unicode codepoint.
+    HashMap<ReverseLUTTraits> reverse_lut;
+    s32 missing_char = 255; // If negative, missing characters are skipped.
 };
 
-//-------------------------------------------------------------------
-// Enc_Bytes
-//-------------------------------------------------------------------
-struct Enc_Bytes {
-    static PLY_INLINE DecodeResult decodePoint(StringView view) {
-        if (view.numBytes == 0) {
-            return {};
-        } else {
-            return {(u8) view.bytes[0], DecodeResult::Status::Valid, 1};
-        }
-    }
-
-    static PLY_INLINE u32 backNumBytes(StringView view) {
-        if (view.numBytes == 0) {
-            return 0;
-        } else {
-            return 1;
-        }
-    }
-
-    static PLY_INLINE u32 numBytes(u32 point) {
-        return 1;
-    }
-
-    static PLY_INLINE u32 encodePoint(MutStringView view, u32 point) {
-        if (view.numBytes > 0) {
-            view.bytes[0] = point < 256 ? (u8) point : 0x95;
-            return 1;
-        }
-        PLY_ASSERT(false); // Passed buffer was too small
-        return 0;
-    }
+enum DecodeStatus {
+    DS_OK,
+    DS_IllFormed, // Not at EOF.
+    DS_NotEnoughData, // Can still decode an ill-formed codepoint.
 };
 
-//-------------------------------------------------------------------
-// UTF8
-//-------------------------------------------------------------------
-struct UTF8 {
-    static PLY_DLL_ENTRY DecodeResult decodePointSlowPath(StringView view);
+struct Unicode {
+    UnicodeType type;
+    ExtendedTextParams* ext_params = nullptr;
+    DecodeStatus status = DS_OK;
 
-    static PLY_INLINE DecodeResult decodePoint(StringView view) {
-        if (view.numBytes > 0) {
-            u8 first = view.bytes[0];
-            if (first < 0x80) {
-                return {first, DecodeResult::Status::Valid, 1};
-            }
-        }
-        return decodePointSlowPath(view);
+    Unicode(UnicodeType type = NotUnicode) : type{type} {
     }
 
-    static PLY_DLL_ENTRY u32 backNumBytesSlowPath(StringView view);
-
-    static PLY_INLINE u32 backNumBytes(StringView view) {
-        if (view.numBytes > 0) {
-            u8 last = view.bytes[view.numBytes - 1];
-            if (last < 0x80) {
-                return 1;
-            }
-        }
-        return backNumBytesSlowPath(view);
-    }
-
-    static PLY_INLINE u32 numBytes(u32 point) {
-        if (point < 0x80)
-            return 1;
-        else if (point < 0x800)
-            return 2;
-        else if (point < 0x10000)
-            return 3;
-        else
-            return 4;
-    }
-
-    static PLY_INLINE u32 encodePoint(MutStringView view, u32 point) {
-        if (point < 0x80) {
-            if (view.numBytes >= 1) {
-                view.bytes[0] = u8(point);
-                return 1;
-            }
-        } else if (point < 0x800) {
-            if (view.numBytes >= 2) {
-                view.bytes[0] = u8(0xc0 | (point >> 6));
-                view.bytes[1] = u8(0x80 | (point & 0x3f));
-                return 2;
-            }
-        } else if (point < 0x10000) {
-            if (view.numBytes >= 3) {
-                view.bytes[0] = u8(0xe0 | (point >> 12));
-                view.bytes[1] = u8(0x80 | ((point >> 6) & 0x3f));
-                view.bytes[2] = u8(0x80 | ((point & 0x3f)));
-                return 3;
-            }
-        } else {
-            if (view.numBytes >= 4) {
-                view.bytes[0] = u8(0xf0 | (point >> 18));
-                view.bytes[1] = u8(0x80 | ((point >> 12) & 0x3f));
-                view.bytes[2] = u8(0x80 | ((point >> 6) & 0x3f));
-                view.bytes[3] = u8(0x80 | (point & 0x3f));
-                return 4;
-            }
-        }
-        PLY_ASSERT(false); // Passed buffer was too small
-        return 0;
-    }
+    bool encode_point(OutStream& out, u32 codepoint);
+    s32 decode_point(InStream& in); // -1 at EOF
 };
 
-//-------------------------------------------------------------------
-// UTF16
-//-------------------------------------------------------------------
-template <bool BigEndian>
-struct UTF16 {
-    static PLY_INLINE u16 getUnit(const char* src) {
-        if (BigEndian) {
-            return (u16(u8(src[0])) << 8) | u8(src[1]);
-        } else {
-            return u8(src[0]) | (u16(u8(src[1])) << 8);
-        }
+// ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+// ┃  InPipe_ConvertUnicode  ┃
+// ┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
+struct InPipe_ConvertUnicode : InPipe {
+    InStream in;
+    Unicode src_enc;
+
+    // shim_storage is used to split multibyte characters at buffer boundaries.
+    FixedArray<char, 4> shim_storage;
+    StringView shim_used;
+
+    InPipe_ConvertUnicode(InStream&& in, UnicodeType type = NotUnicode)
+        : in{std::move(in)}, src_enc{type} {
     }
 
-    static PLY_INLINE void putUnit(char* src, u16 u) {
-        if (BigEndian) {
-            src[0] = u8(u >> 8);
-            src[1] = u8(u);
-        } else {
-            src[0] = u8(u);
-            src[1] = u8(u >> 8);
-        }
-    }
-
-    static PLY_INLINE DecodeResult decodePoint(StringView view) {
-        if (view.numBytes < 2) {
-            return {};
-        }
-        u16 first = getUnit(view.bytes);
-        auto status = DecodeResult::Status::Invalid;
-        if (first >= 0xd800 && first < 0xdc00) {
-            if (view.numBytes < 4) {
-                status = DecodeResult::Status::Truncated;
-            } else {
-                u16 second = getUnit(view.bytes + 2);
-                if (second >= 0xdc00 && second < 0xe000) {
-                    u32 value = 0x10000 + ((first - 0xd800) << 10) + (second - 0xdc00);
-                    return {(s32) value, DecodeResult::Status::Valid, 4};
-                }
-            }
-        } else if (!(first >= 0xdc00 && first < 0xe000)) {
-            status = DecodeResult::Status::Valid;
-        }
-        return {first, status, 2};
-    }
-
-    static PLY_INLINE u32 backNumBytes(StringView view) {
-        if (view.numBytes < 2) {
-            return 0;
-        }
-        const char* tail = view.bytes + view.numBytes;
-        if (view.numBytes >= 4) {
-            u16 first = getUnit(tail - 4);
-            u16 second = getUnit(tail - 2);
-            if (first >= 0xd800 && first < 0xdc00 && second >= 0xdc00 && second < 0xe000)
-                return 4;
-        }
-        return 2;
-    }
-
-    static PLY_INLINE u32 numBytes(u32 point) {
-        if (point < 0x10000)
-            return 2;
-        else
-            return 4;
-    }
-
-    static PLY_INLINE u32 encodePoint(MutStringView view, u32 point) {
-        if (point < 0x10000) {
-            if (view.numBytes >= 2) {
-                putUnit(view.bytes, u16(point));
-                return 2;
-            }
-        } else {
-            if (view.numBytes >= 4) {
-                point -= 0x10000;
-                putUnit(view.bytes, u16(0xd800 + ((point >> 10) & 0x3ff)));
-                putUnit(view.bytes + 2, u16(0xdc00 + (point & 0x3ff)));
-                return 4;
-            }
-        }
-        PLY_ASSERT(false); // Passed buffer was too small
-        return 0;
-    }
+    // Fill dst_buf with UTF-8-encoded data.
+    virtual u32 read(MutStringView dst_buf) override;
 };
 
-using UTF16_LE = UTF16<false>;
-using UTF16_BE = UTF16<true>;
-using UTF16_Native = UTF16<PLY_IS_BIG_ENDIAN>;
+// ┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+// ┃  OutPipe_ConvertUnicode  ┃
+// ┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+struct OutPipe_ConvertUnicode : OutPipe {
+    OutStream out;
+    Unicode dst_enc;
 
-//-------------------------------------------------------------------
-// TextEncoding helper objects
-//-------------------------------------------------------------------
-struct TextEncoding {
-    DecodeResult (*decodePoint)(StringView view) = nullptr;
-    u32 (*encodePoint)(MutStringView view, u32 point) = nullptr;
-    u32 unitSize = 0;
+    // shim_storage is used to join multibyte characters at buffer boundaries.
+    char shim_storage[4];
+    u32 shim_used;
 
-    template <typename>
-    struct Wrapper;
-    template <typename Enc>
-    PLY_INLINE static const TextEncoding* get() {
-        return &TextEncoding::Wrapper<Enc>::Instance;
+    OutPipe_ConvertUnicode(OutStream&& out, UnicodeType type = NotUnicode)
+        : out{std::move(out)}, dst_enc{type} {
     }
-};
 
-template <>
-struct TextEncoding::Wrapper<Enc_Bytes> {
-    static PLY_DLL_ENTRY TextEncoding Instance;
-};
-template <>
-struct TextEncoding::Wrapper<UTF8> {
-    static PLY_DLL_ENTRY TextEncoding Instance;
-};
-template <>
-struct TextEncoding::Wrapper<UTF16_LE> {
-    static PLY_DLL_ENTRY TextEncoding Instance;
-};
-template <>
-struct TextEncoding::Wrapper<UTF16_BE> {
-    static PLY_DLL_ENTRY TextEncoding Instance;
+    // src_buf expects UTF-8-encoded data.
+    virtual bool write(StringView src_buf) override;
+    virtual void flush(bool hard) override;
 };
 
 } // namespace ply

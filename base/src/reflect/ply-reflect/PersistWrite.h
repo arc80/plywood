@@ -27,7 +27,7 @@ private:
     void writeChildFormatDesc(TypeDescriptor* typeDesc);
 
 public:
-    WriteFormatContext(OutStream* out);
+    WriteFormatContext(OutStream& out);
     u32 addOrGetFormatID(TypeDescriptor* typeDesc);
     u32 getFormatID(TypeDescriptor* typeDesc) const;
     void endSchema();

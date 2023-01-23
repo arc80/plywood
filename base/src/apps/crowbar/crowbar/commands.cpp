@@ -15,7 +15,6 @@
 #include <ply-build-repo/Instantiate.h>
 #include <ply-build-repo/BuiltIns.h>
 #include <ply-runtime/string/WString.h>
-#include <ply-runtime/io/text/TextConverter.h>
 
 using namespace ply::build;
 
@@ -227,23 +226,13 @@ void command_open(BuildFolder_t* bf) {
             Error.log("Can't find '{}'", slnPath);
         }
 
-        // Convert to UTF-16 path
-        WString wstr;
-        {
-            MemOutStream out;
-            StringView srcView = slnPath.view();
-            TextConverter::create<UTF16_Native, UTF8>().writeTo(out, &srcView, true);
-            out << StringView{"\0\0", 2}; // null terminated
-            wstr = WString::moveFromString(out.moveToString());
-        }
-
         // Open IDE
         if (CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE) !=
             S_OK) {
             Error.log("Unable to initialize COM");
             exit(1);
         }
-        ShellExecuteW(NULL, L"open", wstr, NULL, NULL, SW_SHOWNORMAL);
+        ShellExecuteW(NULL, L"open", toWString(slnPath), NULL, NULL, SW_SHOWNORMAL);
         return;
 #endif // PLY_TARGET_WIN32
 #if PLY_TARGET_APPLE

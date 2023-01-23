@@ -208,14 +208,6 @@ struct StringMixin {
     */
     PLY_INLINE String reversedBytes() const;
 
-    // FIXME: Make sure this documentation string is OK
-    /*!
-    Returns a new `String` with UTF-8 characters reversed. For example,
-    `StringView{"`&#x1f60b;&#x1f37a;&#x1f355;`"}.reversedUTF8()` returns
-    `"`&#x1f355;&#x1f37a;&#x1f60b;`"`.
-    */
-    PLY_INLINE String reversedUTF8() const;
-
     /*!
     Returns a new `String` with each byte passed through the provided `filterFunc`. It's safe to
     call this function on UTF-8 encoded strings as long as `filterFunc` leaves byte values greater
