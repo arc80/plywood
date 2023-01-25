@@ -45,7 +45,7 @@ FnResult doEscape(const FnParams& params) {
         return Fn_Error;
     }
 
-    String result = String::from(fmt::EscapedString{*path});
+    String result = to_string(escape(*path));
     AnyObject* resultStorage =
         params.base->localVariableStorage.appendObject(getTypeDescriptor<String>());
     *resultStorage->cast<String>() = std::move(result);

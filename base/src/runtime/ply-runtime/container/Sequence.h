@@ -192,7 +192,7 @@ public:
 
         ArrayView<String> view = list.beginWriteViewNoConstruct();
         for (u32 i = 0; i < view.numItems; i++) {
-            new (&view[i]) String{String::from(i)};
+            new (&view[i]) String{to_string(i)};
         }
         list.endWrite(view.numItems);
     */

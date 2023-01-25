@@ -7,51 +7,41 @@
 namespace ply {
 namespace build {
 
-struct CMakeEscape {
-    StringView view;
-    PLY_INLINE CMakeEscape(StringView view) : view{view} {
+struct CMakeEscape : FormatArg {
+    static void do_print(OutStream& out, const FormatArg& arg);
+    CMakeEscape(StringView view) {
+        this->print_func = do_print;
+        this->view = view;
     }
 };
 
-} // namespace build
-} // namespace ply
-
-namespace ply {
-namespace fmt {
-template <>
-struct TypePrinter<build::CMakeEscape> {
-    static void print(OutStream& out, const build::CMakeEscape& value) {
-        StringView srcUnits = value.view;
-        while (srcUnits.numBytes > 0) {
-            char c = srcUnits.bytes[0];
-            switch (c) {
-                case '$':
-                case '<':
-                case '>':
-                case '(':
-                case ')':
-                case '#':
-                case '"':
-                case '\\':
-                case ';':
-                case ',': {
-                    out << '\\';
-                    break;
-                }
-                default: {
-                    break;
-                }
+void CMakeEscape::do_print(OutStream& out, const FormatArg& arg) {
+    PLY_ASSERT(arg.type == View);
+    StringView srcUnits = arg.view;
+    while (srcUnits.numBytes > 0) {
+        char c = srcUnits.bytes[0];
+        switch (c) {
+            case '$':
+            case '<':
+            case '>':
+            case '(':
+            case ')':
+            case '#':
+            case '"':
+            case '\\':
+            case ';':
+            case ',': {
+                out << '\\';
+                break;
             }
-            out << c;
-            srcUnits.offsetHead(1);
+            default: {
+                break;
+            }
         }
+        out << c;
+        srcUnits.offsetHead(1);
     }
-};
-} // namespace fmt
-} // namespace ply
-
-namespace ply {
-namespace build {
+}
 
 String escapeCMakeList(ArrayView<const StringView> copts) {
     MemOutStream mout;
@@ -60,7 +50,7 @@ String escapeCMakeList(ArrayView<const StringView> copts) {
         if (!first) {
             mout << ';';
         }
-        mout << CMakeEscape{copt};
+        mout << to_string(CMakeEscape{copt});
         first = false;
     }
     return mout.moveToString();
@@ -168,6 +158,7 @@ endmacro()
             if (target->hasBuildStepBits != 0) {
                 // Note: This library target might still be disabled in specific
                 // configs.
+                FormatArg a{true};
                 out.format("add_library({}{} ${{{}_SOURCES}})\n", name,
                            target->type == Target::ObjectLibrary ? " OBJECT" : "",
                            upperName);
@@ -269,7 +260,7 @@ endmacro()
                             if (!first) {
                                 out << ",";
                             }
-                            out << CMakeEscape{Project.configNames[i]};
+                            out.format(CMakeEscape{Project.configNames[i]});
                         }
                         out.format(">:{}>\"\n", target_name);
                         first = false;
@@ -294,7 +285,7 @@ endmacro()
                             if (!first) {
                                 out << ",";
                             }
-                            out << CMakeEscape{Project.configNames[i]};
+                            out.format(CMakeEscape{Project.configNames[i]});
                         }
                         out.format(">:{}>\"\n", CMakeEscape{libPath});
                         first = false;

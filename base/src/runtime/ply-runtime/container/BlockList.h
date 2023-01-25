@@ -114,11 +114,11 @@ struct BlockList {
         PLY_INLINE Ref(Footer* block) : block{block}, byte{block->bytes} {
         }
         PLY_INLINE Ref(Footer* block, char* byte) : block{block}, byte{byte} {
-            PLY_ASSERT(uptr(byte - block->bytes) <= block->blockSize);
+            PLY_ASSERT(!block || (uptr(byte - block->bytes) <= block->blockSize));
         }
         PLY_INLINE Ref(Reference<Footer>&& block, char* byte)
             : block{std::move(block)}, byte{byte} {
-            PLY_ASSERT(uptr(byte - this->block->bytes) <= this->block->blockSize);
+            PLY_ASSERT(!block || (uptr(byte - this->block->bytes) <= this->block->blockSize));
         }
         PLY_INLINE Ref(const WeakRef& weakRef) : block{weakRef.block}, byte{weakRef.byte} {
         }

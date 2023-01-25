@@ -289,9 +289,9 @@ HybridString Parser::toString(const Token& token) {
         case Token::Semicolon:
             return "\";\"";
         case Token::Text:
-            return String::format("text \"{}\"", fmt::EscapedString{token.text, 20});
+            return String::format("text \"{}\"", escape(token.text));
         case Token::Junk:
-            return String::format("junk \"{}\"", fmt::EscapedString{token.text, 20});
+            return String::format("junk \"{}\"", escape{token.text});
         case Token::NewLine:
             return "newline";
         case Token::EndOfFile:
@@ -309,7 +309,7 @@ HybridString Parser::toString(const Node* node) {
         case Node::Type::Array:
             return "array";
         case Node::Type::Text:
-            return String::format("text \"{}\"", fmt::EscapedString{node->text(), 20});
+            return String::format("text \"{}\"", escape(node->text()));
         default:
             PLY_ASSERT(0);
             return "???";
@@ -358,14 +358,14 @@ Owned<Node> Parser::readObject(const Token& startToken) {
                 error(firstToken.fileOfs,
                       String::format("Expected a comma, semicolon or newline "
                                      "separator between properties \"{}\" and \"{}\"",
-                                     fmt::EscapedString{prevProperty.text, 20},
-                                     fmt::EscapedString{firstToken.text, 20}));
+                                     escape(prevProperty.text),
+                                     escape(firstToken.text)));
                 return {};
             }
         } else if (prevProperty.isValid()) {
             error(firstToken.fileOfs,
                   String::format("Unexpected {} after property \"{}\"", toString(firstToken),
-                                 fmt::EscapedString{prevProperty.text, 20}));
+                                 escape(prevProperty.text)));
             return {};
         } else {
             error(firstToken.fileOfs,
@@ -378,7 +378,7 @@ Owned<Node> Parser::readObject(const Token& startToken) {
             ScopeHandler duplicateScope{*this,
                                         ParseError::Scope::duplicate(propLocationCursor->fileOfs)};
             error(firstToken.fileOfs, String::format("Duplicate property \"{}\"",
-                                                      fmt::EscapedString{firstToken.text, 20}));
+                                                      escape(firstToken.text)));
             return {};
         }
 
@@ -386,7 +386,7 @@ Owned<Node> Parser::readObject(const Token& startToken) {
         if (colon.type != Token::Colon && colon.type != Token::Equals) {
             error(colon.fileOfs,
                   String::format("Expected \":\" or \"=\" after \"{}\", got {}",
-                                 fmt::EscapedString{firstToken.text, 20}, toString(colon)));
+                                 escape(firstToken.text), toString(colon)));
             return {};
         }
 

@@ -25,7 +25,7 @@ void dumpParseTree(OutStream& out, AnyObject any, u32 indent, const PPVisitedFil
             if (token->linearLoc >= 0 && visitedFiles) {
                 out.format("{}: ", expandFileLocation(visitedFiles, token->linearLoc).toString());
             }
-            out.format("\"{}\"\n", fmt::EscapedString{token->identifier});
+            out.format("\"{}\"\n", escape(token->identifier));
         } else if (structType->name == "ply::cpp::grammar::QualifiedID") {
             out.format("\"{}\"", ((grammar::QualifiedID*) any.data)->toString());
             out << '\n';

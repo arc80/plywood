@@ -75,7 +75,7 @@ PLY_NO_INLINE String makeUniqueFileName(StringView parentFolder, StringView pref
         if (FileSystem.exists(path) == ExistsResult::NotFound)
             return path;
         number++;
-        suffix = String::from(number);
+        suffix = to_string(number);
         u32 numZeroDigits = max<s32>(3 - suffix.numBytes, 0);
         suffix = String::format(".{}{}", StringView{"0"} * numZeroDigits, suffix);
     }

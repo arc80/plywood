@@ -13,14 +13,14 @@ struct MutStringView;
 
 //------------------------------------------------------------------------------------------------
 /*!
-An `ArrayView` references a range of typed items in memory. It consists of a pointer `items` and an
-integer `numItems`. An `ArrayView` does not own the memory it points to, and no heap memory is freed
-when the `ArrayView` is destroyed.
+An `ArrayView` references a range of typed items in memory. It consists of a pointer
+`items` and an integer `numItems`. An `ArrayView` does not own the memory it points to,
+and no heap memory is freed when the `ArrayView` is destroyed.
 
-When an `ArrayView` is `const`, the items its references are immutable. When an `ArrayView` is not
-`const`, the items its references are mutable only if the item type `T` is not `const`.
-`ArrayView<T>` is implicitly convertible to `ArrayView<const T>` and can be passed as an argument to
-any function that expects `ArrayView<const T>`.
+When an `ArrayView` is `const`, the items its references are immutable. When an
+`ArrayView` is not `const`, the items its references are mutable only if the item type
+`T` is not `const`. `ArrayView<T>` is implicitly convertible to `ArrayView<const T>` and
+can be passed as an argument to any function that expects `ArrayView<const T>`.
  */
 template <typename T_>
 struct ArrayView {
@@ -48,26 +48,30 @@ struct ArrayView {
     }
 
     /*!
-    Constructs an `ArrayView` from a braced initializer list. Lets you pass an initializer list
-    to any function expecting an `ArrayView`, as in the following:
+    Constructs an `ArrayView` from a braced initializer list. Lets you pass an
+    initializer list to any function expecting an `ArrayView`, as in the following:
 
-        void foo(ArrayView<u32>);
+        void foo(ArrayView<const u32>);
         void test() {
             foo({1, 2, 3, 4, 5});
         }
 
-    Use this carefully; the underlying array only exists for the lifetime of the statement calling
-    this constructor.
+    Use this carefully; the underlying array only exists for the lifetime of the
+    statement calling this constructor.
     */
+    template <typename U = T, std::enable_if_t<std::is_const<U>::value, int> = 0>
     PLY_INLINE ArrayView(std::initializer_list<T> init)
         : items{init.begin()}, numItems{safeDemote<u32>(init.size())} {
-        PLY_STATIC_ASSERT(std::is_const<T>::value);
-        // Guaranteed by the standard:
         PLY_ASSERT((uptr) init.end() - (uptr) init.begin() == sizeof(T) * init.size());
     }
 
+    template <u32 N>
+    ArrayView(T (&s)[N]) : items{s}, numItems{N} {
+    }
+
     /*!
-    Conversion operator. Makes `ArrayView<T>` implicitly convertible to `ArrayView<const T>`.
+    Conversion operator. Makes `ArrayView<T>` implicitly convertible to `ArrayView<const
+    T>`.
     */
     PLY_INLINE operator ArrayView<const T>() const {
         return {this->items, this->numItems};
@@ -111,8 +115,8 @@ struct ArrayView {
 
     /*!
     \beginGroup
-    Reverse subscript operator with runtime bound checking. Expects a negative index. `-1` returns
-    the last item in the view; `-2` returns the second-last item, etc.
+    Reverse subscript operator with runtime bound checking. Expects a negative index.
+    `-1` returns the last item in the view; `-2` returns the second-last item, etc.
     */
     PLY_INLINE T& back(s32 offset = -1) {
         PLY_ASSERT(u32(numItems + offset) < numItems);
@@ -148,8 +152,8 @@ struct ArrayView {
     }
 
     /*!
-    Explicit conversion to `bool`. Returns `true` if `numItems` is greater than 0. Allows you to use
-    an `ArrayView` object inside an `if` condition.
+    Explicit conversion to `bool`. Returns `true` if `numItems` is greater than 0.
+    Allows you to use an `ArrayView` object inside an `if` condition.
 
         if (view) {
             ...
@@ -167,8 +171,8 @@ struct ArrayView {
     }
 
     /*!
-    Returns the total size, in bytes, of the items in the view. Equivalent to `this->numItems *
-    sizeof(T)`.
+    Returns the total size, in bytes, of the items in the view. Equivalent to
+    `this->numItems * sizeof(T)`.
     */
     PLY_INLINE u32 sizeBytes() const {
         return numItems * u32(sizeof(T));
@@ -176,9 +180,9 @@ struct ArrayView {
 
     /*!
     \beginGroup
-    Returns a subview that starts at the offset given by `start`. The optional `numItems` argument
-    determines the number of items in the subview. If `numItems` is not specified, the subview
-    continues to the end of the view.
+    Returns a subview that starts at the offset given by `start`. The optional
+    `numItems` argument determines the number of items in the subview. If `numItems` is
+    not specified, the subview continues to the end of the view.
     */
     PLY_INLINE ArrayView subView(u32 start) const {
         PLY_ASSERT(start <= numItems);
@@ -203,8 +207,8 @@ struct ArrayView {
 
     /*!
     \beginGroup
-    Required functions to support range-for syntax. Allows you to iterate over all the items in the
-    view as follows:
+    Required functions to support range-for syntax. Allows you to iterate over all the
+    items in the view as follows:
 
         for (const T& item : view) {
             ...
@@ -223,9 +227,10 @@ struct ArrayView {
 
 namespace impl {
 
-// There's an ArrayTraits specialization for each array-like class template in this library.
-// If ArrayTraits<Arr>::ItemType is well-formed, Arr is convertible to ArrayView of that type.
-// If ArrayTraits<Arr>::IsOwner is true, Arr is considered the owner of its elements.
+// There's an ArrayTraits specialization for each array-like class template in this
+// library. If ArrayTraits<Arr>::ItemType is well-formed, Arr is convertible to
+// ArrayView of that type. If ArrayTraits<Arr>::IsOwner is true, Arr is considered the
+// owner of its elements.
 template <typename>
 struct ArrayTraits {
     static constexpr bool IsOwner = false;
@@ -235,27 +240,30 @@ struct ArrayTraits<ArrayView<T>> {
     using ItemType = T;
     static constexpr bool IsOwner = false;
 };
-// ArrayViewType<Arr> is a convenience template that returns the item type of an array-like class
-// Arr, even if Arr is const or a reference. If Arr is const (or const&) and owns its elements, the
-// resulting item type will be const.
-// For example: ArrayViewType<const Array<u32>&> evaluates to const u32.
+// ArrayViewType<Arr> is a convenience template that returns the item type of an
+// array-like class Arr, even if Arr is const or a reference. If Arr is const (or
+// const&) and owns its elements, the resulting item type will be const. For example:
+// ArrayViewType<const Array<u32>&> evaluates to const u32.
 template <typename Arr>
-using ArrayViewType = std::conditional_t<ArrayTraits<std::decay_t<Arr>>::IsOwner &&
-                                             std::is_const<std::remove_reference_t<Arr>>::value,
-                                         const typename ArrayTraits<std::decay_t<Arr>>::ItemType,
-                                         typename ArrayTraits<std::decay_t<Arr>>::ItemType>;
+using ArrayViewType =
+    std::conditional_t<ArrayTraits<std::decay_t<Arr>>::IsOwner &&
+                           std::is_const<std::remove_reference_t<Arr>>::value,
+                       const typename ArrayTraits<std::decay_t<Arr>>::ItemType,
+                       typename ArrayTraits<std::decay_t<Arr>>::ItemType>;
 
 // If the second argument is an rvalue reference, Arr will be deduced as non-reference.
-// Otherwise, Arr will be deduced as a reference, and ArrayTraits<Arr>::IsOwner will be false.
-// Therefore, the "moving" version of this function will only be called if the second argument is an
-// rvalue reference to an array-like class for which ArrayTraits<Arr>::IsOwner is true, which is
-// what we want.
-template <typename T, typename Arr, std::enable_if_t<ArrayTraits<Arr>::IsOwner, int> = 0>
+// Otherwise, Arr will be deduced as a reference, and ArrayTraits<Arr>::IsOwner will be
+// false. Therefore, the "moving" version of this function will only be called if the
+// second argument is an rvalue reference to an array-like class for which
+// ArrayTraits<Arr>::IsOwner is true, which is what we want.
+template <typename T, typename Arr,
+          std::enable_if_t<ArrayTraits<Arr>::IsOwner, int> = 0>
 PLY_INLINE void moveOrCopyConstruct(T* dst, Arr&& src) {
     ArrayView<ArrayViewType<Arr>> srcView{src};
     subst::moveConstructArray(dst, srcView.items, srcView.numItems);
 }
-template <typename T, typename Arr, std::enable_if_t<!ArrayTraits<Arr>::IsOwner, int> = 0>
+template <typename T, typename Arr,
+          std::enable_if_t<!ArrayTraits<Arr>::IsOwner, int> = 0>
 PLY_INLINE void moveOrCopyConstruct(T* dst, Arr&& src) {
     ArrayView<ArrayViewType<Arr>> srcView{src};
     subst::constructArrayFrom(dst, srcView.items, srcView.numItems);
@@ -266,9 +274,9 @@ PLY_INLINE void moveOrCopyConstruct(T* dst, Arr&& src) {
 /*!
 \addToClass ArrayView
 \beginGroup
-Compares two array-like objects. `a` and `b` can have different item types. Returns `true` if and
-only if `a` and `b` have the same number of items and `a[i] == b[i]` evaluates to `true` at every
-index `i`.
+Compares two array-like objects. `a` and `b` can have different item types. Returns
+`true` if and only if `a` and `b` have the same number of items and `a[i] == b[i]`
+evaluates to `true` at every index `i`.
 */
 template <typename T0, typename T1>
 PLY_NO_INLINE bool operator==(ArrayView<T0> a, ArrayView<T1> b) {
@@ -290,8 +298,6 @@ PLY_INLINE bool operator==(Arr0&& a, Arr1&& b) {
 */
 
 #define PLY_ALLOC_STACK_ARRAY(T, count) \
-    ArrayView<T> { \
-        (T*) alloca(sizeof(T) * (count)), (count) \
-    }
+    ArrayView<T> { (T*) alloca(sizeof(T) * (count)), (count) }
 
 } // namespace ply

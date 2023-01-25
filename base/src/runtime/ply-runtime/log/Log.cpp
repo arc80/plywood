@@ -15,7 +15,7 @@ PLY_NO_INLINE LogChannel::LineHandler::LineHandler(StringView channelName) {
     CPUTimer::Point now = CPUTimer::get();
     TID::TID tid = TID::getCurrentThreadID();
     this->mout << (now - startTime); // Timestamp
-    this->mout.format(" 0x{}[{}] ", String::from(fmt::Hex(tid)), channelName);
+    this->mout.format(" 0x{}[{}] ", hex(tid), channelName);
 }
 
 PLY_NO_INLINE LogChannel::LineHandler::~LineHandler() {

@@ -203,16 +203,6 @@ struct String : StringMixin<String> {
     static PLY_INLINE String format(StringView fmt, const Args&... args);
 
     /*!
-    Template function that converts the provided argument to a string.
-
-        String s = String::from(123.456);
-
-    For more information, see [Converting Values to Text](ConvertingValuesToText).
-    */
-    template <typename T>
-    static PLY_INLINE String from(const T& value);
-
-    /*!
     \beginGroup
     Subscript operators with runtime bounds checking.
     */

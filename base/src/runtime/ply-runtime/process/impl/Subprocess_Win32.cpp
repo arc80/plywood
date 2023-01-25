@@ -232,7 +232,7 @@ Owned<Subprocess> Subprocess::execArgStr(StringView exePath, StringView argStr,
 
     // Create command line
     MemOutStream cmdLine;
-    cmdLine << fmt::CmdLineArg_WinCrt{exePath};
+    cmdLine.format(CmdLineArg_WinCrt{exePath});
     if (argStr) {
         cmdLine << ' ' << argStr;
     }
@@ -286,7 +286,7 @@ Subprocess::exec(StringView exePath, ArrayView<const StringView> args,
         if (mout.get_seek_pos() > 0) {
             mout << ' ';
         }
-        mout << fmt::CmdLineArg_WinCrt{arg};
+        mout.format(CmdLineArg_WinCrt{arg});
     }
     return Subprocess::execArgStr(exePath, mout.moveToString(), initialDir, output,
                                   input);

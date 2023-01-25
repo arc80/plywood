@@ -12,13 +12,12 @@ namespace ply {
 //---------------------------------------------------------------
 // Primitives for printing numeric types
 //----------------------------------------------------------------
-PLY_INLINE char toDigit(u32 d, bool capitalize = false) {
-    const char* digitTable = capitalize ? "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                        : "0123456789abcdefghijklmnopqrstuvwxyz";
+PLY_INLINE char toDigit(u32 d) {
+    const char* digitTable = "0123456789abcdefghijklmnopqrstuvwxyz";
     return (d <= 35) ? digitTable[d] : '?';
 }
 
-PLY_NO_INLINE void printString(OutStream& out, u64 value, u32 radix, bool capitalize) {
+PLY_NO_INLINE void printString(OutStream& out, u64 value, u32 radix) {
     PLY_ASSERT(radix >= 2);
     char digitBuffer[64];
     s32 digitIndex = PLY_STATIC_ARRAY_SIZE(digitBuffer);
@@ -30,7 +29,7 @@ PLY_NO_INLINE void printString(OutStream& out, u64 value, u32 radix, bool capita
             u64 quotient = value / radix;
             u32 digit = u32(value - quotient * radix);
             PLY_ASSERT(digitIndex > 0);
-            digitBuffer[--digitIndex] = toDigit(digit, capitalize);
+            digitBuffer[--digitIndex] = toDigit(digit);
             value = quotient;
         }
     }
@@ -39,17 +38,16 @@ PLY_NO_INLINE void printString(OutStream& out, u64 value, u32 radix, bool capita
                (u32) PLY_STATIC_ARRAY_SIZE(digitBuffer) - digitIndex});
 }
 
-PLY_NO_INLINE void printString(OutStream& out, s64 value, u32 radix, bool capitalize) {
+PLY_NO_INLINE void printString(OutStream& out, s64 value, u32 radix) {
     if (value >= 0) {
-        printString(out, (u64) value, radix, capitalize);
+        printString(out, (u64) value, radix);
     } else {
         out << '-';
-        printString(out, (u64) -value, radix, capitalize);
+        printString(out, (u64) -value, radix);
     }
 }
 
-PLY_NO_INLINE void printString(OutStream& out, double value, u32 radix,
-                               bool capitalize) {
+PLY_NO_INLINE void printString(OutStream& out, double value, u32 radix) {
     PLY_ASSERT(radix >= 2);
 
 #if PLY_COMPILER_GCC
@@ -72,7 +70,7 @@ PLY_NO_INLINE void printString(OutStream& out, double value, u32 radix,
         u32 radix6 = radix3 * radix3;
         if (value == 0.0 || (value * radix3 > radix && value < radix6)) {
             u64 fixedPoint = u64(value * radix3);
-            printString(out, fixedPoint / radix3, radix, capitalize);
+            printString(out, fixedPoint / radix3, radix);
             out << '.';
             u64 fractionalPart = fixedPoint % radix3;
             {
@@ -81,7 +79,7 @@ PLY_NO_INLINE void printString(OutStream& out, double value, u32 radix,
                 for (s32 i = 2; i >= 0; i--) {
                     u64 quotient = fractionalPart / radix;
                     u32 digit = u32(fractionalPart - quotient * radix);
-                    digitBuffer[i] = toDigit(digit, capitalize);
+                    digitBuffer[i] = toDigit(digit);
                     fractionalPart = quotient;
                 }
                 out.write({digitBuffer, PLY_STATIC_ARRAY_SIZE(digitBuffer)});
@@ -92,15 +90,15 @@ PLY_NO_INLINE void printString(OutStream& out, double value, u32 radix,
             double exponent = floor(logBase);
             double m = value / pow(radix, exponent); // mantissa (initially)
             s32 digit = clamp<s32>((s32) floor(m), 1, radix - 1);
-            out << toDigit(digit, capitalize);
+            out << toDigit(digit);
             out << '.';
             for (u32 i = 0; i < 3; i++) {
                 m = (m - digit) * radix;
                 digit = clamp<s32>((s32) floor(m), 0, radix - 1);
-                out << toDigit(digit, capitalize);
+                out << toDigit(digit);
             }
             out << 'e';
-            printString(out, (s64) exponent, radix, capitalize);
+            printString(out, (s64) exponent, radix);
         }
     }
 }
@@ -108,8 +106,7 @@ PLY_NO_INLINE void printString(OutStream& out, double value, u32 radix,
 //----------------------------------------------------------------
 // OutStream
 //----------------------------------------------------------------
-PLY_NO_INLINE void OutStream::format_args(StringView fmt,
-                                          ArrayView<const FormatArg> args) {
+void OutStream::format_args(StringView fmt, ArrayView<const FormatArg> args) {
     u32 argIndex = 0;
     while (fmt.numBytes > 0) {
         if (fmt[0] == '{') {
@@ -124,7 +121,7 @@ PLY_NO_INLINE void OutStream::format_args(StringView fmt,
                 PLY_ASSERT(
                     argIndex <
                     args.numItems); // Not enough arguments provided for format string!
-                args[argIndex].func(*this, args[argIndex].value);
+                args[argIndex].print(*this);
                 argIndex++;
             } else {
                 PLY_ASSERT(0); // Invalid format string!
@@ -150,77 +147,35 @@ PLY_NO_INLINE void OutStream::format_args(StringView fmt,
 }
 
 //----------------------------------------------------
-// fmt::TypePrinters
-//----------------------------------------------------
-PLY_NO_INLINE void
-fmt::TypePrinter<fmt::WithRadix>::print(OutStream& out, const fmt::WithRadix& value) {
-    switch (value.type) {
-        case WithRadix::U64: {
-            printString(out, value.u64_, value.radix, value.capitalize);
+void FormatArg::default_print(OutStream& out, const FormatArg& arg) {
+    switch (arg.type) {
+        case View:
+            out << arg.view;
             break;
-        }
-        case WithRadix::S64: {
-            printString(out, value.s64_, value.radix, value.capitalize);
+
+        case Bool:
+            out << (arg.bool_ ? StringView{"true"} : "false");
             break;
-        }
-        case WithRadix::Double: {
-            printString(out, value.double_, value.radix, value.capitalize);
+
+        case S64:
+            printString(out, arg.s64_, arg.radix);
             break;
-        }
-        default: {
-            PLY_ASSERT(0);
+
+        case U64:
+            printString(out, arg.u64_, arg.radix);
             break;
-        }
+
+        case Double:
+            printString(out, arg.double_, arg.radix);
+            break;
     }
 }
 
-PLY_NO_INLINE void fmt::TypePrinter<StringView>::print(OutStream& out,
-                                                       StringView value) {
-    // FIXME: Do newline conversion here
-    out.write(value);
-}
-
-PLY_NO_INLINE void fmt::TypePrinter<u64>::print(OutStream& out, u64 value) {
-    printString(out, value, 10, false);
-}
-
-PLY_NO_INLINE void fmt::TypePrinter<s64>::print(OutStream& out, s64 value) {
-    printString(out, value, 10, false);
-}
-
-PLY_NO_INLINE void fmt::TypePrinter<double>::print(OutStream& out, double value) {
-    printString(out, value, 10, false);
-}
-
-PLY_NO_INLINE void fmt::TypePrinter<bool>::print(OutStream& out, bool value) {
-    out << (value ? StringView{"true"} : "false");
-}
-
-PLY_NO_INLINE void
-fmt::TypePrinter<CPUTimer::Duration>::print(OutStream& out, CPUTimer::Duration value) {
-    static CPUTimer::Converter converter;
-    double seconds = converter.toSeconds(value);
-    u64 s = (u64) seconds;
-    u64 us = u64((seconds - s) * 1000000);
-    u64 m = s / 60;
-    s = s % 60;
-
-    // FIXME: Optimize this, too much intermediate stuff
-    // FIXME: Support zero-padding in format string
-    out.format("{}:{}.{}", m, (StringView{"0"} + String::from(s)).right(2),
-               (StringView{"00000"} + String::from(us)).right(6));
-}
-
-PLY_NO_INLINE void
-fmt::TypePrinter<fmt::EscapedString>::print(OutStream& out,
-                                            const fmt::EscapedString& value) {
-    StringView srcUnits = value.view;
+void escape::do_print(OutStream& out, const FormatArg& arg) {
+    PLY_ASSERT(arg.type == View);
+    StringView srcUnits = arg.view;
     u32 points = 0;
     while (srcUnits.numBytes > 0) {
-        if (value.maxPoints > 0 && points >= value.maxPoints) {
-            out << "...";
-            break;
-        }
         char c = srcUnits.bytes[0];
         switch (c) {
             case '"': {
@@ -249,7 +204,7 @@ fmt::TypePrinter<fmt::EscapedString>::print(OutStream& out,
                     // are in the source string:
                     out << c;
                 } else {
-                    static const char* digits = "0123456789abcdef";
+                    const char* digits = "0123456789abcdef";
                     out << '\\' << digits[(c >> 4) & 0xf] << digits[c & 0xf];
                 }
                 break;
@@ -260,15 +215,11 @@ fmt::TypePrinter<fmt::EscapedString>::print(OutStream& out,
     }
 }
 
-PLY_NO_INLINE void fmt::TypePrinter<fmt::XMLEscape>::print(OutStream& out,
-                                                           const XMLEscape& value) {
-    StringView srcUnits = value.view;
+void xml_escape::do_print(OutStream& out, const FormatArg& arg) {
+    PLY_ASSERT(arg.type == View);
+    StringView srcUnits = arg.view;
     u32 points = 0;
     while (srcUnits.numBytes > 0) {
-        if (value.maxPoints > 0 && points >= value.maxPoints) {
-            out << "...";
-            break;
-        }
         char c = srcUnits.bytes[0];
         switch (c) {
             case '<': {
@@ -297,12 +248,11 @@ PLY_NO_INLINE void fmt::TypePrinter<fmt::XMLEscape>::print(OutStream& out,
     }
 }
 
-PLY_NO_INLINE void
-fmt::TypePrinter<fmt::CmdLineArg_WinCrt>::print(OutStream& out,
-                                                const fmt::CmdLineArg_WinCrt& value) {
+void CmdLineArg_WinCrt::do_print(OutStream& out, const FormatArg& arg) {
+    PLY_ASSERT(arg.type == View);
     bool needsQuote = false;
-    const char* end = value.view.end();
-    for (const char* cur = value.view.bytes; cur < end; cur++) {
+    const char* end = arg.view.end();
+    for (const char* cur = arg.view.bytes; cur < end; cur++) {
         if (isWhite(*cur) || *cur == '"') {
             needsQuote = true;
             break;
@@ -311,7 +261,7 @@ fmt::TypePrinter<fmt::CmdLineArg_WinCrt>::print(OutStream& out,
     if (needsQuote) {
         out << '"';
         u32 backslashCount = 0;
-        for (const char* cur = value.view.bytes; cur < end; cur++) {
+        for (const char* cur = arg.view.bytes; cur < end; cur++) {
             char c = *cur;
             if (c == '\\') {
                 backslashCount++;
@@ -329,7 +279,7 @@ fmt::TypePrinter<fmt::CmdLineArg_WinCrt>::print(OutStream& out,
         }
         out << '"';
     } else {
-        out << value.view;
+        out << arg.view;
     }
 }
 

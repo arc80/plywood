@@ -16,6 +16,7 @@ namespace build {
 BuildFolder_t* BuildFolder = nullptr;
 
 PLY_NO_INLINE bool BuildFolder_t::load(StringView absPath) {
+    ArrayView<float> xx{(float*) nullptr, (u32) 0};
     String infoPath = Path.join(absPath, "info.pylon");
     String strContents = FileSystem.loadTextAutodetect(infoPath);
     if (FileSystem.lastResult() != FSResult::OK) {
@@ -78,7 +79,7 @@ PLY_NO_INLINE s32 buildCMakeProject(StringView cmakeListsFolder,
         Array<HybridString> args = {};
         u32 hwThreads = Affinity{}.getNumHWThreads();
         if (hwThreads > 1) {
-            args.extend({"-j", String::from(hwThreads)});
+            args.extend({"-j", to_string(hwThreads)});
         }
         if (targetName) {
             args.append(targetName);

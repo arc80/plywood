@@ -29,7 +29,7 @@ struct WriteContext {
             for (u32 i : range(numItems)) {
                 const Node::Object::Item& objItem = objNode.items[i];
                 indent();
-                this->out.format("\"{}\": ", fmt::EscapedString{objItem.key});
+                this->out.format("\"{}\": ", escape(objItem.key));
                 write(objItem.value);
                 if (i + 1 < numItems) {
                     this->out << ',';
@@ -56,7 +56,7 @@ struct WriteContext {
             indent();
             this->out << ']';
         } else if (aNode->isText()) {
-            this->out.format("\"{}\"", fmt::EscapedString{aNode->text()});
+            this->out.format("\"{}\"", escape(aNode->text()));
         } else {
             PLY_ASSERT(0);  // unsupported
         }

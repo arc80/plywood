@@ -11,9 +11,10 @@ namespace ply {
 struct Error_t {
     void log_internal(StringView fmt, ArrayView<const FormatArg> args);
     template <typename... Args>
-    PLY_INLINE void log(StringView fmt, const Args&... args) {
-        auto argList = FormatArg::collect(args...);
-        this->log_internal(fmt, argList);
+    void log(StringView fmt, Args&&... args) {
+        FixedArray<FormatArg, sizeof...(Args)> arg_list;
+        impl::InitItems<FormatArg>::init(arg_list.view().items, std::forward<Args>(args)...);
+        this->log_internal(fmt, arg_list);
     }
 };
 

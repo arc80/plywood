@@ -15,7 +15,7 @@ struct InitItems {
     }
     template <typename Arg, typename... RemainingArgs>
     static void init(T* items, Arg&& arg, RemainingArgs&&... remainingArgs) {
-        *items = std::forward<Arg>(arg);
+        *items = T{std::forward<Arg>(arg)};
         init(items + 1, std::forward<RemainingArgs>(remainingArgs)...);
     }
 };
