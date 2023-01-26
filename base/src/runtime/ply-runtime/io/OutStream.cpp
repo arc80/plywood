@@ -6,6 +6,7 @@
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 
 #include <ply-runtime/Precomp.h>
+#include <ply-runtime/io/Pipe.h>
 #include <ply-runtime/io/OutStream.h>
 
 namespace ply {
@@ -50,16 +51,17 @@ u64 OutStream::get_seek_pos() const {
 }
 
 void OutStream::flush(bool hard) {
-    if (this->out_pipe) {
-        // Write buffered data to the pipe.
-        if (!this->out_pipe->write(
-                StringView::fromRange(this->block->unused(), this->cur_byte))) {
-            this->status.eof = 1;
-        }
-        // Forward flush command down the output chain.
-        this->out_pipe->flush(hard);
-    }
     if (this->block) {
+        if (this->out_pipe) {
+            // Write buffered data to the pipe.
+            if (!this->out_pipe->write(
+                    StringView::fromRange(this->block->unused(), this->cur_byte))) {
+                this->status.eof = 1;
+            }
+            // Forward flush command down the output chain.
+            this->out_pipe->flush(hard);
+        }
+
         // Update the block's write position.
         this->block->numBytesUsed = safeDemote<u32>(this->cur_byte - this->start_byte);
     }
@@ -76,13 +78,17 @@ bool OutStream::make_writable() {
     PLY_ASSERT(this->start_byte == this->block->bytes);
     PLY_ASSERT(this->end_byte == this->block->bytes + this->block->blockSize);
 
+    bool rc = true;
     if (this->out_pipe) {
         // Write buffered data to the pipe.
-        if (!this->out_pipe->write(
-                StringView::fromRange(this->block->unused(), this->cur_byte))) {
-            this->status.eof = 1;
-            return false;
-        }
+        rc = this->out_pipe->write(
+            StringView::fromRange(this->block->unused(), this->cur_byte));
+    }
+    // Update the block's write position.
+    this->block->numBytesUsed = safeDemote<u32>(this->cur_byte - this->start_byte);
+    if (!rc) {
+        this->status.eof = 1;
+        return false;
     }
 
     // Append a new block.

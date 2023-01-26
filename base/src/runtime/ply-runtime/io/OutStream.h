@@ -8,13 +8,13 @@
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/container/BlockList.h>
-#include <ply-runtime/io/Pipe.h>
 #include <ply-runtime/container/Owned.h>
 #include <ply-runtime/string/String.h>
 #include <ply-runtime/container/FixedArray.h>
 
 namespace ply {
 
+struct OutPipe;
 struct OutStream;
 
 #define PLY_ENABLE_IF_SIGNED(T) \
@@ -142,6 +142,8 @@ struct OutStream {
     OutStream() = default;
     // out_pipe can be nullptr, in which case is_open() will return false.
     OutStream(OutPipe* out_pipe, bool is_pipe_owner);
+    OutStream(Owned<OutPipe>&& out_pipe) : OutStream{out_pipe.release(), true} {
+    }
     OutStream(OutStream&& other);
     ~OutStream();
 

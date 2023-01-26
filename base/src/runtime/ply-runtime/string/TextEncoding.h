@@ -50,7 +50,7 @@ struct ExtendedTextParams {
 
 enum DecodeStatus {
     DS_OK,
-    DS_IllFormed, // Not at EOF.
+    DS_IllFormed,     // Not at EOF.
     DS_NotEnoughData, // Can still decode an ill-formed codepoint.
 };
 
@@ -89,7 +89,6 @@ struct InPipe_ConvertUnicode : InPipe {
 // ┃  OutPipe_ConvertUnicode  ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 struct OutPipe_ConvertUnicode : OutPipe {
-    OutStream out;
     Unicode dst_enc;
 
     // shim_storage is used to join multibyte characters at buffer boundaries.
@@ -97,7 +96,8 @@ struct OutPipe_ConvertUnicode : OutPipe {
     u32 shim_used;
 
     OutPipe_ConvertUnicode(OutStream&& out, UnicodeType type = NotUnicode)
-        : out{std::move(out)}, dst_enc{type} {
+        : dst_enc{type} {
+        this->child_stream = std::move(out);
     }
 
     // src_buf expects UTF-8-encoded data.

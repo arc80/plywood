@@ -48,8 +48,10 @@ bool InStream::load_more_data() {
     if (this->cur_byte < this->end_byte)
         return true; // More data is available.
 
-    if (!this->block)
+    if (!this->block) {
+        this->status.eof = true;
         return false; // No blocks. We reached the end of a StringView.
+    }
 
     // Consistency checks. Existing pointers should match the current block.
     PLY_ASSERT(this->start_byte == this->block->bytes);
@@ -81,6 +83,9 @@ bool InStream::load_more_data() {
     u32 num_bytes_loaded = this->in_pipe->read(this->block->viewUnusedBytes());
     this->block->numBytesUsed += num_bytes_loaded;
     this->end_byte += num_bytes_loaded;
+    if (num_bytes_loaded == 0) {
+        this->status.eof = true;
+    }
     return num_bytes_loaded > 0;
 }
 
@@ -100,7 +105,7 @@ void InStream::rewind(const BlockList::WeakRef& pos) {
         PLY_ASSERT(!this->block);
     }
     PLY_ASSERT(this->cur_byte >= this->start_byte);
-    PLY_ASSERT(this->cur_byte >= this->end_byte);
+    PLY_ASSERT(this->cur_byte < this->end_byte);
     this->status.eof = 0;
 }
 

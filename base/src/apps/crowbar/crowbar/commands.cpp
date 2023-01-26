@@ -80,8 +80,8 @@ generateCMakeProject(StringView cmakeListsFolder,
     Owned<Subprocess> sub =
         Subprocess::exec(PLY_CMAKE_PATH, Array<StringView>{args}, buildFolder,
                          Subprocess::Output::openMerged());
-    String output = TextFormat::platformPreference()
-                        .createImporter({sub->readFromStdOut, false})
+    String output = InStream{TextFormat::platformPreference().createImporter(
+                                 {sub->readFromStdOut, false})}
                         .read_remaining_contents();
     s32 rc = sub->join();
     if (rc != 0) {

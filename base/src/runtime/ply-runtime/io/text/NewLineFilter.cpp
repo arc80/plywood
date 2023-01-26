@@ -85,10 +85,10 @@ Owned<InPipe> createInNewLineFilter(InStream&& in) {
 //-----------------------------------------------------------------------
 
 struct OutPipe_NewLineFilter : OutPipe {
-    OutStream out;
     NewLineFilter filter;
 
-    OutPipe_NewLineFilter(OutStream&& out, bool writeCRLF) : out{std::move(out)} {
+    OutPipe_NewLineFilter(OutStream&& out, bool writeCRLF) {
+        this->child_stream = std::move(out);
         this->filter.crlf = writeCRLF;
     }
     virtual bool write(StringView buf) override;
@@ -99,17 +99,17 @@ bool OutPipe_NewLineFilter::write(StringView buf) {
     u32 desiredTotalBytesRead = buf.numBytes;
     u32 totalBytesRead = 0;
     for (;;) {
-        this->out.ensure_writable();
+        this->child_stream.ensure_writable();
 
         // If tryMakeBytesAvailable fails, process() will do nothing and we'll simply
         // return below:
         NewLineFilter::Params params;
         params.srcByte = buf.bytes;
         params.srcEndByte = buf.bytes + buf.numBytes;
-        params.dstByte = this->out.cur_byte;
-        params.dstEndByte = this->out.end_byte;
+        params.dstByte = this->child_stream.cur_byte;
+        params.dstEndByte = this->child_stream.end_byte;
         this->filter.process(&params);
-        this->out.cur_byte = params.dstByte;
+        this->child_stream.cur_byte = params.dstByte;
         u32 numBytesRead = safeDemote<u32>(params.srcByte - buf.bytes);
         if (numBytesRead == 0) {
             PLY_ASSERT(totalBytesRead <= desiredTotalBytesRead);
@@ -122,7 +122,7 @@ bool OutPipe_NewLineFilter::write(StringView buf) {
 
 void OutPipe_NewLineFilter::flush(bool hard) {
     // Forward flush command down the output chain.
-    this->out.flush(hard);
+    this->child_stream.flush(hard);
 };
 
 Owned<OutPipe> createOutNewLineFilter(OutStream&& out, bool writeCRLF) {

@@ -44,6 +44,8 @@ struct InStream {
     InStream() = default;
     // in_pipe can be nullptr, in which case is_open() will return false.
     InStream(InPipe* in_pipe, bool is_pipe_owner);
+    InStream(Owned<InPipe>&& in_pipe) : InStream{in_pipe.release(), true} {
+    }
     InStream(InStream&& other);
     ~InStream();
 

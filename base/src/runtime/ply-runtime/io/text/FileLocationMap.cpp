@@ -23,10 +23,9 @@ FileLocationMap FileLocationMap::fromView(StringView path, StringView src) {
     u32 nextChunkOfs = 256;
     result.table.append({1, 0, 1, 0});
     for (;;) {
-        if (src.numBytes == 0)
-            break;
-
         s32 codepoint = Unicode{UTF8}.decode_point(src_in);
+        if (codepoint < 0)
+            break;
         u32 nextOfs = safeDemote<u32>(src_in.cur_byte - src_in.start_byte);
         if (nextOfs > nextChunkOfs) {
             result.table.append({lineNumber, nextChunkOfs - lineStartOfs, columnNumber, ofs - 256});

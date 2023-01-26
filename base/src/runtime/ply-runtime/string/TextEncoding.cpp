@@ -299,14 +299,14 @@ bool OutPipe_ConvertUnicode::write(StringView src_buf) {
         }
 
         // Convert codepoint to the destination encoding.
-        this->dst_enc.encode_point(this->out, codepoint);
+        this->dst_enc.encode_point(this->child_stream, codepoint);
 
         // Skip ahead in the source buffer and clear the shim.
         src_in.cur_byte += num_bytes_appended;
         this->shim_used = 0;
     }
 
-    while (!this->out.at_eof()) {
+    while (!this->child_stream.at_eof()) {
         // Decode a codepoint from the source buffer using UTF-8.
         Unicode decoder{UTF8};
         s32 codepoint = decoder.decode_point(src_in);
@@ -320,7 +320,7 @@ bool OutPipe_ConvertUnicode::write(StringView src_buf) {
         }
 
         // Convert codepoint to the destination encoding.
-        this->dst_enc.encode_point(this->out, codepoint);
+        this->dst_enc.encode_point(this->child_stream, codepoint);
     }
 
     return false; // We reached the end of the OutStream.
@@ -330,12 +330,12 @@ void OutPipe_ConvertUnicode::flush(bool hard) {
     // The shim may still contain an incomplete (thus invalid) UTF-8 sequence.
     for (u32 i = 0; i < this->shim_used; i++) {
         // Interpret each byte as a separate codepoint.
-        this->dst_enc.encode_point(this->out, this->shim_storage[i]);
+        this->dst_enc.encode_point(this->child_stream, this->shim_storage[i]);
     }
     this->shim_used = 0;
 
     // Forward flush command down the output chain.
-    this->out.flush(hard);
+    this->child_stream.flush(hard);
 }
 
 } // namespace ply

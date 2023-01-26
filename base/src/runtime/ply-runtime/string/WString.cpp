@@ -12,8 +12,8 @@ WString toWString(StringView str) {
     ViewInStream str_in{str};
     OutPipe_ConvertUnicode encoder{MemOutStream{}, UTF16_LE};
     encoder.write(str);
-    encoder.out.raw_write<u16>(0); // Null terminator
-    return WString::moveFromString(encoder.out.moveToString());
+    encoder.child_stream.raw_write<u16>(0); // Null terminator
+    return WString::moveFromString(encoder.child_stream.moveToString());
 }
 
 String fromWString(WStringView str) {

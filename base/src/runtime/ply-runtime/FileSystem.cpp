@@ -104,11 +104,11 @@ FSResult FileSystemIface::makeDirs(StringView path) {
 }
 
 InStream FileSystemIface::openStreamForRead(StringView path) {
-    return {this->openPipeForRead(path), true};
+    return this->openPipeForRead(path);
 }
 
 OutStream FileSystemIface::openStreamForWrite(StringView path) {
-    return {this->openPipeForWrite(path), true};
+    return this->openPipeForWrite(path);
 }
 
 InStream FileSystemIface::openTextForRead(StringView path,
@@ -158,7 +158,8 @@ String FileSystemIface::loadTextAutodetect(StringView path, TextFormat* out_form
 OutStream FileSystemIface::openTextForWrite(StringView path,
                                             const TextFormat& textFormat) {
     if (OutStream out = this->openStreamForWrite(path))
-        return textFormat.createExporter(std::move(out));
+        return {textFormat.createExporter(std::move(out)).release(),
+                true};
     return {};
 }
 
@@ -197,12 +198,10 @@ FSResult FileSystemIface::makeDirsAndSaveBinaryIfDifferent(StringView path,
 FSResult FileSystemIface::makeDirsAndSaveTextIfDifferent(StringView path,
                                                          StringView strContents,
                                                          const TextFormat& textFormat) {
-    MemOutStream mem_out;
-    // FIXME: This could be an OutPipe instead of an OutStream
-    OutStream out = textFormat.createExporter(std::move(mem_out));
-    out << strContents;
-    out.flush();
-    String rawContents = mem_out.moveToString();
+    Owned<OutPipe> out = textFormat.createExporter(MemOutStream{});
+    out->write(strContents);
+    out->flush();
+    String rawContents = out->get_tail_pipe()->child_stream.moveToString();
     return this->makeDirsAndSaveBinaryIfDifferent(path, rawContents);
 }
 
@@ -511,8 +510,8 @@ FSResult FileSystem_t::removeDirTree(StringView dirPath) {
     }
     OutPipe_ConvertUnicode out{MemOutStream{}, UTF16_LE};
     out.write(absPath.view());
-    out.out << StringView{"\0\0\0\0", 4}; // double null terminated
-    WString wstr = WString::moveFromString(out.out.moveToString());
+    out.child_stream << StringView{"\0\0\0\0", 4}; // double null terminated
+    WString wstr = WString::moveFromString(out.child_stream.moveToString());
     SHFILEOPSTRUCTW shfo;
     memset(&shfo, 0, sizeof(shfo));
     shfo.hwnd = NULL;

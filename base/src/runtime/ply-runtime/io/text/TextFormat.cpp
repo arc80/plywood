@@ -192,7 +192,7 @@ PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream& in) {
 
 //-----------------------------------------------------------------------
 
-PLY_NO_INLINE InStream TextFormat::createImporter(InStream&& in) const {
+Owned<InPipe> TextFormat::createImporter(InStream&& in) const {
     if (this->bom) {
         BlockList::Ref start = in.get_save_point();
         bool gotBom = false;
@@ -237,10 +237,10 @@ PLY_NO_INLINE InStream TextFormat::createImporter(InStream&& in) const {
 
     // Install newline filter (basically just eats \r)
     // FIXME: Some caller might want the LFs to be unchanged.
-    return {createInNewLineFilter(std::move(importer)), true};
+    return createInNewLineFilter(std::move(importer));
 }
 
-PLY_NO_INLINE OutStream TextFormat::createExporter(OutStream&& out) const {
+PLY_NO_INLINE Owned<OutPipe> TextFormat::createExporter(OutStream&& out) const {
     OutStream exporter = std::move(out);
 
     switch (this->encoding) {
@@ -274,10 +274,7 @@ PLY_NO_INLINE OutStream TextFormat::createExporter(OutStream&& out) const {
         }
     }
 
-    // Install newline filter
-    return {createOutNewLineFilter(std::move(exporter),
-                                   this->newLine == TextFormat::NewLine::CRLF),
-            true};
+    return createOutNewLineFilter(std::move(exporter), this->newLine == NewLine::CRLF);
 }
 
 } // namespace ply

@@ -7,6 +7,7 @@
 
 #pragma once
 #include <ply-runtime/Core.h>
+#include <ply-runtime/io/OutStream.h>
 #include <ply-runtime/string/StringView.h>
 #include <ply-runtime/string/Label.h>
 
@@ -70,18 +71,22 @@ struct InPipe_Handle : InPipe {
 
 struct OutPipe {
     StringView type;
+    // child_stream is unused by OutPipe_Handle/FD/Winsock.
+    OutStream child_stream;
+
+    OutPipe(StringView type = {}) : type{type} {
+    }
+    virtual ~OutPipe() = default;
     template <typename T>
     T* cast() {
         PLY_ASSERT(this->type == T::Type);
         return static_cast<T*>(this);
     }
+    OutPipe* get_tail_pipe();
 
-    OutPipe(StringView type = {}) : type{type} {
-    }
-    virtual ~OutPipe() = default;
     // write() may block if connected to a blocked reader.
     virtual bool write(StringView buf) = 0;
-    virtual void flush(bool hard);
+    virtual void flush(bool hard = false);
     virtual void seek(s64 offset, SeekDirection dir);
 };
 

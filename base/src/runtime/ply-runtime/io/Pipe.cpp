@@ -21,6 +21,14 @@ void InPipe::seek(s64 offset, SeekDirection dir) {
     PLY_ASSERT(0);
 }
 
+OutPipe* OutPipe::get_tail_pipe() {
+    OutPipe* result = this;
+    while (result->child_stream.out_pipe) {
+        result = result->child_stream.out_pipe;
+    }
+    return result;
+}
+
 void OutPipe::flush(bool) {
     // Does nothing.
 }
