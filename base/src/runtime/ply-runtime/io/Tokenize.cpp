@@ -4,7 +4,7 @@
 ┃   ╱___╱╭╮╲   https://plywood.dev/          ┃
 ┃    └──┴┴┴┘                                 ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
-
+#if 0
 namespace ply {
 
 StringView tokenRepr[] = {
@@ -378,3 +378,4 @@ TokenType Tokenizer::read_token() {
 }
 
 } // namespace ply
+#endif

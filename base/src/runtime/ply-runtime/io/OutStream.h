@@ -18,7 +18,8 @@ struct OutPipe;
 struct OutStream;
 
 #define PLY_ENABLE_IF_SIGNED(T) \
-    typename std::enable_if_t<std::is_signed<T>::value, int> = 0
+    typename std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value, \
+                              int> = 0
 #define PLY_ENABLE_IF_UNSIGNED(T) \
     typename std::enable_if_t< \
         std::is_unsigned<T>::value && !std::is_same<T, bool>::value, int> = 0
@@ -42,7 +43,7 @@ struct FormatArg {
         double double_;
     };
     Type type = View;
-    u32 radix = 0;
+    u32 radix = 10;
 
     FormatArg(StringView view = {}) : view{view} {
     }

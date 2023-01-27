@@ -50,7 +50,7 @@ struct Float2x2 {
 
         Float2x2 m = {{1, 0}, {0, 1}};
         m[0].x = -1;
-        StdOut::text() << m[1];  // "{0, 1}"
+        Console::out() << m[1];  // "{0, 1}"
     */
     PLY_INLINE Float2& operator[](ureg i) {
         PLY_ASSERT(i < 2);
@@ -153,7 +153,7 @@ struct Float3x3 {
 
         Float3x3 m = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
         m[0].x = -1;
-        StdOut::text() << m[2];  // "{0, 0, 1}"
+        Console::out() << m[2];  // "{0, 0, 1}"
     */
     PLY_INLINE Float3& operator[](ureg i) {
         PLY_ASSERT(i < 3);
@@ -282,7 +282,7 @@ struct Float3x4 {
 
         Float3x4 m = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}};
         m[0].x = -1;
-        StdOut::text() << m[3];  // "{0, 0, 0}"
+        Console::out() << m[3];  // "{0, 0, 0}"
     */
     Float3& operator[](ureg i) {
         PLY_ASSERT(i < 4);
@@ -426,7 +426,7 @@ struct Float4x4 {
 
         Float4x4 m = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
         m[0].x = -1;
-        StdOut::text() << m[3];  // "{0, 0, 0, 1}"
+        Console::out() << m[3];  // "{0, 0, 0, 1}"
     */
     Float4& operator[](ureg i) {
         PLY_ASSERT(i < 4);

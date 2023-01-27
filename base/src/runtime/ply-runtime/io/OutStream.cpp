@@ -26,7 +26,7 @@ OutStream::OutStream(OutStream&& other) : status{other.status} {
     other.status = {};
 }
 
-OutStream::OutStream(OutPipe* out_piipe, bool is_pipe_owner) {
+OutStream::OutStream(OutPipe* out_pipe, bool is_pipe_owner) {
     this->status.is_pipe_owner = is_pipe_owner;
     this->out_pipe = out_pipe;
 
@@ -40,6 +40,7 @@ OutStream::OutStream(OutPipe* out_piipe, bool is_pipe_owner) {
 }
 
 OutStream::~OutStream() {
+    this->flush();
     if (this->status.is_pipe_owner) {
         delete this->out_pipe;
     }

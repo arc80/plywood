@@ -37,7 +37,7 @@ struct Float2 {
     Constructs a `Float2` with both components set to `t`.
 
         Float2 v = {1};
-        StdOut::text() << v;  // "{1, 1}"
+        Console::out() << v;  // "{1, 1}"
     */
     PLY_INLINE Float2(float t) : x{t}, y{t} {
     }
@@ -112,7 +112,7 @@ struct Float2 {
     aliases for the `x` and `y` components respectively.
 
         Float4 c = {1.0f, 0.8f};
-        StdOut::text().format("{}, {}", c.r(), c.g());  // "1.0, 0.8"
+        Console.out().format("{}, {}", c.r(), c.g());  // "1.0, 0.8"
     */
     PLY_INLINE float& r() {
         return x;
@@ -139,8 +139,8 @@ struct Float2 {
     only to read from it.
 
         Float2 v = {4, 5};
-        StdOut::text() << v.swizzle(1, 0);        // "{5, 4}"
-        StdOut::text() << v.swizzle(0, 1, 1, 0);  // "{4, 5, 5, 4}"
+        Console::out() << v.swizzle(1, 0);        // "{5, 4}"
+        Console::out() << v.swizzle(0, 1, 1, 0);  // "{4, 5, 5, 4}"
 
     These functions work correctly in the current version of all major compilers even though they
     use type punning, which is undefined behavior in standard C++.
@@ -166,13 +166,13 @@ PLY_INLINE Float2 operator-(const Float2& a) {
 Returns a vector whose components are the result of applying the given operation to the
 corresponding components of `a` and `b`. Each component is acted on independently.
 
-    StdOut::text() << Float2{2, 3} * Float2{4, 1};  // "{8, 3}"
+    Console::out() << Float2{2, 3} * Float2{4, 1};  // "{8, 3}"
 
 If you specify a scalar value in place of a `Float2`, it will be promoted to a `Float2` by
 replicating the value to each component.
 
-    StdOut::text() << Float2{2, 3} * 2;  // "{4, 6}"
-    StdOut::text() << 8 / Float2{2, 4};  // "{4, 2}"
+    Console::out() << Float2{2, 3} * 2;  // "{4, 6}"
+    Console::out() << 8 / Float2{2, 4};  // "{4, 2}"
 */
 PLY_INLINE Float2 operator+(const Float2& a, const Float2& b) {
     return {a.x + b.x, a.y + b.y};
@@ -199,7 +199,7 @@ In-place versions of the above operators.
 
     Float2 v = {2, 3};
     v *= {4, 1};
-    StdOut::text() << v;  // "{8, 3}"
+    Console::out() << v;  // "{8, 3}"
 */
 PLY_INLINE void operator+=(Float2& a, const Float2& b) {
     a.x += b.x;
@@ -229,7 +229,7 @@ PLY_INLINE void operator/=(Float2& a, float b) {
 \category Geometric Functions
 Returns the dot product of two vectors.
 
-    StdOut::text() << dot(Float2{1, 0}, Float2{3, 4});  // "2"
+    Console::out() << dot(Float2{1, 0}, Float2{3, 4});  // "2"
 */
 PLY_INLINE float dot(const Float2& a, const Float2& b) {
     return a.x * b.x + a.y * b.y;
@@ -237,7 +237,7 @@ PLY_INLINE float dot(const Float2& a, const Float2& b) {
 /*!
 Returns the cross product of two vectors.
 
-    StdOut::text() << cross(Float2{1, 0}, Float2{3, 4});  // "4"
+    Console::out() << cross(Float2{1, 0}, Float2{3, 4});  // "4"
 */
 PLY_INLINE float cross(const Float2& a, const Float2& b) {
     return a.x * b.y - a.y * b.x;
@@ -248,8 +248,8 @@ Returns a copy of `v` with each component constrained to lie within the range de
 corresponding components of `mins` and `maxs`.
 
     Float2 v = {3, 1.5f};
-    StdOut::text() << clamp(v, Float2{0, 1}, Float2{1, 2});  // "{1, 1.5}"
-    StdOut::text() << clamp(v, 0, 1);                        // "{1, 1}"
+    Console::out() << clamp(v, Float2{0, 1}, Float2{1, 2});  // "{1, 1.5}"
+    Console::out() << clamp(v, 0, 1);                        // "{1, 1}"
 */
 PLY_INLINE Float2 clamp(const Float2& v, const Float2& mins, const Float2& maxs) {
     return {clamp(v.x, mins.x, maxs.x), clamp(v.y, mins.y, maxs.y)};
@@ -258,7 +258,7 @@ PLY_INLINE Float2 clamp(const Float2& v, const Float2& mins, const Float2& maxs)
 Returns a vector with each component set to the absolute value of the corresponding component of
 `a`.
 
-    StdOut::text() << abs(Float2{-2, 3});  // "{2, 3}"
+    Console::out() << abs(Float2{-2, 3});  // "{2, 3}"
 */
 PLY_INLINE Float2 abs(const Float2& a) {
     return {fabsf(a.x), fabsf(a.y)};
@@ -267,8 +267,8 @@ PLY_INLINE Float2 abs(const Float2& a) {
 Returns a vector with each component set to the corresponding component of `a` raised to the power
 of the corresponding component of `b`.
 
-    StdOut::text() << pow(Float2{1, 2}, Float2{2, 3});  // "{1, 8}"
-    StdOut::text() << pow(Float2{1, 2}, 2);             // "{1, 4}"
+    Console::out() << pow(Float2{1, 2}, Float2{2, 3});  // "{1, 8}"
+    Console::out() << pow(Float2{1, 2}, 2);             // "{1, 4}"
 */
 PLY_INLINE Float2 pow(const Float2& a, const Float2& b) {
     return {powf(a.x, b.x), powf(a.y, b.y)};
@@ -276,7 +276,7 @@ PLY_INLINE Float2 pow(const Float2& a, const Float2& b) {
 /*!
 Returns a vector with each component set to minimum of the corresponding components of `a` and `b`.
 
-    StdOut::text() << min(Float2{0, 1}, Float2{1, 0});  // "{0, 0}"
+    Console::out() << min(Float2{0, 1}, Float2{1, 0});  // "{0, 0}"
 */
 PLY_INLINE Float2 min(const Float2& a, const Float2& b) {
     return {min(a.x, b.x), min(a.y, b.y)};
@@ -284,7 +284,7 @@ PLY_INLINE Float2 min(const Float2& a, const Float2& b) {
 /*!
 Returns a vector with each component set to maximum of the corresponding components of `a` and `b`.
 
-    StdOut::text() << max(Float2{0, 1}, Float2{1, 0});  // "{1, 1}"
+    Console::out() << max(Float2{0, 1}, Float2{1, 0});  // "{1, 1}"
 */
 PLY_INLINE Float2 max(const Float2& a, const Float2& b) {
     return {max(a.x, b.x), max(a.y, b.y)};
@@ -308,7 +308,7 @@ PLY_INLINE bool operator!=(const Float2& a, const Float2& b) {
 Returns `true` if `a` is approximately equal to `b`. The tolerance is given by `epsilon`.
 
     Float2 v = {0.9999f, 0.0001f};
-    StdOut::text() << isNear(v, Float2{1, 0}, 1e-3f);  // "true"
+    Console::out() << isNear(v, Float2{1, 0}, 1e-3f);  // "true"
 */
 PLY_INLINE bool isNear(const Float2& a, const Float2& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
@@ -319,7 +319,7 @@ These functions compare each component individually. The result of each comparis
 a `Bool2`. Call `all()` to check if the result was `true` for all components, or call `any()` to
 check if the result was `true` for any component.
 
-    StdOut::text() << all(Float2{1, 2} > Float2{0, 1});  // "true"
+    Console::out() << all(Float2{1, 2} > Float2{0, 1});  // "true"
 
 These functions are useful for testing whether a point is inside a box. See the implementation of
 `Box<>::contains` for an example.
@@ -346,8 +346,8 @@ Returns a vector with each component set to the rounded result of the correspond
 `vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
 `spacing` is a power of 2.
 
-    StdOut::text() << roundUp(Float2{-0.3f, 1.4f});   // "{0, 2}"
-    StdOut::text() << roundDown(Float2{1.8f}, 0.5f);  // "{1.5, 1.5}"
+    Console::out() << roundUp(Float2{-0.3f, 1.4f});   // "{0, 2}"
+    Console::out() << roundDown(Float2{1.8f}, 0.5f);  // "{1.5, 1.5}"
 */
 PLY_INLINE Float2 roundUp(const Float2& value, float spacing = 1) {
     return {roundUp(value.x, spacing), roundUp(value.y, spacing)};
@@ -366,7 +366,7 @@ PLY_INLINE Float2 roundNearest(const Float2& value, float spacing = 1) {
 Returns `true` if every component of `vec` is already rounded. The optional `spacing` argument can
 be used to round to arbitrary spacings. Most precise when `spacing` is a power of 2.
 
-    StdOut::text() << isRounded(Float2{1.5f, 2.5f}, 0.5f);  // "true"
+    Console::out() << isRounded(Float2{1.5f, 2.5f}, 0.5f);  // "true"
 */
 PLY_INLINE bool isRounded(const Float2& value, float spacing = 1) {
     return roundNearest(value, spacing) == value;
@@ -396,7 +396,7 @@ struct Float3 {
     Constructs a `Float3` with all components set to `t`.
 
         Float3 v = {1};
-        StdOut::text() << v;  // "{1, 1, 1}"
+        Console::out() << v;  // "{1, 1, 1}"
     */
     PLY_INLINE Float3(float t) : x{t}, y{t}, z{t} {
     }
@@ -414,7 +414,7 @@ struct Float3 {
     Constructs a `Float3` from a `Float2` and a third component.
 
         Float2 a = {1, 2};
-        StdOut::text() << Float3{a, 0};  // "{1, 2, 0}"
+        Console::out() << Float3{a, 0};  // "{1, 2, 0}"
     */
     PLY_INLINE Float3(const Float2& v, float z) : x{v.x}, y{v.y}, z{z} {
     }
@@ -469,7 +469,7 @@ struct Float3 {
     should only be used as a temporary expression.
 
         Float3 v = {4, 5, 6};
-        StdOut::text() << v.asFloat2();  // "{4, 5}"
+        Console::out() << v.asFloat2();  // "{4, 5}"
     */
     PLY_INLINE const Float2& asFloat2() const {
         PLY_PUN_SCOPE
@@ -494,7 +494,7 @@ struct Float3 {
     functions are aliases for the `x`, `y` and `z` components respectively.
 
         Float3 c = {1.0f, 0.8f, 0.7f};
-        StdOut::text().format("{}, {}, {}", c.r(), c.g(), c.b());  // "1.0, 0.8, 0.7"
+        Console.out().format("{}, {}, {}", c.r(), c.g(), c.b());  // "1.0, 0.8, 0.7"
     */
     PLY_INLINE float& r() {
         return x;
@@ -527,8 +527,8 @@ struct Float3 {
     only to read from it.
 
         Float3 v = {4, 5, 6};
-        StdOut::text() << v.swizzle(1, 0);        // "{5, 4}"
-        StdOut::text() << v.swizzle(2, 0, 2, 1);  // "{6, 4, 6, 5}"
+        Console::out() << v.swizzle(1, 0);        // "{5, 4}"
+        Console::out() << v.swizzle(2, 0, 2, 1);  // "{6, 4, 6, 5}"
 
     These functions work correctly in the current version of all major compilers even though they
     use type punning, which is undefined behavior in standard C++.
@@ -554,13 +554,13 @@ PLY_INLINE Float3 operator-(const Float3& a) {
 Returns a vector whose components are the result of applying the given operation to the
 corresponding components of `a` and `b`. Each component is acted on independently.
 
-    StdOut::text() << Float3{2, 3, 2} * Float3{4, 1, 2};  // "{8, 3, 4}"
+    Console::out() << Float3{2, 3, 2} * Float3{4, 1, 2};  // "{8, 3, 4}"
 
 If you specify a scalar value in place of a `Float3`, it will be promoted to a `Float3` by
 replicating the value to each component.
 
-    StdOut::text() << Float3{2, 3, 2} * 2;  // "{4, 6, 4}"
-    StdOut::text() << 8 / Float3{2, 4, 1};  // "{4, 2, 8}"
+    Console::out() << Float3{2, 3, 2} * 2;  // "{4, 6, 4}"
+    Console::out() << 8 / Float3{2, 4, 1};  // "{4, 2, 8}"
 */
 PLY_INLINE Float3 operator+(const Float3& a, const Float3& b) {
     return {a.x + b.x, a.y + b.y, a.z + b.z};
@@ -587,7 +587,7 @@ In-place versions of the above operators.
 
     Float3 v = {2, 3, 2};
     v *= {4, 1, 2};
-    StdOut::text() << v;  // "{8, 3, 4}"
+    Console::out() << v;  // "{8, 3, 4}"
 */
 PLY_INLINE void operator+=(Float3& a, const Float3& b) {
     a.x += b.x;
@@ -622,7 +622,7 @@ PLY_INLINE void operator/=(Float3& a, float b) {
 \category Geometric Functions
 Returns the dot product of two vectors.
 
-    StdOut::text() << dot(Float3{2, 3, 1}, Float3{4, 5, 1});  // "24"
+    Console::out() << dot(Float3{2, 3, 1}, Float3{4, 5, 1});  // "24"
 */
 PLY_INLINE float dot(const Float3& a, const Float3& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
@@ -630,7 +630,7 @@ PLY_INLINE float dot(const Float3& a, const Float3& b) {
 /*!
 Returns the cross product of two vectors.
 
-    StdOut::text() << cross(Float3{1, 0, 0}, Float3{0, 1, 0});  // "{0, 0, 1}"
+    Console::out() << cross(Float3{1, 0, 0}, Float3{0, 1, 0});  // "{0, 0, 1}"
 */
 Float3 cross(const Float3& a, const Float3& b);
 /*!
@@ -639,15 +639,15 @@ Returns a copy of `v` with each component constrained to lie within the range de
 corresponding components of `mins` and `maxs`.
 
     Float3 v = {3, 1.5f, 0};
-    StdOut::text() << clamp(v, Float3{0, 1, 2}, Float3{1, 2, 3});  // "{1, 1.5, 2}"
-    StdOut::text() << clamp(v, 0, 1);                              // "{1, 1, 0}"
+    Console::out() << clamp(v, Float3{0, 1, 2}, Float3{1, 2, 3});  // "{1, 1.5, 2}"
+    Console::out() << clamp(v, 0, 1);                              // "{1, 1, 0}"
 */
 Float3 clamp(const Float3& v, const Float3& mins, const Float3& maxs);
 /*!
 Returns a vector with each component set to the absolute value of the corresponding component of
 `a`.
 
-    StdOut::text() << abs(Float3{-2, 3, 0});  // "{2, 3, 0}"
+    Console::out() << abs(Float3{-2, 3, 0});  // "{2, 3, 0}"
 */
 PLY_INLINE Float3 abs(const Float3& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z)};
@@ -656,14 +656,14 @@ PLY_INLINE Float3 abs(const Float3& a) {
 Returns a vector with each component set to the corresponding component of `a` raised to the power
 of the corresponding component of `b`.
 
-    StdOut::text() << pow(Float3{1, 2, 2}, Float3{2, 3, 1});  // "{1, 8, 2}"
-    StdOut::text() << pow(Float3{1, 2, 3}, 2);                // "{1, 4, 9}"
+    Console::out() << pow(Float3{1, 2, 2}, Float3{2, 3, 1});  // "{1, 8, 2}"
+    Console::out() << pow(Float3{1, 2, 3}, 2);                // "{1, 4, 9}"
 */
 Float3 pow(const Float3& a, const Float3& b);
 /*!
 Returns a vector with each component set to minimum of the corresponding components of `a` and `b`.
 
-    StdOut::text() << min(Float3{0, 1, 0}, Float3{1, 0, 1});  // "{0, 0, 0}"
+    Console::out() << min(Float3{0, 1, 0}, Float3{1, 0, 1});  // "{0, 0, 0}"
 */
 PLY_INLINE Float3 min(const Float3& a, const Float3& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)};
@@ -671,7 +671,7 @@ PLY_INLINE Float3 min(const Float3& a, const Float3& b) {
 /*!
 Returns a vector with each component set to maximum of the corresponding components of `a` and `b`.
 
-    StdOut::text() << max(Float3{0, 1, 0}, Float3{1, 0, 1});  // "{1, 1, 1}"
+    Console::out() << max(Float3{0, 1, 0}, Float3{1, 0, 1});  // "{1, 1, 1}"
 */
 PLY_INLINE Float3 max(const Float3& a, const Float3& b) {
     return {max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)};
@@ -695,7 +695,7 @@ PLY_INLINE bool operator!=(const Float3& a, const Float3& b) {
 Returns `true` if `a` is approximately equal to `b`. The tolerance is given by `epsilon`.
 
     Float3 v = {0.9999f, 0.0001f, 1.9999f};
-    StdOut::text() << isNear(v, Float3{1, 0, 2}, 1e-3f);  // "true"
+    Console::out() << isNear(v, Float3{1, 0, 2}, 1e-3f);  // "true"
 */
 PLY_INLINE bool isNear(const Float3& a, const Float3& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
@@ -706,7 +706,7 @@ These functions compare each component individually. The result of each comparis
 a `Bool3`. Call `all()` to check if the result was `true` for all components, or call `any()` to
 check if the result was `true` for any component.
 
-    StdOut::text() << all(Float3{1, 2, 3} > Float3{0, 1, 2});  // "true"
+    Console::out() << all(Float3{1, 2, 3} > Float3{0, 1, 2});  // "true"
 
 These functions are useful for testing whether a point is inside a box. See the implementation of
 `Box<>::contains` for an example.
@@ -733,8 +733,8 @@ Returns a vector with each component set to the rounded result of the correspond
 `vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
 `spacing` is a power of 2.
 
-    StdOut::text() << roundUp(Float3{-0.3f, 1.4f, 0.8f});  // "{0, 2, 1}"
-    StdOut::text() << roundDown(Float3{1.8f}, 0.5f);       // "{1.5, 1.5, 1.5}"
+    Console::out() << roundUp(Float3{-0.3f, 1.4f, 0.8f});  // "{0, 2, 1}"
+    Console::out() << roundDown(Float3{1.8f}, 0.5f);       // "{1.5, 1.5, 1.5}"
 */
 PLY_INLINE Float3 roundUp(const Float3& value, float spacing = 1) {
     return {roundUp(value.x, spacing), roundUp(value.y, spacing), roundUp(value.z, spacing)};
@@ -753,7 +753,7 @@ PLY_INLINE Float3 roundNearest(const Float3& value, float spacing = 1) {
 Returns `true` if every component of `vec` is already rounded. The optional `spacing` argument can
 be used to round to arbitrary spacings. Most precise when `spacing` is a power of 2.
 
-    StdOut::text() << isRounded(Float3{1.5f, 0.5f, 0}, 0.5f);  // "true"
+    Console::out() << isRounded(Float3{1.5f, 0.5f, 0}, 0.5f);  // "true"
 */
 PLY_INLINE bool isRounded(const Float3& value, float spacing = 1) {
     return roundNearest(value, spacing) == value;
@@ -785,7 +785,7 @@ struct Float4 {
     Constructs a `Float4` with all components set to `t`.
 
         Float4 v = {1};
-        StdOut::text() << v;  // "{1, 1, 1, 1}"
+        Console::out() << v;  // "{1, 1, 1, 1}"
     */
     PLY_INLINE Float4(float t) : x{t}, y{t}, z{t}, w{t} {
     }
@@ -804,7 +804,7 @@ struct Float4 {
     Constructs a `Float4` from a `Float3` and a fourth component.
 
         Float3 a = {1, 2, 3};
-        StdOut::text() << Float4{a, 0};  // "{1, 2, 3, 0}"
+        Console::out() << Float4{a, 0};  // "{1, 2, 3, 0}"
     */
     PLY_INLINE Float4(const Float3& v, float w) : x{v.x}, y{v.y}, z{v.z}, w{w} {
     }
@@ -812,7 +812,7 @@ struct Float4 {
     Constructs a `Float4` from a `Float2` and two additional components.
 
         Float2 a = {1, 2};
-        StdOut::text() << Float4{a, 0, 0};  // "{1, 2, 0, 0}"
+        Console::out() << Float4{a, 0, 0};  // "{1, 2, 0, 0}"
     */
     PLY_INLINE Float4(const Float2& v, float z, float w) : x{v.x}, y{v.y}, z{z}, w{w} {
     }
@@ -869,7 +869,7 @@ struct Float4 {
     should only be used as a temporary expression.
 
         Float4 v = {4, 5, 6, 7};
-        StdOut::text() << v.asFloat2();  // "{4, 5}"
+        Console::out() << v.asFloat2();  // "{4, 5}"
     */
     PLY_INLINE const Float2& asFloat2() const {
         PLY_PUN_SCOPE
@@ -880,7 +880,7 @@ struct Float4 {
     should only be used as a temporary expression.
 
         Float4 v = {4, 5, 6, 7};
-        StdOut::text() << v.asFloat3();  // "{4, 5, 6}"
+        Console::out() << v.asFloat3();  // "{4, 5, 6}"
     */
     PLY_INLINE const Float3& asFloat3() const {
         PLY_PUN_SCOPE
@@ -909,7 +909,7 @@ struct Float4 {
     functions are aliases for the `x`, `y`, `z` and `w` components respectively.
 
         Float4 c = {1.0f, 0.8f, 0.7f, 0.5f};
-        StdOut::text().format("{}, {}, {}, {}", c.r(), c.g(), c.b(), c.a());
+        Console.out().format("{}, {}, {}, {}", c.r(), c.g(), c.b(), c.a());
         // prints "1.0, 0.8, 0.7, 0.5"
     */
     PLY_INLINE float& r() {
@@ -949,8 +949,8 @@ struct Float4 {
     only to read from it.
 
         Float4 v = {4, 5, 6, 0};
-        StdOut::text() << v.swizzle(1, 0);        // "{5, 4}"
-        StdOut::text() << v.swizzle(2, 3, 2, 1);  // "{6, 0, 6, 5}"
+        Console::out() << v.swizzle(1, 0);        // "{5, 4}"
+        Console::out() << v.swizzle(2, 3, 2, 1);  // "{6, 0, 6, 5}"
 
     These functions work correctly in the current version of all major compilers even though they
     use type punning, which is undefined behavior in standard C++.
@@ -976,13 +976,13 @@ PLY_INLINE Float4 operator-(const Float4& a) {
 Returns a vector whose components are the result of applying the given operation to the
 corresponding components of `a` and `b`. Each component is acted on independently.
 
-    StdOut::text() << Float4{2, 3, 2, 0} * Float4{4, 1, 2, 5};  // "{8, 3, 4, 0}"
+    Console::out() << Float4{2, 3, 2, 0} * Float4{4, 1, 2, 5};  // "{8, 3, 4, 0}"
 
 If you specify a scalar value in place of a `Float4`, it will be promoted to a `Float4` by
 replicating the value to each component.
 
-    StdOut::text() << Float4{2, 3, 2, 0} * 2;  // "{4, 6, 4, 0}"
-    StdOut::text() << 8 / Float4{2, 4, 1, 8};  // "{4, 2, 8, 1}"
+    Console::out() << Float4{2, 3, 2, 0} * 2;  // "{4, 6, 4, 0}"
+    Console::out() << 8 / Float4{2, 4, 1, 8};  // "{4, 2, 8, 1}"
 */
 PLY_INLINE Float4 operator+(const Float4& a, const Float4& b) {
     return {a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w};
@@ -1009,7 +1009,7 @@ In-place versions of the above operators.
 
     Float4 v = {2, 3, 2, 0};
     v *= {4, 1, 2, 5};
-    StdOut::text() << v;  // "{8, 3, 4, 0}"
+    Console::out() << v;  // "{8, 3, 4, 0}"
 */
 PLY_INLINE void operator+=(Float4& a, const Float4& b) {
     a.x += b.x;
@@ -1049,7 +1049,7 @@ PLY_INLINE void operator/=(Float4& a, float b) {
 \category Geometric Functions
 Returns the dot product of two vectors.
 
-    StdOut::text() << dot(Float4{2, 3, 1, 3}, Float4{4, 5, 1, 0});  // "24"
+    Console::out() << dot(Float4{2, 3, 1, 3}, Float4{4, 5, 1, 0});  // "24"
 */
 PLY_INLINE float dot(const Float4& a, const Float4& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
@@ -1060,8 +1060,8 @@ Returns a copy of `v` with each component constrained to lie within the range de
 corresponding components of `mins` and `maxs`.
 
     Float4 v = {3, 1.5f, 0, 0.5f};
-    StdOut::text() << clamp(v, Float4{0, 1, 2, 3}, Float4{1, 2, 3, 4});  // "{1, 1.5, 2, 3}"
-    StdOut::text() << clamp(v, 0, 1);                                    // "{1, 1, 0, 0.5f}"
+    Console::out() << clamp(v, Float4{0, 1, 2, 3}, Float4{1, 2, 3, 4});  // "{1, 1.5, 2, 3}"
+    Console::out() << clamp(v, 0, 1);                                    // "{1, 1, 0, 0.5f}"
 */
 PLY_INLINE Float4 clamp(const Float4& v, const Float4& mins, const Float4& maxs) {
     return {clamp(v.x, mins.x, maxs.x), clamp(v.y, mins.y, maxs.y), clamp(v.z, mins.z, maxs.z),
@@ -1071,7 +1071,7 @@ PLY_INLINE Float4 clamp(const Float4& v, const Float4& mins, const Float4& maxs)
 Returns a vector with each component set to the absolute value of the corresponding component of
 `a`.
 
-    StdOut::text() << abs(Float4{-2, 3, 0, -1});  // "{2, 3, 0, 1}"
+    Console::out() << abs(Float4{-2, 3, 0, -1});  // "{2, 3, 0, 1}"
 */
 PLY_INLINE Float4 abs(const Float4& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z), fabsf(a.w)};
@@ -1080,14 +1080,14 @@ PLY_INLINE Float4 abs(const Float4& a) {
 Returns a vector with each component set to the corresponding component of `a` raised to the power
 of the corresponding component of `b`.
 
-    StdOut::text() << pow(Float4{1, 2, 2, 3}, Float4{2, 3, 1, 2});  // "{1, 8, 2, 9}"
-    StdOut::text() << pow(Float4{1, 2, 3, -2}, 2);                  // "{1, 4, 9, 4}"
+    Console::out() << pow(Float4{1, 2, 2, 3}, Float4{2, 3, 1, 2});  // "{1, 8, 2, 9}"
+    Console::out() << pow(Float4{1, 2, 3, -2}, 2);                  // "{1, 4, 9, 4}"
 */
 Float4 pow(const Float4& a, const Float4& b);
 /*!
 Returns a vector with each component set to minimum of the corresponding components of `a` and `b`.
 
-    StdOut::text() << min(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // "{0, 0, 0, 0}"
+    Console::out() << min(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // "{0, 0, 0, 0}"
 */
 PLY_INLINE Float4 min(const Float4& a, const Float4& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w)};
@@ -1095,7 +1095,7 @@ PLY_INLINE Float4 min(const Float4& a, const Float4& b) {
 /*!
 Returns a vector with each component set to maximum of the corresponding components of `a` and `b`.
 
-    StdOut::text() << max(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // "{1, 1, 1, 1}"
+    Console::out() << max(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // "{1, 1, 1, 1}"
 */
 PLY_INLINE Float4 max(const Float4& a, const Float4& b) {
     return {max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w)};
@@ -1119,7 +1119,7 @@ PLY_INLINE bool operator!=(const Float4& a, const Float4& b) {
 Returns `true` if `a` is approximately equal to `b`. The tolerance is given by `epsilon`.
 
     Float4 v = {0.9999f, 0.0001f, 1.9999f, 3.0001f};
-    StdOut::text() << isNear(v, Float4{1, 0, 2, 3}, 1e-3f);  // "true"
+    Console::out() << isNear(v, Float4{1, 0, 2, 3}, 1e-3f);  // "true"
 */
 PLY_INLINE bool isNear(const Float4& a, const Float4& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
@@ -1130,7 +1130,7 @@ These functions compare each component individually. The result of each comparis
 a `Bool4`. Call `all()` to check if the result was `true` for all components, or call `any()` to
 check if the result was `true` for any component.
 
-    StdOut::text() << all(Float4{1, 2, 3, 4} > Float4{0, 1, 2, 3});  // "true"
+    Console::out() << all(Float4{1, 2, 3, 4} > Float4{0, 1, 2, 3});  // "true"
 
 These functions are useful for testing whether a point is inside a box. See the implementation of
 `Box<>::contains` for an example.
@@ -1157,8 +1157,8 @@ Returns a vector with each component set to the rounded result of the correspond
 `vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
 `spacing` is a power of 2.
 
-    StdOut::text() << roundUp(Float4{-0.3f, 1.4f, 0.8f, -1.2f});  // "{0, 2, 1, -1}"
-    StdOut::text() << roundDown(Float4{1.8f}, 0.5f);              // "{1.5, 1.5, 1.5, 1.5}"
+    Console::out() << roundUp(Float4{-0.3f, 1.4f, 0.8f, -1.2f});  // "{0, 2, 1, -1}"
+    Console::out() << roundDown(Float4{1.8f}, 0.5f);              // "{1.5, 1.5, 1.5, 1.5}"
 */
 PLY_INLINE Float4 roundUp(const Float4& vec, float spacing = 1) {
     return {roundUp(vec.x, spacing), roundUp(vec.y, spacing), roundUp(vec.z, spacing),
@@ -1179,7 +1179,7 @@ PLY_INLINE Float4 roundNearest(const Float4& vec, float spacing = 1) {
 Returns `true` if every component of `vec` is already rounded. The optional `spacing` argument can
 be used to round to arbitrary spacings. Most precise when `spacing` is a power of 2.
 
-    StdOut::text() << isRounded(Float4{1.5f, 0.5f, 0, 2}, 0.5f);  // true
+    Console::out() << isRounded(Float4{1.5f, 0.5f, 0, 2}, 0.5f);  // true
 */
 PLY_INLINE bool isRounded(const Float4& vec, float spacing = 1) {
     return roundNearest(vec, spacing) == vec;

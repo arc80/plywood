@@ -78,7 +78,7 @@ struct BlockList {
         PLY_INLINE WeakRef(const WeakRef& other) : block{other.block}, byte{other.byte} {
         }
         PLY_INLINE WeakRef(Footer* block, char* byte) : block{block}, byte{byte} {
-            PLY_ASSERT(uptr(byte - block->bytes) <= block->blockSize);
+            PLY_ASSERT(!block || (uptr(byte - block->bytes) <= block->blockSize));
         }
         PLY_INLINE WeakRef(Footer* block, u32 offset) : block{block}, byte{block->bytes + offset} {
             PLY_ASSERT(offset <= block->blockSize);

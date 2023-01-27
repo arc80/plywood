@@ -39,7 +39,7 @@ bool run() {
     const auto& testCases = getCases();
 
     for (u32 i = 0; i < testCases.numItems(); i++) {
-        StdOut::text().format("[{}/{}] {}... ", (i + 1), testCases.numItems(), testCases[i].name);
+        Console.out().format("[{}/{}] {}... ", (i + 1), testCases.numItems(), testCases[i].name);
         gTestState.success = true;
 #if PLY_USE_DLMALLOC
         auto beginStats = Heap.getStats();
@@ -52,7 +52,7 @@ bool run() {
             gTestState.success = false;
         }
 #endif
-        StdOut::text() << (gTestState.success ? StringView{"success\n"} : "***FAIL***\n");
+        Console.out() << (gTestState.success ? StringView{"success\n"} : "***FAIL***\n");
         if (gTestState.success) {
             numPassed++;
         }
@@ -61,7 +61,7 @@ bool run() {
     if (testCases.numItems() > 0) {
         frac = (float) numPassed / testCases.numItems();
     }
-    StdOut::text().format("{}/{} test cases passed ({}%)\n", numPassed, testCases.numItems(),
+    Console.out().format("{}/{} test cases passed ({}%)\n", numPassed, testCases.numItems(),
                           frac * 100.f);
 
     return numPassed == testCases.numItems();

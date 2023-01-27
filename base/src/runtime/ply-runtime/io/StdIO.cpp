@@ -59,7 +59,7 @@ InStream Console_t::in(ConsoleMode mode) {
     if (mode == CM_Text) {
         InStream in{get_console_in_pipe(), false};
         // Always create a filter to make newlines consistent.
-        return InStream{createInNewLineFilter(std::move(in)), false};
+        return createInNewLineFilter(std::move(in));
     } else {
         return {get_console_in_pipe(), false};
     }
@@ -72,7 +72,7 @@ OutStream Console_t::out(ConsoleMode mode) {
     writeCRLF = true;
 #endif
     // Always create a filter to make newlines consistent.
-    return OutStream{createOutNewLineFilter(std::move(out), writeCRLF), false};
+    return createOutNewLineFilter(std::move(out), writeCRLF);
 }
 
 OutStream Console_t::error(ConsoleMode mode) {
@@ -82,7 +82,7 @@ OutStream Console_t::error(ConsoleMode mode) {
     writeCRLF = true;
 #endif
     // Always create a filter to make newlines consistent.
-    return OutStream{createOutNewLineFilter(std::move(out), writeCRLF), false};
+    return createOutNewLineFilter(std::move(out), writeCRLF);
 }
 
 } // namespace ply
