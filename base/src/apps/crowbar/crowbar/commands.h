@@ -10,6 +10,7 @@
 
 void tidy_repo(StringView repoPath, StringView clangFormatPath, const TextFormat& tff);
 void print_bigfont(StringView text);
+void print_smallbox(StringView text);
 void do_codegen();
 void command_open(BuildFolder_t* bf);
 Tuple<s32, String> generateCMakeProject(StringView cmakeListsFolder,

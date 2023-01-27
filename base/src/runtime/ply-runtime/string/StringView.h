@@ -13,6 +13,7 @@ struct String;
 struct HybridString;
 template <typename>
 class Array;
+enum UnicodeType;
 
 namespace fmt {
 template <typename>
@@ -101,6 +102,8 @@ struct StringView {
     /*!
     \endGroup
     */
+    
+    u32 num_codepoints(UnicodeType decoder_type) const;
 
     /*!
     Constructs a `StringView` from a single byte. `c` is expected to remain valid for the lifetime

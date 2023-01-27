@@ -142,6 +142,25 @@ void cmd_bigfont(CommandLine& cl) {
     print_bigfont(out.moveToString());
 }
 
+//                         ▄▄▄  ▄▄▄  ▄▄
+//   ▄▄▄▄  ▄▄▄▄▄▄▄   ▄▄▄▄   ██   ██  ██▄▄▄   ▄▄▄▄  ▄▄  ▄▄
+//  ▀█▄▄▄  ██ ██ ██  ▄▄▄██  ██   ██  ██  ██ ██  ██  ▀██▀
+//   ▄▄▄█▀ ██ ██ ██ ▀█▄▄██ ▄██▄ ▄██▄ ██▄▄█▀ ▀█▄▄█▀ ▄█▀▀█▄
+//
+
+void cmd_smallbox(CommandLine& cl) {
+    MemOutStream out;
+    if (StringView word = cl.next_arg()) {
+        out << word;
+    }
+    while (StringView word = cl.next_arg()) {
+        out << " " << word;
+    }
+    cl.check_for_unused_args();
+
+    print_smallbox(out.moveToString());
+}
+
 //    ▄▄▄        ▄▄▄      ▄▄
 //   ██    ▄▄▄▄   ██   ▄▄▄██  ▄▄▄▄  ▄▄▄▄▄
 //  ▀██▀  ██  ██  ██  ██  ██ ██▄▄██ ██  ▀▀
@@ -229,6 +248,8 @@ int main(int argc, char* argv[]) {
         cmd_codegen(cl);
     } else if (prefix_match(category, "bigfont")) {
         cmd_bigfont(cl);
+    } else if (prefix_match(category, "smallbox")) {
+        cmd_smallbox(cl);
     } else if (prefix_match(category, "folder")) {
         cmd_folder(cl);
     } else {

@@ -10,6 +10,16 @@
 
 namespace ply {
 
+u32 StringView::num_codepoints(UnicodeType decoder_type) const {
+    Unicode decoder{decoder_type};
+    u32 num_codepoints = 0;
+    ViewInStream in{*this};
+    while (Unicode{UTF8}.decode_point(in) >= 0) {
+        num_codepoints++;
+    }
+    return num_codepoints;
+}
+
 PLY_NO_INLINE bool StringView::startsWith(StringView other) const {
     if (other.numBytes > numBytes)
         return false;

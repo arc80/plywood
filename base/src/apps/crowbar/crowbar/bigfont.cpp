@@ -7,6 +7,12 @@
 
 #include "core.h"
 
+//  ▄▄     ▄▄          ▄▄▄                ▄▄
+//  ██▄▄▄  ▄▄  ▄▄▄▄▄  ██    ▄▄▄▄  ▄▄▄▄▄  ▄██▄▄
+//  ██  ██ ██ ██  ██ ▀██▀▀ ██  ██ ██  ██  ██
+//  ██▄▄█▀ ██ ▀█▄▄██  ██   ▀█▄▄█▀ ██  ██  ▀█▄▄
+//             ▄▄▄█▀
+
 char* GlyphData[] = {
 // clang-format off
     "A ,,,, B,,,,, C ,,,, D,,,,, E,,,,,F,,,,,G ,,,, H,,  ,,I,,,,J    ,,K,,  ,,L,,   M,,   ,,",
@@ -94,4 +100,20 @@ void print_bigfont(StringView text) {
         }
         out << '\n';
     }
+}
+
+//                         ▄▄▄  ▄▄▄  ▄▄
+//   ▄▄▄▄  ▄▄▄▄▄▄▄   ▄▄▄▄   ██   ██  ██▄▄▄   ▄▄▄▄  ▄▄  ▄▄
+//  ▀█▄▄▄  ██ ██ ██  ▄▄▄██  ██   ██  ██  ██ ██  ██  ▀██▀
+//   ▄▄▄█▀ ██ ██ ██ ▀█▄▄██ ▄██▄ ▄██▄ ██▄▄█▀ ▀█▄▄█▀ ▄█▀▀█▄
+//
+
+void print_smallbox(StringView text) {
+    u32 num_codepoints = text.num_codepoints(UTF8);
+    String bar = StringView{u8"━"} * num_codepoints;
+
+    OutStream out = Console.out();
+    out.format(u8"// ┏━━{}━━┓\n", bar);
+    out.format(u8"// ┃  {}  ┃\n", text);
+    out.format(u8"// ┗━━{}━━┛\n", bar);
 }
