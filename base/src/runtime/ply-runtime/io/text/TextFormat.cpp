@@ -12,7 +12,7 @@
 
 namespace ply {
 
-PLY_NO_INLINE TextFormat TextFormat::platformPreference() {
+PLY_NO_INLINE TextFormat TextFormat::default() {
     TextFormat tff;
 #if PLY_TARGET_WIN32
     tff.newLine = TextFormat::NewLine::CRLF;
@@ -250,14 +250,14 @@ PLY_NO_INLINE Owned<OutPipe> TextFormat::createExporter(OutStream&& out) const {
 
         case UTF8: {
             if (this->bom) {
-                exporter.write({"\xef\xbb\xbf", 3});
+                exporter << StringView{"\xef\xbb\xbf", 3};
             }
             break;
         }
 
         case UTF16_BE: {
             if (this->bom) {
-                exporter.write({"\xfe\xff", 2});
+                exporter << StringView{"\xfe\xff", 2};
             }
             exporter = {new OutPipe_ConvertUnicode{std::move(exporter), UTF16_BE},
                         true};
@@ -266,7 +266,7 @@ PLY_NO_INLINE Owned<OutPipe> TextFormat::createExporter(OutStream&& out) const {
 
         case UTF16_LE: {
             if (this->bom) {
-                exporter.write({"\xff\xfe", 2});
+                exporter << StringView{"\xff\xfe", 2};
             }
             exporter = {new OutPipe_ConvertUnicode{std::move(exporter), UTF16_LE},
                         true};

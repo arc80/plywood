@@ -122,9 +122,9 @@ PLY_NO_INLINE String StringView::join(ArrayView<const StringView> comps) const {
     bool first = true;
     for (StringView comp : comps) {
         if (!first) {
-            mout.write(*this);
+            mout << *this;
         }
-        mout.write(comp);
+        mout << comp;
         first = false;
     }
     return mout.moveToString();

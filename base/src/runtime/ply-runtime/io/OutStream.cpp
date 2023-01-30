@@ -100,11 +100,11 @@ bool OutStream::make_writable() {
     return true;
 }
 
-bool OutStream::write(StringView src) {
+OutStream& OutStream::operator<<(StringView src) {
     // Loop over the input in case we need to copy data to different blocks.
     while (src.numBytes > 0) {
         if (!this->ensure_writable())
-            return false; // EOF
+            return *this; // EOF
 
         // Copy as much data as possible to the current block.
         u32 toCopy = min<u32>(this->num_writable_bytes(), src.numBytes);
@@ -113,7 +113,7 @@ bool OutStream::write(StringView src) {
         src.offsetHead(toCopy);
     }
 
-    return true;
+    return *this;
 }
 
 String OutStream::moveToString() {

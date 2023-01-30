@@ -19,7 +19,7 @@ PLY_NO_INLINE LogChannel::LineHandler::LineHandler(StringView channelName) {
 }
 
 PLY_NO_INLINE LogChannel::LineHandler::~LineHandler() {
-    this->mout.write({"\n", 2}); // include null terminator
+    this->mout << StringView{"\n", 2}; // include null terminator
     Logger::log(this->mout.moveToString());
 }
 

@@ -31,13 +31,13 @@ struct TextFormat {
 
     UnicodeType encoding = UTF8;
     NewLine newLine = NewLine::LF;
-    bool bom = false;
+    bool bom = true;
 
     static PLY_INLINE TextFormat unixUTF8() {
         return {UTF8, TextFormat::NewLine::LF, false};
     }
 
-    static TextFormat platformPreference();
+    static TextFormat default();
     static TextFormat autodetect(InStream& in);
 
     /*!

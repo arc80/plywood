@@ -1,0 +1,12 @@
+executable BiscuitTest {
+    source_files {
+        "."
+    }
+    include_directories {
+        private "."
+    }
+    dependencies {
+        public biscuit
+        public test
+    }
+}

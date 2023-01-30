@@ -20,7 +20,7 @@ template <>
 struct Boxed<String> {
     static void write(NativeEndianWriter& wr, StringView view) {
         wr.write(view.numBytes);
-        wr.out.write(view);
+        wr.out << view;
     }
 
     static PLY_NO_INLINE String read(NativeEndianReader& rd);

@@ -134,16 +134,19 @@ struct FileSystemIface {
     FSResult makeDirs(StringView path);
     InStream openStreamForRead(StringView path);
     OutStream openStreamForWrite(StringView path);
-    InStream openTextForRead(StringView path, const TextFormat& textFormat);
-    OutStream openTextForWrite(StringView path, const TextFormat& textFormat);
+    InStream openTextForRead(StringView path,
+                             const TextFormat& format = TextFormat::default());
     InStream openTextForReadAutodetect(StringView path,
                                        TextFormat* out_format = nullptr);
+    OutStream openTextForWrite(StringView path,
+                               const TextFormat& format = TextFormat::default());
     String loadBinary(StringView path);
-    String loadText(StringView path, const TextFormat& textFormat);
+    String loadText(StringView path, const TextFormat& format);
     String loadTextAutodetect(StringView path, TextFormat* out_format = nullptr);
     FSResult makeDirsAndSaveBinaryIfDifferent(StringView path, StringView contents);
-    FSResult makeDirsAndSaveTextIfDifferent(StringView path, StringView strContents,
-                                            const TextFormat& textFormat);
+    FSResult
+    makeDirsAndSaveTextIfDifferent(StringView path, StringView strContents,
+                                   const TextFormat& format = TextFormat::default());
 };
 
 struct FileSystem_t : FileSystemIface {

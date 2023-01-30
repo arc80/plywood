@@ -24,7 +24,7 @@ void writeAsset(OutStream& out, AnyObject obj) {
     resolveLinksAndWriteLinkTable({bin.bytes, bin.numBytes}, out, &writeObjectContext.ptrResolver);
 
     // Write object data
-    out.write(bin);
+    out << bin;
 }
 
 //--------------------------------------------------------------------

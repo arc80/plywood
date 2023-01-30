@@ -184,19 +184,6 @@ struct OutStream {
             return true;
         return this->make_writable();
     }
-    bool write(char c) {
-        if (this->cur_byte >= this->end_byte) {
-            if (!this->make_writable())
-                return false;
-        }
-        *this->cur_byte++ = c;
-        return true;
-    }
-    bool write(StringView src);
-    template <typename T>
-    void raw_write(const T& value) {
-        this->write({(const char*) &value, sizeof(T)});
-    }
     OutStream& operator<<(char c) {
         if (this->cur_byte >= this->end_byte) {
             if (!this->make_writable())
@@ -205,9 +192,15 @@ struct OutStream {
         *this->cur_byte++ = c;
         return *this;
     }
-    OutStream& operator<<(StringView buf) {
-        this->write(buf);
+    OutStream& operator<<(StringView str);
+    template <typename T, std::enable_if_t<std::is_arithmetic<T>::value, int> = 0>
+    OutStream& operator<<(T c) {
+        FormatArg{c}.print(*this);
         return *this;
+    }
+    template <typename T>
+    void raw_write(const T& value) {
+        *this << StringView{(const char*) &value, sizeof(T)};
     }
 
     void format(const FormatArg& arg) {
@@ -247,7 +240,7 @@ public:
 
     template <typename T>
     PLY_INLINE void write(const T& value) {
-        out.write({(const char*) &value, sizeof(value)});
+        out.raw_write(value);
     }
 };
 

@@ -18,8 +18,7 @@ struct ScriptOutStream {
 };
 
 FnResult doPrint(const FnParams& params) {
-    ScriptOutStream* sos = args.self.cast<ScriptOutStream>();
-
+    ScriptOutStream* sos = params.self.cast<ScriptOutStream>();
     if (params.args.numItems != 1) {
         params.base->error("'print' expects exactly one argument");
         return Fn_Error;
@@ -100,7 +99,7 @@ String parseAndTryCall(StringView src, StringView funcName, ArrayView<const AnyO
         // Create interpreter
         Interpreter interp;
         interp.base.error = [&outs, &interp](StringView message) {
-            logErrorWithStack(&outs, &interp, message);
+            logErrorWithStack(outs, &interp, message);
         };
         LabelMap<AnyObject> biMap;
         bis.addBuiltIns(biMap);
@@ -196,15 +195,15 @@ void runTestSuite() {
     // Open input file
     String testSuitePath =
         Path.join(PLY_WORKSPACE_FOLDER, "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
-    Tuple<String, TextFormat> allTests = FileSystem.loadTextAutodetect(testSuitePath);
-    SectionReader sr{allTests.first};
+    String allTests = FileSystem.loadTextAutodetect(testSuitePath);
+    SectionReader sr{allTests};
 
     // Iterate over test cases.
     MemOutStream outs;
     for (;;) {
         StringView src = sr.readSection();
         if (!src) {
-            if (sr.ins.atEOF())
+            if (sr.ins.at_eof())
                 break;
             continue;
         }
@@ -229,8 +228,7 @@ void runTestSuite() {
     }
 
     // Rewrite BiscuitTests.txt
-    FileSystem.makeDirsAndSaveTextIfDifferent(testSuitePath, outs.moveToString(),
-                                                         allTests.second);
+    FileSystem.makeDirsAndSaveTextIfDifferent(testSuitePath, outs.moveToString());
 }
 
 int main() {

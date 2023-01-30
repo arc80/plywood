@@ -34,8 +34,8 @@ PLY_NO_INLINE void printString(OutStream& out, u64 value, u32 radix) {
         }
     }
 
-    out.write({digitBuffer + digitIndex,
-               (u32) PLY_STATIC_ARRAY_SIZE(digitBuffer) - digitIndex});
+    out << StringView{digitBuffer + digitIndex,
+                      (u32) PLY_STATIC_ARRAY_SIZE(digitBuffer) - digitIndex};
 }
 
 PLY_NO_INLINE void printString(OutStream& out, s64 value, u32 radix) {
@@ -82,7 +82,7 @@ PLY_NO_INLINE void printString(OutStream& out, double value, u32 radix) {
                     digitBuffer[i] = toDigit(digit);
                     fractionalPart = quotient;
                 }
-                out.write({digitBuffer, PLY_STATIC_ARRAY_SIZE(digitBuffer)});
+                out << StringView{digitBuffer, PLY_STATIC_ARRAY_SIZE(digitBuffer)};
             }
         } else {
             // Scientific notation

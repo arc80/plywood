@@ -235,7 +235,7 @@ s32 Unicode::decode_point(InStream& in) {
 bool copy_from_shim(OutStream& dst_out, StringView& shim_used) {
     if (shim_used) {
         u32 n = min(dst_out.num_writable_bytes(), shim_used.numBytes);
-        dst_out.write(shim_used);
+        dst_out << shim_used;
         shim_used.offsetHead(n);
         if (shim_used)
             return true; // Destination buffer is full.

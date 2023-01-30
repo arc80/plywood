@@ -284,7 +284,7 @@ PLY_NO_INLINE WString win32PathArg(StringView path, bool allowExtended) {
     ViewInStream path_in{path};
     MemOutStream out;
     if (allowExtended && WindowsPath.isAbsolute(path)) {
-        out.write(ArrayView<const char16_t>{u"\\\\?\\", 4}.stringView());
+        out << ArrayView<const char16_t>{u"\\\\?\\", 4}.stringView();
     }
     while (true) {
         s32 codepoint = Unicode{UTF8}.decode_point(path_in);
