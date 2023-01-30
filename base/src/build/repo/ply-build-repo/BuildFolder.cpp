@@ -39,8 +39,7 @@ PLY_NO_INLINE bool BuildFolder_t::save() const {
     Owned<pylon::Node> aRoot = pylon::exportObj(AnyObject::bind(this));
     String strContents = pylon::toString(aRoot);
     String infoPath = Path.join(this->absPath, "info.pylon");
-    FSResult rc = FileSystem.makeDirsAndSaveTextIfDifferent(
-        infoPath, strContents, TextFormat::platformPreference());
+    FSResult rc = FileSystem.makeDirsAndSaveTextIfDifferent(infoPath, strContents);
     if ((rc != FSResult::OK) && (rc != FSResult::Unchanged)) {
         Error.log("Unable to save file '{}'", infoPath);
         return false;
@@ -64,8 +63,8 @@ bool isMultiConfigCMakeGenerator(StringView generator) {
 }
 
 PLY_NO_INLINE s32 buildCMakeProject(StringView cmakeListsFolder,
-                                    const CMakeGeneratorOptions& generatorOpts, StringView config,
-                                    StringView targetName) {
+                                    const CMakeGeneratorOptions& generatorOpts,
+                                    StringView config, StringView targetName) {
     PLY_ASSERT(generatorOpts.generator);
     PLY_ASSERT(config);
     String buildFolder = Path.join(cmakeListsFolder, "build");
@@ -84,7 +83,8 @@ PLY_NO_INLINE s32 buildCMakeProject(StringView cmakeListsFolder,
         if (targetName) {
             args.append(targetName);
         }
-        sub = Subprocess::exec("make", Array<StringView>{args}, buildFolder, outputType);
+        sub =
+            Subprocess::exec("make", Array<StringView>{args}, buildFolder, outputType);
     } else {
         Array<StringView> args = {"--build", "."};
         if (isMultiConfig) {
@@ -103,9 +103,12 @@ String getTargetOutputPath(BuildTargetType targetType, StringView targetName,
                            StringView buildFolderPath, StringView config) {
     PLY_ASSERT(config);
 
-    // FIXME: The following logic assumes we're always using a native toolchain. In order to make it
-    // work with cross-compilers, we'll need to pass in more information about the target platform,
-    // perhaps using ToolchainInfo. (In that case, the real question will be, in general, how to
+    // FIXME: The following logic assumes we're always using a native toolchain. In
+order to make it
+    // work with cross-compilers, we'll need to pass in more information about the
+target platform,
+    // perhaps using ToolchainInfo. (In that case, the real question will be, in
+general, how to
     // initialize that ToolchainInfo.)
     StringView filePrefix;
     StringView fileExtension;
@@ -142,10 +145,11 @@ String getTargetOutputPath(BuildTargetType targetType, StringView targetName,
 }
 */
 
-PLY_NO_INLINE bool BuildFolder_t::build(StringView config, StringView targetName) const {
-    // Note: Should we check that targetName actually exists in the build folder before invoking
-    // CMake? If targetName isn't a root target, this would require us to instaniate all
-    // dependencies first.
+PLY_NO_INLINE bool BuildFolder_t::build(StringView config,
+                                        StringView targetName) const {
+    // Note: Should we check that targetName actually exists in the build folder before
+    // invoking CMake? If targetName isn't a root target, this would require us to
+    // instaniate all dependencies first.
     if (!config) {
         config = this->activeConfig;
         if (!config) {

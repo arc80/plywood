@@ -38,22 +38,22 @@ bool Unicode::encode_point(OutStream& out, u32 codepoint) {
         // ┗━━━━━━━━┛
         if (codepoint < 0x80) {
             // 1-byte encoding: 0xxxxxxx
-            out << u8(codepoint);
+            out << char(codepoint);
         } else if (codepoint < 0x800) {
             // 2-byte encoding: 110xxxxx 10xxxxxx
-            out << u8(0xc0 | (codepoint >> 6));
-            out << u8(0x80 | (codepoint & 0x3f));
+            out << char(0xc0 | (codepoint >> 6));
+            out << char(0x80 | (codepoint & 0x3f));
         } else if (codepoint < 0x10000) {
             // 3-byte encoding: 1110xxxx 10xxxxxx 10xxxxxx
-            out << u8(0xe0 | (codepoint >> 12));
-            out << u8(0x80 | ((codepoint >> 6) & 0x3f));
-            out << u8(0x80 | ((codepoint & 0x3f)));
+            out << char(0xe0 | (codepoint >> 12));
+            out << char(0x80 | ((codepoint >> 6) & 0x3f));
+            out << char(0x80 | ((codepoint & 0x3f)));
         } else {
             // 4-byte encoding: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-            out << u8(0xf0 | (codepoint >> 18));
-            out << u8(0x80 | ((codepoint >> 12) & 0x3f));
-            out << u8(0x80 | ((codepoint >> 6) & 0x3f));
-            out << u8(0x80 | (codepoint & 0x3f));
+            out << char(0xf0 | (codepoint >> 18));
+            out << char(0x80 | ((codepoint >> 12) & 0x3f));
+            out << char(0x80 | ((codepoint >> 6) & 0x3f));
+            out << char(0x80 | (codepoint & 0x3f));
         }
 
     } else if (this->type == UTF16_Native) {

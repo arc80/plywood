@@ -12,7 +12,7 @@
 
 namespace ply {
 
-PLY_NO_INLINE TextFormat TextFormat::default() {
+PLY_NO_INLINE TextFormat TextFormat::default_utf8() {
     TextFormat tff;
 #if PLY_TARGET_WIN32
     tff.newLine = TextFormat::NewLine::CRLF;

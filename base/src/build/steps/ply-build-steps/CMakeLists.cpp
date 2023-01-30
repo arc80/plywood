@@ -313,8 +313,7 @@ endmacro()
         }
     }
 
-    FileSystem.makeDirsAndSaveTextIfDifferent(path, out.moveToString(),
-                                              TextFormat::platformPreference());
+    FileSystem.makeDirsAndSaveTextIfDifferent(path, out.moveToString());
 }
 
 } // namespace build

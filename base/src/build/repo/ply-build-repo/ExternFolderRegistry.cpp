@@ -24,7 +24,7 @@ PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
     if (!aRoot->isValid())
         return nullptr;
 
-    Owned<ExternFolder> info = pylon::import<ExternFolder>(aRoot);
+    Owned<ExternFolder> info = pylon::import <ExternFolder>(aRoot);
     info->path = std::move(path);
 
     return info;
@@ -34,8 +34,7 @@ PLY_NO_INLINE bool ExternFolder::save() const {
     auto aRoot = pylon::exportObj(AnyObject::bind(this));
     String strContents = pylon::toString(aRoot);
     String infoPath = Path.join(this->path, "info.pylon");
-    FSResult rc = FileSystem.makeDirsAndSaveTextIfDifferent(
-        infoPath, strContents, TextFormat::platformPreference());
+    FSResult rc = FileSystem.makeDirsAndSaveTextIfDifferent(infoPath, strContents);
     return (rc == FSResult::OK || rc == FSResult::Unchanged);
 }
 
@@ -87,7 +86,8 @@ PLY_NO_INLINE ExternFolder* ExternFolderRegistry::create(StringView desc) {
         makeUniqueFileName(Path.join(PLY_WORKSPACE_FOLDER, "data/extern"), desc);
     FSResult fsResult = FileSystem.makeDirs(folderPath);
     if (!(fsResult == FSResult::OK || fsResult == FSResult::AlreadyExists)) {
-        PLY_ASSERT(0);  // Don't bother to handle gracefully; this library will be deleted soon
+        PLY_ASSERT(
+            0); // Don't bother to handle gracefully; this library will be deleted soon
         return nullptr;
     }
 

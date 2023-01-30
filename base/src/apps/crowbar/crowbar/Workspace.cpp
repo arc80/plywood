@@ -44,7 +44,7 @@ PLY_NO_INLINE void Workspace_t::load() {
     importInto(AnyObject::bind(this), aRoot);
     if (!this->sourceNewLines) {
         this->sourceNewLines =
-            (TextFormat::platformPreference().newLine == TextFormat::NewLine::CRLF
+            (TextFormat::default_utf8().newLine == TextFormat::NewLine::CRLF
                  ? "crlf"
                  : "lf");
     }
@@ -64,7 +64,7 @@ PLY_NO_INLINE bool Workspace_t::save() const {
 }
 
 PLY_NO_INLINE TextFormat Workspace_t::getSourceTextFormat() const {
-    TextFormat tff = TextFormat::platformPreference();
+    TextFormat tff = TextFormat::default_utf8();
     if (this->sourceNewLines == "crlf") {
         tff.newLine = TextFormat::NewLine::CRLF;
     } else if (this->sourceNewLines == "lf") {

@@ -545,11 +545,11 @@ String performSubsts(StringView absPath, ArrayView<Subst> substs) {
         PLY_ASSERT(subst.start >= prevEndPos);
         u32 endPos = subst.start + subst.numBytes;
         PLY_ASSERT(endPos < src.numBytes);
-        mout.write({src.bytes + prevEndPos, subst.start - prevEndPos});
-        mout.write(subst.replacement);
+        mout << StringView{src.bytes + prevEndPos, subst.start - prevEndPos};
+        mout << subst.replacement;
         prevEndPos = endPos;
     }
-    mout.write({src.bytes + prevEndPos, src.numBytes - prevEndPos});
+    mout << StringView{src.bytes + prevEndPos, src.numBytes - prevEndPos};
     return mout.moveToString();
 }
 

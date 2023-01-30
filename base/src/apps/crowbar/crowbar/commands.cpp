@@ -80,7 +80,7 @@ generateCMakeProject(StringView cmakeListsFolder,
     Owned<Subprocess> sub =
         Subprocess::exec(PLY_CMAKE_PATH, Array<StringView>{args}, buildFolder,
                          Subprocess::Output::openMerged());
-    String output = InStream{TextFormat::platformPreference().createImporter(
+    String output = InStream{TextFormat::default_utf8().createImporter(
                                  {sub->readFromStdOut, false})}
                         .read_remaining_contents();
     s32 rc = sub->join();
@@ -132,8 +132,8 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
             }
         }
         String sourcePath = Path.join(sourceDir, "crowbar_bulk.cpp");
-        FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
-            sourcePath, out.moveToString(), TextFormat::platformPreference());
+        FSResult result =
+            FileSystem.makeDirsAndSaveTextIfDifferent(sourcePath, out.moveToString());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
             Error.log("Error writing {}", sourcePath);
         }
@@ -202,8 +202,8 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
         out << "del crowbar_bulk.pdb\n";
 
         String batPath = Path.join(Workspace.path, "setup.bat");
-        FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
-            batPath, out.moveToString(), TextFormat::platformPreference());
+        FSResult result =
+            FileSystem.makeDirsAndSaveTextIfDifferent(batPath, out.moveToString());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
             Error.log("Error writing {}", batPath);
         }
