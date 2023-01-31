@@ -220,6 +220,235 @@ public:
 
 #endif
 
+//   ▄▄▄▄    ▄▄▄   ▄▄▄ ▄▄        ▄▄  ▄▄
+//  ██  ██  ██    ██   ▄▄ ▄▄▄▄▄  ▄▄ ▄██▄▄ ▄▄  ▄▄
+//  ██▀▀██ ▀██▀▀ ▀██▀▀ ██ ██  ██ ██  ██   ██  ██
+//  ██  ██  ██    ██   ██ ██  ██ ██  ▀█▄▄ ▀█▄▄██
+//                                         ▄▄▄█▀
+
+#if PLY_TARGET_WIN32
+// ┏━━━━━━━━━┓
+// ┃  Win32  ┃
+// ┗━━━━━━━━━┛
+class Affinity {
+private:
+    typedef ULONG_PTR AffinityMask;
+    static const ureg MaxHWThreads = sizeof(AffinityMask) * 8;
+
+    bool m_isAccurate;
+    ureg m_numPhysicalCores;
+    ureg m_numHWThreads;
+    AffinityMask m_physicalCoreMasks[MaxHWThreads];
+
+public:
+    PLY_DLL_ENTRY Affinity();
+
+    bool isAccurate() const {
+        return m_isAccurate;
+    }
+
+    u32 getNumPhysicalCores() const {
+        return static_cast<u32>(m_numPhysicalCores);
+    }
+
+    u32 getNumHWThreads() const {
+        return static_cast<u32>(m_numHWThreads);
+    }
+
+    u32 getNumHWThreadsForCore(ureg core) const {
+        PLY_ASSERT(core < m_numPhysicalCores);
+        return static_cast<u32>(countSetBits(m_physicalCoreMasks[core]));
+    }
+
+    PLY_DLL_ENTRY bool setAffinity(ureg core, ureg hwThread);
+};
+
+#elif PLY_KERNEL_LINUX
+// ┏━━━━━━━━━┓
+// ┃  Linux  ┃
+// ┗━━━━━━━━━┛
+class Affinity_Linux {
+private:
+    struct CoreInfo {
+        std::vector<u32> hwThreadIndexToLogicalProcessor;
+    };
+    bool m_isAccurate;
+    std::vector<CoreInfo> m_coreIndexToInfo;
+    u32 m_numHWThreads;
+
+    struct CoreInfoCollector {
+        struct CoreID {
+            s32 physical;
+            s32 core;
+            CoreID() : physical(-1), core(-1) {
+            }
+            bool operator<(const CoreID& other) const {
+                if (physical != other.physical)
+                    return physical < other.physical;
+                return core < other.core;
+            }
+        };
+
+        s32 logicalProcessor;
+        CoreID coreID;
+        std::map<CoreID, u32> coreIDToIndex;
+
+        CoreInfoCollector() : logicalProcessor(-1) {
+        }
+
+        void flush(Affinity_Linux& affinity) {
+            if (logicalProcessor >= 0) {
+                if (coreID.physical < 0 && coreID.core < 0) {
+                    // On PowerPC Linux 3.2.0-4, /proc/cpuinfo outputs "processor", but not
+                    // "physical id" or "core id". Emulate a single physical CPU with N cores:
+                    coreID.physical = 0;
+                    coreID.core = logicalProcessor;
+                }
+                std::map<CoreID, u32>::iterator iter = coreIDToIndex.find(coreID);
+                u32 coreIndex;
+                if (iter == coreIDToIndex.end()) {
+                    coreIndex = (u32) affinity.m_coreIndexToInfo.size();
+                    affinity.m_coreIndexToInfo.resize(coreIndex + 1);
+                    coreIDToIndex[coreID] = coreIndex;
+                } else {
+                    coreIndex = iter->second;
+                }
+                affinity.m_coreIndexToInfo[coreIndex].hwThreadIndexToLogicalProcessor.push_back(
+                    logicalProcessor);
+                affinity.m_numHWThreads++;
+            }
+            logicalProcessor = -1;
+            coreID = CoreID();
+        }
+    };
+
+public:
+    Affinity_Linux();
+
+    bool isAccurate() const {
+        return m_isAccurate;
+    }
+
+    u32 getNumPhysicalCores() const {
+        return m_coreIndexToInfo.size();
+    }
+
+    u32 getNumHWThreads() const {
+        return m_numHWThreads;
+    }
+
+    u32 getNumHWThreadsForCore(ureg core) const {
+        return m_coreIndexToInfo[core].hwThreadIndexToLogicalProcessor.size();
+    }
+
+    bool setAffinity(ureg core, ureg hwThread);
+};
+
+#elif PLY_KERNEL_FREEBSD
+// ┏━━━━━━━━━━━┓
+// ┃  FreeBSD  ┃
+// ┗━━━━━━━━━━━┛
+class Affinity {
+private:
+    struct CoreInfo {
+        std::vector<u32> hwThreadIndexToLogicalProcessor;
+    };
+    bool m_isAccurate;
+    std::vector<CoreInfo> m_coreIndexToInfo;
+    u32 m_numHWThreads;
+
+public:
+    Affinity();
+
+    bool isAccurate() const {
+        return m_isAccurate;
+    }
+
+    u32 getNumPhysicalCores() const {
+        return m_coreIndexToInfo.size();
+    }
+
+    u32 getNumHWThreads() const {
+        return m_numHWThreads;
+    }
+
+    u32 getNumHWThreadsForCore(ureg core) const {
+        return m_coreIndexToInfo[core].hwThreadIndexToLogicalProcessor.size();
+    }
+
+    bool setAffinity(ureg core, ureg hwThread);
+};
+
+#elif PLY_KERNEL_MACH
+// ┏━━━━━━━━┓
+// ┃  Mach  ┃
+// ┗━━━━━━━━┛
+class Affinity {
+private:
+    bool m_isAccurate;
+    u32 m_numHWThreads;
+    u32 m_numPhysicalCores;
+    u32 m_hwThreadsPerCore;
+
+public:
+    Affinity()
+        : m_isAccurate(false), m_numHWThreads(1), m_numPhysicalCores(1), m_hwThreadsPerCore(1) {
+        int count;
+        // Get # of HW threads
+        size_t countLen = sizeof(count);
+        if (sysctlbyname("hw.logicalcpu", &count, &countLen, NULL, 0) == 0) {
+            if (count > 0) {
+                m_numHWThreads = (u32) count;
+                // Get # of physical cores
+                size_t countLen = sizeof(count);
+                if (sysctlbyname("hw.physicalcpu", &count, &countLen, NULL, 0) == 0) {
+                    if (count > 0) {
+                        m_numPhysicalCores = count;
+                        m_hwThreadsPerCore = u32(m_numHWThreads / count);
+                        if (m_hwThreadsPerCore < 1)
+                            m_hwThreadsPerCore = 1;
+                        else
+                            m_isAccurate = true;
+                    }
+                }
+            }
+        }
+    }
+
+    bool isAccurate() const {
+        return m_isAccurate;
+    }
+
+    u32 getNumPhysicalCores() const {
+        return m_numPhysicalCores;
+    }
+
+    u32 getNumHWThreads() const {
+        return m_numHWThreads;
+    }
+
+    u32 getNumHWThreadsForCore(ureg core) const {
+        PLY_ASSERT(core < m_numPhysicalCores);
+        return m_hwThreadsPerCore;
+    }
+
+    bool setAffinity(ureg core, ureg hwThread) {
+        PLY_ASSERT(core < m_numPhysicalCores);
+        PLY_ASSERT(hwThread < m_hwThreadsPerCore);
+        u32 index = core * m_hwThreadsPerCore + hwThread;
+        thread_t thread = mach_thread_self();
+        thread_affinity_policy_data_t policyInfo = {(integer_t) index};
+        // Note: The following returns KERN_NOT_SUPPORTED on iOS. (Tested on iOS
+        // 9.2.)
+        kern_return_t result =
+            thread_policy_set(thread, THREAD_AFFINITY_POLICY, (thread_policy_t) &policyInfo,
+                              THREAD_AFFINITY_POLICY_COUNT);
+        return (result == KERN_SUCCESS);
+    }
+};
+
+#endif
+
 //   ▄▄                          ▄▄▄          ▄▄
 //  ▄██▄▄  ▄▄▄▄  ▄▄▄▄▄▄▄  ▄▄▄▄▄   ██   ▄▄▄▄  ▄██▄▄  ▄▄▄▄   ▄▄▄▄
 //   ██   ██▄▄██ ██ ██ ██ ██  ██  ██   ▄▄▄██  ██   ██▄▄██ ▀█▄▄▄

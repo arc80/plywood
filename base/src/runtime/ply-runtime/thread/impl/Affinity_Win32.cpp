@@ -6,11 +6,9 @@
 
 #if PLY_TARGET_WIN32 && !PLY_DLL_IMPORTING
 
-#include <ply-runtime/thread/impl/Affinity_Win32.h>
-
 namespace ply {
 
-Affinity_Win32::Affinity_Win32() {
+Affinity::Affinity() {
     m_isAccurate = false;
     m_numPhysicalCores = 0;
     m_numHWThreads = 0;
@@ -58,7 +56,7 @@ Affinity_Win32::Affinity_Win32() {
     }
 }
 
-bool Affinity_Win32::setAffinity(ureg core, ureg hwThread) {
+bool Affinity::setAffinity(ureg core, ureg hwThread) {
     PLY_ASSERT(hwThread < getNumHWThreadsForCore(core));
     AffinityMask availableMask = m_physicalCoreMasks[core];
     for (AffinityMask checkMask = 1;; checkMask <<= 1) {
