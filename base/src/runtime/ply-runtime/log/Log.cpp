@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/log/Log.h>
-#include <ply-runtime/thread/TID.h>
 
 namespace ply {
 
@@ -13,7 +12,7 @@ CPUTimer::Converter LogChannel::converter;
 
 PLY_NO_INLINE LogChannel::LineHandler::LineHandler(StringView channelName) {
     CPUTimer::Point now = CPUTimer::get();
-    TID::TID tid = TID::getCurrentThreadID();
+    TID tid = getCurrentThreadID();
     this->mout << (now - startTime); // Timestamp
     this->mout.format(" 0x{}[{}] ", hex(tid), channelName);
 }

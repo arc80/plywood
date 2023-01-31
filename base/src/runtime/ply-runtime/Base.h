@@ -30,6 +30,3 @@
 #include <ply-runtime/thread/Semaphore.h>
 #include <ply-runtime/thread/Thread.h>
 #include <ply-runtime/thread/ThreadLocal.h>
-#include <ply-runtime/thread/TID.h>
-#include <ply-runtime/time/CPUTimer.h>
-#include <ply-runtime/time/DateTime.h>

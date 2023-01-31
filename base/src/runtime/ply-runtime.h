@@ -13,6 +13,213 @@
 
 namespace ply {
 
+//  ▄▄▄▄▄                    ▄▄
+//  ██  ██  ▄▄▄▄  ▄▄▄▄▄   ▄▄▄██  ▄▄▄▄  ▄▄▄▄▄▄▄
+//  ██▀▀█▄  ▄▄▄██ ██  ██ ██  ██ ██  ██ ██ ██ ██
+//  ██  ██ ▀█▄▄██ ██  ██ ▀█▄▄██ ▀█▄▄█▀ ██ ██ ██
+//
+
+// xoroshiro128** 1.0 generator seeded using misc. information from the environment.
+// Based on http://xorshift.di.unimi.it/
+class Random {
+private:
+    u64 s[2];
+
+public:
+    PLY_DLL_ENTRY Random();
+    PLY_DLL_ENTRY Random(u64 seed); // Explicit seed
+    PLY_DLL_ENTRY u64 next64();
+    PLY_INLINE u32 next32() {
+        return (u32) next64();
+    }
+    PLY_INLINE u16 next16() {
+        return (u16) next64();
+    }
+    PLY_INLINE u8 next8() {
+        return (u8) next64();
+    }
+    PLY_INLINE float nextFloat() {
+        return next32() / 4294967295.f;
+    }
+};
+
+//   ▄▄▄▄  ▄▄▄▄▄  ▄▄  ▄▄ ▄▄▄▄▄▄ ▄▄
+//  ██  ▀▀ ██  ██ ██  ██   ██   ▄▄ ▄▄▄▄▄▄▄   ▄▄▄▄  ▄▄▄▄▄
+//  ██     ██▀▀▀  ██  ██   ██   ██ ██ ██ ██ ██▄▄██ ██  ▀▀
+//  ▀█▄▄█▀ ██     ▀█▄▄█▀   ██   ██ ██ ██ ██ ▀█▄▄▄  ██
+//
+
+struct CPUTimer {
+    struct Duration {
+        using Ticks = std::chrono::high_resolution_clock::duration;
+        Ticks ticks;
+        PLY_INLINE operator s64() const {
+            return s64(ticks.count());
+        }
+    };
+
+    struct Point {
+        using Tick = std::chrono::high_resolution_clock::time_point;
+        Tick tick;
+        PLY_INLINE Point(s64 v = 0) : tick{Duration::Ticks{v}} {
+        }
+        PLY_INLINE Point(const Tick& tick) : tick{tick} {
+        }
+        PLY_INLINE Point operator+(Duration d) const {
+            return {tick + d.ticks};
+        }
+        PLY_INLINE Duration operator-(Point b) const {
+            return {tick - b.tick};
+        }
+        PLY_INLINE bool operator<(Point b) const {
+            return tick < b.tick;
+        }
+        PLY_INLINE bool operator<=(Point b) const {
+            return tick <= b.tick;
+        }
+        PLY_INLINE bool operator>(Point b) const {
+            return tick > b.tick;
+        }
+        PLY_INLINE bool operator>=(Point b) const {
+            return tick >= b.tick;
+        }
+        PLY_INLINE bool operator==(Point b) const {
+            return tick == b.tick;
+        }
+    };
+
+    PLY_INLINE static Point get() {
+        return {std::chrono::high_resolution_clock::now()};
+    }
+
+    struct Converter {
+        PLY_INLINE Converter() {
+        }
+        static PLY_INLINE float toSeconds(Duration duration) {
+            return std::chrono::duration_cast<std::chrono::duration<float>>(
+                       duration.ticks)
+                .count();
+        }
+        Duration toDuration(float seconds) const {
+            return {std::chrono::duration_cast<Duration::Ticks>(
+                std::chrono::duration<float>{seconds})};
+        }
+    };
+};
+
+//  ▄▄▄▄▄          ▄▄          ▄▄▄▄▄▄ ▄▄
+//  ██  ██  ▄▄▄▄  ▄██▄▄  ▄▄▄▄    ██   ▄▄ ▄▄▄▄▄▄▄   ▄▄▄▄
+//  ██  ██  ▄▄▄██  ██   ██▄▄██   ██   ██ ██ ██ ██ ██▄▄██
+//  ██▄▄█▀ ▀█▄▄██  ▀█▄▄ ▀█▄▄▄    ██   ██ ██ ██ ██ ▀█▄▄▄
+//
+
+struct DateTime {
+    s32 year = 0;
+    u8 month = 0;
+    u8 day = 0;
+    u8 weekday = 0; // [0, 6] -> [Sun, Sat]
+    u8 hour = 0;
+    u8 minute = 0;
+    u8 second = 0;
+    s8 timeZoneHour = 0;
+    u8 timeZoneMinute = 0;
+    u32 microseconds = 0;
+
+    // Number of microseconds since January 1, 1970 at 00:00:00 UTC.
+    static PLY_DLL_ENTRY s64 getCurrentEpochMicroseconds();
+
+    // Conversion
+    static PLY_DLL_ENTRY DateTime fromEpochMicroseconds(s64 us);
+    PLY_DLL_ENTRY s64 toEpochMicroseconds() const;
+};
+
+//  ▄▄▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄
+//    ██    ██  ██  ██
+//    ██    ██  ██  ██
+//    ██   ▄██▄ ██▄▄█▀
+//
+
+#if PLY_TARGET_WIN32
+// ┏━━━━━━━━━┓
+// ┃  Win32  ┃
+// ┗━━━━━━━━━┛
+using TID = u32;
+using PID = u32;
+
+static TID getCurrentThreadID() {
+#if PLY_CPU_X64
+    return ((DWORD*) __readgsqword(48))[18]; // Read directly from the TIB
+#elif PLY_CPU_X86
+    return ((DWORD*) __readfsdword(24))[9]; // Read directly from the TIB
+#else
+    return GetCurrentThreadID();
+#endif
+}
+
+static PID getCurrentProcessID() {
+#if PLY_CPU_X64
+    return ((DWORD*) __readgsqword(48))[16]; // Read directly from the TIB
+#elif PLY_CPU_X86
+    return ((DWORD*) __readfsdword(24))[8]; // Read directly from the TIB
+#else
+    return GetCurrentProcessID();
+#endif
+}
+
+#elif PLY_KERNEL_MACH
+// ┏━━━━━━━━┓
+// ┃  Mach  ┃
+// ┗━━━━━━━━┛
+class TID {
+public:
+    using TID = SizedInt<sizeof(thread_port_t)>::Unsigned;
+    using PID = SizedInt<sizeof(pid_t)>::Unsigned;
+
+    static TID getCurrentThreadID() {
+        return pthread_mach_thread_np(pthread_self());
+    }
+
+    static PID getCurrentProcessID() {
+        return getpid();
+    }
+};
+
+#elif PLY_TARGET_POSIX
+// ┏━━━━━━━━━┓
+// ┃  POSIX  ┃
+// ┗━━━━━━━━━┛
+class TID {
+public:
+#ifdef PLY_TARGET_MINGW
+    typedef uptr TID;
+#else
+    // This only works when pthread_t is an integer type, as it is in the GNU C Library
+    // >= 2.3.3. If that's not true for your Pthreads library, we'll need to extend
+    // Plywood to fetch TIDs from somewehere else in the environment.
+    using TID = SizedInt<sizeof(pthread_t)>::Unsigned;
+#endif
+    using PID = SizedInt<sizeof(pid_t)>::Unsigned;
+
+    static TID getCurrentThreadID() {
+        // FIXME: On Linux, would the kernel task ID be more useful for debugging?
+        // If so, detect NPTL at compile time and create TID_NPTL.h which uses gettid()
+        // instead.
+#ifdef PLY_KERNEL_FREEBSD
+        return pthread_getthreadid_np();
+#elif PLY_TARGET_MINGW
+        return (TID) pthread_self().p;
+#else
+        return pthread_self();
+#endif
+    }
+
+    static PID getCurrentProcessID() {
+        return getpid();
+    }
+};
+
+#endif
+
 //   ▄▄                          ▄▄▄          ▄▄
 //  ▄██▄▄  ▄▄▄▄  ▄▄▄▄▄▄▄  ▄▄▄▄▄   ██   ▄▄▄▄  ▄██▄▄  ▄▄▄▄   ▄▄▄▄
 //   ██   ██▄▄██ ██ ██ ██ ██  ██  ██   ▄▄▄██  ██   ██▄▄██ ▀█▄▄▄

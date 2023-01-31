@@ -2,11 +2,9 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-runtime/Precomp.h>
+#include <ply-runtime.h>
 
 #if !PLY_DLL_IMPORTING
-
-#include <ply-runtime/time/DateTime.h>
 
 namespace ply {
 

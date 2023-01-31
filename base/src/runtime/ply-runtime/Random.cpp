@@ -2,12 +2,8 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-runtime/Precomp.h>
-#include <ply-runtime/Random.h>
-#include <ply-runtime/time/DateTime.h>
-#include <ply-runtime/time/CPUTimer.h>
+#include <ply-runtime.h>
 #include <ply-platform/Util.h>
-#include <ply-runtime/thread/TID.h>
 
 namespace ply {
 
@@ -18,7 +14,7 @@ PLY_NO_INLINE Random::Random() {
     s[0] = avalanche(t | 1);
 
     t = u64(CPUTimer::get() - CPUTimer::Point{0});
-    t = avalanche(t) + (avalanche(TID::getCurrentThreadID()) << 1);
+    t = avalanche(t) + (avalanche(getCurrentThreadID()) << 1);
     s[1] = avalanche(t | 1);
 
     for (ureg i = 0; i < 10; i++)
