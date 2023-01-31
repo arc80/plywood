@@ -9,7 +9,6 @@
 #include <ply-runtime/container/Owned.h>
 #include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
-#include <ply-runtime/thread/ThreadLocal.h>
 #include <ws2tcpip.h>
 
 namespace ply {

@@ -5,7 +5,6 @@
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/string/String.h>
-#include <ply-runtime/thread/Thread.h>
 #include <ply-runtime/container/Func.h>
 
 namespace ply {

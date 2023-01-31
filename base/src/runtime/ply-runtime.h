@@ -11,6 +11,15 @@
 #include <mutex>
 #include <condition_variable>
 
+#if PLY_TARGET_POSIX
+#include <errno.h>
+#if PLY_KERNEL_MACH
+#include <mach/mach.h>
+#else
+#include <semaphore.h>
+#endif
+#endif
+
 namespace ply {
 
 //  ▄▄▄▄▄                    ▄▄
@@ -218,7 +227,7 @@ public:
     }
 };
 
-#endif
+#endif // TID
 
 //   ▄▄▄▄    ▄▄▄   ▄▄▄ ▄▄        ▄▄  ▄▄
 //  ██  ██  ██    ██   ▄▄ ▄▄▄▄▄  ▄▄ ▄██▄▄ ▄▄  ▄▄
@@ -447,13 +456,13 @@ public:
     }
 };
 
-#endif
+#endif // Affinity
 
-//   ▄▄                          ▄▄▄          ▄▄
-//  ▄██▄▄  ▄▄▄▄  ▄▄▄▄▄▄▄  ▄▄▄▄▄   ██   ▄▄▄▄  ▄██▄▄  ▄▄▄▄   ▄▄▄▄
-//   ██   ██▄▄██ ██ ██ ██ ██  ██  ██   ▄▄▄██  ██   ██▄▄██ ▀█▄▄▄
-//   ▀█▄▄ ▀█▄▄▄  ██ ██ ██ ██▄▄█▀ ▄██▄ ▀█▄▄██  ▀█▄▄ ▀█▄▄▄   ▄▄▄█▀
-//                        ██
+//  ▄▄▄▄▄▄                        ▄▄▄          ▄▄
+//    ██    ▄▄▄▄  ▄▄▄▄▄▄▄  ▄▄▄▄▄   ██   ▄▄▄▄  ▄██▄▄  ▄▄▄▄   ▄▄▄▄
+//    ██   ██▄▄██ ██ ██ ██ ██  ██  ██   ▄▄▄██  ██   ██▄▄██ ▀█▄▄▄
+//    ██   ▀█▄▄▄  ██ ██ ██ ██▄▄█▀ ▄██▄ ▀█▄▄██  ▀█▄▄ ▀█▄▄▄   ▄▄▄█▀
+//                         ██
 
 namespace subst {
 
@@ -944,6 +953,210 @@ public:
     }
 };
 
+//  ▄▄▄▄▄                    ▄▄ ▄▄    ▄▄        ▄▄                 ▄▄
+//  ██  ██  ▄▄▄▄   ▄▄▄▄   ▄▄▄██ ██ ▄▄ ██ ▄▄▄▄▄  ██     ▄▄▄▄   ▄▄▄▄ ██  ▄▄
+//  ██▀▀█▄ ██▄▄██  ▄▄▄██ ██  ██ ▀█▄██▄█▀ ██  ▀▀ ██    ██  ██ ██    ██▄█▀
+//  ██  ██ ▀█▄▄▄  ▀█▄▄██ ▀█▄▄██  ██▀▀██  ██     ██▄▄▄ ▀█▄▄█▀ ▀█▄▄▄ ██ ▀█▄
+//
+
+#if PLY_TARGET_WIN32
+// ┏━━━━━━━━━┓
+// ┃  Win32  ┃
+// ┗━━━━━━━━━┛
+class ReadWriteLock {
+private:
+    SRWLOCK m_rwLock;
+
+public:
+    ReadWriteLock() {
+        InitializeSRWLock(&m_rwLock);
+    }
+
+    ~ReadWriteLock() {
+        // SRW locks do not need to be destroyed.
+    }
+
+    void lockExclusive() {
+        AcquireSRWLockExclusive(&m_rwLock);
+    }
+
+    void unlockExclusive() {
+        ReleaseSRWLockExclusive(&m_rwLock);
+    }
+
+    void lockShared() {
+        AcquireSRWLockShared(&m_rwLock);
+    }
+
+    void unlockShared() {
+        ReleaseSRWLockShared(&m_rwLock);
+    }
+};
+
+#elif PLY_TARGET_POSIX
+// ┏━━━━━━━━━┓
+// ┃  POSIX  ┃
+// ┗━━━━━━━━━┛
+class ReadWriteLock {
+private:
+    pthread_rwlock_t m_rwLock;
+
+public:
+    ReadWriteLock() {
+        pthread_rwlock_init(&m_rwLock, NULL);
+    }
+
+    ~ReadWriteLock() {
+        pthread_rwlock_destroy(&m_rwLock);
+    }
+
+    void lockExclusive() {
+        pthread_rwlock_wrlock(&m_rwLock);
+    }
+
+    void unlockExclusive() {
+        pthread_rwlock_unlock(&m_rwLock);
+    }
+
+    void lockShared() {
+        pthread_rwlock_rdlock(&m_rwLock);
+    }
+
+    void unlockShared() {
+        pthread_rwlock_unlock(&m_rwLock);
+    }
+};
+
+#endif // ReadWriteLock
+
+// ┏━━━━━━━━━━━━━━━━━━━┓
+// ┃  SharedLockGuard  ┃
+// ┗━━━━━━━━━━━━━━━━━━━┛
+template <typename LockType> class SharedLockGuard {
+private:
+    LockType& m_lock;
+
+public:
+    SharedLockGuard(LockType& lock) : m_lock(lock) {
+        m_lock.lockShared();
+    }
+
+    ~SharedLockGuard() {
+        m_lock.unlockShared();
+    }
+};
+
+// ┏━━━━━━━━━━━━━━━━━━━━━━┓
+// ┃  ExclusiveLockGuard  ┃
+// ┗━━━━━━━━━━━━━━━━━━━━━━┛
+template <typename LockType> class ExclusiveLockGuard {
+private:
+    LockType& m_lock;
+
+public:
+    ExclusiveLockGuard(LockType& lock) : m_lock(lock) {
+        m_lock.lockExclusive();
+    }
+
+    ~ExclusiveLockGuard() {
+        m_lock.unlockExclusive();
+    }
+};
+
+//   ▄▄▄▄                                ▄▄
+//  ██  ▀▀  ▄▄▄▄  ▄▄▄▄▄▄▄   ▄▄▄▄  ▄▄▄▄▄  ██▄▄▄   ▄▄▄▄  ▄▄▄▄▄   ▄▄▄▄
+//   ▀▀▀█▄ ██▄▄██ ██ ██ ██  ▄▄▄██ ██  ██ ██  ██ ██  ██ ██  ▀▀ ██▄▄██
+//  ▀█▄▄█▀ ▀█▄▄▄  ██ ██ ██ ▀█▄▄██ ██▄▄█▀ ██  ██ ▀█▄▄█▀ ██     ▀█▄▄▄
+//                                ██
+
+#if PLY_TARGET_WIN32
+// ┏━━━━━━━━━┓
+// ┃  Win32  ┃
+// ┗━━━━━━━━━┛
+class Semaphore {
+private:
+    HANDLE m_sem;
+
+public:
+    Semaphore() {
+        m_sem = CreateSemaphore(NULL, 0, INT32_MAX, NULL);
+    }
+
+    ~Semaphore() {
+        CloseHandle(m_sem);
+    }
+
+    void wait() {
+        WaitForSingleObject(m_sem, INFINITE);
+    }
+
+    void signal(ureg count = 1) {
+        ReleaseSemaphore(m_sem, (DWORD) count, NULL);
+    }
+};
+
+#elif PLY_KERNEL_MACH
+// ┏━━━━━━━━┓
+// ┃  Mach  ┃
+// ┗━━━━━━━━┛
+// Mach can't use POSIX semaphores due to
+// http://lists.apple.com/archives/darwin-kernel/2009/Apr/msg00010.html
+class Semaphore {
+private:
+    semaphore_t m_semaphore;
+
+public:
+    Semaphore() {
+        semaphore_create(mach_task_self(), &m_semaphore, SYNC_POLICY_FIFO, 0);
+    }
+
+    ~Semaphore() {
+        semaphore_destroy(mach_task_self(), m_semaphore);
+    }
+
+    void wait() {
+        semaphore_wait(m_semaphore);
+    }
+
+    void signal(ureg count = 1) {
+        while (count-- > 0)
+            semaphore_signal(m_semaphore);
+    }
+};
+
+#elif PLY_TARGET_POSIX
+// ┏━━━━━━━━━┓
+// ┃  POSIX  ┃
+// ┗━━━━━━━━━┛
+class Semaphore {
+private:
+    sem_t m_sem;
+
+public:
+    Semaphore() {
+        sem_init(&m_sem, 0, 0);
+    }
+
+    ~Semaphore() {
+        sem_destroy(&m_sem);
+    }
+
+    void wait() {
+        // http://stackoverflow.com/questions/2013181/gdb-causes-sem-wait-to-fail-with-eintr-error
+        int rc;
+        do {
+            rc = sem_wait(&m_sem);
+        } while (rc == -1 && errno == EINTR);
+    }
+
+    void signal(ureg count = 1) {
+        while (count-- > 0)
+            sem_post(&m_sem);
+    }
+};
+
+#endif // Semaphore
+
 //   ▄▄▄▄                    ▄▄ ▄▄  ▄▄   ▄▄               ▄▄   ▄▄
 //  ██  ▀▀  ▄▄▄▄  ▄▄▄▄▄   ▄▄▄██ ▄▄ ▄██▄▄ ▄▄  ▄▄▄▄  ▄▄▄▄▄  ██   ██  ▄▄▄▄  ▄▄▄▄▄
 //  ██     ██  ██ ██  ██ ██  ██ ██  ██   ██ ██  ██ ██  ██  ██ ██   ▄▄▄██ ██  ▀▀
@@ -972,6 +1185,247 @@ public:
         m_condVar.notify_all();
     }
 };
+
+//  ▄▄▄▄▄▄ ▄▄                              ▄▄
+//    ██   ██▄▄▄  ▄▄▄▄▄   ▄▄▄▄   ▄▄▄▄   ▄▄▄██
+//    ██   ██  ██ ██  ▀▀ ██▄▄██  ▄▄▄██ ██  ██
+//    ██   ██  ██ ██     ▀█▄▄▄  ▀█▄▄██ ▀█▄▄██
+//
+
+#define PLY_THREAD_STARTCALL
+
+class Thread {
+protected:
+    std::thread thread;
+
+public:
+    typedef void* ReturnType;
+    typedef void* (*StartRoutine)(void*);
+
+    PLY_INLINE Thread() = default;
+
+    template <typename Callable>
+    PLY_INLINE Thread(Callable&& callable) : thread{std::forward<Callable>(callable)} {
+    }
+
+    PLY_INLINE ~Thread() {
+        if (this->thread.joinable())
+            this->thread.detach();
+    }
+
+    PLY_INLINE bool isValid() const {
+        return this->thread.joinable();
+    }
+
+    PLY_INLINE void join() {
+        this->thread.join();
+    }
+
+    template <typename Callable>
+    PLY_INLINE void run(Callable&& callable) {
+        if (this->thread.joinable())
+            this->thread.detach();
+        this->thread = std::thread(std::forward<Callable>(callable));
+    }
+
+    static PLY_INLINE void sleepMillis(ureg millis) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(millis));
+    }
+};
+
+//  ▄▄▄▄▄▄ ▄▄                              ▄▄ ▄▄                        ▄▄▄
+//    ██   ██▄▄▄  ▄▄▄▄▄   ▄▄▄▄   ▄▄▄▄   ▄▄▄██ ██     ▄▄▄▄   ▄▄▄▄  ▄▄▄▄   ██
+//    ██   ██  ██ ██  ▀▀ ██▄▄██  ▄▄▄██ ██  ██ ██    ██  ██ ██     ▄▄▄██  ██
+//    ██   ██  ██ ██     ▀█▄▄▄  ▀█▄▄██ ▀█▄▄██ ██▄▄▄ ▀█▄▄█▀ ▀█▄▄▄ ▀█▄▄██ ▄██▄
+//
+
+// Used as the return value of ThreadLocal::setInScope()
+template <template <typename> class TL, typename T>
+class ThreadLocalScope {
+private:
+    TL<T>* var;
+    T oldValue;
+
+public:
+    PLY_INLINE ThreadLocalScope(TL<T>* var, T newValue) : var{var} {
+        this->oldValue = var->load();
+        var->store(newValue);
+    }
+
+    ThreadLocalScope(const ThreadLocalScope&) = delete;
+    PLY_INLINE ThreadLocalScope(ThreadLocalScope&& other) {
+        this->var = other->var;
+        this->oldValue = std::move(other.oldValue);
+        other->var = nullptr;
+    }
+
+    ~ThreadLocalScope() {
+        if (this->var) {
+            this->var->store(this->oldValue);
+        }
+    }
+};
+
+#if PLY_TARGET_WIN32
+// ┏━━━━━━━━━┓
+// ┃  Win32  ┃
+// ┗━━━━━━━━━┛
+template <typename T>
+class ThreadLocal {
+private:
+    PLY_STATIC_ASSERT(sizeof(T) <= PLY_PTR_SIZE);
+    DWORD m_tlsIndex;
+
+public:
+    PLY_INLINE ThreadLocal() {
+        m_tlsIndex = TlsAlloc();
+        PLY_ASSERT(m_tlsIndex != TLS_OUT_OF_INDEXES);
+    }
+
+    ThreadLocal(const ThreadLocal&) = delete;
+
+    PLY_INLINE ~ThreadLocal() {
+        BOOL rc = TlsFree(m_tlsIndex);
+        PLY_ASSERT(rc != 0);
+        PLY_UNUSED(rc);
+    }
+
+    template <typename U = T, std::enable_if_t<std::is_pointer<U>::value, int> = 0>
+    PLY_INLINE U load() const {
+        LPVOID value = TlsGetValue(m_tlsIndex);
+        PLY_ASSERT(value != 0 || GetLastError() == ERROR_SUCCESS);
+        return (T) value;
+    }
+
+    template <typename U = T,
+              std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
+    PLY_INLINE U load() const {
+        LPVOID value = TlsGetValue(m_tlsIndex);
+        PLY_ASSERT(value != 0 || GetLastError() == ERROR_SUCCESS);
+        return (T)(uptr) value;
+    }
+
+    PLY_INLINE void store(T value) {
+        BOOL rc = TlsSetValue(m_tlsIndex, (LPVOID) value);
+        PLY_ASSERT(rc != 0);
+        PLY_UNUSED(rc);
+    }
+
+    // In C++11, you can write auto scope = myTLvar.setInScope(value);
+    using Scope = ThreadLocalScope<ThreadLocal, T>;
+    PLY_INLINE Scope setInScope(T value) {
+        return {this, value};
+    }
+};
+
+#elif PLY_TARGET_POSIX
+// ┏━━━━━━━━━┓
+// ┃  POSIX  ┃
+// ┗━━━━━━━━━┛
+template <typename T>
+class ThreadLocal {
+private:
+    PLY_STATIC_ASSERT(sizeof(T) <= PLY_PTR_SIZE);
+    pthread_key_t m_tlsKey;
+
+public:
+    PLY_INLINE ThreadLocal() {
+        int rc = pthread_key_create(&m_tlsKey, NULL);
+        PLY_ASSERT(rc == 0);
+        PLY_UNUSED(rc);
+    }
+
+    ThreadLocal(const ThreadLocal&) = delete;
+
+    PLY_INLINE ~ThreadLocal() {
+        int rc = pthread_key_delete(m_tlsKey);
+        PLY_ASSERT(rc == 0);
+        PLY_UNUSED(rc);
+    }
+
+    template <typename U = T, std::enable_if_t<std::is_pointer<U>::value, int> = 0>
+    PLY_INLINE U load() const {
+        void* value = pthread_getspecific(m_tlsKey);
+        return (T) value;
+    }
+
+    template <typename U = T,
+              std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
+    PLY_INLINE U load() const {
+        void* value = pthread_getspecific(m_tlsKey);
+        return (T)(uptr) value;
+    }
+
+    template <typename U = T,
+              std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
+    PLY_INLINE void store(U value) {
+        int rc = pthread_setspecific(m_tlsKey, (void*) (uptr) value);
+        PLY_ASSERT(rc == 0);
+        PLY_UNUSED(rc);
+    }
+
+    // In C++11, you can write auto scope = myTLvar.setInScope(value);
+    using Scope = ThreadLocalScope<ThreadLocal, T>;
+    PLY_INLINE Scope setInScope(T value) {
+        return {this, value};
+    }
+};
+
+#endif // ThreadLocal
+
+//  ▄▄▄▄▄                      ▄▄▄▄▄          ▄▄                 ▄▄
+//  ██  ██  ▄▄▄▄   ▄▄▄▄  ▄▄▄▄  ██  ██  ▄▄▄▄  ▄██▄▄  ▄▄▄▄   ▄▄▄▄ ▄██▄▄  ▄▄▄▄  ▄▄▄▄▄
+//  ██▀▀█▄  ▄▄▄██ ██    ██▄▄██ ██  ██ ██▄▄██  ██   ██▄▄██ ██     ██   ██  ██ ██  ▀▀
+//  ██  ██ ▀█▄▄██ ▀█▄▄▄ ▀█▄▄▄  ██▄▄█▀ ▀█▄▄▄   ▀█▄▄ ▀█▄▄▄  ▀█▄▄▄  ▀█▄▄ ▀█▄▄█▀ ██
+//
+
+#if PLY_WITH_ASSERTS
+
+class RaceDetector {
+private:
+    ply::Atomic<u8> m_entered = 0;
+
+public:
+    void enter() {
+        if (m_entered.exchange(1, ply::Acquire) != 0) {
+            PLY_FORCE_CRASH();
+        }
+    }
+    void exit() {
+        if (m_entered.exchange(0, ply::Acquire) != 1) {
+            PLY_FORCE_CRASH();
+        }
+    }
+};
+
+class RaceDetectGuard {
+private:
+    RaceDetector& m_guard;
+
+public:
+    RaceDetectGuard(RaceDetector& guard) : m_guard(guard) {
+        m_guard.enter();
+    }
+    ~RaceDetectGuard() {
+        m_guard.exit();
+    }
+};
+
+#define PLY_DEFINE_RACE_DETECTOR(name) mutable ply::RaceDetector name;
+#define PLY_RACE_DETECT_GUARD(name) ply::RaceDetectGuard PLY_UNIQUE_VARIABLE(raceDetectGuard)(name)
+#define PLY_RACE_DETECT_ENTER(name) name.enter()
+#define PLY_RACE_DETECT_EXIT(name) name.exit()
+
+#else
+
+// clang-format off
+#define PLY_DEFINE_RACE_DETECTOR(name)
+#define PLY_RACE_DETECT_GUARD(name) do {} while (0)
+#define PLY_RACE_DETECT_ENTER(name) do {} while (0)
+#define PLY_RACE_DETECT_EXIT(name) do {} while (0)
+// clang-format on
+
+#endif // RaceDetector
 
 //  ▄▄   ▄▄                 ▄▄▄▄▄
 //  ███▄███  ▄▄▄▄  ▄▄▄▄▄▄▄  ██  ██  ▄▄▄▄   ▄▄▄▄▄  ▄▄▄▄

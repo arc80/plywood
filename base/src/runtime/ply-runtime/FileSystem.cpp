@@ -316,9 +316,9 @@ Path_t FileSystem_t::pathFormat() {
 FSResult FileSystem_t::setWorkingDirectory(StringView path) {
     BOOL rc;
     {
-        // This RWLock is used to mitigate data race issues with SetCurrentDirectoryW:
+        // This ReadWriteLock is used to mitigate data race issues with SetCurrentDirectoryW:
         // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setcurrentdirectory
-        ExclusiveLockGuard<RWLock> guard{this->workingDirLock};
+        ExclusiveLockGuard<ReadWriteLock> guard{this->workingDirLock};
         rc = SetCurrentDirectoryW(win32PathArg(path));
     }
     if (rc) {
@@ -342,10 +342,10 @@ String FileSystem_t::getWorkingDirectory() {
         WString win32Path = WString::allocate(numUnitsWithNullTerm);
         DWORD rc;
         {
-            // This RWLock is used to mitigate data race issues with
+            // This ReadWriteLock is used to mitigate data race issues with
             // SetCurrentDirectoryW:
             // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setcurrentdirectory
-            SharedLockGuard<RWLock> guard{this->workingDirLock};
+            SharedLockGuard<ReadWriteLock> guard{this->workingDirLock};
             rc = GetCurrentDirectoryW(numUnitsWithNullTerm, (LPWSTR) win32Path.units);
         }
         if (rc == 0) {

@@ -25,7 +25,3 @@
 #include <ply-runtime/network/Socket.h>
 #include <ply-runtime/process/Subprocess.h>
 #include <ply-runtime/string/Label.h>
-#include <ply-runtime/thread/RWLock.h>
-#include <ply-runtime/thread/Semaphore.h>
-#include <ply-runtime/thread/Thread.h>
-#include <ply-runtime/thread/ThreadLocal.h>

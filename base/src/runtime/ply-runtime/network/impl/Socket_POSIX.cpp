@@ -7,7 +7,6 @@
 #if PLY_TARGET_POSIX
 
 #include <ply-runtime/network/impl/Socket_POSIX.h>
-#include <ply-runtime/thread/Thread.h>
 #include <ply-runtime/io/OutStream.h>
 #include <netinet/in.h>
 #include <unistd.h>

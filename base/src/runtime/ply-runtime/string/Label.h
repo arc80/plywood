@@ -7,7 +7,6 @@
 #include <ply-runtime/container/BigPool.h>
 #include <ply-runtime/container/HashMap.h>
 #include <ply-runtime/string/impl/LabelEncoder.h>
-#include <ply-runtime/thread/RaceDetector.h>
 
 namespace ply {
 

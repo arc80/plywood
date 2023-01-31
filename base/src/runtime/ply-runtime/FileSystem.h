@@ -7,7 +7,6 @@
 
 #pragma once
 #include <ply-runtime.h>
-#include <ply-runtime/thread/ThreadLocal.h>
 #include <ply-runtime/Path.h>
 #include <ply-runtime/container/Tuple.h>
 #include <ply-runtime/container/Owned.h>
@@ -15,7 +14,6 @@
 #include <ply-runtime/io/InStream.h>
 #include <ply-runtime/io/OutStream.h>
 #include <ply-runtime/io/text/TextFormat.h>
-#include <ply-runtime/thread/RWLock.h>
 
 namespace ply {
 
@@ -149,9 +147,9 @@ struct FileSystemIface {
 
 struct FileSystem_t : FileSystemIface {
 #if PLY_TARGET_WIN32
-    // RWLock used to mitigate data race issues with SetCurrentDirectoryW:
+    // ReadWriteLock used to mitigate data race issues with SetCurrentDirectoryW:
     // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setcurrentdirectory
-    RWLock workingDirLock;
+    ReadWriteLock workingDirLock;
 
     // Direct access to Windows handles:
     HANDLE openHandleForRead(StringView path);

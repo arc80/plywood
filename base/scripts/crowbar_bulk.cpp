@@ -55,7 +55,6 @@
 #include "../src/runtime/ply-runtime/Heap.cpp"
 #include "../src/runtime/ply-runtime/MemPage.cpp"
 #include "../src/runtime/ply-runtime/Path.cpp"
-#include "../src/runtime/ply-runtime/Precomp.cpp"
 #include "../src/runtime/ply-runtime/Random.cpp"
 #include "../src/runtime/ply-runtime/container/BigPool.cpp"
 #include "../src/runtime/ply-runtime/container/BlockList.cpp"
