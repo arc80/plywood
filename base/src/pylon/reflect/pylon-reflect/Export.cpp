@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <pylon-reflect/Core.h>
 #include <pylon-reflect/Export.h>
-#include <ply-runtime/Algorithm.h>
 
 namespace pylon {
 
@@ -32,7 +31,7 @@ PLY_NO_INLINE Owned<pylon::Node> exportObj(AnyObject obj, const FilterFunc& filt
         impl::BaseArray* arr = (impl::BaseArray*) obj.data;
         Array<Owned<Node>>& childNodes = arrNode->array();
         childNodes.resize(arr->m_numItems);
-        for (u32 i : range(arr->m_numItems)) {
+        for (u32 i = 0; i < arr->m_numItems; i++) {
             childNodes[i] =
                 exportObj({PLY_PTR_OFFSET(arr->m_items, itemSize * i), itemType}, filter);
         }

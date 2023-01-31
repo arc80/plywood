@@ -6,7 +6,6 @@
 #include <ply-reflect/builtin/TypeDescriptor_FixedArray.h>
 #include <ply-reflect/builtin/TypeDescriptor_Array.h>
 #include <ply-reflect/AnyObject.h>
-#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 
@@ -27,8 +26,7 @@ NativeBindings& getNativeBindings_FixedArray() {
             TypeDescriptor* itemType = arrType->itemType;
             u32 itemSize = itemType->fixedSize;
             void* item = obj.data;
-            for (u32 i : range(arrType->numItems)) {
-                PLY_UNUSED(i);
+            for (u32 i = 0; i < arrType->numItems; i++) {
                 itemType->bindings.construct({item, itemType});
                 item = PLY_PTR_OFFSET(item, itemSize);
             }
@@ -39,8 +37,7 @@ NativeBindings& getNativeBindings_FixedArray() {
             TypeDescriptor* itemType = arrType->itemType;
             u32 itemSize = itemType->fixedSize;
             void* item = obj.data;
-            for (u32 i : range(arrType->numItems)) {
-                PLY_UNUSED(i);
+            for (u32 i = 0; i < arrType->numItems; i++) {
                 itemType->bindings.destruct({item, itemType});
                 item = PLY_PTR_OFFSET(item, itemSize);
             }

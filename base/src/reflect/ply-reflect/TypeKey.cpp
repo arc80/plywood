@@ -9,7 +9,6 @@
 #include <ply-reflect/PersistWrite.h>
 #include <ply-runtime/container/Numeric.h>
 #include <ply-runtime/container/Boxed.h>
-#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 
@@ -242,8 +241,7 @@ TypeKey TypeKey_FixedArray{
         TypeDescriptor* itemType = fixedArrayType->itemType;
         u32 itemSize = itemType->fixedSize;
         void* item = obj.data;
-        for (u32 i : range(fixedArrayType->numItems)) {
-            PLY_UNUSED(i);
+        for (u32 i = 0; i < fixedArrayType->numItems; i++) {
             itemType->typeKey->write(AnyObject{item, itemType}, context);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
@@ -273,8 +271,7 @@ TypeKey TypeKey_FixedArray{
         TypeDescriptor* itemType = fixedArrayType->itemType;
         u32 itemSize = itemType->fixedSize;
         void* item = obj.data;
-        for (u32 i : range(fixedArrayType->numItems)) {
-            PLY_UNUSED(i);
+        for (u32 i = 0; i < fixedArrayType->numItems; i++) {
             itemType->typeKey->read(AnyObject{item, itemType}, context, itemFormat);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
@@ -317,8 +314,7 @@ TypeKey TypeKey_Array{
         void* item = arr->m_items;
         PLY_ASSERT(arr->m_numItems <= UINT32_MAX);
         context->out.write<u32>((u32) arr->m_numItems);
-        for (u32 i : range(arr->m_numItems)) {
-            PLY_UNUSED(i);
+        for (u32 i = 0; i < arr->m_numItems; i++) {
             itemType->typeKey->write(AnyObject{item, itemType}, context);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
@@ -348,8 +344,7 @@ TypeKey TypeKey_Array{
         // FIXME: Destruct existing elements if array not empty
         arr->realloc(arrSize, itemSize);
         void* item = arr->m_items;
-        for (u32 i : range((u32) arrSize)) {
-            PLY_UNUSED(i);
+        for (u32 i = 0; i < arrSize; i++) {
             AnyObject typedItem{item, itemType};
             itemType->bindings.construct(typedItem);
             itemType->typeKey->read(typedItem, context, itemFormat);

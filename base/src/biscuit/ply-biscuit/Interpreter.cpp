@@ -5,7 +5,6 @@
 #include <ply-biscuit/Core.h>
 #include <ply-biscuit/Interpreter.h>
 #include <ply-reflect/methods/BoundMethod.h>
-#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 namespace biscuit {
@@ -180,7 +179,7 @@ FnResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* call) 
         };
         newFrame.tkr = functionDef->tkr;
         newFrame.prevFrame = frame;
-        for (u32 argIndex : range(args.numItems())) {
+        for (u32 argIndex = 0; argIndex < args.numItems(); argIndex++) {
             AnyObject* value;
             newFrame.localVariableTable.insertOrFind(functionDef->parameterNames[argIndex], &value);
             *value = args[argIndex];

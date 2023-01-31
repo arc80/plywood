@@ -9,7 +9,6 @@
 #include <ply-reflect/TypedArray.h>
 #include <ply-reflect/AnySavedObject.h>
 #include <ply-runtime/container/Boxed.h>
-#include <ply-runtime/Algorithm.h>
 #include <map>
 
 namespace ply {
@@ -57,7 +56,7 @@ void WriteFormatContext::writeChildFormatDesc(TypeDescriptor* typeDesc) {
 WriteFormatContext::WriteFormatContext(OutStream& out) : m_out{out} {
     // Initialize m_typeToFormatID with built-in types
     PLY_ASSERT(BuiltInTypeDescs.numItems() == (u32) FormatKey::StartUserKeyRange);
-    for (u32 builtinIndex : range(BuiltInTypeDescs.numItems())) {
+    for (u32 builtinIndex = 0; builtinIndex < BuiltInTypeDescs.numItems(); builtinIndex++) {
         const auto& builtin = BuiltInTypeDescs[builtinIndex];
         PLY_ASSERT((u32) builtin.key == builtinIndex);
         if (builtin.type) {
@@ -152,13 +151,6 @@ void WriteFormatContext::writeEnumEntry(const String& name) {
 
 void WriteFormatContext::endEnum() {
     // FIXME: Verify that the correct number of entries was written
-}
-
-void WriteFormatContext::writeEnumIndexedArray(TypeDescriptor* itemType,
-                                               TypeDescriptor_Enum* enumType) {
-    m_out.write<u8>((u8) FormatKey::EnumIndexedArray);
-    writeChildFormatDesc(itemType);
-    writeChildFormatDesc(enumType);
 }
 
 void WriteFormatContext::beginSwitch(const String& name, u32 numStates) {

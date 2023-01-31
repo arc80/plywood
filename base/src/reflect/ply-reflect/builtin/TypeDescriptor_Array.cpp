@@ -5,7 +5,6 @@
 #include <ply-reflect/Core.h>
 #include <ply-reflect/builtin/TypeDescriptor_Array.h>
 #include <ply-reflect/AnyObject.h>
-#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 
@@ -31,8 +30,7 @@ NativeBindings& getNativeBindings_Array() {
             u32 itemSize = itemType->fixedSize;
             // FIXME: Skip this loop if itemType is trivially
             // destructible (Need a way to determine that)
-            for (u32 i : range(arr->m_numItems)) {
-                PLY_UNUSED(i);
+            for (u32 i = 0; i < arr->m_numItems; i++) {
                 itemType->bindings.destruct({item, itemType});
                 item = PLY_PTR_OFFSET(item, itemSize);
             }

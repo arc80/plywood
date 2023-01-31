@@ -9,7 +9,6 @@
 #include <ply-cpp/PPVisitedFiles.h>
 #include <ply-runtime/io/text/TextFormat.h>
 #include <ply-cpp/ErrorFormatting.h>
-#include <ply-runtime/Algorithm.h>
 
 //                              ▄▄
 //  ▄▄▄▄▄   ▄▄▄▄  ▄▄▄▄▄   ▄▄▄▄  ▄▄ ▄▄▄▄▄   ▄▄▄▄▄
@@ -614,7 +613,7 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
             virtual void write(OutStream& out) override {
                 out.format("PLY_ENUM_BEGIN({}, {})\n", this->enum_->namespacePrefix,
                              this->enum_->enumName);
-                for (u32 i : range(this->enum_->enumerators.numItems())) {
+                for (u32 i = 0; i < this->enum_->enumerators.numItems(); i++) {
                     StringView enumerator = this->enum_->enumerators[i];
                     if ((i != this->enum_->enumerators.numItems() - 1) || (enumerator != "Count")) {
                         out.format("PLY_ENUM_IDENTIFIER({})\n", enumerator);

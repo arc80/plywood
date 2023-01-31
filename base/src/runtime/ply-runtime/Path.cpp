@@ -3,7 +3,6 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
-#include <ply-runtime/Algorithm.h>
 #include <ply-runtime/Path.h>
 #include <ply-runtime/io/InStream.h>
 #include <ply-runtime/string/TextEncoding.h>
@@ -272,7 +271,7 @@ PLY_NO_INLINE HybridString Path_t::from(const Path_t& srcFormat, StringView srcP
         return srcPath;
     String result = srcPath;
     char* bytes = result.bytes;
-    for (u32 i : range(result.numBytes)) {
+    for (u32 i = 0; i < result.numBytes; i++) {
         if (srcFormat.isSepByte(bytes[i])) {
             bytes[i] = this->sepByte();
         }

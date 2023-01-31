@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <pylon/Core.h>
 #include <pylon/Write.h>
-#include <ply-runtime/Algorithm.h>
 
 namespace pylon {
 
@@ -27,7 +26,7 @@ struct WriteContext {
             this->depth++;
             const Node::Object& objNode = aNode->object();
             u32 numItems = objNode.items.numItems();
-            for (u32 i : range(numItems)) {
+            for (u32 i = 0; i < numItems; i++) {
                 const Node::Object::Item& objItem = objNode.items[i];
                 indent();
                 this->out.format("\"{}\": ", escape(objItem.key));
@@ -45,7 +44,7 @@ struct WriteContext {
             this->depth++;
             ArrayView<const Node* const> arrNode = aNode->arrayView();
             u32 numItems = arrNode.numItems;
-            for (u32 i : range(numItems)) {
+            for (u32 i = 0; i < numItems; i++) {
                 indent();
                 write(arrNode[i]);
                 if (i + 1 < numItems) {

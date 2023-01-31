@@ -6,7 +6,6 @@
 #include <ply-reflect/PersistRead.h>
 #include <ply-reflect/TypeKey.h>
 #include <ply-runtime/container/Boxed.h>
-#include <ply-runtime/Algorithm.h>
 #include <map>
 
 namespace ply {
@@ -60,7 +59,7 @@ void skip(ReadObjectContext* context, FormatDescriptor* formatDesc) {
             u32 formatID = context->in.read<u32>();
             FormatDescriptor* formatDesc = context->schema->getFormatDesc(formatID);
             u32 numItems = context->in.read<u32>();
-            for (u32 i : range(numItems)) {
+            for (u32 i = 0; i < numItems; i++) {
                 PLY_UNUSED(i);
                 skip(context, formatDesc);
             }
@@ -74,7 +73,7 @@ void skip(ReadObjectContext* context, FormatDescriptor* formatDesc) {
         }
         case FormatKey::FixedArray: {
             FormatDescriptor_FixedArray* fixedFormat = (FormatDescriptor_FixedArray*) formatDesc;
-            for (u32 i : range(fixedFormat->numItems)) {
+            for (u32 i = 0; i < fixedFormat->numItems; i++) {
                 PLY_UNUSED(i);
                 skip(context, fixedFormat->itemFormat);
             }
@@ -83,7 +82,7 @@ void skip(ReadObjectContext* context, FormatDescriptor* formatDesc) {
         case FormatKey::Array: {
             FormatDescriptor_Array* arrayFormat = (FormatDescriptor_Array*) formatDesc;
             u32 numItems = context->in.read<u32>();
-            for (u32 i : range(numItems)) {
+            for (u32 i = 0; i < numItems; i++) {
                 PLY_UNUSED(i);
                 skip(context, arrayFormat->itemFormat);
             }
@@ -107,15 +106,6 @@ void skip(ReadObjectContext* context, FormatDescriptor* formatDesc) {
             // FIXME: Could implement an InStream::skip function instead of this unsafe code:
             u32 value;
             context->in.in.read({(char*) &value, enumFormat->fixedSize});
-            break;
-        }
-        case FormatKey::EnumIndexedArray: {
-            FormatDescriptor_EnumIndexedArray* enumIndexedFormat =
-                (FormatDescriptor_EnumIndexedArray*) formatDesc;
-            for (u32 i : range(enumIndexedFormat->enumFormat->identifiers.numItems())) {
-                PLY_UNUSED(i);
-                skip(context, enumIndexedFormat->itemFormat);
-            }
             break;
         }
         case FormatKey::Switch: {

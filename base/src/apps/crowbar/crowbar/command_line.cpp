@@ -7,7 +7,6 @@
 
 #include "core.h"
 #include "command_line.h"
-#include <ply-runtime/Algorithm.h>
 
 CommandLine::CommandLine(int argc, char* argv[]) {
     for (int i = 1; i < argc; i++) {

@@ -5,7 +5,6 @@
 #include <ply-cpp/Core.h>
 #include <ply-cpp/ParseDeclarations.h>
 #include <ply-cpp/Preprocessor.h>
-#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 namespace cpp {
@@ -45,7 +44,7 @@ String ParseSupervisor::getClassName(StringView withSep, bool withNameSpace) con
     MemOutStream mout;
     PLY_ASSERT(this->scopeStack[0].is<grammar::TranslationUnit>());
     StringView sep = "";
-    for (u32 i : range(1, this->scopeStack.numItems())) {
+    for (u32 i = 1; i < scopeStack.numItems(); i++) {
         const AnyObject& scope = scopeStack[i];
         if (auto ns = scope.safeCast<grammar::Declaration::Namespace_>()) {
             if (withNameSpace) {
@@ -66,7 +65,7 @@ String ParseSupervisor::getClassName(StringView withSep, bool withNameSpace) con
 String ParseSupervisor::getNamespacePrefix() const {
     MemOutStream mout;
     PLY_ASSERT(this->scopeStack[0].is<grammar::TranslationUnit>());
-    for (u32 i : range(1, this->scopeStack.numItems())) {
+    for (u32 i = 1; i < this->scopeStack.numItems(); i++) {
         const AnyObject& scope = scopeStack[i];
         auto ns = scope.safeCast<grammar::Declaration::Namespace_>();
         if (!ns)

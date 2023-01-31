@@ -111,13 +111,6 @@ public:
                 name = Boxed<String>::read(m_in);
             }
             newFormat = enumFormat;
-        } else if (formatKey == (u8) FormatKey::EnumIndexedArray) {
-            FormatDescriptor_EnumIndexedArray* arrFormat = new FormatDescriptor_EnumIndexedArray;
-            arrFormat->itemFormat = readFormatDescriptor();
-            FormatDescriptor* enumFormat = readFormatDescriptor();
-            PLY_ASSERT(enumFormat->formatKey == (u8) FormatKey::Enum);
-            arrFormat->enumFormat = static_cast<FormatDescriptor_Enum*>(enumFormat);
-            newFormat = arrFormat;
         } else if (formatKey == (u8) FormatKey::Switch) {
             FormatDescriptor_Switch* switchFormat = new FormatDescriptor_Switch;
             switchFormat->name = Boxed<String>::read(m_in);

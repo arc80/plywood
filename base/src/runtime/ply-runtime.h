@@ -1011,7 +1011,6 @@ struct HeapStats {
 
 namespace memory_dl {
 
-//-----------------------------------------------------
 // Adapted from Doug Lea's malloc: ftp://g.oswego.edu/pub/misc/malloc-2.8.6.c
 //
 // Note: You can create new heaps by instantiating new
@@ -1028,7 +1027,6 @@ namespace memory_dl {
 //
 // The approach chosen here simplifies the implementation of Heap_t, avoids
 // any issues with static initialization order, and minimizes runtime overhead.
-//-----------------------------------------------------
 #define PLY_DLMALLOC_FAST_STATS 0
 
 static const unsigned int NSMALLBINS = (32U);
@@ -2451,5 +2449,146 @@ struct ArrayTraits<FixedArray<T, Size>> {
     static constexpr bool IsOwner = true;
 };
 } // namespace impl
+
+//         ▄▄▄                       ▄▄  ▄▄   ▄▄
+//   ▄▄▄▄   ██   ▄▄▄▄▄  ▄▄▄▄  ▄▄▄▄▄  ▄▄ ▄██▄▄ ██▄▄▄  ▄▄▄▄▄▄▄   ▄▄▄▄
+//   ▄▄▄██  ██  ██  ██ ██  ██ ██  ▀▀ ██  ██   ██  ██ ██ ██ ██ ▀█▄▄▄
+//  ▀█▄▄██ ▄██▄ ▀█▄▄██ ▀█▄▄█▀ ██     ██  ▀█▄▄ ██  ██ ██ ██ ██  ▄▄▄█▀
+//               ▄▄▄█▀
+
+// ┏━━━━━━━━┓
+// ┃  find  ┃
+// ┗━━━━━━━━┛
+PLY_MAKE_WELL_FORMEDNESS_CHECK_2(IsComparable, std::declval<T0>() == std::declval<T1>());
+PLY_MAKE_WELL_FORMEDNESS_CHECK_2(IsCallable, std::declval<T0>()(std::declval<T1>()));
+
+template <typename T, typename U, std::enable_if_t<IsComparable<T, U>, int> = 0>
+PLY_INLINE s32 find(ArrayView<const T> arr, const U& item) {
+    for (u32 i = 0; i < arr.numItems; i++) {
+        if (arr[i] == item)
+            return i;
+    }
+    return -1;
+}
+
+template <typename T, typename Callback, std::enable_if_t<IsCallable<Callback, T>, int> = 0>
+PLY_INLINE s32 find(ArrayView<const T> arr, const Callback& callback) {
+    for (u32 i = 0; i < arr.numItems; i++) {
+        if (callback(arr[i]))
+            return i;
+    }
+    return -1;
+}
+
+template <typename Arr, typename Arg, typename T = impl::ArrayViewType<Arr>>
+PLY_INLINE s32 find(const Arr& arr, const Arg& arg) {
+    return find(ArrayView<const T>{arr}, arg);
+}
+
+template <typename T, typename U, std::enable_if_t<IsComparable<T, U>, int> = 0>
+PLY_INLINE s32 rfind(ArrayView<const T> arr, const U& item) {
+    for (s32 i = safeDemote<s32>(arr.numItems - 1); i >= 0; i--) {
+        if (arr[i] == item)
+            return i;
+    }
+    return -1;
+}
+
+template <typename T, typename Callback, std::enable_if_t<IsCallable<Callback, T>, int> = 0>
+PLY_INLINE s32 rfind(ArrayView<const T> arr, const Callback& callback) {
+    for (s32 i = safeDemote<s32>(arr.numItems - 1); i >= 0; i--) {
+        if (callback(arr[i]))
+            return i;
+    }
+    return -1;
+}
+
+template <typename Arr, typename Arg, typename T = impl::ArrayViewType<Arr>>
+PLY_INLINE s32 rfind(const Arr& arr, const Arg& arg) {
+    return rfind(ArrayView<const T>{arr}, arg);
+}
+
+// ┏━━━━━━━┓
+// ┃  map  ┃
+// ┗━━━━━━━┛
+template <typename Iterable, typename MapFunc,
+          typename MappedItemType = std::decay_t<
+              decltype(std::declval<MapFunc>()(std::declval<impl::ItemType<Iterable>>()))>>
+Array<MappedItemType> map(Iterable&& iterable, MapFunc&& mapFunc) {
+    Array<MappedItemType> result;
+    // FIXME: Reserve memory for result when possible. Otherwise, use a typed ChunkBuffer.
+    for (auto&& item : iterable) {
+        result.append(mapFunc(item));
+    }
+    return result;
+}
+
+// ┏━━━━━━━━┓
+// ┃  sort  ┃
+// ┗━━━━━━━━┛
+namespace impl {
+template <typename T>
+PLY_INLINE bool defaultLess(const T& a, const T& b) {
+    return a < b;
+}
+} // namespace impl
+
+template <typename T, typename IsLess = decltype(impl::defaultLess<T>)>
+PLY_NO_INLINE void sort(ArrayView<T> view, const IsLess& isLess = impl::defaultLess<T>) {
+    if (view.numItems <= 1)
+        return;
+    u32 lo = 0;
+    u32 hi = view.numItems - 1;
+    u32 pivot = view.numItems / 2;
+    for (;;) {
+        while (lo < hi && isLess(view[lo], view[pivot])) {
+            lo++;
+        }
+        while (lo < hi && isLess(view[pivot], view[hi])) {
+            hi--;
+        }
+        if (lo >= hi)
+            break;
+        // view[lo] is >= pivot
+        // All slots to left of lo are < pivot
+        // view[hi] <= pivot
+        // All slots to the right of hi are > pivot
+        PLY_ASSERT(!isLess(view[lo], view[pivot]));
+        PLY_ASSERT(!isLess(view[pivot], view[hi]));
+        PLY_ASSERT(lo < hi);
+        std::swap(view[lo], view[hi]);
+        if (lo == pivot) {
+            pivot = hi;
+        } else if (hi == pivot) {
+            pivot = lo;
+        }
+        lo++;
+    }
+    PLY_ASSERT((s32) hi >= 0);
+    // Now, everything to left of lo is <= pivot, and everything from hi onwards is >= pivot.
+    PLY_ASSERT(hi <= lo);
+    while (lo > 1) {
+        if (!isLess(view[lo - 1], view[pivot])) {
+            lo--;
+        } else {
+            sort(view.subView(0, lo), isLess);
+            break;
+        }
+    }
+    while (hi + 1 < view.numItems) {
+        if (!isLess(view[pivot], view[hi])) {
+            hi++;
+        } else {
+            sort(view.subView(hi), isLess);
+            break;
+        }
+    }
+}
+
+template <typename Arr, typename IsLess = decltype(impl::defaultLess<impl::ArrayViewType<Arr>>)>
+PLY_INLINE void sort(Arr& arr, const IsLess& isLess = impl::defaultLess<impl::ArrayViewType<Arr>>) {
+    using T = impl::ArrayViewType<Arr>;
+    sort(ArrayView<T>{arr}, isLess);
+}
 
 } // namespace ply

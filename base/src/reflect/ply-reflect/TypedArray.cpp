@@ -8,7 +8,6 @@
 #include <ply-reflect/TypeSynthesizer.h>
 #include <ply-reflect/PersistRead.h>
 #include <ply-reflect/PersistWrite.h>
-#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 
@@ -104,8 +103,7 @@ TypeKey TypeKey_TypedArray{
         void* item = arr->m_array.m_items;
         PLY_ASSERT(arr->m_array.m_numItems <= UINT32_MAX);
         context->out.write<u32>((u32) arr->m_array.m_numItems);
-        for (u32 i : range(arr->m_array.m_numItems)) {
-            PLY_UNUSED(i);
+        for (u32 i = 0; i < arr->m_array.m_numItems; i++) {
             itemType->typeKey->write(AnyObject{item, itemType}, context);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
@@ -141,8 +139,7 @@ TypeKey TypeKey_TypedArray{
         u32 arrSize = context->in.read<u32>();
         arr->create(itemTypeOwner, arrSize);
         AnyObject anyItem{arr->m_array.m_items, itemType};
-        for (u32 i : range((u32) arrSize)) {
-            PLY_UNUSED(i);
+        for (u32 i = 0; i < arrSize; i++) {
             itemType->typeKey->read(anyItem, context, itemFormat);
             anyItem.data = PLY_PTR_OFFSET(anyItem.data, itemSize);
         }

@@ -40,7 +40,6 @@ enum class FormatKey {
     RawPtr,
     Struct,
     Enum,
-    EnumIndexedArray,
     Switch
 };
 
@@ -156,16 +155,6 @@ struct FormatDescriptor_Enum : FormatDescriptor {
     FormatDescriptor_Enum() : FormatDescriptor((u32) FormatKey::Enum) {
     }
     virtual ~FormatDescriptor_Enum() override {
-    }
-};
-
-struct FormatDescriptor_EnumIndexedArray : FormatDescriptor {
-    FormatDescriptor* itemFormat;
-    FormatDescriptor_Enum* enumFormat;
-
-    FormatDescriptor_EnumIndexedArray() : FormatDescriptor((u32) FormatKey::EnumIndexedArray) {
-    }
-    virtual ~FormatDescriptor_EnumIndexedArray() override {
     }
 };
 

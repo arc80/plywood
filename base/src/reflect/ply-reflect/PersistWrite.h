@@ -46,7 +46,6 @@ public:
     void beginEnum(const String& name, u32 numEntries, u8 fixedSize);
     void writeEnumEntry(const String& name);
     void endEnum();
-    void writeEnumIndexedArray(TypeDescriptor* itemType, TypeDescriptor_Enum* enumType);
     void beginSwitch(const String& name, u32 numStates);
     void writeState(const String& name, TypeDescriptor_Struct* structType);
     void endSwitch();
