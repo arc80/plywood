@@ -9,7 +9,6 @@
 #include <ply-reflect/builtin/TypeDescriptor_Array.h>
 #include <ply-reflect/builtin/TypeDescriptor_Bool.h>
 #include <ply-reflect/builtin/TypeDescriptor_Enum.h>
-#include <ply-reflect/builtin/TypeDescriptor_EnumIndexedArray.h>
 #include <ply-reflect/builtin/TypeDescriptor_FixedArray.h>
 #include <ply-reflect/builtin/TypeDescriptor_Method.h>
 #include <ply-reflect/builtin/TypeDescriptor_Owned.h>

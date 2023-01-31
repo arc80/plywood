@@ -4,6 +4,7 @@
 ------------------------------------*/
 #include <pylon-reflect/Core.h>
 #include <pylon-reflect/Export.h>
+#include <ply-runtime/Algorithm.h>
 
 namespace pylon {
 

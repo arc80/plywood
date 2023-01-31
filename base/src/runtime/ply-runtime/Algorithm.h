@@ -6,8 +6,7 @@
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 
 #pragma once
-#include <ply-runtime/Core.h>
-#include <ply-runtime/container/Array.h>
+#include <ply-runtime.h>
 #include <ply-runtime/container/impl/ItemType.h>
 
 namespace ply {

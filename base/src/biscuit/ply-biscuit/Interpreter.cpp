@@ -5,6 +5,7 @@
 #include <ply-biscuit/Core.h>
 #include <ply-biscuit/Interpreter.h>
 #include <ply-reflect/methods/BoundMethod.h>
+#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 namespace biscuit {

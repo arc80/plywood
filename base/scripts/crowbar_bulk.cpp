@@ -39,7 +39,6 @@
 #include "../src/reflect/ply-reflect/builtin/TypeDescriptor_Array.cpp"
 #include "../src/reflect/ply-reflect/builtin/TypeDescriptor_Bool.cpp"
 #include "../src/reflect/ply-reflect/builtin/TypeDescriptor_Enum.cpp"
-#include "../src/reflect/ply-reflect/builtin/TypeDescriptor_EnumIndexedArray.cpp"
 #include "../src/reflect/ply-reflect/builtin/TypeDescriptor_FixedArray.cpp"
 #include "../src/reflect/ply-reflect/builtin/TypeDescriptor_Method.cpp"
 #include "../src/reflect/ply-reflect/builtin/TypeDescriptor_Owned.cpp"

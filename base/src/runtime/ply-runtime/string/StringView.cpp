@@ -2,11 +2,9 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-runtime/Precomp.h>
-#include <ply-runtime/string/String.h>
+#include <ply-runtime.h>
 #include <ply-runtime/string/TextEncoding.h>
 #include <ply-runtime/io/OutStream.h>
-#include <ply-runtime/container/Array.h>
 
 namespace ply {
 

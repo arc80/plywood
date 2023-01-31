@@ -171,18 +171,6 @@ PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
             AnyObject elem{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType};
             convertFrom(elem, aNodeArr[i], typeFromName);
         }
-    } else if (obj.type->typeKey == &TypeKey_EnumIndexedArray) {
-        PLY_ASSERT(aNode->isObject());
-        auto* arrayDesc = obj.type->cast<TypeDescriptor_EnumIndexedArray>();
-        for (const TypeDescriptor_Enum::Identifier& identifier : arrayDesc->enumType->identifiers) {
-            const Node* aMember = aNode->get(identifier.name);
-            if (aMember->isValid()) {
-                AnyObject m{
-                    PLY_PTR_OFFSET(obj.data, arrayDesc->itemType->fixedSize * identifier.value),
-                    arrayDesc->itemType};
-                convertFrom(m, aMember, typeFromName);
-            }
-        }
     } else if (obj.type->typeKey == &TypeKey_Enum) {
         PLY_ASSERT(aNode->isText());
         auto* enumDesc = obj.type->cast<TypeDescriptor_Enum>();

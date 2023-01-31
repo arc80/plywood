@@ -4,7 +4,6 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/string/String.h>
 
 #if !defined(PLY_IMPL_LOGGER_PATH)
 #if PLY_TARGET_WIN32

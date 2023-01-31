@@ -4,6 +4,7 @@
 ------------------------------------*/
 #include <pylon/Core.h>
 #include <pylon/Write.h>
+#include <ply-runtime/Algorithm.h>
 
 namespace pylon {
 

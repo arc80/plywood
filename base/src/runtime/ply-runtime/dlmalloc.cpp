@@ -1,10 +1,7 @@
 // Based on Doug Lea's malloc
 // http://gee.cs.oswego.edu/dl/html/malloc.html
 
-#include <ply-runtime/Precomp.h>
-#include <ply-runtime/Heap.h>
-#include <ply-runtime/MemPage.h>
-#include <ply-runtime/thread/impl/Mutex_LazyInit.h>
+#include <ply-runtime.h>
 #include <stdlib.h>
 #include <memory.h>
 #include <errno.h>

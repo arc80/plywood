@@ -8,7 +8,6 @@
 #pragma once
 #include <ply-runtime/Core.h>
 #include <ply-runtime/io/OutStream.h>
-#include <ply-runtime/string/StringView.h>
 #include <ply-runtime/string/Label.h>
 
 namespace ply {

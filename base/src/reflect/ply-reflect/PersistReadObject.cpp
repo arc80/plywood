@@ -6,6 +6,7 @@
 #include <ply-reflect/PersistRead.h>
 #include <ply-reflect/TypeKey.h>
 #include <ply-runtime/container/Boxed.h>
+#include <ply-runtime/Algorithm.h>
 #include <map>
 
 namespace ply {

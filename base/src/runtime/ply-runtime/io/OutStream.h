@@ -6,112 +6,11 @@
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 
 #pragma once
-#include <ply-runtime/Core.h>
+#include <ply-runtime.h>
 #include <ply-runtime/container/BlockList.h>
 #include <ply-runtime/container/Owned.h>
-#include <ply-runtime/string/String.h>
-#include <ply-runtime/container/FixedArray.h>
 
 namespace ply {
-
-struct OutPipe;
-struct OutStream;
-
-#define PLY_ENABLE_IF_SIGNED(T) \
-    typename std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value, \
-                              int> = 0
-#define PLY_ENABLE_IF_UNSIGNED(T) \
-    typename std::enable_if_t< \
-        std::is_unsigned<T>::value && !std::is_same<T, bool>::value, int> = 0
-
-struct FormatArg {
-    enum Type {
-        View,
-        Bool,
-        S64,
-        U64,
-        Double,
-    };
-
-    static void default_print(OutStream& out, const FormatArg& arg);
-    void (*print_func)(OutStream& out, const FormatArg& arg) = default_print;
-    union {
-        StringView view;
-        bool bool_;
-        s64 s64_;
-        u64 u64_;
-        double double_;
-    };
-    Type type = View;
-    u32 radix = 10;
-
-    FormatArg(StringView view = {}) : view{view} {
-    }
-    template <typename T,
-              typename std::enable_if_t<std::is_same<T, bool>::value, int> = 0>
-    FormatArg(T v) : bool_{v}, type{Bool} {
-    }
-    template <typename T, PLY_ENABLE_IF_SIGNED(T)>
-    FormatArg(T v) : s64_{v}, type{S64} {
-    }
-    template <typename T, PLY_ENABLE_IF_UNSIGNED(T)>
-    FormatArg(T v) : u64_{v}, type{U64} {
-    }
-    FormatArg(double v) : double_{v}, type{Double} {
-    }
-    void print(OutStream& out) const {
-        this->print_func(out, *this);
-    }
-};
-
-struct with_radix : FormatArg {
-    template <typename T, PLY_ENABLE_IF_SIGNED(T)>
-    with_radix(T v, u32 radix) : FormatArg{v} {
-        this->radix = radix;
-    }
-    template <typename T, PLY_ENABLE_IF_UNSIGNED(T)>
-    with_radix(T v, u32 radix) : FormatArg{v} {
-        this->radix = radix;
-    }
-    with_radix(double v, u32 radix) : FormatArg{v} {
-        this->radix = radix;
-    }
-};
-
-struct hex : FormatArg {
-    template <typename T, PLY_ENABLE_IF_SIGNED(T)>
-    hex(T v) : FormatArg{v} {
-        this->radix = 16;
-    }
-    template <typename T, PLY_ENABLE_IF_UNSIGNED(T)>
-    hex(T v) : FormatArg{v} {
-        this->radix = 16;
-    }
-};
-
-struct escape : FormatArg {
-    static void do_print(OutStream& out, const FormatArg& arg);
-    escape(StringView view) {
-        this->print_func = do_print;
-        this->view = view;
-    }
-};
-
-struct xml_escape : FormatArg {
-    static void do_print(OutStream& out, const FormatArg& arg);
-    xml_escape(StringView view) {
-        this->print_func = do_print;
-        this->view = view;
-    }
-};
-
-struct CmdLineArg_WinCrt : FormatArg {
-    static void do_print(OutStream& out, const FormatArg& arg);
-    CmdLineArg_WinCrt(StringView view) {
-        this->print_func = do_print;
-        this->view = view;
-    }
-};
 
 //   ▄▄▄▄          ▄▄    ▄▄▄▄   ▄▄
 //  ██  ██ ▄▄  ▄▄ ▄██▄▄ ██  ▀▀ ▄██▄▄ ▄▄▄▄▄   ▄▄▄▄   ▄▄▄▄  ▄▄▄▄▄▄▄

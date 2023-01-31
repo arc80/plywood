@@ -5,8 +5,7 @@
 ┃    └──┴┴┴┘                                  ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 
-#include <ply-runtime/Precomp.h>
-#include <ply-runtime/Heap.h>
+#include <ply-runtime.h>
 
 namespace ply {
 namespace memory_dl {

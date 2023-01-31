@@ -3,9 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-runtime/Core.h>
-#include <ply-runtime/container/Array.h>
-#include <ply-runtime/string/String.h>
+#include <ply-runtime.h>
 
 namespace ply {
 

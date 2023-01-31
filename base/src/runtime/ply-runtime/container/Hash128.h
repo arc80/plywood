@@ -32,8 +32,7 @@
 //
 
 #pragma once
-#include <ply-runtime/Core.h>
-#include <ply-runtime/string/StringView.h>
+#include <ply-runtime.h>
 #include <ply-runtime/container/Int128.h>
 
 namespace ply {

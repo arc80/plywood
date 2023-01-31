@@ -5,6 +5,7 @@
 #include <ply-cpp/Core.h>
 #include <ply-cpp/ParseDeclarations.h>
 #include <ply-cpp/Preprocessor.h>
+#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 namespace cpp {

@@ -2,12 +2,11 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-runtime/Precomp.h>
+#include <ply-runtime.h>
 
 #if PLY_TARGET_WIN32 && !PLY_DLL_IMPORTING
 
 #include <ply-runtime/thread/impl/Affinity_Win32.h>
-#include <ply-runtime/Heap.h>
 
 namespace ply {
 

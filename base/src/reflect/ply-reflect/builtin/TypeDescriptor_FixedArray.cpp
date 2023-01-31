@@ -6,6 +6,7 @@
 #include <ply-reflect/builtin/TypeDescriptor_FixedArray.h>
 #include <ply-reflect/builtin/TypeDescriptor_Array.h>
 #include <ply-reflect/AnyObject.h>
+#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 

@@ -9,6 +9,7 @@
 #include <ply-reflect/PersistWrite.h>
 #include <ply-runtime/container/Numeric.h>
 #include <ply-runtime/container/Boxed.h>
+#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 
@@ -767,81 +768,6 @@ TypeKey TypeKey_RawPtr{
 };
 
 TypeKey* TypeDescriptor_RawPtr::typeKey = &TypeKey_RawPtr;
-
-//-----------------------------------------------------------------
-// TypeKey_EnumIndexedArray
-//
-TypeKey TypeKey_EnumIndexedArray{
-    // getName
-    [](const TypeDescriptor* typeDesc) -> HybridString { //
-        const TypeDescriptor_EnumIndexedArray* arrayType =
-            typeDesc->cast<const TypeDescriptor_EnumIndexedArray>();
-        return String::format("EnumIndexedArray<{}>", arrayType->itemType->getName());
-    },
-    // write
-    [](AnyObject obj, WriteObjectContext* context) {
-        TypeDescriptor_EnumIndexedArray* arrayType =
-            obj.type->cast<TypeDescriptor_EnumIndexedArray>();
-        TypeDescriptor* itemType = arrayType->itemType;
-        u32 itemSize = itemType->fixedSize;
-        u32 count = arrayType->enumType->identifiers.numItems();
-        void* item = obj.data;
-        for (u32 i = 0; i < count; i++) {
-            itemType->typeKey->write(AnyObject{item, itemType}, context);
-            item = PLY_PTR_OFFSET(item, itemSize);
-        }
-    },
-    // writeFormat
-    [](TypeDescriptor* typeDesc, WriteFormatContext* context) {
-        TypeDescriptor_EnumIndexedArray* arrayType =
-            typeDesc->cast<TypeDescriptor_EnumIndexedArray>();
-        context->writeEnumIndexedArray(arrayType->itemType, arrayType->enumType);
-    },
-    // read
-    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
-        if ((FormatKey) formatDesc->formatKey != FormatKey::EnumIndexedArray) {
-            SLOG(Load, "Can't convert to EnumIndexedArray");
-            skip(context, formatDesc);
-            return;
-        }
-        FormatDescriptor_EnumIndexedArray* arrayFormat =
-            (FormatDescriptor_EnumIndexedArray*) formatDesc;
-        FormatDescriptor* itemFormat = arrayFormat->itemFormat;
-        FormatDescriptor_Enum* enumFormat = arrayFormat->enumFormat;
-        u32 enumFormatCount = enumFormat->identifiers.numItems();
-        TypeDescriptor_EnumIndexedArray* arrayType =
-            obj.type->cast<TypeDescriptor_EnumIndexedArray>();
-        TypeDescriptor* itemType = arrayType->itemType;
-        TypeDescriptor_Enum* enumType = arrayType->enumType;
-        PLY_ASSERT(arrayType->fixedSize == itemType->fixedSize * enumType->identifiers.numItems());
-        void* items = obj.data;
-        for (u32 i = 0; i < enumFormatCount; i++) {
-            const auto& enumFormatName = enumFormat->identifiers[i];
-            // FIXME: Improve this by building a conversion table ahead of time, in a separate
-            // pass
-            for (const TypeDescriptor_Enum::Identifier& identifier : enumType->identifiers) {
-                if (identifier.name == enumFormatName) {
-                    PLY_ASSERT(identifier.value < enumType->identifiers.numItems());
-                    itemType->typeKey->read(
-                        AnyObject{PLY_PTR_OFFSET(items, itemType->fixedSize * identifier.value),
-                                  itemType},
-                        context, itemFormat);
-                    goto found;
-                }
-            }
-            // Not found
-            SLOG(Load, "Can't find enum value \"{}::{}\"", enumType->name, enumFormatName);
-            skip(context, itemFormat);
-        found:;
-        }
-    },
-    // hashDescriptor
-    nullptr, // Unimplemented
-    // equalDescriptors
-    nullptr // Unimplemented
-};
-
-TypeKey* TypeDescriptor_EnumIndexedArray::typeKey = &TypeKey_EnumIndexedArray;
 
 //-----------------------------------------------------------------
 // TypeKey_Switch

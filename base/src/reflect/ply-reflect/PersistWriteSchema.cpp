@@ -9,6 +9,7 @@
 #include <ply-reflect/TypedArray.h>
 #include <ply-reflect/AnySavedObject.h>
 #include <ply-runtime/container/Boxed.h>
+#include <ply-runtime/Algorithm.h>
 #include <map>
 
 namespace ply {

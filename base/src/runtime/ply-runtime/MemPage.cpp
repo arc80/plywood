@@ -5,8 +5,7 @@
 ┃    └──┴┴┴┘                                  ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 
-#include <ply-runtime/Precomp.h>
-#include <ply-runtime/MemPage.h>
+#include <ply-runtime.h>
 
 #if PLY_TARGET_WIN32
 

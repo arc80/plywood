@@ -3,8 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-runtime/Core.h>
-#include <ply-runtime/container/Array.h>
+#include <ply-runtime.h>
 
 #if PLY_WITH_ASSERTS
 #define PLY_WITH_POOL_DEBUG_CHECKS 1

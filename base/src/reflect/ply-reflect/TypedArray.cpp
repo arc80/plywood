@@ -8,6 +8,7 @@
 #include <ply-reflect/TypeSynthesizer.h>
 #include <ply-reflect/PersistRead.h>
 #include <ply-reflect/PersistWrite.h>
+#include <ply-runtime/Algorithm.h>
 
 namespace ply {
 
