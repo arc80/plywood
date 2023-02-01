@@ -6,12 +6,9 @@
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 
 #include <ply-runtime/Precomp.h>
-#include <ply-runtime/FileSystem.h>
-#include <ply-runtime/io/Pipe.h>
 
 #if PLY_TARGET_WIN32
 #include <ply-runtime/string/WString.h>
-#include <ply-runtime/string/TextEncoding.h>
 #include <shellapi.h>
 #else
 #include <sys/stat.h>

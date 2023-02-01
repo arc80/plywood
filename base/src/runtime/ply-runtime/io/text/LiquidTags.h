@@ -4,8 +4,6 @@
 ------------------------------------*/
 #pragma once
 #include <ply-runtime/Core.h>
-#include <ply-runtime/io/InStream.h>
-#include <ply-runtime/io/OutStream.h>
 #include <ply-runtime/container/Func.h>
 
 namespace ply {

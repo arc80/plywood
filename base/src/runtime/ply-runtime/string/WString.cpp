@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/string/WString.h>
-#include <ply-runtime/string/TextEncoding.h>
 
 namespace ply {
 

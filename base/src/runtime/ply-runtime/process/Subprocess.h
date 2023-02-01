@@ -5,8 +5,6 @@
 #pragma once
 #include <ply-runtime.h>
 #include <ply-runtime/container/Owned.h>
-#include <ply-runtime/io/Pipe.h>
-#include <ply-runtime/io/StdIO.h>
 
 namespace ply {
 

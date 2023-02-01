@@ -7,8 +7,6 @@
 #if PLY_TARGET_POSIX
 
 #include <ply-runtime/process/Subprocess.h>
-#include <ply-runtime/Path.h>
-#include <ply-runtime/io/impl/Pipe_FD.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>

@@ -7,13 +7,11 @@
 #if PLY_TARGET_POSIX
 
 #include <ply-runtime/network/impl/Socket_POSIX.h>
-#include <ply-runtime/io/OutStream.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
-#include <ply-runtime/io/StdIO.h>
 
 #define PLY_IPPOSIX_ALLOW_UNKNOWN_ERRORS 1
 

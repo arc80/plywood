@@ -4,8 +4,6 @@
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/io/text/FileLocationMap.h>
-#include <ply-runtime/string/TextEncoding.h>
-#include <ply-runtime/io/OutStream.h>
 
 namespace ply {
 

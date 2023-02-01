@@ -12,7 +12,6 @@
 #error "File should not be included"
 #endif
 
-#include <ply-runtime/io/Pipe.h>
 #include <winsock2.h>
 
 namespace ply {

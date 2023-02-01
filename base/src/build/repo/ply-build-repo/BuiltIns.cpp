@@ -5,7 +5,6 @@
 #include <ply-build-repo/BuiltIns.h>
 #include <ply-reflect/methods/BoundMethod.h>
 #include <ply-runtime/string/WString.h>
-#include <ply-runtime/string/TextEncoding.h>
 #include <ply-build-repo/ExternFolderRegistry.h>
 #include <ply-build-repo/BuildFolder.h>
 #if PLY_TARGET_WIN32

@@ -5,7 +5,6 @@
 #pragma once
 #include <pylon/Core.h>
 #include <pylon/Node.h>
-#include <ply-runtime/io/OutStream.h>
 #include <ply-runtime/io/text/FileLocationMap.h>
 
 namespace pylon {

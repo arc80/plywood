@@ -8,7 +8,6 @@
 #if PLY_TARGET_WIN32
 
 #include <ply-runtime/network/impl/Socket_Winsock.h>
-#include <ply-runtime/io/OutStream.h>
 
 #define PLY_IPWINSOCK_ALLOW_UNKNOWN_ERRORS 0
 

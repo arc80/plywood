@@ -6,8 +6,6 @@
 
 #if PLY_TARGET_POSIX
 
-#include <ply-runtime/io/impl/Pipe_FD.h>
-
 namespace ply {
 
 PLY_NO_INLINE void InPipe_FD_destroy(InPipe* inPipe_) {

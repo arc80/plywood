@@ -3,8 +3,6 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
-#include <ply-runtime/io/OutStream.h>
-#include <ply-runtime/string/TextEncoding.h>
 #include <math.h>
 
 namespace ply {

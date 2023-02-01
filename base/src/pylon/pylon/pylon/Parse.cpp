@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <pylon/Core.h>
 #include <pylon/Parse.h>
-#include <ply-runtime/io/StdIO.h>
 
 namespace pylon {
 

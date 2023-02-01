@@ -7,7 +7,6 @@
 #if PLY_TARGET_WIN32
 
 #include <ply-runtime/filesystem/impl/DirectoryWatcher_Win32.h>
-#include <ply-runtime/Path.h>
 #include <ply-runtime/string/WString.h>
 
 namespace ply {

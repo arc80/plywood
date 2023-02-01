@@ -2,8 +2,7 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-runtime/io/OutStream.h>
-#include <ply-runtime/io/StdIO.h>
+#include <ply-runtime.h>
 
 namespace ply {
 

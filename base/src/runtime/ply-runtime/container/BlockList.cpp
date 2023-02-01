@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <ply-runtime.h>
 #include <ply-runtime/container/BlockList.h>
-#include <ply-runtime/io/OutStream.h>
 
 namespace ply {
 

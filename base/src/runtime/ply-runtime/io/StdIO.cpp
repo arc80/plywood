@@ -6,7 +6,6 @@
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 
 #include <ply-runtime/Precomp.h>
-#include <ply-runtime/io/StdIO.h>
 #include <ply-runtime/io/text/NewLineFilter.h>
 
 namespace ply {

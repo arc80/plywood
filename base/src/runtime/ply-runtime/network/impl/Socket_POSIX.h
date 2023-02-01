@@ -3,12 +3,9 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #pragma once
-#include <ply-runtime/Core.h>
+#include <ply-runtime.h>
 #include <ply-runtime/network/IPAddress.h>
-#include <ply-runtime/io/impl/Pipe_FD.h>
 #include <ply-runtime/container/Owned.h>
-#include <ply-runtime/io/InStream.h>
-#include <ply-runtime/io/OutStream.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
