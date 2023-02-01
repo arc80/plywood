@@ -6,46 +6,38 @@
 
 #if PLY_TARGET_WIN32
 
-#include <ply-runtime/process/Subprocess.h>
 #include <ply-runtime/string/WString.h>
 
 namespace ply {
 
-struct Subprocess_Win32 : Subprocess {
-    HANDLE childProcess = INVALID_HANDLE_VALUE;
-    HANDLE childMainThread = INVALID_HANDLE_VALUE;
+Process::~Process() {
+    PLY_ASSERT(this->childProcess != INVALID_HANDLE_VALUE);
+    CloseHandle(this->childProcess);
+    CloseHandle(this->childMainThread);
+}
 
-    PLY_INLINE Subprocess_Win32() = default;
-
-    PLY_NO_INLINE ~Subprocess_Win32() {
-        PLY_ASSERT(this->childProcess != INVALID_HANDLE_VALUE);
-        CloseHandle(this->childProcess);
-        CloseHandle(this->childMainThread);
-    }
-
-    PLY_NO_INLINE s32 join() override {
-        PLY_ASSERT(this->childProcess != INVALID_HANDLE_VALUE);
-        DWORD rc = WaitForSingleObject(this->childProcess, INFINITE);
-        PLY_ASSERT(rc == WAIT_OBJECT_0);
-        PLY_UNUSED(rc);
-        // FIXME: Add an assert here to ensure that readFromStdOut & readFromStdErr have
-        // been drained (?).
-        DWORD exitCode;
-        BOOL rc2 = GetExitCodeProcess(this->childProcess, &exitCode);
-        PLY_ASSERT(rc2 != 0);
-        PLY_UNUSED(rc2);
-        return (s32) exitCode;
-    }
-};
+s32 Process::join() {
+    PLY_ASSERT(this->childProcess != INVALID_HANDLE_VALUE);
+    DWORD rc = WaitForSingleObject(this->childProcess, INFINITE);
+    PLY_ASSERT(rc == WAIT_OBJECT_0);
+    PLY_UNUSED(rc);
+    // FIXME: Add an assert here to ensure that readFromStdOut & readFromStdErr have
+    // been drained (?).
+    DWORD exitCode;
+    BOOL rc2 = GetExitCodeProcess(this->childProcess, &exitCode);
+    PLY_ASSERT(rc2 != 0);
+    PLY_UNUSED(rc2);
+    return (s32) exitCode;
+}
 
 //--------------------------------
 // NULL input/output
 //--------------------------------
-PLY_NO_INLINE HANDLE getNullInHandle_Win32() {
+HANDLE getNullInHandle_Win32() {
     struct NullInPipe {
         HANDLE handle = INVALID_HANDLE_VALUE;
 
-        PLY_NO_INLINE NullInPipe() {
+        NullInPipe() {
             // FIXME: If CreateFileW fails, create a pipe here and close the sending
             // end.
             this->handle = CreateFileW(L"nul", GENERIC_READ, FILE_SHARE_READ, NULL,
@@ -56,7 +48,7 @@ PLY_NO_INLINE HANDLE getNullInHandle_Win32() {
             PLY_ASSERT(rc != 0);
         }
 
-        PLY_NO_INLINE ~NullInPipe() {
+        ~NullInPipe() {
             PLY_ASSERT(this->handle != INVALID_HANDLE_VALUE);
             CloseHandle(this->handle);
             // FIXME: If a thread was spawned (as per comment above), we could join it
@@ -68,11 +60,11 @@ PLY_NO_INLINE HANDLE getNullInHandle_Win32() {
     return nullInPipe.handle;
 }
 
-PLY_NO_INLINE HANDLE getNullOutHandle_Win32() {
+HANDLE getNullOutHandle_Win32() {
     struct NullOutPipe {
         HANDLE handle = INVALID_HANDLE_VALUE;
 
-        PLY_NO_INLINE NullOutPipe() {
+        NullOutPipe() {
             // FIXME: If CreateFileW fails, create a pipe here and spawn a thread that
             // infinitely consumes the pipe's output.
             this->handle = CreateFileW(L"nul", GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
@@ -83,7 +75,7 @@ PLY_NO_INLINE HANDLE getNullOutHandle_Win32() {
             PLY_ASSERT(rc != 0);
         }
 
-        PLY_NO_INLINE ~NullOutPipe() {
+        ~NullOutPipe() {
             PLY_ASSERT(this->handle != INVALID_HANDLE_VALUE);
             CloseHandle(this->handle);
             // FIXME: If a thread was spawned (as per comment above), we could join it
@@ -95,7 +87,7 @@ PLY_NO_INLINE HANDLE getNullOutHandle_Win32() {
     return nullOutPipe.handle;
 }
 
-PLY_NO_INLINE HANDLE createInheritableHandle(HANDLE origHandle) {
+HANDLE createInheritableHandle(HANDLE origHandle) {
     HANDLE currentProcess = GetCurrentProcess();
     HANDLE dupHandle = INVALID_HANDLE_VALUE;
     BOOL rc = DuplicateHandle(currentProcess, origHandle, currentProcess, &dupHandle, 0,
@@ -105,7 +97,7 @@ PLY_NO_INLINE HANDLE createInheritableHandle(HANDLE origHandle) {
     return dupHandle;
 }
 
-Owned<Subprocess> Subprocess::execArgStr(StringView exePath, StringView argStr,
+Owned<Process> Process::execArgStr(StringView exePath, StringView argStr,
                                          StringView initialDir, const Output& output,
                                          const Input& input) {
     // These are temporary handles meant for the subprocess to inherit.
@@ -265,8 +257,8 @@ Owned<Subprocess> Subprocess::execArgStr(StringView exePath, StringView argStr,
         return nullptr;
     }
 
-    // Success! Create Subprocess object and return it:
-    Subprocess_Win32* subprocess = new Subprocess_Win32;
+    // Success! Create Process object and return it:
+    Process* subprocess = new Process;
     PLY_ASSERT(procInfo.hProcess != INVALID_HANDLE_VALUE);
     PLY_ASSERT(procInfo.hThread != INVALID_HANDLE_VALUE);
     subprocess->childProcess = procInfo.hProcess;
@@ -277,8 +269,8 @@ Owned<Subprocess> Subprocess::execArgStr(StringView exePath, StringView argStr,
     return subprocess;
 }
 
-PLY_NO_INLINE Owned<Subprocess>
-Subprocess::exec(StringView exePath, ArrayView<const StringView> args,
+Owned<Process>
+Process::exec(StringView exePath, ArrayView<const StringView> args,
                  StringView initialDir, const Output& output, const Input& input) {
     MemOutStream mout;
     for (StringView arg : args) {
@@ -287,7 +279,7 @@ Subprocess::exec(StringView exePath, ArrayView<const StringView> args,
         }
         mout.format(CmdLineArg_WinCrt{arg});
     }
-    return Subprocess::execArgStr(exePath, mout.moveToString(), initialDir, output,
+    return Process::execArgStr(exePath, mout.moveToString(), initialDir, output,
                                   input);
 }
 

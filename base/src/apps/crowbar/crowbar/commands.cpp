@@ -77,9 +77,9 @@ generateCMakeProject(StringView cmakeListsFolder,
         args.append(String::format("-DCMAKE_BUILD_TYPE={}", config));
     }
     args.extend({"-DCMAKE_C_COMPILER_FORCED=1", "-DCMAKE_CXX_COMPILER_FORCED=1"});
-    Owned<Subprocess> sub =
-        Subprocess::exec(PLY_CMAKE_PATH, Array<StringView>{args}, buildFolder,
-                         Subprocess::Output::openMerged());
+    Owned<Process> sub =
+        Process::exec(PLY_CMAKE_PATH, Array<StringView>{args}, buildFolder,
+                         Process::Output::openMerged());
     String output = InStream{TextFormat::default_utf8().createImporter(
                                  {sub->readFromStdOut, false})}
                         .read_remaining_contents();
@@ -244,9 +244,9 @@ void command_open(BuildFolder_t* bf) {
         }
 
         // Open IDE
-        Owned<Subprocess> sub =
-            Subprocess::exec("open", Array<StringView>{projPath}.view(), {},
-                             Subprocess::Output::inherit());
+        Owned<Process> sub =
+            Process::exec("open", Array<StringView>{projPath}.view(), {},
+                             Process::Output::inherit());
         if (!sub) {
             fatalError("Unable to open IDE using 'open'");
         }

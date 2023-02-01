@@ -72,8 +72,8 @@ PLY_NO_INLINE s32 buildCMakeProject(StringView cmakeListsFolder,
     if (!isMultiConfig) {
         buildFolder = Path.join(buildFolder, config);
     }
-    Subprocess::Output outputType = Subprocess::Output::inherit();
-    Owned<Subprocess> sub;
+    Process::Output outputType = Process::Output::inherit();
+    Owned<Process> sub;
     if (generatorOpts.generator == "Unix Makefiles") {
         Array<HybridString> args = {};
         u32 hwThreads = Affinity{}.getNumHWThreads();
@@ -84,7 +84,7 @@ PLY_NO_INLINE s32 buildCMakeProject(StringView cmakeListsFolder,
             args.append(targetName);
         }
         sub =
-            Subprocess::exec("make", Array<StringView>{args}, buildFolder, outputType);
+            Process::exec("make", Array<StringView>{args}, buildFolder, outputType);
     } else {
         Array<StringView> args = {"--build", "."};
         if (isMultiConfig) {
@@ -93,7 +93,7 @@ PLY_NO_INLINE s32 buildCMakeProject(StringView cmakeListsFolder,
         if (targetName) {
             args.extend({"--target", targetName});
         }
-        sub = Subprocess::exec(PLY_CMAKE_PATH, args, buildFolder, outputType);
+        sub = Process::exec(PLY_CMAKE_PATH, args, buildFolder, outputType);
     }
     return sub->join();
 }

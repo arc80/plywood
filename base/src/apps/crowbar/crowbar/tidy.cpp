@@ -82,9 +82,9 @@ void tidy_repo(StringView repoPath, StringView clangFormatPath, const TextFormat
             if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
                 // Run clang-format
                 if (clangFormatPath) {
-                    Owned<Subprocess> sub =
-                        Subprocess::exec(clangFormatPath, {"-i", file.name}, triple.dirPath,
-                                         Subprocess::Output::inherit());
+                    Owned<Process> sub =
+                        Process::exec(clangFormatPath, {"-i", file.name}, triple.dirPath,
+                                         Process::Output::inherit());
                     if (sub) {
                         sub->join();
                     }

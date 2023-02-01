@@ -497,6 +497,94 @@ struct Console_t {
 
 extern Console_t Console;
 
+//  ▄▄▄▄▄
+//  ██  ██ ▄▄▄▄▄   ▄▄▄▄   ▄▄▄▄  ▄▄▄▄   ▄▄▄▄   ▄▄▄▄
+//  ██▀▀▀  ██  ▀▀ ██  ██ ██    ██▄▄██ ▀█▄▄▄  ▀█▄▄▄
+//  ██     ██     ▀█▄▄█▀ ▀█▄▄▄ ▀█▄▄▄   ▄▄▄█▀  ▄▄▄█▀
+//
+
+struct Process {
+    enum struct Pipe {
+        Open,
+        Redirect, // This will redirect output to /dev/null if corresponding OutPipe
+                  // (stdOutPipe/stdErrPipe) is unopened
+        StdOut,
+    };
+
+    struct Output {
+        Pipe stdOut = Pipe::Redirect;
+        Pipe stdErr = Pipe::Redirect;
+        OutPipe* stdOutPipe = nullptr;
+        OutPipe* stdErrPipe = nullptr;
+
+        static PLY_INLINE Output ignore() {
+            return {};
+        }
+        static PLY_INLINE Output inherit() {
+            Output h;
+            h.stdOutPipe = get_console_out_pipe();
+            h.stdErrPipe = get_console_error_pipe();
+            return h;
+        }
+        static PLY_INLINE Output openSeparate() {
+            Output h;
+            h.stdOut = Pipe::Open;
+            h.stdErr = Pipe::Open;
+            return h;
+        }
+        static PLY_INLINE Output openMerged() {
+            Output h;
+            h.stdOut = Pipe::Open;
+            h.stdErr = Pipe::StdOut;
+            return h;
+        }
+        static PLY_INLINE Output openStdOutOnly() {
+            Output h;
+            h.stdOut = Pipe::Open;
+            return h;
+        }
+    };
+
+    struct Input {
+        Pipe stdIn = Pipe::Redirect;
+        InPipe* stdInPipe = nullptr;
+
+        static PLY_INLINE Input ignore() {
+            return {};
+        }
+        static PLY_INLINE Input inherit() {
+            return {Pipe::Redirect, get_console_in_pipe()};
+        }
+        static PLY_INLINE Input open() {
+            return {Pipe::Open, nullptr};
+        }
+    };
+
+    // Members
+    Owned<OutPipe> writeToStdIn;
+    Owned<InPipe> readFromStdOut;
+    Owned<InPipe> readFromStdErr;
+
+#if PLY_TARGET_WIN32
+    HANDLE childProcess = INVALID_HANDLE_VALUE;
+    HANDLE childMainThread = INVALID_HANDLE_VALUE;
+#elif PLY_TARGET_POSIX
+    int childPID = -1;
+#endif
+
+    PLY_INLINE Process() = default;
+    ~Process();
+    s32 join();
+
+    static PLY_DLL_ENTRY Owned<Process> execArgStr(StringView exePath, StringView argStr,
+                                                      StringView initialDir, const Output& output,
+                                                      const Input& input = Input::open());
+    static PLY_DLL_ENTRY Owned<Process> exec(StringView exePath,
+                                                ArrayView<const StringView> args,
+                                                StringView initialDir, const Output& output,
+                                                const Input& input = Input::open());
+};
+
 //  ▄▄  ▄▄        ▄▄                  ▄▄
 //  ██  ██ ▄▄▄▄▄  ▄▄  ▄▄▄▄  ▄▄▄▄   ▄▄▄██  ▄▄▄▄
 //  ██  ██ ██  ██ ██ ██    ██  ██ ██  ██ ██▄▄██

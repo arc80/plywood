@@ -6,55 +6,48 @@
 
 #if PLY_TARGET_POSIX
 
-#include <ply-runtime/process/Subprocess.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
 namespace ply {
 
-struct Subprocess_POSIX : Subprocess {
-    int childPID = -1;
-
-    PLY_INLINE Subprocess_POSIX() = default;
-
-    PLY_NO_INLINE ~Subprocess_POSIX() {
-        if (this->childPID != -1) {
-            // Do a non-blocking (WNOHANG) wait so that the kernel is free to re-use the child PID
-            // for other processes. In other words, avoid leaving child processes in a "zombie"
-            // state.
-            int status;
-            int rc = waitpid(this->childPID, &status, WNOHANG); // non-blocking
-            PLY_ASSERT(rc == this->childPID || rc == 0);
-            PLY_UNUSED(rc);
-        }
-    }
-
-    PLY_NO_INLINE s32 join() override {
-        PLY_ASSERT(this->childPID != -1);
+Process::~Process() {
+    if (this->childPID != -1) {
+        // Do a non-blocking (WNOHANG) wait so that the kernel is free to re-use the child PID
+        // for other processes. In other words, avoid leaving child processes in a "zombie"
+        // state.
         int status;
-        int rc;
-        // Loop to ignore signals sent by the debugger on macOS
-        do {
-            rc = waitpid(this->childPID, &status, 0);
-        } while (rc == -1 && errno == EINTR);
-        PLY_ASSERT(rc == this->childPID);
+        int rc = waitpid(this->childPID, &status, WNOHANG); // non-blocking
+        PLY_ASSERT(rc == this->childPID || rc == 0);
         PLY_UNUSED(rc);
-        this->childPID = -1;
-        // FIXME: Add an assert here to ensure that readFromStdOut & readFromStdErr have been
-        // drained (?).
-        if (WIFEXITED(status)) {
-            return WEXITSTATUS(status);
-        } else {
-            return -1;
-        }
     }
-};
+}
+
+s32 Process::join() {
+    PLY_ASSERT(this->childPID != -1);
+    int status;
+    int rc;
+    // Loop to ignore signals sent by the debugger on macOS
+    do {
+        rc = waitpid(this->childPID, &status, 0);
+    } while (rc == -1 && errno == EINTR);
+    PLY_ASSERT(rc == this->childPID);
+    PLY_UNUSED(rc);
+    this->childPID = -1;
+    // FIXME: Add an assert here to ensure that readFromStdOut & readFromStdErr have been
+    // drained (?).
+    if (WIFEXITED(status)) {
+        return WEXITSTATUS(status);
+    } else {
+        return -1;
+    }
+}
 
 //--------------------------------
 // Get unique inheritable handle for null output
 //--------------------------------
-PLY_NO_INLINE int getNullInFD_POSIX() {
+int getNullInFD_POSIX() {
     static int fd = -1;
     if (fd == -1) {
         static Mutex mutex;
@@ -71,7 +64,7 @@ PLY_NO_INLINE int getNullInFD_POSIX() {
     return fd2;
 }
 
-PLY_NO_INLINE int getNullOutFD_POSIX() {
+int getNullOutFD_POSIX() {
     static int fd = -1;
     if (fd == -1) {
         static Mutex mutex;
@@ -88,7 +81,7 @@ PLY_NO_INLINE int getNullOutFD_POSIX() {
     return fd2;
 }
 
-PLY_NO_INLINE Owned<Subprocess> Subprocess::exec(StringView exePath,
+Owned<Process> Process::exec(StringView exePath,
                                                  ArrayView<const StringView> args,
                                                  StringView initialDir, const Output& output,
                                                  const Input& input) {
@@ -231,8 +224,8 @@ PLY_NO_INLINE Owned<Subprocess> Subprocess::exec(StringView exePath,
     }
 
     // This is the parent process.
-    // Create Subprocess object and return it:
-    Subprocess_POSIX* subprocess = new Subprocess_POSIX;
+    // Create Process object and return it:
+    Process* subprocess = new Process;
     subprocess->childPID = childPID;
     int rc = close(childStdInFD[0]);
     PLY_ASSERT(rc == 0);
