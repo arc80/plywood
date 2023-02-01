@@ -2,7 +2,7 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include <ply-runtime/string/String.h>
+#include <ply-runtime.h>
 #include <ply-test/TestSuite.h>
 
 namespace ply {

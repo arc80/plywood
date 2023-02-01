@@ -2,8 +2,8 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
+#include <ply-runtime.h>
 #include <ply-test/TestSuite.h>
-#include <ply-runtime/string/TextEncoding.h>
 
 namespace ply {
 namespace tests {
