@@ -7,8 +7,6 @@
 
 #if PLY_TARGET_WIN32
 
-#include <ply-runtime/network/impl/Socket_Winsock.h>
-
 #define PLY_IPWINSOCK_ALLOW_UNKNOWN_ERRORS 0
 
 namespace ply {
@@ -21,11 +19,11 @@ PLY_STATIC_ASSERT(sizeof(struct sockaddr_in) <= sizeof(struct sockaddr_in6));
 #define PLY_IF_IPV4(v6expr, v4expr) v4expr
 #endif
 
-bool Socket_Winsock::IsInit = false;
-bool Socket_Winsock::HasIPv6 = false;
-ThreadLocal<IPResult> Socket_Winsock::lastResult_;
+bool Socket::IsInit = false;
+bool Socket::HasIPv6 = false;
+ThreadLocal<IPResult> Socket::lastResult_;
 
-PLY_NO_INLINE void Socket_Winsock::initialize(IPAddress::Version ipVersion) {
+PLY_NO_INLINE void Socket::initialize(IPAddress::Version ipVersion) {
     PLY_ASSERT(!IsInit);
     // Initialize Winsock
     WSADATA wsaData;
@@ -36,7 +34,7 @@ PLY_NO_INLINE void Socket_Winsock::initialize(IPAddress::Version ipVersion) {
     IsInit = true;
 }
 
-PLY_NO_INLINE void Socket_Winsock::shutdown() {
+PLY_NO_INLINE void Socket::shutdown() {
     PLY_ASSERT(IsInit);
     int rc = WSACleanup();
     PLY_ASSERT(rc == 0);
@@ -44,20 +42,20 @@ PLY_NO_INLINE void Socket_Winsock::shutdown() {
     IsInit = false;
 }
 
-PLY_NO_INLINE TCPConnection_Winsock::~TCPConnection_Winsock() {
+PLY_NO_INLINE TCPConnection::~TCPConnection() {
     // Prevent double-deletion of file descriptor
     this->outPipe.socket = INVALID_SOCKET;
 }
 
-PLY_NO_INLINE Owned<TCPConnection_Winsock> TCPListener_Winsock::accept() {
+PLY_NO_INLINE Owned<TCPConnection> TCPListener::accept() {
     if (this->listenSocket == INVALID_SOCKET) {
-        Socket_Winsock::lastResult_.store(IPResult::NoSocket);
+        Socket::lastResult_.store(IPResult::NoSocket);
         return nullptr;
     }
 
     struct PLY_IF_IPV6(sockaddr_in6, sockaddr_in) remoteAddr;
     socklen_t remoteAddrLen = sizeof(sockaddr_in);
-    if (PLY_IF_IPV6(Socket_Winsock::HasIPv6, false)) {
+    if (PLY_IF_IPV6(Socket::HasIPv6, false)) {
         remoteAddrLen = sizeof(sockaddr_in6);
     }
     socklen_t passedAddrLen = remoteAddrLen;
@@ -67,14 +65,14 @@ PLY_NO_INLINE Owned<TCPConnection_Winsock> TCPListener_Winsock::accept() {
     if (hostSocket == INVALID_SOCKET) {
         // FIXME: Check WSAGetLastError
         PLY_ASSERT(PLY_IPWINSOCK_ALLOW_UNKNOWN_ERRORS);
-        Socket_Winsock::lastResult_.store(IPResult::Unknown);
+        Socket::lastResult_.store(IPResult::Unknown);
         return nullptr;
     }
 
     PLY_ASSERT(passedAddrLen >= remoteAddrLen);
-    TCPConnection_Winsock* tcpConn = new TCPConnection_Winsock;
+    TCPConnection* tcpConn = new TCPConnection;
 #if PLY_WITH_IPV6
-    if (Socket_Winsock::HasIPv6 && remoteAddrLen == sizeof(sockaddr_in6)) {
+    if (Socket::HasIPv6 && remoteAddrLen == sizeof(sockaddr_in6)) {
         PLY_ASSERT(remoteAddr.sin6_family == AF_INET6);
         memcpy(&tcpConn->remoteAddr_, &remoteAddr.sin6_addr, 16);
     } else
@@ -87,13 +85,13 @@ PLY_NO_INLINE Owned<TCPConnection_Winsock> TCPListener_Winsock::accept() {
     tcpConn->remotePort_ = PLY_CONVERT_BIG_ENDIAN(remoteAddr.sin6_port);
     tcpConn->inPipe.socket = hostSocket;
     tcpConn->outPipe.socket = hostSocket;
-    Socket_Winsock::lastResult_.store(IPResult::OK);
+    Socket::lastResult_.store(IPResult::OK);
     return tcpConn;
 }
 
 PLY_NO_INLINE SOCKET createSocket(int type) {
     int family = AF_INET;
-    if (PLY_IF_IPV6(Socket_Winsock::HasIPv6, false)) {
+    if (PLY_IF_IPV6(Socket::HasIPv6, false)) {
         family = AF_INET6;
     }
     SOCKET s = socket(family, type, 0);
@@ -103,7 +101,7 @@ PLY_NO_INLINE SOCKET createSocket(int type) {
             case 0: // Dummy case to prevent compiler warnings
             default: {
                 PLY_ASSERT(PLY_IPWINSOCK_ALLOW_UNKNOWN_ERRORS); // FIXME: Recognize this code
-                Socket_Winsock::lastResult_.store(IPResult::Unknown);
+                Socket::lastResult_.store(IPResult::Unknown);
                 break;
             }
         }
@@ -111,7 +109,7 @@ PLY_NO_INLINE SOCKET createSocket(int type) {
     return s;
 }
 
-PLY_NO_INLINE TCPListener_Winsock Socket_Winsock::bindTCP(u16 port) {
+PLY_NO_INLINE TCPListener Socket::bindTCP(u16 port) {
     SOCKET listenSocket = createSocket(SOCK_STREAM);
     if (listenSocket == INVALID_SOCKET) { // lastResult_ is already set
         return {};
@@ -125,7 +123,7 @@ PLY_NO_INLINE TCPListener_Winsock Socket_Winsock::bindTCP(u16 port) {
     struct PLY_IF_IPV6(sockaddr_in6, sockaddr_in) serverAddr;
     socklen_t serverAddrLen = sizeof(sockaddr_in);
 #if PLY_WITH_IPV6
-    if (Socket_Winsock::HasIPv6) {
+    if (Socket::HasIPv6) {
         serverAddrLen = sizeof(sockaddr_in6);
         memset(&serverAddr, 0, serverAddrLen);
 #if PLY_KERNEL_FREEBSD
@@ -151,8 +149,8 @@ PLY_NO_INLINE TCPListener_Winsock Socket_Winsock::bindTCP(u16 port) {
     if (rc == 0) {
         rc = listen(listenSocket, 1);
         if (rc == 0) {
-            Socket_Winsock::lastResult_.store(IPResult::OK);
-            return TCPListener_Winsock{listenSocket};
+            Socket::lastResult_.store(IPResult::OK);
+            return TCPListener{listenSocket};
         } else {
             int err = WSAGetLastError();
             switch (err) {
@@ -160,7 +158,7 @@ PLY_NO_INLINE TCPListener_Winsock Socket_Winsock::bindTCP(u16 port) {
                 default: {
                     // FIXME: Recognize this error code
                     PLY_ASSERT(PLY_IPWINSOCK_ALLOW_UNKNOWN_ERRORS);
-                    Socket_Winsock::lastResult_.store(IPResult::Unknown);
+                    Socket::lastResult_.store(IPResult::Unknown);
                     break;
                 }
             }
@@ -172,7 +170,7 @@ PLY_NO_INLINE TCPListener_Winsock Socket_Winsock::bindTCP(u16 port) {
             default: {
                 // FIXME: Recognize this error code
                 PLY_ASSERT(PLY_IPWINSOCK_ALLOW_UNKNOWN_ERRORS);
-                Socket_Winsock::lastResult_.store(IPResult::Unknown);
+                Socket::lastResult_.store(IPResult::Unknown);
                 break;
             }
         }
@@ -185,7 +183,7 @@ PLY_NO_INLINE TCPListener_Winsock Socket_Winsock::bindTCP(u16 port) {
     return {};
 }
 
-PLY_NO_INLINE Owned<TCPConnection_Winsock> Socket_Winsock::connectTCP(const IPAddress& address,
+PLY_NO_INLINE Owned<TCPConnection> Socket::connectTCP(const IPAddress& address,
                                                                       u16 port) {
     SOCKET connectSocket = createSocket(SOCK_STREAM);
     if (connectSocket == INVALID_SOCKET) { // lastResult_ is already set
@@ -195,7 +193,7 @@ PLY_NO_INLINE Owned<TCPConnection_Winsock> Socket_Winsock::connectTCP(const IPAd
     struct PLY_IF_IPV6(sockaddr_in6, sockaddr_in) remoteAddr;
     socklen_t remoteAddrLen = sizeof(sockaddr_in);
 #if PLY_WITH_IPV6
-    if (Socket_Winsock::HasIPv6) {
+    if (Socket::HasIPv6) {
         remoteAddrLen = sizeof(sockaddr_in6);
         memset(&remoteAddr, 0, remoteAddrLen);
 #if PLY_KERNEL_FREEBSD
@@ -220,24 +218,24 @@ PLY_NO_INLINE Owned<TCPConnection_Winsock> Socket_Winsock::connectTCP(const IPAd
 
     int rc = ::connect(connectSocket, (sockaddr*) &remoteAddr, remoteAddrLen);
     if (rc == 0) {
-        TCPConnection_Winsock* tcpConn = new TCPConnection_Winsock;
+        TCPConnection* tcpConn = new TCPConnection;
         tcpConn->remoteAddr_ = address;
         tcpConn->remotePort_ = port;
         tcpConn->inPipe.socket = connectSocket;
         tcpConn->outPipe.socket = connectSocket;
-        Socket_Winsock::lastResult_.store(IPResult::OK);
+        Socket::lastResult_.store(IPResult::OK);
         return tcpConn;
     }
 
     int err = WSAGetLastError();
     switch (err) {
         case WSAECONNREFUSED: {
-            Socket_Winsock::lastResult_.store(IPResult::Refused);
+            Socket::lastResult_.store(IPResult::Refused);
             break;
         }
         default: {
             PLY_ASSERT(PLY_IPWINSOCK_ALLOW_UNKNOWN_ERRORS); // FIXME: Recognize this error ode
-            Socket_Winsock::lastResult_.store(IPResult::Unknown);
+            Socket::lastResult_.store(IPResult::Unknown);
             break;
         }
     }
@@ -247,7 +245,7 @@ PLY_NO_INLINE Owned<TCPConnection_Winsock> Socket_Winsock::connectTCP(const IPAd
     return nullptr;
 }
 
-PLY_NO_INLINE IPAddress Socket_Winsock::resolveHostName(StringView hostName,
+PLY_NO_INLINE IPAddress Socket::resolveHostName(StringView hostName,
                                                         IPAddress::Version ipVersion) {
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
