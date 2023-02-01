@@ -9,7 +9,7 @@
 // command line or a GUI.
 
 #include "core.h"
-#include "workspace.h"
+#include <ply-build-repo/Workspace.h>
 #include <ply-build-steps/Project.h>
 #include <ply-build-repo/BuildFolder.h>
 #include <ply-build-repo/Instantiate.h>

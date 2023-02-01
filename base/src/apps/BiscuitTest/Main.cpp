@@ -194,7 +194,7 @@ void runTestSuite() {
 
     // Open input file
     String testSuitePath =
-        Path.join(PLY_WORKSPACE_FOLDER, "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
+        Path.join(Workspace.path, "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
     String allTests = FileSystem.loadTextAutodetect(testSuitePath);
     SectionReader sr{allTests};
 

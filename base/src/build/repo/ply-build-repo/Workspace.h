@@ -6,17 +6,17 @@
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 
 #pragma once
-#include "core.h"
+#include <ply-build-repo/Core.h>
 #include <ply-build-repo/BuildFolder.h>
 
-using namespace ply::build;
+namespace ply {
 
 struct Workspace_t {
     String path; // absolute path to folder
 
     PLY_REFLECT()
     String currentBuildFolder;
-    CMakeGeneratorOptions defaultCMakeOptions;
+    build::CMakeGeneratorOptions defaultCMakeOptions;
     String defaultConfig;
     String sourceNewLines;
     // ply reflect off
@@ -28,3 +28,5 @@ struct Workspace_t {
 };
 
 extern Workspace_t Workspace;
+
+} // namespace ply

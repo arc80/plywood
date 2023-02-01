@@ -46,7 +46,7 @@ Tuple<bool, TextFormat> extractFormatFromName(StringView name) {
 
 bool runTestSuite() {
     String testsFolder =
-        Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/AutodetectTest/tests");
+        Path.join(Workspace.path, "repos/plywood/src/apps/AutodetectTest/tests");
     OutStream outs = StdOut::text();
     u32 succeeded = 0;
     u32 failed = 0;

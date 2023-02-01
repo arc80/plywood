@@ -3,7 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include "core.h"
-#include "workspace.h"
+#include <ply-build-repo/Workspace.h>
 #include <ply-cpp/Preprocessor.h>
 #include <ply-cpp/ErrorFormatting.h>
 

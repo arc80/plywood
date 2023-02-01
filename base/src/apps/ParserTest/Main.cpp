@@ -63,7 +63,7 @@ void runTest(StringView testPath) {
 
 void runTestSuite() {
     String testsFolder =
-        Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/src/apps/ParserTest/tests");
+        Path.join(Workspace.path, "repos/plywood/src/apps/ParserTest/tests");
     OutStream outs = StdOut::text();
     for (const DirectoryEntry& entry : FileSystem.listDir(testsFolder)) {
         if (!entry.isDir && entry.name.endsWith(".txt")) {

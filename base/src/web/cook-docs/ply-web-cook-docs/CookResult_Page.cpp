@@ -279,9 +279,9 @@ void dumpExtractedMembers(OutStream& htmlWriter, SemaEntity* classEnt) {
             dumpMemberTitle(title, htmlWriter, prependClassName, lookupCtx);
 
             // Close <code> tag, write optional permalink & source code link, close <div>
-            PLY_ASSERT(title.srcPath.startsWith(Path.normalize(PLY_WORKSPACE_FOLDER)));
+            PLY_ASSERT(title.srcPath.startsWith(Path.normalize(Workspace.path)));
             String srcPath = PosixPath.from<NativePath>(
-                Path.makeRelative(PLY_WORKSPACE_FOLDER, title.srcPath));
+                Path.makeRelative(Workspace.path, title.srcPath));
 #if WEBCOOKDOCS_LINK_TO_GITHUB
             // FIXME: Link to a specific commit
             StringView srcLinkPrefix = "https://github.com/arc80/plywood/tree/main/";
@@ -519,8 +519,8 @@ void Page_cook(cook::CookResult* cookResult_, AnyObject) {
     flushMarkdown();
     String finalHtml = String::format("{}\n", extractMetaResult->title) + htmlWriter.moveToString();
     PLY_ASSERT(pageResult->job->id.desc.startsWith("/"));
-    String htmlPath = Path.join(PLY_WORKSPACE_FOLDER, "data/docsite/pages",
-                                       pageResult->job->id.desc.subStr(1) + ".html");
+    String htmlPath = Path.join(Workspace.path, "data/docsite/pages",
+                                pageResult->job->id.desc.subStr(1) + ".html");
     FileSystem.makeDirsAndSaveTextIfDifferent(htmlPath, finalHtml,
                                                          TextFormat::unixUTF8());
 }

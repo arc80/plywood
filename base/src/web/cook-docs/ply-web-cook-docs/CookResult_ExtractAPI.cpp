@@ -726,7 +726,7 @@ void ExtractAPI_cook(cook::CookResult* cookResult_, AnyObject) {
     visor.extractAPIResult = extractAPIResult;
 
     cpp::PPVisitedFiles visitedFiles;
-    cpp::parsePlywoodSrcFile(Path.join(PLY_WORKSPACE_FOLDER, extractAPIResult->job->id.desc),
+    cpp::parsePlywoodSrcFile(Path.join(Workspace.path, extractAPIResult->job->id.desc),
                              &visitedFiles, &visor);
 }
 

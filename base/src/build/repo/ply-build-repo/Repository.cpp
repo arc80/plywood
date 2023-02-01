@@ -3,6 +3,7 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-build-repo/Repository.h>
+#include <ply-build-repo/Workspace.h>
 #include <ply-biscuit/Interpreter.h>
 
 namespace ply {
@@ -29,7 +30,7 @@ void Repository::create() {
     g_repository = new Repository;
 
     bool anyError = false;
-    for (const FileInfo& entry : FileSystem.listDir(PLY_WORKSPACE_FOLDER, 0)) {
+    for (const FileInfo& entry : FileSystem.listDir(Workspace.path, 0)) {
         if (!entry.isDir)
             continue;
         if (entry.name.startsWith("."))
@@ -38,7 +39,7 @@ void Repository::create() {
             continue;
 
         // Recursively find all Plyfiles
-        String repoFolder = Path.join(PLY_WORKSPACE_FOLDER, entry.name);
+        String repoFolder = Path.join(Workspace.path, entry.name);
         for (const WalkTriple& triple : FileSystem.walk(repoFolder)) {
             for (const FileInfo& file : triple.files) {
                 if (file.name == "Plyfile") {

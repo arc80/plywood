@@ -2,12 +2,14 @@
   ///\  Plywood C++ Framework
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
-#include "core.h"
-#include "workspace.h"
+#include <ply-build-repo/Core.h>
+#include <ply-build-repo/Workspace.h>
 #include <pylon/Parse.h>
 #include <pylon/Write.h>
 #include <pylon-reflect/Import.h>
 #include <pylon-reflect/Export.h>
+
+namespace ply {
 
 Workspace_t Workspace;
 
@@ -44,9 +46,8 @@ PLY_NO_INLINE void Workspace_t::load() {
     importInto(AnyObject::bind(this), aRoot);
     if (!this->sourceNewLines) {
         this->sourceNewLines =
-            (TextFormat::default_utf8().newLine == TextFormat::NewLine::CRLF
-                 ? "crlf"
-                 : "lf");
+            (TextFormat::default_utf8().newLine == TextFormat::NewLine::CRLF ? "crlf"
+                                                                             : "lf");
     }
 }
 
@@ -73,4 +74,6 @@ PLY_NO_INLINE TextFormat Workspace_t::getSourceTextFormat() const {
     return tff;
 }
 
-#include "codegen/workspace.inl" //%%
+#include "codegen/Workspace.inl" //%%
+
+} // namespace ply

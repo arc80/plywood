@@ -4,6 +4,7 @@
 ------------------------------------*/
 #include <ply-build-repo/Core.h>
 #include <ply-build-repo/ExternFolderRegistry.h>
+#include <ply-build-repo/Workspace.h>
 #include <pylon/Parse.h>
 #include <pylon/Write.h>
 #include <pylon-reflect/Import.h>
@@ -42,7 +43,7 @@ Owned<ExternFolderRegistry> ExternFolderRegistry::create() {
     PLY_ASSERT(!instance_);
     Owned<ExternFolderRegistry> externFolders = new ExternFolderRegistry;
     externFolders->folders.clear();
-    String buildFolderRoot = Path.join(PLY_WORKSPACE_FOLDER, "data/extern");
+    String buildFolderRoot = Path.join(Workspace.path, "data/extern");
     // FIXME: Use native() or compat() consistently
     // FIXME: Detect and report duplicate extern folders
     for (const FileInfo& entry : FileSystem.listDir(buildFolderRoot, 0)) {
@@ -83,7 +84,7 @@ PLY_NO_INLINE String makeUniqueFileName(StringView parentFolder, StringView pref
 PLY_NO_INLINE ExternFolder* ExternFolderRegistry::create(StringView desc) {
     // Make directory
     String folderPath =
-        makeUniqueFileName(Path.join(PLY_WORKSPACE_FOLDER, "data/extern"), desc);
+        makeUniqueFileName(Path.join(Workspace.path, "data/extern"), desc);
     FSResult fsResult = FileSystem.makeDirs(folderPath);
     if (!(fsResult == FSResult::OK || fsResult == FSResult::AlreadyExists)) {
         PLY_ASSERT(

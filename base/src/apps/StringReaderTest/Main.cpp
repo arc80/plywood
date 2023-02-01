@@ -11,8 +11,8 @@ void testParse(OutStream* outs, StringView type, StringView str, u32 radix) {
     ViewInStream ins{str};
     T result = ins.parse<T>(fmt::Radix{radix});
     String backToString = String::from(fmt::WithRadix{result, radix});
-    outs->format("Parsing \"{}\" as {}, radix {} -> \"{}\", {}\n", str, type, radix, backToString,
-                 ins.anyParseError() ? "failed" : "success");
+    outs->format("Parsing \"{}\" as {}, radix {} -> \"{}\", {}\n", str, type, radix,
+                 backToString, ins.anyParseError() ? "failed" : "success");
 }
 
 StringView strList[] = {
@@ -58,8 +58,7 @@ int main() {
         }
     }
     FileSystem.makeDirsAndSaveTextIfDifferent(
-        Path.join(PLY_WORKSPACE_FOLDER,
-                         "repos/plywood/src/apps/StringReaderTest/result.txt"),
+        Path.join(Workspace.path, "repos/plywood/src/apps/StringReaderTest/result.txt"),
         mout.moveToString(), TextFormat::platformPreference());
     return 0;
 }

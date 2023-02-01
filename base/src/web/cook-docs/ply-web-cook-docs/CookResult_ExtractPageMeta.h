@@ -39,8 +39,9 @@ struct CookResult_ExtractPageMeta : cook::CookResult {
     }
     PLY_INLINE String getMarkdownPath() const {
         PLY_ASSERT(this->job->id.desc.startsWith("/"));
-        return Path.join(PLY_WORKSPACE_FOLDER, "repos/plywood/docs",
-                                this->job->id.desc.ltrim([](char c) { return c == '/'; }) + ".md");
+        return Path.join(Workspace.path, "repos/plywood/docs",
+                         this->job->id.desc.ltrim([](char c) { return c == '/'; }) +
+                             ".md");
     }
 };
 

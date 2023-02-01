@@ -7,7 +7,7 @@
 
 #include "core.h"
 #include "command_line.h"
-#include "workspace.h"
+#include <ply-build-repo/Workspace.h>
 #include "commands.h"
 #include <ply-build-repo/BuildFolder.h>
 #include <ply-build-repo/Common.h>
