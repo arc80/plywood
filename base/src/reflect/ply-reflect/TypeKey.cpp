@@ -7,7 +7,6 @@
 #include <ply-reflect/FormatDescriptor.h>
 #include <ply-reflect/PersistRead.h>
 #include <ply-reflect/PersistWrite.h>
-#include <ply-runtime/container/Numeric.h>
 #include <ply-runtime/container/Boxed.h>
 
 namespace ply {

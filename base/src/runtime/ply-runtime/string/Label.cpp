@@ -4,7 +4,6 @@
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/Core.h>
-#include <ply-runtime/string/Label.h>
 
 namespace ply {
 

@@ -1,12 +1,11 @@
-/*------------------------------------
-  ///\  Plywood C++ Framework
-  \\\/  https://plywood.arc80.com/
-------------------------------------*/
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                           ┃
+┃    ╱   ╱╲    Plywood Multimedia Development Kit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/                  ┃
+┃    └──┴┴┴┘                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+
 #pragma once
-#include <ply-runtime/container/Tuple.h>
-#include <ply-runtime/container/Owned.h>
-#include <ply-runtime/container/BlockList.h>
-#include <ply-runtime/container/HashMap.h>
 
 namespace ply {
 

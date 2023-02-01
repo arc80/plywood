@@ -3,7 +3,6 @@
   \\\/  https://plywood.arc80.com/
 ------------------------------------*/
 #include <ply-runtime/Precomp.h>
-#include <ply-runtime/container/impl/BaseLabelMap.h>
 
 namespace ply {
 namespace impl {

@@ -4,7 +4,6 @@
 ------------------------------------*/
 #pragma once
 #include <ply-build-repo/Core.h>
-#include <ply-runtime/string/Label.h>
 
 namespace ply {
 namespace build {

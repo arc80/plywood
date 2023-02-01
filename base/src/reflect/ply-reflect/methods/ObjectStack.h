@@ -8,7 +8,6 @@
 #if PLY_WITH_METHOD_TABLES
 
 #include <ply-reflect/AnyObject.h>
-#include <ply-runtime/container/Sequence.h>
 
 namespace ply {
 

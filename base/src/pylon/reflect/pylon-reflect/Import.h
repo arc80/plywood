@@ -8,7 +8,6 @@
 #include <ply-reflect/TypeDescriptor.h>
 #include <ply-reflect/TypeKey.h>
 #include <ply-reflect/AnyOwnedObject.h>
-#include <ply-runtime/container/Owned.h>
 
 namespace pylon {
 

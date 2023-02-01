@@ -3047,4 +3047,5 @@ PLY_INLINE void sort(Arr& arr, const IsLess& isLess = impl::defaultLess<impl::Ar
 
 } // namespace ply
 
+#include <ply-runtime/container.h>
 #include <ply-runtime/io.h>
