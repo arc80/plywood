@@ -861,4 +861,29 @@ PLY_NO_INLINE FileInfo FileSystem_t::getFileStatus(StringView path) {
 
 #endif
 
+// ┏━━━━━━━━━━━━━━━━━━━━━━┓
+// ┃  get_workspace_path  ┃
+// ┗━━━━━━━━━━━━━━━━━━━━━━┛
+String get_workspace_path() {
+    String path = FileSystem.getWorkingDirectory();
+    static const StringView fileName = "workspace-settings.pylon";
+    String settingsPath;
+
+    // Search each parent directory for workspace-settings.pylon:
+    while (true) {
+        settingsPath = Path.join(path, fileName);
+        if (FileSystem.exists(settingsPath) == ExistsResult::File)
+            break;
+        String nextDir = Path.split(path).first;
+        if (path == nextDir) {
+            // We've reached the topmost directory.
+            Error.log("Can't locate {}", fileName);
+            exit(1);
+        }
+        path = nextDir;
+    }
+
+    return path;
+}
+
 } // namespace ply

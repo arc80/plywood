@@ -33,7 +33,8 @@ FnResult doPrint(const FnParams& params) {
     } else if (arg.is<String>()) {
         *sos->outs << *arg.cast<String>() << '\n';
     } else {
-        params.base->error(String::format("'{}' does not support printing", arg.type->getName()));
+        params.base->error(
+            String::format("'{}' does not support printing", arg.type->getName()));
         return Fn_Error;
     }
     return Fn_OK;
@@ -55,7 +56,8 @@ struct BuiltInStorage {
     }
 };
 
-String parseAndTryCall(StringView src, StringView funcName, ArrayView<const AnyObject> args) {
+String parseAndTryCall(StringView src, StringView funcName,
+                       ArrayView<const AnyObject> args) {
     // Create tokenizer and parser.
     Tokenizer tkr;
     tkr.setSourceInput({}, src);
@@ -73,25 +75,28 @@ String parseAndTryCall(StringView src, StringView funcName, ArrayView<const AnyO
 
         // Parse function body.
         biscuit::Parser::Filter filter;
-        filter.keywordHandler = [](const KeywordParams&) { return KeywordResult::Illegal; };
+        filter.keywordHandler = [](const KeywordParams&) {
+            return KeywordResult::Illegal;
+        };
         filter.allowInstructions = true;
         PLY_SET_IN_SCOPE(parser.filter, filter);
         stmt->functionDefinition()->body =
-            parseStatementBlock(&
-                parser, {"function", "parameter list"});
-         
+            parseStatementBlock(&parser, {"function", "parameter list"});
+
         *fnMap.insert(nameToken.label) = std::move(stmt);
     };
 
     // Parse the script.
     biscuit::StatementBlockProperties props{"file"};
-    Owned<biscuit::StatementBlock> file = parseStatementBlockInner(&parser, props, true);
+    Owned<biscuit::StatementBlock> file =
+        parseStatementBlockInner(&parser, props, true);
     if (parser.errorCount > 0)
         return errorOut.moveToString();
 
     // Invoke function if it exists
     if (Owned<Statement>* stmt = fnMap.find(g_labelStorage.find(funcName))) {
-        const Statement::FunctionDefinition* fnDef = (*stmt)->functionDefinition().get();
+        const Statement::FunctionDefinition* fnDef =
+            (*stmt)->functionDefinition().get();
         MemOutStream outs;
         ScriptOutStream sos{&outs};
         BuiltInStorage bis{&sos};
@@ -193,8 +198,8 @@ void runTestSuite() {
     };
 
     // Open input file
-    String testSuitePath =
-        Path.join(Workspace.path, "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
+    String testSuitePath = Path.join(get_workspace_path(),
+                                     "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
     String allTests = FileSystem.loadTextAutodetect(testSuitePath);
     SectionReader sr{allTests};
 

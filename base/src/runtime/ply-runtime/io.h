@@ -786,6 +786,8 @@ extern Path_t Path;
 extern Path_t WindowsPath;
 extern Path_t PosixPath;
 
+String get_workspace_path();
+
 //  ▄▄▄▄▄ ▄▄ ▄▄▄          ▄▄▄▄                 ▄▄
 //  ██    ▄▄  ██   ▄▄▄▄  ██  ▀▀ ▄▄  ▄▄  ▄▄▄▄  ▄██▄▄  ▄▄▄▄  ▄▄▄▄▄▄▄
 //  ██▀▀  ██  ██  ██▄▄██  ▀▀▀█▄ ██  ██ ▀█▄▄▄   ██   ██▄▄██ ██ ██ ██
