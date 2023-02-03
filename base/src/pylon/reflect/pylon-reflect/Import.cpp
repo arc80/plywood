@@ -4,9 +4,7 @@
 ------------------------------------*/
 #include <pylon-reflect/Core.h>
 #include <pylon-reflect/Import.h>
-#include <ply-reflect/AnySavedObject.h>
 #include <ply-reflect/TypeDescriptorOwner.h>
-#include <ply-reflect/TypedArray.h>
 
 namespace pylon {
 
@@ -194,25 +192,6 @@ PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
         }
         PLY_ASSERT(found);
         PLY_UNUSED(found);
-    } else if (obj.type->typeKey == &TypeKey_AnySavedObject) {
-        PLY_ASSERT(aNode->isObject());
-        TypeDescriptorOwner* targetTypeOwner = convertTypeFrom(aNode->get("type"), typeFromName);
-        AnySavedObject* savedTypedPtr = (AnySavedObject*) obj.data;
-        savedTypedPtr->typeOwner = targetTypeOwner;
-        savedTypedPtr->owned = AnyObject::create(targetTypeOwner->getRootType());
-        convertFrom(savedTypedPtr->owned, aNode->get("value"), typeFromName);
-    } else if (obj.type->typeKey == &TypeKey_TypedArray) {
-        PLY_ASSERT(aNode->isObject());
-        TypeDescriptorOwner* itemTypeOwner = convertTypeFrom(aNode->get("type"), typeFromName);
-        const pylon::Node* aData = aNode->get("data");
-        ArrayView<const pylon::Node* const> aDataArr = aData->arrayView();
-        TypedArray* arr = (TypedArray*) obj.data;
-        arr->create(itemTypeOwner, aDataArr.numItems);
-        AnyObject item = {arr->m_array.items, itemTypeOwner->getRootType()};
-        for (u32 i = 0; i < aDataArr.numItems; i++) {
-            convertFrom(item, aDataArr[i], typeFromName);
-            item.data = PLY_PTR_OFFSET(item.data, itemTypeOwner->getRootType()->fixedSize);
-        }
     } else if (obj.type->typeKey == &TypeKey_Switch) {
         PLY_ASSERT(aNode->isObject());
         auto* switchDesc = obj.type->cast<TypeDescriptor_Switch>();

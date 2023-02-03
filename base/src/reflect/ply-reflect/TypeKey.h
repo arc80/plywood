@@ -9,10 +9,6 @@ namespace ply {
 
 struct AnyObject;
 struct TypeDescriptor;
-class WriteFormatContext;
-struct WriteObjectContext;
-struct ReadObjectContext;
-struct FormatDescriptor;
 
 //-----------------------------------------------------------------------
 // TypeKey
@@ -24,18 +20,8 @@ struct FormatDescriptor;
 //
 struct TypeKey {
     HybridString (*getName)(const TypeDescriptor* typeDesc);
-    void (*write)(AnyObject obj, WriteObjectContext* context);
-    void (*writeFormat)(TypeDescriptor* typeDesc, WriteFormatContext* context);
-    void (*read)(AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc);
     void (*hashDescriptor)(Hasher& hasher, const TypeDescriptor* typeDesc);
     bool (*equalDescriptors)(const TypeDescriptor* type0, const TypeDescriptor* type1);
-
-    TypeKey(decltype(getName) getName_, decltype(write) write_, decltype(writeFormat) writeFormat_,
-            decltype(read) read_, decltype(hashDescriptor) hashTypeParams_,
-            decltype(equalDescriptors) equalTypeParams_)
-        : getName{getName_}, write{write_}, writeFormat{writeFormat_}, read{read_},
-          hashDescriptor{hashTypeParams_}, equalDescriptors{equalTypeParams_} {
-    }
 
     static void hashEmptyDescriptor(Hasher&, const TypeDescriptor*);
     static bool alwaysEqualDescriptors(const TypeDescriptor* typeDesc0,

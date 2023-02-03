@@ -44,18 +44,6 @@ TypeKey TypeKey_NativeFunction{
     [](const TypeDescriptor* typeDesc) -> HybridString { //
         return "built-in function";
     },
-    // write
-    [](AnyObject obj, WriteObjectContext* context) {
-        PLY_FORCE_CRASH(); // FIXME
-    },
-    // writeFormat
-    [](TypeDescriptor* typeDesc, WriteFormatContext* context) {
-        PLY_FORCE_CRASH(); // FIXME
-    },
-    // read
-    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
-        PLY_FORCE_CRASH(); // FIXME
-    },
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {
         PLY_FORCE_CRASH(); // FIXME
@@ -98,18 +86,6 @@ TypeKey TypeKey_BoundNativeMethod{
     // getName
     [](const TypeDescriptor* typeDesc) -> HybridString { //
         return "built-in function";
-    },
-    // write
-    [](AnyObject obj, WriteObjectContext* context) {
-        PLY_FORCE_CRASH(); // FIXME
-    },
-    // writeFormat
-    [](TypeDescriptor* typeDesc, WriteFormatContext* context) {
-        PLY_FORCE_CRASH(); // FIXME
-    },
-    // read
-    [](AnyObject obj, ReadObjectContext* context, FormatDescriptor* formatDesc) {
-        PLY_FORCE_CRASH(); // FIXME
     },
     // hashDescriptor
     [](Hasher& hasher, const TypeDescriptor* typeDesc) {

@@ -296,15 +296,6 @@ TypeKey TypeKey_ReadOnlyDict{
         return "ReadOnlyDict";
     },
 
-    // write
-    nullptr, // Unimplemented
-
-    // writeFormat
-    nullptr, // Unimplemented
-
-    // read
-    nullptr, // Unimplemented
-
     // hashDescriptor
     TypeKey::hashEmptyDescriptor,
 

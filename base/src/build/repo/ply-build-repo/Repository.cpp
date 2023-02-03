@@ -124,15 +124,6 @@ TypeKey TypeKey_Repository_ConfigOptions{
         return "ConfigOptions";
     },
 
-    // write
-    nullptr, // Unimplemented
-
-    // writeFormat
-    nullptr, // Unimplemented
-
-    // read
-    nullptr, // Unimplemented
-
     // hashDescriptor
     TypeKey::hashEmptyDescriptor,
 

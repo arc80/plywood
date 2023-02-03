@@ -5,6 +5,7 @@
 #pragma once
 #include <ply-biscuit/Core.h>
 #include <ply-biscuit/Tokenizer.h>
+#include <ply-reflect/AnyOwnedObject.h>
 
 namespace ply {
 namespace biscuit {
