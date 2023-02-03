@@ -51,18 +51,7 @@ struct Preprocessor {
     };
     Array<StackItem> stack;
     LinearLocation linearLocAtEndOfStackTop = -1;
-
-    struct MacrosTraits {
-        using Key = StringView;
-        struct Item {
-            String identifier;
-            u32 expansionIdx = 0;
-        };
-        static PLY_INLINE bool match(const Item& item, Key key) {
-            return item.identifier == key;
-        }
-    };
-    HashMap<MacrosTraits> macros;
+    Map<StringView, u32> macros;
 
     bool tokenizeCloseAnglesOnly = false;
     bool atStartOfLine = true;

@@ -17,9 +17,8 @@ bool Unicode::encode_point(OutStream& out, u32 codepoint) {
         s32 c;
         if (this->ext_params) {
             // Use lookup table.
-            auto cursor = this->ext_params->reverse_lut.find(codepoint);
-            if (cursor.wasFound()) {
-                c = cursor->value;
+            if (u8* value = this->ext_params->reverse_lut.find(codepoint)) {
+                c = *value;
             } else {
                 c = this->ext_params->missing_char;
             }

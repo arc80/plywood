@@ -319,17 +319,7 @@ Owned<Node> Parser::readObject(const Token& startToken) {
     PLY_ASSERT(startToken.type == Token::OpenCurly);
     ScopeHandler objectScope{*this, ParseError::Scope::object(startToken.fileOfs)};
     Owned<Node> node = Node::createObject(startToken.fileOfs);
-    struct PropLocationTraits {
-        using Key = StringView;
-        struct Item {
-            HybridString name;
-            u32 fileOfs;
-        };
-        static PLY_INLINE bool match(const Item& item, Key key) {
-            return item.name.view() == key;
-        }
-    };
-    HashMap<PropLocationTraits> propLocations;
+    Map<String, u32> propLocations;
     Token prevProperty = {};
     for (;;) {
         bool gotSeparator = false;
@@ -372,10 +362,10 @@ Owned<Node> Parser::readObject(const Token& startToken) {
             return {};
         }
 
-        auto propLocationCursor = propLocations.insertOrFind(firstToken.text);
-        if (propLocationCursor.wasFound()) {
-            ScopeHandler duplicateScope{*this,
-                                        ParseError::Scope::duplicate(propLocationCursor->fileOfs)};
+        bool was_found = false;
+        u32* fileOfs = propLocations.insert_or_find(firstToken.text, &was_found);
+        if (was_found) {
+            ScopeHandler duplicateScope{*this, ParseError::Scope::duplicate(*fileOfs)};
             error(firstToken.fileOfs, String::format("Duplicate property \"{}\"",
                                                       escape(firstToken.text)));
             return {};
@@ -396,8 +386,7 @@ Owned<Node> Parser::readObject(const Token& startToken) {
             Owned<Node> value = readExpression(readToken(), &colon);
             if (!value->isValid())
                 return value;
-            propLocationCursor->name = firstToken.text.view();
-            propLocationCursor->fileOfs = firstToken.fileOfs;
+            *fileOfs = firstToken.fileOfs;
             node->set(std::move(firstToken.text), std::move(value));
         }
 

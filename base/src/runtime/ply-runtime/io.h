@@ -606,19 +606,8 @@ enum UnicodeType {
 };
 
 struct ExtendedTextParams {
-    struct ReverseLUTTraits {
-        using Key = u32;
-        struct Item {
-            u32 key;
-            u8 value;
-        };
-        static bool match(const Item& item, Key key) {
-            return item.key == key;
-        }
-    };
-
     ArrayView<s32> lut; // Lookup table: byte -> Unicode codepoint.
-    HashMap<ReverseLUTTraits> reverse_lut;
+    Map<u32, u8> reverse_lut;
     s32 missing_char = 255; // If negative, missing characters are skipped.
 };
 

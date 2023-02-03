@@ -3383,7 +3383,7 @@ struct MapHelper { // Base template for u32, u64 and StringView.
 template <>
 struct MapHelper<String> { // Specialization for String.
     using Prim = String;
-    static StringView prim(const String& key) {
+    static StringView prim(StringView key) {
         return key;
     }
 };
@@ -3398,7 +3398,7 @@ template <typename T>
 struct MapHelper<T*> { // Specialization for T*.
     using Prim = uptr;
     static uptr prim(T* key) {
-        return (uptr) key.idx;
+        return (uptr) key;
     }
 };
 
@@ -3417,26 +3417,26 @@ struct Map {
 
     using Prim = typename MapHelper<Key>::Prim;
 
-    Value* find(Key key) {
+    Value* find(View<Key> key) {
         PLY_PUN_SCOPE
         return (Value*) map_operate<Prim>((BaseMap*) this, M_Find,
                                           MapHelper<Key>::prim(key),
                                           &map_type_info<Key, Value>);
     }
-    const Value* find(Key key) const {
+    const Value* find(View<Key> key) const {
         PLY_PUN_SCOPE
         return (Value*) map_operate<Prim>((BaseMap*) this, M_Find,
                                           MapHelper<Key>::prim(key),
                                           &map_type_info<Key, Value>);
     }
-    Value* insert_or_find(Key key, bool* was_found = nullptr) {
+    Value* insert_or_find(View<Key> key, bool* was_found = nullptr) {
         PLY_PUN_SCOPE
         return (Value*) map_operate<Prim>((BaseMap*) this, M_Insert,
                                           MapHelper<Key>::prim(key),
                                           &map_type_info<Key, Value>, was_found);
     }
     template <typename T>
-    void assign(Label key, T&& arg) {
+    void assign(View<Key> key, T&& arg) {
         PLY_PUN_SCOPE
         void* value =
             map_operate<Prim>((BaseMap*) this, M_Insert, MapHelper<Key>::prim(key),

@@ -18,9 +18,7 @@ PLY_NO_INLINE void addPPDef(Preprocessor* pp, StringView identifier,
     exp.setString(expansion);
     exp.takesArgs = takesArgs;
 
-    auto cursor = pp->macros.insertOrFind(identifier);
-    cursor->identifier = identifier;
-    cursor->expansionIdx = expIdx;
+    pp->macros.assign(identifier, expIdx);
 }
 
 PLY_INLINE LinearLocation getLinearLocation(const Preprocessor* pp,
@@ -806,8 +804,7 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
 
                 token.identifier = item->in.getViewFrom(savePoint);
                 PLY_ASSERT(token.identifier);
-                auto cursor = pp->macros.find(token.identifier);
-                if (cursor.wasFound()) {
+                if (u32* expansionIdx = pp->macros.find(token.identifier)) {
                     token.type = Token::Macro;
                     token.identifier = item->in.getViewFrom(savePoint);
 
@@ -819,7 +816,7 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
                     PPVisitedFiles* vf = pp->visitedFiles;
 
                     const PPVisitedFiles::MacroExpansion& exp =
-                        vf->macroExpansions[cursor->expansionIdx];
+                        vf->macroExpansions[*expansionIdx];
                     pp->macroArgs.clear();
                     if (exp.takesArgs) {
                         // This macro expects arguments
@@ -841,7 +838,7 @@ PLY_NO_INLINE Token readToken(Preprocessor* pp) {
                     u32 includeChainIdx = vf->includeChains.numItems();
                     PPVisitedFiles::IncludeChain& chain = vf->includeChains.append();
                     chain.isMacroExpansion = true;
-                    chain.fileOrExpIdx = cursor->expansionIdx;
+                    chain.fileOrExpIdx = *expansionIdx;
                     chain.parentIdx = prevChainIdx;
 
                     item = &pp->stack.append();
