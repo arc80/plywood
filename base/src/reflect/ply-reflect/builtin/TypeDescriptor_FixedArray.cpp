@@ -66,12 +66,12 @@ NativeBindings& getNativeBindings_FixedArray() {
                 }
             } else if (src.type->typeKey == &TypeKey_Array) {
                 const TypeDescriptor_Array* srcArrType = src.type->cast<TypeDescriptor_Array>();
-                const impl::BaseArray* baseSrcArray = reinterpret_cast<impl::BaseArray*>(src.data);
+                const BaseArray* baseSrcArray = reinterpret_cast<BaseArray*>(src.data);
                 TypeDescriptor* srcItemType = srcArrType->itemType;
                 // FIXME: Warn about size mismatch
-                u32 itemsToCopy = min<u32>(dstArrType->numItems, baseSrcArray->m_numItems);
+                u32 itemsToCopy = min<u32>(dstArrType->numItems, baseSrcArray->num_items);
                 AnyObject dstItem = {dst.data, dstItemType};
-                AnyObject srcItem = {baseSrcArray->m_items, srcItemType};
+                AnyObject srcItem = {baseSrcArray->items, srcItemType};
                 while (itemsToCopy--) {
                     dstItem.copy(srcItem);
                     // FIXME: Support different strides

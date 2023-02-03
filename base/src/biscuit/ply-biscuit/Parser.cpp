@@ -579,11 +579,11 @@ Owned<StatementBlock> parseStatementBlock(Parser* parser, const StatementBlockPr
 }
 
 Parser::Parser() {
-    this->keywords.insert(g_labelStorage.insert("fn"));
-    this->keywords.insert(g_labelStorage.insert("if"));
-    this->keywords.insert(g_labelStorage.insert("while"));
-    this->keywords.insert(g_labelStorage.insert("else"));
-    this->keywords.insert(g_labelStorage.insert("return"));
+    this->keywords.assign(g_labelStorage.insert("fn"), true);
+    this->keywords.assign(g_labelStorage.insert("if"), true);
+    this->keywords.assign(g_labelStorage.insert("while"), true);
+    this->keywords.assign(g_labelStorage.insert("else"), true);
+    this->keywords.assign(g_labelStorage.insert("return"), true);
     this->functionHandler = {handleFunction, this};
 }
 

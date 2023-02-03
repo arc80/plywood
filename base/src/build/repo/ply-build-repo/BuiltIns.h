@@ -11,7 +11,7 @@ namespace build {
 
 struct ReadOnlyDict {
     String name;
-    LabelMap<AnyObject> map;
+    Map<Label, AnyObject> map;
 };
 
 struct BuiltInStorage_ {
@@ -27,7 +27,7 @@ struct BuiltInStorage_ {
 };
 
 extern BuiltInStorage_ BuiltInStorage;
-extern LabelMap<AnyObject> BuiltInMap;
+extern Map<Label, AnyObject> BuiltInMap;
 
 void init_built_ins(BuildFolder_t* build_folder);
 

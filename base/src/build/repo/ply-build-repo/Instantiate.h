@@ -24,10 +24,10 @@ struct TargetWithStatus {
 };
 
 struct TargetInstantiator {
-    LabelMap<AnyObject> globalNamespace;
+    Map<Label, AnyObject> globalNamespace;
 
     // These members are modified during instantiation.
-    LabelMap<TargetWithStatus> targetMap;
+    Map<Label, TargetWithStatus> targetMap;
     u64 configBit = 0;
 };
 

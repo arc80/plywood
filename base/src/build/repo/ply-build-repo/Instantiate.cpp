@@ -290,8 +290,9 @@ FnResult instantiateTargetForCurrentConfig(Target** outTarget, TargetInstantiato
     // Check for an existing target; otherwise create one.
     Target* target = nullptr;
     {
-        TargetWithStatus* tws = nullptr;
-        if (mi->targetMap.insertOrFind(name, &tws)) {
+        bool was_found = false;
+        TargetWithStatus* tws = mi->targetMap.insert_or_find(name, &was_found);
+        if (!was_found) {
             // No existing target found. Create a new one.
             tws->target = new Target;
             tws->target->name = name;
@@ -411,8 +412,8 @@ FnResult custom_block_inside_config_list(ConfigListInterpreter* cli,
     // Initialize all Target::currentOptions
     for (Repository::Function* target : g_repository->targets) {
         auto newOptions = Owned<Repository::ConfigOptions>::create();
-        for (const auto item : target->defaultOptions->map) {
-            AnyOwnedObject* dst = newOptions->map.insert(item.key);
+        for (const auto& item : target->defaultOptions->map) {
+            AnyOwnedObject* dst = newOptions->map.insert_or_find(item.key);
             *dst = AnyOwnedObject::create(item.value.type);
             dst->copy(item.value);
         }
@@ -491,11 +492,11 @@ PLY_NO_INLINE void instantiate_all_configs(BuildFolder_t* build_folder) {
         cli.mi = &mi;
 
         // Add builtin namespace.
-        LabelMap<AnyObject> builtIns;
+        Map<Label, AnyObject> builtIns;
         bool true_ = true;
         bool false_ = false;
-        *builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
-        *builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
+        builtIns.assign(g_labelStorage.insert("true"), AnyObject::bind(&true_));
+        builtIns.assign(g_labelStorage.insert("false"), AnyObject::bind(&false_));
         cli.build_folder = build_folder;
         cli.interp.resolveName = [&builtIns, &cli](Label identifier) -> AnyObject {
             if (AnyObject* builtIn = builtIns.find(identifier))

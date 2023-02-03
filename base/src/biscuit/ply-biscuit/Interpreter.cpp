@@ -13,19 +13,20 @@ void logErrorWithStack(OutStream& out, const Interpreter* interp, StringView mes
     Interpreter::StackFrame* frame = interp->currentFrame;
     ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
     out.format("{} error: {}\n",
-                 frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset), message);
+               frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
+               message);
     for (;;) {
         frame = frame->prevFrame;
         if (!frame)
             break;
         ExpandedToken expToken = frame->tkr->expandToken(frame->tokenIdx);
         out.format("{}: called from {}\n",
-                     frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
-                     frame->desc());
+                   frame->tkr->fileLocationMap.formatFileLocation(expToken.fileOffset),
+                   frame->desc());
     }
 }
 
-AnyObject find(const LabelMap<AnyObject>& map, Label identifier) {
+AnyObject find(const Map<Label, AnyObject>& map, Label identifier) {
     const AnyObject* value = map.find(identifier);
     return value ? *value : AnyObject{};
 }
@@ -46,7 +47,7 @@ void write(OutStream& out, const AnyObject& arg) {
 }
 
 FnResult evalString(Interpreter::StackFrame* frame,
-                        const Expression::InterpolatedString* stringExp) {
+                    const Expression::InterpolatedString* stringExp) {
     BaseInterpreter* base = &frame->interp->base;
 
     MemOutStream mout;
@@ -62,7 +63,8 @@ FnResult evalString(Interpreter::StackFrame* frame,
     }
 
     // Return string with all substitutions performed.
-    AnyObject* stringObj = base->localVariableStorage.appendObject(getTypeDescriptor<String>());
+    AnyObject* stringObj =
+        base->localVariableStorage.appendObject(getTypeDescriptor<String>());
     *stringObj->cast<String>() = mout.moveToString();
     base->returnValue = *stringObj;
     return Fn_OK;
@@ -74,7 +76,7 @@ PLY_INLINE bool isReturnValueOnTopOfStack(BaseInterpreter* base) {
 }
 
 FnResult evalPropertyLookup(Interpreter::StackFrame* frame,
-                                const Expression::PropertyLookup* propLookup) {
+                            const Expression::PropertyLookup* propLookup) {
     BaseInterpreter* base = &frame->interp->base;
 
     // Evaluate left side.
@@ -86,11 +88,12 @@ FnResult evalPropertyLookup(Interpreter::StackFrame* frame,
 
     // Perform property lookup.
     // FIXME: This should accept interned strings.
-    return obj.type->methods.propertyLookup(base, obj,
-                                            g_labelStorage.view(propLookup->propertyName));
+    return obj.type->methods.propertyLookup(
+        base, obj, g_labelStorage.view(propLookup->propertyName));
 }
 
-FnResult evalBinaryOp(Interpreter::StackFrame* frame, const Expression::BinaryOp* binaryOp) {
+FnResult evalBinaryOp(Interpreter::StackFrame* frame,
+                      const Expression::BinaryOp* binaryOp) {
     BaseInterpreter* base = &frame->interp->base;
 
     // Evaluate left side.
@@ -111,7 +114,8 @@ FnResult evalBinaryOp(Interpreter::StackFrame* frame, const Expression::BinaryOp
     return left.type->methods.binaryOp(base, binaryOp->op, left, right);
 }
 
-FnResult evalUnaryOp(Interpreter::StackFrame* frame, const Expression::UnaryOp* unaryOp) {
+FnResult evalUnaryOp(Interpreter::StackFrame* frame,
+                     const Expression::UnaryOp* unaryOp) {
     BaseInterpreter* base = &frame->interp->base;
 
     // Evaluate subexpression.
@@ -144,11 +148,11 @@ FnResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* call) 
 
         AnyObject* arg;
         if (!isReturnValueOnTopOfStack(base)) {
-            // The return value is not a temporary object, and the interpreter is currently designed
-            // to pass all arguments "by value", like in C, so we should make a copy here. (In the
-            // future, we could extend the interpreter to support passing "by reference" as well,
-            // like in C++. In the meantime, scripts can achieve the same thing by passing
-            // pointers.)
+            // The return value is not a temporary object, and the interpreter is
+            // currently designed to pass all arguments "by value", like in C, so we
+            // should make a copy here. (In the future, we could extend the interpreter
+            // to support passing "by reference" as well, like in C++. In the meantime,
+            // scripts can achieve the same thing by passing pointers.)
             arg = base->localVariableStorage.appendObject(base->returnValue.type);
             arg->copy(base->returnValue);
         } else {
@@ -175,14 +179,14 @@ FnResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* call) 
         Interpreter::StackFrame newFrame;
         newFrame.interp = frame->interp;
         newFrame.desc = [functionDef]() -> HybridString {
-            return String::format("function '{}'", g_labelStorage.view(functionDef->name));
+            return String::format("function '{}'",
+                                  g_labelStorage.view(functionDef->name));
         };
         newFrame.tkr = functionDef->tkr;
         newFrame.prevFrame = frame;
         for (u32 argIndex = 0; argIndex < args.numItems(); argIndex++) {
-            AnyObject* value;
-            newFrame.localVariableTable.insertOrFind(functionDef->parameterNames[argIndex], &value);
-            *value = args[argIndex];
+            newFrame.localVariableTable.assign(functionDef->parameterNames[argIndex],
+                                               args[argIndex]);
         }
 
         // Execute function body and clean up stack frame.
@@ -202,7 +206,8 @@ FnResult evalCall(Interpreter::StackFrame* frame, const Expression::Call* call) 
     }
 
     // Object is not callable
-    base->error(String::format("cannot call '{}' as a function", callee.type->getName()));
+    base->error(
+        String::format("cannot call '{}' as a function", callee.type->getName()));
     return Fn_Error;
 }
 
@@ -224,8 +229,9 @@ FnResult eval(Interpreter::StackFrame* frame, const Expression* expr) {
         case Expression::ID::NameLookup: {
             base->returnValue = lookupName(frame, expr->nameLookup()->name);
             if (!base->returnValue.data) {
-                base->error(String::format("cannot resolve identifier '{}'",
-                                           g_labelStorage.view(expr->nameLookup()->name)));
+                base->error(
+                    String::format("cannot resolve identifier '{}'",
+                                   g_labelStorage.view(expr->nameLookup()->name)));
                 return Fn_Error;
             }
             return Fn_OK;
@@ -267,7 +273,8 @@ FnResult execIf(Interpreter::StackFrame* frame, const Statement::If_* if_) {
     BaseInterpreter* base = &frame->interp->base;
 
     // Evaluate condition.
-    ObjectStack::Boundary localVariableStorageBoundary = base->localVariableStorage.end();
+    ObjectStack::Boundary localVariableStorageBoundary =
+        base->localVariableStorage.end();
     FnResult result = eval(frame, if_->condition);
     if (result != Fn_OK)
         return result;
@@ -291,7 +298,8 @@ FnResult execWhile(Interpreter::StackFrame* frame, const Statement::While_* whil
 
     for (;;) {
         // Evaluate condition.
-        ObjectStack::Boundary localVariableStorageBoundary = base->localVariableStorage.end();
+        ObjectStack::Boundary localVariableStorageBoundary =
+            base->localVariableStorage.end();
         FnResult result = eval(frame, while_->condition);
         if (result != Fn_OK)
             return result;
@@ -311,9 +319,11 @@ FnResult execWhile(Interpreter::StackFrame* frame, const Statement::While_* whil
     }
 }
 
-FnResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignment* assign) {
+FnResult execAssign(Interpreter::StackFrame* frame,
+                    const Statement::Assignment* assign) {
     BaseInterpreter* base = &frame->interp->base;
-    ObjectStack::Boundary localVariableStorageBoundary = base->localVariableStorage.end();
+    ObjectStack::Boundary localVariableStorageBoundary =
+        base->localVariableStorage.end();
 
     // Evaluate left side.
     AnyObject left;
@@ -337,21 +347,26 @@ FnResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignment*
         if (frame->hooks.assignToLocal(assign->attributes, name))
             return Fn_OK;
 
-        AnyObject* value;
-        if (frame->localVariableTable.insertOrFind(name, &value)) {
+        bool was_found = false;
+        AnyObject* value = frame->localVariableTable.insert_or_find(name, &was_found);
+        if (!was_found) {
             if (isReturnValueOnTopOfStack(base)) {
-                WeakSequenceRef<AnyObject> deleteTo = base->localVariableStorage.items.end();
+                WeakSequenceRef<AnyObject> deleteTo =
+                    base->localVariableStorage.items.end();
                 --deleteTo;
                 // Delete temporary objects except for the return value.
-                base->localVariableStorage.deleteRange(localVariableStorageBoundary, deleteTo);
-                // We've just created a new local Local variable.
+                base->localVariableStorage.deleteRange(localVariableStorageBoundary,
+                                                       deleteTo);
+                // We've just created a new local variable.
                 *value = base->localVariableStorage.items.tail();
             } else {
                 // Delete temporary objects.
-                base->localVariableStorage.deleteRange(localVariableStorageBoundary,
-                                                       base->localVariableStorage.items.end());
+                base->localVariableStorage.deleteRange(
+                    localVariableStorageBoundary,
+                    base->localVariableStorage.items.end());
                 // Allocate storage for new local variable.
-                AnyObject* dest = base->localVariableStorage.appendObject(base->returnValue.type);
+                AnyObject* dest =
+                    base->localVariableStorage.appendObject(base->returnValue.type);
                 dest->move(base->returnValue);
                 *value = *dest;
             }
@@ -359,8 +374,8 @@ FnResult execAssign(Interpreter::StackFrame* frame, const Statement::Assignment*
             // Move result to existing local variable.
             value->move(base->returnValue);
             // Delete temporary objects.
-            base->localVariableStorage.deleteRange(localVariableStorageBoundary,
-                                                   base->localVariableStorage.items.end());
+            base->localVariableStorage.deleteRange(
+                localVariableStorageBoundary, base->localVariableStorage.items.end());
         }
         base->returnValue = {};
     } else {
@@ -404,11 +419,13 @@ FnResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block) 
                 FnResult result = eval(frame, statement->evaluate()->expr);
                 if (result != Fn_OK)
                     return result;
-                bool hookResult = frame->hooks.onEvaluate(statement->evaluate()->attributes);
+                bool hookResult =
+                    frame->hooks.onEvaluate(statement->evaluate()->attributes);
                 base->returnValue = {};
                 // Delete temporary objects.
-                base->localVariableStorage.deleteRange(localVariableStorageBoundary,
-                                                       base->localVariableStorage.items.end());
+                base->localVariableStorage.deleteRange(
+                    localVariableStorageBoundary,
+                    base->localVariableStorage.items.end());
                 if (!hookResult)
                     return Fn_Error;
                 break;
@@ -448,14 +465,16 @@ FnResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* bloc
 
     // Destroy all local variables in this stack frame.
     WeakSequenceRef<AnyObject> deleteTo = base->localVariableStorage.items.end();
-    bool fixupReturnValue = (endOfPreviousFrameStorage != base->localVariableStorage.end()) &&
-                            (base->localVariableStorage.items.tail() == base->returnValue);
+    bool fixupReturnValue =
+        (endOfPreviousFrameStorage != base->localVariableStorage.end()) &&
+        (base->localVariableStorage.items.tail() == base->returnValue);
     if (fixupReturnValue) {
         --deleteTo;
     }
     base->localVariableStorage.deleteRange(endOfPreviousFrameStorage, deleteTo);
     if (fixupReturnValue) {
-        PLY_ASSERT(base->localVariableStorage.items.tail().type == base->returnValue.type);
+        PLY_ASSERT(base->localVariableStorage.items.tail().type ==
+                   base->returnValue.type);
         base->returnValue.data = base->localVariableStorage.items.tail().data;
     }
 

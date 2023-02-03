@@ -49,10 +49,10 @@ struct BuiltInStorage {
     BuiltInStorage(ScriptOutStream* sos) {
         this->boundPrint = {AnyObject::bind(sos), AnyObject::bind(doPrint)};
     }
-    void addBuiltIns(LabelMap<AnyObject>& ns) {
-        *ns.insert(g_labelStorage.insert("print")) = AnyObject::bind(&this->boundPrint);
-        *ns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&this->true_);
-        *ns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&this->false_);
+    void addBuiltIns(Map<Label, AnyObject>& ns) {
+        ns.assign(g_labelStorage.insert("print"), AnyObject::bind(&this->boundPrint));
+        ns.assign(g_labelStorage.insert("true"), AnyObject::bind(&this->true_));
+        ns.assign(g_labelStorage.insert("false"), AnyObject::bind(&this->false_));
     }
 };
 
@@ -67,7 +67,7 @@ String parseAndTryCall(StringView src, StringView funcName,
     parser.error = [&errorOut](StringView message) { errorOut << message; };
     parser.filter.allowFunctions = true;
     parser.filter.allowInstructions = false;
-    LabelMap<Owned<Statement>> fnMap;
+    Map<Label, Owned<Statement>> fnMap;
     parser.functionHandler = [&parser, &fnMap](Owned<biscuit::Statement>&& stmt,
                                                const ExpandedToken& nameToken) {
         if (!parseParameterList(&parser, stmt->functionDefinition().get()))
@@ -83,7 +83,7 @@ String parseAndTryCall(StringView src, StringView funcName,
         stmt->functionDefinition()->body =
             parseStatementBlock(&parser, {"function", "parameter list"});
 
-        *fnMap.insert(nameToken.label) = std::move(stmt);
+        fnMap.assign(nameToken.label, std::move(stmt));
     };
 
     // Parse the script.
@@ -106,7 +106,7 @@ String parseAndTryCall(StringView src, StringView funcName,
         interp.base.error = [&outs, &interp](StringView message) {
             logErrorWithStack(outs, &interp, message);
         };
-        LabelMap<AnyObject> biMap;
+        Map<Label, AnyObject> biMap;
         bis.addBuiltIns(biMap);
         interp.resolveName = [&biMap, &fnMap](Label identifier) -> AnyObject {
             if (AnyObject* builtIn = biMap.find(identifier))
@@ -125,7 +125,7 @@ String parseAndTryCall(StringView src, StringView funcName,
         frame.tkr = &tkr;
         PLY_ASSERT(fnDef->parameterNames.numItems() == args.numItems);
         for (u32 i = 0; i < args.numItems; i++) {
-            *frame.localVariableTable.insert(fnDef->parameterNames[i]) = args[i];
+            frame.localVariableTable.assign(fnDef->parameterNames[i], args[i]);
         }
         execFunction(&frame, fnDef->body);
 

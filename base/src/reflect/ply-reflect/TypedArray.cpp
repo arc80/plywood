@@ -34,21 +34,21 @@ PLY_NO_INLINE void TypedArrayView::destructSlow(TypedArrayView view) {
 }
 
 PLY_NO_INLINE void TypedArray::operator=(TypedArray&& other) {
-    if (m_array.m_numItems > 0) {
+    if (m_array.num_items > 0) {
         view().destruct();
     }
-    Heap.free(m_array.m_items);
-    m_array.m_items = other.m_array.m_items;
-    m_array.m_numItems = other.m_array.m_numItems;
-    m_array.m_allocated = other.m_array.m_allocated;
-    other.m_array.m_items = nullptr;
-    other.m_array.m_numItems = 0;
-    other.m_array.m_allocated = 0;
+    Heap.free(m_array.items);
+    m_array.items = other.m_array.items;
+    m_array.num_items = other.m_array.num_items;
+    m_array.allocated = other.m_array.allocated;
+    other.m_array.items = nullptr;
+    other.m_array.num_items = 0;
+    other.m_array.allocated = 0;
     m_typeOwner = std::move(other.m_typeOwner);
 }
 
 PLY_NO_INLINE void TypedArray::destroy() {
-    if (m_array.m_numItems > 0) {
+    if (m_array.num_items > 0) {
         view().destruct();
     }
     m_array.free();
@@ -56,7 +56,7 @@ PLY_NO_INLINE void TypedArray::destroy() {
 }
 
 PLY_NO_INLINE void TypedArray::create(TypeDescriptorOwner* typeOwner, u32 numItems) {
-    if (m_array.m_numItems > 0) {
+    if (m_array.num_items > 0) {
         view().destruct();
     }
     m_array.realloc(numItems, typeOwner->getRootType()->fixedSize);
@@ -65,18 +65,18 @@ PLY_NO_INLINE void TypedArray::create(TypeDescriptorOwner* typeOwner, u32 numIte
 }
 
 PLY_NO_INLINE void TypedArray::assign(TypeDescriptorOwner* typeOwner, void* items, u32 numItems) {
-    if (m_array.m_numItems > 0) {
+    if (m_array.num_items > 0) {
         view().destruct();
     }
     m_typeOwner = typeOwner;
-    m_array.m_items = items;
-    m_array.m_numItems = numItems;
-    m_array.m_allocated = numItems;
+    m_array.items = items;
+    m_array.num_items = numItems;
+    m_array.allocated = numItems;
 }
 
 PLY_NO_INLINE AnyObject TypedArray::append() {
-    u32 i = m_array.m_numItems++;
-    m_array.reserve(m_array.m_numItems, m_typeOwner->getRootType()->fixedSize);
+    u32 i = m_array.num_items++;
+    m_array.reserve(m_array.num_items, m_typeOwner->getRootType()->fixedSize);
     AnyObject result = getItem(i);
     result.construct();
     return result;
@@ -100,10 +100,10 @@ TypeKey TypeKey_TypedArray{
 
         // Write all array items.
         u32 itemSize = itemType->fixedSize;
-        void* item = arr->m_array.m_items;
-        PLY_ASSERT(arr->m_array.m_numItems <= UINT32_MAX);
-        context->out.write<u32>((u32) arr->m_array.m_numItems);
-        for (u32 i = 0; i < arr->m_array.m_numItems; i++) {
+        void* item = arr->m_array.items;
+        PLY_ASSERT(arr->m_array.num_items <= UINT32_MAX);
+        context->out.write<u32>((u32) arr->m_array.num_items);
+        for (u32 i = 0; i < arr->m_array.num_items; i++) {
             itemType->typeKey->write(AnyObject{item, itemType}, context);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
@@ -138,7 +138,7 @@ TypeKey TypeKey_TypedArray{
         u32 itemSize = itemType->fixedSize;
         u32 arrSize = context->in.read<u32>();
         arr->create(itemTypeOwner, arrSize);
-        AnyObject anyItem{arr->m_array.m_items, itemType};
+        AnyObject anyItem{arr->m_array.items, itemType};
         for (u32 i = 0; i < arrSize; i++) {
             itemType->typeKey->read(anyItem, context, itemFormat);
             anyItem.data = PLY_PTR_OFFSET(anyItem.data, itemSize);

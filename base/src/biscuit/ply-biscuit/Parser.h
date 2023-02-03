@@ -46,7 +46,7 @@ struct Parser {
     RecoveryState recovery;
 
     // Properties and hooks for extensibility.
-    LabelMap<bool> keywords;
+    Map<Label, bool> keywords;
     struct Filter {
         Func<KeywordHandler> keywordHandler;
         Func<ValidateAttribute> validateAttributes;

@@ -24,7 +24,7 @@ struct Interpreter {
     struct StackFrame {
         Interpreter* interp = nullptr;
         Func<HybridString()> desc;
-        LabelMap<AnyObject> localVariableTable;
+        Map<Label, AnyObject> localVariableTable;
         Tokenizer* tkr = nullptr;
         const Statement::CustomBlock* customBlock = nullptr;
         u32 tokenIdx = 0;

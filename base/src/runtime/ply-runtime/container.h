@@ -3336,182 +3336,6 @@ public:
     }
 };
 
-//  ▄▄           ▄▄            ▄▄▄  ▄▄   ▄▄
-//  ██     ▄▄▄▄  ██▄▄▄   ▄▄▄▄   ██  ███▄███  ▄▄▄▄  ▄▄▄▄▄
-//  ██     ▄▄▄██ ██  ██ ██▄▄██  ██  ██▀█▀██  ▄▄▄██ ██  ██
-//  ██▄▄▄ ▀█▄▄██ ██▄▄█▀ ▀█▄▄▄  ▄██▄ ██   ██ ▀█▄▄██ ██▄▄█▀
-//                                                 ██
-
-namespace impl {
-
-struct BaseLabelMap {
-    struct Cell {
-        Label keys[4];
-    };
-
-    Cell* cells = nullptr;
-    u32 population = 0;
-    u32 capacity = 0;
-
-    enum Operation { Find, Insert, Erase, Repopulate };
-
-    struct TypeInfo {
-        u32 valueSize;
-        void (*construct)(void* obj);
-        void (*destruct)(void* obj);
-        void (*memcpy)(void* dst, void* src);
-    };
-
-    template <typename T>
-    static TypeInfo typeInfo;
-};
-
-template <typename T>
-BaseLabelMap::TypeInfo BaseLabelMap::typeInfo = {
-    u32{sizeof(T)},
-    [](void* obj) { new (obj) T; },
-    [](void* obj) { ((T*) obj)->~T(); },
-    [](void* dst, void* src) { memcpy(dst, src, sizeof(T)); },
-};
-
-void construct(BaseLabelMap* map, const BaseLabelMap::TypeInfo* typeInfo);
-void destruct(BaseLabelMap* map, const BaseLabelMap::TypeInfo* typeInfo);
-bool operate(BaseLabelMap* map, BaseLabelMap::Operation op, Label key,
-             const BaseLabelMap::TypeInfo* typeInfo, void** value);
-
-} // namespace impl
-
-template <typename T>
-struct LabelMapIterator;
-
-template <typename T>
-class LabelMap {
-private:
-    struct Cell {
-        Label keys[4];
-        T values[4];
-    };
-
-    Cell* cells;
-    u32 population;
-    u32 capacity; // Always a power of 2
-
-    using Base = impl::BaseLabelMap;
-    friend struct LabelMapIterator<T>;
-
-public:
-    PLY_INLINE LabelMap() {
-        PLY_PUN_SCOPE
-        construct((Base*) this, &Base::typeInfo<T>);
-    }
-
-    PLY_INLINE ~LabelMap() {
-        PLY_PUN_SCOPE
-        destruct((Base*) this, &Base::typeInfo<T>);
-    }
-
-    PLY_INLINE u32 numItems() const {
-        return this->population;
-    }
-
-    PLY_INLINE T* find(Label key) {
-        PLY_PUN_SCOPE
-        T* value;
-        operate((Base*) this, Base::Find, key, &Base::typeInfo<T>, (void**) &value);
-        return value;
-    }
-
-    PLY_INLINE const T* find(Label key) const {
-        PLY_PUN_SCOPE
-        const T* value;
-        operate((Base*) this, Base::Find, key, &Base::typeInfo<T>, (void**) &value);
-        return value;
-    }
-
-    PLY_INLINE bool insertOrFind(Label key, T** value) {
-        PLY_PUN_SCOPE
-        return operate((Base*) this, Base::Insert, key, &Base::typeInfo<T>,
-                       (void**) value);
-    }
-
-    PLY_INLINE T* insert(Label key) {
-        PLY_PUN_SCOPE
-        T* value;
-        operate((Base*) this, Base::Insert, key, &Base::typeInfo<T>, (void**) &value);
-        return value;
-    }
-
-    struct Item {
-        Label key;
-        T& value;
-    };
-    LabelMapIterator<T> begin();
-    LabelMapIterator<T> end();
-    LabelMapIterator<const T> begin() const;
-    LabelMapIterator<const T> end() const;
-};
-
-template <typename T>
-struct LabelMapIterator {
-    using Map = LabelMap<T>;
-    using Cell = typename Map::Cell;
-    using Item = typename Map::Item;
-
-    Map* map;
-    u32 index;
-
-    PLY_INLINE void operator++() {
-        u32 mask = this->map->capacity - 1;
-        while (true) {
-            this->index++;
-            PLY_ASSERT(this->index <= this->map->capacity);
-            if (this->index >= this->map->capacity)
-                break;
-            Cell* cell = this->map->cells + ((this->index & mask) >> 2);
-            if (cell->keys[this->index & 3])
-                break;
-        }
-    }
-
-    PLY_INLINE bool operator!=(const LabelMapIterator& other) const {
-        PLY_ASSERT(this->map == other.map);
-        return this->index != other.index;
-    }
-
-    PLY_INLINE Item operator*() const {
-        u32 mask = this->map->capacity - 1;
-        PLY_ASSERT(this->index < this->map->capacity);
-        Cell* cell = this->map->cells + ((this->index & mask) >> 2);
-        u32 cellIdx = (this->index & 3);
-        PLY_ASSERT(cell->keys[cellIdx]);
-        return {cell->keys[cellIdx], cell->values[cellIdx]};
-    }
-};
-
-template <typename T>
-PLY_INLINE LabelMapIterator<T> LabelMap<T>::begin() {
-    LabelMapIterator<T> iter{this, (u32) -1};
-    ++iter;
-    return iter;
-}
-
-template <typename T>
-PLY_INLINE LabelMapIterator<T> LabelMap<T>::end() {
-    return {this, this->capacity};
-}
-
-template <typename T>
-PLY_INLINE LabelMapIterator<const T> LabelMap<T>::begin() const {
-    LabelMapIterator<const T> iter{this, (u32) -1};
-    ++iter;
-    return iter;
-}
-
-template <typename T>
-PLY_INLINE LabelMapIterator<const T> LabelMap<T>::end() const {
-    return {this, this->capacity};
-}
-
 //  ▄▄   ▄▄
 //  ███▄███  ▄▄▄▄  ▄▄▄▄▄
 //  ██▀█▀██  ▄▄▄██ ██  ██
@@ -3519,19 +3343,13 @@ PLY_INLINE LabelMapIterator<const T> LabelMap<T>::end() const {
 //                 ██
 
 // Key can be u32, u64, String, StringView, Label or T*.
-template <typename Key, typename Value>
-struct Map;
 
 struct BaseMap {
     Array<s32> indices;
     BaseArray items;
 };
 
-enum MapOperation {
-    M_Find,
-    M_Insert,
-    M_Reindex,
-};
+enum MapOperation { M_Find, M_Insert };
 
 struct MapTypeInfo {
     u32 item_size;
@@ -3548,42 +3366,45 @@ const MapTypeInfo map_type_info = {
     [](void* value) { ((Value*) value)->~Value(); },
 };
 
-// map_operate() is defined out-of-line (not inline) and explicitly instantiated for
-// u32, u64, String and StringView keys only.
-template <typename Key>
-void* map_operate(BaseMap* map, MapOperation op, View<Key> key, const MapTypeInfo* ti,
+// map_operate() is defined out-of-line and explicitly instantiated for u32, u64,
+// String and StringView.
+template <typename Prim>
+void* map_operate(BaseMap* map, MapOperation op, View<Prim> key, const MapTypeInfo* ti,
                   bool* was_found = nullptr);
 
-// KeyTraits
-template <typename T>
-struct KeyTraits {
-    using Rep = T;
-    static T view(T key) {
+// MapHelper<> helps adapt Map<> to different key types.
+template <typename K>
+struct MapHelper { // Base template for u32, u64 and StringView.
+    using Prim = K; // The internal type used by map_operate().
+    static K prim(K key) {
         return key;
     }
 };
 template <>
-struct KeyTraits<String> {
-    using Rep = String;
-    static StringView view(const String& key) {
+struct MapHelper<String> { // Specialization for String.
+    using Prim = String;
+    static StringView prim(const String& key) {
         return key;
     }
 };
 template <>
-struct KeyTraits<Label> {
-    using Rep = u32;
-    static u32 view(Label key) {
+struct MapHelper<Label> { // Specialization for Label.
+    using Prim = u32;
+    static u32 prim(Label key) {
         return key.idx;
     }
 };
 template <typename T>
-struct KeyTraits<T*> {
-    using Rep = uptr;
-    static uptr view(T* key) {
+struct MapHelper<T*> { // Specialization for T*.
+    using Prim = uptr;
+    static uptr prim(T* key) {
         return (uptr) key.idx;
     }
 };
 
+// ┏━━━━━━━┓
+// ┃  Map  ┃
+// ┗━━━━━━━┛
 template <typename Key, typename Value>
 struct Map {
     struct Item {
@@ -3594,33 +3415,36 @@ struct Map {
     Array<s32> indices;
     Array<Item> items;
 
-    using Rep = typename KeyTraits<Key>::Rep;
+    using Prim = typename MapHelper<Key>::Prim;
 
     Value* find(Key key) {
         PLY_PUN_SCOPE
-        return (Value*) map_operate<Rep>((BaseMap*) this, M_Find,
-                                         KeyTraits<Key>::view(key),
-                                         &map_type_info<Key, Value>);
+        return (Value*) map_operate<Prim>((BaseMap*) this, M_Find,
+                                          MapHelper<Key>::prim(key),
+                                          &map_type_info<Key, Value>);
     }
     const Value* find(Key key) const {
         PLY_PUN_SCOPE
-        return (Value*) map_operate<Rep>((BaseMap*) this, M_Find,
-                                         KeyTraits<Key>::view(key),
-                                         &map_type_info<Key, Value>);
+        return (Value*) map_operate<Prim>((BaseMap*) this, M_Find,
+                                          MapHelper<Key>::prim(key),
+                                          &map_type_info<Key, Value>);
     }
     Value* insert_or_find(Key key, bool* was_found = nullptr) {
         PLY_PUN_SCOPE
-        return (Value*) map_operate<Rep>((BaseMap*) this, M_Insert,
-                                         KeyTraits<Key>::view(key),
-                                         &map_type_info<Key, Value>, was_found);
+        return (Value*) map_operate<Prim>((BaseMap*) this, M_Insert,
+                                          MapHelper<Key>::prim(key),
+                                          &map_type_info<Key, Value>, was_found);
     }
     template <typename T>
     void assign(Label key, T&& arg) {
         PLY_PUN_SCOPE
         void* value =
-            map_operate<Rep>((BaseMap*) this, M_Insert, KeyTraits<Key>::view(key),
-                             &map_type_info<Key, Value>);
+            map_operate<Prim>((BaseMap*) this, M_Insert, MapHelper<Key>::prim(key),
+                              &map_type_info<Key, Value>);
         *((Value*) value) = std::forward<T>(arg);
+    }
+    u32 num_items() const {
+        return this->items.numItems();
     }
 
     // Range-for support.

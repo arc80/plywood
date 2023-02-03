@@ -15,7 +15,7 @@ namespace ply {
 namespace build {
 
 BuiltInStorage_ BuiltInStorage;
-LabelMap<AnyObject> BuiltInMap;
+Map<Label, AnyObject> BuiltInMap;
 
 FnResult doJoinPath(const FnParams& params) {
     Array<StringView> parts;
@@ -245,7 +245,7 @@ PLY_NO_INLINE MethodTable getMethodTable_ReadOnlyDict() {
 }
 
 void init_built_ins(BuildFolder_t* build_folder) {
-    PLY_ASSERT(BuiltInMap.numItems() == 0);
+    PLY_ASSERT(BuiltInMap.num_items() == 0);
     bool true_ = true;
     bool false_ = false;
     BuiltInStorage.sys_target_platform = "windows";
@@ -254,36 +254,40 @@ void init_built_ins(BuildFolder_t* build_folder) {
     BuiltInStorage.dict_sys.name = "sys";
     BuiltInStorage.dict_sys_fs.name = "sys.fs";
 
-    *BuiltInMap.insert(g_labelStorage.insert("true")) = AnyObject::bind(&BuiltInStorage.true_);
-    *BuiltInMap.insert(g_labelStorage.insert("false")) = AnyObject::bind(&BuiltInStorage.false_);
-    *BuiltInMap.insert(g_labelStorage.insert("join_path")) = AnyObject::bind(doJoinPath);
-    *BuiltInMap.insert(g_labelStorage.insert("script_path")) =
-        AnyObject::bind(&BuiltInStorage.script_path);
-    *BuiltInMap.insert(g_labelStorage.insert("escape")) = AnyObject::bind(doEscape);
-    *BuiltInMap.insert(g_labelStorage.insert("save_if_different")) =
-        AnyObject::bind(doSaveIfDifferent);
+    BuiltInMap.assign(g_labelStorage.insert("true"),
+                      AnyObject::bind(&BuiltInStorage.true_));
+    BuiltInMap.assign(g_labelStorage.insert("false"), AnyObject::bind(&BuiltInStorage.false_));
+    BuiltInMap.assign(g_labelStorage.insert("join_path"), AnyObject::bind(doJoinPath));
+    BuiltInMap.assign(g_labelStorage.insert("script_path"),
+                      AnyObject::bind(&BuiltInStorage.script_path));
+    BuiltInMap.assign(g_labelStorage.insert("escape"), AnyObject::bind(doEscape));
+    BuiltInMap.assign(g_labelStorage.insert("save_if_different"),
+                      AnyObject::bind(doSaveIfDifferent));
 
     // sys dictionary
-    *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("target_platform")) =
-        AnyObject::bind(&BuiltInStorage.sys_target_platform);
-    *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("target_arch")) =
-        AnyObject::bind(&BuiltInStorage.sys_target_arch);
+    BuiltInStorage.dict_sys.map.assign(
+        g_labelStorage.insert("target_platform"),
+        AnyObject::bind(&BuiltInStorage.sys_target_platform));
+    BuiltInStorage.dict_sys.map.assign(
+        g_labelStorage.insert("target_arch"),
+        AnyObject::bind(&BuiltInStorage.sys_target_arch));
     PLY_ASSERT(build_folder->absPath);
-    *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("build_folder")) =
-        AnyObject::bind(&build_folder->absPath);
-    *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("cmake_path")) =
-        AnyObject::bind(&BuiltInStorage.sys_cmake_path);
-    *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("get_extern_folder")) =
-        AnyObject::bind(getExternFolder);
-    *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("download")) =
-        AnyObject::bind(&sys_fs_download);
-    *BuiltInMap.insert(g_labelStorage.insert("sys")) = AnyObject::bind(&BuiltInStorage.dict_sys);
+    BuiltInStorage.dict_sys.map.assign(g_labelStorage.insert("build_folder"),
+                                       AnyObject::bind(&build_folder->absPath));
+    BuiltInStorage.dict_sys.map.assign(g_labelStorage.insert("cmake_path"),
+                                       AnyObject::bind(&BuiltInStorage.sys_cmake_path));
+    BuiltInStorage.dict_sys.map.assign(g_labelStorage.insert("get_extern_folder"),
+                                       AnyObject::bind(getExternFolder));
+    BuiltInStorage.dict_sys.map.assign(g_labelStorage.insert("download"),
+                                       AnyObject::bind(&sys_fs_download));
+    BuiltInMap.assign(g_labelStorage.insert("sys"),
+                      AnyObject::bind(&BuiltInStorage.dict_sys));
 
     // sys.fs
-    *BuiltInStorage.dict_sys_fs.map.insert(g_labelStorage.insert("exists")) =
-        AnyObject::bind(&sys_fs_exists);
-    *BuiltInStorage.dict_sys.map.insert(g_labelStorage.insert("fs")) =
-        AnyObject::bind(&BuiltInStorage.dict_sys_fs);
+    BuiltInStorage.dict_sys_fs.map.assign(g_labelStorage.insert("exists"),
+                                          AnyObject::bind(&sys_fs_exists));
+    BuiltInStorage.dict_sys.map.assign(g_labelStorage.insert("fs"),
+                                       AnyObject::bind(&BuiltInStorage.dict_sys_fs));
 }
 
 TypeKey TypeKey_ReadOnlyDict{

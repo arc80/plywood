@@ -56,8 +56,10 @@ biscuit::KeywordResult handleKeywordAtFileScope(ExtendedParser* ep,
         }
 
         // Add to Repository
-        Repository::Function** prev_target = nullptr;
-        if (!g_repository->globalScope.insertOrFind(cb->name, &prev_target)) {
+        bool was_found = false;
+        Repository::Function** prev_target =
+            g_repository->globalScope.insert_or_find(cb->name, &was_found);
+        if (was_found) {
             StringView type = "function";
             if (auto prevCB = (*prev_target)->stmt->customBlock()) {
                 type = g_labelStorage.view(prevCB->type);
@@ -226,7 +228,7 @@ void handlePlyfileFunction(ExtendedParser* ep, Owned<biscuit::Statement>&& stmt,
         target->plyfile = ep->currentPlyfile;
         target->stmt = std::move(stmt);
 
-        *g_repository->globalScope.insert(fnDef->name) = target;
+        g_repository->globalScope.assign(fnDef->name, target);
         g_repository->functions.append(std::move(target));
     }
 }
@@ -245,20 +247,20 @@ bool parsePlyfile(StringView path) {
     biscuit::Parser parser;
 
     // Add parser keywords.
-    *parser.keywords.insert(g_common->libraryKey) = true;
-    *parser.keywords.insert(g_common->executableKey) = true;
-    *parser.keywords.insert(g_common->sourceFilesKey) = true;
-    *parser.keywords.insert(g_common->includeDirectoriesKey) = true;
-    *parser.keywords.insert(g_common->preprocessorDefinitionsKey) = true;
-    *parser.keywords.insert(g_common->dependenciesKey) = true;
-    *parser.keywords.insert(g_common->linkLibrariesKey) = true;
-    *parser.keywords.insert(g_common->configOptionsKey) = true;
-    *parser.keywords.insert(g_common->configListKey) = true;
-    *parser.keywords.insert(g_common->configKey) = true;
-    *parser.keywords.insert(g_common->compileOptionsKey) = true;
-    *parser.keywords.insert(g_common->publicKey) = true;
-    *parser.keywords.insert(g_common->privateKey) = true;
-    *parser.keywords.insert(g_common->generateKey) = true;
+    parser.keywords.assign(g_common->libraryKey, true);
+    parser.keywords.assign(g_common->executableKey, true);
+    parser.keywords.assign(g_common->sourceFilesKey, true);
+    parser.keywords.assign(g_common->includeDirectoriesKey, true);
+    parser.keywords.assign(g_common->preprocessorDefinitionsKey, true);
+    parser.keywords.assign(g_common->dependenciesKey, true);
+    parser.keywords.assign(g_common->linkLibrariesKey, true);
+    parser.keywords.assign(g_common->configOptionsKey, true);
+    parser.keywords.assign(g_common->configListKey, true);
+    parser.keywords.assign(g_common->configKey, true);
+    parser.keywords.assign(g_common->compileOptionsKey, true);
+    parser.keywords.assign(g_common->publicKey, true);
+    parser.keywords.assign(g_common->privateKey, true);
+    parser.keywords.assign(g_common->generateKey, true);
 
     // Extend the parser
     ExtendedParser ep;

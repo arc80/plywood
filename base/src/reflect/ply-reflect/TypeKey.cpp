@@ -309,11 +309,11 @@ TypeKey TypeKey_Array{
         TypeDescriptor_Array* arrayType = obj.type->cast<TypeDescriptor_Array>();
         TypeDescriptor* itemType = arrayType->itemType;
         u32 itemSize = itemType->fixedSize;
-        impl::BaseArray* arr = (impl::BaseArray*) obj.data;
-        void* item = arr->m_items;
-        PLY_ASSERT(arr->m_numItems <= UINT32_MAX);
-        context->out.write<u32>((u32) arr->m_numItems);
-        for (u32 i = 0; i < arr->m_numItems; i++) {
+        BaseArray* arr = (BaseArray*) obj.data;
+        void* item = arr->items;
+        PLY_ASSERT(arr->num_items <= UINT32_MAX);
+        context->out.write<u32>((u32) arr->num_items);
+        for (u32 i = 0; i < arr->num_items; i++) {
             itemType->typeKey->write(AnyObject{item, itemType}, context);
             item = PLY_PTR_OFFSET(item, itemSize);
         }
@@ -339,10 +339,10 @@ TypeKey TypeKey_Array{
         u32 itemSize = itemType->fixedSize;
         u32 arrSize = context->in.read<u32>();
         PLY_ASSERT(arrSize < 10000000);
-        impl::BaseArray* arr = (impl::BaseArray*) obj.data;
+        BaseArray* arr = (BaseArray*) obj.data;
         // FIXME: Destruct existing elements if array not empty
         arr->realloc(arrSize, itemSize);
-        void* item = arr->m_items;
+        void* item = arr->items;
         for (u32 i = 0; i < arrSize; i++) {
             AnyObject typedItem{item, itemType};
             itemType->bindings.construct(typedItem);

@@ -20,17 +20,17 @@ NativeBindings& getNativeBindings_Array() {
             PLY_ASSERT(0); // Not supported
         },
         // construct
-        [](AnyObject obj) { new (obj.data) impl::BaseArray; },
+        [](AnyObject obj) { new (obj.data) BaseArray; },
         // destruct
         [](AnyObject obj) {
             TypeDescriptor_Array* arrayType = obj.type->cast<TypeDescriptor_Array>();
             TypeDescriptor* itemType = arrayType->itemType;
-            impl::BaseArray* arr = (impl::BaseArray*) obj.data;
-            void* item = arr->m_items;
+            BaseArray* arr = (BaseArray*) obj.data;
+            void* item = arr->items;
             u32 itemSize = itemType->fixedSize;
             // FIXME: Skip this loop if itemType is trivially
             // destructible (Need a way to determine that)
-            for (u32 i = 0; i < arr->m_numItems; i++) {
+            for (u32 i = 0; i < arr->num_items; i++) {
                 itemType->bindings.destruct({item, itemType});
                 item = PLY_PTR_OFFSET(item, itemSize);
             }

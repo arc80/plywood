@@ -50,11 +50,11 @@ struct TypedArrayView {
 
 class TypedArray {
 public:
-    impl::BaseArray m_array;
+    BaseArray m_array;
     Reference<TypeDescriptorOwner> m_typeOwner = TypeOwnerResolver<EmptyType>::get();
 
     PLY_INLINE TypedArrayView view() {
-        return {m_array.m_items, m_array.m_numItems, m_typeOwner};
+        return {m_array.items, m_array.num_items, m_typeOwner};
     }
 
     PLY_DLL_ENTRY void operator=(TypedArray&& other);
@@ -82,21 +82,21 @@ public:
     }
 
     PLY_INLINE const void* getBytes() const {
-        return m_array.m_items;
+        return m_array.items;
     }
 
     PLY_INLINE const void* getBytesEnd() const {
-        return PLY_PTR_OFFSET(m_array.m_items,
-                              m_array.m_numItems * m_typeOwner->getRootType()->fixedSize);
+        return PLY_PTR_OFFSET(m_array.items,
+                              m_array.num_items * m_typeOwner->getRootType()->fixedSize);
     }
 
     PLY_INLINE u32 numItems() const {
-        return m_array.m_numItems;
+        return m_array.num_items;
     }
 
     PLY_INLINE AnyObject getItem(u32 i) const {
-        PLY_ASSERT(i < m_array.m_numItems);
-        return {PLY_PTR_OFFSET(m_array.m_items, m_typeOwner->getRootType()->fixedSize * i),
+        PLY_ASSERT(i < m_array.num_items);
+        return {PLY_PTR_OFFSET(m_array.items, m_typeOwner->getRootType()->fixedSize * i),
                 m_typeOwner->getRootType()};
     }
 

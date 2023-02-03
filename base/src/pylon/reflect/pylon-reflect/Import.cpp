@@ -156,19 +156,19 @@ PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
         PLY_ASSERT(aNode->isArray());
         ArrayView<const Node* const> aNodeArr = aNode->arrayView();
         auto* arrType = static_cast<TypeDescriptor_Array*>(obj.type);
-        impl::BaseArray* arr = (impl::BaseArray*) obj.data;
-        u32 oldArrSize = arr->m_numItems;
+        BaseArray* arr = (BaseArray*) obj.data;
+        u32 oldArrSize = arr->num_items;
         u32 newArrSize = aNodeArr.numItems;
         u32 itemSize = arrType->itemType->fixedSize;
         for (u32 i = newArrSize; i < oldArrSize; i++) {
-            AnyObject{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType}.destruct();
+            AnyObject{PLY_PTR_OFFSET(arr->items, itemSize * i), arrType->itemType}.destruct();
         }
         arr->realloc(newArrSize, itemSize);
         for (u32 i = oldArrSize; i < newArrSize; i++) {
-            AnyObject{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType}.construct();
+            AnyObject{PLY_PTR_OFFSET(arr->items, itemSize * i), arrType->itemType}.construct();
         }
         for (u32 i = 0; i < newArrSize; i++) {
-            AnyObject elem{PLY_PTR_OFFSET(arr->m_items, itemSize * i), arrType->itemType};
+            AnyObject elem{PLY_PTR_OFFSET(arr->items, itemSize * i), arrType->itemType};
             convertFrom(elem, aNodeArr[i], typeFromName);
         }
     } else if (obj.type->typeKey == &TypeKey_Enum) {
@@ -208,7 +208,7 @@ PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
         ArrayView<const pylon::Node* const> aDataArr = aData->arrayView();
         TypedArray* arr = (TypedArray*) obj.data;
         arr->create(itemTypeOwner, aDataArr.numItems);
-        AnyObject item = {arr->m_array.m_items, itemTypeOwner->getRootType()};
+        AnyObject item = {arr->m_array.items, itemTypeOwner->getRootType()};
         for (u32 i = 0; i < aDataArr.numItems; i++) {
             convertFrom(item, aDataArr[i], typeFromName);
             item.data = PLY_PTR_OFFSET(item.data, itemTypeOwner->getRootType()->fixedSize);

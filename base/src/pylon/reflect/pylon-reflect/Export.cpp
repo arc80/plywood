@@ -28,12 +28,12 @@ PLY_NO_INLINE Owned<pylon::Node> exportObj(AnyObject obj, const FilterFunc& filt
         const TypeDescriptor_Array* arrayType = obj.type->cast<TypeDescriptor_Array>();
         TypeDescriptor* itemType = arrayType->itemType;
         u32 itemSize = itemType->fixedSize;
-        impl::BaseArray* arr = (impl::BaseArray*) obj.data;
+        BaseArray* arr = (BaseArray*) obj.data;
         Array<Owned<Node>>& childNodes = arrNode->array();
-        childNodes.resize(arr->m_numItems);
-        for (u32 i = 0; i < arr->m_numItems; i++) {
+        childNodes.resize(arr->num_items);
+        for (u32 i = 0; i < arr->num_items; i++) {
             childNodes[i] =
-                exportObj({PLY_PTR_OFFSET(arr->m_items, itemSize * i), itemType}, filter);
+                exportObj({PLY_PTR_OFFSET(arr->items, itemSize * i), itemType}, filter);
         }
         return arrNode;
     } else if (obj.type->typeKey == &TypeKey_Switch) {

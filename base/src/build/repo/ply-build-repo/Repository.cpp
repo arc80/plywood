@@ -19,8 +19,7 @@ struct ConfigOptionsInterpreter {
 bool doLocalAssignment(ConfigOptionsInterpreter* coi, const AnyObject& attributes,
                        Label label) {
     PLY_ASSERT(!attributes.data);
-    AnyOwnedObject* obj;
-    coi->optionSet->map.insertOrFind(label, &obj);
+    AnyOwnedObject* obj = coi->optionSet->map.insert_or_find(label);
     *obj = AnyOwnedObject::create(coi->interp.base.returnValue.type);
     obj->move(coi->interp.base.returnValue);
     return true;
@@ -70,11 +69,11 @@ void Repository::create() {
         coi.optionSet = cb.target_func->defaultOptions;
 
         // Add builtin namespace.
-        LabelMap<AnyObject> builtIns;
+        Map<Label, AnyObject> builtIns;
         static bool true_ = true;
         static bool false_ = false;
-        *builtIns.insert(g_labelStorage.insert("true")) = AnyObject::bind(&true_);
-        *builtIns.insert(g_labelStorage.insert("false")) = AnyObject::bind(&false_);
+        builtIns.assign(g_labelStorage.insert("true"), AnyObject::bind(&true_));
+        builtIns.assign(g_labelStorage.insert("false"), AnyObject::bind(&false_));
         coi.interp.resolveName = [&builtIns](Label identifier) -> AnyObject {
             if (AnyObject* builtIn = builtIns.find(identifier))
                 return *builtIn;
@@ -105,8 +104,7 @@ PLY_NO_INLINE MethodTable getMethodTable_Repository_ConfigOptions() {
         Label label = g_labelStorage.find(propertyName);
         if (label) {
             auto* configOpts = obj.cast<Repository::ConfigOptions>();
-            AnyOwnedObject* prop;
-            configOpts->map.insertOrFind(label, &prop);
+            AnyOwnedObject* prop = configOpts->map.insert_or_find(label);
             interp->returnValue = *prop;
             return Fn_OK;
         }

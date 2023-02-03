@@ -17,7 +17,7 @@ struct Repository {
     };
 
     struct ConfigOptions {
-        LabelMap<AnyOwnedObject> map;
+        Map<Label, AnyOwnedObject> map;
     };
 
     struct Function {
@@ -46,7 +46,7 @@ struct Repository {
     Array<Owned<Plyfile>> plyfiles;
     Array<Owned<Function>> targets;
     Array<Owned<Function>> functions;
-    LabelMap<Function*> globalScope; // Maps names to targets & functions
+    Map<Label, Function*> globalScope; // Maps names to targets & functions
     Array<TargetConfigBlock> targetConfigBlocks;
     Owned<ConfigList> configList;
 

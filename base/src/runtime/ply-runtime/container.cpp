@@ -66,12 +66,17 @@ u32 best_num_indices(u32 num_items) {
 template <typename Key>
 void* map_operate(BaseMap* map, MapOperation op, View<Key> key, const MapTypeInfo* ti,
                   bool* was_found) {
+    if (was_found) {
+        *was_found = false;
+    }
     if (op == M_Insert) {
         u32 min_indices = best_num_indices(map->items.num_items + 1);
         if (map->indices.numItems() < min_indices) {
             PLY_PUN_SCOPE
             map_reindex<View<Key>>(map, min_indices, ti);
         }
+    } else if (!map->indices) {
+        return nullptr;
     }
 
     PLY_ASSERT(isPowerOf2(map->indices.numItems()));
@@ -90,7 +95,7 @@ void* map_operate(BaseMap* map, MapOperation op, View<Key> key, const MapTypeInf
         } else {
             if (op == M_Find) {
                 return nullptr;
-            } else if (op == M_Insert) {
+            } else {
                 // Store item index.
                 item_idx = safeDemote<s32>(map->items.num_items);
                 map->indices[idx & mask] = item_idx;
@@ -105,8 +110,6 @@ void* map_operate(BaseMap* map, MapOperation op, View<Key> key, const MapTypeInf
                 void* value = PLY_PTR_OFFSET(item, ti->value_offset);
                 ti->construct(value);
                 return value;
-            } else {
-                PLY_FORCE_CRASH();
             }
         }
     }

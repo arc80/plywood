@@ -17,7 +17,7 @@ struct TypeDescriptor_Array : TypeDescriptor {
     TypeDescriptor* itemType;
 
     PLY_INLINE TypeDescriptor_Array(TypeDescriptor* itemType)
-        : TypeDescriptor{&TypeKey_Array, (impl::BaseArray*) nullptr,
+        : TypeDescriptor{&TypeKey_Array, (BaseArray*) nullptr,
                          getNativeBindings_Array() PLY_METHOD_TABLES_ONLY(, {})},
           itemType{itemType} {
     }

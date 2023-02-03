@@ -211,11 +211,11 @@ void convert(BlockList::WeakRef cursor, void* dstPtr, ArrayView<void*> srcPtrs,
                 auto cmd = *safeCast<TypeConverter::IterateArrayToFixedArray>(view);
                 view.offsetHead(sizeof(TypeConverter::IterateArrayToFixedArray));
 
-                impl::BaseArray* baseArr = (impl::BaseArray*) PLY_PTR_OFFSET(srcPtr, cmd.srcOffset);
+                BaseArray* baseArr = (BaseArray*) PLY_PTR_OFFSET(srcPtr, cmd.srcOffset);
                 // FIXME: Warn if baseArr has too many source elements
-                u32 itemsToCopy = min<u32>(cmd.dstSize, baseArr->m_numItems);
+                u32 itemsToCopy = min<u32>(cmd.dstSize, baseArr->num_items);
                 void* childDstPtr = PLY_PTR_OFFSET(dstPtr, cmd.dstOffset);
-                void* childSrcPtr = baseArr->m_items;
+                void* childSrcPtr = baseArr->items;
                 while (itemsToCopy) {
                     BlockList::WeakRef childCursor = cursor; // Copy child cursor
                     convert(childCursor, childDstPtr, srcPtrs, childSrcPtr);
