@@ -308,8 +308,9 @@ private:
         void flush(Affinity_Linux& affinity) {
             if (logicalProcessor >= 0) {
                 if (coreID.physical < 0 && coreID.core < 0) {
-                    // On PowerPC Linux 3.2.0-4, /proc/cpuinfo outputs "processor", but not
-                    // "physical id" or "core id". Emulate a single physical CPU with N cores:
+                    // On PowerPC Linux 3.2.0-4, /proc/cpuinfo outputs "processor", but
+                    // not "physical id" or "core id". Emulate a single physical CPU
+                    // with N cores:
                     coreID.physical = 0;
                     coreID.core = logicalProcessor;
                 }
@@ -322,8 +323,8 @@ private:
                 } else {
                     coreIndex = iter->second;
                 }
-                affinity.m_coreIndexToInfo[coreIndex].hwThreadIndexToLogicalProcessor.push_back(
-                    logicalProcessor);
+                affinity.m_coreIndexToInfo[coreIndex]
+                    .hwThreadIndexToLogicalProcessor.push_back(logicalProcessor);
                 affinity.m_numHWThreads++;
             }
             logicalProcessor = -1;
@@ -401,7 +402,8 @@ private:
 
 public:
     Affinity()
-        : m_isAccurate(false), m_numHWThreads(1), m_numPhysicalCores(1), m_hwThreadsPerCore(1) {
+        : m_isAccurate(false), m_numHWThreads(1), m_numPhysicalCores(1),
+          m_hwThreadsPerCore(1) {
         int count;
         // Get # of HW threads
         size_t countLen = sizeof(count);
@@ -449,9 +451,9 @@ public:
         thread_affinity_policy_data_t policyInfo = {(integer_t) index};
         // Note: The following returns KERN_NOT_SUPPORTED on iOS. (Tested on iOS
         // 9.2.)
-        kern_return_t result =
-            thread_policy_set(thread, THREAD_AFFINITY_POLICY, (thread_policy_t) &policyInfo,
-                              THREAD_AFFINITY_POLICY_COUNT);
+        kern_return_t result = thread_policy_set(thread, THREAD_AFFINITY_POLICY,
+                                                 (thread_policy_t) &policyInfo,
+                                                 THREAD_AFFINITY_POLICY_COUNT);
         return (result == KERN_SUCCESS);
     }
 };
@@ -463,6 +465,18 @@ public:
 //    ██   ██▄▄██ ██ ██ ██ ██  ██  ██   ▄▄▄██  ██   ██▄▄██ ▀█▄▄▄
 //    ██   ▀█▄▄▄  ██ ██ ██ ██▄▄█▀ ▄██▄ ▀█▄▄██  ▀█▄▄ ▀█▄▄▄   ▄▄▄█▀
 //                         ██
+
+// By default, View<T> is an alias for T itself. Specializations for String and Array
+// are defined later.
+namespace traits {
+template <typename T>
+struct View {
+    using Type = T;
+};
+} // namespace traits
+
+template <typename T>
+using View = typename traits::View<T>::Type;
 
 namespace subst {
 
@@ -1032,7 +1046,8 @@ public:
 // ┏━━━━━━━━━━━━━━━━━━━┓
 // ┃  SharedLockGuard  ┃
 // ┗━━━━━━━━━━━━━━━━━━━┛
-template <typename LockType> class SharedLockGuard {
+template <typename LockType>
+class SharedLockGuard {
 private:
     LockType& m_lock;
 
@@ -1049,7 +1064,8 @@ public:
 // ┏━━━━━━━━━━━━━━━━━━━━━━┓
 // ┃  ExclusiveLockGuard  ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━┛
-template <typename LockType> class ExclusiveLockGuard {
+template <typename LockType>
+class ExclusiveLockGuard {
 private:
     LockType& m_lock;
 
@@ -1297,12 +1313,13 @@ public:
         return (T) value;
     }
 
-    template <typename U = T,
-              std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
+    template <
+        typename U = T,
+        std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
     PLY_INLINE U load() const {
         LPVOID value = TlsGetValue(m_tlsIndex);
         PLY_ASSERT(value != 0 || GetLastError() == ERROR_SUCCESS);
-        return (T)(uptr) value;
+        return (T) (uptr) value;
     }
 
     PLY_INLINE void store(T value) {
@@ -1349,15 +1366,17 @@ public:
         return (T) value;
     }
 
-    template <typename U = T,
-              std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
+    template <
+        typename U = T,
+        std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
     PLY_INLINE U load() const {
         void* value = pthread_getspecific(m_tlsKey);
-        return (T)(uptr) value;
+        return (T) (uptr) value;
     }
 
-    template <typename U = T,
-              std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
+    template <
+        typename U = T,
+        std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
     PLY_INLINE void store(U value) {
         int rc = pthread_setspecific(m_tlsKey, (void*) (uptr) value);
         PLY_ASSERT(rc == 0);
@@ -1412,7 +1431,8 @@ public:
 };
 
 #define PLY_DEFINE_RACE_DETECTOR(name) mutable ply::RaceDetector name;
-#define PLY_RACE_DETECT_GUARD(name) ply::RaceDetectGuard PLY_UNIQUE_VARIABLE(raceDetectGuard)(name)
+#define PLY_RACE_DETECT_GUARD(name) \
+    ply::RaceDetectGuard PLY_UNIQUE_VARIABLE(raceDetectGuard)(name)
 #define PLY_RACE_DETECT_ENTER(name) name.enter()
 #define PLY_RACE_DETECT_EXIT(name) name.exit()
 
@@ -2103,7 +2123,8 @@ extern Error_t Error;
 // ┏━━━━━━━━┓
 // ┃  find  ┃
 // ┗━━━━━━━━┛
-PLY_MAKE_WELL_FORMEDNESS_CHECK_2(IsComparable, std::declval<T0>() == std::declval<T1>());
+PLY_MAKE_WELL_FORMEDNESS_CHECK_2(IsComparable,
+                                 std::declval<T0>() == std::declval<T1>());
 PLY_MAKE_WELL_FORMEDNESS_CHECK_2(IsCallable, std::declval<T0>()(std::declval<T1>()));
 
 template <typename T, typename U, std::enable_if_t<IsComparable<T, U>, int> = 0>
@@ -2115,7 +2136,8 @@ PLY_INLINE s32 find(ArrayView<const T> arr, const U& item) {
     return -1;
 }
 
-template <typename T, typename Callback, std::enable_if_t<IsCallable<Callback, T>, int> = 0>
+template <typename T, typename Callback,
+          std::enable_if_t<IsCallable<Callback, T>, int> = 0>
 PLY_INLINE s32 find(ArrayView<const T> arr, const Callback& callback) {
     for (u32 i = 0; i < arr.numItems; i++) {
         if (callback(arr[i]))
@@ -2138,7 +2160,8 @@ PLY_INLINE s32 rfind(ArrayView<const T> arr, const U& item) {
     return -1;
 }
 
-template <typename T, typename Callback, std::enable_if_t<IsCallable<Callback, T>, int> = 0>
+template <typename T, typename Callback,
+          std::enable_if_t<IsCallable<Callback, T>, int> = 0>
 PLY_INLINE s32 rfind(ArrayView<const T> arr, const Callback& callback) {
     for (s32 i = safeDemote<s32>(arr.numItems - 1); i >= 0; i--) {
         if (callback(arr[i]))
@@ -2156,11 +2179,12 @@ PLY_INLINE s32 rfind(const Arr& arr, const Arg& arg) {
 // ┃  map  ┃
 // ┗━━━━━━━┛
 template <typename Iterable, typename MapFunc,
-          typename MappedItemType = std::decay_t<
-              decltype(std::declval<MapFunc>()(std::declval<impl::ItemType<Iterable>>()))>>
+          typename MappedItemType = std::decay_t<decltype(std::declval<MapFunc>()(
+              std::declval<impl::ItemType<Iterable>>()))>>
 Array<MappedItemType> map(Iterable&& iterable, MapFunc&& mapFunc) {
     Array<MappedItemType> result;
-    // FIXME: Reserve memory for result when possible. Otherwise, use a typed ChunkBuffer.
+    // FIXME: Reserve memory for result when possible. Otherwise, use a typed
+    // ChunkBuffer.
     for (auto&& item : iterable) {
         result.append(mapFunc(item));
     }
@@ -2178,7 +2202,8 @@ PLY_INLINE bool defaultLess(const T& a, const T& b) {
 } // namespace impl
 
 template <typename T, typename IsLess = decltype(impl::defaultLess<T>)>
-PLY_NO_INLINE void sort(ArrayView<T> view, const IsLess& isLess = impl::defaultLess<T>) {
+PLY_NO_INLINE void sort(ArrayView<T> view,
+                        const IsLess& isLess = impl::defaultLess<T>) {
     if (view.numItems <= 1)
         return;
     u32 lo = 0;
@@ -2209,7 +2234,8 @@ PLY_NO_INLINE void sort(ArrayView<T> view, const IsLess& isLess = impl::defaultL
         lo++;
     }
     PLY_ASSERT((s32) hi >= 0);
-    // Now, everything to left of lo is <= pivot, and everything from hi onwards is >= pivot.
+    // Now, everything to left of lo is <= pivot, and everything from hi onwards is >=
+    // pivot.
     PLY_ASSERT(hi <= lo);
     while (lo > 1) {
         if (!isLess(view[lo - 1], view[pivot])) {
@@ -2229,8 +2255,10 @@ PLY_NO_INLINE void sort(ArrayView<T> view, const IsLess& isLess = impl::defaultL
     }
 }
 
-template <typename Arr, typename IsLess = decltype(impl::defaultLess<impl::ArrayViewType<Arr>>)>
-PLY_INLINE void sort(Arr& arr, const IsLess& isLess = impl::defaultLess<impl::ArrayViewType<Arr>>) {
+template <typename Arr,
+          typename IsLess = decltype(impl::defaultLess<impl::ArrayViewType<Arr>>)>
+PLY_INLINE void
+sort(Arr& arr, const IsLess& isLess = impl::defaultLess<impl::ArrayViewType<Arr>>) {
     using T = impl::ArrayViewType<Arr>;
     sort(ArrayView<T>{arr}, isLess);
 }

@@ -153,6 +153,7 @@ struct StringMixin {
 //   ▀▀▀█▄  ██   ██  ▀▀ ██ ██  ██ ██  ██
 //  ▀█▄▄█▀  ▀█▄▄ ██     ██ ██  ██ ▀█▄▄██
 //                                 ▄▄▄█▀
+
 struct HybridString;
 
 struct String : StringMixin<String> {
@@ -255,6 +256,15 @@ struct String : StringMixin<String> {
         return this->bytes[this->numBytes + ofs];
     }
 };
+
+// This makes View<String> an alias for StringView. In C++14, the only way to achieve
+// this
+namespace traits {
+template <>
+struct View<String> {
+    using Type = StringView;
+};
+} // namespace traits
 
 namespace impl {
 template <>
@@ -377,22 +387,20 @@ HybridString StringMixin<Derived>::withNullTerminator() const {
 //  ██  ██ ██     ██     ▀█▄▄██ ▀█▄▄██
 //                               ▄▄▄█▀
 
-namespace impl {
 struct BaseArray {
-    void* m_items = nullptr;
-    u32 m_numItems = 0;
-    u32 m_allocated = 0;
+    void* items = nullptr;
+    u32 num_items = 0;
+    u32 allocated = 0;
 
     BaseArray() = default;
 
     void alloc(u32 numItems, u32 itemSize);
     void realloc(u32 numItems, u32 itemSize);
     void free();
-    void reserve(u32 numItems, u32 itemSize); // m_numItems is unaffected
-    void reserveIncrement(u32 itemSize);      // m_numItems is unaffected
+    void reserve(u32 numItems, u32 itemSize);
+    void reserveIncrement(u32 itemSize);
     void truncate(u32 itemSize);
 };
-} // namespace impl
 
 template <typename T>
 class Array {
@@ -422,7 +430,7 @@ public:
     Array() : items{nullptr}, numItems_{0}, allocated{0} {
     }
     Array(const Array& other) {
-        ((impl::BaseArray&) *this).alloc(other.numItems_, (u32) sizeof(T));
+        ((BaseArray*) this)->alloc(other.numItems_, (u32) sizeof(T));
         subst::unsafeConstructArrayFrom(this->items, other.items, other.numItems_);
     }
     Array(Array&& other)
@@ -433,17 +441,16 @@ public:
     }
     Array(InitList<T> init) {
         u32 initSize = safeDemote<u32>(init.size());
-        ((impl::BaseArray&) *this).alloc(initSize, (u32) sizeof(T));
+        ((BaseArray*) this)->alloc(initSize, (u32) sizeof(T));
         subst::constructArrayFrom(this->items, init.begin(), initSize);
     }
     template <typename Other, typename U = impl::ArrayViewType<Other>>
     Array(Other&& other) {
-        ((impl::BaseArray&) *this).alloc(ArrayView<U>{other}.numItems, (u32) sizeof(T));
+        ((BaseArray*) this)->alloc(ArrayView<U>{other}.numItems, (u32) sizeof(T));
         impl::moveOrCopyConstruct(this->items, std::forward<Other>(other));
     }
     ~Array() {
-        PLY_STATIC_ASSERT(sizeof(Array) ==
-                          sizeof(impl::BaseArray)); // Sanity check binary compatibility
+        PLY_STATIC_ASSERT(sizeof(Array) == sizeof(BaseArray));
         subst::destructArray(this->items, this->numItems_);
         Heap.free(this->items);
     }
@@ -464,7 +471,7 @@ public:
     void operator=(std::initializer_list<T> init) {
         subst::destructArray(this->items, this->numItems_);
         u32 initSize = safeDemote<u32>(init.size());
-        ((impl::BaseArray&) *this).realloc(initSize, (u32) sizeof(T));
+        ((BaseArray*) this)->realloc(initSize, (u32) sizeof(T));
         subst::unsafeConstructArrayFrom(this->items, init.begin(), initSize);
     }
     template <typename Other, typename = impl::ArrayViewType<Other>>
@@ -530,13 +537,13 @@ public:
     }
 
     void reserve(u32 numItems) {
-        ((impl::BaseArray&) *this).reserve(numItems, (u32) sizeof(T));
+        ((BaseArray*) this)->reserve(numItems, (u32) sizeof(T));
     }
     void resize(u32 numItems) {
         if (numItems < this->numItems_) {
             subst::destructArray(this->items + numItems, this->numItems_ - numItems);
         }
-        ((impl::BaseArray&) *this).reserve(numItems, (u32) sizeof(T));
+        ((BaseArray*) this)->reserve(numItems, (u32) sizeof(T));
         if (numItems > this->numItems_) {
             subst::constructArray(this->items + this->numItems_,
                                   numItems - this->numItems_);
@@ -545,14 +552,14 @@ public:
     }
 
     void truncate() {
-        ((impl::BaseArray&) *this).truncate((u32) sizeof(T));
+        ((BaseArray*) this)->truncate((u32) sizeof(T));
     }
 
     T& append(T&& item) {
         // The argument must not be a reference to an existing item in the array:
         PLY_ASSERT((&item < this->items) || (&item >= this->items + this->numItems_));
         if (this->numItems_ >= this->allocated) {
-            ((impl::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
+            ((BaseArray*) this)->reserveIncrement((u32) sizeof(T));
         }
         T* result = new (this->items + this->numItems_) T{std::move(item)};
         this->numItems_++;
@@ -562,7 +569,7 @@ public:
         // The argument must not be a reference to an existing item in the array:
         PLY_ASSERT((&item < this->items) || (&item >= this->items + this->numItems_));
         if (this->numItems_ >= this->allocated) {
-            ((impl::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
+            ((BaseArray*) this)->reserveIncrement((u32) sizeof(T));
         }
         T* result = new (this->items + this->numItems_) T{item};
         this->numItems_++;
@@ -571,7 +578,7 @@ public:
     template <typename... Args>
     T& append(Args&&... args) {
         if (this->numItems_ >= this->allocated) {
-            ((impl::BaseArray&) *this).reserveIncrement((u32) sizeof(T));
+            ((BaseArray*) this)->reserveIncrement((u32) sizeof(T));
         }
         T* result = new (this->items + this->numItems_) T{std::forward<Args>(args)...};
         this->numItems_++;
@@ -580,7 +587,7 @@ public:
 
     void extend(InitList<T> init) {
         u32 initSize = safeDemote<u32>(init.size());
-        ((impl::BaseArray&) *this).reserve(this->numItems_ + initSize, (u32) sizeof(T));
+        ((BaseArray*) this)->reserve(this->numItems_ + initSize, (u32) sizeof(T));
         subst::constructArrayFrom(this->items + this->numItems_, init.begin(),
                                   initSize);
         this->numItems_ += initSize;
@@ -588,8 +595,7 @@ public:
     template <typename Other, typename U = impl::ArrayViewType<Other>>
     void extend(Other&& other) {
         u32 numOtherItems = ArrayView<U>{other}.numItems;
-        ((impl::BaseArray&) *this)
-            .reserve(this->numItems_ + numOtherItems, (u32) sizeof(T));
+        ((BaseArray&) *this).reserve(this->numItems_ + numOtherItems, (u32) sizeof(T));
         impl::moveOrCopyConstruct(this->items + this->numItems_,
                                   std::forward<Other>(other));
         this->numItems_ += numOtherItems;
@@ -597,8 +603,7 @@ public:
     void moveExtend(ArrayView<T> other) {
         // The argument must not be a subview into the array itself:
         PLY_ASSERT((other.end() <= this->items) || (other.items >= this->end()));
-        ((impl::BaseArray&) *this)
-            .reserve(this->numItems_ + other.numItems, (u32) sizeof(T));
+        ((BaseArray&) *this).reserve(this->numItems_ + other.numItems, (u32) sizeof(T));
         subst::moveConstructArray(this->items + this->numItems_, other.items,
                                   other.numItems);
         this->numItems_ += other.numItems;
@@ -610,7 +615,7 @@ public:
     }
     T& insert(u32 pos, u32 count = 1) {
         PLY_ASSERT(pos <= this->numItems_);
-        ((impl::BaseArray&) *this).reserve(this->numItems_ + count, (u32) sizeof(T));
+        ((BaseArray*) this)->reserve(this->numItems_ + count, (u32) sizeof(T));
         memmove(static_cast<void*>(this->items + pos + count),
                 static_cast<const void*>(this->items + pos),
                 (this->numItems_ - pos) * sizeof(T)); // Underlying type is relocatable
@@ -714,7 +719,7 @@ auto operator+(Arr0&& a, Arr1&& b) {
     u32 numItemsB = ArrayView<T1>{b}.numItems;
 
     Array<std::remove_const_t<T0>> result;
-    ((impl::BaseArray&) result).alloc(numItemsA + numItemsB, (u32) sizeof(T0));
+    ((BaseArray&) result).alloc(numItemsA + numItemsB, (u32) sizeof(T0));
     impl::moveOrCopyConstruct(result.items, std::forward<Arr0>(a));
     impl::moveOrCopyConstruct(result.items + numItemsA, std::forward<Arr1>(b));
     return result;
@@ -840,7 +845,8 @@ private:
 public:
     Func() = default;
 
-    PLY_INLINE Func(const Func& other) : handler{other.handler}, storedArg{other.storedArg} {
+    PLY_INLINE Func(const Func& other)
+        : handler{other.handler}, storedArg{other.storedArg} {
     }
 
     template <typename T>
@@ -849,18 +855,20 @@ public:
     }
 
     template <typename T>
-    PLY_INLINE Func(Return (T::*handler)(Args...), T* target) : storedArg{(void*) target} {
+    PLY_INLINE Func(Return (T::*handler)(Args...), T* target)
+        : storedArg{(void*) target} {
         this->handler = [this](void* target, Args... args) {
             return ((T*) target)->*(this->hiddenArg)(std::forward<Args>(args)...);
         };
     }
 
     // Support lambda expressions
-    template <typename Callable,
-              typename = void_t<decltype(std::declval<Callable>()(std::declval<Args>()...))>>
+    template <
+        typename Callable,
+        typename = void_t<decltype(std::declval<Callable>()(std::declval<Args>()...))>>
     Func(const Callable& callable) : storedArg{(void*) &callable} {
         this->handler = [](void* callable, Args... args) -> Return {
-            return (*(const Callable*) callable) (std::forward<Args>(args)...);
+            return (*(const Callable*) callable)(std::forward<Args>(args)...);
         };
     }
 
@@ -891,7 +899,8 @@ public:
 template <typename T>
 class Owned {
 private:
-    template<typename> friend class Owned;
+    template <typename>
+    friend class Owned;
     T* ptr;
 
 public:
@@ -1218,23 +1227,25 @@ struct Tuple<T1, T2> {
     T2 second;
 
     Tuple() = default;
-    // Note: We don't bother using SFINAE to conditionally disable constructors depending on whether
-    // types are actually copy-constructible or move-constructible.
-    // We also don't bother to support constructing from types other than const T& or T&&.
-    // May need to make some of these conditionally explicit, though.
+    // Note: We don't bother using SFINAE to conditionally disable constructors
+    // depending on whether types are actually copy-constructible or move-constructible.
+    // We also don't bother to support constructing from types other than const T& or
+    // T&&. May need to make some of these conditionally explicit, though.
     Tuple(const T1& first, const T2& second) : first{first}, second{second} {
     }
     Tuple(const T1& first, T2&& second) : first{first}, second{std::move(second)} {
     }
     Tuple(T1&& first, const T2& second) : first{std::move(first)}, second{second} {
     }
-    Tuple(T1&& first, T2&& second) : first{std::move(first)}, second{std::move(second)} {
+    Tuple(T1&& first, T2&& second)
+        : first{std::move(first)}, second{std::move(second)} {
     }
     template <typename U1, typename U2>
     Tuple(const Tuple<U1, U2>& other) : first{other.first}, second{other.second} {
     }
     template <typename U1, typename U2>
-    Tuple(Tuple<U1, U2>&& other) : first{std::move(other.first)}, second{std::move(other.second)} {
+    Tuple(Tuple<U1, U2>&& other)
+        : first{std::move(other.first)}, second{std::move(other.second)} {
     }
     template <typename U1, typename U2>
     void operator=(const Tuple<U1, U2>& other) {
@@ -1249,13 +1260,15 @@ struct Tuple<T1, T2> {
     bool operator==(const Tuple& other) const {
         return first == other.first && second == other.second;
     }
-    template <typename U1, typename U2,
-              std::enable_if_t<IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>(), int> = 0>
+    template <
+        typename U1, typename U2,
+        std::enable_if_t<IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>(), int> = 0>
     operator Tuple<U1, U2>&() {
         return reinterpret_cast<Tuple<U1, U2>&>(*this);
     }
-    template <typename U1, typename U2,
-              std::enable_if_t<IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>(), int> = 0>
+    template <
+        typename U1, typename U2,
+        std::enable_if_t<IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>(), int> = 0>
     operator const Tuple<U1, U2>&() const {
         return reinterpret_cast<const Tuple<U1, U2>&>(*this);
     }
@@ -1301,8 +1314,8 @@ struct Tuple<T1, T2, T3> {
     }
     template <typename U1, typename U2, typename U3>
     Tuple(Tuple<U1, U2, U3>&& other)
-        : first{std::move(other.first)}, second{std::move(other.second)}, third{std::move(
-                                                                              other.third)} {
+        : first{std::move(other.first)}, second{std::move(other.second)},
+          third{std::move(other.third)} {
     }
     template <typename U1, typename U2, typename U3>
     void operator=(const Tuple<U1, U2, U3>& other) {
@@ -1319,17 +1332,17 @@ struct Tuple<T1, T2, T3> {
     bool operator==(const Tuple& other) const {
         return first == other.first && second == other.second && third == other.third;
     }
-    template <
-        typename U1, typename U2, typename U3,
-        std::enable_if_t<
-            IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>() && IsSameOrConst<T3, U3>(), int> = 0>
+    template <typename U1, typename U2, typename U3,
+              std::enable_if_t<IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>() &&
+                                   IsSameOrConst<T3, U3>(),
+                               int> = 0>
     operator Tuple<U1, U2, U3>&() {
         return reinterpret_cast<Tuple<U1, U2, U3>&>(*this);
     }
-    template <
-        typename U1, typename U2, typename U3,
-        std::enable_if_t<
-            IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>() && IsSameOrConst<T3, U3>(), int> = 0>
+    template <typename U1, typename U2, typename U3,
+              std::enable_if_t<IsSameOrConst<T1, U1>() && IsSameOrConst<T2, U2>() &&
+                                   IsSameOrConst<T3, U3>(),
+                               int> = 0>
     operator const Tuple<U1, U2, U3>&() const {
         return reinterpret_cast<const Tuple<U1, U2, U3>&>(*this);
     }
@@ -1467,7 +1480,8 @@ template <typename Callback>
 PLY_INLINE OnScopeExit<Callback> setOnScopeExit(Callback&& cb) {
     return {std::forward<Callback>(cb)};
 }
-#define PLY_ON_SCOPE_EXIT(cb) auto PLY_UNIQUE_VARIABLE(onScopeExit) = setOnScopeExit([&] cb)
+#define PLY_ON_SCOPE_EXIT(cb) \
+    auto PLY_UNIQUE_VARIABLE(onScopeExit) = setOnScopeExit([&] cb)
 
 //   ▄▄▄▄           ▄▄  ▄▄         ▄▄
 //  ██  ▀▀ ▄▄    ▄▄ ▄▄ ▄██▄▄  ▄▄▄▄ ██▄▄▄
@@ -1491,7 +1505,9 @@ struct SwitchType {
             // move
             [](void* dst, void* src) { subst::unsafeMove<T>((T*) dst, (T*) src); },
             // copy
-            [](void* dst, const void* src) { subst::unsafeCopy<T>((T*) dst, (const T*) src); },
+            [](void* dst, const void* src) {
+                subst::unsafeCopy<T>((T*) dst, (const T*) src);
+            },
         };
     };
 };
@@ -1547,12 +1563,8 @@ struct SwitchWrapper {
     static SwitchType idToType[]; \
     template <typename, typename = void> \
     struct TypeToID; \
-    PLY_INLINE ctrName() : id{ID::defaultState} { \
-        new (&storage) defaultState{}; \
-    } \
-    PLY_INLINE ~ctrName() { \
-        idToType[ply::ureg(id)].destruct(&storage); \
-    } \
+    PLY_INLINE ctrName() : id{ID::defaultState} { new (&storage) defaultState{}; } \
+    PLY_INLINE ~ctrName() { idToType[ply::ureg(id)].destruct(&storage); } \
     PLY_INLINE ctrName(const ctrName& other) : id{other.id} { \
         idToType[ply::ureg(id)].construct(&storage); \
         idToType[ply::ureg(id)].copy(&storage, &other.storage); \
@@ -1588,9 +1600,7 @@ struct SwitchWrapper {
     struct TypeToID<state, dummy> { \
         static constexpr ID value = ID::state; \
     }; \
-    PLY_INLINE ply::SwitchWrapper<T, state, T::ID::state> func() { \
-        return {*this}; \
-    } \
+    PLY_INLINE ply::SwitchWrapper<T, state, T::ID::state> func() { return {*this}; } \
     PLY_INLINE const ply::SwitchWrapper<const T, state, T::ID::state> func() const { \
         return {*this}; \
     }
@@ -1602,7 +1612,8 @@ struct SwitchWrapper {
 #define SWITCH_TABLE_END(ctrName) \
     } \
     ; \
-    PLY_STATIC_ASSERT(PLY_STATIC_ARRAY_SIZE(ctrName::idToType) == (ply::ureg) ctrName::ID::Count); \
+    PLY_STATIC_ASSERT(PLY_STATIC_ARRAY_SIZE(ctrName::idToType) == \
+                      (ply::ureg) ctrName::ID::Count); \
     PLY_STATIC_ASSERT((ply::ureg) ctrName::ID::Count > 0);
 
 //  ▄▄▄▄▄                ▄▄▄
@@ -1753,8 +1764,8 @@ public:
     ~PoolPtr();
     void operator=(const PoolPtr<T>& other);
     bool operator==(const PoolPtr<T>& other) const;
-    operator T*() const = delete; // Disallow cast to pointer because we don't want callers to
-                                  // accidentally store the pointer
+    operator T*() const = delete; // Disallow cast to pointer because we don't want
+                                  // callers to accidentally store the pointer
     T* get() const;
     explicit operator bool() const;
     T* operator->() const;
@@ -1771,7 +1782,8 @@ PoolIndex<T, Index>::PoolIndex(u32 idx) : idx{safeDemote<Index>(idx)} {
 }
 
 template <typename T, typename Index>
-PoolIndex<T, Index>::PoolIndex(const PoolIndex<const T, Index>& other) : idx{other.idx} {
+PoolIndex<T, Index>::PoolIndex(const PoolIndex<const T, Index>& other)
+    : idx{other.idx} {
 }
 
 template <typename T, typename Index>
@@ -1903,11 +1915,12 @@ inline BasePool::BasePool() {
 }
 
 inline void BasePool::baseReserve(u32 newSize, u32 itemSize) {
-    m_allocated = (u32) roundUpPowerOf2(
-        max<u32>(newSize, 8));    // FIXME: Generalize to other resize strategies when needed
+    m_allocated = (u32) roundUpPowerOf2(max<u32>(
+        newSize, 8)); // FIXME: Generalize to other resize strategies when needed
     PLY_ASSERT(m_allocated != 0); // Overflow check
     m_items = Heap.realloc(
-        m_items, itemSize * m_allocated); // FIXME: Generalize to other heaps when needed
+        m_items,
+        itemSize * m_allocated); // FIXME: Generalize to other heaps when needed
 }
 
 inline u32 BasePool::baseAlloc(u32 itemSize) {
@@ -1959,7 +1972,8 @@ void Pool<T>::clear() {
         T* end = item + m_size;
         u32 skipIndex = m_firstFree;
         for (;;) {
-            T* skip = static_cast<T*>(m_items) + (skipIndex == u32(-1) ? m_size : skipIndex);
+            T* skip =
+                static_cast<T*>(m_items) + (skipIndex == u32(-1) ? m_size : skipIndex);
             while (item < skip) {
                 item->~T();
                 item++;
@@ -2103,7 +2117,8 @@ PoolIterator<T>& PoolIterator<T>::operator++() {
         PLY_ASSERT(m_index <= m_nextFree);
         if (m_index < m_nextFree)
             break;
-        m_nextFree = *reinterpret_cast<const u32*>(static_cast<T*>(m_pool->m_items) + m_index);
+        m_nextFree =
+            *reinterpret_cast<const u32*>(static_cast<T*>(m_pool->m_items) + m_index);
         m_index++;
     }
     return *this;
@@ -2148,7 +2163,8 @@ OwnPoolHandle<Traits>::~OwnPoolHandle() {
 }
 
 template <typename Traits>
-void OwnPoolHandle<Traits>::assign(PoolIndex<typename Traits::T, typename Traits::Index> other) {
+void OwnPoolHandle<Traits>::assign(
+    PoolIndex<typename Traits::T, typename Traits::Index> other) {
     if (this->idx != this->InvalidIndex) {
         Traits::getPool().delItem(*this);
     }
@@ -2262,8 +2278,8 @@ struct BlockList {
     struct WeakRef;
 
     //--------------------------------------
-    // Blocks are allocated on the heap, and the block footer is located contiguously in memory
-    // immediately following the block data.
+    // Blocks are allocated on the heap, and the block footer is located contiguously in
+    // memory immediately following the block data.
     //--------------------------------------
     struct Footer {
         u64 fileOffset = 0; // Total number of bytes used in all preceding blocks
@@ -2305,9 +2321,9 @@ struct BlockList {
         PLY_INLINE MutStringView viewUnusedBytes() {
             return {this->unused(), this->blockSize - this->numBytesUsed};
         }
-        // Returns a WeakRef to next block, and the next byte after the last byte in this block,
-        // taking the difference in fileOffsets into account since it's possible for adjacent blocks
-        // to overlap.
+        // Returns a WeakRef to next block, and the next byte after the last byte in
+        // this block, taking the difference in fileOffsets into account since it's
+        // possible for adjacent blocks to overlap.
         PLY_DLL_ENTRY WeakRef weakRefToNext() const;
     };
 
@@ -2320,12 +2336,14 @@ struct BlockList {
 
         PLY_INLINE WeakRef() {
         }
-        PLY_INLINE WeakRef(const WeakRef& other) : block{other.block}, byte{other.byte} {
+        PLY_INLINE WeakRef(const WeakRef& other)
+            : block{other.block}, byte{other.byte} {
         }
         PLY_INLINE WeakRef(Footer* block, char* byte) : block{block}, byte{byte} {
             PLY_ASSERT(!block || (uptr(byte - block->bytes) <= block->blockSize));
         }
-        PLY_INLINE WeakRef(Footer* block, u32 offset) : block{block}, byte{block->bytes + offset} {
+        PLY_INLINE WeakRef(Footer* block, u32 offset)
+            : block{block}, byte{block->bytes + offset} {
             PLY_ASSERT(offset <= block->blockSize);
         }
         PLY_INLINE void operator=(const WeakRef& other) {
@@ -2363,9 +2381,11 @@ struct BlockList {
         }
         PLY_INLINE Ref(Reference<Footer>&& block, char* byte)
             : block{std::move(block)}, byte{byte} {
-            PLY_ASSERT(!block || (uptr(byte - this->block->bytes) <= this->block->blockSize));
+            PLY_ASSERT(!block ||
+                       (uptr(byte - this->block->bytes) <= this->block->blockSize));
         }
-        PLY_INLINE Ref(const WeakRef& weakRef) : block{weakRef.block}, byte{weakRef.byte} {
+        PLY_INLINE Ref(const WeakRef& weakRef)
+            : block{weakRef.block}, byte{weakRef.byte} {
         }
         PLY_INLINE operator WeakRef() const {
             return {this->block, this->byte};
@@ -2414,8 +2434,10 @@ struct BlockList {
     // Static member functions
     //--------------------------------------
     static PLY_DLL_ENTRY Reference<Footer> createBlock(u32 numBytes = DefaultBlockSize);
-    static PLY_DLL_ENTRY Reference<Footer> createOverlayBlock(const WeakRef& pos, u32 numBytes);
-    static PLY_DLL_ENTRY Footer* appendBlock(Footer* block, u32 numBytes = DefaultBlockSize);
+    static PLY_DLL_ENTRY Reference<Footer> createOverlayBlock(const WeakRef& pos,
+                                                              u32 numBytes);
+    static PLY_DLL_ENTRY Footer* appendBlock(Footer* block,
+                                             u32 numBytes = DefaultBlockSize);
     static PLY_DLL_ENTRY void appendBlockWithRecycle(Reference<Footer>& block,
                                                      u32 numBytes = DefaultBlockSize);
     static PLY_INLINE RangeForIterator iterateOverViews(const WeakRef& start,
@@ -2488,7 +2510,8 @@ public:
         return ArrayView<T>::from(StringView{this->impl.byte, numBytesAvailable});
     }
     PLY_INLINE void endRead(u32 numItems) {
-        PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T) * numItems);
+        PLY_ASSERT(this->impl.block->unused() - this->impl.byte >=
+                   sizeof(T) * numItems);
         this->impl.byte += sizeof(T) * numItems;
     }
     PLY_INLINE WeakSequenceRef normalized() const {
@@ -2533,8 +2556,8 @@ public:
         return this->impl.byte != other.impl.byte;
     }
 
-    // The reference returned here remains valid as long as item continues to exist in the
-    // underlying sequence.
+    // The reference returned here remains valid as long as item continues to exist in
+    // the underlying sequence.
     PLY_INLINE T& read() {
         return *(T*) impl::read(&impl, sizeof(T));
     }
@@ -2553,7 +2576,8 @@ public:
     PLY_INLINE Sequence() : headBlock{BlockList::createBlock()}, tailBlock{headBlock} {
     }
 
-    PLY_INLINE Sequence(Sequence&& other) : headBlock{std::move(other.headBlock)}, tailBlock{other.tailBlock} {
+    PLY_INLINE Sequence(Sequence&& other)
+        : headBlock{std::move(other.headBlock)}, tailBlock{other.tailBlock} {
     }
 
     PLY_INLINE ~Sequence() {
@@ -2625,7 +2649,8 @@ public:
     }
 
     PLY_INLINE void popTail(u32 numItems = 1) {
-        impl::popTail(&this->tailBlock, numItems * (u32) sizeof(T), subst::destructViewAs<T>);
+        impl::popTail(&this->tailBlock, numItems * (u32) sizeof(T),
+                      subst::destructViewAs<T>);
     }
     PLY_INLINE void truncate(const WeakSequenceRef<T>& to) {
         impl::truncate(&this->tailBlock, to.impl);
@@ -2663,7 +2688,8 @@ public:
 //
 
 // Adapted from https://github.com/aappleby/smhasher
-// Specifically https://raw.githubusercontent.com/aappleby/smhasher/master/src/PMurHash.c
+// Specifically
+// https://raw.githubusercontent.com/aappleby/smhasher/master/src/PMurHash.c
 struct Hasher {
     u32 accum = 0;
 
@@ -2725,8 +2751,9 @@ PLY_INLINE Hasher& operator<<(Hasher& hasher, u64 value) {
 
 // For pointer to class or void*, use pointer value only.
 // (Note: char* is not accepted here.)
-template <typename T,
-          std::enable_if_t<std::is_class<T>::value || std::is_same<T, void>::value, int> = 0>
+template <
+    typename T,
+    std::enable_if_t<std::is_class<T>::value || std::is_same<T, void>::value, int> = 0>
 PLY_INLINE Hasher& operator<<(Hasher& hasher, const T* value) {
     hasher << uptr(value);
     return hasher;
@@ -2831,19 +2858,19 @@ struct HashMap {
         static PLY_NO_INLINE void construct(void* item, const void* key) {
             Traits::construct((Item*) item, *(const Key*) key);
         }
-        template <
-            typename U = Traits,
-            std::enable_if_t<!HasConstruct<U> &&
-                                 std::is_constructible<typename U::Item, typename U::Key>::value,
-                             int> = 0>
+        template <typename U = Traits,
+                  std::enable_if_t<!HasConstruct<U> &&
+                                       std::is_constructible<typename U::Item,
+                                                             typename U::Key>::value,
+                                   int> = 0>
         static PLY_NO_INLINE void construct(void* item, const void* key) {
             new (item) Item{*(const Key*) key};
         }
-        template <
-            typename U = Traits,
-            std::enable_if_t<!HasConstruct<U> &&
-                                 !std::is_constructible<typename U::Item, typename U::Key>::value,
-                             int> = 0>
+        template <typename U = Traits,
+                  std::enable_if_t<!HasConstruct<U> &&
+                                       !std::is_constructible<typename U::Item,
+                                                              typename U::Key>::value,
+                                   int> = 0>
         static PLY_NO_INLINE void construct(void* item, const void* key) {
             new (item) Item{};
         }
@@ -2875,11 +2902,13 @@ struct HashMap {
 
         // match (item and key)
         template <typename U = Traits, std::enable_if_t<!HasContext<U>, int> = 0>
-        static PLY_NO_INLINE bool match(const void* item, const void* key, const void*) {
+        static PLY_NO_INLINE bool match(const void* item, const void* key,
+                                        const void*) {
             return Traits::match(*(const Item*) item, *(const Key*) key);
         }
         template <typename U = Traits, std::enable_if_t<HasContext<U>, int> = 0>
-        static PLY_NO_INLINE bool match(const void* item, const void* key, const void* context) {
+        static PLY_NO_INLINE bool match(const void* item, const void* key,
+                                        const void* context) {
             return Traits::match(*(const Item*) item, *(const Key*) key,
                                  *(const typename U::Context*) context);
         }
@@ -2916,13 +2945,16 @@ struct HashMap {
     PLY_DLL_ENTRY HashMap(HashMap&& other);
     PLY_DLL_ENTRY void moveAssign(const Callbacks* cb, HashMap&& other);
     PLY_DLL_ENTRY void clear(const Callbacks* cb);
-    static PLY_DLL_ENTRY CellGroup* createTable(const Callbacks* cb, u32 size = InitialSize);
-    static PLY_DLL_ENTRY void destroyTable(const Callbacks* cb, CellGroup* cellGroups, u32 size);
+    static PLY_DLL_ENTRY CellGroup* createTable(const Callbacks* cb,
+                                                u32 size = InitialSize);
+    static PLY_DLL_ENTRY void destroyTable(const Callbacks* cb, CellGroup* cellGroups,
+                                           u32 size);
     PLY_DLL_ENTRY void migrateToNewTable(const Callbacks* cb);
-    PLY_DLL_ENTRY FindResult findNext(FindInfo* info, const Callbacks* cb, const void* key,
-                                      const void* context) const;
-    PLY_DLL_ENTRY FindResult insertOrFind(FindInfo* info, const Callbacks* cb, const void* key,
-                                          const void* context, u32 flags);
+    PLY_DLL_ENTRY FindResult findNext(FindInfo* info, const Callbacks* cb,
+                                      const void* key, const void* context) const;
+    PLY_DLL_ENTRY FindResult insertOrFind(FindInfo* info, const Callbacks* cb,
+                                          const void* key, const void* context,
+                                          u32 flags);
     PLY_DLL_ENTRY void* insertForMigration(u32 itemSize, u32 hash);
     PLY_DLL_ENTRY void erase(FindInfo* info, const Callbacks* cb, u8*& linkToAdjust);
 
@@ -2933,7 +2965,8 @@ struct HashMap {
         FindResult m_findResult;
 
         PLY_DLL_ENTRY void constructFindWithInsert(const Callbacks* cb, HashMap* map,
-                                                   const void* key, const void* context, u32 flags);
+                                                   const void* key, const void* context,
+                                                   u32 flags);
     };
 };
 } // namespace impl
@@ -2942,9 +2975,9 @@ struct HashMap {
 // CursorMixin is some template magic that lets us use different return values for
 // Cursor::operator->, depending on whether Item is a pointer or not.
 //
-// CursorMixin *could* be eliminated by eliminating operator-> from Cursor, or forbidding
-// operator-> for some types of Item, or by eliminating both operator-> and operator* and just
-// exposing an explicit get() function instead.
+// CursorMixin *could* be eliminated by eliminating operator-> from Cursor, or
+// forbidding operator-> for some types of Item, or by eliminating both operator-> and
+// operator* and just exposing an explicit get() function instead.
 //------------------------------------------------------------------
 template <class Cursor, typename Item, bool = std::is_pointer<Item>::value>
 class CursorMixin {
@@ -3012,8 +3045,9 @@ public:
 
     PLY_INLINE ~HashMap() {
         if (m_cellGroups) {
-            impl::HashMap::destroyTable(
-                Callbacks::instance(), (impl::HashMap::CellGroup*) m_cellGroups, m_sizeMask + 1);
+            impl::HashMap::destroyTable(Callbacks::instance(),
+                                        (impl::HashMap::CellGroup*) m_cellGroups,
+                                        m_sizeMask + 1);
         }
     }
 
@@ -3042,13 +3076,15 @@ public:
         impl::HashMap::FindResult m_findResult;
 
         // Find without insert
-        PLY_INLINE Cursor(HashMap* map, const Key& key, const Context* context) : m_map{map} {
+        PLY_INLINE Cursor(HashMap* map, const Key& key, const Context* context)
+            : m_map{map} {
             m_findResult = reinterpret_cast<impl::HashMap*>(m_map)->insertOrFind(
-                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, context,
-                impl::HashMap::AllowFind);
+                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
+                context, impl::HashMap::AllowFind);
         }
         // Find with insert
-        PLY_INLINE Cursor(HashMap* map, const Key& key, const Context* context, u32 flags) {
+        PLY_INLINE Cursor(HashMap* map, const Key& key, const Context* context,
+                          u32 flags) {
             reinterpret_cast<impl::HashMap::Cursor*>(this)->constructFindWithInsert(
                 Callbacks::instance(), (impl::HashMap*) map, &key, context, flags);
         }
@@ -3067,7 +3103,8 @@ public:
         }
         PLY_INLINE void next(const Key& key, const Context& context = {}) {
             m_findResult = reinterpret_cast<const impl::HashMap*>(m_map)->findNext(
-                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
+                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
+                &context);
         }
         PLY_INLINE Item& operator*() {
             PLY_ASSERT(m_findInfo.itemSlot);
@@ -3080,13 +3117,15 @@ public:
         PLY_INLINE void erase() {
             u8* unusedLink = nullptr;
             reinterpret_cast<impl::HashMap*>(m_map)->erase(
-                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), unusedLink);
+                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(),
+                unusedLink);
             m_findResult = impl::HashMap::FindResult::NotFound;
         }
         PLY_INLINE void eraseAndAdvance(const Key& key, const Context& context = {}) {
             FindInfo infoToErase = m_findInfo;
             m_findResult = reinterpret_cast<const impl::HashMap&>(m_map).findNext(
-                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
+                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
+                &context);
             reinterpret_cast<impl::HashMap*>(m_map)->erase(
                 (impl::HashMap::FindInfo*) &infoToErase, Callbacks::instance(),
                 m_findInfo.prevLink);
@@ -3107,12 +3146,13 @@ public:
         impl::HashMap::FindResult m_findResult;
 
         // Find without insert
-        PLY_INLINE ConstCursor(const HashMap* map, const Key& key, const Context* context)
+        PLY_INLINE ConstCursor(const HashMap* map, const Key& key,
+                               const Context* context)
             : m_map{map} {
-            m_findResult =
-                ((impl::HashMap*) m_map)
-                    ->insertOrFind((impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(),
-                                   &key, context, impl::HashMap::AllowFind);
+            m_findResult = ((impl::HashMap*) m_map)
+                               ->insertOrFind((impl::HashMap::FindInfo*) &m_findInfo,
+                                              Callbacks::instance(), &key, context,
+                                              impl::HashMap::AllowFind);
         }
 
     public:
@@ -3129,7 +3169,8 @@ public:
         }
         PLY_INLINE void next(const Key& key, const Context& context = {}) {
             m_findResult = reinterpret_cast<const impl::HashMap&>(m_map).findNext(
-                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key, &context);
+                (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
+                &context);
         }
         PLY_INLINE Item& operator*() {
             PLY_ASSERT(m_findInfo.itemSlot);
@@ -3150,11 +3191,13 @@ public:
     }
 
     PLY_INLINE Cursor insertOrFind(const Key& key, const Context* context = nullptr) {
-        return {this, key, context, impl::HashMap::AllowFind | impl::HashMap::AllowInsert};
+        return {this, key, context,
+                impl::HashMap::AllowFind | impl::HashMap::AllowInsert};
     }
 
     // insertMulti is experimental and should not be used. Will likely delete.
-    // FIXME: Delete this function and its associated support code, including Cursor::next()
+    // FIXME: Delete this function and its associated support code, including
+    // Cursor::next()
     PLY_INLINE Cursor insertMulti(const Key& key, const Context* context = nullptr) {
         return {this, key, context, impl::HashMap::AllowInsert};
     }
@@ -3162,7 +3205,8 @@ public:
     PLY_INLINE Cursor find(const Key& key, const Context* context = nullptr) {
         return {this, key, context};
     }
-    PLY_INLINE ConstCursor find(const Key& key, const Context* context = nullptr) const {
+    PLY_INLINE ConstCursor find(const Key& key,
+                                const Context* context = nullptr) const {
         return {this, key, context};
     }
 
@@ -3189,7 +3233,8 @@ public:
                 PLY_ASSERT(m_idx <= m_map.m_sizeMask + 1);
                 if (m_idx > m_map.m_sizeMask)
                     break;
-                CellGroup* group = m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
+                CellGroup* group =
+                    m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
                 if (group->nextDelta[m_idx & 3] != impl::HashMap::EmptySlot)
                     break;
             }
@@ -3239,7 +3284,8 @@ public:
                 PLY_ASSERT(m_idx <= m_map.m_sizeMask + 1);
                 if (m_idx > m_map.m_sizeMask)
                     break;
-                CellGroup* group = m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
+                CellGroup* group =
+                    m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
                 if (group->nextDelta[m_idx & 3] != impl::HashMap::EmptySlot)
                     break;
             }
@@ -3384,7 +3430,8 @@ public:
 
     PLY_INLINE bool insertOrFind(Label key, T** value) {
         PLY_PUN_SCOPE
-        return operate((Base*) this, Base::Insert, key, &Base::typeInfo<T>, (void**) value);
+        return operate((Base*) this, Base::Insert, key, &Base::typeInfo<T>,
+                       (void**) value);
     }
 
     PLY_INLINE T* insert(Label key) {
@@ -3464,6 +3511,132 @@ template <typename T>
 PLY_INLINE LabelMapIterator<const T> LabelMap<T>::end() const {
     return {this, this->capacity};
 }
+
+//  ▄▄   ▄▄
+//  ███▄███  ▄▄▄▄  ▄▄▄▄▄
+//  ██▀█▀██  ▄▄▄██ ██  ██
+//  ██   ██ ▀█▄▄██ ██▄▄█▀
+//                 ██
+
+// Key can be u32, u64, String, StringView, Label or T*.
+template <typename Key, typename Value>
+struct Map;
+
+struct BaseMap {
+    Array<s32> indices;
+    BaseArray items;
+};
+
+enum MapOperation {
+    M_Find,
+    M_Insert,
+    M_Reindex,
+};
+
+struct MapTypeInfo {
+    u32 item_size;
+    u32 value_offset;
+    void (*construct)(void* value);
+    void (*destruct)(void* value);
+};
+
+template <typename Key, typename Value>
+const MapTypeInfo map_type_info = {
+    u32{sizeof(typename Map<Key, Value>::Item)},
+    u32{(uptr) & ((typename Map<Key, Value>::Item*) 0)->value},
+    [](void* value) { new (value) Value; },
+    [](void* value) { ((Value*) value)->~Value(); },
+};
+
+// map_operate() is defined out-of-line (not inline) and explicitly instantiated for
+// u32, u64, String and StringView keys only.
+template <typename Key>
+void* map_operate(BaseMap* map, MapOperation op, View<Key> key, const MapTypeInfo* ti,
+                  bool* was_found = nullptr);
+
+// KeyTraits
+template <typename T>
+struct KeyTraits {
+    using Rep = T;
+    static T view(T key) {
+        return key;
+    }
+};
+template <>
+struct KeyTraits<String> {
+    using Rep = String;
+    static StringView view(const String& key) {
+        return key;
+    }
+};
+template <>
+struct KeyTraits<Label> {
+    using Rep = u32;
+    static u32 view(Label key) {
+        return key.idx;
+    }
+};
+template <typename T>
+struct KeyTraits<T*> {
+    using Rep = uptr;
+    static uptr view(T* key) {
+        return (uptr) key.idx;
+    }
+};
+
+template <typename Key, typename Value>
+struct Map {
+    struct Item {
+        Key key;
+        Value value;
+    };
+
+    Array<s32> indices;
+    Array<Item> items;
+
+    using Rep = typename KeyTraits<Key>::Rep;
+
+    Value* find(Key key) {
+        PLY_PUN_SCOPE
+        return (Value*) map_operate<Rep>((BaseMap*) this, M_Find,
+                                         KeyTraits<Key>::view(key),
+                                         &map_type_info<Key, Value>);
+    }
+    const Value* find(Key key) const {
+        PLY_PUN_SCOPE
+        return (Value*) map_operate<Rep>((BaseMap*) this, M_Find,
+                                         KeyTraits<Key>::view(key),
+                                         &map_type_info<Key, Value>);
+    }
+    Value* insert_or_find(Key key, bool* was_found = nullptr) {
+        PLY_PUN_SCOPE
+        return (Value*) map_operate<Rep>((BaseMap*) this, M_Insert,
+                                         KeyTraits<Key>::view(key),
+                                         &map_type_info<Key, Value>, was_found);
+    }
+    template <typename T>
+    void assign(Label key, T&& arg) {
+        PLY_PUN_SCOPE
+        void* value =
+            map_operate<Rep>((BaseMap*) this, M_Insert, KeyTraits<Key>::view(key),
+                             &map_type_info<Key, Value>);
+        *((Value*) value) = std::forward<T>(arg);
+    }
+
+    // Range-for support.
+    Item* begin() {
+        return this->items.begin();
+    }
+    Item* end() {
+        return this->items.end();
+    }
+    const Item* begin() const {
+        return this->items.begin();
+    }
+    const Item* end() const {
+        return this->items.end();
+    }
+};
 
 //  ▄▄           ▄▄            ▄▄▄   ▄▄▄▄   ▄▄
 //  ██     ▄▄▄▄  ██▄▄▄   ▄▄▄▄   ██  ██  ▀▀ ▄██▄▄  ▄▄▄▄  ▄▄▄▄▄   ▄▄▄▄   ▄▄▄▄▄  ▄▄▄▄
