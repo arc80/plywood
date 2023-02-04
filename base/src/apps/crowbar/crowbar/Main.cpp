@@ -1,10 +1,9 @@
-﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃     ____                                    ┃
-┃    ╱   ╱╲    Plywood C++ Development Kit    ┃
-┃   ╱___╱╭╮╲   https://plywood.dev/           ┃
-┃    └──┴┴┴┘                                  ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
-
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                           ┃
+┃    ╱   ╱╲    Plywood Multimedia Development Kit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/                  ┃
+┃    └──┴┴┴┘                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 #include "core.h"
 #include "command_line.h"
 #include <ply-build-repo/Workspace.h>
@@ -23,8 +22,7 @@ using namespace ply::build;
 
 void cmd_tidy(CommandLine& cl) {
     cl.check_for_unused_args();
-    tidy_repo(Path.join(Workspace.path, "base/src"), {},
-              Workspace.getSourceTextFormat());
+    tidy_source();
 }
 
 //   ▄▄                                ▄▄

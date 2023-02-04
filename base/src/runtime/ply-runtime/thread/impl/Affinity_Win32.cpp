@@ -1,7 +1,9 @@
-/*------------------------------------
-  ///\  Plywood C++ Framework
-  \\\/  https://plywood.arc80.com/
-------------------------------------*/
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                           ┃
+┃    ╱   ╱╲    Plywood Multimedia Development Kit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/                  ┃
+┃    └──┴┴┴┘                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 #include <ply-runtime.h>
 
 #if PLY_TARGET_WIN32 && !PLY_DLL_IMPORTING

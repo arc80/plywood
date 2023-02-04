@@ -1,10 +1,9 @@
-/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃     ____                                           ┃
 ┃    ╱   ╱╲    Plywood Multimedia Development Kit    ┃
 ┃   ╱___╱╭╮╲   https://plywood.dev/                  ┃
 ┃    └──┴┴┴┘                                         ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
-
 #pragma once
 
 namespace ply {
@@ -683,7 +682,7 @@ struct TextFormat {
 
     UnicodeType encoding = UTF8;
     NewLine newLine = NewLine::LF;
-    bool bom = false;
+    bool bom = true;
 
     static TextFormat default_utf8();
     static TextFormat autodetect(InStream& in);

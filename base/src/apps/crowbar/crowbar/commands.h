@@ -1,15 +1,14 @@
-﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃     ____                                    ┃
-┃    ╱   ╱╲    Plywood C++ Development Kit    ┃
-┃   ╱___╱╭╮╲   https://plywood.dev/           ┃
-┃    └──┴┴┴┘                                  ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
-
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                           ┃
+┃    ╱   ╱╲    Plywood Multimedia Development Kit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/                  ┃
+┃    └──┴┴┴┘                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 #pragma once
 #include "core.h"
 #include <ply-build-repo/BuildFolder.h>
 
-void tidy_repo(StringView repoPath, StringView clangFormatPath, const TextFormat& tff);
+void tidy_source();
 void print_bigfont(StringView text);
 void print_smallbox(StringView text);
 void do_codegen();

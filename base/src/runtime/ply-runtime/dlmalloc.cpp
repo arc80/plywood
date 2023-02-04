@@ -1,6 +1,9 @@
-// Based on Doug Lea's malloc
-// http://gee.cs.oswego.edu/dl/html/malloc.html
-
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                           ┃
+┃    ╱   ╱╲    Plywood Multimedia Development Kit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/                  ┃
+┃    └──┴┴┴┘                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 #include <ply-runtime.h>
 #include <stdlib.h>
 #include <memory.h>

@@ -1,12 +1,9 @@
-﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃     ____                                    ┃
-┃    ╱   ╱╲    Plywood C++ Development Kit    ┃
-┃   ╱___╱╭╮╲   https://plywood.dev/           ┃
-┃    └──┴┴┴┘                                  ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
-
-// This file implements workspace commands in a way that can be called from either the
-// command line or a GUI.
+﻿/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     ____                                           ┃
+┃    ╱   ╱╲    Plywood Multimedia Development Kit    ┃
+┃   ╱___╱╭╮╲   https://plywood.dev/                  ┃
+┃    └──┴┴┴┘                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 
 #include "core.h"
 #include <ply-build-repo/Workspace.h>
