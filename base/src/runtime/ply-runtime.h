@@ -1801,9 +1801,6 @@ struct StringView {
         PLY_ASSERT(u32(-ofs - 1) < this->numBytes);
         return this->bytes[this->numBytes + ofs];
     }
-    const char* end() const {
-        return this->bytes + this->numBytes;
-    }
     void offsetHead(u32 numBytes) {
         PLY_ASSERT(numBytes <= this->numBytes);
         this->bytes += numBytes;
@@ -1907,6 +1904,13 @@ struct StringView {
     }
     HybridString withNullTerminator() const;
     StringView withoutNullTerminator() const;
+
+    const char* begin() const {
+        return this->bytes;
+    }
+    const char* end() const {
+        return this->bytes + this->numBytes;
+    }
 };
 
 s32 compare(StringView a, StringView b);
