@@ -10,7 +10,7 @@
 namespace ply {
 namespace cpp {
 
-PLY_NO_INLINE StringView getPunctuationString(Token::Type tok) {
+PLY_NO_INLINE StringView get_punctuation_string(Token::Type tok) {
     switch (tok) {
         case Token::OpenCurly:
             return "{";
@@ -105,7 +105,7 @@ PLY_NO_INLINE StringView getPunctuationString(Token::Type tok) {
     }
 }
 
-HybridString Token::toString() const {
+HybridString Token::to_string() const {
     switch (this->type) {
         case Token::Identifier:
         case Token::StringLiteral:
@@ -116,7 +116,7 @@ HybridString Token::toString() const {
             return StringView{"end-of-file"};
         }
         default: {
-            return getPunctuationString(this->type);
+            return get_punctuation_string(this->type);
         }
     }
 }

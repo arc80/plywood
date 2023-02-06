@@ -12,49 +12,53 @@ namespace ply {
 namespace cpp {
 namespace sema {
 
-Array<Stringifier::Component> Stringifier::toStringComps(const TemplateArg::Type& templateArgType) {
-    if (auto unknown = templateArgType.unknown()) {
+Array<Stringifier::Component>
+Stringifier::to_string_comps(const TemplateArg::Type& template_arg_type) {
+    if (auto unknown = template_arg_type.unknown()) {
         return {{Component::Other, unknown->expression, nullptr}};
-    } else if (auto typeID = templateArgType.typeID()) {
-        return this->toStringComps(typeID->declSpecifierSeq, typeID->abstractDcor, {}, {}, false);
+    } else if (auto type_id = template_arg_type.type_id()) {
+        return this->to_string_comps(type_id->decl_specifier_seq,
+                                     type_id->abstract_dcor, {}, {}, false);
     } else {
         PLY_ASSERT(0);
         return {};
     }
 }
 
-Array<Stringifier::Component> Stringifier::applyProductions(const DeclaratorProduction* prod,
-                                                            Array<Stringifier::Component>&& comps) {
-    auto startsWithIdentifier = [](ArrayView<Stringifier::Component> comps) {
-        return comps.numItems >= 1 && (comps[0].type == Component::KeywordOrIdentifier ||
-                                       comps[0].type == Component::BeginRootDeclarator);
+Array<Stringifier::Component>
+Stringifier::apply_productions(const DeclaratorProduction* prod,
+                               Array<Stringifier::Component>&& comps) {
+    auto starts_with_identifier = [](ArrayView<Stringifier::Component> comps) {
+        return comps.num_items >= 1 &&
+               (comps[0].type == Component::KeywordOrIdentifier ||
+                comps[0].type == Component::BeginRootDeclarator);
     };
-    bool hasLeftPart = false;
-    auto parenthesizeIfNeeded = [&] {
-        if (!hasLeftPart)
+    bool has_left_part = false;
+    auto parenthesize_if_needed = [&] {
+        if (!has_left_part)
             return;
         comps.insert(0) = {Component::Other, "(", nullptr};
         comps.append({Component::Other, ")", nullptr});
-        hasLeftPart = false;
+        has_left_part = false;
     };
     while (prod) {
-        if (auto pointerTo = prod->pointerTo()) {
-            if (startsWithIdentifier(comps)) {
+        if (auto pointer_to = prod->pointer_to()) {
+            if (starts_with_identifier(comps)) {
                 comps.insert(0) = {Component::Other, " ", nullptr};
             }
             comps.insert(0) = {Component::PointerOrReference,
-                               getPunctuationString(pointerTo->puncType), nullptr};
-            hasLeftPart = true;
-            prod = pointerTo->target;
+                               get_punctuation_string(pointer_to->punc_type), nullptr};
+            has_left_part = true;
+            prod = pointer_to->target;
         } else if (auto function = prod->function()) {
-            parenthesizeIfNeeded();
+            parenthesize_if_needed();
             comps.append({Component::Other, "(", nullptr});
-            for (u32 i = 0; i < function->params.numItems(); i++) {
+            for (u32 i = 0; i < function->params.num_items(); i++) {
                 if (i > 0) {
                     comps.append({Component::Other, ", ", nullptr});
                 }
                 const SingleDeclaration& param = function->params[i];
-                comps.moveExtend(this->toStringComps(param, false));
+                comps.move_extend(this->to_string_comps(param, false));
             }
             comps.append({Component::Other, ")", nullptr});
             for (cpp::Token::Type qual : function->qualifiers) {
@@ -64,22 +68,24 @@ Array<Stringifier::Component> Stringifier::applyProductions(const DeclaratorProd
                     comps.append({Component::Other, " const", nullptr});
                 } else {
                     comps.append({Component::Other,
-                                  String::format(" {}", getPunctuationString(qual)), nullptr});
+                                  String::format(" {}", get_punctuation_string(qual)),
+                                  nullptr});
                 }
             }
             prod = function->target;
         } else if (auto qualifier = prod->qualifier()) {
-            if (startsWithIdentifier(comps)) {
+            if (starts_with_identifier(comps)) {
                 comps.insert(0) = {Component::Other, " ", nullptr};
             }
-            comps.insert(0) = {Component::KeywordOrIdentifier, qualifier->keyword, nullptr};
-            hasLeftPart = true;
+            comps.insert(0) = {Component::KeywordOrIdentifier, qualifier->keyword,
+                               nullptr};
+            has_left_part = true;
             prod = qualifier->target;
-        } else if (auto arrayOf = prod->arrayOf()) {
+        } else if (auto array_of = prod->array_of()) {
             // FIXME: sema does not support the array subscript yet
-            parenthesizeIfNeeded();
+            parenthesize_if_needed();
             comps.append({Component::Other, "[]", nullptr});
-            prod = arrayOf->target;
+            prod = array_of->target;
         } else {
             PLY_ASSERT(0);
         }
@@ -87,92 +93,98 @@ Array<Stringifier::Component> Stringifier::applyProductions(const DeclaratorProd
     return std::move(comps);
 }
 
-Array<Stringifier::Component> Stringifier::toStringComps(const QualifiedID& qid, QIDRole role) {
+Array<Stringifier::Component> Stringifier::to_string_comps(const QualifiedID& qid,
+                                                           QIDRole role) {
     Array<Component> result;
-    docs::SemaEntity* scope = this->fromScope;
-    bool checkParents = true;
+    docs::SemaEntity* scope = this->from_scope;
+    bool check_parents = true;
     if (role == QIDRole::RootDeclarator) {
-        PLY_ASSERT(qid.nestedName.isEmpty());
-        if (this->prependClassName && scope && scope->parent->type == docs::SemaEntity::Class) {
+        PLY_ASSERT(qid.nested_name.is_empty());
+        if (this->prepend_class_name && scope &&
+            scope->parent->type == docs::SemaEntity::Class) {
             result.append({Component::KeywordOrIdentifier, scope->parent->name});
             result.append({Component::Other, "::", nullptr});
         }
         result.append({Component::BeginRootDeclarator, {}, nullptr});
     }
-    for (const NestedNameComponent& nestedComp : qid.nestedName) {
-        if (auto identifier = nestedComp.identifier()) {
+    for (const NestedNameComponent& nested_comp : qid.nested_name) {
+        if (auto identifier = nested_comp.identifier()) {
             if (scope) {
-                scope = scope->lookup(identifier->name, checkParents);
+                scope = scope->lookup(identifier->name, check_parents);
             }
             result.append({Component::KeywordOrIdentifier, identifier->name, scope});
             result.append({Component::Other, "::", nullptr});
-        } else if (auto templated = nestedComp.templated()) {
+        } else if (auto templated = nested_comp.templated()) {
             if (scope) {
-                scope = scope->lookup(identifier->name, checkParents);
+                scope = scope->lookup(identifier->name, check_parents);
             }
             result.append({Component::KeywordOrIdentifier, templated->name, scope});
             result.append({Component::Other, "<", nullptr});
-            for (u32 i = 0; i < templated->args.numItems(); i++) {
+            for (u32 i = 0; i < templated->args.num_items(); i++) {
                 if (i > 0) {
                     result.append({Component::Other, ", ", nullptr});
                 }
                 const TemplateArg& arg = templated->args[i];
-                result.moveExtend(this->toStringComps(arg.type));
+                result.move_extend(this->to_string_comps(arg.type));
             }
             result.append({Component::Other, ">::", nullptr});
-        } else if (auto declType = nestedComp.declType()) {
+        } else if (auto decl_type = nested_comp.decl_type()) {
             result.append({Component::KeywordOrIdentifier, "decltype", nullptr});
-            result.append(
-                {Component::Other, StringView{"("} + declType->expression + ")::", nullptr});
+            result.append({Component::Other,
+                           StringView{"("} + decl_type->expression + ")::", nullptr});
         } else {
             PLY_ASSERT(0);
         }
-        checkParents = false;
+        check_parents = false;
     }
     if (auto identifier = qid.unqual.identifier()) {
         if (role == QIDRole::TypeSpecifier && scope) {
-            scope = scope->lookup(identifier->name, checkParents);
+            scope = scope->lookup(identifier->name, check_parents);
         } else {
             scope = nullptr;
         }
         result.append({Component::KeywordOrIdentifier, identifier->name, scope});
-    } else if (auto templateID = qid.unqual.templateID()) {
+    } else if (auto template_id = qid.unqual.template_id()) {
         if (role == QIDRole::TypeSpecifier && scope) {
-            scope = scope->lookup(templateID->name, checkParents);
+            scope = scope->lookup(template_id->name, check_parents);
         } else {
             scope = nullptr;
         }
-        result.append({Component::KeywordOrIdentifier, templateID->name, scope});
+        result.append({Component::KeywordOrIdentifier, template_id->name, scope});
         if (role == QIDRole::RootDeclarator) {
             result.append({Component::EndRootDeclarator, {}, nullptr});
             role = QIDRole::Declarator;
         }
         result.append({Component::Other, "<", nullptr});
-        for (u32 i = 0; i < templateID->args.numItems(); i++) {
+        for (u32 i = 0; i < template_id->args.num_items(); i++) {
             if (i > 0) {
                 result.append({Component::Other, ", ", nullptr});
             }
-            const TemplateArg& arg = templateID->args[i];
-            result.moveExtend(this->toStringComps(arg.type));
+            const TemplateArg& arg = template_id->args[i];
+            result.move_extend(this->to_string_comps(arg.type));
         }
         result.append({Component::Other, ">", nullptr});
-    } else if (auto declType = qid.unqual.declType()) {
+    } else if (auto decl_type = qid.unqual.decl_type()) {
         result.append({Component::KeywordOrIdentifier, "decltype", nullptr});
-        result.append({Component::Other, StringView{"("} + declType->expression + ")", nullptr});
+        result.append(
+            {Component::Other, StringView{"("} + decl_type->expression + ")", nullptr});
     } else if (auto destructor = qid.unqual.destructor()) {
         result.append({Component::Other, "~", nullptr});
         result.append({Component::KeywordOrIdentifier, destructor->name, nullptr});
-    } else if (auto operatorFunc = qid.unqual.operatorFunc()) {
+    } else if (auto operator_func = qid.unqual.operator_func()) {
         result.append({Component::KeywordOrIdentifier, "operator", nullptr});
-        result.append({Component::Other, getPunctuationString(operatorFunc->punc), nullptr});
-        if (operatorFunc->punc2 != cpp::Token::Invalid) {
-            result.append({Component::Other, getPunctuationString(operatorFunc->punc2), nullptr});
+        result.append(
+            {Component::Other, get_punctuation_string(operator_func->punc), nullptr});
+        if (operator_func->punc2 != cpp::Token::Invalid) {
+            result.append({Component::Other,
+                           get_punctuation_string(operator_func->punc2), nullptr});
         }
-    } else if (auto conversionFunc = qid.unqual.conversionFunc()) {
+    } else if (auto conversion_func = qid.unqual.conversion_func()) {
         result.append({Component::KeywordOrIdentifier, "operator", nullptr});
         result.append({Component::Other, " ", nullptr});
-        result.moveExtend(this->toStringComps(conversionFunc->declSpecifierSeq,
-                                              conversionFunc->abstractDcor, {}, {}, false));
+        result.move_extend(this->to_string_comps(conversion_func->decl_specifier_seq,
+                                                 conversion_func->abstract_dcor, {}, {},
+                                                 false));
     }
     if (role == QIDRole::RootDeclarator) {
         result.append({Component::EndRootDeclarator, {}, nullptr});
@@ -181,68 +193,71 @@ Array<Stringifier::Component> Stringifier::toStringComps(const QualifiedID& qid,
 }
 
 Array<Stringifier::Component>
-Stringifier::toStringComps(ArrayView<const DeclSpecifier> declSpecifierSeq,
-                           const DeclaratorProduction* prod, const QualifiedID& qid,
-                           const Initializer& init, bool forRootDeclaration) {
+Stringifier::to_string_comps(ArrayView<const DeclSpecifier> decl_specifier_seq,
+                             const DeclaratorProduction* prod, const QualifiedID& qid,
+                             const Initializer& init, bool for_root_declaration) {
     Array<Component> comps;
     bool first = true;
-    for (const DeclSpecifier& declSpec : declSpecifierSeq) {
+    for (const DeclSpecifier& decl_spec : decl_specifier_seq) {
         if (!first) {
             comps.append({Component::Other, " ", nullptr});
         }
         first = false;
-        if (auto keyword = declSpec.keyword()) {
+        if (auto keyword = decl_spec.keyword()) {
             comps.append({Component::KeywordOrIdentifier, keyword->token, nullptr});
-        } else if (auto typeID = declSpec.typeID()) {
-            if (typeID->hasTypename) {
+        } else if (auto type_id = decl_spec.type_id()) {
+            if (type_id->has_typename) {
                 comps.append({Component::KeywordOrIdentifier, "typename", nullptr});
                 comps.append({Component::Other, " ", nullptr});
             }
-            comps.moveExtend(this->toStringComps(typeID->qid, QIDRole::TypeSpecifier));
-        } else if (auto typeParam = declSpec.typeParam()) {
+            comps.move_extend(
+                this->to_string_comps(type_id->qid, QIDRole::TypeSpecifier));
+        } else if (auto type_param = decl_spec.type_param()) {
             comps.append({Component::KeywordOrIdentifier, "typename", nullptr});
         } else {
             PLY_ASSERT(0);
         }
     }
 
-    Array<Component> qidComps;
+    Array<Component> qid_comps;
     {
         // Don't try to lookup the declarator
-        //        PLY_SET_IN_SCOPE(this->fromScope, nullptr);
-        qidComps = this->toStringComps(qid, forRootDeclaration ? QIDRole::RootDeclarator
-                                                               : QIDRole::Declarator);
+        //        PLY_SET_IN_SCOPE(this->from_scope, nullptr);
+        qid_comps = this->to_string_comps(
+            qid, for_root_declaration ? QIDRole::RootDeclarator : QIDRole::Declarator);
     }
-    Array<Component> dcorComps = this->applyProductions(prod, std::move(qidComps));
-    if (dcorComps && dcorComps[0].type != Component::PointerOrReference) {
+    Array<Component> dcor_comps = this->apply_productions(prod, std::move(qid_comps));
+    if (dcor_comps && dcor_comps[0].type != Component::PointerOrReference) {
         comps.append({Component::Other, " ", nullptr});
     }
-    comps.moveExtend(dcorComps);
+    comps.move_extend(dcor_comps);
 
-    if (auto initAssign = init.assignment()) {
+    if (auto init_assign = init.assignment()) {
         comps.append({Component::Other, StringView{" = "}, nullptr});
-        comps.moveExtend(this->toStringComps(initAssign->type));
-    } else if (auto bitField = init.bitField()) {
-        comps.append({Component::Other, StringView{" : "} + bitField->expression, nullptr});
+        comps.move_extend(this->to_string_comps(init_assign->type));
+    } else if (auto bit_field = init.bit_field()) {
+        comps.append(
+            {Component::Other, StringView{" : "} + bit_field->expression, nullptr});
     }
 
     return comps;
 }
 
-Array<Stringifier::Component> toStringComps(const SingleDeclaration& single,
-                                            docs::SemaEntity* fromScope, bool prependClassName) {
+Array<Stringifier::Component> to_string_comps(const SingleDeclaration& single,
+                                              docs::SemaEntity* from_scope,
+                                              bool prepend_class_name) {
     Stringifier stringifier;
-    stringifier.fromScope = fromScope;
-    stringifier.prependClassName = prependClassName;
-    return stringifier.toStringComps(single, true);
+    stringifier.from_scope = from_scope;
+    stringifier.prepend_class_name = prepend_class_name;
+    return stringifier.to_string_comps(single, true);
 }
 
-String toString(const SingleDeclaration& single) {
+String to_string(const SingleDeclaration& single) {
     MemOutStream mout;
-    for (const Stringifier::Component& comp : toStringComps(single, nullptr, false)) {
+    for (const Stringifier::Component& comp : to_string_comps(single, nullptr, false)) {
         mout << comp.text;
     }
-    return mout.moveToString();
+    return mout.move_to_string();
 }
 
 } // namespace sema

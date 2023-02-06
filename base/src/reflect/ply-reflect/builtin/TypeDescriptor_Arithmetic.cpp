@@ -21,97 +21,122 @@ struct ArithmeticMethodTable {
     template <typename T>
     static PLY_INLINE MethodTable make() {
         MethodTable methods;
-        methods.binaryOp = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
-                              const AnyObject& first, const AnyObject& second) -> FnResult {
+        methods.binary_op = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
+                               const AnyObject& first,
+                               const AnyObject& second) -> FnResult {
             switch (op) {
                 case MethodTable::BinaryOp::Multiply: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
-                    *interp->returnValue.cast<T>() = *first.cast<T>() * *second.cast<T>();
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<T>());
+                    *interp->return_value.cast<T>() =
+                        *first.cast<T>() * *second.cast<T>();
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::Divide: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
-                    *interp->returnValue.cast<T>() = *first.cast<T>() / *second.cast<T>();
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<T>());
+                    *interp->return_value.cast<T>() =
+                        *first.cast<T>() / *second.cast<T>();
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::Modulo: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
-                    *interp->returnValue.cast<T>() = *first.cast<T>() % *second.cast<T>();
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<T>());
+                    *interp->return_value.cast<T>() =
+                        *first.cast<T>() % *second.cast<T>();
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::Add: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
-                    *interp->returnValue.cast<T>() = *first.cast<T>() + *second.cast<T>();
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<T>());
+                    *interp->return_value.cast<T>() =
+                        *first.cast<T>() + *second.cast<T>();
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::Subtract: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
-                    *interp->returnValue.cast<T>() = *first.cast<T>() - *second.cast<T>();
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<T>());
+                    *interp->return_value.cast<T>() =
+                        *first.cast<T>() - *second.cast<T>();
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::DoubleEqual: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-                    *interp->returnValue.cast<bool>() = (*first.cast<T>() == *second.cast<T>());
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<bool>());
+                    *interp->return_value.cast<bool>() =
+                        (*first.cast<T>() == *second.cast<T>());
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::LessThan: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-                    *interp->returnValue.cast<bool>() = (*first.cast<T>() < *second.cast<T>());
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<bool>());
+                    *interp->return_value.cast<bool>() =
+                        (*first.cast<T>() < *second.cast<T>());
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::LessThanOrEqual: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-                    *interp->returnValue.cast<bool>() = (*first.cast<T>() <= *second.cast<T>());
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<bool>());
+                    *interp->return_value.cast<bool>() =
+                        (*first.cast<T>() <= *second.cast<T>());
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::GreaterThan: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-                    *interp->returnValue.cast<bool>() = (*first.cast<T>() > *second.cast<T>());
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<bool>());
+                    *interp->return_value.cast<bool>() =
+                        (*first.cast<T>() > *second.cast<T>());
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::GreaterThanOrEqual: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-                    *interp->returnValue.cast<bool>() = (*first.cast<T>() >= *second.cast<T>());
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<bool>());
+                    *interp->return_value.cast<bool>() =
+                        (*first.cast<T>() >= *second.cast<T>());
                     return Fn_OK;
                 }
                 default: {
-                    return MethodTable::unsupportedBinaryOp(interp, op, first, second);
+                    return MethodTable::unsupported_binary_op(interp, op, first,
+                                                              second);
                 }
             }
         };
-        methods.unaryOp = [](BaseInterpreter* interp, MethodTable::UnaryOp op,
-                             const AnyObject& obj) -> FnResult {
+        methods.unary_op = [](BaseInterpreter* interp, MethodTable::UnaryOp op,
+                              const AnyObject& obj) -> FnResult {
             switch (op) {
                 case MethodTable::UnaryOp::Negate: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
-                    *interp->returnValue.cast<T>() = -*obj.cast<T>();
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<T>());
+                    *interp->return_value.cast<T>() = -*obj.cast<T>();
                     return Fn_OK;
                 }
                 case MethodTable::UnaryOp::LogicalNot: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
-                    *interp->returnValue.cast<T>() = !*obj.cast<T>();
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<T>());
+                    *interp->return_value.cast<T>() = !*obj.cast<T>();
                     return Fn_OK;
                 }
                 case MethodTable::UnaryOp::BitComplement: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<T>());
-                    *interp->returnValue.cast<T>() = ~*obj.cast<T>();
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<T>());
+                    *interp->return_value.cast<T>() = ~*obj.cast<T>();
                     return Fn_OK;
                 }
                 default: {
-                    return MethodTable::unsupportedUnaryOp(interp, op, obj);
+                    return MethodTable::unsupported_unary_op(interp, op, obj);
                 }
             }
         };
@@ -122,71 +147,71 @@ struct ArithmeticMethodTable {
 #endif // PLY_WITH_METHOD_TABLES
 
 PLY_DEFINE_TYPE_DESCRIPTOR(s8) {
-    static TypeDescriptor typeDesc{&TypeKey_S8, (s8*) nullptr,
-                                   NativeBindings::make<s8>()
-                                       PLY_METHOD_TABLES_ONLY(, ArithmeticMethodTable::make<s8>())};
-    return &typeDesc;
+    static TypeDescriptor type_desc{&TypeKey_S8, (s8*) nullptr,
+                                    NativeBindings::make<s8>() PLY_METHOD_TABLES_ONLY(
+                                        , ArithmeticMethodTable::make<s8>())};
+    return &type_desc;
 }
 
 PLY_DEFINE_TYPE_DESCRIPTOR(s16) {
-    static TypeDescriptor typeDesc{
-        &TypeKey_S16, (s16*) nullptr,
-        NativeBindings::make<s16>() PLY_METHOD_TABLES_ONLY(, ArithmeticMethodTable::make<s16>())};
-    return &typeDesc;
+    static TypeDescriptor type_desc{&TypeKey_S16, (s16*) nullptr,
+                                    NativeBindings::make<s16>() PLY_METHOD_TABLES_ONLY(
+                                        , ArithmeticMethodTable::make<s16>())};
+    return &type_desc;
 }
 
 PLY_DEFINE_TYPE_DESCRIPTOR(s32) {
-    static TypeDescriptor typeDesc{
-        &TypeKey_S32, (s32*) nullptr,
-        NativeBindings::make<s32>() PLY_METHOD_TABLES_ONLY(, ArithmeticMethodTable::make<s32>())};
-    return &typeDesc;
+    static TypeDescriptor type_desc{&TypeKey_S32, (s32*) nullptr,
+                                    NativeBindings::make<s32>() PLY_METHOD_TABLES_ONLY(
+                                        , ArithmeticMethodTable::make<s32>())};
+    return &type_desc;
 }
 
 PLY_DEFINE_TYPE_DESCRIPTOR(s64) {
-    static TypeDescriptor typeDesc{
-        &TypeKey_S64, (s64*) nullptr,
-        NativeBindings::make<s64>() PLY_METHOD_TABLES_ONLY(, ArithmeticMethodTable::make<s64>())};
-    return &typeDesc;
+    static TypeDescriptor type_desc{&TypeKey_S64, (s64*) nullptr,
+                                    NativeBindings::make<s64>() PLY_METHOD_TABLES_ONLY(
+                                        , ArithmeticMethodTable::make<s64>())};
+    return &type_desc;
 }
 
 PLY_DEFINE_TYPE_DESCRIPTOR(u8) {
-    static TypeDescriptor typeDesc{&TypeKey_U8, (u8*) nullptr,
-                                   NativeBindings::make<u8>()
-                                       PLY_METHOD_TABLES_ONLY(, ArithmeticMethodTable::make<u8>())};
-    return &typeDesc;
+    static TypeDescriptor type_desc{&TypeKey_U8, (u8*) nullptr,
+                                    NativeBindings::make<u8>() PLY_METHOD_TABLES_ONLY(
+                                        , ArithmeticMethodTable::make<u8>())};
+    return &type_desc;
 }
 
 PLY_DEFINE_TYPE_DESCRIPTOR(u16) {
-    static TypeDescriptor typeDesc{
-        &TypeKey_U16, (u16*) nullptr,
-        NativeBindings::make<u16>() PLY_METHOD_TABLES_ONLY(, ArithmeticMethodTable::make<u16>())};
-    return &typeDesc;
+    static TypeDescriptor type_desc{&TypeKey_U16, (u16*) nullptr,
+                                    NativeBindings::make<u16>() PLY_METHOD_TABLES_ONLY(
+                                        , ArithmeticMethodTable::make<u16>())};
+    return &type_desc;
 }
 
 PLY_DEFINE_TYPE_DESCRIPTOR(u32) {
-    static TypeDescriptor typeDesc{
-        &TypeKey_U32, (u32*) nullptr,
-        NativeBindings::make<u32>() PLY_METHOD_TABLES_ONLY(, ArithmeticMethodTable::make<u32>())};
-    return &typeDesc;
+    static TypeDescriptor type_desc{&TypeKey_U32, (u32*) nullptr,
+                                    NativeBindings::make<u32>() PLY_METHOD_TABLES_ONLY(
+                                        , ArithmeticMethodTable::make<u32>())};
+    return &type_desc;
 }
 
 PLY_DEFINE_TYPE_DESCRIPTOR(u64) {
-    static TypeDescriptor typeDesc{
-        &TypeKey_U64, (u64*) nullptr,
-        NativeBindings::make<u64>() PLY_METHOD_TABLES_ONLY(, ArithmeticMethodTable::make<u64>())};
-    return &typeDesc;
+    static TypeDescriptor type_desc{&TypeKey_U64, (u64*) nullptr,
+                                    NativeBindings::make<u64>() PLY_METHOD_TABLES_ONLY(
+                                        , ArithmeticMethodTable::make<u64>())};
+    return &type_desc;
 }
 
 PLY_DEFINE_TYPE_DESCRIPTOR(float) {
-    static TypeDescriptor typeDesc{
+    static TypeDescriptor type_desc{
         &TypeKey_Float, (float*) nullptr, NativeBindings::make<float>(), {}};
-    return &typeDesc;
+    return &type_desc;
 }
 
 PLY_DEFINE_TYPE_DESCRIPTOR(double) {
-    static TypeDescriptor typeDesc{
+    static TypeDescriptor type_desc{
         &TypeKey_Double, (double*) nullptr, NativeBindings::make<double>(), {}};
-    return &typeDesc;
+    return &type_desc;
 }
 
 } // namespace ply

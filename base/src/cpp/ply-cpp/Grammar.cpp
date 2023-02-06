@@ -11,33 +11,33 @@ namespace ply {
 namespace cpp {
 namespace grammar {
 
-StringView UnqualifiedID::getCtorDtorName() const {
+StringView UnqualifiedID::get_ctor_dtor_name() const {
     if (auto id = this->identifier()) {
         return id->name.identifier;
     } else if (auto dtor = this->destructor()) {
         return dtor->name.identifier;
-    } else if (auto tmpl = this->templateID()) {
+    } else if (auto tmpl = this->template_id()) {
         return tmpl->name.identifier; // FIXME: is this valid?
     }
     return {};
 }
 
-String QualifiedID::toString() const {
+String QualifiedID::to_string() const {
     MemOutStream mout;
 
-    for (const grammar::NestedNameComponent& comp : this->nestedName) {
-        if (auto ident = comp.type.identifierOrTemplated()) {
+    for (const grammar::NestedNameComponent& comp : this->nested_name) {
+        if (auto ident = comp.type.identifier_or_templated()) {
             mout << ident->name.identifier;
-            if (ident->openAngled.isValid()) {
+            if (ident->open_angled.is_valid()) {
                 // FIXME: dump nested IDs/expressions
                 mout << "<>";
             }
-        } else if (auto declType = comp.type.declType()) {
+        } else if (auto decl_type = comp.type.decl_type()) {
             mout << "decltype()";
         } else {
             PLY_ASSERT(0);
         }
-        PLY_ASSERT(comp.sep.isValid());
+        PLY_ASSERT(comp.sep.is_valid());
         mout << "::";
     }
 
@@ -48,14 +48,14 @@ String QualifiedID::toString() const {
             break;
         }
         case ID::TemplateID: {
-            auto tid = this->unqual.templateID();
-            mout << tid->name.identifier << tid->openAngled.identifier;
+            auto tid = this->unqual.template_id();
+            mout << tid->name.identifier << tid->open_angled.identifier;
             // FIXME: dump nested IDs/expressions
-            mout << tid->closeAngled.identifier;
+            mout << tid->close_angled.identifier;
             break;
         }
         case ID::DeclType: {
-            // auto declType = this->unqual.declType();
+            // auto decl_type = this->unqual.decl_type();
             mout << "decltype()";
             break;
         }
@@ -65,8 +65,9 @@ String QualifiedID::toString() const {
             break;
         }
         case ID::OperatorFunc: {
-            auto opFunc = this->unqual.operatorFunc();
-            mout << opFunc->keyword.identifier << opFunc->punc.identifier << opFunc->punc2.identifier;
+            auto op_func = this->unqual.operator_func();
+            mout << op_func->keyword.identifier << op_func->punc.identifier
+                 << op_func->punc2.identifier;
             break;
         }
         case ID::ConversionFunc: {
@@ -84,17 +85,17 @@ String QualifiedID::toString() const {
         }
     }
 
-    return mout.moveToString();
+    return mout.move_to_string();
 }
 
-Token NestedNameComponent::getFirstToken() const {
+Token NestedNameComponent::get_first_token() const {
     switch (this->type.id) {
         using ID = NestedNameComponent::Type::ID;
         case ID::IdentifierOrTemplated: {
-            return this->type.identifierOrTemplated()->name;
+            return this->type.identifier_or_templated()->name;
         }
         case ID::DeclType: {
-            return this->type.declType()->keyword;
+            return this->type.decl_type()->keyword;
         }
         default: {
             PLY_ASSERT(0);
@@ -103,7 +104,7 @@ Token NestedNameComponent::getFirstToken() const {
     }
 }
 
-Token UnqualifiedID::getFirstToken() const {
+Token UnqualifiedID::get_first_token() const {
     switch (this->id) {
         using ID = UnqualifiedID::ID;
         case ID::Empty: {
@@ -113,19 +114,19 @@ Token UnqualifiedID::getFirstToken() const {
             return this->identifier()->name;
         }
         case ID::TemplateID: {
-            return this->templateID()->name;
+            return this->template_id()->name;
         }
         case ID::DeclType: {
-            return this->declType()->keyword;
+            return this->decl_type()->keyword;
         }
         case ID::Destructor: {
             return this->destructor()->tilde;
         }
         case ID::OperatorFunc: {
-            return this->operatorFunc()->keyword;
+            return this->operator_func()->keyword;
         }
         case ID::ConversionFunc: {
-            return this->conversionFunc()->keyword;
+            return this->conversion_func()->keyword;
         }
         default: {
             PLY_ASSERT(0);
@@ -135,11 +136,11 @@ Token UnqualifiedID::getFirstToken() const {
 }
 
 // Used when logging errors
-Token QualifiedID::getFirstToken() const {
-    if (this->nestedName.numItems() > 0) {
-        return this->nestedName[0].getFirstToken();
+Token QualifiedID::get_first_token() const {
+    if (this->nested_name.num_items() > 0) {
+        return this->nested_name[0].get_first_token();
     } else {
-        return this->unqual.getFirstToken();
+        return this->unqual.get_first_token();
     }
 }
 

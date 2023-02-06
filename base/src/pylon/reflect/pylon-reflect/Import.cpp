@@ -11,75 +11,80 @@
 namespace pylon {
 
 struct PylonTypeImporter {
-    TypeDescriptorOwner* typeOwner = nullptr;
-    const Func<TypeFromName>& typeFromName;
+    TypeDescriptorOwner* type_owner = nullptr;
+    const Func<TypeFromName>& type_from_name;
 
-    PylonTypeImporter(const Func<TypeFromName>& typeFromName) : typeFromName{typeFromName} {
+    PylonTypeImporter(const Func<TypeFromName>& type_from_name)
+        : type_from_name{type_from_name} {
     }
 
-    PLY_NO_INLINE TypeDescriptor* convertType(const Node* aNode) {
-        if (aNode->isText()) {
+    PLY_NO_INLINE TypeDescriptor* convert_type(const Node* a_node) {
+        if (a_node->is_text()) {
             // It's a primitive type, represented by a string in Pylon.
             // FIXME: This could use a hash table.
-            // Note: TypeKey_SavedTypedPtr/TypeArray::read could use the same hash table if we
-            // ever want them to resolve built-in types.
-            StringView str = aNode->text();
+            // Note: TypeKey_SavedTypedPtr/TypeArray::read could use the same hash table
+            // if we ever want them to resolve built-in types.
+            StringView str = a_node->text();
             if (str == "u16") {
-                return getTypeDescriptor<u16>();
+                return get_type_descriptor<u16>();
             } else if (str == "u16_2") {
-                return getTypeDescriptor<u16[2]>();
+                return get_type_descriptor<u16[2]>();
             } else if (str == "u16_3") {
-                return getTypeDescriptor<u16[3]>();
+                return get_type_descriptor<u16[3]>();
             } else if (str == "u16_4") {
-                return getTypeDescriptor<u16[4]>();
+                return get_type_descriptor<u16[4]>();
             } else if (str == "float") {
-                return getTypeDescriptor<float>();
+                return get_type_descriptor<float>();
             } else {
-                TypeDescriptor* typeDesc = nullptr;
-                if (typeFromName) {
-                    typeDesc = typeFromName(str);
+                TypeDescriptor* type_desc = nullptr;
+                if (type_from_name) {
+                    type_desc = type_from_name(str);
                 }
-                PLY_ASSERT(typeDesc); // Unrecognized primitive type
-                return typeDesc;
+                PLY_ASSERT(type_desc); // Unrecognized primitive type
+                return type_desc;
             }
-        } else if (aNode->isObject()) {
+        } else if (a_node->is_object()) {
             // It's either a struct or an enum (not supported yet).
-            StringView key = aNode->get("key")->text();
+            StringView key = a_node->get("key")->text();
             if (key == "struct") {
-                PLY_ASSERT(typeOwner); // Must provide an owner for synthesized structs
+                PLY_ASSERT(type_owner); // Must provide an owner for synthesized structs
                 // Synthesize a struct
-                const Node* aName = aNode->get("name");
-                PLY_ASSERT(aName->isText());
-                TypeDescriptor_Struct* structType = new TypeDescriptor_Struct{0, 0, aName->text()};
-                auto appendMember = [&](StringView memberName, TypeDescriptor* memberType) {
-                    structType->appendMember(memberName, memberType);
+                const Node* a_name = a_node->get("name");
+                PLY_ASSERT(a_name->is_text());
+                TypeDescriptor_Struct* struct_type =
+                    new TypeDescriptor_Struct{0, 0, a_name->text()};
+                auto append_member = [&](StringView member_name,
+                                         TypeDescriptor* member_type) {
+                    struct_type->append_member(member_name, member_type);
 
-                    // FIXME: Different structs will have different alignment requirements (eg.
-                    // uniform buffers have different alignment requirements from vertex
-                    // attributes). This code only assumes iOS vertex attributes:
-                    u32 alignment = structType->fixedSize % 4;
+                    // FIXME: Different structs will have different alignment
+                    // requirements (eg. uniform buffers have different alignment
+                    // requirements from vertex attributes). This code only assumes i_os
+                    // vertex attributes:
+                    u32 alignment = struct_type->fixed_size % 4;
                     if (alignment > 0) {
                         PLY_ASSERT(alignment == 2); // only case currently handled
-                        structType->appendMember("padding", getTypeDescriptor<u16>());
+                        struct_type->append_member("padding",
+                                                   get_type_descriptor<u16>());
                     }
                 };
-                const Node* aMembers = aNode->get("members");
-                if (aMembers->isObject()) {
-                    for (const Node::Object::Item& item : aMembers->object().items) {
-                        appendMember(item.key, convertType(item.value));
+                const Node* a_members = a_node->get("members");
+                if (a_members->is_object()) {
+                    for (const Node::Object::Item& item : a_members->object().items) {
+                        append_member(item.key, convert_type(item.value));
                     }
-                } else if (aMembers->isArray()) {
-                    for (const Node* aMember : aMembers->arrayView()) {
-                        PLY_ASSERT(aMember->isArray());
-                        PLY_ASSERT(aMember->arrayView().numItems == 2);
-                        appendMember(aMember->arrayView()[0]->text(),
-                                     convertType(aMember->arrayView()[1]));
+                } else if (a_members->is_array()) {
+                    for (const Node* a_member : a_members->array_view()) {
+                        PLY_ASSERT(a_member->is_array());
+                        PLY_ASSERT(a_member->array_view().num_items == 2);
+                        append_member(a_member->array_view()[0]->text(),
+                                      convert_type(a_member->array_view()[1]));
                     }
                 } else {
                     PLY_ASSERT(0);
                 }
-                typeOwner->adoptType(structType);
-                return structType;
+                type_owner->adopt_type(struct_type);
+                return struct_type;
             } else {
                 PLY_ASSERT(0); // Unrecognized or missing type key
             }
@@ -91,99 +96,103 @@ struct PylonTypeImporter {
     }
 };
 
-PLY_NO_INLINE TypeDescriptorOwner* convertTypeFrom(const Node* aNode,
-                                                   const Func<TypeFromName>& typeFromName) {
-    PylonTypeImporter importer{typeFromName};
-    importer.typeOwner = new TypeDescriptorOwner;
-    importer.typeOwner->setRootType(importer.convertType(aNode));
-    return importer.typeOwner;
+PLY_NO_INLINE TypeDescriptorOwner*
+convert_type_from(const Node* a_node, const Func<TypeFromName>& type_from_name) {
+    PylonTypeImporter importer{type_from_name};
+    importer.type_owner = new TypeDescriptorOwner;
+    importer.type_owner->set_root_type(importer.convert_type(a_node));
+    return importer.type_owner;
 }
 
-PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
-                               const Func<TypeFromName>& typeFromName) {
+PLY_NO_INLINE void convert_from(AnyObject obj, const Node* a_node,
+                                const Func<TypeFromName>& type_from_name) {
     auto error = [&] {}; // FIXME: Decide where these go
 
-    PLY_ASSERT(aNode->isValid());
-    // FIXME: Handle errors gracefully by logging a message, returning false and marking the
-    // cook as failed (instead of asserting).
-    if (obj.type->typeKey == &TypeKey_Struct) {
-        PLY_ASSERT(aNode->isObject());
-        auto* structDesc = obj.type->cast<TypeDescriptor_Struct>();
-        for (const TypeDescriptor_Struct::Member& member : structDesc->members) {
-            const Node* aMember = aNode->get(member.name);
-            if (aMember->isValid()) {
+    PLY_ASSERT(a_node->is_valid());
+    // FIXME: Handle errors gracefully by logging a message, returning false and marking
+    // the cook as failed (instead of asserting).
+    if (obj.type->type_key == &TypeKey_Struct) {
+        PLY_ASSERT(a_node->is_object());
+        auto* struct_desc = obj.type->cast<TypeDescriptor_Struct>();
+        for (const TypeDescriptor_Struct::Member& member : struct_desc->members) {
+            const Node* a_member = a_node->get(member.name);
+            if (a_member->is_valid()) {
                 AnyObject m{PLY_PTR_OFFSET(obj.data, member.offset), member.type};
-                convertFrom(m, aMember, typeFromName);
+                convert_from(m, a_member, type_from_name);
             }
         }
-    } else if (obj.type->typeKey == &TypeKey_Float) {
-        Tuple<bool, double> pair = aNode->numeric();
+    } else if (obj.type->type_key == &TypeKey_Float) {
+        Tuple<bool, double> pair = a_node->numeric();
         PLY_ASSERT(pair.first);
         *(float*) obj.data = (float) pair.second;
-    } else if (obj.type->typeKey == &TypeKey_U8) {
-        Tuple<bool, double> pair = aNode->numeric();
+    } else if (obj.type->type_key == &TypeKey_U8) {
+        Tuple<bool, double> pair = a_node->numeric();
         PLY_ASSERT(pair.first);
         *(u8*) obj.data = (u8) pair.second;
-    } else if (obj.type->typeKey == &TypeKey_U16) {
-        Tuple<bool, double> pair = aNode->numeric();
+    } else if (obj.type->type_key == &TypeKey_U16) {
+        Tuple<bool, double> pair = a_node->numeric();
         PLY_ASSERT(pair.first);
         *(u16*) obj.data = (u16) pair.second;
-    } else if (obj.type->typeKey == &TypeKey_Bool) {
-        *(bool*) obj.data = aNode->text() == "true";
-    } else if (obj.type->typeKey == &TypeKey_U32) {
-        Tuple<bool, double> pair = aNode->numeric();
+    } else if (obj.type->type_key == &TypeKey_Bool) {
+        *(bool*) obj.data = a_node->text() == "true";
+    } else if (obj.type->type_key == &TypeKey_U32) {
+        Tuple<bool, double> pair = a_node->numeric();
         PLY_ASSERT(pair.first);
         *(u32*) obj.data = (u32) pair.second;
-    } else if (obj.type->typeKey == &TypeKey_S32) {
-        Tuple<bool, double> pair = aNode->numeric();
+    } else if (obj.type->type_key == &TypeKey_S32) {
+        Tuple<bool, double> pair = a_node->numeric();
         PLY_ASSERT(pair.first);
         *(s32*) obj.data = (s32) pair.second;
-    } else if (obj.type->typeKey == &TypeKey_FixedArray) {
-        PLY_ASSERT(aNode->isArray());
-        auto* fixedArrType = obj.type->cast<TypeDescriptor_FixedArray>();
-        u32 itemSize = fixedArrType->itemType->fixedSize;
-        for (u32 i = 0; i < fixedArrType->numItems; i++) {
-            AnyObject elem{PLY_PTR_OFFSET(obj.data, itemSize * i), fixedArrType->itemType};
-            convertFrom(elem, aNode->get(i), typeFromName);
+    } else if (obj.type->type_key == &TypeKey_FixedArray) {
+        PLY_ASSERT(a_node->is_array());
+        auto* fixed_arr_type = obj.type->cast<TypeDescriptor_FixedArray>();
+        u32 item_size = fixed_arr_type->item_type->fixed_size;
+        for (u32 i = 0; i < fixed_arr_type->num_items; i++) {
+            AnyObject elem{PLY_PTR_OFFSET(obj.data, item_size * i),
+                           fixed_arr_type->item_type};
+            convert_from(elem, a_node->get(i), type_from_name);
         }
-    } else if (obj.type->typeKey == &TypeKey_String) {
-        if (aNode->isText()) {
-            *(String*) obj.data = aNode->text();
+    } else if (obj.type->type_key == &TypeKey_String) {
+        if (a_node->is_text()) {
+            *(String*) obj.data = a_node->text();
         } else {
             error();
         }
-    } else if (obj.type->typeKey == &TypeKey_Array) {
-        PLY_ASSERT(aNode->isArray());
-        ArrayView<const Node* const> aNodeArr = aNode->arrayView();
-        auto* arrType = static_cast<TypeDescriptor_Array*>(obj.type);
+    } else if (obj.type->type_key == &TypeKey_Array) {
+        PLY_ASSERT(a_node->is_array());
+        ArrayView<const Node* const> a_node_arr = a_node->array_view();
+        auto* arr_type = static_cast<TypeDescriptor_Array*>(obj.type);
         BaseArray* arr = (BaseArray*) obj.data;
-        u32 oldArrSize = arr->num_items;
-        u32 newArrSize = aNodeArr.numItems;
-        u32 itemSize = arrType->itemType->fixedSize;
-        for (u32 i = newArrSize; i < oldArrSize; i++) {
-            AnyObject{PLY_PTR_OFFSET(arr->items, itemSize * i), arrType->itemType}.destruct();
+        u32 old_arr_size = arr->num_items;
+        u32 new_arr_size = a_node_arr.num_items;
+        u32 item_size = arr_type->item_type->fixed_size;
+        for (u32 i = new_arr_size; i < old_arr_size; i++) {
+            AnyObject{PLY_PTR_OFFSET(arr->items, item_size * i), arr_type->item_type}
+                .destruct();
         }
-        arr->realloc(newArrSize, itemSize);
-        for (u32 i = oldArrSize; i < newArrSize; i++) {
-            AnyObject{PLY_PTR_OFFSET(arr->items, itemSize * i), arrType->itemType}.construct();
+        arr->realloc(new_arr_size, item_size);
+        for (u32 i = old_arr_size; i < new_arr_size; i++) {
+            AnyObject{PLY_PTR_OFFSET(arr->items, item_size * i), arr_type->item_type}
+                .construct();
         }
-        for (u32 i = 0; i < newArrSize; i++) {
-            AnyObject elem{PLY_PTR_OFFSET(arr->items, itemSize * i), arrType->itemType};
-            convertFrom(elem, aNodeArr[i], typeFromName);
+        for (u32 i = 0; i < new_arr_size; i++) {
+            AnyObject elem{PLY_PTR_OFFSET(arr->items, item_size * i),
+                           arr_type->item_type};
+            convert_from(elem, a_node_arr[i], type_from_name);
         }
-    } else if (obj.type->typeKey == &TypeKey_Enum) {
-        PLY_ASSERT(aNode->isText());
-        auto* enumDesc = obj.type->cast<TypeDescriptor_Enum>();
+    } else if (obj.type->type_key == &TypeKey_Enum) {
+        PLY_ASSERT(a_node->is_text());
+        auto* enum_desc = obj.type->cast<TypeDescriptor_Enum>();
         bool found = false;
-        for (const auto& identifier : enumDesc->identifiers) {
-            if (identifier.name == aNode->text()) {
-                if (enumDesc->fixedSize == 1) {
+        for (const auto& identifier : enum_desc->identifiers) {
+            if (identifier.name == a_node->text()) {
+                if (enum_desc->fixed_size == 1) {
                     PLY_ASSERT(identifier.value <= UINT8_MAX);
                     *(u8*) obj.data = (u8) identifier.value;
-                } else if (enumDesc->fixedSize == 2) {
+                } else if (enum_desc->fixed_size == 2) {
                     PLY_ASSERT(identifier.value <= UINT16_MAX);
                     *(u16*) obj.data = (u16) identifier.value;
-                } else if (enumDesc->fixedSize == 4) {
+                } else if (enum_desc->fixed_size == 4) {
                     *(u32*) obj.data = identifier.value;
                 } else {
                     PLY_ASSERT(0);
@@ -194,45 +203,46 @@ PLY_NO_INLINE void convertFrom(AnyObject obj, const Node* aNode,
         }
         PLY_ASSERT(found);
         PLY_UNUSED(found);
-    } else if (obj.type->typeKey == &TypeKey_Switch) {
-        PLY_ASSERT(aNode->isObject());
-        auto* switchDesc = obj.type->cast<TypeDescriptor_Switch>();
-        PLY_ASSERT(aNode->object().items.numItems() == 1);
-        auto iter = aNode->object().items.begin();
-        const StringView& stateName = iter->key;
+    } else if (obj.type->type_key == &TypeKey_Switch) {
+        PLY_ASSERT(a_node->is_object());
+        auto* switch_desc = obj.type->cast<TypeDescriptor_Switch>();
+        PLY_ASSERT(a_node->object().items.num_items() == 1);
+        auto iter = a_node->object().items.begin();
+        const StringView& state_name = iter->key;
         bool found = false;
-        for (u32 i = 0; i < switchDesc->states.numItems(); i++) {
-            const TypeDescriptor_Switch::State& state = switchDesc->states[i];
-            if (state.name == stateName) {
-                switchDesc->ensureStateIs(obj, (u16) i);
-                AnyObject m{PLY_PTR_OFFSET(obj.data, switchDesc->storageOffset), state.structType};
-                convertFrom(m, iter->value, typeFromName);
+        for (u32 i = 0; i < switch_desc->states.num_items(); i++) {
+            const TypeDescriptor_Switch::State& state = switch_desc->states[i];
+            if (state.name == state_name) {
+                switch_desc->ensure_state_is(obj, (u16) i);
+                AnyObject m{PLY_PTR_OFFSET(obj.data, switch_desc->storage_offset),
+                            state.struct_type};
+                convert_from(m, iter->value, type_from_name);
                 found = true;
                 break;
             }
         }
         PLY_ASSERT(found);
         PLY_UNUSED(found);
-    } else if (obj.type->typeKey == &TypeKey_Owned) {
-        auto* ownedDesc = obj.type->cast<TypeDescriptor_Owned>();
-        AnyObject created = AnyObject::create(ownedDesc->targetType);
+    } else if (obj.type->type_key == &TypeKey_Owned) {
+        auto* owned_desc = obj.type->cast<TypeDescriptor_Owned>();
+        AnyObject created = AnyObject::create(owned_desc->target_type);
         *(void**) obj.data = created.data;
-        convertFrom(created, aNode, typeFromName);
+        convert_from(created, a_node, type_from_name);
     } else {
         PLY_ASSERT(0); // Unsupported member type
     }
 }
 
-PLY_NO_INLINE AnyOwnedObject import(TypeDescriptor* typeDesc, const Node* aRoot,
-                                    const Func<TypeFromName>& typeFromName) {
-    AnyOwnedObject result = AnyObject::create(typeDesc);
-    convertFrom(result, aRoot, typeFromName);
+PLY_NO_INLINE AnyOwnedObject import(TypeDescriptor* type_desc, const Node* a_root,
+                                    const Func<TypeFromName>& type_from_name) {
+    AnyOwnedObject result = AnyObject::create(type_desc);
+    convert_from(result, a_root, type_from_name);
     return result;
 }
 
-PLY_NO_INLINE void importInto(AnyObject obj, const Node* aRoot,
-                              const Func<TypeFromName>& typeFromName) {
-    convertFrom(obj, aRoot, typeFromName);
+PLY_NO_INLINE void import_into(AnyObject obj, const Node* a_root,
+                               const Func<TypeFromName>& type_from_name) {
+    convert_from(obj, a_root, type_from_name);
 }
 
 } // namespace pylon

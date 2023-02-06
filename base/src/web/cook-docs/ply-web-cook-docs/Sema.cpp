@@ -13,236 +13,259 @@ namespace ply {
 namespace cpp {
 
 // This is temporary code until the C++ parser parses expressions correctly
-String tempExtractInitializer(const PPVisitedFiles* visitedFiles, LinearLocation startLoc,
-                              LinearLocation endLoc) {
-    if (!visitedFiles || startLoc < 0 || endLoc < 0)
+String temp_extract_initializer(const PPVisitedFiles* visited_files,
+                                LinearLocation start_loc, LinearLocation end_loc) {
+    if (!visited_files || start_loc < 0 || end_loc < 0)
         return {};
-    // Note: These iterators may not be usable if the initializer began or ended with a macro.
-    // What we really want is the topmost item on the include chain that is not a macro.
-    auto startIter = visitedFiles->locationMap.findLastLessThan(startLoc + 1);
-    auto endIter = visitedFiles->locationMap.findLastLessThan(endLoc + 1);
-    if (startIter.getItem().includeChainIdx != endIter.getItem().includeChainIdx)
+    // Note: These iterators may not be usable if the initializer began or ended with a
+    // macro. What we really want is the topmost item on the include chain that is not a
+    // macro.
+    auto start_iter = visited_files->location_map.find_last_less_than(start_loc + 1);
+    auto end_iter = visited_files->location_map.find_last_less_than(end_loc + 1);
+    if (start_iter.get_item().include_chain_idx !=
+        end_iter.get_item().include_chain_idx)
         return {};
     const cpp::PPVisitedFiles::IncludeChain& chain =
-        visitedFiles->includeChains[startIter.getItem().includeChainIdx];
-    if (chain.isMacroExpansion)
+        visited_files->include_chains[start_iter.get_item().include_chain_idx];
+    if (chain.is_macro_expansion)
         return {};
-    const cpp::PPVisitedFiles::SourceFile* srcFile = &visitedFiles->sourceFiles[chain.fileOrExpIdx];
-    PLY_ASSERT(startLoc >= startIter.getItem().linearLoc);
-    PLY_ASSERT(endLoc >= endIter.getItem().linearLoc);
-    u32 startPos =
-        safeDemote<u32>(startIter.getItem().offset + (startLoc - startIter.getItem().linearLoc));
-    u32 endPos = safeDemote<u32>(endIter.getItem().offset + (endLoc - endIter.getItem().linearLoc));
-    return srcFile->contents.subStr(startPos, endPos - startPos);
+    const cpp::PPVisitedFiles::SourceFile* src_file =
+        &visited_files->source_files[chain.file_or_exp_idx];
+    PLY_ASSERT(start_loc >= start_iter.get_item().linear_loc);
+    PLY_ASSERT(end_loc >= end_iter.get_item().linear_loc);
+    u32 start_pos = safe_demote<u32>(start_iter.get_item().offset +
+                                     (start_loc - start_iter.get_item().linear_loc));
+    u32 end_pos = safe_demote<u32>(end_iter.get_item().offset +
+                                   (end_loc - end_iter.get_item().linear_loc));
+    return src_file->contents.sub_str(start_pos, end_pos - start_pos);
 }
 
 struct SemaConverter {
-    const PPVisitedFiles* visitedFiles = nullptr;
-    bool anyError = false;
+    const PPVisitedFiles* visited_files = nullptr;
+    bool any_error = false;
 
-    PLY_NO_INLINE sema::TemplateArg toSema(const grammar::TemplateArgumentWithComma& gArg) {
-        sema::TemplateArg sArg;
-        if (auto gTypeID = gArg.type.typeID()) {
-            auto sTypeID = sArg.type.typeID().switchTo();
-            sTypeID->declSpecifierSeq = this->toSema(gTypeID->declSpecifierSeq);
-            sTypeID->abstractDcor = this->toSema(gTypeID->abstractDcor);
-        } else if (auto gUnknown = gArg.type.unknown()) {
-            auto sUnknown = sArg.type.unknown();
-            sUnknown->expression = tempExtractInitializer(
-                this->visitedFiles, gUnknown->startToken.linearLoc,
-                gUnknown->startToken.linearLoc + gUnknown->startToken.identifier.numBytes);
+    PLY_NO_INLINE sema::TemplateArg
+    to_sema(const grammar::TemplateArgumentWithComma& g_arg) {
+        sema::TemplateArg s_arg;
+        if (auto g_type_id = g_arg.type.type_id()) {
+            auto s_type_id = s_arg.type.type_id().switch_to();
+            s_type_id->decl_specifier_seq =
+                this->to_sema(g_type_id->decl_specifier_seq);
+            s_type_id->abstract_dcor = this->to_sema(g_type_id->abstract_dcor);
+        } else if (auto g_unknown = g_arg.type.unknown()) {
+            auto s_unknown = s_arg.type.unknown();
+            s_unknown->expression = temp_extract_initializer(
+                this->visited_files, g_unknown->start_token.linear_loc,
+                g_unknown->start_token.linear_loc +
+                    g_unknown->start_token.identifier.num_bytes);
         } else {
-            this->anyError = true;
+            this->any_error = true;
         }
-        return sArg;
+        return s_arg;
     }
 
-    PLY_NO_INLINE sema::QualifiedID toSema(const grammar::QualifiedID& gQID) {
-        sema::QualifiedID sQID;
-        for (const grammar::NestedNameComponent& gNestedComp : gQID.nestedName) {
-            if (auto gIdentOrTempl = gNestedComp.type.identifierOrTemplated()) {
-                if (gIdentOrTempl->openAngled.isValid()) {
-                    auto sTemplated = sQID.nestedName.append().templated().switchTo();
-                    sTemplated->name = gIdentOrTempl->name.identifier;
-                    for (const grammar::TemplateArgumentWithComma& gTemplateArg :
-                         gIdentOrTempl->args) {
-                        sTemplated->args.append(this->toSema(gTemplateArg));
+    PLY_NO_INLINE sema::QualifiedID to_sema(const grammar::QualifiedID& g_qid) {
+        sema::QualifiedID s_qid;
+        for (const grammar::NestedNameComponent& g_nested_comp : g_qid.nested_name) {
+            if (auto g_ident_or_templ = g_nested_comp.type.identifier_or_templated()) {
+                if (g_ident_or_templ->open_angled.is_valid()) {
+                    auto s_templated =
+                        s_qid.nested_name.append().templated().switch_to();
+                    s_templated->name = g_ident_or_templ->name.identifier;
+                    for (const grammar::TemplateArgumentWithComma& g_template_arg :
+                         g_ident_or_templ->args) {
+                        s_templated->args.append(this->to_sema(g_template_arg));
                     }
                 } else {
-                    auto sIdentifier = sQID.nestedName.append().identifier().switchTo();
-                    sIdentifier->name = gIdentOrTempl->name.identifier;
+                    auto s_identifier =
+                        s_qid.nested_name.append().identifier().switch_to();
+                    s_identifier->name = g_ident_or_templ->name.identifier;
                 }
-            } else if (auto gDeclType = gNestedComp.type.declType()) {
-                auto sDeclType = sQID.nestedName.append().declType().switchTo();
-                sDeclType->expression = tempExtractInitializer(
-                    this->visitedFiles,
-                    gDeclType->openParen.linearLoc + gDeclType->openParen.identifier.numBytes,
-                    gDeclType->closeParen.linearLoc);
+            } else if (auto g_decl_type = g_nested_comp.type.decl_type()) {
+                auto s_decl_type = s_qid.nested_name.append().decl_type().switch_to();
+                s_decl_type->expression = temp_extract_initializer(
+                    this->visited_files,
+                    g_decl_type->open_paren.linear_loc +
+                        g_decl_type->open_paren.identifier.num_bytes,
+                    g_decl_type->close_paren.linear_loc);
             } else {
-                this->anyError = true;
+                this->any_error = true;
             }
         }
-        if (auto gIdentifier = gQID.unqual.identifier()) {
-            auto sIdentifier = sQID.unqual.identifier().switchTo();
-            sIdentifier->name = gIdentifier->name.identifier;
-        } else if (auto gTemplateID = gQID.unqual.templateID()) {
-            auto sTemplateID = sQID.unqual.templateID().switchTo();
-            sTemplateID->name = gTemplateID->name.identifier;
-            for (const grammar::TemplateArgumentWithComma& gArg : gTemplateID->args) {
-                sTemplateID->args.append(this->toSema(gArg));
+        if (auto g_identifier = g_qid.unqual.identifier()) {
+            auto s_identifier = s_qid.unqual.identifier().switch_to();
+            s_identifier->name = g_identifier->name.identifier;
+        } else if (auto g_template_id = g_qid.unqual.template_id()) {
+            auto s_template_id = s_qid.unqual.template_id().switch_to();
+            s_template_id->name = g_template_id->name.identifier;
+            for (const grammar::TemplateArgumentWithComma& g_arg :
+                 g_template_id->args) {
+                s_template_id->args.append(this->to_sema(g_arg));
             }
-        } else if (auto gDeclType = gQID.unqual.declType()) {
-            auto sDeclType = sQID.unqual.declType().switchTo();
-            sDeclType->expression = tempExtractInitializer(
-                this->visitedFiles,
-                gDeclType->openParen.linearLoc + gDeclType->openParen.identifier.numBytes,
-                gDeclType->closeParen.linearLoc);
-        } else if (auto gDestructor = gQID.unqual.destructor()) {
-            auto sDestructor = sQID.unqual.destructor().switchTo();
-            sDestructor->name = gDestructor->name.identifier;
-        } else if (auto gOperatorFunc = gQID.unqual.operatorFunc()) {
-            auto sOperatorFunc = sQID.unqual.operatorFunc().switchTo();
-            sOperatorFunc->punc = gOperatorFunc->punc.type;
-            sOperatorFunc->punc2 = gOperatorFunc->punc2.type;
-        } else if (auto gConversionFunc = gQID.unqual.conversionFunc()) {
-            auto sConversionFunc = sQID.unqual.conversionFunc().switchTo();
-            sConversionFunc->declSpecifierSeq = this->toSema(gConversionFunc->declSpecifierSeq);
-            sConversionFunc->abstractDcor = this->toSema(gConversionFunc->abstractDcor);
+        } else if (auto g_decl_type = g_qid.unqual.decl_type()) {
+            auto s_decl_type = s_qid.unqual.decl_type().switch_to();
+            s_decl_type->expression = temp_extract_initializer(
+                this->visited_files,
+                g_decl_type->open_paren.linear_loc +
+                    g_decl_type->open_paren.identifier.num_bytes,
+                g_decl_type->close_paren.linear_loc);
+        } else if (auto g_destructor = g_qid.unqual.destructor()) {
+            auto s_destructor = s_qid.unqual.destructor().switch_to();
+            s_destructor->name = g_destructor->name.identifier;
+        } else if (auto g_operator_func = g_qid.unqual.operator_func()) {
+            auto s_operator_func = s_qid.unqual.operator_func().switch_to();
+            s_operator_func->punc = g_operator_func->punc.type;
+            s_operator_func->punc2 = g_operator_func->punc2.type;
+        } else if (auto g_conversion_func = g_qid.unqual.conversion_func()) {
+            auto s_conversion_func = s_qid.unqual.conversion_func().switch_to();
+            s_conversion_func->decl_specifier_seq =
+                this->to_sema(g_conversion_func->decl_specifier_seq);
+            s_conversion_func->abstract_dcor =
+                this->to_sema(g_conversion_func->abstract_dcor);
         }
-        return sQID;
+        return s_qid;
     }
 
     PLY_NO_INLINE Array<sema::DeclSpecifier>
-    toSema(ArrayView<const Owned<grammar::DeclSpecifier>> gDeclSpecifierSeq) {
-        Array<sema::DeclSpecifier> sDeclSpecs;
-        for (const grammar::DeclSpecifier* gDeclSpec : gDeclSpecifierSeq) {
-            if (auto gKeyword = gDeclSpec->keyword()) {
-                auto sKeyword = sDeclSpecs.append().keyword().switchTo();
-                sKeyword->token = gKeyword->token.identifier;
-            } else if (auto gTypeID = gDeclSpec->typeID()) {
-                auto sTypeID = sDeclSpecs.append().typeID().switchTo();
-                sTypeID->hasTypename = gTypeID->typename_.isValid();
-                sTypeID->wasAssumed = gTypeID->wasAssumed;
-                sTypeID->qid = this->toSema(gTypeID->qid);
-            } else if (auto gTypeParam = gDeclSpec->typeParam()) {
-                auto sTypeParam = sDeclSpecs.append().typeParam().switchTo();
-                sTypeParam->hasEllipsis = gTypeParam->ellipsis.isValid();
+    to_sema(ArrayView<const Owned<grammar::DeclSpecifier>> g_decl_specifier_seq) {
+        Array<sema::DeclSpecifier> s_decl_specs;
+        for (const grammar::DeclSpecifier* g_decl_spec : g_decl_specifier_seq) {
+            if (auto g_keyword = g_decl_spec->keyword()) {
+                auto s_keyword = s_decl_specs.append().keyword().switch_to();
+                s_keyword->token = g_keyword->token.identifier;
+            } else if (auto g_type_id = g_decl_spec->type_id()) {
+                auto s_type_id = s_decl_specs.append().type_id().switch_to();
+                s_type_id->has_typename = g_type_id->typename_.is_valid();
+                s_type_id->was_assumed = g_type_id->was_assumed;
+                s_type_id->qid = this->to_sema(g_type_id->qid);
+            } else if (auto g_type_param = g_decl_spec->type_param()) {
+                auto s_type_param = s_decl_specs.append().type_param().switch_to();
+                s_type_param->has_ellipsis = g_type_param->ellipsis.is_valid();
             } else {
-                this->anyError = true;
+                this->any_error = true;
             }
         }
-        return sDeclSpecs;
+        return s_decl_specs;
     }
 
-    PLY_NO_INLINE sema::SingleDeclaration toSema(const grammar::ParamDeclarationWithComma& gParam) {
-        sema::SingleDeclaration sSingle;
-        sSingle.declSpecifierSeq = this->toSema(gParam.declSpecifierSeq);
-        sSingle.dcor = this->toSema(gParam.dcor);
-        if (auto gAssignment = gParam.init.assignment()) {
-            auto sAssignment = sSingle.init.assignment().switchTo();
-            if (auto gExpression = gAssignment->type.expression()) {
-                sAssignment->type.unknown().switchTo()->expression = tempExtractInitializer(
-                    this->visitedFiles, gExpression->start.linearLoc,
-                    gExpression->end.linearLoc + gExpression->end.identifier.numBytes);
-            } else if (auto gTypeID = gAssignment->type.typeID()) {
-                auto sTypeID = sAssignment->type.typeID().switchTo();
-                sTypeID->declSpecifierSeq = this->toSema(gTypeID->declSpecifierSeq);
-                sTypeID->abstractDcor = this->toSema(gTypeID->abstractDcor);
+    PLY_NO_INLINE sema::SingleDeclaration
+    to_sema(const grammar::ParamDeclarationWithComma& g_param) {
+        sema::SingleDeclaration s_single;
+        s_single.decl_specifier_seq = this->to_sema(g_param.decl_specifier_seq);
+        s_single.dcor = this->to_sema(g_param.dcor);
+        if (auto g_assignment = g_param.init.assignment()) {
+            auto s_assignment = s_single.init.assignment().switch_to();
+            if (auto g_expression = g_assignment->type.expression()) {
+                s_assignment->type.unknown().switch_to()->expression =
+                    temp_extract_initializer(
+                        this->visited_files, g_expression->start.linear_loc,
+                        g_expression->end.linear_loc +
+                            g_expression->end.identifier.num_bytes);
+            } else if (auto g_type_id = g_assignment->type.type_id()) {
+                auto s_type_id = s_assignment->type.type_id().switch_to();
+                s_type_id->decl_specifier_seq =
+                    this->to_sema(g_type_id->decl_specifier_seq);
+                s_type_id->abstract_dcor = this->to_sema(g_type_id->abstract_dcor);
             } else {
-                this->anyError = true;
+                this->any_error = true;
             }
         }
-        return sSingle;
+        return s_single;
     }
 
     PLY_NO_INLINE Owned<sema::DeclaratorProduction>
-    toSema(const grammar::DeclaratorProduction* gDcor) {
-        if (!gDcor)
+    to_sema(const grammar::DeclaratorProduction* g_dcor) {
+        if (!g_dcor)
             return nullptr;
-        auto sProd = Owned<sema::DeclaratorProduction>::create();
-        if (auto gPointerTo = gDcor->type.pointerTo()) {
-            auto sPointerTo = sProd->pointerTo().switchTo();
-            sPointerTo->puncType = gPointerTo->punc.type;
-            sPointerTo->target = this->toSema(gDcor->target);
-        } else if (auto gFunction = gDcor->type.function()) {
-            auto sFunction = sProd->function().switchTo();
-            sFunction->target = this->toSema(gDcor->target);
-            for (const grammar::ParamDeclarationWithComma& gParam : gFunction->params.params) {
-                sFunction->params.append(this->toSema(gParam));
+        auto s_prod = Owned<sema::DeclaratorProduction>::create();
+        if (auto g_pointer_to = g_dcor->type.pointer_to()) {
+            auto s_pointer_to = s_prod->pointer_to().switch_to();
+            s_pointer_to->punc_type = g_pointer_to->punc.type;
+            s_pointer_to->target = this->to_sema(g_dcor->target);
+        } else if (auto g_function = g_dcor->type.function()) {
+            auto s_function = s_prod->function().switch_to();
+            s_function->target = this->to_sema(g_dcor->target);
+            for (const grammar::ParamDeclarationWithComma& g_param :
+                 g_function->params.params) {
+                s_function->params.append(this->to_sema(g_param));
             }
-            for (const Token& qualToken : gFunction->qualifiers.tokens) {
-                sFunction->qualifiers.append(qualToken.type);
+            for (const Token& qual_token : g_function->qualifiers.tokens) {
+                s_function->qualifiers.append(qual_token.type);
             }
-        } else if (auto gQualifier = gDcor->type.qualifier()) {
-            auto sQualifier = sProd->qualifier().switchTo();
-            sQualifier->keyword = gQualifier->keyword.identifier;
-            sQualifier->target = this->toSema(gDcor->target);
-        } else if (auto gArrayOf = gDcor->type.arrayOf()) {
-            auto sArrayOf = sProd->arrayOf().switchTo();
-            sArrayOf->target = this->toSema(gDcor->target);
-        } else if (auto gParenthesized = gDcor->type.parenthesized()) {
-            sProd = this->toSema(gDcor->target);
+        } else if (auto g_qualifier = g_dcor->type.qualifier()) {
+            auto s_qualifier = s_prod->qualifier().switch_to();
+            s_qualifier->keyword = g_qualifier->keyword.identifier;
+            s_qualifier->target = this->to_sema(g_dcor->target);
+        } else if (auto g_array_of = g_dcor->type.array_of()) {
+            auto s_array_of = s_prod->array_of().switch_to();
+            s_array_of->target = this->to_sema(g_dcor->target);
+        } else if (auto g_parenthesized = g_dcor->type.parenthesized()) {
+            s_prod = this->to_sema(g_dcor->target);
         } else {
-            this->anyError = true;
+            this->any_error = true;
         }
-        return sProd;
+        return s_prod;
     }
 
-    PLY_NO_INLINE sema::Declarator toSema(const grammar::Declarator& gDcor) {
-        return {this->toSema(gDcor.prod), this->toSema(gDcor.qid)};
+    PLY_NO_INLINE sema::Declarator to_sema(const grammar::Declarator& g_dcor) {
+        return {this->to_sema(g_dcor.prod), this->to_sema(g_dcor.qid)};
     }
 
     PLY_NO_INLINE Array<sema::SingleDeclaration>
-    toSema(const grammar::Declaration::Simple& gSimple) {
-        Array<sema::SingleDeclaration> sSingles;
-        for (const grammar::InitDeclaratorWithComma& gInitDcor : gSimple.initDeclarators) {
-            sema::SingleDeclaration& sSingle = sSingles.append();
-            sSingle.declSpecifierSeq = this->toSema(gSimple.declSpecifierSeq);
-            sSingle.dcor = this->toSema(gInitDcor.dcor);
-            if (auto bitField = gInitDcor.init.bitField()) {
-                sSingle.init.bitField().switchTo()->expression =
-                    tempExtractInitializer(this->visitedFiles, bitField->expressionStart.linearLoc,
-                                           bitField->expressionEnd.linearLoc +
-                                               bitField->expressionEnd.identifier.numBytes);
+    to_sema(const grammar::Declaration::Simple& g_simple) {
+        Array<sema::SingleDeclaration> s_singles;
+        for (const grammar::InitDeclaratorWithComma& g_init_dcor :
+             g_simple.init_declarators) {
+            sema::SingleDeclaration& s_single = s_singles.append();
+            s_single.decl_specifier_seq = this->to_sema(g_simple.decl_specifier_seq);
+            s_single.dcor = this->to_sema(g_init_dcor.dcor);
+            if (auto bit_field = g_init_dcor.init.bit_field()) {
+                s_single.init.bit_field().switch_to()->expression =
+                    temp_extract_initializer(
+                        this->visited_files, bit_field->expression_start.linear_loc,
+                        bit_field->expression_end.linear_loc +
+                            bit_field->expression_end.identifier.num_bytes);
             }
         }
-        return sSingles;
+        return s_singles;
     }
 };
 
-Array<sema::SingleDeclaration> semaFromParseTree(const grammar::Declaration::Simple& gSimple,
-                                                 const PPVisitedFiles* visitedFiles) {
+Array<sema::SingleDeclaration>
+sema_from_parse_tree(const grammar::Declaration::Simple& g_simple,
+                     const PPVisitedFiles* visited_files) {
     SemaConverter conv;
-    conv.visitedFiles = visitedFiles;
-    Array<sema::SingleDeclaration> result = conv.toSema(gSimple);
-    if (conv.anyError)
+    conv.visited_files = visited_files;
+    Array<sema::SingleDeclaration> result = conv.to_sema(g_simple);
+    if (conv.any_error)
         return {};
     return result;
 }
 
-sema::SingleDeclaration semaFromParam(const grammar::ParamDeclarationWithComma& gParam,
-                                      const PPVisitedFiles* visitedFiles) {
+sema::SingleDeclaration
+sema_from_param(const grammar::ParamDeclarationWithComma& g_param,
+                const PPVisitedFiles* visited_files) {
     SemaConverter conv;
-    conv.visitedFiles = visitedFiles;
-    sema::SingleDeclaration result = conv.toSema(gParam);
-    if (conv.anyError)
+    conv.visited_files = visited_files;
+    sema::SingleDeclaration result = conv.to_sema(g_param);
+    if (conv.any_error)
         return {};
     return result;
 }
 
-sema::QualifiedID semaFromQID(const grammar::QualifiedID& gQID,
-                              const PPVisitedFiles* visitedFiles) {
+sema::QualifiedID sema_from_qid(const grammar::QualifiedID& g_qid,
+                                const PPVisitedFiles* visited_files) {
     SemaConverter conv;
-    conv.visitedFiles = visitedFiles;
-    sema::QualifiedID result = conv.toSema(gQID);
-    if (conv.anyError)
+    conv.visited_files = visited_files;
+    sema::QualifiedID result = conv.to_sema(g_qid);
+    if (conv.any_error)
         return {};
     return result;
 }
 
-Array<StringView> sema::QualifiedID::getSimplifiedComponents() const {
+Array<StringView> sema::QualifiedID::get_simplified_components() const {
     Array<StringView> result;
-    for (const NestedNameComponent& comp : this->nestedName) {
+    for (const NestedNameComponent& comp : this->nested_name) {
         if (auto ident = comp.identifier()) {
             result.append(ident->name);
         } else if (auto templated = comp.templated()) {
@@ -253,7 +276,7 @@ Array<StringView> sema::QualifiedID::getSimplifiedComponents() const {
     }
     if (auto ident = this->unqual.identifier()) {
         result.append(ident->name);
-    } else if (auto templated = this->unqual.templateID()) {
+    } else if (auto templated = this->unqual.template_id()) {
         result.append(templated->name);
     } else {
         return {};

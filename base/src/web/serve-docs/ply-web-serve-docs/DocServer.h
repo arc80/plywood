@@ -16,29 +16,29 @@ struct DocServer {
     struct ContentsTraits {
         using Key = StringView;
         struct Item {
-            StringView linkPath;
+            StringView link_path;
             Contents* node = nullptr;
-            PLY_INLINE Item(StringView linkPath) : linkPath{linkPath} {
+            PLY_INLINE Item(StringView link_path) : link_path{link_path} {
             }
         };
         static PLY_INLINE bool match(const Item& item, Key key) {
-            return item.linkPath == key;
+            return item.link_path == key;
         }
     };
 
-    String dataRoot;
-    String contentsPath;
+    String data_root;
+    String contents_path;
 
-    // These members are protected by contentsMutex:
-    Mutex contentsMutex;
-    Atomic<double> contentsModTime = 0;
+    // These members are protected by contents_mutex:
+    Mutex contents_mutex;
+    Atomic<double> contents_mod_time = 0;
     Array<Owned<Contents>> contents;
-    HashMap<ContentsTraits> pathToContents;
+    HashMap<ContentsTraits> path_to_contents;
 
-    void init(StringView dataRoot);
-    void reloadContents();
-    void serve(StringView requestPath, ResponseIface* responseIface);
-    void serveContentOnly(StringView requestPath, ResponseIface* responseIface);
+    void init(StringView data_root);
+    void reload_contents();
+    void serve(StringView request_path, ResponseIface* response_iface);
+    void serve_content_only(StringView request_path, ResponseIface* response_iface);
 };
 
 } // namespace web

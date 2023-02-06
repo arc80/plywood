@@ -11,19 +11,21 @@
 namespace ply {
 namespace cpp {
 
-ExpandedFileLocation expandFileLocation(const PPVisitedFiles* visitedFiles,
-                                        LinearLocation linearLoc) {
-    auto iter = visitedFiles->locationMap.findLastLessThan(linearLoc + 1);
+ExpandedFileLocation expand_file_location(const PPVisitedFiles* visited_files,
+                                          LinearLocation linear_loc) {
+    auto iter = visited_files->location_map.find_last_less_than(linear_loc + 1);
     const cpp::PPVisitedFiles::IncludeChain& chain =
-        visitedFiles->includeChains[iter.getItem().includeChainIdx];
-    PLY_ASSERT(!chain.isMacroExpansion); // FIXME handle macros
-    const cpp::PPVisitedFiles::SourceFile* srcFile = &visitedFiles->sourceFiles[chain.fileOrExpIdx];
-    FileLocation fileLoc = srcFile->fileLocationMap.getFileLocation(
-        safeDemote<u32>(linearLoc - iter.getItem().linearLoc + iter.getItem().offset));
-    return {srcFile, fileLoc};
+        visited_files->include_chains[iter.get_item().include_chain_idx];
+    PLY_ASSERT(!chain.is_macro_expansion); // FIXME handle macros
+    const cpp::PPVisitedFiles::SourceFile* src_file =
+        &visited_files->source_files[chain.file_or_exp_idx];
+    FileLocation file_loc =
+        src_file->file_location_map.get_file_location(safe_demote<u32>(
+            linear_loc - iter.get_item().linear_loc + iter.get_item().offset));
+    return {src_file, file_loc};
 }
 
-StringView getExpectedTokenDesc(ExpectedToken expected) {
+StringView get_expected_token_desc(ExpectedToken expected) {
     switch (expected) {
         case ExpectedToken::None:
             PLY_ASSERT(0); // shouldn't get here
@@ -88,33 +90,37 @@ StringView getExpectedTokenDesc(ExpectedToken expected) {
     }
 }
 
-String ExpandedFileLocation::toString() const {
-    return String::format("{}({}, {})", this->srcFile->fileLocationMap.path,
-                          this->fileLoc.lineNumber, this->fileLoc.columnNumber);
+String ExpandedFileLocation::to_string() const {
+    return String::format("{}({}, {})", this->src_file->file_location_map.path,
+                          this->file_loc.line_number, this->file_loc.column_number);
 }
 
-void ParseError::writeMessage(OutStream& out, const PPVisitedFiles* visitedFiles) const {
-    out.format("{}: error: ",
-                 expandFileLocation(visitedFiles, this->errorToken.linearLoc).toString());
+void ParseError::write_message(OutStream& out,
+                               const PPVisitedFiles* visited_files) const {
+    out.format(
+        "{}: error: ",
+        expand_file_location(visited_files, this->error_token.linear_loc).to_string());
     switch (this->type) {
         case ParseError::UnexpectedEOF: {
-            PLY_ASSERT(this->errorToken.type == Token::EndOfFile);
+            PLY_ASSERT(this->error_token.type == Token::EndOfFile);
             out << "unexpected end-of-file\n";
             break;
         }
         case ParseError::Expected: {
-            out.format("expected {} before '{}'\n", getExpectedTokenDesc(this->expected),
-                         this->errorToken.toString());
+            out.format("expected {} before '{}'\n",
+                       get_expected_token_desc(this->expected),
+                       this->error_token.to_string());
             break;
         }
         case ParseError::UnclosedToken: {
-            out.format("expected '{}'\n",
-                         getPunctuationString((Token::Type) ((u32) this->precedingToken.type + 1)));
-            PLY_ASSERT(this->precedingToken.isValid());
+            out.format("expected '{}'\n", get_punctuation_string((Token::Type)(
+                                              (u32) this->preceding_token.type + 1)));
+            PLY_ASSERT(this->preceding_token.is_valid());
             out.format(
                 "{}: note: to match this '{}'\n",
-                expandFileLocation(visitedFiles, this->precedingToken.linearLoc).toString(),
-                this->precedingToken.toString());
+                expand_file_location(visited_files, this->preceding_token.linear_loc)
+                    .to_string(),
+                this->preceding_token.to_string());
             break;
         }
         case ParseError::MissingCommaAfterEnumerator: {
@@ -122,21 +128,23 @@ void ParseError::writeMessage(OutStream& out, const PPVisitedFiles* visitedFiles
             break;
         }
         case ParseError::QualifierNotAllowedHere: {
-            out.format("'{}' qualifier not allowed here\n", this->errorToken.identifier);
+            out.format("'{}' qualifier not allowed here\n",
+                       this->error_token.identifier);
             break;
         }
         case ParseError::TypeIDCannotHaveName: {
-            // FIXME: It would be nice to somehow store the entire qualified-id in the error
-            // somehow, and write it in the error message. (Currently, we only store the first
-            // token.)
+            // FIXME: It would be nice to somehow store the entire qualified-id in the
+            // error somehow, and write it in the error message. (Currently, we only
+            // store the first token.)
             out << "type-id cannot have a name\n";
             break;
         }
         case ParseError::NestedNameNotAllowedHere: {
-            // FIXME: It would be nice to somehow store the entire nested-name-prefix in the error
-            // somehow, and write it in the error message. (Currently, we only store the first
-            // token.)
-            out.format("'{}' cannot have a nested name prefix\n", this->errorToken.toString());
+            // FIXME: It would be nice to somehow store the entire nested-name-prefix in
+            // the error somehow, and write it in the error message. (Currently, we only
+            // store the first token.)
+            out.format("'{}' cannot have a nested name prefix\n",
+                       this->error_token.to_string());
             break;
         }
         case ParseError::TooManyTypeSpecifiers: {
@@ -152,12 +160,13 @@ void ParseError::writeMessage(OutStream& out, const PPVisitedFiles* visitedFiles
             break;
         }
         case ParseError::MissingDeclaration: {
-            // FIXME: This should only be a warning, but we don't have a warning system yet
+            // FIXME: This should only be a warning, but we don't have a warning system
+            // yet
             out << "declaration does not declare anything\n";
             break;
         }
         case ParseError::DuplicateVirtSpecifier: {
-            out.format("'{}' used more than once\n", this->errorToken.identifier);
+            out.format("'{}' used more than once\n", this->error_token.identifier);
             break;
         }
         default: {

@@ -12,7 +12,7 @@ namespace ply {
 
 SLOG_DECLARE_CHANNEL(Load)
 
-NativeBindings& getNativeBindings_StaticPtr() {
+NativeBindings& get_native_bindings_static_ptr() {
     static NativeBindings bindings{
         // create
         [](TypeDescriptor*) -> AnyObject {
@@ -42,17 +42,17 @@ NativeBindings& getNativeBindings_StaticPtr() {
 }
 
 TypeKey TypeKey_StaticPtr = {
-    // getName
-    [](const TypeDescriptor* typeDesc) -> HybridString { //
+    // get_name
+    [](const TypeDescriptor* type_desc) -> HybridString { //
         // FIXME: Include template argument
         return "StaticPtr";
     },
 
-    // hashDescriptor
-    TypeKey::hashEmptyDescriptor,
+    // hash_descriptor
+    TypeKey::hash_empty_descriptor,
 
-    // equalDescriptors
-    TypeKey::alwaysEqualDescriptors,
+    // equal_descriptors
+    TypeKey::always_equal_descriptors,
 };
 
 } // namespace ply

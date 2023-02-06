@@ -19,10 +19,10 @@ struct SymbolPagePair {
     PLY_REFLECT()
     // ply reflect off
 
-    Reference<SemaEntity> semaEnt;
-    String linkDestination;
+    Reference<SemaEntity> sema_ent;
+    String link_destination;
 
-    void addToIndex();
+    void add_to_index();
     ~SymbolPagePair();
 };
 
@@ -31,13 +31,13 @@ struct WebCookerIndex {
         using Index = StringView;
         using Item = SymbolPagePair*; // Owned by CookResult_ExtractPageMeta
         static constexpr u32 NodeCapacity = 8;
-        static Index getIndex(Item symbolPagePair) {
-            return symbolPagePair->semaEnt->name;
+        static Index get_index(Item symbol_page_pair) {
+            return symbol_page_pair->sema_ent->name;
         }
         static bool less(Index a, Index b) {
             return a < b;
         }
-        static void onItemMoved(Item, void*) {
+        static void on_item_moved(Item, void*) {
         }
     };
 
@@ -45,22 +45,22 @@ struct WebCookerIndex {
         using Index = StringView;
         using Item = CookResult_ExtractPageMeta*;
         static constexpr u32 NodeCapacity = 8;
-        static Index getIndex(Item pageMetaJob) {
-            return pageMetaJob->linkID;
+        static Index get_index(Item page_meta_job) {
+            return page_meta_job->link_id;
         }
         static bool less(Index a, Index b) {
             return a < b;
         }
-        static void onItemMoved(Item, void*) {
+        static void on_item_moved(Item, void*) {
         }
     };
 
     PLY_REFLECT()
-    Reference<SemaEntity> globalScope;
+    Reference<SemaEntity> global_scope;
     // ply reflect off
 
-    BTree<ExtractPageMetaTraits> extractPageMeta;
-    BTree<LinkIDTraits> linkIDMap;
+    BTree<ExtractPageMetaTraits> extract_page_meta;
+    BTree<LinkIDTraits> link_idmap;
 };
 
 } // namespace docs

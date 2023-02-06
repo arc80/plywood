@@ -11,10 +11,11 @@ namespace ply {
 namespace audio {
 
 //-----------------------------------------------------------------------
-/*! Describes the number of channels and format of each multichannel sample in a `Buffer`.
+/*! Describes the number of channels and format of each multichannel sample in a
+ * `Buffer`.
  */
 struct Format {
-    enum class SampleType : u8 { //! Valid values of `sampleType`
+    enum class SampleType : u8 { //! Valid values of `sample_type`
         // ply reflect enum
         S16 = 0,
         Float,
@@ -23,29 +24,29 @@ struct Format {
     static u16 SampleTypeToStride[];
 
     PLY_REFLECT()
-    u8 numChannels;        //! 1 for mono, 2 for stereo
-    SampleType sampleType; //! `Format::SampleType::S16`, `Format::SampleType::Float`
-    u16 stride; //! Number of bytes for each multichannel sample (numChannels * sizeof the
-                //! basic type)
+    u8 num_channels;        //! 1 for mono, 2 for stereo
+    SampleType sample_type; //! `Format::SampleType::S16`, `Format::SampleType::Float`
+    u16 stride; //! Number of bytes for each multichannel sample (num_channels * sizeof
+                //! the basic type)
     // ply reflect off
 
     bool operator==(const Format& other) const {
         return (const u32&) *this == (const u32&) other;
     }
 
-    static Format encode(u8 numChannels, SampleType sampleType) {
-        PLY_ASSERT((u8) sampleType < (u8) SampleType::Num);
-        return Format{numChannels, sampleType,
-                      u16(SampleTypeToStride[(u8) sampleType] * numChannels)};
+    static Format encode(u8 num_channels, SampleType sample_type) {
+        PLY_ASSERT((u8) sample_type < (u8) SampleType::Num);
+        return Format{num_channels, sample_type,
+                      u16(SampleTypeToStride[(u8) sample_type] * num_channels)};
     }
 
     static const Format Null;
     static const Format MonoS16;
     static const Format StereoS16;
 
-    void onPostSerialize() {
-        PLY_ASSERT((u8) sampleType < (u8) SampleType::Num);
-        stride = u16(SampleTypeToStride[(u8) sampleType] * numChannels);
+    void on_post_serialize() {
+        PLY_ASSERT((u8) sample_type < (u8) SampleType::Num);
+        stride = u16(SampleTypeToStride[(u8) sample_type] * num_channels);
     }
 };
 

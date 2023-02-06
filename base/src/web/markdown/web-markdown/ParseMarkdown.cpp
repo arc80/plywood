@@ -14,31 +14,31 @@ namespace markdown {
 // A helper class that keeps track of the indentation level while consuming input.
 struct LineConsumer {
     ViewInStream vins;
-    u32 outerIndent = 0;
+    u32 outer_indent = 0;
     u32 indent = 0;
 
-    PLY_NO_INLINE bool consumeSpaceOrTab() {
-        if (this->vins.numBytesAvailable() == 0)
+    PLY_NO_INLINE bool consume_space_or_tab() {
+        if (this->vins.num_bytes_available() == 0)
             return false;
-        char c = *this->vins.curByte;
+        char c = *this->vins.cur_byte;
         if (c == ' ') {
             this->indent++;
         } else if (c == '\t') {
-            u32 tabSize = 4;
-            this->indent += tabSize - (this->indent % tabSize);
+            u32 tab_size = 4;
+            this->indent += tab_size - (this->indent % tab_size);
         } else {
             return false;
         }
-        this->vins.advanceByte();
+        this->vins.advance_byte();
         return true;
     }
 
-    PLY_INLINE u32 innerIndent() const {
-        return this->indent - this->outerIndent;
+    PLY_INLINE u32 inner_indent() const {
+        return this->indent - this->outer_indent;
     }
 
-    PLY_INLINE StringView trimmedRemainder() const {
-        return this->vins.viewAvailable().trim(isWhite);
+    PLY_INLINE StringView trimmed_remainder() const {
+        return this->vins.view_available().trim(is_white);
     }
 
     PLY_INLINE LineConsumer(StringView line) : vins{line} {
@@ -48,22 +48,23 @@ struct LineConsumer {
 //-----------------------------------------------------------------
 // Code to parse block elements (first pass)
 //-----------------------------------------------------------------
-String extractCodeLine(StringView line, u32 fromIndent) {
+String extract_code_line(StringView line, u32 from_indent) {
     u32 indent = 0;
-    for (u32 i = 0; i < line.numBytes; i++) {
-        if (indent == fromIndent) {
-            return line.subStr(i);
+    for (u32 i = 0; i < line.num_bytes; i++) {
+        if (indent == from_indent) {
+            return line.sub_str(i);
         }
         u8 c = line[i];
         PLY_ASSERT(c < 128);              // No high code points
         PLY_ASSERT(c >= 32 || c == '\t'); // No control characters
         if (c == '\t') {
-            u32 tabSize = 4;
-            u32 newIndent = indent + tabSize - (indent % tabSize);
-            if (newIndent > fromIndent) {
-                return StringView{" "} * (newIndent - fromIndent) + line.subStr(i + 1);
+            u32 tab_size = 4;
+            u32 new_indent = indent + tab_size - (indent % tab_size);
+            if (new_indent > from_indent) {
+                return StringView{" "} * (new_indent - from_indent) +
+                       line.sub_str(i + 1);
             }
-            indent = newIndent;
+            indent = new_indent;
         } else {
             indent++;
         }
@@ -73,109 +74,112 @@ String extractCodeLine(StringView line, u32 fromIndent) {
 }
 
 struct Parser {
-    // blockNodes and leafNode, together, represent the stack of elements for the current line.
-    // blockNodes[0] holds the root Node::Document.
-    // blockNodes[1 and greater] can only hold a Node::BlockQuote or Node::ListItem.
-    // leafNode represents the top of the stack where text goes. It can either hold a
-    // Node::Paragraph or Node::CodeBlock.
-    Array<Node*> blockNodes;
-    Node* leafNode = nullptr;
+    // block_nodes and leaf_node, together, represent the stack of elements for the
+    // current line. block_nodes[0] holds the root Node::Document. block_nodes[1 and
+    // greater] can only hold a Node::BlockQuote or Node::ListItem. leaf_node represents
+    // the top of the stack where text goes. It can either hold a Node::Paragraph or
+    // Node::CodeBlock.
+    Array<Node*> block_nodes;
+    Node* leaf_node = nullptr;
 
-    // Only used if leafNode is CodeBlock:
-    u32 numBlankLinesInCodeBlock = 0;
+    // Only used if leaf_node is CodeBlock:
+    u32 num_blank_lines_in_code_block = 0;
 
-    // This flag indicates that some Lists on the stack have their isLooseIfContinued flag set:
-    // (Alternatively, we *could* store the number of such Lists on the stack, and eliminate the
-    // isLooseIfContinued flag completely, but it would complicate matchExistingIndentation a little
-    // bit. Sticking with this approach for now.)
-    bool checkListContinuations = false;
+    // This flag indicates that some Lists on the stack have their is_loose_if_continued
+    // flag set: (Alternatively, we *could* store the number of such Lists on the stack,
+    // and eliminate the is_loose_if_continued flag completely, but it would complicate
+    // match_existing_indentation a little bit. Sticking with this approach for now.)
+    bool check_list_continuations = false;
 
-    // This is called at the start of each line. It figures out which of the existing elements we
-    // are still inside by consuming indentation and blockquote '>' markers that match the current
-    // element stack, then truncates any unmatched BlockQuote nodes from the stack. (Unmatched
-    // ListItem nodes are not truncated here because list items are allowed to contain blank lines.)
-    // Returns true if there is more text on the current line.
-    PLY_NO_INLINE bool matchExistingIndentation(StringView line, LineConsumer& lc) {
-        u32 keepStackDepth = 1;
+    // This is called at the start of each line. It figures out which of the existing
+    // elements we are still inside by consuming indentation and blockquote '>' markers
+    // that match the current element stack, then truncates any unmatched BlockQuote
+    // nodes from the stack. (Unmatched ListItem nodes are not truncated here because
+    // list items are allowed to contain blank lines.) Returns true if there is more
+    // text on the current line.
+    PLY_NO_INLINE bool match_existing_indentation(StringView line, LineConsumer& lc) {
+        u32 keep_stack_depth = 1;
         for (;;) {
-            while (lc.consumeSpaceOrTab()) {
+            while (lc.consume_space_or_tab()) {
             }
-            if (keepStackDepth >= this->blockNodes.numItems())
+            if (keep_stack_depth >= this->block_nodes.num_items())
                 break;
-            Node* node = this->blockNodes[keepStackDepth];
+            Node* node = this->block_nodes[keep_stack_depth];
             if (node->type == Node::BlockQuote) {
-                if (lc.vins.numBytesAvailable() > 0 && *lc.vins.curByte == '>' &&
-                    lc.innerIndent() <= 3) {
+                if (lc.vins.num_bytes_available() > 0 && *lc.vins.cur_byte == '>' &&
+                    lc.inner_indent() <= 3) {
                     // Continue the current blockquote
-                    lc.vins.advanceByte();
+                    lc.vins.advance_byte();
                     lc.indent++;
-                    lc.outerIndent = lc.indent;
-                    keepStackDepth++;
-                    // Consume optional space and include it in outerIndent:
-                    if (lc.consumeSpaceOrTab()) {
-                        lc.outerIndent++;
+                    lc.outer_indent = lc.indent;
+                    keep_stack_depth++;
+                    // Consume optional space and include it in outer_indent:
+                    if (lc.consume_space_or_tab()) {
+                        lc.outer_indent++;
                     }
                     continue;
                 }
             } else if (node->type == Node::ListItem) {
-                if (lc.innerIndent() >= node->indentOrLevel) {
+                if (lc.inner_indent() >= node->indent_or_level) {
                     // Continue the current list item
-                    keepStackDepth++;
-                    lc.outerIndent += node->indentOrLevel;
+                    keep_stack_depth++;
+                    lc.outer_indent += node->indent_or_level;
                     continue;
                 }
             } else {
-                // blockNodes indices >= 1 should only hold BlockQuote and ListItem
+                // block_nodes indices >= 1 should only hold BlockQuote and ListItem
                 PLY_ASSERT(0);
             }
             break;
         }
 
         // Is remainder of line blank?
-        if (lc.trimmedRemainder().isEmpty()) {
+        if (lc.trimmed_remainder().is_empty()) {
             // Yes. Terminate paragraph if any
-            if (this->leafNode && this->leafNode->type == Node::Paragraph) {
-                this->leafNode = nullptr;
-                PLY_ASSERT(this->numBlankLinesInCodeBlock == 0);
+            if (this->leaf_node && this->leaf_node->type == Node::Paragraph) {
+                this->leaf_node = nullptr;
+                PLY_ASSERT(this->num_blank_lines_in_code_block == 0);
             }
             // Truncate non-continued blockquotes
-            while (keepStackDepth < this->blockNodes.numItems() &&
-                   this->blockNodes[keepStackDepth]->type == Node::ListItem) {
-                keepStackDepth++;
+            while (keep_stack_depth < this->block_nodes.num_items() &&
+                   this->block_nodes[keep_stack_depth]->type == Node::ListItem) {
+                keep_stack_depth++;
             }
-            PLY_ASSERT(keepStackDepth >= this->blockNodes.numItems() ||
-                       this->blockNodes[keepStackDepth]->type == Node::BlockQuote);
-            if (keepStackDepth < this->blockNodes.numItems()) {
-                this->blockNodes.resize(keepStackDepth);
-                this->leafNode = nullptr;
-                this->numBlankLinesInCodeBlock = 0;
+            PLY_ASSERT(keep_stack_depth >= this->block_nodes.num_items() ||
+                       this->block_nodes[keep_stack_depth]->type == Node::BlockQuote);
+            if (keep_stack_depth < this->block_nodes.num_items()) {
+                this->block_nodes.resize(keep_stack_depth);
+                this->leaf_node = nullptr;
+                this->num_blank_lines_in_code_block = 0;
             }
-            if (this->leafNode) {
-                // At this point, the only possible leaf node is a CodeBlock, because Paragraphs are
-                // terminated above, and Headings don't persist across lines.
-                PLY_ASSERT(this->leafNode->type == Node::CodeBlock);
+            if (this->leaf_node) {
+                // At this point, the only possible leaf node is a CodeBlock, because
+                // Paragraphs are terminated above, and Headings don't persist across
+                // lines.
+                PLY_ASSERT(this->leaf_node->type == Node::CodeBlock);
                 // Count blank lines in CodeBlocks
-                if (lc.indent - lc.outerIndent > 4) {
+                if (lc.indent - lc.outer_indent > 4) {
                     // Add intermediate blank lines
-                    // FIXME: Could this be unified with the code below? (Code simplification)
-                    for (u32 i = 0; i < this->numBlankLinesInCodeBlock; i++) {
-                        this->leafNode->rawLines.append("\n");
+                    // FIXME: Could this be unified with the code below? (Code
+                    // simplification)
+                    for (u32 i = 0; i < this->num_blank_lines_in_code_block; i++) {
+                        this->leaf_node->raw_lines.append("\n");
                     }
-                    this->numBlankLinesInCodeBlock = 0;
-                    String codeLine = extractCodeLine(line, lc.outerIndent + 4);
-                    this->leafNode->rawLines.append(std::move(codeLine));
+                    this->num_blank_lines_in_code_block = 0;
+                    String code_line = extract_code_line(line, lc.outer_indent + 4);
+                    this->leaf_node->raw_lines.append(std::move(code_line));
                 } else {
-                    this->numBlankLinesInCodeBlock++;
+                    this->num_blank_lines_in_code_block++;
                 }
             } else {
                 // There's no leaf node and the remainder of the line is blank.
                 // Walk the stack and set the "isLooseIfContinued" flag on all Lists.
-                for (Node* node : this->blockNodes) {
+                for (Node* node : this->block_nodes) {
                     if (node->type == Node::ListItem) {
                         PLY_ASSERT(node->parent->type == Node::List);
-                        if (!node->parent->isLoose) {
-                            node->parent->isLooseIfContinued = true;
-                            this->checkListContinuations = true;
+                        if (!node->parent->is_loose) {
+                            node->parent->is_loose_if_continued = true;
+                            this->check_list_continuations = true;
                         }
                     }
                 }
@@ -184,200 +188,207 @@ struct Parser {
         }
 
         // No. There's more text on the current line
-        if (keepStackDepth < this->blockNodes.numItems()) {
-            this->blockNodes.resize(keepStackDepth);
-            this->leafNode = nullptr;
-            this->numBlankLinesInCodeBlock = 0;
+        if (keep_stack_depth < this->block_nodes.num_items()) {
+            this->block_nodes.resize(keep_stack_depth);
+            this->leaf_node = nullptr;
+            this->num_blank_lines_in_code_block = 0;
         }
         return true;
     }
 
-    // This function consumes new blockquote '>' markers and list item markers such as '*' that
-    // *don't* match existing block elements on the current stack. It creates new block elements for
-    // each marker encountered.
-    void parseNewMarkers(LineConsumer& lc) {
-        PLY_ASSERT(!lc.trimmedRemainder().isEmpty()); // Not called if remainder of line is blank
+    // This function consumes new blockquote '>' markers and list item markers such as
+    // '*' that *don't* match existing block elements on the current stack. It creates
+    // new block elements for each marker encountered.
+    void parse_new_markers(LineConsumer& lc) {
+        PLY_ASSERT(!lc.trimmed_remainder()
+                        .is_empty()); // Not called if remainder of line is blank
 
         // Attempt to parse new Node markers
-        while (lc.vins.numBytesAvailable() > 0) {
-            if (lc.innerIndent() >= 4)
+        while (lc.vins.num_bytes_available() > 0) {
+            if (lc.inner_indent() >= 4)
                 break;
 
-            auto savePoint = lc.vins.savePoint();
-            u32 savedIndent = lc.indent;
+            auto save_point = lc.vins.save_point();
+            u32 saved_indent = lc.indent;
 
             // This code block will handle any list markers encountered:
-            auto gotListMarker = [&](s32 markerNumber, char punc) {
-                bool isOrdered = (markerNumber >= 0);
-                this->leafNode = nullptr;
-                this->numBlankLinesInCodeBlock = 0;
-                Node* listNode = nullptr;
-                Node* parentCtr = this->blockNodes.back();
-                PLY_ASSERT(parentCtr->isContainerBlock());
-                if (!parentCtr->children.isEmpty()) {
-                    Node* potentialParent = parentCtr->children.back();
-                    if (potentialParent->type == Node::List &&
-                        potentialParent->isOrderedList() == isOrdered &&
-                        potentialParent->listPunc == punc) {
+            auto got_list_marker = [&](s32 marker_number, char punc) {
+                bool is_ordered = (marker_number >= 0);
+                this->leaf_node = nullptr;
+                this->num_blank_lines_in_code_block = 0;
+                Node* list_node = nullptr;
+                Node* parent_ctr = this->block_nodes.back();
+                PLY_ASSERT(parent_ctr->is_container_block());
+                if (!parent_ctr->children.is_empty()) {
+                    Node* potential_parent = parent_ctr->children.back();
+                    if (potential_parent->type == Node::List &&
+                        potential_parent->is_ordered_list() == is_ordered &&
+                        potential_parent->list_punc == punc) {
                         // Add item to existing list
-                        listNode = potentialParent;
+                        list_node = potential_parent;
                     }
-                } else if (parentCtr->type == Node::ListItem) {
+                } else if (parent_ctr->type == Node::ListItem) {
                     // Begin new list as a sublist of existing list
-                    parentCtr = parentCtr->parent;
-                    PLY_ASSERT(parentCtr->type == Node::List);
+                    parent_ctr = parent_ctr->parent;
+                    PLY_ASSERT(parent_ctr->type == Node::List);
                 }
-                if (!listNode) {
+                if (!list_node) {
                     // Begin new list
-                    listNode = new Node{parentCtr, Node::List};
-                    listNode->listStartNumber = markerNumber;
-                    listNode->listPunc = punc;
+                    list_node = new Node{parent_ctr, Node::List};
+                    list_node->list_start_number = marker_number;
+                    list_node->list_punc = punc;
                 }
-                Node* listItem = new Node{listNode, Node::ListItem};
-                listItem->indentOrLevel = lc.outerIndent;
-                this->blockNodes.append(listItem);
+                Node* list_item = new Node{list_node, Node::ListItem};
+                list_item->indent_or_level = lc.outer_indent;
+                this->block_nodes.append(list_item);
             };
 
-            char c = *lc.vins.curByte;
-            PLY_ASSERT(!isWhite(c));
+            char c = *lc.vins.cur_byte;
+            PLY_ASSERT(!is_white(c));
             if (c == '>') {
                 // Begin a new blockquote
-                this->blockNodes.append(new Node{this->blockNodes.back(), Node::BlockQuote});
+                this->block_nodes.append(
+                    new Node{this->block_nodes.back(), Node::BlockQuote});
                 // Consume optional space after '>'
-                lc.vins.advanceByte();
+                lc.vins.advance_byte();
                 lc.indent++;
-                lc.outerIndent = lc.indent;
-                if (lc.consumeSpaceOrTab()) {
-                    lc.outerIndent++;
+                lc.outer_indent = lc.indent;
+                if (lc.consume_space_or_tab()) {
+                    lc.outer_indent++;
                 }
             } else if (c == '*' || c == '-' || c == '+') {
-                lc.vins.advanceByte();
+                lc.vins.advance_byte();
                 lc.indent++;
-                u32 indentAfterStar = lc.indent;
-                if (!lc.consumeSpaceOrTab())
-                    goto notMarker;
-                if (this->leafNode && lc.trimmedRemainder().isEmpty()) {
-                    // If the list item interrupts a paragraph, it must not begin with a blank line.
-                    goto notMarker;
+                u32 indent_after_star = lc.indent;
+                if (!lc.consume_space_or_tab())
+                    goto not_marker;
+                if (this->leaf_node && lc.trimmed_remainder().is_empty()) {
+                    // If the list item interrupts a paragraph, it must not begin with a
+                    // blank line.
+                    goto not_marker;
                 }
 
                 // It's an unordered list item.
-                lc.outerIndent = indentAfterStar + 1;
-                gotListMarker(-1, c);
-            } else if (isDecimalDigit(c)) {
+                lc.outer_indent = indent_after_star + 1;
+                got_list_marker(-1, c);
+            } else if (is_decimal_digit(c)) {
                 u64 num = lc.vins.parse<u64>();
-                if (this->leafNode && num != 1) {
+                if (this->leaf_node && num != 1) {
                     // If list item interrupts a paragraph, the start number must be 1.
-                    goto notMarker;
+                    goto not_marker;
                 }
-                uptr markerLength = (lc.vins.curByte - savePoint.startByte);
-                if (markerLength > 9)
-                    goto notMarker; // marker too long
-                lc.indent += safeDemote<u32>(markerLength);
-                if (lc.vins.numBytesAvailable() < 2)
-                    goto notMarker;
-                char punc = *lc.vins.curByte;
+                uptr marker_length = (lc.vins.cur_byte - save_point.start_byte);
+                if (marker_length > 9)
+                    goto not_marker; // marker too long
+                lc.indent += safe_demote<u32>(marker_length);
+                if (lc.vins.num_bytes_available() < 2)
+                    goto not_marker;
+                char punc = *lc.vins.cur_byte;
                 // FIXME: support alternate punctuator ')'.
                 // If the punctuator doesn't match, it should start a new list.
                 if (punc != '.' && punc != ')')
-                    goto notMarker;
-                lc.vins.advanceByte();
+                    goto not_marker;
+                lc.vins.advance_byte();
                 lc.indent++;
-                u32 indentAfterMarker = lc.indent;
-                if (!lc.consumeSpaceOrTab())
-                    goto notMarker;
-                if (this->leafNode && lc.trimmedRemainder().isEmpty()) {
-                    // If the list item interrupts a paragraph, it must not begin with a blank line.
-                    goto notMarker;
+                u32 indent_after_marker = lc.indent;
+                if (!lc.consume_space_or_tab())
+                    goto not_marker;
+                if (this->leaf_node && lc.trimmed_remainder().is_empty()) {
+                    // If the list item interrupts a paragraph, it must not begin with a
+                    // blank line.
+                    goto not_marker;
                 }
 
                 // It's an ordered list item.
-                // 32-bit demotion is safe because we know the marker is 9 digits or less:
-                lc.outerIndent = indentAfterMarker + 1;
-                gotListMarker(safeDemote<s32>(num), punc);
+                // 32-bit demotion is safe because we know the marker is 9 digits or
+                // less:
+                lc.outer_indent = indent_after_marker + 1;
+                got_list_marker(safe_demote<s32>(num), punc);
             } else {
-                goto notMarker;
+                goto not_marker;
             }
 
             // Consume whitespace
-            while (lc.consumeSpaceOrTab()) {
+            while (lc.consume_space_or_tab()) {
             }
             continue;
 
-        notMarker:
-            lc.vins.restore(savePoint);
-            lc.indent = savedIndent;
+        not_marker:
+            lc.vins.restore(save_point);
+            lc.indent = saved_indent;
             break;
         }
     }
 
-    PLY_NO_INLINE void parseParagraphText(StringView line, LineConsumer& lc) {
-        StringView remainingText = lc.trimmedRemainder();
-        bool hasPara = this->leafNode && this->leafNode->type == Node::Paragraph;
-        if (!hasPara && lc.innerIndent() >= 4) {
+    PLY_NO_INLINE void parse_paragraph_text(StringView line, LineConsumer& lc) {
+        StringView remaining_text = lc.trimmed_remainder();
+        bool has_para = this->leaf_node && this->leaf_node->type == Node::Paragraph;
+        if (!has_para && lc.inner_indent() >= 4) {
             // Potentially begin or append to code Node
-            if (remainingText && !this->leafNode) {
-                this->leafNode = new Node{this->blockNodes.back(), Node::CodeBlock};
-                PLY_ASSERT(this->numBlankLinesInCodeBlock == 0);
+            if (remaining_text && !this->leaf_node) {
+                this->leaf_node = new Node{this->block_nodes.back(), Node::CodeBlock};
+                PLY_ASSERT(this->num_blank_lines_in_code_block == 0);
             }
-            if (this->leafNode) {
-                PLY_ASSERT(this->leafNode->type == Node::CodeBlock);
+            if (this->leaf_node) {
+                PLY_ASSERT(this->leaf_node->type == Node::CodeBlock);
                 // Add intermediate blank lines
-                for (u32 i = 0; i < this->numBlankLinesInCodeBlock; i++) {
-                    this->leafNode->rawLines.append("\n");
+                for (u32 i = 0; i < this->num_blank_lines_in_code_block; i++) {
+                    this->leaf_node->raw_lines.append("\n");
                 }
-                this->numBlankLinesInCodeBlock = 0;
-                String codeLine = extractCodeLine(line, lc.outerIndent + 4);
-                this->leafNode->rawLines.append(std::move(codeLine));
+                this->num_blank_lines_in_code_block = 0;
+                String code_line = extract_code_line(line, lc.outer_indent + 4);
+                this->leaf_node->raw_lines.append(std::move(code_line));
             }
         } else {
-            if (remainingText) {
+            if (remaining_text) {
                 // We're going to create or extend a leaf node.
                 // First, check if any Lists should be marked loose:
-                if (this->checkListContinuations) {
-                    // Yes, we should mark some (possibly zero) lists loose. It's impossible for a
-                    // leaf node to exist at this point:
-                    PLY_ASSERT(!this->leafNode);
-                    for (Node* node : this->blockNodes) {
+                if (this->check_list_continuations) {
+                    // Yes, we should mark some (possibly zero) lists loose. It's
+                    // impossible for a leaf node to exist at this point:
+                    PLY_ASSERT(!this->leaf_node);
+                    for (Node* node : this->block_nodes) {
                         if (node->type == Node::ListItem) {
                             PLY_ASSERT(node->parent->type == Node::List);
-                            if (node->parent->isLooseIfContinued) {
-                                node->parent->isLoose = true;
-                                node->parent->isLooseIfContinued = false;
+                            if (node->parent->is_loose_if_continued) {
+                                node->parent->is_loose = true;
+                                node->parent->is_loose_if_continued = false;
                             }
                         }
                     }
-                    this->checkListContinuations = false;
+                    this->check_list_continuations = false;
                 }
 
-                if (*lc.vins.curByte == '#' && lc.innerIndent() <= 3) {
+                if (*lc.vins.cur_byte == '#' && lc.inner_indent() <= 3) {
                     // Attempt to parse a heading
-                    auto savePoint = lc.vins.savePoint();
-                    StringView poundSeq =
-                        lc.vins.readView(fmt::Callback{[](char c) { return c == '#'; }});
-                    StringView space = lc.vins.readView<fmt::Whitespace>();
-                    if (poundSeq.numBytes <= 6 &&
-                        (!space.isEmpty() || lc.vins.numBytesAvailable() == 0)) {
+                    auto save_point = lc.vins.save_point();
+                    StringView pound_seq = lc.vins.read_view(
+                        fmt::Callback{[](char c) { return c == '#'; }});
+                    StringView space = lc.vins.read_view<fmt::Whitespace>();
+                    if (pound_seq.num_bytes <= 6 &&
+                        (!space.is_empty() || lc.vins.num_bytes_available() == 0)) {
                         // Got a heading
-                        Node* headingNode = new Node{this->blockNodes.back(), Node::Heading};
-                        headingNode->indentOrLevel = poundSeq.numBytes;
-                        if (StringView remainingText = lc.trimmedRemainder()) {
-                            headingNode->rawLines.append(remainingText);
+                        Node* heading_node =
+                            new Node{this->block_nodes.back(), Node::Heading};
+                        heading_node->indent_or_level = pound_seq.num_bytes;
+                        if (StringView remaining_text = lc.trimmed_remainder()) {
+                            heading_node->raw_lines.append(remaining_text);
                         }
-                        this->leafNode = nullptr;
+                        this->leaf_node = nullptr;
                         return;
                     }
-                    lc.vins.restore(savePoint);
+                    lc.vins.restore(save_point);
                 }
-                // If this->leafNode already exists, it's a lazy paragraph continuation
-                if (!hasPara) {
+                // If this->leaf_node already exists, it's a lazy paragraph continuation
+                if (!has_para) {
                     // Begin new paragraph
-                    this->leafNode = new Node{this->blockNodes.back(), Node::Paragraph};
-                    this->numBlankLinesInCodeBlock = 0;
+                    this->leaf_node =
+                        new Node{this->block_nodes.back(), Node::Paragraph};
+                    this->num_blank_lines_in_code_block = 0;
                 }
-                this->leafNode->rawLines.append(remainingText);
+                this->leaf_node->raw_lines.append(remaining_text);
             } else {
-                PLY_ASSERT(!this->leafNode); // Should already be cleared by this point
+                PLY_ASSERT(!this->leaf_node); // Should already be cleared by this point
             }
         }
     }
@@ -387,17 +398,17 @@ struct Parser {
         Owned<Node> document = new Node{nullptr, Node::Document};
 
         // Initialize stack
-        this->blockNodes = {document.get()};
-        this->leafNode = nullptr;
-        this->numBlankLinesInCodeBlock = 0;
+        this->block_nodes = {document.get()};
+        this->leaf_node = nullptr;
+        this->num_blank_lines_in_code_block = 0;
 
-        while (StringView line = vins.readView<fmt::Line>()) {
+        while (StringView line = vins.read_view<fmt::Line>()) {
             LineConsumer lc{line};
-            if (!matchExistingIndentation(line, lc))
+            if (!match_existing_indentation(line, lc))
                 continue; // Remainder of line is blank
 
-            parseNewMarkers(lc);
-            parseParagraphText(line, lc);
+            parse_new_markers(lc);
+            parse_paragraph_text(line, lc);
         }
 
         return document;
@@ -408,64 +419,64 @@ struct Parser {
 // Code to parse inline elements (second pass)
 //-----------------------------------------------------------------
 struct InlineConsumer {
-    ArrayView<const String> rawLines;
-    StringView rawLine;
-    u32 lineIndex = 0;
+    ArrayView<const String> raw_lines;
+    StringView raw_line;
+    u32 line_index = 0;
     u32 i = 0;
 
-    InlineConsumer(ArrayView<const String> rawLines) : rawLines{rawLines} {
-        PLY_ASSERT(rawLines.numItems > 0);
-        rawLine = rawLines[0];
-        PLY_ASSERT(rawLine);
+    InlineConsumer(ArrayView<const String> raw_lines) : raw_lines{raw_lines} {
+        PLY_ASSERT(raw_lines.num_items > 0);
+        raw_line = raw_lines[0];
+        PLY_ASSERT(raw_line);
     }
 
     enum ValidIndexResult { SameLine, NextLine, End };
 
-    ValidIndexResult validIndex() {
-        if (this->i >= this->rawLine.numBytes) {
-            if (this->lineIndex >= this->rawLines.numItems) {
+    ValidIndexResult valid_index() {
+        if (this->i >= this->raw_line.num_bytes) {
+            if (this->line_index >= this->raw_lines.num_items) {
                 return End;
             }
             this->i = 0;
-            this->lineIndex++;
-            if (this->lineIndex >= this->rawLines.numItems) {
-                this->rawLine = {};
+            this->line_index++;
+            if (this->line_index >= this->raw_lines.num_items) {
+                this->raw_line = {};
                 return End;
             }
-            this->rawLine = this->rawLines[this->lineIndex];
-            PLY_ASSERT(this->rawLine);
+            this->raw_line = this->raw_lines[this->line_index];
+            PLY_ASSERT(this->raw_line);
             return NextLine;
         }
         return SameLine;
     }
 };
 
-String getCodeSpan(InlineConsumer& ic, u32 endTickCount) {
+String get_code_span(InlineConsumer& ic, u32 end_tick_count) {
     MemOutStream mout;
     for (;;) {
-        InlineConsumer::ValidIndexResult res = ic.validIndex();
+        InlineConsumer::ValidIndexResult res = ic.valid_index();
         if (res == InlineConsumer::End)
             return {};
         if (res == InlineConsumer::NextLine) {
             mout << ' ';
         }
-        char c = ic.rawLine[ic.i];
+        char c = ic.raw_line[ic.i];
         ic.i++;
         if (c == '`') {
-            u32 tickCount = 1;
-            for (; ic.i < ic.rawLine.numBytes && ic.rawLine[ic.i] == '`'; ic.i++) {
-                tickCount++;
+            u32 tick_count = 1;
+            for (; ic.i < ic.raw_line.num_bytes && ic.raw_line[ic.i] == '`'; ic.i++) {
+                tick_count++;
             }
-            if (tickCount == endTickCount) {
-                String result = mout.moveToString();
+            if (tick_count == end_tick_count) {
+                String result = mout.move_to_string();
                 PLY_ASSERT(result);
                 if (result[0] == ' ' && result.back() == ' ' &&
-                    result.findByte([](char c) { return c != ' '; }) >= 0) {
-                    result = result.subStr(1, result.numBytes - 2);
+                    result.find_byte([](char c) { return c != ' '; }) >= 0) {
+                    result = result.sub_str(1, result.num_bytes - 2);
                 }
                 return result;
             }
-            mout << ic.rawLine.subStr(ic.i - tickCount, tickCount);
+            mout << ic.raw_line.sub_str(ic.i - tick_count, tick_count);
         } else {
             mout << c;
         }
@@ -473,9 +484,9 @@ String getCodeSpan(InlineConsumer& ic, u32 endTickCount) {
 }
 
 // FIXME: Recognize all Unicode punctuation
-PLY_INLINE bool isAscPunc(char c) {
-    return (c >= 0x21 && c <= 0x2f) || (c >= 0x3a && c <= 0x40) || (c >= 0x5b && c <= 0x60) ||
-           (c >= 0x7b && c <= 0x7e);
+PLY_INLINE bool is_asc_punc(char c) {
+    return (c >= 0x21 && c <= 0x2f) || (c >= 0x3a && c <= 0x40) ||
+           (c >= 0x5b && c <= 0x60) || (c >= 0x7b && c <= 0x7e);
 }
 
 struct Delimiter {
@@ -488,79 +499,84 @@ struct Delimiter {
     };
 
     Type type = RawText;
-    bool leftFlanking = false;  // Stars & Underscores only
-    bool rightFlanking = false; // Stars & Underscores only
-    bool active = true;         // OpenLink only
+    bool left_flanking = false;  // Stars & Underscores only
+    bool right_flanking = false; // Stars & Underscores only
+    bool active = true;          // OpenLink only
     HybridString text;
     Owned<Node> element; // InlineElem only, and it'll be an inline node type
 
     PLY_INLINE Delimiter() = default;
-    PLY_INLINE Delimiter(Type type, HybridString&& text) : type{type}, text{std::move(text)} {
+    PLY_INLINE Delimiter(Type type, HybridString&& text)
+        : type{type}, text{std::move(text)} {
     }
-    PLY_INLINE Delimiter(Owned<Node>&& elem) : type{InlineElem}, element{std::move(elem)} {
+    PLY_INLINE Delimiter(Owned<Node>&& elem)
+        : type{InlineElem}, element{std::move(elem)} {
     }
-    static PLY_NO_INLINE Delimiter makeRun(Type type, StringView rawLine, u32 start, u32 numBytes) {
-        bool precededByWhite = (start == 0) || isWhite(rawLine[start - 1]);
-        bool followedByWhite =
-            (start + numBytes >= rawLine.numBytes) || isWhite(rawLine[start + numBytes]);
-        bool precededByPunc = (start > 0) && isAscPunc(rawLine[start - 1]);
-        bool followedByPunc =
-            (start + numBytes < rawLine.numBytes) && isAscPunc(rawLine[start + numBytes]);
+    static PLY_NO_INLINE Delimiter make_run(Type type, StringView raw_line, u32 start,
+                                            u32 num_bytes) {
+        bool preceded_by_white = (start == 0) || is_white(raw_line[start - 1]);
+        bool followed_by_white = (start + num_bytes >= raw_line.num_bytes) ||
+                                 is_white(raw_line[start + num_bytes]);
+        bool preceded_by_punc = (start > 0) && is_asc_punc(raw_line[start - 1]);
+        bool followed_by_punc = (start + num_bytes < raw_line.num_bytes) &&
+                                is_asc_punc(raw_line[start + num_bytes]);
 
-        Delimiter result{type, rawLine.subStr(start, numBytes)};
-        result.leftFlanking =
-            !followedByWhite &&
-            (!followedByPunc || (followedByPunc && (precededByWhite || precededByPunc)));
-        result.rightFlanking =
-            !precededByWhite &&
-            (!precededByPunc || (precededByPunc && (followedByWhite || followedByPunc)));
+        Delimiter result{type, raw_line.sub_str(start, num_bytes)};
+        result.left_flanking =
+            !followed_by_white &&
+            (!followed_by_punc ||
+             (followed_by_punc && (preceded_by_white || preceded_by_punc)));
+        result.right_flanking =
+            !preceded_by_white &&
+            (!preceded_by_punc ||
+             (preceded_by_punc && (followed_by_white || followed_by_punc)));
         return result;
     }
 };
 
-Tuple<bool, String> parseLinkDestination(InlineConsumer& ic) {
+Tuple<bool, String> parse_link_destination(InlineConsumer& ic) {
     // FIXME: Support < > destinations
     // FIXME: Support link titles
 
     // Skip initial whitespace
     for (;;) {
-        InlineConsumer::ValidIndexResult res = ic.validIndex();
+        InlineConsumer::ValidIndexResult res = ic.valid_index();
         if (res == InlineConsumer::End) {
             return {false, String{}};
         }
-        if (!isWhite(ic.rawLine[ic.i]))
+        if (!is_white(ic.raw_line[ic.i]))
             break;
         ic.i++;
     }
 
     MemOutStream mout;
-    u32 parenNestLevel = 0;
+    u32 paren_nest_level = 0;
     for (;;) {
-        InlineConsumer::ValidIndexResult res = ic.validIndex();
+        InlineConsumer::ValidIndexResult res = ic.valid_index();
         if (res != InlineConsumer::SameLine)
             break;
 
-        char c = ic.rawLine[ic.i];
+        char c = ic.raw_line[ic.i];
         if (c == '\\') {
             ic.i++;
-            if (ic.validIndex() != InlineConsumer::SameLine) {
+            if (ic.valid_index() != InlineConsumer::SameLine) {
                 mout << '\\';
                 break;
             }
-            c = ic.rawLine[ic.i];
-            if (!isAscPunc(c)) {
+            c = ic.raw_line[ic.i];
+            if (!is_asc_punc(c)) {
                 mout << '\\';
             }
             mout << c;
         } else if (c == '(') {
             ic.i++;
             mout << c;
-            parenNestLevel++;
+            paren_nest_level++;
         } else if (c == ')') {
-            if (parenNestLevel > 0) {
+            if (paren_nest_level > 0) {
                 ic.i++;
                 mout << c;
-                parenNestLevel--;
+                paren_nest_level--;
             } else {
                 break;
             }
@@ -572,34 +588,34 @@ Tuple<bool, String> parseLinkDestination(InlineConsumer& ic) {
         }
     }
 
-    if (parenNestLevel != 0) {
+    if (paren_nest_level != 0) {
         return {false, String{}};
     }
 
     // Skip trailing whitespace
     for (;;) {
-        InlineConsumer::ValidIndexResult res = ic.validIndex();
+        InlineConsumer::ValidIndexResult res = ic.valid_index();
         if (res == InlineConsumer::End) {
             return {false, String{}};
         }
-        char c = ic.rawLine[ic.i];
+        char c = ic.raw_line[ic.i];
         if (c == ')') {
             ic.i++;
-            return {true, mout.moveToString()};
-        } else if (!isWhite(c)) {
+            return {true, mout.move_to_string()};
+        } else if (!is_white(c)) {
             return {false, String{}};
         }
         ic.i++;
     }
 }
 
-Array<Owned<Node>> convertToInlineElems(ArrayView<Delimiter> delimiters) {
+Array<Owned<Node>> convert_to_inline_elems(ArrayView<Delimiter> delimiters) {
     Array<Owned<Node>> elements;
     for (Delimiter& delimiter : delimiters) {
         if (delimiter.type == Delimiter::InlineElem) {
             elements.append(std::move(delimiter.element));
         } else {
-            if (!(elements.numItems() > 0 && elements.back()->type == Node::Text)) {
+            if (!(elements.num_items() > 0 && elements.back()->type == Node::Text)) {
                 elements.append(new Node{nullptr, Node::Text});
             }
             elements.back()->text += delimiter.text;
@@ -608,142 +624,148 @@ Array<Owned<Node>> convertToInlineElems(ArrayView<Delimiter> delimiters) {
     return elements;
 }
 
-Array<Owned<Node>> processEmphasis(Array<Delimiter>& delimiters, u32 bottomPos) {
-    u32 starOpener = bottomPos;
-    u32 underscoreOpener = bottomPos;
-    for (u32 pos = bottomPos; pos < delimiters.numItems(); pos++) {
-        auto handleCloser = [&](Delimiter::Type type, u32& openerPos) {
-            for (u32 j = pos; j > openerPos;) {
+Array<Owned<Node>> process_emphasis(Array<Delimiter>& delimiters, u32 bottom_pos) {
+    u32 star_opener = bottom_pos;
+    u32 underscore_opener = bottom_pos;
+    for (u32 pos = bottom_pos; pos < delimiters.num_items(); pos++) {
+        auto handle_closer = [&](Delimiter::Type type, u32& opener_pos) {
+            for (u32 j = pos; j > opener_pos;) {
                 --j;
-                if (delimiters[j].type == type && delimiters[j].leftFlanking) {
-                    u32 spanLength =
-                        min(delimiters[j].text.numBytes, delimiters[pos].text.numBytes);
-                    PLY_ASSERT(spanLength > 0);
-                    Owned<Node> elem =
-                        new Node{nullptr, spanLength >= 2 ? Node::Strong : Node::Emphasis};
-                    elem->addChildren(
-                        convertToInlineElems(delimiters.subView(j + 1, pos - j - 1)));
-                    u32 delimsToSubtract = min(spanLength, 2u);
-                    delimiters[j].text.numBytes -= delimsToSubtract;
-                    delimiters[pos].text.numBytes -= delimsToSubtract;
-                    // We're going to delete from j to pos inclusive, so leave remaining delimiters
-                    // if any
-                    if (!delimiters[j].text.isEmpty()) {
+                if (delimiters[j].type == type && delimiters[j].left_flanking) {
+                    u32 span_length = min(delimiters[j].text.num_bytes,
+                                          delimiters[pos].text.num_bytes);
+                    PLY_ASSERT(span_length > 0);
+                    Owned<Node> elem = new Node{
+                        nullptr, span_length >= 2 ? Node::Strong : Node::Emphasis};
+                    elem->add_children(convert_to_inline_elems(
+                        delimiters.sub_view(j + 1, pos - j - 1)));
+                    u32 delims_to_subtract = min(span_length, 2u);
+                    delimiters[j].text.num_bytes -= delims_to_subtract;
+                    delimiters[pos].text.num_bytes -= delims_to_subtract;
+                    // We're going to delete from j to pos inclusive, so leave remaining
+                    // delimiters if any
+                    if (!delimiters[j].text.is_empty()) {
                         j++;
                     }
-                    if (!delimiters[pos].text.isEmpty()) {
+                    if (!delimiters[pos].text.is_empty()) {
                         pos--;
                     }
                     delimiters.erase(j, pos + 1 - j);
                     delimiters.insert(j) = std::move(elem);
                     pos = j;
-                    starOpener = min(starOpener, pos + 1);
-                    underscoreOpener = min(starOpener, pos + 1);
+                    star_opener = min(star_opener, pos + 1);
+                    underscore_opener = min(star_opener, pos + 1);
                     return;
                 }
             }
             // None found
-            openerPos = pos + 1;
+            opener_pos = pos + 1;
         };
-        if (delimiters[pos].type == Delimiter::Stars && delimiters[pos].rightFlanking) {
-            handleCloser(Delimiter::Stars, starOpener);
+        if (delimiters[pos].type == Delimiter::Stars &&
+            delimiters[pos].right_flanking) {
+            handle_closer(Delimiter::Stars, star_opener);
         } else if (delimiters[pos].type == Delimiter::Underscores &&
-                   delimiters[pos].rightFlanking) {
-            handleCloser(Delimiter::Underscores, underscoreOpener);
+                   delimiters[pos].right_flanking) {
+            handle_closer(Delimiter::Underscores, underscore_opener);
         }
     }
-    Array<Owned<Node>> result = convertToInlineElems(delimiters.subView(bottomPos));
-    delimiters.resize(bottomPos);
+    Array<Owned<Node>> result =
+        convert_to_inline_elems(delimiters.sub_view(bottom_pos));
+    delimiters.resize(bottom_pos);
     return result;
 }
 
-Array<Owned<Node>> expandInlineElements(ArrayView<const String> rawLines) {
+Array<Owned<Node>> expand_inline_elements(ArrayView<const String> raw_lines) {
     Array<Delimiter> delimiters;
-    InlineConsumer ic{rawLines};
-    u32 flushedIndex = 0;
-    auto flushText = [&] {
-        if (ic.i > flushedIndex) {
+    InlineConsumer ic{raw_lines};
+    u32 flushed_index = 0;
+    auto flush_text = [&] {
+        if (ic.i > flushed_index) {
             delimiters.append(
-                {Delimiter::RawText, ic.rawLine.subStr(flushedIndex, ic.i - flushedIndex)});
-            flushedIndex = ic.i;
+                {Delimiter::RawText,
+                 ic.raw_line.sub_str(flushed_index, ic.i - flushed_index)});
+            flushed_index = ic.i;
         }
     };
     for (;;) {
-        if (ic.i >= ic.rawLine.numBytes) {
-            flushText();
+        if (ic.i >= ic.raw_line.num_bytes) {
+            flush_text();
             ic.i = 0;
-            flushedIndex = 0;
-            ic.lineIndex++;
-            if (ic.lineIndex >= ic.rawLines.numItems)
+            flushed_index = 0;
+            ic.line_index++;
+            if (ic.line_index >= ic.raw_lines.num_items)
                 break;
-            ic.rawLine = ic.rawLines[ic.lineIndex];
+            ic.raw_line = ic.raw_lines[ic.line_index];
             delimiters.append(Owned<Node>::create(nullptr, Node::SoftBreak));
         }
 
-        char c = ic.rawLine[ic.i];
+        char c = ic.raw_line[ic.i];
         if (c == '`') {
-            flushText();
-            u32 tickCount = 1;
-            for (ic.i++; ic.i < ic.rawLine.numBytes && ic.rawLine[ic.i] == '`'; ic.i++) {
-                tickCount++;
+            flush_text();
+            u32 tick_count = 1;
+            for (ic.i++; ic.i < ic.raw_line.num_bytes && ic.raw_line[ic.i] == '`';
+                 ic.i++) {
+                tick_count++;
             }
             // Try consuming code span
             InlineConsumer backup = ic;
-            String codeStr = getCodeSpan(ic, tickCount);
-            if (codeStr) {
-                Owned<Node> codeSpan = new Node{nullptr, Node::CodeSpan};
-                codeSpan->text = std::move(codeStr);
-                delimiters.append(std::move(codeSpan));
-                flushedIndex = ic.i;
+            String code_str = get_code_span(ic, tick_count);
+            if (code_str) {
+                Owned<Node> code_span = new Node{nullptr, Node::CodeSpan};
+                code_span->text = std::move(code_str);
+                delimiters.append(std::move(code_span));
+                flushed_index = ic.i;
             } else {
                 ic = backup;
-                flushText();
+                flush_text();
             }
         } else if (c == '*') {
-            flushText();
-            u32 runLength = 1;
-            for (ic.i++; ic.i < ic.rawLine.numBytes && ic.rawLine[ic.i] == '*'; ic.i++) {
-                runLength++;
+            flush_text();
+            u32 run_length = 1;
+            for (ic.i++; ic.i < ic.raw_line.num_bytes && ic.raw_line[ic.i] == '*';
+                 ic.i++) {
+                run_length++;
             }
-            delimiters.append(
-                Delimiter::makeRun(Delimiter::Stars, ic.rawLine, ic.i - runLength, runLength));
-            flushedIndex = ic.i;
+            delimiters.append(Delimiter::make_run(Delimiter::Stars, ic.raw_line,
+                                                  ic.i - run_length, run_length));
+            flushed_index = ic.i;
         } else if (c == '_') {
-            flushText();
-            u32 runLength = 1;
-            for (ic.i++; ic.i < ic.rawLine.numBytes && ic.rawLine[ic.i] == '_'; ic.i++) {
-                runLength++;
+            flush_text();
+            u32 run_length = 1;
+            for (ic.i++; ic.i < ic.raw_line.num_bytes && ic.raw_line[ic.i] == '_';
+                 ic.i++) {
+                run_length++;
             }
-            delimiters.append(Delimiter::makeRun(Delimiter::Underscores, ic.rawLine,
-                                                 ic.i - runLength, runLength));
-            flushedIndex = ic.i;
+            delimiters.append(Delimiter::make_run(Delimiter::Underscores, ic.raw_line,
+                                                  ic.i - run_length, run_length));
+            flushed_index = ic.i;
         } else if (c == '[') {
-            flushText();
-            delimiters.append({Delimiter::OpenLink, ic.rawLine.subStr(ic.i, 1)});
+            flush_text();
+            delimiters.append({Delimiter::OpenLink, ic.raw_line.sub_str(ic.i, 1)});
             ic.i++;
-            flushedIndex = ic.i;
+            flushed_index = ic.i;
         } else if (c == ']') {
             // Try to parse an inline link
-            flushText();
+            flush_text();
             ic.i++;
-            if (!(ic.i < ic.rawLine.numBytes && ic.rawLine[ic.i] == '('))
+            if (!(ic.i < ic.raw_line.num_bytes && ic.raw_line[ic.i] == '('))
                 continue; // No parenthesis
 
             // Got opening parenthesis
             ic.i++;
 
             // Look for preceding OpenLink delimiter
-            s32 openLink = rfind(delimiters, [](const Delimiter& delim) {
+            s32 open_link = rfind(delimiters, [](const Delimiter& delim) {
                 return delim.type == Delimiter::OpenLink;
             });
-            if (openLink < 0)
+            if (open_link < 0)
                 continue; // No preceding OpenLink delimiter
 
             // Found a preceding OpenLink delimiter
             // Try to parse link destination
             InlineConsumer backup = ic;
-            Tuple<bool, String> linkDest = parseLinkDestination(ic);
-            if (!linkDest.first) {
+            Tuple<bool, String> link_dest = parse_link_destination(ic);
+            if (!link_dest.first) {
                 // Couldn't parse link destination
                 ic = backup;
                 continue;
@@ -751,30 +773,30 @@ Array<Owned<Node>> expandInlineElements(ArrayView<const String> rawLines) {
 
             // Successfully parsed link destination
             Owned<Node> elem = new Node{nullptr, Node::Link};
-            elem->text = std::move(linkDest.second);
-            elem->addChildren(processEmphasis(delimiters, openLink + 1));
-            delimiters.resize(openLink);
+            elem->text = std::move(link_dest.second);
+            elem->add_children(process_emphasis(delimiters, open_link + 1));
+            delimiters.resize(open_link);
             delimiters.append(std::move(elem));
-            flushedIndex = ic.i;
+            flushed_index = ic.i;
         } else {
             ic.i++;
         }
     }
 
-    return processEmphasis(delimiters, 0);
+    return process_emphasis(delimiters, 0);
 }
 
-static PLY_NO_INLINE void doInlines(Node* node) {
-    if (node->isContainerBlock()) {
-        PLY_ASSERT(node->rawLines.isEmpty());
+static PLY_NO_INLINE void do_inlines(Node* node) {
+    if (node->is_container_block()) {
+        PLY_ASSERT(node->raw_lines.is_empty());
         for (Node* child : node->children) {
-            doInlines(child);
+            do_inlines(child);
         }
     } else {
-        PLY_ASSERT(node->isLeafBlock());
+        PLY_ASSERT(node->is_leaf_block());
         if (node->type != Node::CodeBlock) {
-            node->addChildren(expandInlineElements(node->rawLines));
-            node->rawLines.clear();
+            node->add_children(expand_inline_elements(node->raw_lines));
+            node->raw_lines.clear();
         }
     }
 }
@@ -787,7 +809,7 @@ Owned<Node> parse(StringView src) {
     Owned<Node> document = Parser{}.parse(src);
 
     // Second pass: Inline elements
-    doInlines(document);
+    do_inlines(document);
 
     return document;
 }

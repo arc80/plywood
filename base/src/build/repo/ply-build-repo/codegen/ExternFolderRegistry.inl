@@ -1,4 +1,3 @@
-PLY_STRUCT_BEGIN(ply::build::ExternFolder)
+﻿PLY_STRUCT_BEGIN(ply::build::ExternFolder)
 PLY_STRUCT_MEMBER(desc)
 PLY_STRUCT_END()
-

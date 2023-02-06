@@ -25,19 +25,19 @@ struct Fibonacci {
 
 void Sequence_testBeginWriteView(u32 num) {
     Sequence<u32> seq;
-    u32 lastFib = 0;
+    u32 last_fib = 0;
     {
         Fibonacci fib;
         while (num > 0) {
-            ArrayView<u32> view = seq.beginWriteViewNoConstruct();
-            u32 itemsToWrite = min(num, view.numItems);
-            for (u32 i = 0; i < itemsToWrite; i++) {
+            ArrayView<u32> view = seq.begin_write_view_no_construct();
+            u32 items_to_write = min(num, view.num_items);
+            for (u32 i = 0; i < items_to_write; i++) {
                 view[i] = fib.next();
             }
-            seq.endWrite(itemsToWrite);
-            num -= itemsToWrite;
+            seq.end_write(items_to_write);
+            num -= items_to_write;
         }
-        lastFib = fib.next();
+        last_fib = fib.next();
     }
 
     {
@@ -45,7 +45,7 @@ void Sequence_testBeginWriteView(u32 num) {
         for (u32 v : seq) {
             PLY_TEST_CHECK(v == fib.next());
         }
-        PLY_TEST_CHECK(lastFib == fib.next());
+        PLY_TEST_CHECK(last_fib == fib.next());
     }
 }
 
@@ -59,13 +59,13 @@ PLY_TEST_CASE("Sequence beginWriteView big loop") {
 
 void Sequence_testAppend(u32 num) {
     Sequence<u32> seq;
-    u32 lastFib = 0;
+    u32 last_fib = 0;
     {
         Fibonacci fib;
         for (u32 i = 0; i < num; i++) {
             seq.append(fib.next());
         }
-        lastFib = fib.next();
+        last_fib = fib.next();
     }
 
     {
@@ -73,7 +73,7 @@ void Sequence_testAppend(u32 num) {
         for (u32 v : seq) {
             PLY_TEST_CHECK(v == fib.next());
         }
-        PLY_TEST_CHECK(lastFib == fib.next());
+        PLY_TEST_CHECK(last_fib == fib.next());
     }
 }
 
@@ -87,22 +87,22 @@ PLY_TEST_CASE("Sequence append big loop") {
 
 void Sequence_testToArray(u32 num) {
     Sequence<u32> seq;
-    u32 lastFib = 0;
+    u32 last_fib = 0;
     {
         Fibonacci fib;
         for (u32 i = 0; i < num; i++) {
             seq.append(fib.next());
         }
-        lastFib = fib.next();
+        last_fib = fib.next();
     }
 
     {
-        Array<u32> arr = seq.moveToArray();
+        Array<u32> arr = seq.move_to_array();
         Fibonacci fib;
         for (u32 v : arr) {
             PLY_TEST_CHECK(v == fib.next());
         }
-        PLY_TEST_CHECK(lastFib == fib.next());
+        PLY_TEST_CHECK(last_fib == fib.next());
     }
 }
 
@@ -131,7 +131,7 @@ void Sequence_testDestructors(u32 num, bool move) {
                 seq.append(&counter);
             }
             if (move) {
-                arr = seq.moveToArray();
+                arr = seq.move_to_array();
             }
         }
         PLY_TEST_CHECK(counter == (move ? 0 : num));
@@ -155,7 +155,7 @@ PLY_TEST_CASE("Sequence move big destructors") {
     Sequence_testDestructors(10000, true);
 }
 
-void Sequence_testPopTail(u32 numItems, u32 numToPop) {
+void Sequence_testPopTail(u32 num_items, u32 num_to_pop) {
     struct Dtor {
         u32* counter = nullptr;
         ~Dtor() {
@@ -166,13 +166,13 @@ void Sequence_testPopTail(u32 numItems, u32 numToPop) {
     u32 counter = 0;
     {
         Sequence<Dtor> seq;
-        for (u32 i = 0; i < numItems; i++) {
+        for (u32 i = 0; i < num_items; i++) {
             seq.append(&counter);
         }
-        seq.popTail(numToPop);
-        PLY_TEST_CHECK(counter == numToPop);
+        seq.pop_tail(num_to_pop);
+        PLY_TEST_CHECK(counter == num_to_pop);
     }
-    PLY_TEST_CHECK(counter == numItems);
+    PLY_TEST_CHECK(counter == num_items);
 }
 
 PLY_TEST_CASE("Sequence small popTail") {

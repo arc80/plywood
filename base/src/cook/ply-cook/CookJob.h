@@ -15,8 +15,8 @@ namespace ply {
 // FIXME: Rename and move to runtime
 struct FileIOWrappers {
     static Tuple<Owned<InStream>, TextFormat>
-    createStringReaderAutodetect(Owned<InStream>&& ins);
-    static Tuple<String, TextFormat> loadTextAutodetect(Owned<InStream>&& ins);
+    create_string_reader_autodetect(Owned<InStream>&& ins);
+    static Tuple<String, TextFormat> load_text_autodetect(Owned<InStream>&& ins);
 };
 
 namespace cook {
@@ -28,9 +28,9 @@ struct CookResult;
 
 struct CookJobType {
     String name;
-    TypeDescriptor* resultType = nullptr;
-    TypeDescriptor* argType = nullptr;
-    void (*cook)(CookResult* result, AnyObject jobArg) = nullptr;
+    TypeDescriptor* result_type = nullptr;
+    TypeDescriptor* arg_type = nullptr;
+    void (*cook)(CookResult* result, AnyObject job_arg) = nullptr;
 };
 
 struct CookJobID {
@@ -45,7 +45,8 @@ struct CookJobID {
     PLY_INLINE bool operator==(const CookJobID& other) const {
         return (this->type == other.type && this->desc == other.desc);
     }
-    // operator< is used by DependencyTracker::allCookJobs to keep CookJobs grouped by type.
+    // operator< is used by DependencyTracker::all_cook_jobs to keep CookJobs grouped by
+    // type.
     PLY_INLINE bool operator<(const CookJobID& other) const {
         if (this->type.get() != other.type.get()) {
             return this->type.get() < other.type.get();
@@ -60,7 +61,7 @@ struct CookJobID {
 struct Dependency;
 
 struct DependencyType {
-    bool (*hasChanged)(Dependency* dep, CookResult* job, AnyObject jobArg) = nullptr;
+    bool (*has_changed)(Dependency* dep, CookResult* job, AnyObject job_arg) = nullptr;
 };
 
 struct Dependency {
@@ -74,13 +75,13 @@ struct Dependency_File;
 
 struct CookResult {
     struct FileDepScope {
-        double modificationTime = 0;
-        Dependency_File* depFile;
+        double modification_time = 0;
+        Dependency_File* dep_file;
 
-        PLY_INLINE bool isValid() const {
-            return this->modificationTime != 0;
+        PLY_INLINE bool is_valid() const {
+            return this->modification_time != 0;
         }
-        void onSuccessfulFileOpen();
+        void on_successful_file_open();
     };
 
     PLY_REFLECT()
@@ -92,13 +93,13 @@ struct CookResult {
 
     virtual ~CookResult() {
     }
-    virtual void unlinkFromDatabase() {
+    virtual void unlink_from_database() {
     }
 
-    Owned<InStream> openFileAsDependency(StringView path);
-    FileDepScope createFileDependency(StringView path);
-    void addReference(const CookJobID& jobID);
-    void addError(String&& error);
+    Owned<InStream> open_file_as_dependency(StringView path);
+    FileDepScope create_file_dependency(StringView path);
+    void add_reference(const CookJobID& job_id);
+    void add_error(String&& error);
 };
 
 struct CookJob : RefCounted<CookJob> {
@@ -108,12 +109,12 @@ struct CookJob : RefCounted<CookJob> {
     // ply reflect off
 
     ~CookJob();
-    PLY_INLINE void onRefCountZero() {
+    PLY_INLINE void on_ref_count_zero() {
         delete this;
     }
     template <typename T>
-    T* castResult() const {
-        if (!getTypeDescriptor<T>()->isEquivalentTo(this->id.type->resultType))
+    T* cast_result() const {
+        if (!get_type_descriptor<T>()->is_equivalent_to(this->id.type->result_type))
             return nullptr;
         return static_cast<T*>(this->result.get());
     }
@@ -124,28 +125,28 @@ struct DependencyTracker {
         using Index = const CookJobID*;
         using Item = CookJob*;
         static constexpr u32 NodeCapacity = 8;
-        static Index getIndex(const CookJob* job) {
+        static Index get_index(const CookJob* job) {
             return &job->id;
         }
         static bool less(Index a, Index b) {
             return *a < *b;
         }
-        static void onItemMoved(Item, void*) {
+        static void on_item_moved(Item, void*) {
         }
     };
 
     PLY_REFLECT()
-    Array<Reference<CookJob>> rootReferences;
+    Array<Reference<CookJob>> root_references;
     // ply reflect off
 
-    // FIXME: Serialize allCookJobs
-    BTree<AllCookJobsTraits> allCookJobs;
+    // FIXME: Serialize all_cook_jobs
+    BTree<AllCookJobsTraits> all_cook_jobs;
 
-    // FIXME: Serialize userData
-    AnyOwnedObject userData;
+    // FIXME: Serialize user_data
+    AnyOwnedObject user_data;
 
-    void setRootReferences(Array<Reference<CookJob>>&& rootRefs);
-    Reference<CookJob> getOrCreateCookJob(const CookJobID& id);
+    void set_root_references(Array<Reference<CookJob>>&& root_refs);
+    Reference<CookJob> get_or_create_cook_job(const CookJobID& id);
 
     static DependencyTracker* current_;
     static PLY_INLINE DependencyTracker* current() {
@@ -188,25 +189,25 @@ struct CookContext {
         return current_;
     }
 
-    DependencyTracker* depTracker = nullptr;
-    // Alternatively, checkedTypes and checkedJobs *could* just be implemented as a status code in
-    // every CookJob/CookJobType...
-    HashMap<CheckedTraits> checkedJobs;
-    HashMap<DeferredTraits> deferredJobs;
+    DependencyTracker* dep_tracker = nullptr;
+    // Alternatively, checked_types and checked_jobs *could* just be implemented as a
+    // status code in every CookJob/CookJobType...
+    HashMap<CheckedTraits> checked_jobs;
+    HashMap<DeferredTraits> deferred_jobs;
 
     ~CookContext();
-    void beginCook();
-    void endCook();
-    void ensureCooked(CookJob* job, AnyObject jobArg = {});
-    void cookDeferred();
-    CookResult* getAlreadyCookedResult(const CookJobID& id);
-    bool isCooked(CookJob* job);
+    void begin_cook();
+    void end_cook();
+    void ensure_cooked(CookJob* job, AnyObject job_arg = {});
+    void cook_deferred();
+    CookResult* get_already_cooked_result(const CookJobID& id);
+    bool is_cooked(CookJob* job);
 
-    PLY_INLINE Reference<CookJob> cook(const CookJobID& id, AnyObject jobArg = {}) {
+    PLY_INLINE Reference<CookJob> cook(const CookJobID& id, AnyObject job_arg = {}) {
         PLY_ASSERT(CookContext::current() == this);
-        Reference<CookJob> cookJob = this->depTracker->getOrCreateCookJob(id);
-        this->ensureCooked(cookJob, jobArg);
-        return cookJob;
+        Reference<CookJob> cook_job = this->dep_tracker->get_or_create_cook_job(id);
+        this->ensure_cooked(cook_job, job_arg);
+        return cook_job;
     }
 };
 

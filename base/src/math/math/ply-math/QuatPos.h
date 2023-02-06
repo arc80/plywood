@@ -28,15 +28,15 @@ struct ScalePos2 {
         return {{1, 1}, {0, 0}};
     }
 
-    static ScalePos2 makeScale(const Float2& scale) {
+    static ScalePos2 make_scale(const Float2& scale) {
         return {scale, 0};
     }
 
-    static ScalePos2 makeTranslation(const Float2& pos) {
+    static ScalePos2 make_translation(const Float2& pos) {
         return {{0, 0}, pos};
     }
 
-    static ScalePos2 mapToRect(const Rect& r) {
+    static ScalePos2 map_to_rect(const Rect& r) {
         return {r.size(), r.mins};
     }
 
@@ -49,11 +49,11 @@ struct ScalePos2 {
     }
 
     ScalePos2 inverted() const {
-        Float2 ooScale = 1.f / scale;
-        return {ooScale, -pos * ooScale};
+        Float2 oo_scale = 1.f / scale;
+        return {oo_scale, -pos * oo_scale};
     }
 
-    const Float4& asFloat4() const {
+    const Float4& as_float4() const {
         return reinterpret_cast<const Float4&>(*this);
     }
 };
@@ -70,9 +70,9 @@ inline Rect operator*(const ScalePos2& xform, const Rect& r) {
 /*!
 A transformation consisting of a rotation followed by a translation.
 
-A `QuatPos` behaves like a `Float4x4` or `Float3x4` that performs only rotation and translation.
-While `Float4x4` uses 64 bytes of storage and `Float3x4` uses 48 bytes, `QuatPos` uses only 28
-bytes.
+A `QuatPos` behaves like a `Float4x4` or `Float3x4` that performs only rotation and
+translation. While `Float4x4` uses 64 bytes of storage and `Float3x4` uses 48 bytes,
+`QuatPos` uses only 28 bytes.
 */
 struct QuatPos {
     /*!
@@ -97,7 +97,8 @@ struct QuatPos {
     /*!
     Constructs a `QuatPos` from a quaternion and a translation.
     */
-    PLY_INLINE QuatPos(const Quaternion& quat, const Float3& pos) : quat(quat), pos(pos) {
+    PLY_INLINE QuatPos(const Quaternion& quat, const Float3& pos)
+        : quat(quat), pos(pos) {
     }
     /*!
     \category Transformation Functions
@@ -112,28 +113,28 @@ struct QuatPos {
     /*!
     Returns a `QuatPos` that performs translation only.
     */
-    static QuatPos makeTranslation(const Float3& pos);
+    static QuatPos make_translation(const Float3& pos);
     /*!
-    Returns a `QuatPos` that performs rotation only. `unitAxis` must have unit length. The angle is
-    specified in radians. Rotation follows the [right-hand
-    rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations) in a right-handed coordinate
-    system.
+    Returns a `QuatPos` that performs rotation only. `unit_axis` must have unit length.
+    The angle is specified in radians. Rotation follows the [right-hand
+    rule](https://en.wikipedia.org/wiki/Right-hand_rule#Rotations) in a right-handed
+    coordinate system.
     */
-    static QuatPos makeRotation(const Float3& unitAxis, float radians);
+    static QuatPos make_rotation(const Float3& unit_axis, float radians);
     /*!
-    \beginGroup
-    Converts a transformation matrix to a `QuatPos`. The matrix must only consist of a rotation
-    and/or translation component.
+    \begin_group
+    Converts a transformation matrix to a `QuatPos`. The matrix must only consist of a
+    rotation and/or translation component.
     */
-    static QuatPos fromOrtho(const Float3x4& m);
-    static QuatPos fromOrtho(const Float4x4& m);
+    static QuatPos from_ortho(const Float3x4& m);
+    static QuatPos from_ortho(const Float4x4& m);
     /*!
-    \endGroup
+    \end_group
     */
 };
 
 /*!
-\addToClass QuatPos
+\add_to_class QuatPos
 \category Transformation Functions
 Transforms `v` using `qp`. Equivalent to `qp.quat * v + qp.pos`.
 */
@@ -141,9 +142,10 @@ PLY_INLINE Float3 operator*(const QuatPos& qp, const Float3& v) {
     return (qp.quat * v) + qp.pos;
 }
 /*!
-\beginGroup
-Composes a `QuatPos` with another `QuatPos` or a `Quaternion`. The resulting `QuatPos` performs
-the transformation performed by `b` followed by the transformation performed by `a`.
+\begin_group
+Composes a `QuatPos` with another `QuatPos` or a `Quaternion`. The resulting `QuatPos`
+performs the transformation performed by `b` followed by the transformation performed by
+`a`.
 */
 PLY_INLINE QuatPos operator*(const QuatPos& a, const QuatPos& b) {
     return {a.quat * b.quat, (a.quat * b.pos) + a.pos};
@@ -155,14 +157,14 @@ PLY_INLINE QuatPos operator*(const Quaternion& a, const QuatPos& b) {
     return {a * b.quat, a * b.pos};
 }
 /*!
-\endGroup
+\end_group
 */
 
-PLY_INLINE Float3x4 Float3x4::fromQuatPos(const QuatPos& qp) {
-    return fromQuaternion(qp.quat, qp.pos);
+PLY_INLINE Float3x4 Float3x4::from_quat_pos(const QuatPos& qp) {
+    return from_quaternion(qp.quat, qp.pos);
 }
-PLY_INLINE Float4x4 Float4x4::fromQuatPos(const QuatPos& qp) {
-    return fromQuaternion(qp.quat, qp.pos);
+PLY_INLINE Float4x4 Float4x4::from_quat_pos(const QuatPos& qp) {
+    return from_quaternion(qp.quat, qp.pos);
 }
 
 //----------------------------------------------------
@@ -189,11 +191,11 @@ struct QuatPosScale {
         return {Quaternion::identity(), {0, 0, 0}, {1, 1, 1}};
     }
 
-    static QuatPosScale makeTranslation(const Float3& pos) {
+    static QuatPosScale make_translation(const Float3& pos) {
         return {{0, 0, 0, 1}, pos, {1, 1, 1}};
     }
 
-    static QuatPosScale makeScale(const Float3& scale) {
+    static QuatPosScale make_scale(const Float3& scale) {
         return {{0, 0, 0, 1}, {0, 0, 0}, scale};
     }
 
@@ -205,19 +207,19 @@ struct QuatPosScale {
         return quat * (p * scale) + pos;
     }
 
-    Float4x4 toFloat4x4() const {
-        return Float4x4::fromQuaternion(quat, pos) * Float4x4::makeScale(scale);
+    Float4x4 to_float4x4() const {
+        return Float4x4::from_quaternion(quat, pos) * Float4x4::make_scale(scale);
     }
 
-    Float3x4 toFloat3x4() const {
-        return Float3x4::fromQuaternion(quat, pos) * Float3x4::makeScale(scale);
+    Float3x4 to_float3x4() const {
+        return Float3x4::from_quaternion(quat, pos) * Float3x4::make_scale(scale);
     }
 
-    QuatPos& asQuatPos() {
+    QuatPos& as_quat_pos() {
         return (QuatPos&) *this;
     }
 
-    const QuatPos& asQuatPos() const {
+    const QuatPos& as_quat_pos() const {
         return (const QuatPos&) *this;
     }
 };

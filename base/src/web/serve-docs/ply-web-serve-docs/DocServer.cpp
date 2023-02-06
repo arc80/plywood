@@ -12,164 +12,169 @@
 namespace ply {
 namespace web {
 
-void dumpContents(OutStream* outs, const Contents* node, ArrayView<const Contents*> expandTo) {
-    bool isExpanded = false;
-    bool isSelected = false;
-    if (expandTo && expandTo.back() == node) {
-        isExpanded = true;
-        expandTo = expandTo.shortenedBy(1);
-        isSelected = expandTo.isEmpty();
+void dump_contents(OutStream* outs, const Contents* node,
+                   ArrayView<const Contents*> expand_to) {
+    bool is_expanded = false;
+    bool is_selected = false;
+    if (expand_to && expand_to.back() == node) {
+        is_expanded = true;
+        expand_to = expand_to.shortened_by(1);
+        is_selected = expand_to.is_empty();
     } else {
-        expandTo = {};
+        expand_to = {};
     }
 
-    if (node->linkDestination) {
-        outs->format("<a href=\"{}\">", node->linkDestination);
+    if (node->link_destination) {
+        outs->format("<a href=\"{}\">", node->link_destination);
     }
     *outs << "<li";
-    bool anyClasses = false;
-    auto addClass = [&](StringView name) {
-        *outs << (anyClasses ? StringView{" "} : StringView{" class=\""}) << name;
-        anyClasses = true;
+    bool any_classes = false;
+    auto add_class = [&](StringView name) {
+        *outs << (any_classes ? StringView{" "} : StringView{" class=\""}) << name;
+        any_classes = true;
     };
-    addClass("selectable");
+    add_class("selectable");
     if (node->children) {
-        addClass("caret");
-        if (isExpanded) {
-            addClass("caret-down");
+        add_class("caret");
+        if (is_expanded) {
+            add_class("caret-down");
         }
     }
-    if (isSelected) {
-        addClass("selected");
+    if (is_selected) {
+        add_class("selected");
     }
-    *outs << (anyClasses ? StringView{"\">"} : StringView{">"});
+    *outs << (any_classes ? StringView{"\">"} : StringView{">"});
     *outs << "<span>" << fmt::XMLEscape{node->title} << "</span>";
     *outs << "</li>\n";
-    if (node->linkDestination) {
+    if (node->link_destination) {
         *outs << "</a>";
     }
     if (node->children) {
         outs->format("<ul class=\"nested{}\">\n",
-                     isExpanded ? StringView{" active"} : StringView{});
+                     is_expanded ? StringView{" active"} : StringView{});
         for (const Contents* child : node->children) {
-            dumpContents(outs, child, expandTo);
+            dump_contents(outs, child, expand_to);
         }
         *outs << "</ul>\n";
     }
 }
 
-void DocServer::init(StringView dataRoot) {
+void DocServer::init(StringView data_root) {
     FileSystem* fs = FileSystem::native();
 
-    this->dataRoot = dataRoot;
-    this->contentsPath = Path.join(dataRoot, "contents.pylon");
-    FileStatus contentsStatus = fs->getFileStatus(this->contentsPath);
-    if (contentsStatus.result == FSResult::OK) {
-        this->reloadContents();
-        this->contentsModTime = contentsStatus.modificationTime;
+    this->data_root = data_root;
+    this->contents_path = Path.join(data_root, "contents.pylon");
+    FileStatus contents_status = fs->get_file_status(this->contents_path);
+    if (contents_status.result == FSResult::OK) {
+        this->reload_contents();
+        this->contents_mod_time = contents_status.modification_time;
     }
 }
 
-void populateContentsMap(HashMap<DocServer::ContentsTraits>& pathToContents, Contents* node) {
-    if (node->linkDestination) {
-        pathToContents.insertOrFind(node->linkDestination)->node = node;
+void populate_contents_map(HashMap<DocServer::ContentsTraits>& path_to_contents,
+                           Contents* node) {
+    if (node->link_destination) {
+        path_to_contents.insert_or_find(node->link_destination)->node = node;
     }
     for (Contents* child : node->children) {
         child->parent = node;
-        populateContentsMap(pathToContents, child);
+        populate_contents_map(path_to_contents, child);
     }
 }
 
-void DocServer::reloadContents() {
+void DocServer::reload_contents() {
     FileSystem* fs = FileSystem::native();
 
-    String contentsPylon = fs->loadText(this->contentsPath, TextFormat::unixUTF8());
-    if (fs->lastResult() != FSResult::OK) {
+    String contents_pylon = fs->load_text(this->contents_path, TextFormat::unix_utf8());
+    if (fs->last_result() != FSResult::OK) {
         // FIXME: Log an error here
         return;
     }
 
-    Owned<pylon::Node> aRoot = pylon::Parser{}.parse(contentsPylon).root;
-    if (!aRoot->isValid()) {
+    Owned<pylon::Node> a_root = pylon::Parser{}.parse(contents_pylon).root;
+    if (!a_root->is_valid()) {
         // FIXME: Log an error here
         return;
     }
 
-    pylon::importInto(AnyObject::bind(&this->contents), aRoot);
+    pylon::import_into(AnyObject::bind(&this->contents), a_root);
 
-    this->pathToContents = HashMap<ContentsTraits>{};
+    this->path_to_contents = HashMap<ContentsTraits>{};
     for (Contents* node : this->contents) {
-        populateContentsMap(this->pathToContents, node);
+        populate_contents_map(this->path_to_contents, node);
     }
 }
 
-String getPageSource(DocServer* ds, StringView requestPath, ResponseIface* responseIface) {
+String get_page_source(DocServer* ds, StringView request_path,
+                       ResponseIface* response_iface) {
     FileSystem* fs = FileSystem::native();
-    if (Path.isAbsolute(requestPath)) {
-        responseIface->respondGeneric(ResponseCode::NotFound);
+    if (Path.is_absolute(request_path)) {
+        response_iface->respond_generic(ResponseCode::NotFound);
         return {};
     }
-    String absPath = Path.join(ds->dataRoot, "pages", requestPath);
-    ExistsResult exists = FileSystem.exists(absPath);
+    String abs_path = Path.join(ds->data_root, "pages", request_path);
+    ExistsResult exists = FileSystem.exists(abs_path);
     if (exists == ExistsResult::Directory) {
-        absPath = Path.join(absPath, "index.html");
+        abs_path = Path.join(abs_path, "index.html");
     } else {
-        absPath += ".html";
+        abs_path += ".html";
     }
-    String pageHtml =
-        fs->loadText(Path.join(ds->dataRoot, "pages", absPath), TextFormat::unixUTF8());
-    if (!pageHtml) {
-        responseIface->respondGeneric(ResponseCode::NotFound);
+    String page_html = fs->load_text(Path.join(ds->data_root, "pages", abs_path),
+                                     TextFormat::unix_utf8());
+    if (!page_html) {
+        response_iface->respond_generic(ResponseCode::NotFound);
         return {};
     }
-    return pageHtml;
+    return page_html;
 }
 
-void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
+void DocServer::serve(StringView request_path, ResponseIface* response_iface) {
     FileSystem* fs = FileSystem::native();
 
     // Check if contents.pylon has been updated:
-    FileStatus contentsStatus = fs->getFileStatus(this->contentsPath);
-    if (contentsStatus.result == FSResult::OK) {
-        if (contentsStatus.modificationTime != this->contentsModTime.load(MemoryOrder::Acquire)) {
-            ply::LockGuard<ply::Mutex> guard{this->contentsMutex};
-            if (contentsStatus.modificationTime !=
-                this->contentsModTime.load(MemoryOrder::Relaxed)) {
-                this->reloadContents();
+    FileStatus contents_status = fs->get_file_status(this->contents_path);
+    if (contents_status.result == FSResult::OK) {
+        if (contents_status.modification_time !=
+            this->contents_mod_time.load(MemoryOrder::Acquire)) {
+            ply::LockGuard<ply::Mutex> guard{this->contents_mutex};
+            if (contents_status.modification_time !=
+                this->contents_mod_time.load(MemoryOrder::Relaxed)) {
+                this->reload_contents();
             }
-            this->contentsModTime = contentsStatus.modificationTime;
+            this->contents_mod_time = contents_status.modification_time;
         }
     }
 
     if (!this->contents) {
-        responseIface->respondGeneric(ResponseCode::InternalError);
+        response_iface->respond_generic(ResponseCode::InternalError);
         return;
     }
 
     // Load page
-    String pageHtml = getPageSource(this, requestPath, responseIface);
-    if (!pageHtml)
+    String page_html = get_page_source(this, request_path, response_iface);
+    if (!page_html)
         return;
-    ViewInStream vins{pageHtml};
-    String pageTitle = vins.readView<fmt::Line>().trim(isWhite);
+    ViewInStream vins{page_html};
+    String page_title = vins.read_view<fmt::Line>().trim(is_white);
 
     // Figure out which TOC entries to expand
-    Array<const Contents*> expandTo;
+    Array<const Contents*> expand_to;
     {
-        auto cursor = this->pathToContents.find(
-            requestPath ? (StringView{"/docs/"} + requestPath).view() : StringView{"/"});
-        if (cursor.wasFound()) {
+        auto cursor = this->path_to_contents.find(
+            request_path ? (StringView{"/docs/"} + request_path).view()
+                         : StringView{"/"});
+        if (cursor.was_found()) {
             const Contents* node = cursor->node;
             while (node) {
-                expandTo.append(node);
+                expand_to.append(node);
                 node = node->parent;
             }
         }
     }
 
-    OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
+    OutStream* outs = response_iface->begin_response_header(ResponseCode::OK);
     *outs << "Content-Type: text/html; charset=utf-8\r\n\r\n";
-    responseIface->endResponseHeader();
+    response_iface->end_response_header();
     outs->format(R"#(<!DOCTYPE html>
 <html>
 <head>
@@ -177,8 +182,9 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 )#",
-                 pageTitle);
-    *outs << R"#(<link href="/static/stylesheet.css?1" rel="stylesheet" type="text/css" />
+                 page_title);
+    *outs
+        << R"#(<link href="/static/stylesheet.css?1" rel="stylesheet" type="text/css" />
 <link rel="icon" href="/static/favicon@32x32.png" sizes="32x32" />
 <script src="/static/docs.js"></script>
 </head>
@@ -203,7 +209,7 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
         <ul>
 )#";
     for (const Contents* node : this->contents) {
-        dumpContents(outs, node, expandTo);
+        dump_contents(outs, node, expand_to);
     }
     outs->format(R"(
         </ul>
@@ -213,8 +219,8 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
   <article class="content" id="article">
 <h1>{}</h1>
 )",
-                 pageTitle);
-    *outs << vins.viewAvailable();
+                 page_title);
+    *outs << vins.view_available();
     *outs << R"(
   </article>
 </body>
@@ -222,17 +228,18 @@ void DocServer::serve(StringView requestPath, ResponseIface* responseIface) {
 )";
 }
 
-void DocServer::serveContentOnly(StringView requestPath, ResponseIface* responseIface) {
-    String pageHtml = getPageSource(this, requestPath, responseIface);
-    if (!pageHtml)
+void DocServer::serve_content_only(StringView request_path,
+                                   ResponseIface* response_iface) {
+    String page_html = get_page_source(this, request_path, response_iface);
+    if (!page_html)
         return;
-    OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
-    ViewInStream vins{pageHtml};
-    String pageTitle = vins.readView<fmt::Line>().trim(isWhite);
+    OutStream* outs = response_iface->begin_response_header(ResponseCode::OK);
+    ViewInStream vins{page_html};
+    String page_title = vins.read_view<fmt::Line>().trim(is_white);
     *outs << "Content-Type: text/html\r\n\r\n";
-    responseIface->endResponseHeader();
-    outs->format("{}\n<h1>{}</h1>\n", pageTitle, pageTitle);
-    *outs << vins.viewAvailable();
+    response_iface->end_response_header();
+    outs->format("{}\n<h1>{}</h1>\n", page_title, page_title);
+    *outs << vins.view_available();
 }
 
 } // namespace web

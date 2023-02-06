@@ -1,4 +1,4 @@
-enum class ID : u16 {
+﻿enum class ID : u16 {
     None,
     Assignment,
     FunctionBody,
@@ -8,14 +8,16 @@ enum class ID : u16 {
 union Storage_ {
     None none;
     Assignment assignment;
-    FunctionBody functionBody;
-    BitField bitField;
-    PLY_INLINE Storage_() {}
-    PLY_INLINE ~Storage_() {}
+    FunctionBody function_body;
+    BitField bit_field;
+    PLY_INLINE Storage_() {
+    }
+    PLY_INLINE ~Storage_() {
+    }
 };
 SWITCH_FOOTER(Initializer, None)
 SWITCH_ACCESSOR(None, none)
 SWITCH_ACCESSOR(Assignment, assignment)
-SWITCH_ACCESSOR(FunctionBody, functionBody)
-SWITCH_ACCESSOR(BitField, bitField)
+SWITCH_ACCESSOR(FunctionBody, function_body)
+SWITCH_ACCESSOR(BitField, bit_field)
 PLY_SWITCH_REFLECT()

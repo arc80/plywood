@@ -78,7 +78,7 @@ struct Tokenizer {
     bool is_multiline_string = false;
     String string_value;
 
-    Tokenizer(InStream &&in) : in{std::move(in)} {
+    Tokenizer(InStream&& in) : in{std::move(in)} {
     }
     TokenKind read_token();
 };

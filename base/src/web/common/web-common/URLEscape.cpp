@@ -9,15 +9,16 @@
 
 namespace ply {
 
-PLY_NO_INLINE void fmt::TypePrinter<web::URLEscape>::print(OutStream* outs,
-                                                           const web::URLEscape& value) {
-    for (u32 i = 0; i < value.view.numBytes; i++) {
+PLY_NO_INLINE void
+fmt::TypePrinter<web::URLEscape>::print(OutStream* outs, const web::URLEscape& value) {
+    for (u32 i = 0; i < value.view.num_bytes; i++) {
         u8 c = value.view[i];
-        if (isAsciiLetter(c) || isDecimalDigit(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+        if (is_ascii_letter(c) || is_decimal_digit(c) || c == '-' || c == '_' ||
+            c == '.' || c == '~') {
             *outs << (char) c;
         } else {
             // FIXME: Improve format strings to make this simpler
-            *outs << '%' << String::format("0{}", fmt::Hex{c}).upperAsc().right(2);
+            *outs << '%' << String::format("0{}", fmt::Hex{c}).upper_asc().right(2);
         }
     }
 }

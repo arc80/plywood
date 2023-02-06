@@ -39,17 +39,19 @@ inline u32 reverse(u32 v) {
     return (v << 24) | ((v << 8) & 0xff0000) | ((v >> 8) & 0xff00) | (v >> 24);
 }
 template <typename T>
-inline bool bitwiseEqual(const T& a, const T& b) {
+inline bool bitwise_equal(const T& a, const T& b) {
     return memcmp(&a, &b, sizeof(T)) == 0;
 }
-inline float fastRound(float x) {
+inline float fast_round(float x) {
 #if PLY_CPU_ARM64
     return roundf(x);
 #elif PLY_CPU_X86 || PLY_CPU_X64
     // Intrinsic version
-    __m128 signBit = _mm_and_ps(_mm_set_ss(x), _mm_castsi128_ps(_mm_cvtsi32_si128(0x80000000u)));
-    __m128 added = _mm_add_ss(_mm_set_ss(x),
-                              _mm_or_ps(signBit, _mm_castsi128_ps(_mm_cvtsi32_si128(0x3f000000u))));
+    __m128 sign_bit =
+        _mm_and_ps(_mm_set_ss(x), _mm_castsi128_ps(_mm_cvtsi32_si128(0x80000000u)));
+    __m128 added = _mm_add_ss(
+        _mm_set_ss(x),
+        _mm_or_ps(sign_bit, _mm_castsi128_ps(_mm_cvtsi32_si128(0x3f000000u))));
     return (float) _mm_cvtt_ss2si(added);
 #else
     // Non-intrinsic version
@@ -57,52 +59,54 @@ inline float fastRound(float x) {
     float frac = 0.5f;
     u32 s = (*(u32*) &x) & 0x80000000u;
     u32 c = (*(u32*) &frac) | s;
-    return (float) (s32)(x + *(float*) &c);
+    return (float) (s32) (x + *(float*) &c);
 #endif
 }
-inline s32 exactInt(float value) {
+inline s32 exact_int(float value) {
     s32 result = (s32) value;
     PLY_ASSERT(float(result) == value);
     return result;
 }
-inline s32 fastRoundInt(float x) {
+inline s32 fast_round_int(float x) {
 #if PLY_CPU_ARM64
     return (s32) roundf(x);
 #elif PLY_CPU_X86 || PLY_CPU_X64
     // Intrinsic version
-    __m128 signBit = _mm_and_ps(_mm_set_ss(x), _mm_castsi128_ps(_mm_cvtsi32_si128(0x80000000u)));
-    __m128 added = _mm_add_ss(_mm_set_ss(x),
-                              _mm_or_ps(signBit, _mm_castsi128_ps(_mm_cvtsi32_si128(0x3f000000u))));
+    __m128 sign_bit =
+        _mm_and_ps(_mm_set_ss(x), _mm_castsi128_ps(_mm_cvtsi32_si128(0x80000000u)));
+    __m128 added = _mm_add_ss(
+        _mm_set_ss(x),
+        _mm_or_ps(sign_bit, _mm_castsi128_ps(_mm_cvtsi32_si128(0x3f000000u))));
     return _mm_cvtt_ss2si(added);
 #else
     // Non-intrinsic version
     float frac = 0.5f;
     u32 s = (*(u32*) &x) & 0x80000000u;
     u32 c = (*(u32*) &frac) | s;
-    return (s32)(x + *(float*) &c);
+    return (s32) (x + *(float*) &c);
 #endif
 }
-inline float roundNearest(float value, float spacing = 1) {
-    return fastRound(value / spacing) * spacing;
+inline float round_nearest(float value, float spacing = 1) {
+    return fast_round(value / spacing) * spacing;
 }
 
-PLY_INLINE float roundDown(float value, float spacing = 1) {
+PLY_INLINE float round_down(float value, float spacing = 1) {
     // FIXME: Optimize this
     return floorf(value / spacing) * spacing;
 }
 
-PLY_INLINE float roundUp(float value, float spacing = 1) {
+PLY_INLINE float round_up(float value, float spacing = 1) {
     // FIXME: Optimize this
     return ceilf(value / spacing) * spacing;
 }
 
-inline float wrap(float value, float positiveRange) {
-    PLY_ASSERT(positiveRange > 0);
-    float t = floorf(value / positiveRange);
-    return value - t * positiveRange;
+inline float wrap(float value, float positive_range) {
+    PLY_ASSERT(positive_range > 0);
+    float t = floorf(value / positive_range);
+    return value - t * positive_range;
 }
 
-inline float wrapOne(float value) {
+inline float wrap_one(float value) {
     return value - floorf(value);
 }
 

@@ -12,32 +12,35 @@ namespace ply {
 
 // This class exists to support ply::TypedArray and gpu::ArrayBuffer.
 // In general, it can manage the lifetime of any TypeDescriptor, including all its child
-// TypeDescriptors. The entire set of TypeDescriptors will be destroyed as a group. Future
-// idea: Allocate this group of TypeDescriptors in a single contiguous memory block?
+// TypeDescriptors. The entire set of TypeDescriptors will be destroyed as a group.
+// Future idea: Allocate this group of TypeDescriptors in a single contiguous memory
+// block?
 class TypeDescriptorOwner : public DualRefCounted<TypeDescriptorOwner> {
 protected:
     friend class DualRefCounted<TypeDescriptorOwner>;
     Array<Owned<TypeDescriptor>> m_synthesizedTypes;
-    TypeDescriptor* m_rootType = nullptr; // This might not actually be one of the
-                                          // m_synthesizedTypes; eg. index buffers just contain u16
+    TypeDescriptor* m_rootType =
+        nullptr; // This might not actually be one of the
+                 // m_synthesizedTypes; eg. index buffers just contain u16
 
-    void onPartialRefCountZero() { // Called from DualRefCounted mixin
+    void on_partial_ref_count_zero() { // Called from DualRefCounted mixin
         m_synthesizedTypes.clear();
         m_rootType = nullptr;
     }
-    void onFullRefCountZero() {  // Called from DualRefCounted mixin
-        PLY_ASSERT(!m_rootType); // Because onPartialRefCountZero() must have been called
+    void on_full_ref_count_zero() { // Called from DualRefCounted mixin
+        PLY_ASSERT(
+            !m_rootType); // Because on_partial_ref_count_zero() must have been called
         delete this;
     }
 
 public:
-    void adoptType(TypeDescriptor* type) {
+    void adopt_type(TypeDescriptor* type) {
         m_synthesizedTypes.append(type);
     }
-    void setRootType(TypeDescriptor* rootType) {
-        m_rootType = rootType;
+    void set_root_type(TypeDescriptor* root_type) {
+        m_rootType = root_type;
     }
-    TypeDescriptor* getRootType() const {
+    TypeDescriptor* get_root_type() const {
         return m_rootType;
     }
 };
@@ -51,10 +54,10 @@ template <typename T>
 struct TypeOwnerResolver {
     static TypeDescriptorOwner* get() {
         static TypeDescriptorOwner owner;
-        if (owner.getRefCount() == 0) {
-            owner.incRef(); // Never deleted
-            PLY_ASSERT(!owner.getRootType());
-            owner.setRootType(getTypeDescriptor<T>());
+        if (owner.get_ref_count() == 0) {
+            owner.inc_ref(); // Never deleted
+            PLY_ASSERT(!owner.get_root_type());
+            owner.set_root_type(get_type_descriptor<T>());
         }
         return &owner;
     }
@@ -62,16 +65,17 @@ struct TypeOwnerResolver {
 
 struct TypeOwnerPtr {
     void* data = nullptr;
-    TypeDescriptorOwner* typeOwner = nullptr;
+    TypeDescriptorOwner* type_owner = nullptr;
 
     TypeOwnerPtr() = default;
-    TypeOwnerPtr(void* data, TypeDescriptorOwner* typeOwner) : data{data}, typeOwner{typeOwner} {
+    TypeOwnerPtr(void* data, TypeDescriptorOwner* type_owner)
+        : data{data}, type_owner{type_owner} {
     }
 
     template <typename T>
     static TypeOwnerPtr bind(T* data) {
-        // FIXME: Find a better way to handle cases where this function is passed a pointer to
-        // const.
+        // FIXME: Find a better way to handle cases where this function is passed a
+        // pointer to const.
         return {(void*) data, TypeOwnerResolver<T>::get()};
     }
 };

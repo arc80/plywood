@@ -10,6 +10,6 @@
 
 namespace ply {
 
-String getBundlePath();
+String get_bundle_path();
 
 } // namespace ply

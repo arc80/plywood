@@ -46,7 +46,7 @@ public:
     PLY_INLINE u8 next8() {
         return (u8) next64();
     }
-    PLY_INLINE float nextFloat() {
+    PLY_INLINE float next_float() {
         return next32() / 4294967295.f;
     }
 };
@@ -103,12 +103,12 @@ struct CPUTimer {
     struct Converter {
         PLY_INLINE Converter() {
         }
-        static PLY_INLINE float toSeconds(Duration duration) {
+        static PLY_INLINE float to_seconds(Duration duration) {
             return std::chrono::duration_cast<std::chrono::duration<float>>(
                        duration.ticks)
                 .count();
         }
-        Duration toDuration(float seconds) const {
+        Duration to_duration(float seconds) const {
             return {std::chrono::duration_cast<Duration::Ticks>(
                 std::chrono::duration<float>{seconds})};
         }
@@ -129,16 +129,16 @@ struct DateTime {
     u8 hour = 0;
     u8 minute = 0;
     u8 second = 0;
-    s8 timeZoneHour = 0;
-    u8 timeZoneMinute = 0;
+    s8 time_zone_hour = 0;
+    u8 time_zone_minute = 0;
     u32 microseconds = 0;
 
     // Number of microseconds since January 1, 1970 at 00:00:00 UTC.
-    static PLY_DLL_ENTRY s64 getCurrentEpochMicroseconds();
+    static PLY_DLL_ENTRY s64 get_current_epoch_microseconds();
 
     // Conversion
-    static PLY_DLL_ENTRY DateTime fromEpochMicroseconds(s64 us);
-    PLY_DLL_ENTRY s64 toEpochMicroseconds() const;
+    static PLY_DLL_ENTRY DateTime from_epoch_microseconds(s64 us);
+    PLY_DLL_ENTRY s64 to_epoch_microseconds() const;
 };
 
 //  ▄▄▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄
@@ -154,7 +154,7 @@ struct DateTime {
 using TID = u32;
 using PID = u32;
 
-static TID getCurrentThreadID() {
+static TID get_current_thread_id() {
 #if PLY_CPU_X64
     return ((DWORD*) __readgsqword(48))[18]; // Read directly from the TIB
 #elif PLY_CPU_X86
@@ -164,7 +164,7 @@ static TID getCurrentThreadID() {
 #endif
 }
 
-static PID getCurrentProcessID() {
+static PID get_current_process_id() {
 #if PLY_CPU_X64
     return ((DWORD*) __readgsqword(48))[16]; // Read directly from the TIB
 #elif PLY_CPU_X86
@@ -183,11 +183,11 @@ public:
     using TID = SizedInt<sizeof(thread_port_t)>::Unsigned;
     using PID = SizedInt<sizeof(pid_t)>::Unsigned;
 
-    static TID getCurrentThreadID() {
+    static TID get_current_thread_id() {
         return pthread_mach_thread_np(pthread_self());
     }
 
-    static PID getCurrentProcessID() {
+    static PID get_current_process_id() {
         return getpid();
     }
 };
@@ -208,7 +208,7 @@ public:
 #endif
     using PID = SizedInt<sizeof(pid_t)>::Unsigned;
 
-    static TID getCurrentThreadID() {
+    static TID get_current_thread_id() {
         // FIXME: On Linux, would the kernel task ID be more useful for debugging?
         // If so, detect NPTL at compile time and create TID_NPTL.h which uses gettid()
         // instead.
@@ -221,7 +221,7 @@ public:
 #endif
     }
 
-    static PID getCurrentProcessID() {
+    static PID get_current_process_id() {
         return getpid();
     }
 };
@@ -251,24 +251,24 @@ private:
 public:
     PLY_DLL_ENTRY Affinity();
 
-    bool isAccurate() const {
+    bool is_accurate() const {
         return m_isAccurate;
     }
 
-    u32 getNumPhysicalCores() const {
+    u32 get_num_physical_cores() const {
         return static_cast<u32>(m_numPhysicalCores);
     }
 
-    u32 getNumHWThreads() const {
+    u32 get_num_hwthreads() const {
         return static_cast<u32>(m_numHWThreads);
     }
 
-    u32 getNumHWThreadsForCore(ureg core) const {
+    u32 get_num_hwthreads_for_core(ureg core) const {
         PLY_ASSERT(core < m_numPhysicalCores);
-        return static_cast<u32>(countSetBits(m_physicalCoreMasks[core]));
+        return static_cast<u32>(count_set_bits(m_physicalCoreMasks[core]));
     }
 
-    PLY_DLL_ENTRY bool setAffinity(ureg core, ureg hwThread);
+    PLY_DLL_ENTRY bool set_affinity(ureg core, ureg hw_thread);
 };
 
 #elif PLY_KERNEL_LINUX
@@ -278,7 +278,7 @@ public:
 class Affinity_Linux {
 private:
     struct CoreInfo {
-        std::vector<u32> hwThreadIndexToLogicalProcessor;
+        std::vector<u32> hw_thread_index_to_logical_processor;
     };
     bool m_isAccurate;
     std::vector<CoreInfo> m_coreIndexToInfo;
@@ -297,60 +297,60 @@ private:
             }
         };
 
-        s32 logicalProcessor;
-        CoreID coreID;
-        std::map<CoreID, u32> coreIDToIndex;
+        s32 logical_processor;
+        CoreID core_id;
+        std::map<CoreID, u32> core_idto_index;
 
-        CoreInfoCollector() : logicalProcessor(-1) {
+        CoreInfoCollector() : logical_processor(-1) {
         }
 
         void flush(Affinity_Linux& affinity) {
-            if (logicalProcessor >= 0) {
-                if (coreID.physical < 0 && coreID.core < 0) {
+            if (logical_processor >= 0) {
+                if (core_id.physical < 0 && core_id.core < 0) {
                     // On PowerPC Linux 3.2.0-4, /proc/cpuinfo outputs "processor", but
                     // not "physical id" or "core id". Emulate a single physical CPU
                     // with N cores:
-                    coreID.physical = 0;
-                    coreID.core = logicalProcessor;
+                    core_id.physical = 0;
+                    core_id.core = logical_processor;
                 }
-                std::map<CoreID, u32>::iterator iter = coreIDToIndex.find(coreID);
-                u32 coreIndex;
-                if (iter == coreIDToIndex.end()) {
-                    coreIndex = (u32) affinity.m_coreIndexToInfo.size();
-                    affinity.m_coreIndexToInfo.resize(coreIndex + 1);
-                    coreIDToIndex[coreID] = coreIndex;
+                std::map<CoreID, u32>::iterator iter = core_idto_index.find(core_id);
+                u32 core_index;
+                if (iter == core_idto_index.end()) {
+                    core_index = (u32) affinity.m_coreIndexToInfo.size();
+                    affinity.m_coreIndexToInfo.resize(core_index + 1);
+                    core_idto_index[core_id] = core_index;
                 } else {
-                    coreIndex = iter->second;
+                    core_index = iter->second;
                 }
-                affinity.m_coreIndexToInfo[coreIndex]
-                    .hwThreadIndexToLogicalProcessor.push_back(logicalProcessor);
+                affinity.m_coreIndexToInfo[core_index]
+                    .hw_thread_index_to_logical_processor.push_back(logical_processor);
                 affinity.m_numHWThreads++;
             }
-            logicalProcessor = -1;
-            coreID = CoreID();
+            logical_processor = -1;
+            core_id = CoreID();
         }
     };
 
 public:
     Affinity_Linux();
 
-    bool isAccurate() const {
+    bool is_accurate() const {
         return m_isAccurate;
     }
 
-    u32 getNumPhysicalCores() const {
+    u32 get_num_physical_cores() const {
         return m_coreIndexToInfo.size();
     }
 
-    u32 getNumHWThreads() const {
+    u32 get_num_hwthreads() const {
         return m_numHWThreads;
     }
 
-    u32 getNumHWThreadsForCore(ureg core) const {
-        return m_coreIndexToInfo[core].hwThreadIndexToLogicalProcessor.size();
+    u32 get_num_hwthreads_for_core(ureg core) const {
+        return m_coreIndexToInfo[core].hw_thread_index_to_logical_processor.size();
     }
 
-    bool setAffinity(ureg core, ureg hwThread);
+    bool set_affinity(ureg core, ureg hw_thread);
 };
 
 #elif PLY_KERNEL_FREEBSD
@@ -360,7 +360,7 @@ public:
 class Affinity {
 private:
     struct CoreInfo {
-        std::vector<u32> hwThreadIndexToLogicalProcessor;
+        std::vector<u32> hw_thread_index_to_logical_processor;
     };
     bool m_isAccurate;
     std::vector<CoreInfo> m_coreIndexToInfo;
@@ -369,23 +369,23 @@ private:
 public:
     Affinity();
 
-    bool isAccurate() const {
+    bool is_accurate() const {
         return m_isAccurate;
     }
 
-    u32 getNumPhysicalCores() const {
+    u32 get_num_physical_cores() const {
         return m_coreIndexToInfo.size();
     }
 
-    u32 getNumHWThreads() const {
+    u32 get_num_hwthreads() const {
         return m_numHWThreads;
     }
 
-    u32 getNumHWThreadsForCore(ureg core) const {
-        return m_coreIndexToInfo[core].hwThreadIndexToLogicalProcessor.size();
+    u32 get_num_hwthreads_for_core(ureg core) const {
+        return m_coreIndexToInfo[core].hw_thread_index_to_logical_processor.size();
     }
 
-    bool setAffinity(ureg core, ureg hwThread);
+    bool set_affinity(ureg core, ureg hw_thread);
 };
 
 #elif PLY_KERNEL_MACH
@@ -405,13 +405,13 @@ public:
           m_hwThreadsPerCore(1) {
         int count;
         // Get # of HW threads
-        size_t countLen = sizeof(count);
-        if (sysctlbyname("hw.logicalcpu", &count, &countLen, NULL, 0) == 0) {
+        size_t count_len = sizeof(count);
+        if (sysctlbyname("hw.logicalcpu", &count, &count_len, NULL, 0) == 0) {
             if (count > 0) {
                 m_numHWThreads = (u32) count;
                 // Get # of physical cores
-                size_t countLen = sizeof(count);
-                if (sysctlbyname("hw.physicalcpu", &count, &countLen, NULL, 0) == 0) {
+                size_t count_len = sizeof(count);
+                if (sysctlbyname("hw.physicalcpu", &count, &count_len, NULL, 0) == 0) {
                     if (count > 0) {
                         m_numPhysicalCores = count;
                         m_hwThreadsPerCore = u32(m_numHWThreads / count);
@@ -425,33 +425,33 @@ public:
         }
     }
 
-    bool isAccurate() const {
+    bool is_accurate() const {
         return m_isAccurate;
     }
 
-    u32 getNumPhysicalCores() const {
+    u32 get_num_physical_cores() const {
         return m_numPhysicalCores;
     }
 
-    u32 getNumHWThreads() const {
+    u32 get_num_hwthreads() const {
         return m_numHWThreads;
     }
 
-    u32 getNumHWThreadsForCore(ureg core) const {
+    u32 get_num_hwthreads_for_core(ureg core) const {
         PLY_ASSERT(core < m_numPhysicalCores);
         return m_hwThreadsPerCore;
     }
 
-    bool setAffinity(ureg core, ureg hwThread) {
+    bool set_affinity(ureg core, ureg hw_thread) {
         PLY_ASSERT(core < m_numPhysicalCores);
-        PLY_ASSERT(hwThread < m_hwThreadsPerCore);
-        u32 index = core * m_hwThreadsPerCore + hwThread;
+        PLY_ASSERT(hw_thread < m_hwThreadsPerCore);
+        u32 index = core * m_hwThreadsPerCore + hw_thread;
         thread_t thread = mach_thread_self();
-        thread_affinity_policy_data_t policyInfo = {(integer_t) index};
-        // Note: The following returns KERN_NOT_SUPPORTED on iOS. (Tested on iOS
+        thread_affinity_policy_data_t policy_info = {(integer_t) index};
+        // Note: The following returns KERN_NOT_SUPPORTED on i_os. (Tested on i_os
         // 9.2.)
         kern_return_t result = thread_policy_set(thread, THREAD_AFFINITY_POLICY,
-                                                 (thread_policy_t) &policyInfo,
+                                                 (thread_policy_t) &policy_info,
                                                  THREAD_AFFINITY_POLICY_COUNT);
         return (result == KERN_SUCCESS);
     }
@@ -480,74 +480,74 @@ using View = typename traits::View<T>::Type;
 namespace subst {
 
 // ┏━━━━━━━━━━━━━━━━━┓
-// ┃  createDefault  ┃
+// ┃  create_default  ┃
 // ┗━━━━━━━━━━━━━━━━━┛
 template <typename T, std::enable_if_t<std::is_arithmetic<T>::value, int> = 0>
-T createDefault() {
+T create_default() {
     return 0;
 }
 
 template <typename T,
           std::enable_if_t<
               !std::is_arithmetic<T>::value && !std::is_same<T, void>::value, int> = 0>
-T createDefault() {
+T create_default() {
     return {};
 }
 
 template <typename T, std::enable_if_t<std::is_same<T, void>::value, int> = 0>
-T createDefault() {
+T create_default() {
 }
 
 // ┏━━━━━━━━━━━━━━━━━━━┓
-// ┃  unsafeConstruct  ┃
+// ┃  unsafe_construct  ┃
 // ┗━━━━━━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_default_constructible<T>::value, int> = 0>
-void unsafeConstruct(T* obj) {
+void unsafe_construct(T* obj) {
     new (obj) T;
 }
 
 template <typename T,
           std::enable_if_t<!std::is_default_constructible<T>::value, int> = 0>
-void unsafeConstruct(T* obj) {
+void unsafe_construct(T* obj) {
     // Not constructible
     PLY_FORCE_CRASH();
 }
 
 // ┏━━━━━━━━━━━━━━━━━━┓
-// ┃  createByMember  ┃
+// ┃  create_by_member  ┃
 // ┗━━━━━━━━━━━━━━━━━━┛
 PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasCreate, T0::create())
 
 template <typename T, std::enable_if_t<HasCreate<T>, int> = 0>
-T* createByMember() {
+T* create_by_member() {
     return T::create();
 }
 
 template <
     typename T,
     std::enable_if_t<!HasCreate<T> && std::is_default_constructible<T>::value, int> = 0>
-T* createByMember() {
+T* create_by_member() {
     return new T;
 }
 
 template <typename T,
           std::enable_if_t<!HasCreate<T> && !std::is_default_constructible<T>::value,
                            int> = 0>
-T* createByMember() {
+T* create_by_member() {
     // Not constructible
     PLY_FORCE_CRASH();
     return nullptr;
 }
 
 // ┏━━━━━━━━━━━━━━━━━━━┓
-// ┃  destroyByMember  ┃
+// ┃  destroy_by_member  ┃
 // ┗━━━━━━━━━━━━━━━━━━━┛
 PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasDestroyMember, std::declval<T0>().destroy())
 PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasNamespaceDestroy, destroy((T0*) nullptr))
 
 template <typename T, std::enable_if_t<HasDestroyMember<T>, int> = 0>
-void destroyByMember(T* obj) {
+void destroy_by_member(T* obj) {
     if (obj) {
         obj->destroy();
     }
@@ -555,7 +555,7 @@ void destroyByMember(T* obj) {
 
 template <typename T,
           std::enable_if_t<!HasDestroyMember<T> && HasNamespaceDestroy<T>, int> = 0>
-void destroyByMember(T* obj) {
+void destroy_by_member(T* obj) {
     if (obj) {
         destroy(obj);
     }
@@ -563,79 +563,79 @@ void destroyByMember(T* obj) {
 
 template <typename T,
           std::enable_if_t<!HasDestroyMember<T> && !HasNamespaceDestroy<T>, int> = 0>
-void destroyByMember(T* obj) {
+void destroy_by_member(T* obj) {
     delete obj; // Passing nullptr to delete is allowed
 }
 
 // ┏━━━━━━━━━━━━━━━━━━━━┓
-// ┃  destructByMember  ┃
+// ┃  destruct_by_member  ┃
 // ┗━━━━━━━━━━━━━━━━━━━━┛
 PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasDestruct, std::declval<T0>().destruct())
 
 template <typename T, std::enable_if_t<HasDestruct<T>, int> = 0>
-void destructByMember(T* obj) {
+void destruct_by_member(T* obj) {
     obj->destruct();
 }
 
 template <typename T, std::enable_if_t<!HasDestruct<T>, int> = 0>
-void destructByMember(T* obj) {
+void destruct_by_member(T* obj) {
     obj->~T();
 }
 
 // ┏━━━━━━━━━━━━━━━━━━━━━━━┓
-// ┃  unsafeMoveConstruct  ┃
+// ┃  unsafe_move_construct  ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━┛
 template <typename T, std::enable_if_t<std::is_move_constructible<T>::value, int> = 0>
-void unsafeMoveConstruct(T* dst, T* src) {
+void unsafe_move_construct(T* dst, T* src) {
     new (dst) T{std::move(*src)};
 }
 
 template <typename T, std::enable_if_t<!std::is_move_constructible<T>::value, int> = 0>
-void unsafeMoveConstruct(T* dst, T* src) {
+void unsafe_move_construct(T* dst, T* src) {
     // Not move constructible
     PLY_FORCE_CRASH();
 }
 
 // ┏━━━━━━━━━━━━━━┓
-// ┃  unsafeCopy  ┃
+// ┃  unsafe_copy  ┃
 // ┗━━━━━━━━━━━━━━┛
 template <typename T, std::enable_if_t<std::is_copy_assignable<T>::value, int> = 0>
-void unsafeCopy(T* dst, const T* src) {
+void unsafe_copy(T* dst, const T* src) {
     *dst = *src;
 }
 
 template <typename T, std::enable_if_t<!std::is_copy_assignable<T>::value, int> = 0>
-void unsafeCopy(T* dst, const T* src) {
+void unsafe_copy(T* dst, const T* src) {
     // Not copy assignable
     PLY_FORCE_CRASH();
 }
 
 // ┏━━━━━━━━━━━━━━┓
-// ┃  unsafeMove  ┃
+// ┃  unsafe_move  ┃
 // ┗━━━━━━━━━━━━━━┛
 template <typename T, std::enable_if_t<std::is_move_assignable<T>::value, int> = 0>
-void unsafeMove(T* dst, T* src) {
+void unsafe_move(T* dst, T* src) {
     *dst = std::move(*src);
 }
 
 template <typename T, std::enable_if_t<!std::is_move_assignable<T>::value, int> = 0>
-void unsafeMove(T* dst, T* src) {
+void unsafe_move(T* dst, T* src) {
     // Not move assignable
     PLY_FORCE_CRASH();
 }
 
 // ┏━━━━━━━━━━━━━━━━━━┓
-// ┃  constructArray  ┃
+// ┃  construct_array  ┃
 // ┗━━━━━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_default_constructible<T>::value, int> = 0>
-void constructArray(T* items, s32 size) {
+void construct_array(T* items, s32 size) {
     // Trivially constructible
 }
 
 template <typename T,
           std::enable_if_t<!std::is_trivially_default_constructible<T>::value, int> = 0>
-void constructArray(T* items, s32 size) {
+void construct_array(T* items, s32 size) {
     // Explicitly constructble
     while (size-- > 0) {
         new (items++) T;
@@ -643,17 +643,17 @@ void constructArray(T* items, s32 size) {
 }
 
 // ┏━━━━━━━━━━━━━━━━━┓
-// ┃  destructArray  ┃
+// ┃  destruct_array  ┃
 // ┗━━━━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_destructible<T>::value, int> = 0>
-void destructArray(T* items, s32 size) {
+void destruct_array(T* items, s32 size) {
     // Trivially destructible
 }
 
 template <typename T,
           std::enable_if_t<!std::is_trivially_destructible<T>::value, int> = 0>
-void destructArray(T* items, s32 size) {
+void destruct_array(T* items, s32 size) {
     // Explicitly destructble
     while (size-- > 0) {
         (items++)->~T();
@@ -661,18 +661,18 @@ void destructArray(T* items, s32 size) {
 }
 
 // ┏━━━━━━━━━━━━━━━━━━━━━━┓
-// ┃  constructArrayFrom  ┃
+// ┃  construct_array_from  ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_copy_constructible<T>::value, int> = 0>
-void constructArrayFrom(T* dst, const T* src, s32 size) {
+void construct_array_from(T* dst, const T* src, s32 size) {
     // Trivially copy constructible
     memcpy(dst, src, sizeof(T) * size);
 }
 
 template <typename T, typename U,
           std::enable_if_t<std::is_constructible<T, const U&>::value, int> = 0>
-void constructArrayFrom(T* dst, const U* src, s32 size) {
+void construct_array_from(T* dst, const U* src, s32 size) {
     // Invoke constructor explicitly on each item
     while (size-- > 0) {
         // Use parentheses instead of curly braces to avoid narrowing conversion errors.
@@ -681,33 +681,33 @@ void constructArrayFrom(T* dst, const U* src, s32 size) {
 }
 
 // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-// ┃  unsafeConstructArrayFrom  ┃
+// ┃  unsafe_construct_array_from  ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 template <typename T, typename U,
           std::enable_if_t<std::is_constructible<T, const U&>::value, int> = 0>
-void unsafeConstructArrayFrom(T* dst, const U* src, s32 size) {
-    constructArrayFrom(dst, src, size);
+void unsafe_construct_array_from(T* dst, const U* src, s32 size) {
+    construct_array_from(dst, src, size);
 }
 
 template <typename T, typename U,
           std::enable_if_t<!std::is_constructible<T, const U&>::value, int> = 0>
-void unsafeConstructArrayFrom(T* dst, const U* src, s32 size) {
+void unsafe_construct_array_from(T* dst, const U* src, s32 size) {
     PLY_FORCE_CRASH();
 }
 
 // ┏━━━━━━━━━━━━━━━━━━━━━━┓
-// ┃  moveConstructArray  ┃
+// ┃  move_construct_array  ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_move_constructible<T>::value, int> = 0>
-void moveConstructArray(T* dst, const T* src, s32 size) {
+void move_construct_array(T* dst, const T* src, s32 size) {
     // Trivially move constructible
     memcpy(dst, src, sizeof(T) * size);
 }
 
 template <typename T, typename U,
           std::enable_if_t<std::is_constructible<T, U&&>::value, int> = 0>
-void moveConstructArray(T* dst, U* src, s32 size) {
+void move_construct_array(T* dst, U* src, s32 size) {
     // Explicitly move constructible
     while (size-- > 0) {
         new (dst++) T{std::move(*src++)};
@@ -715,18 +715,18 @@ void moveConstructArray(T* dst, U* src, s32 size) {
 }
 
 // ┏━━━━━━━━━━━━━┓
-// ┃  copyArray  ┃
+// ┃  copy_array  ┃
 // ┗━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_copy_assignable<T>::value, int> = 0>
-void copyArray(T* dst, const T* src, s32 size) {
+void copy_array(T* dst, const T* src, s32 size) {
     // Trivially copy assignable
     memcpy(dst, src, sizeof(T) * size);
 }
 
 template <typename T,
           std::enable_if_t<!std::is_trivially_copy_assignable<T>::value, int> = 0>
-void copyArray(T* dst, const T* src, s32 size) {
+void copy_array(T* dst, const T* src, s32 size) {
     // Explicitly copy assignable
     while (size-- > 0) {
         *dst++ = *src++;
@@ -734,18 +734,18 @@ void copyArray(T* dst, const T* src, s32 size) {
 }
 
 // ┏━━━━━━━━━━━━━┓
-// ┃  moveArray  ┃
+// ┃  move_array  ┃
 // ┗━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_move_assignable<T>::value, int> = 0>
-void moveArray(T* dst, const T* src, s32 size) {
+void move_array(T* dst, const T* src, s32 size) {
     // Trivially move assignable
     memcpy(dst, src, sizeof(T) * size);
 }
 
 template <typename T,
           std::enable_if_t<!std::is_trivially_move_assignable<T>::value, int> = 0>
-void moveArray(T* dst, T* src, s32 size) {
+void move_array(T* dst, T* src, s32 size) {
     // Explicitly move assignable
     while (size-- > 0) {
         *dst++ = std::move(*src++);
@@ -763,9 +763,9 @@ struct InitItems {
     static void init(T*) {
     }
     template <typename Arg, typename... RemainingArgs>
-    static void init(T* items, Arg&& arg, RemainingArgs&&... remainingArgs) {
+    static void init(T* items, Arg&& arg, RemainingArgs&&... remaining_args) {
         *items = T{std::forward<Arg>(arg)};
-        init(items + 1, std::forward<RemainingArgs>(remainingArgs)...);
+        init(items + 1, std::forward<RemainingArgs>(remaining_args)...);
     }
 };
 } // namespace impl
@@ -777,15 +777,15 @@ struct InitItems {
 //
 
 // clang-format off
-inline void signalFenceConsume() { std::atomic_signal_fence(std::memory_order_acquire); }
-inline void signalFenceAcquire() { std::atomic_signal_fence(std::memory_order_acquire); }
-inline void signalFenceRelease() { std::atomic_signal_fence(std::memory_order_release); }
-inline void signalFenceSeqCst() { std::atomic_signal_fence(std::memory_order_seq_cst); }
+inline void signal_fence_consume() { std::atomic_signal_fence(std::memory_order_acquire); }
+inline void signal_fence_acquire() { std::atomic_signal_fence(std::memory_order_acquire); }
+inline void signal_fence_release() { std::atomic_signal_fence(std::memory_order_release); }
+inline void signal_fence_seq_cst() { std::atomic_signal_fence(std::memory_order_seq_cst); }
 
-inline void threadFenceConsume() { std::atomic_thread_fence(std::memory_order_acquire); }
-inline void threadFenceAcquire() { std::atomic_thread_fence(std::memory_order_acquire); }
-inline void threadFenceRelease() { std::atomic_thread_fence(std::memory_order_release); }
-inline void threadFenceSeqCst() { std::atomic_thread_fence(std::memory_order_seq_cst); }
+inline void thread_fence_consume() { std::atomic_thread_fence(std::memory_order_acquire); }
+inline void thread_fence_acquire() { std::atomic_thread_fence(std::memory_order_acquire); }
+inline void thread_fence_release() { std::atomic_thread_fence(std::memory_order_release); }
+inline void thread_fence_seq_cst() { std::atomic_thread_fence(std::memory_order_seq_cst); }
 // clang-format on
 
 enum MemoryOrder {
@@ -804,54 +804,54 @@ public:
     }
     Atomic(T value) : std::atomic<T>{value} {
     }
-    Atomic(const Atomic& other) : std::atomic<T>{other.loadNonatomic()} {
+    Atomic(const Atomic& other) : std::atomic<T>{other.load_nonatomic()} {
     }
     // Hide operator=
     void operator=(T value) = delete;
     void operator=(const Atomic& other) {
-        storeNonatomic(other.loadNonatomic());
+        store_nonatomic(other.load_nonatomic());
     }
-    T loadNonatomic() const {
+    T load_nonatomic() const {
         return std::atomic<T>::load(std::memory_order_relaxed);
     }
-    T load(MemoryOrder memoryOrder) const {
-        return std::atomic<T>::load((std::memory_order) memoryOrder);
+    T load(MemoryOrder memory_order) const {
+        return std::atomic<T>::load((std::memory_order) memory_order);
     }
-    void storeNonatomic(T value) {
+    void store_nonatomic(T value) {
         return std::atomic<T>::store(value, std::memory_order_relaxed);
     }
-    void store(T value, MemoryOrder memoryOrder) {
-        return std::atomic<T>::store(value, (std::memory_order) memoryOrder);
+    void store(T value, MemoryOrder memory_order) {
+        return std::atomic<T>::store(value, (std::memory_order) memory_order);
     }
-    T compareExchange(T expected, T desired, MemoryOrder memoryOrder) {
+    T compare_exchange(T expected, T desired, MemoryOrder memory_order) {
         std::atomic<T>::compare_exchange_strong(expected, desired,
-                                                (std::memory_order) memoryOrder);
+                                                (std::memory_order) memory_order);
         return expected; // modified by reference by compare_exchange_strong
     }
-    bool compareExchangeStrong(T& expected, T desired, MemoryOrder memoryOrder) {
-        return std::atomic<T>::compare_exchange_strong(expected, desired,
-                                                       (std::memory_order) memoryOrder);
+    bool compare_exchange_strong(T& expected, T desired, MemoryOrder memory_order) {
+        return std::atomic<T>::compare_exchange_strong(
+            expected, desired, (std::memory_order) memory_order);
     }
-    bool compareExchangeWeak(T& expected, T desired, MemoryOrder success,
-                             MemoryOrder failure) {
+    bool compare_exchange_weak(T& expected, T desired, MemoryOrder success,
+                               MemoryOrder failure) {
         return std::atomic<T>::compare_exchange_weak(expected, desired,
                                                      (std::memory_order) success,
                                                      (std::memory_order) failure);
     }
-    T exchange(T desired, MemoryOrder memoryOrder) {
-        return std::atomic<T>::exchange(desired, (std::memory_order) memoryOrder);
+    T exchange(T desired, MemoryOrder memory_order) {
+        return std::atomic<T>::exchange(desired, (std::memory_order) memory_order);
     }
-    T fetchAdd(T operand, MemoryOrder memoryOrder) {
-        return std::atomic<T>::fetch_add(operand, (std::memory_order) memoryOrder);
+    T fetch_add(T operand, MemoryOrder memory_order) {
+        return std::atomic<T>::fetch_add(operand, (std::memory_order) memory_order);
     }
-    T fetchSub(T operand, MemoryOrder memoryOrder) {
-        return std::atomic<T>::fetch_sub(operand, (std::memory_order) memoryOrder);
+    T fetch_sub(T operand, MemoryOrder memory_order) {
+        return std::atomic<T>::fetch_sub(operand, (std::memory_order) memory_order);
     }
-    T fetchAnd(T operand, MemoryOrder memoryOrder) {
-        return std::atomic<T>::fetch_and(operand, (std::memory_order) memoryOrder);
+    T fetch_and(T operand, MemoryOrder memory_order) {
+        return std::atomic<T>::fetch_and(operand, (std::memory_order) memory_order);
     }
-    T fetchOr(T operand, MemoryOrder memoryOrder) {
-        return std::atomic<T>::fetch_or(operand, (std::memory_order) memoryOrder);
+    T fetch_or(T operand, MemoryOrder memory_order) {
+        return std::atomic<T>::fetch_or(operand, (std::memory_order) memory_order);
     }
 };
 
@@ -873,7 +873,7 @@ public:
     ~LockGuard() {
         m_lock.unlock();
     }
-    LockType& getMutex() {
+    LockType& get_mutex() {
         return m_lock;
     }
 };
@@ -890,7 +890,7 @@ public:
         std::recursive_mutex::lock();
     }
 
-    bool tryLock() {
+    bool try_lock() {
         return std::recursive_mutex::try_lock();
     }
 
@@ -919,19 +919,19 @@ private:
     Atomic<bool> m_spinLock;
     PLY_DECL_ALIGNED(u8 m_buffer[sizeof(Mutex)], alignof(Mutex));
 
-    Mutex& getMutex() {
+    Mutex& get_mutex() {
         return *(Mutex*) m_buffer;
     }
 
-    void lazyInit() {
+    void lazy_init() {
         // We use the thread-safe DCLI pattern via spinlock in case threads are spawned
         // during static initialization of global C++ objects. In that case, any of them
-        // could call lazyInit().
-        while (m_spinLock.compareExchange(false, true, Acquire)) {
+        // could call lazy_init().
+        while (m_spinLock.compare_exchange(false, true, Acquire)) {
             // FIXME: Implement reusable AdaptiveBackoff class and apply it here
         }
-        if (!m_initFlag.loadNonatomic()) {
-            new (&getMutex()) Mutex;
+        if (!m_initFlag.load_nonatomic()) {
+            new (&get_mutex()) Mutex;
             m_initFlag.store(true, Release);
         }
         m_spinLock.store(false, Release);
@@ -939,7 +939,7 @@ private:
 
 public:
     // Manual initialization is needed if not created at global scope:
-    void zeroInit() {
+    void zero_init() {
         memset(static_cast<void*>(this), 0, sizeof(*this));
     }
 
@@ -948,21 +948,21 @@ public:
     // This permits Mutex_LazyInit to be used at global scope where destructors are
     // called in an arbitrary order.
     ~Mutex_LazyInit() {
-        if (m_initFlag.loadNonatomic()) {
-            getMutex().Mutex::~Mutex();
-            zeroInit();
+        if (m_initFlag.load_nonatomic()) {
+            get_mutex().Mutex::~Mutex();
+            zero_init();
         }
     }
 
     void lock() {
         if (!m_initFlag.load(Acquire))
-            lazyInit();
-        getMutex().lock();
+            lazy_init();
+        get_mutex().lock();
     }
 
     void unlock() {
-        PLY_ASSERT(m_initFlag.loadNonatomic());
-        getMutex().unlock();
+        PLY_ASSERT(m_initFlag.load_nonatomic());
+        get_mutex().unlock();
     }
 };
 
@@ -989,19 +989,19 @@ public:
         // SRW locks do not need to be destroyed.
     }
 
-    void lockExclusive() {
+    void lock_exclusive() {
         AcquireSRWLockExclusive(&m_rwLock);
     }
 
-    void unlockExclusive() {
+    void unlock_exclusive() {
         ReleaseSRWLockExclusive(&m_rwLock);
     }
 
-    void lockShared() {
+    void lock_shared() {
         AcquireSRWLockShared(&m_rwLock);
     }
 
-    void unlockShared() {
+    void unlock_shared() {
         ReleaseSRWLockShared(&m_rwLock);
     }
 };
@@ -1023,19 +1023,19 @@ public:
         pthread_rwlock_destroy(&m_rwLock);
     }
 
-    void lockExclusive() {
+    void lock_exclusive() {
         pthread_rwlock_wrlock(&m_rwLock);
     }
 
-    void unlockExclusive() {
+    void unlock_exclusive() {
         pthread_rwlock_unlock(&m_rwLock);
     }
 
-    void lockShared() {
+    void lock_shared() {
         pthread_rwlock_rdlock(&m_rwLock);
     }
 
-    void unlockShared() {
+    void unlock_shared() {
         pthread_rwlock_unlock(&m_rwLock);
     }
 };
@@ -1052,11 +1052,11 @@ private:
 
 public:
     SharedLockGuard(LockType& lock) : m_lock(lock) {
-        m_lock.lockShared();
+        m_lock.lock_shared();
     }
 
     ~SharedLockGuard() {
-        m_lock.unlockShared();
+        m_lock.unlock_shared();
     }
 };
 
@@ -1070,11 +1070,11 @@ private:
 
 public:
     ExclusiveLockGuard(LockType& lock) : m_lock(lock) {
-        m_lock.lockExclusive();
+        m_lock.lock_exclusive();
     }
 
     ~ExclusiveLockGuard() {
-        m_lock.unlockExclusive();
+        m_lock.unlock_exclusive();
     }
 };
 
@@ -1187,16 +1187,16 @@ public:
         m_condVar.wait(guard);
     }
 
-    void timedWait(LockGuard<Mutex>& guard, ureg waitMillis) {
-        if (waitMillis > 0)
-            m_condVar.wait_for(guard, std::chrono::milliseconds(waitMillis));
+    void timed_wait(LockGuard<Mutex>& guard, ureg wait_millis) {
+        if (wait_millis > 0)
+            m_condVar.wait_for(guard, std::chrono::milliseconds(wait_millis));
     }
 
-    void wakeOne() {
+    void wake_one() {
         m_condVar.notify_one();
     }
 
-    void wakeAll() {
+    void wake_all() {
         m_condVar.notify_all();
     }
 };
@@ -1228,7 +1228,7 @@ public:
             this->thread.detach();
     }
 
-    PLY_INLINE bool isValid() const {
+    PLY_INLINE bool is_valid() const {
         return this->thread.joinable();
     }
 
@@ -1243,7 +1243,7 @@ public:
         this->thread = std::thread(std::forward<Callable>(callable));
     }
 
-    static PLY_INLINE void sleepMillis(ureg millis) {
+    static PLY_INLINE void sleep_millis(ureg millis) {
         std::this_thread::sleep_for(std::chrono::milliseconds(millis));
     }
 };
@@ -1254,29 +1254,29 @@ public:
 //    ██   ██  ██ ██     ▀█▄▄▄  ▀█▄▄██ ▀█▄▄██ ██▄▄▄ ▀█▄▄█▀ ▀█▄▄▄ ▀█▄▄██ ▄██▄
 //
 
-// Used as the return value of ThreadLocal::setInScope()
+// Used as the return value of ThreadLocal::set_in_scope()
 template <template <typename> class TL, typename T>
 class ThreadLocalScope {
 private:
     TL<T>* var;
-    T oldValue;
+    T old_value;
 
 public:
-    PLY_INLINE ThreadLocalScope(TL<T>* var, T newValue) : var{var} {
-        this->oldValue = var->load();
-        var->store(newValue);
+    PLY_INLINE ThreadLocalScope(TL<T>* var, T new_value) : var{var} {
+        this->old_value = var->load();
+        var->store(new_value);
     }
 
     ThreadLocalScope(const ThreadLocalScope&) = delete;
     PLY_INLINE ThreadLocalScope(ThreadLocalScope&& other) {
         this->var = other->var;
-        this->oldValue = std::move(other.oldValue);
+        this->old_value = std::move(other.old_value);
         other->var = nullptr;
     }
 
     ~ThreadLocalScope() {
         if (this->var) {
-            this->var->store(this->oldValue);
+            this->var->store(this->old_value);
         }
     }
 };
@@ -1327,9 +1327,9 @@ public:
         PLY_UNUSED(rc);
     }
 
-    // In C++11, you can write auto scope = myTLvar.setInScope(value);
+    // In C++11, you can write auto scope = my_tlvar.set_in_scope(value);
     using Scope = ThreadLocalScope<ThreadLocal, T>;
-    PLY_INLINE Scope setInScope(T value) {
+    PLY_INLINE Scope set_in_scope(T value) {
         return {this, value};
     }
 };
@@ -1382,9 +1382,9 @@ public:
         PLY_UNUSED(rc);
     }
 
-    // In C++11, you can write auto scope = myTLvar.setInScope(value);
+    // In C++11, you can write auto scope = my_tlvar.set_in_scope(value);
     using Scope = ThreadLocalScope<ThreadLocal, T>;
-    PLY_INLINE Scope setInScope(T value) {
+    PLY_INLINE Scope set_in_scope(T value) {
         return {this, value};
     }
 };
@@ -1431,7 +1431,7 @@ public:
 
 #define PLY_DEFINE_RACE_DETECTOR(name) mutable ply::RaceDetector name;
 #define PLY_RACE_DETECT_GUARD(name) \
-    ply::RaceDetectGuard PLY_UNIQUE_VARIABLE(raceDetectGuard)(name)
+    ply::RaceDetectGuard PLY_UNIQUE_VARIABLE(race_detect_guard)(name)
 #define PLY_RACE_DETECT_ENTER(name) name.enter()
 #define PLY_RACE_DETECT_EXIT(name) name.exit()
 
@@ -1455,19 +1455,19 @@ public:
 class MemPage {
 public:
     struct Info {
-        uptr allocationGranularity;
-        uptr pageSize;
+        uptr allocation_granularity;
+        uptr page_size;
     };
 
-    static const Info& getInfo();
+    static const Info& get_info();
 
-    static bool alloc(char*& outAddr, uptr numBytes);
-    static bool reserve(char*& outAddr, uptr numBytes);
-    static void commit(char* addr, uptr numBytes);
-    static void decommit(char* addr, uptr numBytes);
+    static bool alloc(char*& out_addr, uptr num_bytes);
+    static bool reserve(char*& out_addr, uptr num_bytes);
+    static void commit(char* addr, uptr num_bytes);
+    static void decommit(char* addr, uptr num_bytes);
     // On Windows, free() is only able to free a single entire region returned by
     // alloc() or reserve(). For this reason, dlmalloc doesn't use MemPage_Win32.
-    static void free(char* addr, uptr numBytes);
+    static void free(char* addr, uptr num_bytes);
 };
 
 //  ▄▄  ▄▄
@@ -1477,9 +1477,9 @@ public:
 //                       ██
 
 struct HeapStats {
-    ureg peakSystemBytes;
-    ureg systemBytes;
-    ureg inUseBytes;
+    ureg peak_system_bytes;
+    ureg system_bytes;
+    ureg in_use_bytes;
 };
 
 namespace memory_dl {
@@ -1545,7 +1545,7 @@ struct malloc_state {
     void* extp; /* Unused but available for extensions */
     size_t exts;
 #if PLY_DLMALLOC_FAST_STATS
-    size_t inUseBytes;
+    size_t in_use_bytes;
 #endif
 };
 typedef struct malloc_state* mstate;
@@ -1560,15 +1560,15 @@ private:
 public:
     // If you create a Heap_t at global scope, it will be automatically zero-init.
     // Otherwise, you should call this function before using it:
-    void zeroInit();
+    void zero_init();
     void* alloc(ureg size);
-    void* realloc(void* ptr, ureg newSize);
+    void* realloc(void* ptr, ureg new_size);
     void free(void* ptr);
-    void* allocAligned(ureg size, ureg alignment);
-    void freeAligned(void* ptr);
-    HeapStats getStats();
-    ureg getInUseBytes() const;
-    ureg getSize(void* ptr);
+    void* alloc_aligned(ureg size, ureg alignment);
+    void free_aligned(void* ptr);
+    HeapStats get_stats();
+    ureg get_in_use_bytes() const;
+    ureg get_size(void* ptr);
 };
 
 extern Heap_t Heap;
@@ -1587,79 +1587,79 @@ struct ArrayView {
     using T = T_;
 
     T* items = nullptr;
-    u32 numItems = 0;
+    u32 num_items = 0;
 
     // Constructors
     ArrayView() = default;
-    ArrayView(T* items, u32 numItems) : items{items}, numItems{numItems} {
+    ArrayView(T* items, u32 num_items) : items{items}, num_items{num_items} {
     }
     template <typename U = T, std::enable_if_t<std::is_const<U>::value, int> = 0>
     ArrayView(std::initializer_list<T> init)
-        : items{init.begin()}, numItems{safeDemote<u32>(init.size())} {
+        : items{init.begin()}, num_items{safe_demote<u32>(init.size())} {
         PLY_ASSERT((uptr) init.end() - (uptr) init.begin() == sizeof(T) * init.size());
     }
     template <u32 N>
-    ArrayView(T (&s)[N]) : items{s}, numItems{N} {
+    ArrayView(T (&s)[N]) : items{s}, num_items{N} {
     }
 
     // Conversion
     operator ArrayView<const T>() const {
-        return {this->items, this->numItems};
+        return {this->items, this->num_items};
     }
     static ArrayView<const T> from(StringView view);
     static ArrayView<T> from(MutStringView view);
-    StringView stringView() const;
-    MutStringView mutableStringView();
+    StringView string_view() const;
+    MutStringView mutable_string_view();
 
     // Indexing
     T& operator[](u32 index) {
-        PLY_ASSERT(index < numItems);
+        PLY_ASSERT(index < num_items);
         return items[index];
     }
     const T& operator[](u32 index) const {
-        PLY_ASSERT(index < numItems);
+        PLY_ASSERT(index < num_items);
         return items[index];
     }
     T& back(s32 offset = -1) {
-        PLY_ASSERT(u32(numItems + offset) < numItems);
-        return items[numItems + offset];
+        PLY_ASSERT(u32(num_items + offset) < num_items);
+        return items[num_items + offset];
     }
     const T& back(s32 offset = -1) const {
-        PLY_ASSERT(u32(numItems + offset) < numItems);
-        return items[numItems + offset];
+        PLY_ASSERT(u32(num_items + offset) < num_items);
+        return items[num_items + offset];
     }
 
-    void offsetHead(u32 ofs) {
-        PLY_ASSERT(ofs <= numItems);
+    void offset_head(u32 ofs) {
+        PLY_ASSERT(ofs <= num_items);
         items += ofs;
-        numItems -= ofs;
+        num_items -= ofs;
     }
-    void offsetBack(s32 ofs) {
-        PLY_ASSERT((u32) -ofs <= numItems);
-        numItems += ofs;
+    void offset_back(s32 ofs) {
+        PLY_ASSERT((u32) -ofs <= num_items);
+        num_items += ofs;
     }
 
     explicit operator bool() const {
-        return this->numItems > 0;
+        return this->num_items > 0;
     }
-    bool isEmpty() const {
-        return numItems == 0;
+    bool is_empty() const {
+        return num_items == 0;
     }
-    u32 sizeBytes() const {
-        return numItems * u32(sizeof(T));
+    u32 size_bytes() const {
+        return num_items * u32(sizeof(T));
     }
-    ArrayView subView(u32 start) const {
-        PLY_ASSERT(start <= numItems);
-        return {items + start, numItems - start};
+    ArrayView sub_view(u32 start) const {
+        PLY_ASSERT(start <= num_items);
+        return {items + start, num_items - start};
     }
-    ArrayView subView(u32 start, u32 numItems) const {
-        PLY_ASSERT(start <= this->numItems); // FIXME: Support different end parameters
-        PLY_ASSERT(start + numItems <= this->numItems);
-        return {items + start, numItems};
+    ArrayView sub_view(u32 start, u32 num_items) const {
+        PLY_ASSERT(start <= this->num_items); // FIXME: Support different end parameters
+        PLY_ASSERT(start + num_items <= this->num_items);
+        return {items + start, num_items};
     }
-    ArrayView shortenedBy(u32 numItems) const {
-        PLY_ASSERT(numItems <= this->numItems);
-        return {this->items, this->numItems - numItems};
+    ArrayView shortened_by(u32 num_items) const {
+        PLY_ASSERT(num_items <= this->num_items);
+        return {this->items, this->num_items - num_items};
     }
 
     // Range-for support
@@ -1667,7 +1667,7 @@ struct ArrayView {
         return items;
     }
     T* end() const {
-        return items + numItems;
+        return items + num_items;
     }
 };
 
@@ -1704,24 +1704,24 @@ using ArrayViewType =
 // ArrayTraits<Arr>::IsOwner is true, which is what we want.
 template <typename T, typename Arr,
           std::enable_if_t<ArrayTraits<Arr>::IsOwner, int> = 0>
-void moveOrCopyConstruct(T* dst, Arr&& src) {
-    ArrayView<ArrayViewType<Arr>> srcView{src};
-    subst::moveConstructArray(dst, srcView.items, srcView.numItems);
+void move_or_copy_construct(T* dst, Arr&& src) {
+    ArrayView<ArrayViewType<Arr>> src_view{src};
+    subst::move_construct_array(dst, src_view.items, src_view.num_items);
 }
 template <typename T, typename Arr,
           std::enable_if_t<!ArrayTraits<Arr>::IsOwner, int> = 0>
-void moveOrCopyConstruct(T* dst, Arr&& src) {
-    ArrayView<ArrayViewType<Arr>> srcView{src};
-    subst::constructArrayFrom(dst, srcView.items, srcView.numItems);
+void move_or_copy_construct(T* dst, Arr&& src) {
+    ArrayView<ArrayViewType<Arr>> src_view{src};
+    subst::construct_array_from(dst, src_view.items, src_view.num_items);
 }
 
 } // namespace impl
 
 template <typename T0, typename T1>
 bool operator==(ArrayView<T0> a, ArrayView<T1> b) {
-    if (a.numItems != b.numItems)
+    if (a.num_items != b.num_items)
         return false;
-    for (u32 i = 0; i < a.numItems; i++) {
+    for (u32 i = 0; i < a.num_items; i++) {
         if (!(a[i] == b[i]))
             return false;
     }
@@ -1756,160 +1756,160 @@ template <typename>
 struct FormatParser;
 } // namespace fmt
 
-inline bool isWhite(char cp) {
+inline bool is_white(char cp) {
     return (cp == ' ') || (cp == '\t') || (cp == '\r') || (cp == '\n');
 }
 
-inline bool isAsciiLetter(char cp) {
+inline bool is_ascii_letter(char cp) {
     return (cp >= 'A' && cp <= 'Z') || (cp >= 'a' && cp <= 'z');
 }
 
-inline bool isDecimalDigit(char cp) {
+inline bool is_decimal_digit(char cp) {
     return (cp >= '0' && cp <= '9');
 }
 
 struct StringView {
     const char* bytes = nullptr;
-    u32 numBytes = 0;
+    u32 num_bytes = 0;
 
     StringView() = default;
     StringView(const char* s)
-        : bytes{s}, numBytes{(u32) std::char_traits<char>::length(s)} {
-        PLY_ASSERT(s[numBytes] ==
-                   0); // Sanity check; numBytes must fit within 32-bit field
+        : bytes{s}, num_bytes{(u32) std::char_traits<char>::length(s)} {
+        PLY_ASSERT(s[num_bytes] ==
+                   0); // Sanity check; num_bytes must fit within 32-bit field
     }
     template <typename U, u32 N,
               std::enable_if_t<std::is_same<U, std::decay_t<decltype(*u8"")>>::value,
                                bool> = false>
-    StringView(const U (&s)[N]) : bytes{s}, numBytes{N} {
+    StringView(const U (&s)[N]) : bytes{s}, num_bytes{N} {
     }
     u32 num_codepoints(UnicodeType decoder_type) const;
     template <typename U, typename = std::enable_if_t<std::is_same<U, char>::value>>
-    StringView(const U& c) : bytes{&c}, numBytes{1} {
+    StringView(const U& c) : bytes{&c}, num_bytes{1} {
     }
-    StringView(const char* bytes, u32 numBytes) : bytes{bytes}, numBytes{numBytes} {
+    StringView(const char* bytes, u32 num_bytes) : bytes{bytes}, num_bytes{num_bytes} {
     }
 
-    static StringView fromRange(const char* startByte, const char* endByte) {
-        return {startByte, safeDemote<u32>(endByte - startByte)};
+    static StringView from_range(const char* start_byte, const char* end_byte) {
+        return {start_byte, safe_demote<u32>(end_byte - start_byte)};
     }
     const char& operator[](u32 index) const {
-        PLY_ASSERT(index < this->numBytes);
+        PLY_ASSERT(index < this->num_bytes);
         return this->bytes[index];
     }
     const char& back(s32 ofs = -1) const {
-        PLY_ASSERT(u32(-ofs - 1) < this->numBytes);
-        return this->bytes[this->numBytes + ofs];
+        PLY_ASSERT(u32(-ofs - 1) < this->num_bytes);
+        return this->bytes[this->num_bytes + ofs];
     }
-    void offsetHead(u32 numBytes) {
-        PLY_ASSERT(numBytes <= this->numBytes);
-        this->bytes += numBytes;
-        this->numBytes -= numBytes;
+    void offset_head(u32 num_bytes) {
+        PLY_ASSERT(num_bytes <= this->num_bytes);
+        this->bytes += num_bytes;
+        this->num_bytes -= num_bytes;
     }
 
-    void offsetBack(s32 ofs) {
-        PLY_ASSERT((u32) -ofs <= this->numBytes);
-        this->numBytes += ofs;
+    void offset_back(s32 ofs) {
+        PLY_ASSERT((u32) -ofs <= this->num_bytes);
+        this->num_bytes += ofs;
     }
     template <typename T>
-    T to(const T& defaultValue = subst::createDefault<T>()) const;
+    T to(const T& default_value = subst::create_default<T>()) const;
     explicit operator bool() const {
-        return this->numBytes != 0;
+        return this->num_bytes != 0;
     }
-    bool isEmpty() const {
-        return this->numBytes == 0;
+    bool is_empty() const {
+        return this->num_bytes == 0;
     }
-    StringView subStr(u32 start) const {
-        PLY_ASSERT(start <= numBytes);
-        return {this->bytes + start, this->numBytes - start};
+    StringView sub_str(u32 start) const {
+        PLY_ASSERT(start <= num_bytes);
+        return {this->bytes + start, this->num_bytes - start};
     }
-    StringView subStr(u32 start, u32 numBytes) const {
-        PLY_ASSERT(start <= this->numBytes);
-        PLY_ASSERT(start + numBytes <= this->numBytes);
-        return {this->bytes + start, numBytes};
+    StringView sub_str(u32 start, u32 num_bytes) const {
+        PLY_ASSERT(start <= this->num_bytes);
+        PLY_ASSERT(start + num_bytes <= this->num_bytes);
+        return {this->bytes + start, num_bytes};
     }
-    bool contains(const char* curByte) const {
-        return uptr(curByte - this->bytes) <= this->numBytes;
+    bool contains(const char* cur_byte) const {
+        return uptr(cur_byte - this->bytes) <= this->num_bytes;
     }
-    StringView left(u32 numBytes) const {
-        PLY_ASSERT(numBytes <= this->numBytes);
-        return {this->bytes, numBytes};
+    StringView left(u32 num_bytes) const {
+        PLY_ASSERT(num_bytes <= this->num_bytes);
+        return {this->bytes, num_bytes};
     }
-    StringView shortenedBy(u32 numBytes) const {
-        PLY_ASSERT(numBytes <= this->numBytes);
-        return {this->bytes, this->numBytes - numBytes};
+    StringView shortened_by(u32 num_bytes) const {
+        PLY_ASSERT(num_bytes <= this->num_bytes);
+        return {this->bytes, this->num_bytes - num_bytes};
     }
-    StringView right(u32 numBytes) const {
-        PLY_ASSERT(numBytes <= this->numBytes);
-        return {this->bytes + this->numBytes - numBytes, numBytes};
+    StringView right(u32 num_bytes) const {
+        PLY_ASSERT(num_bytes <= this->num_bytes);
+        return {this->bytes + this->num_bytes - num_bytes, num_bytes};
     }
-    s32 findByte(char matchByte, u32 startPos = 0) const {
-        for (u32 i = startPos; i < this->numBytes; i++) {
-            if (this->bytes[i] == matchByte)
+    s32 find_byte(char match_byte, u32 start_pos = 0) const {
+        for (u32 i = start_pos; i < this->num_bytes; i++) {
+            if (this->bytes[i] == match_byte)
                 return i;
         }
         return -1;
     }
     template <typename MatchFunc>
-    s32 findByte(const MatchFunc& matchFunc, u32 startPos = 0) const {
-        for (u32 i = startPos; i < this->numBytes; i++) {
-            if (matchFunc(this->bytes[i]))
+    s32 find_byte(const MatchFunc& match_func, u32 start_pos = 0) const {
+        for (u32 i = start_pos; i < this->num_bytes; i++) {
+            if (match_func(this->bytes[i]))
                 return i;
         }
         return -1;
     }
 
-    s32 rfindByte(char matchByte, u32 startPos) const {
-        s32 i = startPos;
+    s32 rfind_byte(char match_byte, u32 start_pos) const {
+        s32 i = start_pos;
         for (; i >= 0; i--) {
-            if (this->bytes[i] == matchByte)
+            if (this->bytes[i] == match_byte)
                 break;
         }
         return i;
     }
     template <typename MatchFunc>
-    s32 rfindByte(const MatchFunc& matchFunc, u32 startPos) const {
-        s32 i = startPos;
+    s32 rfind_byte(const MatchFunc& match_func, u32 start_pos) const {
+        s32 i = start_pos;
         for (; i >= 0; i--) {
-            if (matchFunc(this->bytes[i]))
+            if (match_func(this->bytes[i]))
                 break;
         }
         return i;
     }
     template <typename MatchFuncOrChar>
-    s32 rfindByte(const MatchFuncOrChar& matchFuncOrByte) const {
-        return this->rfindByte(matchFuncOrByte, this->numBytes - 1);
+    s32 rfind_byte(const MatchFuncOrChar& match_func_or_byte) const {
+        return this->rfind_byte(match_func_or_byte, this->num_bytes - 1);
     }
 
-    bool startsWith(StringView arg) const;
-    bool endsWith(StringView arg) const;
+    bool starts_with(StringView arg) const;
+    bool ends_with(StringView arg) const;
 
-    StringView trim(bool (*matchFunc)(char) = isWhite, bool left = true,
+    StringView trim(bool (*match_func)(char) = is_white, bool left = true,
                     bool right = true) const;
-    StringView ltrim(bool (*matchFunc)(char) = isWhite) const {
-        return this->trim(matchFunc, true, false);
+    StringView ltrim(bool (*match_func)(char) = is_white) const {
+        return this->trim(match_func, true, false);
     }
-    StringView rtrim(bool (*matchFunc)(char) = isWhite) const {
-        return this->trim(matchFunc, false, true);
+    StringView rtrim(bool (*match_func)(char) = is_white) const {
+        return this->trim(match_func, false, true);
     }
     String join(ArrayView<const StringView> comps) const;
-    Array<StringView> splitByte(char sep) const;
-    String upperAsc() const;
-    String lowerAsc() const;
-    String reversedBytes() const;
-    String filterBytes(char (*filterFunc)(char)) const;
+    Array<StringView> split_byte(char sep) const;
+    String upper_asc() const;
+    String lower_asc() const;
+    String reversed_bytes() const;
+    String filter_bytes(char (*filter_func)(char)) const;
 
-    bool includesNullTerminator() const {
-        return (this->numBytes > 0) ? (this->bytes[this->numBytes - 1] == 0) : false;
+    bool includes_null_terminator() const {
+        return (this->num_bytes > 0) ? (this->bytes[this->num_bytes - 1] == 0) : false;
     }
-    HybridString withNullTerminator() const;
-    StringView withoutNullTerminator() const;
+    HybridString with_null_terminator() const;
+    StringView without_null_terminator() const;
 
     const char* begin() const {
         return this->bytes;
     }
     const char* end() const {
-        return this->bytes + this->numBytes;
+        return this->bytes + this->num_bytes;
     }
 };
 
@@ -1938,58 +1938,58 @@ String operator*(StringView str, u32 count);
 
 struct MutStringView {
     char* bytes = nullptr;
-    u32 numBytes = 0;
+    u32 num_bytes = 0;
 
     MutStringView() = default;
-    MutStringView(char* bytes, u32 numBytes) : bytes{bytes}, numBytes{numBytes} {
+    MutStringView(char* bytes, u32 num_bytes) : bytes{bytes}, num_bytes{num_bytes} {
     }
 
     char* end() {
-        return this->bytes + this->numBytes;
+        return this->bytes + this->num_bytes;
     }
-    static MutStringView fromRange(char* startByte, char* endByte) {
-        return {startByte, safeDemote<u32>(endByte - startByte)};
+    static MutStringView from_range(char* start_byte, char* end_byte) {
+        return {start_byte, safe_demote<u32>(end_byte - start_byte)};
     }
     operator const StringView&() const {
         return reinterpret_cast<const StringView&>(*this);
     }
-    void offsetHead(u32 numBytes) {
-        PLY_ASSERT(numBytes <= this->numBytes);
-        this->bytes += numBytes;
-        this->numBytes -= numBytes;
+    void offset_head(u32 num_bytes) {
+        PLY_ASSERT(num_bytes <= this->num_bytes);
+        this->bytes += num_bytes;
+        this->num_bytes -= num_bytes;
     }
-    void offsetBack(s32 ofs) {
-        PLY_ASSERT((u32) -ofs <= this->numBytes);
-        this->numBytes += ofs;
+    void offset_back(s32 ofs) {
+        PLY_ASSERT((u32) -ofs <= this->num_bytes);
+        this->num_bytes += ofs;
     }
 };
 
 template <typename T>
 ArrayView<const T> ArrayView<T>::from(StringView view) {
-    u32 numItems = view.numBytes / sizeof(T); // Divide by constant is fast
-    return {(const T*) view.bytes, numItems};
+    u32 num_items = view.num_bytes / sizeof(T); // Divide by constant is fast
+    return {(const T*) view.bytes, num_items};
 }
 
 template <typename T>
 ArrayView<T> ArrayView<T>::from(MutStringView view) {
-    u32 numItems = view.numBytes / sizeof(T); // Divide by constant is fast
-    return {(T*) view.bytes, numItems};
+    u32 num_items = view.num_bytes / sizeof(T); // Divide by constant is fast
+    return {(T*) view.bytes, num_items};
 }
 
 template <typename T>
-StringView ArrayView<T>::stringView() const {
-    return {(const char*) items, safeDemote<u32>(numItems * sizeof(T))};
+StringView ArrayView<T>::string_view() const {
+    return {(const char*) items, safe_demote<u32>(num_items * sizeof(T))};
 }
 
 template <typename T>
-MutStringView ArrayView<T>::mutableStringView() {
-    return {(char*) items, safeDemote<u32>(numItems * sizeof(T))};
+MutStringView ArrayView<T>::mutable_string_view() {
+    return {(char*) items, safe_demote<u32>(num_items * sizeof(T))};
 }
 
 namespace subst {
 template <typename T>
-void destructViewAs(StringView view) {
-    subst::destructArray<T>((T*) view.bytes, view.numBytes / (u32) sizeof(T));
+void destruct_view_as(StringView view) {
+    subst::destruct_array<T>((T*) view.bytes, view.num_bytes / (u32) sizeof(T));
 }
 } // namespace subst
 
@@ -2132,7 +2132,7 @@ PLY_MAKE_WELL_FORMEDNESS_CHECK_2(IsCallable, std::declval<T0>()(std::declval<T1>
 
 template <typename T, typename U, std::enable_if_t<IsComparable<T, U>, int> = 0>
 PLY_INLINE s32 find(ArrayView<const T> arr, const U& item) {
-    for (u32 i = 0; i < arr.numItems; i++) {
+    for (u32 i = 0; i < arr.num_items; i++) {
         if (arr[i] == item)
             return i;
     }
@@ -2142,7 +2142,7 @@ PLY_INLINE s32 find(ArrayView<const T> arr, const U& item) {
 template <typename T, typename Callback,
           std::enable_if_t<IsCallable<Callback, T>, int> = 0>
 PLY_INLINE s32 find(ArrayView<const T> arr, const Callback& callback) {
-    for (u32 i = 0; i < arr.numItems; i++) {
+    for (u32 i = 0; i < arr.num_items; i++) {
         if (callback(arr[i]))
             return i;
     }
@@ -2156,7 +2156,7 @@ PLY_INLINE s32 find(const Arr& arr, const Arg& arg) {
 
 template <typename T, typename U, std::enable_if_t<IsComparable<T, U>, int> = 0>
 PLY_INLINE s32 rfind(ArrayView<const T> arr, const U& item) {
-    for (s32 i = safeDemote<s32>(arr.numItems - 1); i >= 0; i--) {
+    for (s32 i = safe_demote<s32>(arr.num_items - 1); i >= 0; i--) {
         if (arr[i] == item)
             return i;
     }
@@ -2166,7 +2166,7 @@ PLY_INLINE s32 rfind(ArrayView<const T> arr, const U& item) {
 template <typename T, typename Callback,
           std::enable_if_t<IsCallable<Callback, T>, int> = 0>
 PLY_INLINE s32 rfind(ArrayView<const T> arr, const Callback& callback) {
-    for (s32 i = safeDemote<s32>(arr.numItems - 1); i >= 0; i--) {
+    for (s32 i = safe_demote<s32>(arr.num_items - 1); i >= 0; i--) {
         if (callback(arr[i]))
             return i;
     }
@@ -2184,12 +2184,12 @@ PLY_INLINE s32 rfind(const Arr& arr, const Arg& arg) {
 template <typename Iterable, typename MapFunc,
           typename MappedItemType = std::decay_t<decltype(std::declval<MapFunc>()(
               std::declval<impl::ItemType<Iterable>>()))>>
-Array<MappedItemType> map(Iterable&& iterable, MapFunc&& mapFunc) {
+Array<MappedItemType> map(Iterable&& iterable, MapFunc&& map_func) {
     Array<MappedItemType> result;
     // FIXME: Reserve memory for result when possible. Otherwise, use a typed
     // ChunkBuffer.
     for (auto&& item : iterable) {
-        result.append(mapFunc(item));
+        result.append(map_func(item));
     }
     return result;
 }
@@ -2199,24 +2199,24 @@ Array<MappedItemType> map(Iterable&& iterable, MapFunc&& mapFunc) {
 // ┗━━━━━━━━┛
 namespace impl {
 template <typename T>
-PLY_INLINE bool defaultLess(const T& a, const T& b) {
+PLY_INLINE bool default_less(const T& a, const T& b) {
     return a < b;
 }
 } // namespace impl
 
-template <typename T, typename IsLess = decltype(impl::defaultLess<T>)>
+template <typename T, typename IsLess = decltype(impl::default_less<T>)>
 PLY_NO_INLINE void sort(ArrayView<T> view,
-                        const IsLess& isLess = impl::defaultLess<T>) {
-    if (view.numItems <= 1)
+                        const IsLess& is_less = impl::default_less<T>) {
+    if (view.num_items <= 1)
         return;
     u32 lo = 0;
-    u32 hi = view.numItems - 1;
-    u32 pivot = view.numItems / 2;
+    u32 hi = view.num_items - 1;
+    u32 pivot = view.num_items / 2;
     for (;;) {
-        while (lo < hi && isLess(view[lo], view[pivot])) {
+        while (lo < hi && is_less(view[lo], view[pivot])) {
             lo++;
         }
-        while (lo < hi && isLess(view[pivot], view[hi])) {
+        while (lo < hi && is_less(view[pivot], view[hi])) {
             hi--;
         }
         if (lo >= hi)
@@ -2225,8 +2225,8 @@ PLY_NO_INLINE void sort(ArrayView<T> view,
         // All slots to left of lo are < pivot
         // view[hi] <= pivot
         // All slots to the right of hi are > pivot
-        PLY_ASSERT(!isLess(view[lo], view[pivot]));
-        PLY_ASSERT(!isLess(view[pivot], view[hi]));
+        PLY_ASSERT(!is_less(view[lo], view[pivot]));
+        PLY_ASSERT(!is_less(view[pivot], view[hi]));
         PLY_ASSERT(lo < hi);
         std::swap(view[lo], view[hi]);
         if (lo == pivot) {
@@ -2241,29 +2241,29 @@ PLY_NO_INLINE void sort(ArrayView<T> view,
     // pivot.
     PLY_ASSERT(hi <= lo);
     while (lo > 1) {
-        if (!isLess(view[lo - 1], view[pivot])) {
+        if (!is_less(view[lo - 1], view[pivot])) {
             lo--;
         } else {
-            sort(view.subView(0, lo), isLess);
+            sort(view.sub_view(0, lo), is_less);
             break;
         }
     }
-    while (hi + 1 < view.numItems) {
-        if (!isLess(view[pivot], view[hi])) {
+    while (hi + 1 < view.num_items) {
+        if (!is_less(view[pivot], view[hi])) {
             hi++;
         } else {
-            sort(view.subView(hi), isLess);
+            sort(view.sub_view(hi), is_less);
             break;
         }
     }
 }
 
 template <typename Arr,
-          typename IsLess = decltype(impl::defaultLess<impl::ArrayViewType<Arr>>)>
+          typename IsLess = decltype(impl::default_less<impl::ArrayViewType<Arr>>)>
 PLY_INLINE void
-sort(Arr& arr, const IsLess& isLess = impl::defaultLess<impl::ArrayViewType<Arr>>) {
+sort(Arr& arr, const IsLess& is_less = impl::default_less<impl::ArrayViewType<Arr>>) {
     using T = impl::ArrayViewType<Arr>;
-    sort(ArrayView<T>{arr}, isLess);
+    sort(ArrayView<T>{arr}, is_less);
 }
 
 } // namespace ply

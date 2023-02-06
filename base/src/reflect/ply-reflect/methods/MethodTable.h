@@ -69,28 +69,33 @@ struct MethodTable {
     };
 
     // Static member functions
-    static StringView unaryOpToString(UnaryOp op);
-    static StringView binaryOpToString(BinaryOp op);
-    static FnResult unsupportedUnaryOp(BaseInterpreter* interp, UnaryOp op,
-                                           const AnyObject& obj);
-    static FnResult unsupportedBinaryOp(BaseInterpreter* interp, MethodTable::BinaryOp op,
-                                            const AnyObject& first, const AnyObject& second);
-    static FnResult unsupportedPropertyLookup(BaseInterpreter* interp, const AnyObject& obj,
-                                                  StringView propertyName);
-    static FnResult unsupportedSubscript(BaseInterpreter* interp, const AnyObject& obj,
-                                             u32 index);
-    static FnResult unsupportedPrint(BaseInterpreter* interp, const AnyObject& obj,
-                                         StringView formatSpec);
+    static StringView unary_op_to_string(UnaryOp op);
+    static StringView binary_op_to_string(BinaryOp op);
+    static FnResult unsupported_unary_op(BaseInterpreter* interp, UnaryOp op,
+                                         const AnyObject& obj);
+    static FnResult unsupported_binary_op(BaseInterpreter* interp,
+                                          MethodTable::BinaryOp op,
+                                          const AnyObject& first,
+                                          const AnyObject& second);
+    static FnResult unsupported_property_lookup(BaseInterpreter* interp,
+                                                const AnyObject& obj,
+                                                StringView property_name);
+    static FnResult unsupported_subscript(BaseInterpreter* interp, const AnyObject& obj,
+                                          u32 index);
+    static FnResult unsupported_print(BaseInterpreter* interp, const AnyObject& obj,
+                                      StringView format_spec);
 
     // Member variables
-    FnResult (*unaryOp)(BaseInterpreter* interp, UnaryOp op, const AnyObject& obj) = nullptr;
-    FnResult (*binaryOp)(BaseInterpreter* interp, BinaryOp op, const AnyObject& first,
-                             const AnyObject& second) = nullptr;
-    FnResult (*propertyLookup)(BaseInterpreter* interp, const AnyObject& obj,
-                                   StringView propertyName) = nullptr;
-    FnResult (*subscript)(BaseInterpreter* interp, const AnyObject& obj, u32 index) = nullptr;
+    FnResult (*unary_op)(BaseInterpreter* interp, UnaryOp op,
+                         const AnyObject& obj) = nullptr;
+    FnResult (*binary_op)(BaseInterpreter* interp, BinaryOp op, const AnyObject& first,
+                          const AnyObject& second) = nullptr;
+    FnResult (*property_lookup)(BaseInterpreter* interp, const AnyObject& obj,
+                                StringView property_name) = nullptr;
+    FnResult (*subscript)(BaseInterpreter* interp, const AnyObject& obj,
+                          u32 index) = nullptr;
     FnResult (*print)(BaseInterpreter* interp, const AnyObject& obj,
-                          StringView formatSpec) = nullptr;
+                      StringView format_spec) = nullptr;
 
     // Constructor
     MethodTable();

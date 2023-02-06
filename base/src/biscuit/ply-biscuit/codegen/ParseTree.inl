@@ -1,4 +1,4 @@
-PLY_STRUCT_BEGIN(ply::biscuit::Statement::FunctionDefinition)
+﻿PLY_STRUCT_BEGIN(ply::biscuit::Statement::FunctionDefinition)
 PLY_STRUCT_END()
 
 SWITCH_TABLE_BEGIN(ply::biscuit::Expression)
@@ -20,4 +20,3 @@ SWITCH_TABLE_STATE(ply::biscuit::Statement, Return_)
 SWITCH_TABLE_STATE(ply::biscuit::Statement, FunctionDefinition)
 SWITCH_TABLE_STATE(ply::biscuit::Statement, CustomBlock)
 SWITCH_TABLE_END(ply::biscuit::Statement)
-

@@ -12,24 +12,24 @@ namespace ply {
 
 PLY_DLL_ENTRY extern TypeKey TypeKey_Array;
 
-PLY_DLL_ENTRY NativeBindings& getNativeBindings_Array();
+PLY_DLL_ENTRY NativeBindings& get_native_bindings_array();
 
 struct TypeDescriptor_Array : TypeDescriptor {
-    PLY_DLL_ENTRY static TypeKey* typeKey;
-    TypeDescriptor* itemType;
+    PLY_DLL_ENTRY static TypeKey* type_key;
+    TypeDescriptor* item_type;
 
-    PLY_INLINE TypeDescriptor_Array(TypeDescriptor* itemType)
+    PLY_INLINE TypeDescriptor_Array(TypeDescriptor* item_type)
         : TypeDescriptor{&TypeKey_Array, (BaseArray*) nullptr,
-                         getNativeBindings_Array() PLY_METHOD_TABLES_ONLY(, {})},
-          itemType{itemType} {
+                         get_native_bindings_array() PLY_METHOD_TABLES_ONLY(, {})},
+          item_type{item_type} {
     }
 };
 
 template <typename T>
 struct TypeDescriptorSpecializer<Array<T>> {
     static PLY_NO_INLINE TypeDescriptor_Array* get() {
-        static TypeDescriptor_Array typeDesc{getTypeDescriptor<T>()};
-        return &typeDesc;
+        static TypeDescriptor_Array type_desc{get_type_descriptor<T>()};
+        return &type_desc;
     }
 };
 

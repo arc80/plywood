@@ -11,8 +11,9 @@ namespace ply {
 
 class Logger_Win32 {
 public:
-    static void log(StringView strWithOptionalNullTerminator) {
-        OutputDebugStringA((LPCSTR) strWithOptionalNullTerminator.withNullTerminator().bytes);
+    static void log(StringView str_with_optional_null_terminator) {
+        OutputDebugStringA(
+            (LPCSTR) str_with_optional_null_terminator.with_null_terminator().bytes);
     }
 };
 

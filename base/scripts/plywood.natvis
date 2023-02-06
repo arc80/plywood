@@ -14,32 +14,25 @@
     </Expand>
   </Type>
 
-  <Type Name="ply::OptionallyOwned&lt;*&gt;">
-    <DisplayString>owned={ptrAndOwnedFlag &amp; 1,d} {{{($T1*) (ptrAndOwnedFlag &amp; ~1)}}}</DisplayString>
-    <Expand>
-      <ExpandedItem>($T1*) (ptrAndOwnedFlag &amp; ~1)</ExpandedItem>
-    </Expand>
-  </Type>
-
   <Type Name="ply::Array&lt;*&gt;">
-    <DisplayString Condition="numItems_ == 0">numItems=0</DisplayString>
-    <DisplayString Condition="numItems_ == 1">numItems=1 {{{*($T1*) items}}}</DisplayString>
-    <DisplayString Condition="numItems_ &gt; 1">numItems={numItems_} {{{*($T1*) items}}} ...</DisplayString>
+    <DisplayString Condition="num_items_ == 0">num_items=0</DisplayString>
+    <DisplayString Condition="num_items_ == 1">num_items=1 {{{*($T1*) items}}}</DisplayString>
+    <DisplayString Condition="num_items_ &gt; 1">num_items={num_items_} {{{*($T1*) items}}} ...</DisplayString>
     <Expand>
       <ArrayItems>
-        <Size>numItems_</Size>
+        <Size>num_items_</Size>
         <ValuePointer>($T1*) items</ValuePointer>
       </ArrayItems>
     </Expand>
   </Type>
 
   <Type Name="ply::ArrayView&lt;*&gt;">
-    <DisplayString Condition="numItems == 0">numItems=0</DisplayString>
-    <DisplayString Condition="numItems == 1">numItems=1 {{{items[0]}}}</DisplayString>
-    <DisplayString Condition="numItems &gt; 1">numItems={numItems} {{{items[0]} ...}}</DisplayString>
+    <DisplayString Condition="num_items == 0">num_items=0</DisplayString>
+    <DisplayString Condition="num_items == 1">num_items=1 {{{items[0]}}}</DisplayString>
+    <DisplayString Condition="num_items &gt; 1">num_items={num_items} {{{items[0]} ...}}</DisplayString>
     <Expand>
       <ArrayItems>
-        <Size>numItems</Size>
+        <Size>num_items</Size>
         <ValuePointer>items</ValuePointer>
       </ArrayItems>
     </Expand>

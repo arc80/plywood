@@ -10,7 +10,7 @@
 
 namespace ply {
 
-NativeBindings& getNativeBindings_RawPtr() {
+NativeBindings& get_native_bindings_raw_ptr() {
     static NativeBindings bindings{
         // create
         [](TypeDescriptor*) -> AnyObject {

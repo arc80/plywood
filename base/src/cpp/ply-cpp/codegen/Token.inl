@@ -1,4 +1,4 @@
-PLY_STRUCT_BEGIN(ply::cpp::Token)
+﻿PLY_STRUCT_BEGIN(ply::cpp::Token)
 PLY_STRUCT_MEMBER(type)
 PLY_STRUCT_END()
 
@@ -55,4 +55,3 @@ PLY_ENUM_IDENTIFIER(StringLiteral)
 PLY_ENUM_IDENTIFIER(NumericLiteral)
 PLY_ENUM_IDENTIFIER(EndOfFile)
 PLY_ENUM_END()
-

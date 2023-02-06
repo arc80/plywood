@@ -14,11 +14,12 @@
 
 namespace ply {
 
-String IPAddress::toString() const {
+String IPAddress::to_string() const {
     char buf[INET6_ADDRSTRLEN] = {0};
     if (this->version() == IPAddress::V4) {
         // FIXME: Rewrite without using CRT
-        const char* r = inet_ntop(AF_INET, &this->netOrdered[3], buf, INET6_ADDRSTRLEN);
+        const char* r =
+            inet_ntop(AF_INET, &this->net_ordered[3], buf, INET6_ADDRSTRLEN);
         PLY_ASSERT(r == buf);
         PLY_UNUSED(r);
     } else {

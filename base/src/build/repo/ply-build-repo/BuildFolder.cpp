@@ -17,40 +17,41 @@ namespace build {
 
 BuildFolder_t* BuildFolder = nullptr;
 
-PLY_NO_INLINE bool BuildFolder_t::load(StringView absPath) {
+PLY_NO_INLINE bool BuildFolder_t::load(StringView abs_path) {
     ArrayView<float> xx{(float*) nullptr, (u32) 0};
-    String infoPath = Path.join(absPath, "info.pylon");
-    String strContents = FileSystem.loadTextAutodetect(infoPath);
-    if (FileSystem.lastResult() != FSResult::OK) {
-        Error.log("Unable to read file '{}'", infoPath);
+    String info_path = Path.join(abs_path, "info.pylon");
+    String str_contents = FileSystem.load_text_autodetect(info_path);
+    if (FileSystem.last_result() != FSResult::OK) {
+        Error.log("Unable to read file '{}'", info_path);
         return false;
     }
 
-    Owned<pylon::Node> aRoot = pylon::Parser{}.parse(infoPath, strContents).root;
-    if (!aRoot->isValid()) {
-        Error.log("Unable to parse the contents of '{}'", infoPath);
+    Owned<pylon::Node> a_root = pylon::Parser{}.parse(info_path, str_contents).root;
+    if (!a_root->is_valid()) {
+        Error.log("Unable to parse the contents of '{}'", info_path);
         return false;
     }
 
-    this->absPath = absPath;
-    pylon::importInto(AnyObject::bind(this), aRoot);
+    this->abs_path = abs_path;
+    pylon::import_into(AnyObject::bind(this), a_root);
     return true;
 }
 
 PLY_NO_INLINE bool BuildFolder_t::save() const {
-    Owned<pylon::Node> aRoot = pylon::exportObj(AnyObject::bind(this));
-    String strContents = pylon::toString(aRoot);
-    String infoPath = Path.join(this->absPath, "info.pylon");
-    FSResult rc = FileSystem.makeDirsAndSaveTextIfDifferent(infoPath, strContents);
+    Owned<pylon::Node> a_root = pylon::export_obj(AnyObject::bind(this));
+    String str_contents = pylon::to_string(a_root);
+    String info_path = Path.join(this->abs_path, "info.pylon");
+    FSResult rc =
+        FileSystem.make_dirs_and_save_text_if_different(info_path, str_contents);
     if ((rc != FSResult::OK) && (rc != FSResult::Unchanged)) {
-        Error.log("Unable to save file '{}'", infoPath);
+        Error.log("Unable to save file '{}'", info_path);
         return false;
     }
     return true;
 }
 
-bool isMultiConfigCMakeGenerator(StringView generator) {
-    if (generator.startsWith("Visual Studio")) {
+bool is_multi_config_cmake_generator(StringView generator) {
+    if (generator.starts_with("Visual Studio")) {
         return true;
     } else if (generator == "Xcode") {
         return true;
@@ -64,45 +65,44 @@ bool isMultiConfigCMakeGenerator(StringView generator) {
     }
 }
 
-PLY_NO_INLINE s32 buildCMakeProject(StringView cmakeListsFolder,
-                                    const CMakeGeneratorOptions& generatorOpts,
-                                    StringView config, StringView targetName) {
-    PLY_ASSERT(generatorOpts.generator);
+PLY_NO_INLINE s32 build_cmake_project(StringView cmake_lists_folder,
+                                      const CMakeGeneratorOptions& generator_opts,
+                                      StringView config, StringView target_name) {
+    PLY_ASSERT(generator_opts.generator);
     PLY_ASSERT(config);
-    String buildFolder = Path.join(cmakeListsFolder, "build");
-    bool isMultiConfig = isMultiConfigCMakeGenerator(generatorOpts.generator);
-    if (!isMultiConfig) {
-        buildFolder = Path.join(buildFolder, config);
+    String build_folder = Path.join(cmake_lists_folder, "build");
+    bool is_multi_config = is_multi_config_cmake_generator(generator_opts.generator);
+    if (!is_multi_config) {
+        build_folder = Path.join(build_folder, config);
     }
-    Process::Output outputType = Process::Output::inherit();
+    Process::Output output_type = Process::Output::inherit();
     Owned<Process> sub;
-    if (generatorOpts.generator == "Unix Makefiles") {
+    if (generator_opts.generator == "Unix Makefiles") {
         Array<HybridString> args = {};
-        u32 hwThreads = Affinity{}.getNumHWThreads();
-        if (hwThreads > 1) {
-            args.extend({"-j", to_string(hwThreads)});
+        u32 hw_threads = Affinity{}.get_num_hwthreads();
+        if (hw_threads > 1) {
+            args.extend({"-j", to_string(hw_threads)});
         }
-        if (targetName) {
-            args.append(targetName);
+        if (target_name) {
+            args.append(target_name);
         }
-        sub =
-            Process::exec("make", Array<StringView>{args}, buildFolder, outputType);
+        sub = Process::exec("make", Array<StringView>{args}, build_folder, output_type);
     } else {
         Array<StringView> args = {"--build", "."};
-        if (isMultiConfig) {
+        if (is_multi_config) {
             args.extend({"--config", config});
         }
-        if (targetName) {
-            args.extend({"--target", targetName});
+        if (target_name) {
+            args.extend({"--target", target_name});
         }
-        sub = Process::exec(PLY_CMAKE_PATH, args, buildFolder, outputType);
+        sub = Process::exec(PLY_CMAKE_PATH, args, build_folder, output_type);
     }
     return sub->join();
 }
 
 /*
-String getTargetOutputPath(BuildTargetType targetType, StringView targetName,
-                           StringView buildFolderPath, StringView config) {
+String get_target_output_path(BuildTargetType target_type, StringView target_name,
+                           StringView build_folder_path, StringView config) {
     PLY_ASSERT(config);
 
     // FIXME: The following logic assumes we're always using a native toolchain. In
@@ -112,56 +112,57 @@ target platform,
     // perhaps using ToolchainInfo. (In that case, the real question will be, in
 general, how to
     // initialize that ToolchainInfo.)
-    StringView filePrefix;
-    StringView fileExtension;
-    if (targetType == BuildTargetType::EXE) {
+    StringView file_prefix;
+    StringView file_extension;
+    if (target_type == BuildTargetType::EXE) {
 #if PLY_TARGET_WIN32
-        fileExtension = ".exe";
+        file_extension = ".exe";
 #endif
-    } else if (targetType == BuildTargetType::DLL) {
+    } else if (target_type == BuildTargetType::DLL) {
 #if PLY_TARGET_WIN32
-        fileExtension = ".dll";
+        file_extension = ".dll";
 #elif PLY_TARGET_APPLE
-        filePrefix = "lib";
-        fileExtension = ".dylib";
+        file_prefix = "lib";
+        file_extension = ".dylib";
 #else
-        filePrefix = "lib";
-        fileExtension = ".so";
+        file_prefix = "lib";
+        file_extension = ".so";
 #endif
-    } else if (targetType == BuildTargetType::DLL) {
+    } else if (target_type == BuildTargetType::DLL) {
 #if PLY_TARGET_WIN32
-        fileExtension = ".lib";
+        file_extension = ".lib";
 #else
-        filePrefix = "lib";
-        fileExtension = ".a";
+        file_prefix = "lib";
+        file_extension = ".a";
 #endif
     } else {
         PLY_ASSERT(0); // Not supported
     }
 
     // Compose full path to the target output:
-    Array<StringView> pathComponents = {buildFolderPath, "build", config};
-    String fullName = filePrefix + targetName + fileExtension;
-    pathComponents.append(fullName);
-    return Path.joinArray(Array<StringView>{pathComponents});
+    Array<StringView> path_components = {build_folder_path, "build", config};
+    String full_name = file_prefix + target_name + file_extension;
+    path_components.append(full_name);
+    return Path.join_array(Array<StringView>{path_components});
 }
 */
 
 PLY_NO_INLINE bool BuildFolder_t::build(StringView config,
-                                        StringView targetName) const {
-    // Note: Should we check that targetName actually exists in the build folder before
-    // invoking CMake? If targetName isn't a root target, this would require us to
+                                        StringView target_name) const {
+    // Note: Should we check that target_name actually exists in the build folder before
+    // invoking CMake? If target_name isn't a root target, this would require us to
     // instaniate all dependencies first.
     if (!config) {
-        config = this->activeConfig;
+        config = this->active_config;
         if (!config) {
             Error.log("Active config not set");
         }
     }
     Error.log("Building {} configuration of '{}'...\n", config,
-              targetName ? targetName : this->solutionName.view());
+              target_name ? target_name : this->solution_name.view());
 
-    s32 rc = buildCMakeProject(this->absPath, this->cmakeOptions, config, targetName);
+    s32 rc =
+        build_cmake_project(this->abs_path, this->cmake_options, config, target_name);
     if (rc != 0) {
         Error.log("Build failed");
         return false;

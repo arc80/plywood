@@ -1,15 +1,17 @@
-enum class ID : u16 {
+﻿enum class ID : u16 {
     IdentifierOrTemplated,
     DeclType,
     Count,
 };
 union Storage_ {
-    IdentifierOrTemplated identifierOrTemplated;
-    DeclType declType;
-    PLY_INLINE Storage_() {}
-    PLY_INLINE ~Storage_() {}
+    IdentifierOrTemplated identifier_or_templated;
+    DeclType decl_type;
+    PLY_INLINE Storage_() {
+    }
+    PLY_INLINE ~Storage_() {
+    }
 };
 SWITCH_FOOTER(Type, IdentifierOrTemplated)
-SWITCH_ACCESSOR(IdentifierOrTemplated, identifierOrTemplated)
-SWITCH_ACCESSOR(DeclType, declType)
+SWITCH_ACCESSOR(IdentifierOrTemplated, identifier_or_templated)
+SWITCH_ACCESSOR(DeclType, decl_type)
 PLY_SWITCH_REFLECT()

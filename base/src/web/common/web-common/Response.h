@@ -22,7 +22,7 @@ struct Request {
     struct StartLine {
         StringView method;
         StringView uri;
-        StringView httpVersion;
+        StringView http_version;
     };
 
     struct HeaderField {
@@ -30,25 +30,26 @@ struct Request {
         StringView value;
     };
 
-    IPAddress clientAddr;
-    u16 clientPort = 0;
-    StartLine startLine;
-    Array<HeaderField> headerFields;
+    IPAddress client_addr;
+    u16 client_port = 0;
+    StartLine start_line;
+    Array<HeaderField> header_fields;
 };
 
-// This interface exists so that the same response code can be used both from FastCGI or from a
-// webserver directly.
+// This interface exists so that the same response code can be used both from FastCGI or
+// from a webserver directly.
 struct ResponseIface {
     Request request;
 
-    // The request handler must call respondWith first, then manually write any optional headers,
-    // followed by a blank \r\n line, followed by the content.
-    virtual OutStream* beginResponseHeader(ResponseCode responseCode) = 0;
-    virtual void endResponseHeader() = 0;
-    void respondGeneric(ResponseCode responseCode);
+    // The request handler must call respond_with first, then manually write any
+    // optional headers, followed by a blank \r\n line, followed by the content.
+    virtual OutStream* begin_response_header(ResponseCode response_code) = 0;
+    virtual void end_response_header() = 0;
+    void respond_generic(ResponseCode response_code);
 };
 
-using RequestHandler = Functor<void(StringView requestPath, ResponseIface* responseIface)>;
+using RequestHandler =
+    Functor<void(StringView request_path, ResponseIface* response_iface)>;
 
 } // namespace web
 } // namespace ply

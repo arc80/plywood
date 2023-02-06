@@ -13,8 +13,8 @@ namespace ply {
 
 template <typename T>
 AnyObject AnyObject::bind(T* data) {
-    // FIXME: Find a better way to handle cases where this function is passed a pointer to
-    // const.
+    // FIXME: Find a better way to handle cases where this function is passed a pointer
+    // to const.
     return AnyObject{(void*) data, TypeDescriptorSpecializer<T>::get()};
 }
 
@@ -25,27 +25,27 @@ bool AnyObject::is() const {
 
 template <class T>
 T* AnyObject::cast() const {
-    // Not sure if this is a good general strategy, but for now, it's valid to cast a null
-    // pointer to any target type, regardless of src type (even if src type is null). This
-    // extra flexibility was added to simplify callers of readObject(), such as
-    // CookCommandReader(), when an unexpected EOF is encountered:
+    // Not sure if this is a good general strategy, but for now, it's valid to cast a
+    // null pointer to any target type, regardless of src type (even if src type is
+    // null). This extra flexibility was added to simplify callers of read_object(),
+    // such as CookCommandReader(), when an unexpected EOF is encountered:
     PLY_ASSERT(!data || (TypeDescriptorSpecializer<T>::get() == type));
     return (T*) data;
 }
 
 template <class T>
-T* AnyObject::safeCast() const {
+T* AnyObject::safe_cast() const {
     return (TypeDescriptorSpecializer<T>::get() == this->type) ? (T*) data : nullptr;
 }
 
 template <class S>
 const S& AnyObject::refine() const {
-    PLY_ASSERT(type->typeKey == S::TypeDescriptor::typeKey);
+    PLY_ASSERT(type->type_key == S::TypeDescriptor::type_key);
     return (const S&) *this;
 }
 
-inline AnyObject AnyObject::create(TypeDescriptor* typeDesc) {
-    return typeDesc->bindings.create(typeDesc);
+inline AnyObject AnyObject::create(TypeDescriptor* type_desc) {
+    return type_desc->bindings.create(type_desc);
 }
 
 inline void AnyObject::destroy() {

@@ -14,15 +14,15 @@
 namespace pylon {
 
 typedef TypeDescriptor* TypeFromName(StringView);
-AnyOwnedObject import(TypeDescriptor* typeDesc, const pylon::Node* aRoot,
-                   const Func<TypeFromName>& typeFromName = {});
-void importInto(AnyObject obj, const pylon::Node* aRoot,
-                const Func<TypeFromName>& typeFromName = {});
+AnyOwnedObject import(TypeDescriptor* type_desc, const pylon::Node* a_root,
+                      const Func<TypeFromName>& type_from_name = {});
+void import_into(AnyObject obj, const pylon::Node* a_root,
+                 const Func<TypeFromName>& type_from_name = {});
 
 template <typename T>
-PLY_INLINE Owned<T> import(const pylon::Node* aRoot,
-                           const Func<TypeFromName>& typeFromName = {}) {
-    AnyOwnedObject result = import(getTypeDescriptor<T>(), aRoot, typeFromName);
+PLY_INLINE Owned<T> import(const pylon::Node* a_root,
+                           const Func<TypeFromName>& type_from_name = {}) {
+    AnyOwnedObject result = import(get_type_descriptor<T>(), a_root, type_from_name);
     return result.release<T>();
 }
 

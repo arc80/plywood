@@ -34,17 +34,17 @@ enum class Format : u8 {
 };
 
 #if PLY_IS_BIG_ENDIAN
-inline u32 toRGBA(const Int4<u8>& color) {
+inline u32 to_rgba(const Int4<u8>& color) {
     return (color.w) | (color.z << 8) | (color.y << 16) | (color.x << 16);
 }
-inline u32 toABGR(const Int4<u8>& color) {
+inline u32 to_abgr(const Int4<u8>& color) {
     return (const u32&) color;
 }
 #else
-inline u32 toRGBA(const Int4<u8>& color) {
+inline u32 to_rgba(const Int4<u8>& color) {
     return (const u32&) color;
 }
-inline u32 toABGR(const Int4<u8>& color) {
+inline u32 to_abgr(const Int4<u8>& color) {
     return (color.w) | (color.z << 8) | (color.y << 16) | (color.x << 16);
 }
 #endif
@@ -67,51 +67,51 @@ struct Image {
     }
     // void operator=(const Image& im) = delete;
 
-    void onPostSerialize() {
+    void on_post_serialize() {
         PLY_ASSERT(format < Format::NumFormats);
         bytespp = FormatToBPP[(u8) format];
     }
 
     u32 size() const {
         PLY_ASSERT(stride > 0);
-        return safeDemote<u32>(stride * height);
+        return safe_demote<u32>(stride * height);
     }
-    bool isChar() const {
+    bool is_char() const {
         return format == Format::Char && bytespp == 1;
     }
-    bool isByte() const {
+    bool is_byte() const {
         return format == Format::Byte && bytespp == 1;
     }
-    bool isByte2() const {
+    bool is_byte2() const {
         return format == Format::Byte2 && bytespp == 2;
     }
-    bool isFloat() const {
+    bool is_float() const {
         return format == Format::Float && bytespp == 4;
     }
-    bool isHalf() const {
+    bool is_half() const {
         return format == Format::Half && bytespp == 2;
     }
-    bool isFloat2() const {
+    bool is_float2() const {
         return format == Format::Float2 && bytespp == 8;
     }
-    bool isHalf2() const {
+    bool is_half2() const {
         return format == Format::Half2 && bytespp == 4;
     }
-    bool isFloat4() const {
+    bool is_float4() const {
         return format == Format::Float4 && bytespp == 16;
     }
-    bool isHalf4() const {
+    bool is_half4() const {
         return format == Format::Half4 && bytespp == 8;
     }
-    bool isU16() const {
+    bool is_u16() const {
         return format == Format::U16 && bytespp == 2;
     }
 
-    friend bool sameDims(const Image& a, const Image& b) {
+    friend bool same_dims(const Image& a, const Image& b) {
         return a.width == b.width && a.height == b.height;
     }
 
-    bool isSquare() const {
+    bool is_square() const {
         return width == height;
     }
 
@@ -119,30 +119,30 @@ struct Image {
         return {width, height};
     }
 
-    IntRect getRect() const {
+    IntRect get_rect() const {
         return {{0, 0}, {width, height}};
     }
 
-    char* getPixel(s32 x, s32 y) {
-        PLY_ASSERT(getRect().contains(IntVec2{x, y}));
+    char* get_pixel(s32 x, s32 y) {
+        PLY_ASSERT(get_rect().contains(IntVec2{x, y}));
         return data + y * stride + x * bytespp;
     }
 
-    const char* getPixel(s32 x, s32 y) const {
-        PLY_ASSERT(getRect().contains(IntVec2{x, y}));
+    const char* get_pixel(s32 x, s32 y) const {
+        PLY_ASSERT(get_rect().contains(IntVec2{x, y}));
         return data + y * stride + x * bytespp;
     }
 
     template <typename T>
     T* get(s32 x, s32 y) {
         PLY_ASSERT(sizeof(T) == FormatToBPP[(u8) format]);
-        return (T*) getPixel(x, y);
+        return (T*) get_pixel(x, y);
     }
 
     template <typename T>
     const T* get(s32 x, s32 y) const {
         PLY_ASSERT(sizeof(T) == FormatToBPP[(u8) format]);
-        return (const T*) getPixel(x, y);
+        return (const T*) get_pixel(x, y);
     }
 };
 
@@ -214,21 +214,21 @@ struct OwnImage : Image {
 };
 
 inline Image crop(const Image& im, const IntRect& r) {
-    PLY_ASSERT(im.getRect().contains(r));
-    return Image{im.data + r.mins.y * im.stride + r.mins.x * im.bytespp, im.stride, r.width(),
-                 r.height(), im.format};
+    PLY_ASSERT(im.get_rect().contains(r));
+    return Image{im.data + r.mins.y * im.stride + r.mins.x * im.bytespp, im.stride,
+                 r.width(), r.height(), im.format};
 }
 
 OwnImage copy(const Image& im);
 void clear(Image& image, u32 value);
 void clear(Image& image, float value);
 void clear(Image& image, const Float4& value);
-void verticalFlip(Image& dst, const Image& src);
-void copy32Bit(Image& dst, const Image& src);
-void linearToSRGB(Image& dst, const Image& src);
-void convertFloatToHalf(Image& halfIm, const Image& floatIm);
-void convertFloat2ToHalf2(Image& halfIm, const Image& floatIm);
-void convertFloat4ToHalf4(Image& halfIm, const Image& floatIm);
+void vertical_flip(Image& dst, const Image& src);
+void copy32_bit(Image& dst, const Image& src);
+void linear_to_srgb(Image& dst, const Image& src);
+void convert_float_to_half(Image& half_im, const Image& float_im);
+void convert_float2_to_half2(Image& half_im, const Image& float_im);
+void convert_float4_to_half4(Image& half_im, const Image& float_im);
 
 } // namespace image
 } // namespace ply

@@ -13,38 +13,38 @@ namespace build {
 
 struct CMakeGeneratorOptions {
     PLY_REFLECT()
-    String generator;     // passed directly to -G
-    String platform;      // passed directly to -A
-    String toolset;       // passed directly to -T
-    String toolchainFile; // currently "ios" or blank
+    String generator;      // passed directly to -G
+    String platform;       // passed directly to -A
+    String toolset;        // passed directly to -T
+    String toolchain_file; // currently "ios" or blank
     // ply reflect off
 
     template <typename Hasher>
-    void appendTo(Hasher& h) const {
+    void append_to(Hasher& h) const {
         h.append(this->generator);
         h.append(this->platform);
         h.append(this->toolset);
-        h.append(this->toolchainFile);
+        h.append(this->toolchain_file);
     }
 };
 
 struct BuildFolder_t {
-    String absPath;
+    String abs_path;
 
     PLY_REFLECT()
-    String solutionName;
-    CMakeGeneratorOptions cmakeOptions;
-    Array<String> rootTargets;
-    Array<String> makeShared;
-    Array<String> externSelectors;
-    String activeConfig;
-    String activeTarget;
+    String solution_name;
+    CMakeGeneratorOptions cmake_options;
+    Array<String> root_targets;
+    Array<String> make_shared;
+    Array<String> extern_selectors;
+    String active_config;
+    String active_target;
     // ply reflect off
 
     // BuildFolder management
-    bool load(StringView absPath);
+    bool load(StringView abs_path);
     bool save() const;
-    bool build(StringView config, StringView targetName) const;
+    bool build(StringView config, StringView target_name) const;
 };
 
 } // namespace build

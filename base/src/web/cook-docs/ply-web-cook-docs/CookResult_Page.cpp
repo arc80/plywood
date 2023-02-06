@@ -17,140 +17,148 @@ namespace docs {
 
 extern cook::CookJobType CookJobType_Page;
 
-void visitAll(markdown::Node* node, const Functor<bool(markdown::Node*)>& callback) {
+void visit_all(markdown::Node* node, const Functor<bool(markdown::Node*)>& callback) {
     if (callback(node)) {
         for (markdown::Node* child : node->children) {
-            visitAll(child, callback);
+            visit_all(child, callback);
         }
     }
 }
 
-SemaEntity* resolveClassScope(StringView classScopeText) {
+SemaEntity* resolve_class_scope(StringView class_scope_text) {
     cook::CookContext* ctx = cook::CookContext::current();
-    WebCookerIndex* wci = ctx->depTracker->userData.safeCast<WebCookerIndex>();
-    Array<StringView> comps = classScopeText.splitByte(':');
-    return wci->globalScope->lookupChain(comps);
+    WebCookerIndex* wci = ctx->dep_tracker->user_data.safe_cast<WebCookerIndex>();
+    Array<StringView> comps = class_scope_text.split_byte(':');
+    return wci->global_scope->lookup_chain(comps);
 }
 
-String getLinkDestination(const SemaEntity* targetSema) {
-    cook::DependencyTracker* depTracker = cook::DependencyTracker::current();
-    WebCookerIndex* wci = depTracker->userData.safeCast<WebCookerIndex>();
-    String memberSuffix;
-    if (targetSema->type == SemaEntity::Member) {
-        memberSuffix = StringView{"#"} + targetSema->name;
-        targetSema = targetSema->parent;
-        if (targetSema->type != SemaEntity::Class)
+String get_link_destination(const SemaEntity* target_sema) {
+    cook::DependencyTracker* dep_tracker = cook::DependencyTracker::current();
+    WebCookerIndex* wci = dep_tracker->user_data.safe_cast<WebCookerIndex>();
+    String member_suffix;
+    if (target_sema->type == SemaEntity::Member) {
+        member_suffix = StringView{"#"} + target_sema->name;
+        target_sema = target_sema->parent;
+        if (target_sema->type != SemaEntity::Class)
             return {};
     }
-    auto iter = wci->extractPageMeta.findFirstGreaterOrEqualTo(targetSema->name);
-    for (; iter.isValid() && iter.getItem()->semaEnt->name == targetSema->name; iter.next()) {
-        if (iter.getItem()->semaEnt == targetSema) {
-            return iter.getItem()->linkDestination + memberSuffix;
+    auto iter =
+        wci->extract_page_meta.find_first_greater_or_equal_to(target_sema->name);
+    for (; iter.is_valid() && iter.get_item()->sema_ent->name == target_sema->name;
+         iter.next()) {
+        if (iter.get_item()->sema_ent == target_sema) {
+            return iter.get_item()->link_destination + member_suffix;
         }
     }
     return {};
 }
 
-HybridString wrapWithLink(StringView html, const SemaEntity* targetSema) {
-    String linkDestination = getLinkDestination(targetSema);
-    if (linkDestination) {
-        return String::format("<a href=\"{}\">{}</a>", fmt::XMLEscape{linkDestination}, html);
+HybridString wrap_with_link(StringView html, const SemaEntity* target_sema) {
+    String link_destination = get_link_destination(target_sema);
+    if (link_destination) {
+        return String::format("<a href=\"{}\">{}</a>", fmt::XMLEscape{link_destination},
+                              html);
     } else {
         return html;
     }
 }
 
 struct LookupContext {
-    SemaEntity* forClass = nullptr;
-    ArrayView<SemaEntity* const> semaGroup;
+    SemaEntity* for_class = nullptr;
+    ArrayView<SemaEntity* const> sema_group;
 
-    bool shouldShowLink(SemaEntity* semaToLink) const {
+    bool should_show_link(SemaEntity* sema_to_link) const {
         // Avoid unnecessary/unhelpful/"noisy" links
-        if (semaToLink == this->forClass)
+        if (sema_to_link == this->for_class)
             return false;
-        for (SemaEntity* checkSema : this->semaGroup) {
-            if (semaToLink == checkSema || semaToLink->parent == checkSema)
+        for (SemaEntity* check_sema : this->sema_group) {
+            if (sema_to_link == check_sema || sema_to_link->parent == check_sema)
                 return false;
         }
         return true;
     }
 };
 
-String getLinkDestinationFromSpan(StringView codeSpanText, const LookupContext& lookupCtx) {
-    if (codeSpanText.endsWith("()")) {
-        codeSpanText = codeSpanText.shortenedBy(2);
+String get_link_destination_from_span(StringView code_span_text,
+                                      const LookupContext& lookup_ctx) {
+    if (code_span_text.ends_with("()")) {
+        code_span_text = code_span_text.shortened_by(2);
     }
-    Array<StringView> nameComps = codeSpanText.splitByte(':');
-    if (nameComps.isEmpty())
+    Array<StringView> name_comps = code_span_text.split_byte(':');
+    if (name_comps.is_empty())
         return {};
-    PLY_ASSERT(!codeSpanText.startsWith(":")); // Not supported yet
-    for (SemaEntity* fromSema : lookupCtx.semaGroup) {
-        SemaEntity* foundSema = fromSema->lookupChain(nameComps);
-        if (foundSema) {
-            if (!lookupCtx.shouldShowLink(foundSema))
+    PLY_ASSERT(!code_span_text.starts_with(":")); // Not supported yet
+    for (SemaEntity* from_sema : lookup_ctx.sema_group) {
+        SemaEntity* found_sema = from_sema->lookup_chain(name_comps);
+        if (found_sema) {
+            if (!lookup_ctx.should_show_link(found_sema))
                 return {};
-            return getLinkDestination(foundSema);
+            return get_link_destination(found_sema);
         }
     }
-    if (lookupCtx.forClass) {
+    if (lookup_ctx.for_class) {
         // Try class itself last
-        SemaEntity* foundSema = lookupCtx.forClass->lookupChain(nameComps);
-        if (foundSema) {
-            if (!lookupCtx.shouldShowLink(foundSema))
+        SemaEntity* found_sema = lookup_ctx.for_class->lookup_chain(name_comps);
+        if (found_sema) {
+            if (!lookup_ctx.should_show_link(found_sema))
                 return {};
-            return getLinkDestination(foundSema);
+            return get_link_destination(found_sema);
         }
     }
     // No potential link destination found
     return {};
 }
 
-Owned<markdown::Node> parseMarkdown(StringView markdown, const LookupContext& lookupCtx) {
+Owned<markdown::Node> parse_markdown(StringView markdown,
+                                     const LookupContext& lookup_ctx) {
     using namespace markdown;
     Owned<Node> document = parse(markdown);
-    WebCookerIndex* wci = cook::DependencyTracker::current()->userData.safeCast<WebCookerIndex>();
-    visitAll(document, [&](Node* node) -> bool {
+    WebCookerIndex* wci =
+        cook::DependencyTracker::current()->user_data.safe_cast<WebCookerIndex>();
+    visit_all(document, [&](Node* node) -> bool {
         if (node->type == Node::Link) {
             // Fixup link destinations
-            if (!node->text.startsWith("/") && node->text.findByte(':') < 0) {
-                s32 anchorPos = node->text.findByte('#');
-                if (anchorPos < 0) {
-                    anchorPos = node->text.numBytes;
+            if (!node->text.starts_with("/") && node->text.find_byte(':') < 0) {
+                s32 anchor_pos = node->text.find_byte('#');
+                if (anchor_pos < 0) {
+                    anchor_pos = node->text.num_bytes;
                 }
-                StringView linkID = node->text.left(anchorPos);
-                if (linkID) {
-                    auto iter = wci->linkIDMap.findFirstGreaterOrEqualTo(linkID);
-                    if (iter.isValid() && iter.getItem()->linkID == linkID) {
-                        node->text =
-                            iter.getItem()->getLinkDestination() + node->text.subStr(anchorPos);
+                StringView link_id = node->text.left(anchor_pos);
+                if (link_id) {
+                    auto iter = wci->link_idmap.find_first_greater_or_equal_to(link_id);
+                    if (iter.is_valid() && iter.get_item()->link_id == link_id) {
+                        node->text = iter.get_item()->get_link_destination() +
+                                     node->text.sub_str(anchor_pos);
                     }
                 }
             }
             return false;
         } else if (node->type == Node::CodeSpan) {
-            String linkDestination = getLinkDestinationFromSpan(node->text, lookupCtx);
-            if (!linkDestination)
+            String link_destination =
+                get_link_destination_from_span(node->text, lookup_ctx);
+            if (!link_destination)
                 return false;
             Node* parent = node->parent;
             s32 i = find(parent->children, node);
             PLY_ASSERT(i >= 0);
-            Owned<Node> movedNode = std::move(parent->children[i]);
-            PLY_ASSERT(movedNode == node);
+            Owned<Node> moved_node = std::move(parent->children[i]);
+            PLY_ASSERT(moved_node == node);
             Owned<Node> link = new Node{nullptr, Node::Link};
-            link->text = std::move(linkDestination);
+            link->text = std::move(link_destination);
             link->parent = node;
-            link->children.append(std::move(movedNode));
+            link->children.append(std::move(moved_node));
             parent->children[i] = std::move(link);
             node->parent = link;
             return false;
         } else if (node->type == Node::Heading) {
-            if (node->children.numItems() == 1) {
-                Node* linkNode = node->children[0];
-                if (linkNode->type == Node::Link && linkNode->text.startsWith("#")) {
+            if (node->children.num_items() == 1) {
+                Node* link_node = node->children[0];
+                if (link_node->type == Node::Link && link_node->text.starts_with("#")) {
                     // Convert this to an anchor
-                    node->id = linkNode->text.subStr(1);
-                    Array<Owned<Node>> promoteChildren = std::move(linkNode->children);
-                    node->children = std::move(promoteChildren);
+                    node->id = link_node->text.sub_str(1);
+                    Array<Owned<Node>> promote_children =
+                        std::move(link_node->children);
+                    node->children = std::move(promote_children);
                 }
             }
         }
@@ -159,377 +167,396 @@ Owned<markdown::Node> parseMarkdown(StringView markdown, const LookupContext& lo
     return document;
 }
 
-String convertMarkdownToHTML(StringView markdown, const LookupContext& lookupCtx) {
-    Owned<markdown::Node> document = parseMarkdown(markdown, lookupCtx);
+String convert_markdown_to_html(StringView markdown, const LookupContext& lookup_ctx) {
+    Owned<markdown::Node> document = parse_markdown(markdown, lookup_ctx);
     MemOutStream mout;
     markdown::HTMLOptions options;
-    options.childAnchors = true;
-    convertToHTML(&mout, document, options);
-    return mout.moveToString();
+    options.child_anchors = true;
+    convert_to_html(&mout, document, options);
+    return mout.move_to_string();
 }
 
-void dumpMemberTitle(const DocInfo::Entry::Title& title, OutStream& htmlWriter,
-                     bool prependClassName, const LookupContext& lookupCtx) {
-    const SemaEntity* templateParams = title.member->templateParams;
-    const cpp::sema::SingleDeclaration* singleDecl = &title.member->singleDecl;
+void dump_member_title(const DocInfo::Entry::Title& title, OutStream& html_writer,
+                       bool prepend_class_name, const LookupContext& lookup_ctx) {
+    const SemaEntity* template_params = title.member->template_params;
+    const cpp::sema::SingleDeclaration* single_decl = &title.member->single_decl;
 
-    bool inRootDeclarator = false;
+    bool in_root_declarator = false;
     using C = cpp::sema::Stringifier::Component;
-    if (templateParams) {
-        htmlWriter << "<code class=\"template\">template &lt;";
+    if (template_params) {
+        html_writer << "<code class=\"template\">template &lt;";
         bool first = true;
-        for (const SemaEntity* param : templateParams->childSeq) {
+        for (const SemaEntity* param : template_params->child_seq) {
             if (!first) {
-                htmlWriter << ", ";
+                html_writer << ", ";
             }
             first = false;
-            for (const C& comp : cpp::sema::toStringComps(param->singleDecl, nullptr, false)) {
-                htmlWriter << fmt::XMLEscape{comp.text};
+            for (const C& comp :
+                 cpp::sema::to_string_comps(param->single_decl, nullptr, false)) {
+                html_writer << fmt::XMLEscape{comp.text};
             }
         }
-        htmlWriter << "&gt;</code><br>\n";
+        html_writer << "&gt;</code><br>\n";
     }
-    htmlWriter << "<code>";
-    for (const C& comp : cpp::sema::toStringComps(*singleDecl, title.member, prependClassName)) {
+    html_writer << "<code>";
+    for (const C& comp :
+         cpp::sema::to_string_comps(*single_decl, title.member, prepend_class_name)) {
         if (comp.type == C::BeginRootDeclarator) {
-            htmlWriter << "<strong>";
-            inRootDeclarator = true;
+            html_writer << "<strong>";
+            in_root_declarator = true;
         } else if (comp.type == C::EndRootDeclarator) {
-            htmlWriter << "</strong>";
-            inRootDeclarator = false;
+            html_writer << "</strong>";
+            in_root_declarator = false;
         } else {
-            String linkDestination;
-            if (!inRootDeclarator && comp.sema) {
+            String link_destination;
+            if (!in_root_declarator && comp.sema) {
                 PLY_ASSERT(comp.type == C::KeywordOrIdentifier);
-                if (lookupCtx.shouldShowLink(comp.sema)) {
-                    linkDestination = getLinkDestination(comp.sema);
+                if (lookup_ctx.should_show_link(comp.sema)) {
+                    link_destination = get_link_destination(comp.sema);
                 }
             }
-            if (linkDestination) {
-                htmlWriter.format("<a href=\"{}\">", fmt::XMLEscape{linkDestination});
+            if (link_destination) {
+                html_writer.format("<a href=\"{}\">", fmt::XMLEscape{link_destination});
             }
-            htmlWriter << fmt::XMLEscape{comp.text};
-            if (linkDestination) {
-                htmlWriter << "</a>";
+            html_writer << fmt::XMLEscape{comp.text};
+            if (link_destination) {
+                html_writer << "</a>";
             }
         }
     }
-    htmlWriter << "</code>\n";
+    html_writer << "</code>\n";
 }
 
-void dumpBaseClasses(OutStream& htmlWriter, SemaEntity* classEnt,
-                     const LookupContext& lookupCtx) {
+void dump_base_classes(OutStream& html_writer, SemaEntity* class_ent,
+                       const LookupContext& lookup_ctx) {
     // Dump base classes
-    for (const cpp::sema::QualifiedID& qid : classEnt->baseClasses) {
-        Array<StringView> comps = qid.getSimplifiedComponents();
-        SemaEntity* baseEnt = classEnt->lookupChain(comps);
-        if (!baseEnt)
+    for (const cpp::sema::QualifiedID& qid : class_ent->base_classes) {
+        Array<StringView> comps = qid.get_simplified_components();
+        SemaEntity* base_ent = class_ent->lookup_chain(comps);
+        if (!base_ent)
             continue;
-        if (!baseEnt->docInfo)
+        if (!base_ent->doc_info)
             continue;
-        if (!baseEnt->docInfo->entries)
+        if (!base_ent->doc_info->entries)
             continue;
 
-        htmlWriter.format(
-            "<h2>Members Inherited From {}</h2>\n",
-            wrapWithLink(String::format("<code>{}</code>", baseEnt->getQualifiedID()), baseEnt));
-        htmlWriter << "<ul>\n";
-        for (const DocInfo::Entry& entry : baseEnt->docInfo->entries) {
+        html_writer.format("<h2>Members Inherited From {}</h2>\n",
+                           wrap_with_link(String::format("<code>{}</code>",
+                                                         base_ent->get_qualified_id()),
+                                          base_ent));
+        html_writer << "<ul>\n";
+        for (const DocInfo::Entry& entry : base_ent->doc_info->entries) {
             for (const DocInfo::Entry::Title& title : entry.titles) {
-                htmlWriter << "<li>";
-                dumpMemberTitle(title, htmlWriter, true, {baseEnt, lookupCtx.semaGroup});
-                htmlWriter << "</li>\n";
+                html_writer << "<li>";
+                dump_member_title(title, html_writer, true,
+                                  {base_ent, lookup_ctx.sema_group});
+                html_writer << "</li>\n";
             }
         }
-        htmlWriter << "</ul>\n";
+        html_writer << "</ul>\n";
 
-        dumpBaseClasses(htmlWriter, baseEnt, {baseEnt, lookupCtx.semaGroup});
+        dump_base_classes(html_writer, base_ent, {base_ent, lookup_ctx.sema_group});
     }
 };
 
-void dumpExtractedMembers(OutStream& htmlWriter, SemaEntity* classEnt) {
-    PLY_ASSERT(classEnt);
-    PLY_ASSERT(classEnt->type == SemaEntity::Class);
-    const DocInfo* docInfo = classEnt->docInfo;
-    PLY_ASSERT(docInfo);
+void dump_extracted_members(OutStream& html_writer, SemaEntity* class_ent) {
+    PLY_ASSERT(class_ent);
+    PLY_ASSERT(class_ent->type == SemaEntity::Class);
+    const DocInfo* doc_info = class_ent->doc_info;
+    PLY_ASSERT(doc_info);
 
-    auto dumpMemberEntry = [&](const DocInfo::Entry& entry, bool prependClassName) {
-        Array<SemaEntity*> semaGroup;
+    auto dump_member_entry = [&](const DocInfo::Entry& entry, bool prepend_class_name) {
+        Array<SemaEntity*> sema_group;
         for (const DocInfo::Entry::Title& title : entry.titles) {
-            semaGroup.append(title.member);
+            sema_group.append(title.member);
         }
-        LookupContext lookupCtx{classEnt, semaGroup};
+        LookupContext lookup_ctx{class_ent, sema_group};
 
-        htmlWriter << "<dt>";
+        html_writer << "<dt>";
         for (const DocInfo::Entry::Title& title : entry.titles) {
             String anchor;
             String permalink;
             if (title.member->name) {
-                htmlWriter.format("<div class=\"defTitle anchored\"><span class=\"anchor\" "
-                                  "id=\"{}\">&nbsp;</span>",
-                                  fmt::XMLEscape{title.member->name});
+                html_writer.format(
+                    "<div class=\"defTitle anchored\"><span class=\"anchor\" "
+                    "id=\"{}\">&nbsp;</span>",
+                    fmt::XMLEscape{title.member->name});
                 /*
                 permalink =
-                    String::format(" <a class=\"headerlink\" href=\"#{}\" title=\"Permalink to "
-                                   "this definition\">[link]</a>",
+                    String::format(" <a class=\"headerlink\" href=\"#{}\"
+                title=\"Permalink to " "this definition\">[link]</a>",
                                    fmt::XMLEscape{title.member->name});
                 */
             } else {
-                htmlWriter.format("<div class=\"defTitle\"{}>", anchor);
+                html_writer.format("<div class=\"defTitle\"{}>", anchor);
             }
 
-            dumpMemberTitle(title, htmlWriter, prependClassName, lookupCtx);
+            dump_member_title(title, html_writer, prepend_class_name, lookup_ctx);
 
-            // Close <code> tag, write optional permalink & source code link, close <div>
-            PLY_ASSERT(title.srcPath.startsWith(Path.normalize(Workspace.path)));
-            String srcPath = PosixPath.from<NativePath>(
-                Path.makeRelative(Workspace.path, title.srcPath));
+            // Close <code> tag, write optional permalink & source code link, close
+            // <div>
+            PLY_ASSERT(title.src_path.starts_with(Path.normalize(Workspace.path)));
+            String src_path = PosixPath.from<NativePath>(
+                Path.make_relative(Workspace.path, title.src_path));
 #if WEBCOOKDOCS_LINK_TO_GITHUB
             // FIXME: Link to a specific commit
-            StringView srcLinkPrefix = "https://github.com/arc80/plywood/tree/main/";
+            StringView src_link_prefix = "https://github.com/arc80/plywood/tree/main/";
 #else
-            StringView srcLinkPrefix = "/file/";
+            StringView src_link_prefix = "/file/";
 #endif
-            String srcLocation =
-                String::format(" <a class=\"headerlink\" href=\"{}{}#L{}\" "
-                               "title=\"Go to source code\">[code]</a>",
-                               srcLinkPrefix, fmt::XMLEscape{srcPath}, title.lineNumber);
-            htmlWriter.format("{}{}</div>\n", permalink, srcLocation);
+            String src_location = String::format(
+                " <a class=\"headerlink\" href=\"{}{}#L{}\" "
+                "title=\"Go to source code\">[code]</a>",
+                src_link_prefix, fmt::XMLEscape{src_path}, title.line_number);
+            html_writer.format("{}{}</div>\n", permalink, src_location);
         }
-        htmlWriter << "</dt>\n";
-        htmlWriter << "<dd>\n";
-        htmlWriter << convertMarkdownToHTML(entry.markdownDesc, lookupCtx);
-        htmlWriter << "</dd>\n";
+        html_writer << "</dt>\n";
+        html_writer << "<dd>\n";
+        html_writer << convert_markdown_to_html(entry.markdown_desc, lookup_ctx);
+        html_writer << "</dd>\n";
     };
 
     // Dump data members
-    bool wroteSectionHeader = false;
-    for (const DocInfo::Entry& entry : docInfo->entries) {
-        if (!entry.titles[0].member->isFunction()) {
-            if (!wroteSectionHeader) {
-                htmlWriter << "<h2>Data Members</h2>\n";
-                htmlWriter << "<dl>\n";
-                wroteSectionHeader = true;
+    bool wrote_section_header = false;
+    for (const DocInfo::Entry& entry : doc_info->entries) {
+        if (!entry.titles[0].member->is_function()) {
+            if (!wrote_section_header) {
+                html_writer << "<h2>Data Members</h2>\n";
+                html_writer << "<dl>\n";
+                wrote_section_header = true;
             }
-            dumpMemberEntry(entry, false);
+            dump_member_entry(entry, false);
         }
     }
-    if (wroteSectionHeader) {
-        htmlWriter << "</dl>\n\n";
+    if (wrote_section_header) {
+        html_writer << "</dl>\n\n";
     }
 
     // Dump member functions in categories first
-    for (u32 c = 0; c < docInfo->categories.numItems(); c++) {
-        wroteSectionHeader = false;
-        for (const DocInfo::Entry& entry : docInfo->entries) {
-            if (entry.titles[0].member->isFunction() && entry.categoryIndex == (s32) c) {
-                if (!wroteSectionHeader) {
-                    htmlWriter.format("<h2>{}</h2>\n", docInfo->categories[c].desc);
-                    htmlWriter << "<dl>\n";
-                    wroteSectionHeader = true;
+    for (u32 c = 0; c < doc_info->categories.num_items(); c++) {
+        wrote_section_header = false;
+        for (const DocInfo::Entry& entry : doc_info->entries) {
+            if (entry.titles[0].member->is_function() &&
+                entry.category_index == (s32) c) {
+                if (!wrote_section_header) {
+                    html_writer.format("<h2>{}</h2>\n", doc_info->categories[c].desc);
+                    html_writer << "<dl>\n";
+                    wrote_section_header = true;
                 }
-                dumpMemberEntry(entry, true);
+                dump_member_entry(entry, true);
             }
         }
     }
 
     // Dump uncategorized member functions
-    wroteSectionHeader = false;
-    for (const DocInfo::Entry& entry : docInfo->entries) {
-        if (entry.titles[0].member->isFunction() && entry.categoryIndex < 0) {
-            if (!wroteSectionHeader) {
-                htmlWriter << "<h2>Member Functions</h2>\n";
-                htmlWriter << "<dl>\n";
-                wroteSectionHeader = true;
+    wrote_section_header = false;
+    for (const DocInfo::Entry& entry : doc_info->entries) {
+        if (entry.titles[0].member->is_function() && entry.category_index < 0) {
+            if (!wrote_section_header) {
+                html_writer << "<h2>Member Functions</h2>\n";
+                html_writer << "<dl>\n";
+                wrote_section_header = true;
             }
-            dumpMemberEntry(entry, true);
+            dump_member_entry(entry, true);
         }
     }
-    if (wroteSectionHeader) {
-        htmlWriter << "</dl>\n\n";
+    if (wrote_section_header) {
+        html_writer << "</dl>\n\n";
     }
 
-    dumpBaseClasses(htmlWriter, classEnt, {classEnt, {}});
+    dump_base_classes(html_writer, class_ent, {class_ent, {}});
 }
 
 //---------------------------
 
-u128 getClassHash(StringView classFQID) {
-    cook::DependencyTracker* depTracker = cook::DependencyTracker::current();
-    WebCookerIndex* wci = depTracker->userData.cast<WebCookerIndex>();
-    SemaEntity* classEnt = wci->globalScope->lookupChain(classFQID.splitByte(':'));
-    if (!classEnt || classEnt->type != SemaEntity::Class)
+u128 get_class_hash(StringView class_fqid) {
+    cook::DependencyTracker* dep_tracker = cook::DependencyTracker::current();
+    WebCookerIndex* wci = dep_tracker->user_data.cast<WebCookerIndex>();
+    SemaEntity* class_ent = wci->global_scope->lookup_chain(class_fqid.split_byte(':'));
+    if (!class_ent || class_ent->type != SemaEntity::Class)
         return {};
-    return classEnt->hash;
+    return class_ent->hash;
 }
 
 extern cook::DependencyType DependencyType_ExtractedClassAPI;
 
 struct Dependency_ExtractedClassAPI : cook::Dependency {
-    String classFQID;
-    u128 classHash;
+    String class_fqid;
+    u128 class_hash;
 
-    PLY_INLINE Dependency_ExtractedClassAPI(StringView classFQID) : classFQID{classFQID} {
-        this->classHash = getClassHash(classFQID);
+    PLY_INLINE Dependency_ExtractedClassAPI(StringView class_fqid)
+        : class_fqid{class_fqid} {
+        this->class_hash = get_class_hash(class_fqid);
     }
 };
 
 cook::DependencyType DependencyType_ExtractedClassAPI{
-    // hasChanged
+    // has_changed
     [](cook::Dependency* dep_, cook::CookResult*, AnyObject) -> bool { //
         // FIXME: Implement safe cast
-        Dependency_ExtractedClassAPI* depECA = static_cast<Dependency_ExtractedClassAPI*>(dep_);
-        return depECA->classHash != getClassHash(depECA->classFQID);
+        Dependency_ExtractedClassAPI* dep_eca =
+            static_cast<Dependency_ExtractedClassAPI*>(dep_);
+        return dep_eca->class_hash != get_class_hash(dep_eca->class_fqid);
     },
 };
 
 //---------------------------
 
-void Page_cook(cook::CookResult* cookResult_, AnyObject) {
+void Page_cook(cook::CookResult* cook_result_, AnyObject) {
     cook::CookContext* ctx = cook::CookContext::current();
-    PLY_ASSERT(cookResult_->job->id.type == &CookJobType_Page);
-    auto pageResult = static_cast<CookResult_Page*>(cookResult_);
+    PLY_ASSERT(cook_result_->job->id.type == &CookJobType_Page);
+    auto page_result = static_cast<CookResult_Page*>(cook_result_);
 
-    CookResult_ExtractPageMeta* extractMetaResult = static_cast<CookResult_ExtractPageMeta*>(
-        ctx->getAlreadyCookedResult({&CookJobType_ExtractPageMeta, pageResult->job->id.desc}));
+    CookResult_ExtractPageMeta* extract_meta_result =
+        static_cast<CookResult_ExtractPageMeta*>(ctx->get_already_cooked_result(
+            {&CookJobType_ExtractPageMeta, page_result->job->id.desc}));
 
-    String pageSrcPath = extractMetaResult->getMarkdownPath();
-    Owned<InStream> ins = pageResult->openFileAsDependency(pageSrcPath);
+    String page_src_path = extract_meta_result->get_markdown_path();
+    Owned<InStream> ins = page_result->open_file_as_dependency(page_src_path);
     if (!ins) {
         // FIXME: Shouldn't create CookJobs for pages that don't exist
-        if (Path.split(pageSrcPath).second != "index.md") {
-            pageResult->addError(String::format("Unable to open \"{}\"\n", pageSrcPath));
+        if (Path.split(page_src_path).second != "index.md") {
+            page_result->add_error(
+                String::format("Unable to open \"{}\"\n", page_src_path));
         }
         return;
     }
-    String src = FileIOWrappers::loadTextAutodetect(std::move(ins)).first;
-    FileLocationMap srcFileLocMap = FileLocationMap::fromView(src);
-    ViewInStream srcVins{src};
+    String src = FileIOWrappers::load_text_autodetect(std::move(ins)).first;
+    FileLocationMap src_file_loc_map = FileLocationMap::from_view(src);
+    ViewInStream src_vins{src};
 
     // Extract liquid tags
     MemOutStream mout;
-    MemOutStream htmlWriter;
-    Array<String> childPageNames;
-    String classScopeText;
-    // FIXME: don't hardcode classScope
-    WebCookerIndex* wci = ctx->depTracker->userData.safeCast<WebCookerIndex>();
-    SemaEntity* classScope = wci->globalScope->lookup({"ply"});
-    bool inMembers = false;
-    auto flushMarkdown = [&] {
-        String page = mout.moveToString();
-        htmlWriter << convertMarkdownToHTML(page, {classScope, {}});
+    MemOutStream html_writer;
+    Array<String> child_page_names;
+    String class_scope_text;
+    // FIXME: don't hardcode class_scope
+    WebCookerIndex* wci = ctx->dep_tracker->user_data.safe_cast<WebCookerIndex>();
+    SemaEntity* class_scope = wci->global_scope->lookup({"ply"});
+    bool in_members = false;
+    auto flush_markdown = [&] {
+        String page = mout.move_to_string();
+        html_writer << convert_markdown_to_html(page, {class_scope, {}});
         mout = MemOutStream{};
     };
-    extractLiquidTags(&mout, &srcVins, [&](StringView tag, StringView section) {
+    extract_liquid_tags(&mout, &src_vins, [&](StringView tag, StringView section) {
         ViewInStream vins{section};
         vins.parse<fmt::Whitespace>();
-        StringView command = vins.readView(fmt::Identifier{});
+        StringView command = vins.read_view(fmt::Identifier{});
         vins.parse<fmt::Whitespace>();
         if (command == "title" || command == "linkID" || command == "synopsis" ||
             command == "childOrder") {
             // Handled by CookResult_ExtractPageMeta
         } else if (command == "note") {
-            flushMarkdown();
-            htmlWriter
-                << "<div class=\"note\"><img src=\"/static/info-icon.svg\" class=\"icon\"/>\n";
-            htmlWriter << convertMarkdownToHTML(vins.viewAvailable(), {classScope, {}});
-            htmlWriter << "</div>\n";
+            flush_markdown();
+            html_writer << "<div class=\"note\"><img src=\"/static/info-icon.svg\" "
+                           "class=\"icon\"/>\n";
+            html_writer << convert_markdown_to_html(vins.view_available(),
+                                                    {class_scope, {}});
+            html_writer << "</div>\n";
         } else if (command == "member") {
-            flushMarkdown();
-            if (!inMembers) {
-                htmlWriter << "<dl>\n";
-                inMembers = true;
+            flush_markdown();
+            if (!in_members) {
+                html_writer << "<dl>\n";
+                in_members = true;
             } else {
-                htmlWriter << "</dd>\n";
+                html_writer << "</dd>\n";
             }
-            htmlWriter << "<dt><code>";
+            html_writer << "<dt><code>";
             // FIXME: handle errors here
-            Array<TitleSpan> spans = parseTitle(vins.viewAvailable().rtrim(isWhite),
-                                                [](ParseTitleError, StringView, const char*) {});
-            writeAltMemberTitle(htmlWriter, spans, {classScope, {}},
-                                getLinkDestinationFromSpan);
-            htmlWriter << "</code></dt>\n";
-            htmlWriter << "<dd>\n";
+            Array<TitleSpan> spans =
+                parse_title(vins.view_available().rtrim(is_white),
+                            [](ParseTitleError, StringView, const char*) {});
+            write_alt_member_title(html_writer, spans, {class_scope, {}},
+                                   get_link_destination_from_span);
+            html_writer << "</code></dt>\n";
+            html_writer << "<dd>\n";
         } else if (command == "endMembers") {
-            if (inMembers) {
-                flushMarkdown();
-                htmlWriter << "</dd>\n";
-                htmlWriter << "</dl>\n";
-                inMembers = false;
+            if (in_members) {
+                flush_markdown();
+                html_writer << "</dd>\n";
+                html_writer << "</dl>\n";
+                in_members = false;
             } else {
                 PLY_ASSERT(0); // FIXME: Handle gracefully
             }
         } else if (command == "setClassScope") {
-            classScopeText = vins.viewAvailable().trim(isWhite);
-            classScope = resolveClassScope(classScopeText);
-            if (!classScope) {
-                FileLocation srcFileLoc =
-                    srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));
-                pageResult->addError(String::format("{}({}, {}): error: class '{}' not found\n",
-                                                    pageSrcPath, srcFileLoc.lineNumber,
-                                                    srcFileLoc.columnNumber, classScopeText));
+            class_scope_text = vins.view_available().trim(is_white);
+            class_scope = resolve_class_scope(class_scope_text);
+            if (!class_scope) {
+                FileLocation src_file_loc = src_file_loc_map.get_file_location(
+                    safe_demote<u32>(tag.bytes - src.bytes));
+                page_result->add_error(
+                    String::format("{}({}, {}): error: class '{}' not found\n",
+                                   page_src_path, src_file_loc.line_number,
+                                   src_file_loc.column_number, class_scope_text));
             } else {
-                if (classScope->docInfo->classMarkdownDesc) {
-                    htmlWriter << convertMarkdownToHTML(classScope->docInfo->classMarkdownDesc,
-                                                        {classScope, {}});
+                if (class_scope->doc_info->class_markdown_desc) {
+                    html_writer << convert_markdown_to_html(
+                        class_scope->doc_info->class_markdown_desc, {class_scope, {}});
                 }
             }
         } else if (command == "dumpExtractedMembers") {
-            flushMarkdown();
-            String classFQID = vins.viewAvailable().trim(isWhite);
-            if (classFQID != classScopeText) {
-                FileLocation srcFileLoc =
-                    srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));
-                pageResult->addError(
-                    String::format("{}({}, {}): error: dumpExtractedMembers tag '{}' does not "
-                                   "match earlier setClassScope tag '{}'\n",
-                                   pageSrcPath, srcFileLoc.lineNumber, srcFileLoc.columnNumber,
-                                   classFQID, classScopeText));
+            flush_markdown();
+            String class_fqid = vins.view_available().trim(is_white);
+            if (class_fqid != class_scope_text) {
+                FileLocation src_file_loc = src_file_loc_map.get_file_location(
+                    safe_demote<u32>(tag.bytes - src.bytes));
+                page_result->add_error(String::format(
+                    "{}({}, {}): error: dumpExtractedMembers tag '{}' does not "
+                    "match earlier setClassScope tag '{}'\n",
+                    page_src_path, src_file_loc.line_number, src_file_loc.column_number,
+                    class_fqid, class_scope_text));
             }
-            pageResult->dependencies.append(new Dependency_ExtractedClassAPI{classFQID});
-            SemaEntity* classEnt = wci->globalScope->lookupChain(classFQID.splitByte(':'));
-            if (!classEnt) {
-                // FIXME: It would be cool to set the columnNumber to the exact location of the
-                // class name within the liquid tag, but that will require a way to map offsets
-                // in the liquid tag to offsets in the file that accounts for escape characters.
-                // (Although there aren't any escape chracters in liquid tags yet...) For now,
-                // we'll just use the location of the tag itself.
-                FileLocation srcFileLoc =
-                    srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));
-                pageResult->addError(String::format("{}({}, {}): error: class '{}' not found\n",
-                                                    pageSrcPath, srcFileLoc.lineNumber,
-                                                    srcFileLoc.columnNumber, classFQID));
-                htmlWriter.format("<div class=\"error\">Error: Class \"{}\" not found</div>",
-                                  fmt::XMLEscape{classFQID});
+            page_result->dependencies.append(
+                new Dependency_ExtractedClassAPI{class_fqid});
+            SemaEntity* class_ent =
+                wci->global_scope->lookup_chain(class_fqid.split_byte(':'));
+            if (!class_ent) {
+                // FIXME: It would be cool to set the column_number to the exact
+                // location of the class name within the liquid tag, but that will
+                // require a way to map offsets in the liquid tag to offsets in the file
+                // that accounts for escape characters. (Although there aren't any
+                // escape chracters in liquid tags yet...) For now, we'll just use the
+                // location of the tag itself.
+                FileLocation src_file_loc = src_file_loc_map.get_file_location(
+                    safe_demote<u32>(tag.bytes - src.bytes));
+                page_result->add_error(String::format(
+                    "{}({}, {}): error: class '{}' not found\n", page_src_path,
+                    src_file_loc.line_number, src_file_loc.column_number, class_fqid));
+                html_writer.format(
+                    "<div class=\"error\">Error: Class \"{}\" not found</div>",
+                    fmt::XMLEscape{class_fqid});
                 return;
             }
-            dumpExtractedMembers(htmlWriter, classEnt);
+            dump_extracted_members(html_writer, class_ent);
         } else if (command == "html") {
-            flushMarkdown();
-            htmlWriter << vins.viewAvailable();
+            flush_markdown();
+            html_writer << vins.view_available();
         } else {
-            FileLocation srcFileLoc =
-                srcFileLocMap.getFileLocation(safeDemote<u32>(tag.bytes - src.bytes));
-            pageResult->addError(String::format("{}({}, {}): error: unrecognized tag '{}'\n",
-                                                pageSrcPath, srcFileLoc.lineNumber,
-                                                srcFileLoc.columnNumber, command));
+            FileLocation src_file_loc = src_file_loc_map.get_file_location(
+                safe_demote<u32>(tag.bytes - src.bytes));
+            page_result->add_error(String::format(
+                "{}({}, {}): error: unrecognized tag '{}'\n", page_src_path,
+                src_file_loc.line_number, src_file_loc.column_number, command));
         }
     });
 
     // Save page html with single line title header
     // FIXME: Implement strategy to delete orphaned HTML files
-    flushMarkdown();
-    String finalHtml = String::format("{}\n", extractMetaResult->title) + htmlWriter.moveToString();
-    PLY_ASSERT(pageResult->job->id.desc.startsWith("/"));
-    String htmlPath = Path.join(Workspace.path, "data/docsite/pages",
-                                pageResult->job->id.desc.subStr(1) + ".html");
-    FileSystem.makeDirsAndSaveTextIfDifferent(htmlPath, finalHtml,
-                                                         TextFormat::unixUTF8());
+    flush_markdown();
+    String final_html = String::format("{}\n", extract_meta_result->title) +
+                        html_writer.move_to_string();
+    PLY_ASSERT(page_result->job->id.desc.starts_with("/"));
+    String html_path = Path.join(Workspace.path, "data/docsite/pages",
+                                 page_result->job->id.desc.sub_str(1) + ".html");
+    FileSystem.make_dirs_and_save_text_if_different(html_path, final_html,
+                                                    TextFormat::unix_utf8());
 }
 
 cook::CookJobType CookJobType_Page = {
     "page",
-    getTypeDescriptor<CookResult_Page>(),
+    get_type_descriptor<CookResult_Page>(),
     nullptr,
     Page_cook,
 };

@@ -77,12 +77,12 @@ bool Unicode::encode_point(OutStream& out, u32 codepoint) {
             // Note: 0xd800 to 0xd8ff are invalid Unicode codepoints reserved for UTF-16
             // surrogates. Such codepoints will simply be written as unpaired
             // surrogates.
-            out.raw_write(reverseBytes(u16(codepoint)));
+            out.raw_write(reverse_bytes(u16(codepoint)));
         } else {
             // Codepoints >= 0x10000 are encoded as a pair of surrogate units.
             u32 adjusted = codepoint - 0x10000;
-            out.raw_write(reverseBytes(u16(0xd800 + ((adjusted >> 10) & 0x3ff))));
-            out.raw_write(reverseBytes(u16(0xdc00 + (adjusted & 0x3ff))));
+            out.raw_write(reverse_bytes(u16(0xd800 + ((adjusted >> 10) & 0x3ff))));
+            out.raw_write(reverse_bytes(u16(0xdc00 + (adjusted & 0x3ff))));
         }
 
     } else {
@@ -113,7 +113,8 @@ s32 Unicode::decode_point(InStream& in) {
         // ┏━━━━━━━━┓
         // ┃  UTF8  ┃
         // ┗━━━━━━━━┛
-        // (Note: Ill-formed encodings are interpreted as sequences of individual bytes.)
+        // (Note: Ill-formed encodings are interpreted as sequences of individual
+        // bytes.)
         s32 value = 0;
         u32 num_continuation_bytes = 0;
         u8 b = in.read_byte();
@@ -193,7 +194,7 @@ s32 Unicode::decode_point(InStream& in) {
         // ┏━━━━━━━━━━━━━━━━━━┓
         // ┃  UTF16_Reversed  ┃
         // ┗━━━━━━━━━━━━━━━━━━┛
-        u16 first = reverseBytes(in.raw_read<u16>());
+        u16 first = reverse_bytes(in.raw_read<u16>());
         if (in.at_eof()) {
             this->status = DS_NotEnoughData;
             return -1; // Not enough data.
@@ -201,7 +202,7 @@ s32 Unicode::decode_point(InStream& in) {
 
         auto save_point = in.get_save_point();
         if (first >= 0xd800 && first < 0xdc00) {
-            u16 second = reverseBytes(in.raw_read<u16>());
+            u16 second = reverse_bytes(in.raw_read<u16>());
             if (in.at_eof()) {
                 // A second 16-bit surrogate is expected, but not enough data.
                 this->status = DS_NotEnoughData;
@@ -231,9 +232,9 @@ s32 Unicode::decode_point(InStream& in) {
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
 bool copy_from_shim(OutStream& dst_out, StringView& shim_used) {
     if (shim_used) {
-        u32 n = min(dst_out.num_writable_bytes(), shim_used.numBytes);
+        u32 n = min(dst_out.num_writable_bytes(), shim_used.num_bytes);
         dst_out << shim_used;
-        shim_used.offsetHead(n);
+        shim_used.offset_head(n);
         if (shim_used)
             return true; // Destination buffer is full.
     }
@@ -247,7 +248,7 @@ u32 InPipe_ConvertUnicode::read(MutStringView dst_buf) {
 
     // If the shim contains data, copy it first.
     if (copy_from_shim(dst_out, this->shim_used))
-        return dst_buf.numBytes; // Destination buffer is full.
+        return dst_buf.num_bytes; // Destination buffer is full.
 
     while (true) {
         // Decode a codepoint from input stream.
@@ -261,16 +262,16 @@ u32 InPipe_ConvertUnicode::read(MutStringView dst_buf) {
             Unicode{UTF8}.encode_point(dst_out, codepoint);
         } else {
             // Use shim as an intermediate buffer.
-            ViewOutStream s{this->shim_storage.mutableStringView()};
+            ViewOutStream s{this->shim_storage.mutable_string_view()};
             Unicode{UTF8}.encode_point(s, codepoint);
             this->shim_used = {s.start_byte,
-                               safeDemote<u32>(s.cur_byte - s.start_byte)};
+                               safe_demote<u32>(s.cur_byte - s.start_byte)};
             if (copy_from_shim(dst_out, this->shim_used))
                 break; // Destination buffer is full.
         }
     }
 
-    return safeDemote<u32>(dst_out.get_seek_pos());
+    return safe_demote<u32>(dst_out.get_seek_pos());
 }
 
 // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -282,7 +283,7 @@ bool OutPipe_ConvertUnicode::write(StringView src_buf) {
 
     // If the shim contains data, join it with the source buffer.
     if (this->shim_used > 0) {
-        u32 num_bytes_appended = min(src_buf.numBytes, 4 - this->shim_used);
+        u32 num_bytes_appended = min(src_buf.num_bytes, 4 - this->shim_used);
         memcpy(this->shim_storage + this->shim_used, src_buf.bytes, num_bytes_appended);
         this->shim_used += num_bytes_appended;
 
@@ -291,7 +292,7 @@ bool OutPipe_ConvertUnicode::write(StringView src_buf) {
         Unicode decoder{UTF8};
         s32 codepoint = decoder.decode_point(s);
         if (decoder.status == DS_NotEnoughData) {
-            PLY_ASSERT(num_bytes_appended == src_buf.numBytes);
+            PLY_ASSERT(num_bytes_appended == src_buf.num_bytes);
             return true; // Not enough data available in shim.
         }
 

@@ -17,7 +17,7 @@ struct Register {
     void PLY_CAT(PLY_CAT(test_, PLY_TEST_CASE_PREFIX), __LINE__)(); \
     void (*PLY_CAT(PLY_CAT(testlink_, PLY_TEST_CASE_PREFIX), __LINE__))() = \
         &PLY_CAT(PLY_CAT(test_, PLY_TEST_CASE_PREFIX), __LINE__); \
-    ::ply::test::Register PLY_CAT(PLY_CAT(autoReg_, PLY_TEST_CASE_PREFIX), __LINE__){ \
+    ::ply::test::Register PLY_CAT(PLY_CAT(auto_reg_, PLY_TEST_CASE_PREFIX), __LINE__){ \
         name, PLY_CAT(PLY_CAT(test_, PLY_TEST_CASE_PREFIX), __LINE__)}; \
     void PLY_CAT(PLY_CAT(test_, PLY_TEST_CASE_PREFIX), __LINE__)()
 

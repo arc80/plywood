@@ -13,7 +13,7 @@ Error_t Error;
 void Error_t::log_internal(StringView fmt, ArrayView<const FormatArg> args) {
     OutStream out = Console.error();
     out.format_args(fmt, args);
-    if (!fmt.endsWith('\n')) {
+    if (!fmt.ends_with('\n')) {
         out << '\n';
     }
 }

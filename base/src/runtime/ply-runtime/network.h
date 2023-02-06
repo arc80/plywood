@@ -24,49 +24,48 @@ namespace ply {
 //
 
 struct IPAddress {
-  enum Version {
-    V4,
-    V6,
-  };
+    enum Version {
+        V4,
+        V6,
+    };
 
-  u32 netOrdered[4]; // big endian
+    u32 net_ordered[4]; // big endian
 
-  Version version() const {
-    return (this->netOrdered[0] == 0 && this->netOrdered[1] == 0 &&
-            this->netOrdered[2] == PLY_CONVERT_BIG_ENDIAN(0xffffu))
-               ? V4
-               : V6;
-  }
+    Version version() const {
+        return (this->net_ordered[0] == 0 && this->net_ordered[1] == 0 &&
+                this->net_ordered[2] == PLY_CONVERT_BIG_ENDIAN(0xffffu))
+                   ? V4
+                   : V6;
+    }
 
-  bool isNull() const {
-    return this->netOrdered[0] == 0 && this->netOrdered[1] == 0 &&
-           this->netOrdered[2] == 0 && this->netOrdered[3] == 0;
-  }
+    bool is_null() const {
+        return this->net_ordered[0] == 0 && this->net_ordered[1] == 0 &&
+               this->net_ordered[2] == 0 && this->net_ordered[3] == 0;
+    }
 
-  static constexpr IPAddress localHost(Version ipVersion) {
-    return (ipVersion == Version::V4)
-               ? IPAddress{{0, 0, PLY_CONVERT_BIG_ENDIAN(0xffffu),
-                            PLY_CONVERT_BIG_ENDIAN(0x7f000001u)}}
-               : IPAddress{{0, 0, 0, PLY_CONVERT_BIG_ENDIAN(1u)}};
-  }
+    static constexpr IPAddress local_host(Version ip_version) {
+        return (ip_version == Version::V4)
+                   ? IPAddress{{0, 0, PLY_CONVERT_BIG_ENDIAN(0xffffu),
+                                PLY_CONVERT_BIG_ENDIAN(0x7f000001u)}}
+                   : IPAddress{{0, 0, 0, PLY_CONVERT_BIG_ENDIAN(1u)}};
+    }
 
-  static constexpr IPAddress fromIPv4(u32 netOrdered) {
-    return {{0, 0, PLY_CONVERT_BIG_ENDIAN(0xffffu), netOrdered}};
-  }
+    static constexpr IPAddress from_ipv4(u32 net_ordered) {
+        return {{0, 0, PLY_CONVERT_BIG_ENDIAN(0xffffu), net_ordered}};
+    }
 
-  String toString() const;
-  static IPAddress fromString();
-  static IPAddress resolveHostName(StringView hostName,
-                                              Version ipVersion);
+    String to_string() const;
+    static IPAddress from_string();
+    static IPAddress resolve_host_name(StringView host_name, Version ip_version);
 };
 
 enum class IPResult : u8 {
-  Unknown = 0,
-  OK,
-  NoSocket,
-  Unreachable,
-  Refused,
-  InUse,
+    Unknown = 0,
+    OK,
+    NoSocket,
+    Unreachable,
+    Refused,
+    InUse,
 };
 
 //   ▄▄▄▄               ▄▄             ▄▄
@@ -115,19 +114,18 @@ struct Socket {
     static constexpr Handle InvalidHandle = INVALID_SOCKET;
     static bool IsInit;
     static bool HasIPv6;
-    static ThreadLocal<IPResult> lastResult_;
+    static ThreadLocal<IPResult> last_result_;
 
-    static void initialize(IPAddress::Version ipVersion);
+    static void initialize(IPAddress::Version ip_version);
     static void shutdown();
 
     // FIXME: Make interface more configurable
-    static TCPListener bindTCP(u16 port);
-    static Owned<TCPConnection> connectTCP(const IPAddress& address,
-                                                                 u16 port);
-    static IPAddress resolveHostName(StringView hostName,
-                                                   IPAddress::Version ipVersion);
-    static IPResult lastResult() {
-        return Socket::lastResult_.load();
+    static TCPListener bind_tcp(u16 port);
+    static Owned<TCPConnection> connect_tcp(const IPAddress& address, u16 port);
+    static IPAddress resolve_host_name(StringView host_name,
+                                       IPAddress::Version ip_version);
+    static IPResult last_result() {
+        return Socket::last_result_.load();
     }
 };
 
@@ -142,25 +140,27 @@ struct Socket {
     static constexpr Handle InvalidHandle = -1;
     static bool IsInit;
     static bool HasIPv6;
-    static ThreadLocal<IPResult> lastResult_;
+    static ThreadLocal<IPResult> last_result_;
 
-    static PLY_DLL_ENTRY void initialize(IPAddress::Version ipVersion);
+    static PLY_DLL_ENTRY void initialize(IPAddress::Version ip_version);
     static PLY_DLL_ENTRY void shutdown();
 
     // FIXME: Make interface more configurable
-    static PLY_DLL_ENTRY TCPListener bindTCP(u16 port);
-    static PLY_DLL_ENTRY Owned<TCPConnection> connectTCP(const IPAddress& address, u16 port);
-    static PLY_DLL_ENTRY IPAddress resolveHostName(StringView hostName,
-                                                   IPAddress::Version ipVersion);
-    static PLY_INLINE IPResult lastResult() {
-        return Socket::lastResult_.load();
+    static PLY_DLL_ENTRY TCPListener bind_tcp(u16 port);
+    static PLY_DLL_ENTRY Owned<TCPConnection> connect_tcp(const IPAddress& address,
+                                                          u16 port);
+    static PLY_DLL_ENTRY IPAddress resolve_host_name(StringView host_name,
+                                                     IPAddress::Version ip_version);
+    static PLY_INLINE IPResult last_result() {
+        return Socket::last_result_.load();
     }
 };
 
 #endif
 
-PLY_INLINE IPAddress IPAddress::resolveHostName(StringView hostName, IPAddress::Version ipVersion) {
-    return Socket::resolveHostName(hostName, ipVersion);
+PLY_INLINE IPAddress IPAddress::resolve_host_name(StringView host_name,
+                                                  IPAddress::Version ip_version) {
+    return Socket::resolve_host_name(host_name, ip_version);
 }
 
 //  ▄▄▄▄▄▄  ▄▄▄▄  ▄▄▄▄▄   ▄▄▄▄                                     ▄▄   ▄▄
@@ -174,28 +174,28 @@ PLY_INLINE IPAddress IPAddress::resolveHostName(StringView hostName, IPAddress::
 // ┃  Winsock  ┃
 // ┗━━━━━━━━━━━┛
 struct TCPConnection {
-    IPAddress remoteAddr_;
-    u16 remotePort_ = 0;
-    InPipe_Winsock inPipe;
-    OutPipe_Winsock outPipe;
+    IPAddress remote_addr_;
+    u16 remote_port_ = 0;
+    InPipe_Winsock in_pipe;
+    OutPipe_Winsock out_pipe;
 
-    TCPConnection() : inPipe{INVALID_SOCKET}, outPipe{INVALID_SOCKET} {
+    TCPConnection() : in_pipe{INVALID_SOCKET}, out_pipe{INVALID_SOCKET} {
     }
     ~TCPConnection();
-    const IPAddress& remoteAddress() const {
-        return this->remoteAddr_;
+    const IPAddress& remote_address() const {
+        return this->remote_addr_;
     }
-    u16 remotePort() const {
-        return this->remotePort_;
+    u16 remote_port() const {
+        return this->remote_port_;
     }
-    SOCKET getHandle() const {
-        return inPipe.socket;
+    SOCKET get_handle() const {
+        return in_pipe.socket;
     }
-    InStream createInStream() {
-        return InStream{&this->inPipe, false};
+    InStream create_in_stream() {
+        return InStream{&this->in_pipe, false};
     }
-    OutStream createOutStream() {
-        return OutStream{&this->outPipe, false};
+    OutStream create_out_stream() {
+        return OutStream{&this->out_pipe, false};
     }
 };
 
@@ -204,28 +204,28 @@ struct TCPConnection {
 // ┃  POSIX  ┃
 // ┗━━━━━━━━━┛
 struct TCPConnection {
-    IPAddress remoteAddr_;
-    u16 remotePort_ = 0;
-    InPipe_FD inPipe;
-    OutPipe_FD outPipe;
+    IPAddress remote_addr_;
+    u16 remote_port_ = 0;
+    InPipe_FD in_pipe;
+    OutPipe_FD out_pipe;
 
-    PLY_INLINE TCPConnection() : inPipe{-1}, outPipe{-1} {
+    PLY_INLINE TCPConnection() : in_pipe{-1}, out_pipe{-1} {
     }
     PLY_DLL_ENTRY ~TCPConnection();
-    PLY_INLINE const IPAddress& remoteAddress() const {
-        return this->remoteAddr_;
+    PLY_INLINE const IPAddress& remote_address() const {
+        return this->remote_addr_;
     }
-    PLY_INLINE u16 remotePort() const {
-        return this->remotePort_;
+    PLY_INLINE u16 remote_port() const {
+        return this->remote_port_;
     }
-    PLY_INLINE int getHandle() const {
-        return inPipe.fd;
+    PLY_INLINE int get_handle() const {
+        return in_pipe.fd;
     }
-    PLY_INLINE InStream createInStream() {
-        return InStream{borrow(&this->inPipe)};
+    PLY_INLINE InStream create_in_stream() {
+        return InStream{borrow(&this->in_pipe)};
     }
-    PLY_INLINE OutStream createOutStream() {
-        return OutStream{borrow(&this->outPipe)};
+    PLY_INLINE OutStream create_out_stream() {
+        return OutStream{borrow(&this->out_pipe)};
     }
 };
 
@@ -243,37 +243,36 @@ struct TCPConnection {
 // ┗━━━━━━━━━━━┛
 struct TCPListener {
 public:
-    SOCKET listenSocket = INVALID_SOCKET;
+    SOCKET listen_socket = INVALID_SOCKET;
 
-    TCPListener(SOCKET listenSocket = INVALID_SOCKET)
-        : listenSocket{listenSocket} {
+    TCPListener(SOCKET listen_socket = INVALID_SOCKET) : listen_socket{listen_socket} {
     }
     TCPListener(TCPListener&& other) {
-        this->listenSocket = other.listenSocket;
-        other.listenSocket = INVALID_SOCKET;
+        this->listen_socket = other.listen_socket;
+        other.listen_socket = INVALID_SOCKET;
     }
     ~TCPListener() {
-        if (this->listenSocket >= 0) {
-            closesocket(this->listenSocket);
+        if (this->listen_socket >= 0) {
+            closesocket(this->listen_socket);
         }
     }
     void operator=(TCPListener&& other) {
-        if (this->listenSocket >= 0) {
-            closesocket(this->listenSocket);
+        if (this->listen_socket >= 0) {
+            closesocket(this->listen_socket);
         }
-        this->listenSocket = other.listenSocket;
-        other.listenSocket = INVALID_SOCKET;
+        this->listen_socket = other.listen_socket;
+        other.listen_socket = INVALID_SOCKET;
     }
-    bool isValid() {
-        return this->listenSocket >= 0;
+    bool is_valid() {
+        return this->listen_socket >= 0;
     }
-    void endComm() {
-        shutdown(this->listenSocket, SD_BOTH);
+    void end_comm() {
+        shutdown(this->listen_socket, SD_BOTH);
     }
     void close() {
-        if (this->listenSocket >= 0) {
-            closesocket(this->listenSocket);
-            this->listenSocket = INVALID_SOCKET;
+        if (this->listen_socket >= 0) {
+            closesocket(this->listen_socket);
+            this->listen_socket = INVALID_SOCKET;
         }
     }
 
@@ -286,36 +285,36 @@ public:
 // ┗━━━━━━━━━┛
 struct TCPListener {
 public:
-    int listenSocket = -1;
+    int listen_socket = -1;
 
-    PLY_INLINE TCPListener(int listenSocket = -1) : listenSocket{listenSocket} {
+    PLY_INLINE TCPListener(int listen_socket = -1) : listen_socket{listen_socket} {
     }
     PLY_INLINE TCPListener(TCPListener&& other) {
-        this->listenSocket = other.listenSocket;
-        other.listenSocket = -1;
+        this->listen_socket = other.listen_socket;
+        other.listen_socket = -1;
     }
     PLY_INLINE ~TCPListener() {
-        if (this->listenSocket >= 0) {
-            ::close(this->listenSocket);
+        if (this->listen_socket >= 0) {
+            ::close(this->listen_socket);
         }
     }
     PLY_INLINE void operator=(TCPListener&& other) {
-        if (this->listenSocket >= 0) {
-            ::close(this->listenSocket);
+        if (this->listen_socket >= 0) {
+            ::close(this->listen_socket);
         }
-        this->listenSocket = other.listenSocket;
-        other.listenSocket = -1;
+        this->listen_socket = other.listen_socket;
+        other.listen_socket = -1;
     }
-    PLY_INLINE bool isValid() {
-        return this->listenSocket >= 0;
+    PLY_INLINE bool is_valid() {
+        return this->listen_socket >= 0;
     }
-    PLY_INLINE void endComm() {
-        shutdown(this->listenSocket, SHUT_RDWR);
+    PLY_INLINE void end_comm() {
+        shutdown(this->listen_socket, SHUT_RDWR);
     }
     PLY_INLINE void close() {
-        if (this->listenSocket >= 0) {
-            ::close(this->listenSocket);
-            this->listenSocket = -1;
+        if (this->listen_socket >= 0) {
+            ::close(this->listen_socket);
+            this->listen_socket = -1;
         }
     }
 

@@ -14,26 +14,26 @@ namespace pylon {
 struct ParseError {
     struct Scope {
         enum Type { Object, Property, Duplicate, Array };
-        u32 fileOfs;
+        u32 file_ofs;
         Type type;
         StringView name;
         u32 index;
 
-        static PLY_INLINE Scope object(u32 fileOfs) {
-            return {fileOfs, Object, {}, 0};
+        static PLY_INLINE Scope object(u32 file_ofs) {
+            return {file_ofs, Object, {}, 0};
         }
-        static PLY_INLINE Scope property(u32 fileOfs, StringView name) {
-            return {fileOfs, Property, name, 0};
+        static PLY_INLINE Scope property(u32 file_ofs, StringView name) {
+            return {file_ofs, Property, name, 0};
         }
-        static PLY_INLINE Scope duplicate(u32 fileOfs) {
-            return {fileOfs, Duplicate, {}, 0};
+        static PLY_INLINE Scope duplicate(u32 file_ofs) {
+            return {file_ofs, Duplicate, {}, 0};
         }
-        static PLY_INLINE Scope array(u32 fileOfs, u32 index) {
-            return {fileOfs, Array, {}, index};
+        static PLY_INLINE Scope array(u32 file_ofs, u32 index) {
+            return {file_ofs, Array, {}, index};
         }
     };
 
-    u32 fileOfs;
+    u32 file_ofs;
     HybridString message;
     const Array<Scope>& context;
 };
@@ -57,26 +57,26 @@ private:
             EndOfFile
         };
         Type type = Invalid;
-        u32 fileOfs = 0;
+        u32 file_ofs = 0;
         HybridString text;
 
-        PLY_INLINE bool isValid() const {
+        PLY_INLINE bool is_valid() const {
             return type != Type::Invalid;
         }
     };
 
-    Func<void(const ParseError& err)> errorCallback;
-    FileLocationMap fileLocMap;
-    bool anyError_ = false;
-    StringView srcView;
-    u32 readOfs = 0;
-    s32 nextUnit = 0;
-    u32 tabSize = 4;
-    Token pushBackToken;
+    Func<void(const ParseError& err)> error_callback;
+    FileLocationMap file_loc_map;
+    bool any_error_ = false;
+    StringView src_view;
+    u32 read_ofs = 0;
+    s32 next_unit = 0;
+    u32 tab_size = 4;
+    Token push_back_token;
     Array<ParseError::Scope> context;
 
-    PLY_INLINE void pushBack(Token&& token) {
-        pushBackToken = std::move(token);
+    PLY_INLINE void push_back(Token&& token) {
+        push_back_token = std::move(token);
     }
 
     struct ScopeHandler {
@@ -84,13 +84,13 @@ private:
         u32 index;
 
         PLY_INLINE ScopeHandler(Parser& parser, ParseError::Scope&& scope)
-            : parser{parser}, index{parser.context.numItems()} {
+            : parser{parser}, index{parser.context.num_items()} {
             parser.context.append(std::move(scope));
         }
         PLY_INLINE ~ScopeHandler() {
             // parser.context can be empty when ParseError is thrown
-            if (!parser.context.isEmpty()) {
-                PLY_ASSERT(parser.context.numItems() == index + 1);
+            if (!parser.context.is_empty()) {
+                PLY_ASSERT(parser.context.num_items() == index + 1);
                 parser.context.pop();
             }
         }
@@ -99,38 +99,39 @@ private:
         }
     };
 
-    void error(u32 fileOfs, HybridString&& message);
-    void advanceChar();
-    Token readPlainToken(Token::Type type);
-    bool readEscapedHex(OutStream& out, u32 escapeFileOfs);
-    Token readQuotedString();
-    Token readLiteral();
-    Token readToken(bool tokenizeNewLine = false);
-    static HybridString toString(const Token& token);
-    static HybridString toString(const Node* node);
-    Owned<Node> readObject(const Token& startToken);
-    Owned<Node> readArray(const Token& startToken);
-    Owned<Node> readExpression(Token&& firstToken, const Token* afterToken = nullptr);
+    void error(u32 file_ofs, HybridString&& message);
+    void advance_char();
+    Token read_plain_token(Token::Type type);
+    bool read_escaped_hex(OutStream& out, u32 escape_file_ofs);
+    Token read_quoted_string();
+    Token read_literal();
+    Token read_token(bool tokenize_new_line = false);
+    static HybridString to_string(const Token& token);
+    static HybridString to_string(const Node* node);
+    Owned<Node> read_object(const Token& start_token);
+    Owned<Node> read_array(const Token& start_token);
+    Owned<Node> read_expression(Token&& first_token,
+                                const Token* after_token = nullptr);
 
 public:
-    PLY_INLINE void setTabSize(int tabSize_) {
-        tabSize = tabSize_;
+    PLY_INLINE void set_tab_size(int tab_size_) {
+        tab_size = tab_size_;
     }
-    PLY_INLINE void setErrorCallback(Func<void(const ParseError& err)>&& cb) {
-        this->errorCallback = std::move(cb);
+    PLY_INLINE void set_error_callback(Func<void(const ParseError& err)>&& cb) {
+        this->error_callback = std::move(cb);
     }
-    PLY_INLINE bool anyError() const {
-        return this->anyError_;
+    PLY_INLINE bool any_error() const {
+        return this->any_error_;
     }
 
     struct Result {
         Owned<Node> root;
-        FileLocationMap fileLocMap;
+        FileLocationMap file_loc_map;
     };
 
-    void dumpError(const ParseError& error, OutStream& out) const;
+    void dump_error(const ParseError& error, OutStream& out) const;
 
-    Result parse(StringView path, StringView srcView_);
+    Result parse(StringView path, StringView src_view_);
 };
 
 } // namespace pylon

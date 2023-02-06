@@ -25,8 +25,8 @@ struct Expression {
     // ply make reflected switch
     struct Call {
         PLY_REFLECT()
-        Token openParen;
-        Token closeParen;
+        Token open_paren;
+        Token close_paren;
         Array<ExpressionWithComma> arguments;
         // ply reflect off
     };
@@ -43,7 +43,8 @@ struct ExpressionWithComma {
 //-----------------------------------------------------------------------------
 // NestedNameComponents describe the optional "scope specifiers" of qualified-ids.
 // Corresponds to nested-name-specifier in the grammar.
-// The components can be namespaces, class names, class template names or decltype() expressions.
+// The components can be namespaces, class names, class template names or decltype()
+// expressions.
 //      Foo::
 //      Foo<int>::
 //      decltype(x)::
@@ -54,16 +55,16 @@ struct NestedNameComponent {
         struct IdentifierOrTemplated {
             PLY_REFLECT()
             Token name;
-            Token openAngled; // If Invalid, it's not a template
-            Token closeAngled;
+            Token open_angled; // If Invalid, it's not a template
+            Token close_angled;
             Array<TemplateArgumentWithComma> args;
             // ply reflect off
         };
         struct DeclType {
             PLY_REFLECT()
             Token keyword;
-            Token openParen;
-            Token closeParen;
+            Token open_paren;
+            Token close_paren;
             // ply reflect off
         };
 #include "codegen/switch-ply-cpp-grammar-NestedNameComponent-Type.inl" //@@ply
@@ -74,7 +75,7 @@ struct NestedNameComponent {
     Token sep;
     // ply reflect off
 
-    Token getFirstToken() const;
+    Token get_first_token() const;
 };
 
 //-----------------------------------------------------------------------------
@@ -97,16 +98,16 @@ struct UnqualifiedID {
     struct TemplateID {
         PLY_REFLECT()
         Token name;
-        Token openAngled;
-        Token closeAngled;
+        Token open_angled;
+        Token close_angled;
         Array<TemplateArgumentWithComma> args;
         // ply reflect off
     };
     struct DeclType {
         PLY_REFLECT()
         Token keyword;
-        Token openParen;
-        Token closeParen;
+        Token open_paren;
+        Token close_paren;
         // ply reflect off
     };
     struct Destructor {
@@ -125,13 +126,13 @@ struct UnqualifiedID {
     struct ConversionFunc {
         PLY_REFLECT()
         Token keyword;
-        Array<Owned<DeclSpecifier>> declSpecifierSeq;
-        Owned<DeclaratorProduction> abstractDcor;
+        Array<Owned<DeclSpecifier>> decl_specifier_seq;
+        Owned<DeclaratorProduction> abstract_dcor;
         // ply reflect off
     };
 
-    StringView getCtorDtorName() const;
-    Token getFirstToken() const;
+    StringView get_ctor_dtor_name() const;
+    Token get_first_token() const;
 #include "codegen/switch-ply-cpp-grammar-UnqualifiedID.inl" //@@ply
 };
 
@@ -148,30 +149,30 @@ struct UnqualifiedID {
 //-----------------------------------------------------------------------------
 struct QualifiedID {
     PLY_REFLECT()
-    Array<NestedNameComponent> nestedName;
+    Array<NestedNameComponent> nested_name;
     UnqualifiedID unqual;
     // ply reflect off
 
-    PLY_INLINE bool isEmpty() const {
-        return this->nestedName.isEmpty() && this->unqual.empty();
+    PLY_INLINE bool is_empty() const {
+        return this->nested_name.is_empty() && this->unqual.empty();
     }
-    PLY_INLINE bool isNestedNameOnly() const {
-        return !this->nestedName.isEmpty() && this->unqual.empty();
+    PLY_INLINE bool is_nested_name_only() const {
+        return !this->nested_name.is_empty() && this->unqual.empty();
     }
-    PLY_INLINE bool isComplete() const {
+    PLY_INLINE bool is_complete() const {
         return !this->unqual.empty();
     }
-    PLY_INLINE StringView getClassName() const {
+    PLY_INLINE StringView get_class_name() const {
         if (auto ident = this->unqual.identifier()) {
             return ident->name.identifier;
-        } else if (auto templateID = this->unqual.templateID()) {
-            return templateID->name.identifier;
+        } else if (auto template_id = this->unqual.template_id()) {
+            return template_id->name.identifier;
         } else {
             return {};
         }
     }
-    String toString() const;
-    Token getFirstToken() const;
+    String to_string() const;
+    Token get_first_token() const;
 };
 
 struct TemplateArgumentWithComma {
@@ -180,14 +181,14 @@ struct TemplateArgumentWithComma {
         // ply make reflected switch
         struct Unknown {
             PLY_REFLECT()
-            Token startToken;
-            Token endToken;
+            Token start_token;
+            Token end_token;
             // ply reflect off
         };
         struct TypeID {
             PLY_REFLECT()
-            Array<Owned<DeclSpecifier>> declSpecifierSeq;
-            Owned<DeclaratorProduction> abstractDcor;
+            Array<Owned<DeclSpecifier>> decl_specifier_seq;
+            Owned<DeclaratorProduction> abstract_dcor;
             // ply reflect off
         };
 #include "codegen/switch-ply-cpp-grammar-TemplateArgumentWithComma-Type.inl" //@@ply
@@ -200,16 +201,16 @@ struct TemplateArgumentWithComma {
 };
 
 //-----------------------------------------------------------------------------
-// An Array<BaseSpecifierWithCommas> describes the base class list at the top of a class definition.
-// The last item in the array does not normally have a comma. Corresponds to base-specifier-list in
-// the grammar.
+// An Array<BaseSpecifierWithCommas> describes the base class list at the top of a class
+// definition. The last item in the array does not normally have a comma. Corresponds to
+// base-specifier-list in the grammar.
 //      class Foo : public Bar, protected Wiz
 //                  ^^^^^^^^^^^^^^^^^^^^^^^^^
 //-----------------------------------------------------------------------------
 struct BaseSpecifierWithComma {
     PLY_REFLECT()
-    Token accessSpec;
-    QualifiedID baseQid;
+    Token access_spec;
+    QualifiedID base_qid;
     Token comma;
     // ply reflect off
 };
@@ -220,20 +221,21 @@ struct Declaration;
 
 //-----------------------------------------------------------------------------
 // An Array<Owned<DeclSpecifier>>, combined with a Declarator (possibly wrapped in an
-// InitDeclaratorWithComma), describes a declaration, function parameter, template parameter or type
-// id (as in an alias). Corresponds to decl-specifier or type-specifier in the grammar.
+// InitDeclaratorWithComma), describes a declaration, function parameter, template
+// parameter or type id (as in an alias). Corresponds to decl-specifier or
+// type-specifier in the grammar.
 //
-// The Array<Owned<DeclSpecifier>> is the part before the name being declared (if any), and
-// basically describes the "base type" of the declaration, which the Declarator can modify into a
-// pointer, reference, array, etc.
+// The Array<Owned<DeclSpecifier>> is the part before the name being declared (if any),
+// and basically describes the "base type" of the declaration, which the Declarator can
+// modify into a pointer, reference, array, etc.
 //
-// The reason why there's an array of DeclSpecifiers is because multiple keywords can describe the
-// base type:
+// The reason why there's an array of DeclSpecifiers is because multiple keywords can
+// describe the base type:
 //      const unsigned int x;
 //      ^^^^^^^^^^^^^^^^^^
 //
-// A DeclSpecifier can also be a class or enum definition. (If followed by a Declarator, a variable
-// can be declared at the same time as the class or enum.)
+// A DeclSpecifier can also be a class or enum definition. (If followed by a Declarator,
+// a variable can be declared at the same time as the class or enum.)
 //-----------------------------------------------------------------------------
 struct DeclSpecifier {
     // ply make reflected switch
@@ -250,25 +252,25 @@ struct DeclSpecifier {
     };
     struct Record {
         PLY_REFLECT()
-        Token classKey;
+        Token class_key;
         QualifiedID qid;
-        Array<Token> virtSpecifiers;
+        Array<Token> virt_specifiers;
         Token colon;
-        Array<BaseSpecifierWithComma> baseSpecifierList;
-        Token openCurly;
-        Token closeCurly;
+        Array<BaseSpecifierWithComma> base_specifier_list;
+        Token open_curly;
+        Token close_curly;
         Array<Declaration> visor_decls; // Modified by supervisor
         // ply reflect off
     };
     struct Enum_ {
         PLY_REFLECT()
-        Token enumKey;
-        Token classKey;
+        Token enum_key;
+        Token class_key;
         QualifiedID qid;
-        Token basePunc;
+        Token base_punc;
         QualifiedID base;
-        Token openCurly;
-        Token closeCurly;
+        Token open_curly;
+        Token close_curly;
         Array<Owned<InitEnumeratorWithComma>> enumerators;
         // ply reflect off
     };
@@ -276,16 +278,16 @@ struct DeclSpecifier {
         PLY_REFLECT()
         Token typename_; // If preceded by typename keyword
         QualifiedID qid;
-        // wasAssumed will be true whenever the parser makes a (possibly wrong) assumption due to
-        // lack of type knowledge. For example:
+        // was_assumed will be true whenever the parser makes a (possibly wrong)
+        // assumption due to lack of type knowledge. For example:
         //      void func(int(A));
         //                    ^
-        // If the parser does not definitively know whether A identifies a type, it will assume that
-        // it is a type and set "wasAssumed" to true. The first parameter of func will be parsed as
-        // an unnamed function that takes an unnamed parameter of type A and returns int, instead of
-        // as an integer named A, which is how it would have been parsed if A did not identify a
-        // type.
-        bool wasAssumed = false;
+        // If the parser does not definitively know whether A identifies a type, it will
+        // assume that it is a type and set "wasAssumed" to true. The first parameter of
+        // func will be parsed as an unnamed function that takes an unnamed parameter of
+        // type A and returns int, instead of as an integer named A, which is how it
+        // would have been parsed if A did not identify a type.
+        bool was_assumed = false;
         // ply reflect off
     };
     struct TypeParam {
@@ -297,7 +299,7 @@ struct DeclSpecifier {
     };
     struct Ellipsis {
         PLY_REFLECT()
-        Token ellipsisToken;
+        Token ellipsis_token;
         // ply reflect off
     };
 #include "codegen/switch-ply-cpp-grammar-DeclSpecifier.inl" //@@ply
@@ -311,8 +313,8 @@ struct ParamDeclarationWithComma;
 //-----------------------------------------------------------------------------
 struct ParamDeclarationList {
     PLY_REFLECT()
-    Token openPunc;
-    Token closePunc;
+    Token open_punc;
+    Token close_punc;
     Array<ParamDeclarationWithComma> params;
     // ply reflect off
 };
@@ -320,7 +322,7 @@ struct ParamDeclarationList {
 //-----------------------------------------------------------------------------
 // FunctionQualifierSeq is where member functions are made const, among other things.
 // Corresponds to the "qualifiers" part of parameters-and-qualifiers in the grammar.
-//      int getValue() const;
+//      int get_value() const;
 //                     ^^^^^
 //-----------------------------------------------------------------------------
 struct FunctionQualifierSeq {
@@ -330,28 +332,29 @@ struct FunctionQualifierSeq {
 };
 
 //-----------------------------------------------------------------------------
-// Every Declarator has an optional chain of DeclaratorProductions. They're used to modify the base
-// type of a declaration. They let you declare pointers, arrays and functions.
+// Every Declarator has an optional chain of DeclaratorProductions. They're used to
+// modify the base type of a declaration. They let you declare pointers, arrays and
+// functions.
 //-----------------------------------------------------------------------------
 struct DeclaratorProduction {
     struct Type {
         // ply make reflected switch
         struct Parenthesized {
             PLY_REFLECT()
-            Token openParen;
-            Token closeParen;
+            Token open_paren;
+            Token close_paren;
             // ply reflect off
         };
         struct PointerTo {
             PLY_REFLECT()
-            Array<NestedNameComponent> nestedName;
+            Array<NestedNameComponent> nested_name;
             Token punc;
             // ply reflect off
         };
         struct ArrayOf {
             PLY_REFLECT()
-            Token openSquare;
-            Token closeSquare;
+            Token open_square;
+            Token close_square;
             Expression size;
             // ply reflect off
         };
@@ -360,7 +363,7 @@ struct DeclaratorProduction {
             ParamDeclarationList params;
             FunctionQualifierSeq qualifiers;
             Token arrow;
-            QualifiedID trailingRetType;
+            QualifiedID trailing_ret_type;
             // ply reflect off
         };
         struct Qualifier {
@@ -378,17 +381,18 @@ struct DeclaratorProduction {
 };
 
 //-----------------------------------------------------------------------------
-// Declarators are combined with an Array<Owned<DeclSpecifier>> to form a declaration, function
-// parameter, template parameter or type id (as in an alias). Corresponds to declarator or
-// abstract-declarator in the grammar.
+// Declarators are combined with an Array<Owned<DeclSpecifier>> to form a declaration,
+// function parameter, template parameter or type id (as in an alias). Corresponds to
+// declarator or abstract-declarator in the grammar.
 //
 // In the case of a variable declaration, there can be multiple declarators:
 //      int x, y;
 //          ^^^^
 //
-// In the case of an function parameter or template parameter, the Declarator can be abstract, which
-// means that the parameter is unnamed (QualifiedID is blank), and there is only the optional
-// DeclaratorProduction chain which modifies the base type into a pointer, function, etc.
+// In the case of an function parameter or template parameter, the Declarator can be
+// abstract, which means that the parameter is unnamed (QualifiedID is blank), and there
+// is only the optional DeclaratorProduction chain which modifies the base type into a
+// pointer, function, etc.
 //      void func(int, char*);
 //                   ^     ^
 //
@@ -402,22 +406,22 @@ struct Declarator {
     QualifiedID qid;
     // ply reflect off
 
-    PLY_INLINE bool isFunction() const {
+    PLY_INLINE bool is_function() const {
         return (this->prod && this->prod->type.function());
     };
 };
 
 //-----------------------------------------------------------------------------
-// An Array<MemberInitializerWithComma> describes the optional member initializer list of a
-// constructor. Corresponds to mem-initializer-list in the grammar.
+// An Array<MemberInitializerWithComma> describes the optional member initializer list
+// of a constructor. Corresponds to mem-initializer-list in the grammar.
 //      Foo() : x{5}, y{7} {}
 //              ^^^^^^^^^^
 //-----------------------------------------------------------------------------
 struct MemberInitializerWithComma {
     PLY_REFLECT()
     QualifiedID qid;
-    Token openPunc;
-    Token closePunc;
+    Token open_punc;
+    Token close_punc;
     Token comma;
     // ply reflect off
 };
@@ -434,17 +438,17 @@ struct AssignmentType {
     };
     struct TypeID {
         PLY_REFLECT()
-        Array<Owned<DeclSpecifier>> declSpecifierSeq;
-        Owned<DeclaratorProduction> abstractDcor;
+        Array<Owned<DeclSpecifier>> decl_specifier_seq;
+        Owned<DeclaratorProduction> abstract_dcor;
         // ply reflect off
     };
 #include "codegen/switch-ply-cpp-grammar-AssignmentType.inl" //@@ply
 };
 
 //-----------------------------------------------------------------------------
-// Initializer is used by InitDeclaratorWithComma, and describes the optional part immediately
-// following a Declarator. In the grammar, it corresponds to initializer, function-body and part of
-// the bitfield production rule in member-declarator.
+// Initializer is used by InitDeclaratorWithComma, and describes the optional part
+// immediately following a Declarator. In the grammar, it corresponds to initializer,
+// function-body and part of the bitfield production rule in member-declarator.
 //      int x = 5;
 //            ^^^
 //      int func() {}
@@ -452,9 +456,9 @@ struct AssignmentType {
 //      int flag : 1;
 //               ^^^
 //
-// It's also currently used by InitEnumerationWithComma and ParamDeclarationWithComma, but in those
-// cases, it can only take the Assignment form. (Might stop using it in those cases, and just store
-// the optional assignment directly.)
+// It's also currently used by InitEnumerationWithComma and ParamDeclarationWithComma,
+// but in those cases, it can only take the Assignment form. (Might stop using it in
+// those cases, and just store the optional assignment directly.)
 //-----------------------------------------------------------------------------
 struct Initializer {
     // ply make reflected switch
@@ -465,36 +469,37 @@ struct Initializer {
     struct Assignment {
         PLY_REFLECT()
         AssignmentType type;
-        Token equalSign;
+        Token equal_sign;
         // ply reflect off
     };
     struct FunctionBody {
         PLY_REFLECT()
         Token colon;
-        Array<MemberInitializerWithComma> memberInits;
-        Token openCurly;
-        Token closeCurly;
+        Array<MemberInitializerWithComma> member_inits;
+        Token open_curly;
+        Token close_curly;
         // ply reflect off
     };
     struct BitField {
         PLY_REFLECT()
         Token colon;
-        // Temporarily store the constant expression as a location span until we start parsing
-        // expressions correctly
-        Token expressionStart;
-        Token expressionEnd;
+        // Temporarily store the constant expression as a location span until we start
+        // parsing expressions correctly
+        Token expression_start;
+        Token expression_end;
         // ply reflect off
     };
 #include "codegen/switch-ply-cpp-grammar-Initializer.inl" //@@ply
 };
 
 //-----------------------------------------------------------------------------
-// An Array<InitDeclaratorWithComma> is used as part of Declaration::Simple, wrapping a Declarator
-// and allowing it to have an optional Initializer. It corresponds to init-declarator-list in the
-// grammar, except when the Initializer is a FunctionBody or a BitField. In those cases, it
-// corresponds function-body and the bitfield production rule in member-declarator respectively.
-// (Consider making separate Declaration states for the latter cases -- especially
-// FunctionDefinition -- intsead of cramming everything into Declaration::Simple, as we do now.)
+// An Array<InitDeclaratorWithComma> is used as part of Declaration::Simple, wrapping a
+// Declarator and allowing it to have an optional Initializer. It corresponds to
+// init-declarator-list in the grammar, except when the Initializer is a FunctionBody or
+// a BitField. In those cases, it corresponds function-body and the bitfield production
+// rule in member-declarator respectively. (Consider making separate Declaration states
+// for the latter cases -- especially FunctionDefinition -- intsead of cramming
+// everything into Declaration::Simple, as we do now.)
 //-----------------------------------------------------------------------------
 struct InitDeclaratorWithComma {
     PLY_REFLECT()
@@ -505,8 +510,9 @@ struct InitDeclaratorWithComma {
 };
 
 //-----------------------------------------------------------------------------
-// An Array<Owned<InitEnumeratorWithComma>> is used by DeclSpecifier::Enum_ and describes a list of
-// enum entries with their optional initialzers. It corresponds to enumerator-list in the grammar.
+// An Array<Owned<InitEnumeratorWithComma>> is used by DeclSpecifier::Enum_ and
+// describes a list of enum entries with their optional initialzers. It corresponds to
+// enumerator-list in the grammar.
 //      enum Color { red = 0, green, blue };
 //                   ^^^^^^^^^^^^^^^^^^^^
 //-----------------------------------------------------------------------------
@@ -519,13 +525,13 @@ struct InitEnumeratorWithComma {
 };
 
 //-----------------------------------------------------------------------------
-// ParamDeclarationWithComma is used by ParamDeclarationList to describe a single function parameter
-// or template parameter. It corresponds to parameter-declaration or template-parameter in the
-// grammar.
+// ParamDeclarationWithComma is used by ParamDeclarationList to describe a single
+// function parameter or template parameter. It corresponds to parameter-declaration or
+// template-parameter in the grammar.
 //-----------------------------------------------------------------------------
 struct ParamDeclarationWithComma {
     PLY_REFLECT()
-    Array<Owned<DeclSpecifier>> declSpecifierSeq;
+    Array<Owned<DeclSpecifier>> decl_specifier_seq;
     Declarator dcor; // possibly abstract
     Initializer init;
     Token comma;
@@ -533,13 +539,14 @@ struct ParamDeclarationWithComma {
 };
 
 //-----------------------------------------------------------------------------
-// A Declaration describes an entry in the top-level namespace, a namespace, a class or a class
-// template. It corresponds to declaration or member-declaration in the grammar. Some of its states
-// are only allowed to appear in certain contexts; eg. AccessSpecifier can only appear inside a
-// class.
+// A Declaration describes an entry in the top-level namespace, a namespace, a class or
+// a class template. It corresponds to declaration or member-declaration in the grammar.
+// Some of its states are only allowed to appear in certain contexts; eg.
+// AccessSpecifier can only appear inside a class.
 //
-// At parse time, the Array<Declaration> is populated by the parse supervisor, and not by the parser
-// itself. (Need to document the reason for this, but don't remember right now.)
+// At parse time, the Array<Declaration> is populated by the parse supervisor, and not
+// by the parser itself. (Need to document the reason for this, but don't remember right
+// now.)
 //-----------------------------------------------------------------------------
 struct Declaration {
     // ply make reflected switch
@@ -547,8 +554,8 @@ struct Declaration {
         PLY_REFLECT()
         Token keyword;
         QualifiedID qid;
-        Token openCurly;
-        Token closeCurly;
+        Token open_curly;
+        Token close_curly;
         Array<Declaration> visor_decls; // Modified by supervisor
         // ply reflect off
     };
@@ -561,8 +568,8 @@ struct Declaration {
     };
     struct Simple {
         PLY_REFLECT()
-        Array<Owned<DeclSpecifier>> declSpecifierSeq;
-        Array<InitDeclaratorWithComma> initDeclarators;
+        Array<Owned<DeclSpecifier>> decl_specifier_seq;
+        Array<InitDeclaratorWithComma> init_declarators;
         Token semicolon;
         // ply reflect off
     };
@@ -575,7 +582,7 @@ struct Declaration {
     struct StaticAssert {
         PLY_REFLECT()
         Token keyword;
-        Expression::Call argList;
+        Expression::Call arg_list;
         Token semicolon;
         // ply reflect off
     };
@@ -592,7 +599,7 @@ struct Declaration {
         Token using_;
         Token name;
         Token equals;
-        Array<Owned<DeclSpecifier>> declSpecifierSeq;
+        Array<Owned<DeclSpecifier>> decl_specifier_seq;
         Declarator dcor; // should be abstract
         Token semicolon;
         // ply reflect off
@@ -601,8 +608,8 @@ struct Declaration {
         PLY_REFLECT()
         Token extern_;
         Token literal;
-        Token openCurly;
-        Token closeCurly;
+        Token open_curly;
+        Token close_curly;
         Array<Declaration> visor_decls; // Modified by supervisor
         // ply reflect off
     };

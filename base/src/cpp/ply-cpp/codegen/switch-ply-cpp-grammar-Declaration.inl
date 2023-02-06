@@ -1,4 +1,4 @@
-enum class ID : u16 {
+﻿enum class ID : u16 {
     Namespace_,
     Template_,
     Simple,
@@ -20,8 +20,10 @@ union Storage_ {
     Alias alias;
     Linkage linkage;
     Empty empty;
-    PLY_INLINE Storage_() {}
-    PLY_INLINE ~Storage_() {}
+    PLY_INLINE Storage_() {
+    }
+    PLY_INLINE ~Storage_() {
+    }
 };
 SWITCH_FOOTER(Declaration, Namespace_)
 SWITCH_ACCESSOR(Namespace_, namespace_)

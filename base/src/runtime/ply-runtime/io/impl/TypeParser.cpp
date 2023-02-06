@@ -33,11 +33,11 @@ const u8 fmt::DigitTable[256] = {
 const u32 fmt::WhitespaceMask[8] = {0x2600, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 
 PLY_INLINE bool match(u8 c, const u32* mask) {
-    u32 bitValue = mask[c >> 5] & (1 << (c & 31));
-    return (bitValue != 0);
+    u32 bit_value = mask[c >> 5] & (1 << (c & 31));
+    return (bit_value != 0);
 }
 
-PLY_NO_INLINE void fmt::scanUsingMask(InStream& in, const u32* mask, bool invert) {
+PLY_NO_INLINE void fmt::scan_using_mask(InStream& in, const u32* mask, bool invert) {
     for (;;) {
         if (!in.ensure_readable())
             break;
@@ -47,7 +47,8 @@ PLY_NO_INLINE void fmt::scanUsingMask(InStream& in, const u32* mask, bool invert
     }
 }
 
-PLY_NO_INLINE void fmt::scanUsingCallback(InStream& in, const Func<bool(char)>& callback) {
+PLY_NO_INLINE void fmt::scan_using_callback(InStream& in,
+                                            const Func<bool(char)>& callback) {
     for (;;) {
         if (!in.ensure_readable())
             break;
@@ -57,21 +58,23 @@ PLY_NO_INLINE void fmt::scanUsingCallback(InStream& in, const Func<bool(char)>& 
     }
 }
 
-PLY_NO_INLINE bool fmt::scanUpToAndIncludingSpecial(InStream& in, StringView special) {
-    PLY_ASSERT(special.numBytes > 0);
-    PLY_ASSERT(special.subStr(1).findByte(special[0]) < 0); // first letter must not reoccur
-    u32 matchedUnits = 0;
+PLY_NO_INLINE bool fmt::scan_up_to_and_including_special(InStream& in,
+                                                         StringView special) {
+    PLY_ASSERT(special.num_bytes > 0);
+    PLY_ASSERT(special.sub_str(1).find_byte(special[0]) <
+               0); // first letter must not reoccur
+    u32 matched_units = 0;
     for (;;) {
         if (!in.ensure_readable())
             break;
         u8 c = *in.cur_byte;
         in.cur_byte++;
-        if (c == (u8) special.bytes[matchedUnits]) {
-            matchedUnits++;
-            if (matchedUnits >= special.numBytes)
+        if (c == (u8) special.bytes[matched_units]) {
+            matched_units++;
+            if (matched_units >= special.num_bytes)
                 return true;
         } else {
-            matchedUnits = 0;
+            matched_units = 0;
         }
     }
     // special wasn't found
@@ -83,11 +86,11 @@ PLY_NO_INLINE bool fmt::scanUpToAndIncludingSpecial(InStream& in, StringView spe
 // Built-in fmt::TypeParsers
 //----------------------------------------------------------
 PLY_NO_INLINE u64 fmt::TypeParser<u64>::parse(InStream& in, Radix radix) {
-    // FIXME: 32-bit platforms like WASM would benefit from dedicated u32 parse function instead of
-    // parsing a u64 then casting the result to u32.
+    // FIXME: 32-bit platforms like WASM would benefit from dedicated u32 parse function
+    // instead of parsing a u64 then casting the result to u32.
     PLY_ASSERT(radix.base > 0 && radix.base <= 36);
     u64 result = 0;
-    bool anyDigits = false;
+    bool any_digits = false;
     bool overflow = false;
     for (;;) {
         if (!in.ensure_readable())
@@ -99,15 +102,17 @@ PLY_NO_INLINE u64 fmt::TypeParser<u64>::parse(InStream& in, Radix radix) {
         // FIXME: When available, check for (multiplicative & additive) overflow using
         // https://gcc.gnu.org/onlinedocs/gcc/Integer-Overflow-Builtins.html#Integer-Overflow-Builtins
         // and equivalent intrinsics instead of the following.
-        // Note: 0x71c71c71c71c71b is the largest value that won't overflow for any radix <= 36. We
-        // test against this constant first to avoid the costly integer division.
-        if (result > 0x71c71c71c71c71b && result > (Limits<u64>::Max - digit) / radix.base) {
+        // Note: 0x71c71c71c71c71b is the largest value that won't overflow for any
+        // radix <= 36. We test against this constant first to avoid the costly integer
+        // division.
+        if (result > 0x71c71c71c71c71b &&
+            result > (Limits<u64>::Max - digit) / radix.base) {
             overflow = true;
         }
         result = result * radix.base + digit;
-        anyDigits = true;
+        any_digits = true;
     }
-    if (!anyDigits || overflow) {
+    if (!any_digits || overflow) {
         in.status.parse_error = 1;
         return 0;
     }
@@ -121,15 +126,15 @@ PLY_NO_INLINE s64 fmt::TypeParser<s64>::parse(InStream& in, Radix radix) {
         in.cur_byte++;
     }
 
-    u64 unsignedComponent = fmt::TypeParser<u64>::parse(in, radix);
+    u64 unsigned_component = fmt::TypeParser<u64>::parse(in, radix);
     if (negate) {
-        s64 result = -(s64) unsignedComponent;
+        s64 result = -(s64) unsigned_component;
         if (result > 0) {
             in.status.parse_error = 1;
         }
         return result;
     } else {
-        s64 result = unsignedComponent;
+        s64 result = unsigned_component;
         if (result < 0) {
             in.status.parse_error = 1;
         }
@@ -139,11 +144,11 @@ PLY_NO_INLINE s64 fmt::TypeParser<s64>::parse(InStream& in, Radix radix) {
 
 struct DoubleComponentOut {
     double result = 0;
-    bool anyDigits = false;
+    bool any_digits = false;
 };
 
-PLY_NO_INLINE void readDoubleComponent(DoubleComponentOut* compOut, InStream& in,
-                                       fmt::Radix radix) {
+PLY_NO_INLINE void read_double_component(DoubleComponentOut* comp_out, InStream& in,
+                                         fmt::Radix radix) {
     double value = 0.0;
     double dr = (double) radix.base;
     for (;;) {
@@ -154,9 +159,9 @@ PLY_NO_INLINE void readDoubleComponent(DoubleComponentOut* compOut, InStream& in
             break;
         in.cur_byte++;
         value = value * dr + digit;
-        compOut->anyDigits = true;
+        comp_out->any_digits = true;
     }
-    compOut->result = value;
+    comp_out->result = value;
 }
 
 PLY_NO_INLINE double fmt::TypeParser<double>::parse(InStream& in, Radix radix) {
@@ -171,7 +176,7 @@ PLY_NO_INLINE double fmt::TypeParser<double>::parse(InStream& in, Radix radix) {
     }
 
     // Parse the mantissa
-    readDoubleComponent(&comp, in, radix);
+    read_double_component(&comp, in, radix);
     double value = comp.result;
 
     // Parse the optional fractional part
@@ -187,41 +192,40 @@ PLY_NO_INLINE double fmt::TypeParser<double>::parse(InStream& in, Radix radix) {
             if (digit >= radix.base)
                 break;
             in.cur_byte;
-            u64 denomWithNextDigit = denom * radix.base;
-            if (denomWithNextDigit < denom) {
+            u64 denom_with_next_digit = denom * radix.base;
+            if (denom_with_next_digit < denom) {
                 // denominator overflowed
-                double ooDenom = 1.0 / denom;
-                value += significance * numer * ooDenom;
-                significance *= ooDenom;
+                double oo_denom = 1.0 / denom;
+                value += significance * numer * oo_denom;
+                significance *= oo_denom;
                 numer = digit;
                 denom = radix.base;
             } else {
                 numer = numer * radix.base + digit;
-                denom = denomWithNextDigit;
+                denom = denom_with_next_digit;
             }
         }
         value += significance * numer / denom;
     }
 
     // Parse optional exponent suffix
-    if (comp.anyDigits && in.ensure_readable() &&
-        (*in.cur_byte | 0x20) == 'e') {
+    if (comp.any_digits && in.ensure_readable() && (*in.cur_byte | 0x20) == 'e') {
         in.cur_byte;
-        bool negateExp = false;
+        bool negate_exp = false;
         if (in.ensure_readable()) {
             if (*in.cur_byte == '+') {
                 in.cur_byte;
             } else if (*in.cur_byte == '-') {
                 in.cur_byte;
-                negateExp = true;
+                negate_exp = true;
             }
         }
-        comp.anyDigits = false;
-        readDoubleComponent(&comp, in, radix);
-        value *= pow((double) radix.base, negateExp ? -comp.result : comp.result);
+        comp.any_digits = false;
+        read_double_component(&comp, in, radix);
+        value *= pow((double) radix.base, negate_exp ? -comp.result : comp.result);
     }
 
-    if (!comp.anyDigits) {
+    if (!comp.any_digits) {
         in.status.parse_error = true;
     }
 
@@ -236,80 +240,80 @@ String fmt::FormatParser<fmt::QuotedString>::parse(InStream& in,
     // Note: It should be possible to modify this function to return a HybridString, and
     // avoid making a copy of the quoted string when reading from a StringView and there
     // are no escape characters. Could be worthwhile.
-    auto handleError = [&](fmt::QuotedString::ErrorCode errorCode) {
+    auto handle_error = [&](fmt::QuotedString::ErrorCode error_code) {
         in.status.parse_error = 1;
-        if (format.errorCallback) {
-            format.errorCallback(in, errorCode);
+        if (format.error_callback) {
+            format.error_callback(in, error_code);
         }
     };
 
     // Get opening quote
     if (!in.ensure_readable()) {
-        handleError(fmt::QuotedString::UnexpectedEndOfFile);
+        handle_error(fmt::QuotedString::UnexpectedEndOfFile);
         return {};
     }
-    u8 quoteType = *in.cur_byte;
-    if (!(quoteType == '"' ||
-          ((format.flags & fmt::AllowSingleQuote) && quoteType == '\''))) {
-        handleError(fmt::QuotedString::NoOpeningQuote);
+    u8 quote_type = *in.cur_byte;
+    if (!(quote_type == '"' ||
+          ((format.flags & fmt::AllowSingleQuote) && quote_type == '\''))) {
+        handle_error(fmt::QuotedString::NoOpeningQuote);
         return {};
     }
     in.cur_byte;
 
     // Parse rest of quoted string
     MemOutStream out;
-    u32 quoteRun = 1;
+    u32 quote_run = 1;
     bool multiline = false;
     for (;;) {
         if (!in.ensure_readable()) {
-            handleError(fmt::QuotedString::UnexpectedEndOfFile);
+            handle_error(fmt::QuotedString::UnexpectedEndOfFile);
             break; // end of string
         }
 
-        u8 nextByte = *in.cur_byte;
-        if (nextByte == quoteType) {
+        u8 next_byte = *in.cur_byte;
+        if (next_byte == quote_type) {
             in.cur_byte;
-            if (quoteRun == 0) {
+            if (quote_run == 0) {
                 if (multiline) {
-                    quoteRun++;
+                    quote_run++;
                 } else {
                     break; // end of string
                 }
             } else {
-                quoteRun++;
-                if (quoteRun == 3) {
+                quote_run++;
+                if (quote_run == 3) {
                     if (multiline) {
                         break; // end of string
                     } else {
                         multiline = true;
-                        quoteRun = 0;
+                        quote_run = 0;
                     }
                 }
             }
         } else {
             // FIXME: Check fmt::AllowMultilineWithTriple (and other flags)
-            if (quoteRun > 0) {
+            if (quote_run > 0) {
                 if (multiline) {
-                    for (u32 i = 0; i < quoteRun; i++) {
-                        out << quoteType;
+                    for (u32 i = 0; i < quote_run; i++) {
+                        out << quote_type;
                     }
-                } else if (quoteRun == 2) {
+                } else if (quote_run == 2) {
                     break; // empty string
                 }
-                quoteRun = 0;
+                quote_run = 0;
             }
 
-            switch (nextByte) {
+            switch (next_byte) {
                 case '\r':
                 case '\n': {
                     if (multiline) {
-                        if (nextByte == '\n') {
-                            out << nextByte;
+                        if (next_byte == '\n') {
+                            out << next_byte;
                         }
                         in.cur_byte;
                     } else {
-                        handleError(fmt::QuotedString::UnexpectedEndOfLine);
-                        goto endOfString;
+                        handle_error(fmt::QuotedString::UnexpectedEndOfLine);
+                        goto end_of_string;
                     }
                     break;
                 }
@@ -318,15 +322,15 @@ String fmt::FormatParser<fmt::QuotedString>::parse(InStream& in,
                     // Escape sequence
                     in.cur_byte;
                     if (!in.ensure_readable()) {
-                        handleError(fmt::QuotedString::UnexpectedEndOfFile);
-                        goto endOfString;
+                        handle_error(fmt::QuotedString::UnexpectedEndOfFile);
+                        goto end_of_string;
                     }
                     u8 code = *in.cur_byte;
                     switch (code) {
                         case '\r':
                         case '\n': {
-                            handleError(fmt::QuotedString::UnexpectedEndOfLine);
-                            goto endOfString;
+                            handle_error(fmt::QuotedString::UnexpectedEndOfLine);
+                            goto end_of_string;
                         }
 
                         case '\\':
@@ -355,7 +359,7 @@ String fmt::FormatParser<fmt::QuotedString>::parse(InStream& in,
                             // case 'x':
 
                         default: {
-                            handleError(fmt::QuotedString::BadEscapeSequence);
+                            handle_error(fmt::QuotedString::BadEscapeSequence);
                             break;
                         }
                     }
@@ -364,7 +368,7 @@ String fmt::FormatParser<fmt::QuotedString>::parse(InStream& in,
                 }
 
                 default: {
-                    out << nextByte;
+                    out << next_byte;
                     in.cur_byte;
                     break;
                 }
@@ -372,8 +376,8 @@ String fmt::FormatParser<fmt::QuotedString>::parse(InStream& in,
         }
     }
 
-endOfString:
-    return out.moveToString();
+end_of_string:
+    return out.move_to_string();
 }
 
 bool fmt::FormatParser<fmt::Identifier>::parse(InStream& in,

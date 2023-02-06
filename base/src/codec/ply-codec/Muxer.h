@@ -17,42 +17,42 @@ struct YUVImage {
 
 class Muxer {
 public:
-    float sampleRate = 0;
+    float sample_rate = 0;
 
     virtual ~Muxer() {
     }
 
-    virtual void beginVideoFrame(image::Image& rgbIm) = 0;
-    virtual void endVideoFrame() = 0;
-    virtual double getVideoTime() = 0;
-    virtual u32 getVideoFrameNumber() = 0;
-    virtual void flushVideo() = 0;
+    virtual void begin_video_frame(image::Image& rgb_im) = 0;
+    virtual void end_video_frame() = 0;
+    virtual double get_video_time() = 0;
+    virtual u32 get_video_frame_number() = 0;
+    virtual void flush_video() = 0;
 
-    virtual void beginAudioFrame(audio::Buffer& buffer) = 0;
-    virtual void endAudioFrame(u32 numSamples) = 0;
-    virtual double getAudioTime() = 0;
-    virtual void flushAudio() = 0;
+    virtual void begin_audio_frame(audio::Buffer& buffer) = 0;
+    virtual void end_audio_frame(u32 num_samples) = 0;
+    virtual double get_audio_time() = 0;
+    virtual void flush_audio() = 0;
 };
 
 struct VideoOptions {
     // FIXME: Add more options
     u32 width = 1280;
     u32 height = 720;
-    u64 bitRate = 1000000;
+    u64 bit_rate = 1000000;
     // default is 30fps
 
-    VideoOptions(u32 width, u32 height, u64 bitRate = 1000000)
-        : width{width}, height{height}, bitRate{bitRate} {
+    VideoOptions(u32 width, u32 height, u64 bit_rate = 1000000)
+        : width{width}, height{height}, bit_rate{bit_rate} {
     }
 };
 
 struct AudioOptions {
-    u64 bitRate = 128000;
-    u32 sampleRate = 44100;
-    u32 numChannels = 1;
+    u64 bit_rate = 128000;
+    u32 sample_rate = 44100;
+    u32 num_channels = 1;
 };
 
-Owned<Muxer> createMuxer(OutPipe* out, const VideoOptions* videoOpts, const AudioOptions* audioOpts,
-                         StringView containerFormat);
+Owned<Muxer> create_muxer(OutPipe* out, const VideoOptions* video_opts,
+                          const AudioOptions* audio_opts, StringView container_format);
 
 } // namespace ply

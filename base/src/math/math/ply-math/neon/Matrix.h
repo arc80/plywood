@@ -20,7 +20,8 @@ struct Float3x3 {
     Float3x3() {
     }
 
-    Float3x3(const Float3& col0, const Float3& col1, const Float3& col2) : col{col0, col1, col2} {
+    Float3x3(const Float3& col0, const Float3& col1, const Float3& col2)
+        : col{col0, col1, col2} {
     }
 
     static const Float3x3& cast(const Float3x4& arg) {
@@ -50,7 +51,8 @@ struct Float3x4 {
     Float3x4() {
     }
 
-    Float3x4(const Float3& col0, const Float3& col1, const Float3& col2, const Float3& col3)
+    Float3x4(const Float3& col0, const Float3& col1, const Float3& col2,
+             const Float3& col3)
         : col{col0, col1, col2, col3} {
     }
 
@@ -74,7 +76,8 @@ struct Float3x4 {
 
     Float3x4 operator*(const Float3x4& arg) const {
         const Float3x3& lin = Float3x3::cast(*this);
-        return Float3x4{lin * arg.col[0], lin * arg.col[1], lin * arg.col[2], *this * arg.col[3]};
+        return Float3x4{lin * arg.col[0], lin * arg.col[1], lin * arg.col[2],
+                        *this * arg.col[3]};
     }
 };
 
@@ -84,7 +87,8 @@ struct Float4x4 {
     Float4x4() {
     }
 
-    Float4x4(const Float4& col0, const Float4& col1, const Float4& col2, const Float4& col3)
+    Float4x4(const Float4& col0, const Float4& col1, const Float4& col2,
+             const Float4& col3)
         : col{col0, col1, col2, col3} {
     }
 

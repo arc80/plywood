@@ -63,11 +63,11 @@ enum class TokenType {
 };
 
 // Full information about a single token.
-// ExpandedTokens are generally temporary objects. The complete set of tokens is stored in the
-// Tokenizer in a more compact way.
+// ExpandedTokens are generally temporary objects. The complete set of tokens is stored
+// in the Tokenizer in a more compact way.
 struct ExpandedToken {
-    u32 tokenIdx = 0;
-    u32 fileOffset = 0;
+    u32 token_idx = 0;
+    u32 file_offset = 0;
     TokenType type = TokenType::Invalid;
     Label label;
     StringView text;
@@ -82,7 +82,7 @@ struct Tokenizer {
         const char* end = nullptr;
         const char* cur = nullptr;
 
-        PLY_INLINE bool atEOF() const {
+        PLY_INLINE bool at_eof() const {
             return this->cur >= this->end;
         }
         PLY_INLINE char peek() const {
@@ -95,32 +95,32 @@ struct Tokenizer {
         }
     } vin;
 
-    // FileLocationMap is initialized when setSourceInput is called.
-    FileLocationMap fileLocationMap;
+    // FileLocationMap is initialized when set_source_input is called.
+    FileLocationMap file_location_map;
 
     // Token data stored in a compact form.
     // Token indices are offsets into this buffer.
-    BigPool<> tokenData;
-    u32 nextTokenIdx = 0; // Tokens can be pushed back into the tokenData queue
+    BigPool<> token_data;
+    u32 next_token_idx = 0; // Tokens can be pushed back into the token_data queue
 
-    // There is entry in the fileOffsetTable for every 256 bytes of tokenData.
-    BigPool<u32> fileOffsetTable;
+    // There is entry in the file_offset_table for every 256 bytes of token_data.
+    BigPool<u32> file_offset_table;
 
     // Behavior that can be changed on the fly by the parser.
     struct Behavior {
-        bool tokenizeNewLine = true;
-        bool insideString = false;
-        bool isMultilineString = false;
+        bool tokenize_new_line = true;
+        bool inside_string = false;
+        bool is_multiline_string = false;
     };
     Behavior behavior;
 
     Tokenizer();
-    void setSourceInput(StringView path, StringView src);
-    ExpandedToken readToken();
-    ExpandedToken expandToken(u32 tokenIdx);
-    PLY_INLINE void rewindTo(u32 tokenIdx) {
-        PLY_ASSERT(tokenIdx <= this->nextTokenIdx);
-        this->nextTokenIdx = tokenIdx;
+    void set_source_input(StringView path, StringView src);
+    ExpandedToken read_token();
+    ExpandedToken expand_token(u32 token_idx);
+    PLY_INLINE void rewind_to(u32 token_idx) {
+        PLY_ASSERT(token_idx <= this->next_token_idx);
+        this->next_token_idx = token_idx;
     }
 };
 

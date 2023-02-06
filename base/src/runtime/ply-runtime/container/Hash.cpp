@@ -25,18 +25,18 @@ PLY_NO_INLINE Hasher& operator<<(Hasher& hasher, u32 value) {
 PLY_NO_INLINE Hasher& operator<<(Hasher& hasher, StringView buf) {
     // FIXME: More work is needed for platforms that don't support unaligned reads
 
-    while (buf.numBytes >= 4) {
-        hasher << *(const u32*) buf.bytes;  // May be unaligned
+    while (buf.num_bytes >= 4) {
+        hasher << *(const u32*) buf.bytes; // May be unaligned
         buf.bytes += 4;
-        buf.numBytes -= 4;
+        buf.num_bytes -= 4;
     }
-    if (buf.numBytes > 0) {
+    if (buf.num_bytes > 0) {
         // Avoid potential unaligned read across page boundary
         u32 v = 0;
-        while (buf.numBytes > 0) {
+        while (buf.num_bytes > 0) {
             v = (v << 8) | *(const u8*) buf.bytes;
             buf.bytes++;
-            buf.numBytes--;
+            buf.num_bytes--;
         }
         hasher << v;
     }

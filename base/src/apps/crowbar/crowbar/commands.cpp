@@ -26,8 +26,8 @@ using namespace ply::build;
 //  ▀█▄▄██ ▀█▄▄▄  ██  ██ ▀█▄▄▄  ██     ▀█▄▄██  ▀█▄▄ ▀█▄▄▄
 //   ▄▄▄█▀
 
-bool isMultiConfigCMakeGenerator(StringView generator) {
-    if (generator.startsWith("Visual Studio")) {
+bool is_multi_config_cmake_generator(StringView generator) {
+    if (generator.starts_with("Visual Studio")) {
         return true;
     } else if (generator == "Xcode") {
         return true;
@@ -42,48 +42,47 @@ bool isMultiConfigCMakeGenerator(StringView generator) {
 }
 
 PLY_NO_INLINE Tuple<s32, String>
-generateCMakeProject(StringView cmakeListsFolder,
-                     const CMakeGeneratorOptions& generatorOpts, StringView config) {
-    PLY_ASSERT(generatorOpts.generator);
-    bool isMultiConfig = isMultiConfigCMakeGenerator(generatorOpts.generator);
-    PLY_ASSERT(isMultiConfig || config);
-    String buildFolder = Path.join(cmakeListsFolder, "build");
-    String relPathToCMakeLists = "..";
-    if (!isMultiConfig) {
-        buildFolder = Path.join(buildFolder, config);
-        relPathToCMakeLists = "../..";
+generate_cmake_project(StringView cmake_lists_folder,
+                       const CMakeGeneratorOptions& generator_opts, StringView config) {
+    PLY_ASSERT(generator_opts.generator);
+    bool is_multi_config = is_multi_config_cmake_generator(generator_opts.generator);
+    PLY_ASSERT(is_multi_config || config);
+    String build_folder = Path.join(cmake_lists_folder, "build");
+    String rel_path_to_cmake_lists = "..";
+    if (!is_multi_config) {
+        build_folder = Path.join(build_folder, config);
+        rel_path_to_cmake_lists = "../..";
     }
-    FSResult result = FileSystem.makeDirs(buildFolder);
+    FSResult result = FileSystem.make_dirs(build_folder);
     if (result != FSResult::OK && result != FSResult::AlreadyExists) {
-        Error.log("Can't create folder '{}'\n", buildFolder);
+        Error.log("Can't create folder '{}'\n", build_folder);
         return {-1, ""};
     }
-    PLY_ASSERT(!generatorOpts.generator.isEmpty());
-    Array<String> args = {relPathToCMakeLists, "-G", generatorOpts.generator};
-    if (generatorOpts.platform) {
-        args.extend({"-A", generatorOpts.platform});
+    PLY_ASSERT(!generator_opts.generator.is_empty());
+    Array<String> args = {rel_path_to_cmake_lists, "-G", generator_opts.generator};
+    if (generator_opts.platform) {
+        args.extend({"-A", generator_opts.platform});
     }
-    if (generatorOpts.toolset) {
-        args.extend({"-T", generatorOpts.toolset});
+    if (generator_opts.toolset) {
+        args.extend({"-T", generator_opts.toolset});
     }
-    if (generatorOpts.toolchainFile == "ios") {
+    if (generator_opts.toolchain_file == "ios") {
         // FIXME: Verify that we're using CMake version 3.14 or higher
         args.append("-DCMAKE_SYSTEM_NAME=iOS");
     }
-    if (!isMultiConfig) {
+    if (!is_multi_config) {
         args.append(String::format("-DCMAKE_BUILD_TYPE={}", config));
     }
     args.extend({"-DCMAKE_C_COMPILER_FORCED=1", "-DCMAKE_CXX_COMPILER_FORCED=1"});
-    Owned<Process> sub =
-        Process::exec(PLY_CMAKE_PATH, Array<StringView>{args}, buildFolder,
-                         Process::Output::openMerged());
-    String output = InStream{TextFormat::default_utf8().createImporter(
-                                 {sub->readFromStdOut, false})}
+    Owned<Process> sub = Process::exec(PLY_CMAKE_PATH, Array<StringView>{args},
+                                       build_folder, Process::Output::open_merged());
+    String output = InStream{TextFormat::default_utf8().create_importer(
+                                 {sub->read_from_std_out, false})}
                         .read_remaining_contents();
     s32 rc = sub->join();
     if (rc != 0) {
         Error.log("Error generating build system using CMake for folder '{}'\n",
-                  buildFolder);
+                  build_folder);
     }
     return {rc, std::move(output)};
 }
@@ -91,13 +90,13 @@ generateCMakeProject(StringView cmakeListsFolder,
 void generate(BuildFolder_t* build_folder) {
     init_built_ins(build_folder);
     instantiate_all_configs(build_folder);
-    String cmakeListsPath = Path.join(build_folder->absPath, "CMakeLists.txt");
-    write_CMakeLists_txt_if_different(cmakeListsPath);
+    String cmake_lists_path = Path.join(build_folder->abs_path, "CMakeLists.txt");
+    write_CMakeLists_txt_if_different(cmake_lists_path);
     Tuple<s32, String> result =
-        generateCMakeProject(build_folder->absPath, build_folder->cmakeOptions, {});
+        generate_cmake_project(build_folder->abs_path, build_folder->cmake_options, {});
     if (result.first != 0) {
         Error.log("Failed to generate build system for '{}':\n{}",
-                  build_folder->solutionName, result.second);
+                  build_folder->solution_name, result.second);
     }
 }
 
@@ -107,46 +106,46 @@ void generate(BuildFolder_t* build_folder) {
 //  ██▄▄█▀ ▀█▄▄█▀ ▀█▄▄█▀  ▀█▄▄  ▄▄▄█▀  ▀█▄▄ ██     ▀█▄▄██ ██▄▄█▀
 //                                                        ██
 
-void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
+void write_bootstrap(BuildFolder_t* build_folder, u32 config_index) {
     init_built_ins(build_folder);
     instantiate_all_configs(build_folder);
 
     // Write crowbar_bulk.cpp
     {
         MemOutStream out;
-        String sourceDir = Path.join(Workspace.path, "base/scripts");
+        String source_dir = Path.join(Workspace.path, "base/scripts");
         for (const Target* target : Project.targets) {
-            for (const SourceGroup& sg : target->sourceGroups) {
+            for (const SourceGroup& sg : target->source_groups) {
                 for (const SourceFile& sf : sg.files) {
-                    if (hasBitAtIndex(sf.enabledBits, configIndex) &&
-                        sf.relPath.endsWith(".cpp")) {
-                        String includePath = PosixPath.from(
-                            Path, Path.makeRelative(sourceDir,
-                                                    Path.join(sg.absPath, sf.relPath)));
-                        out.format("#include \"{}\"\n", includePath);
+                    if (has_bit_at_index(sf.enabled_bits, config_index) &&
+                        sf.rel_path.ends_with(".cpp")) {
+                        String include_path = PosixPath.from(
+                            Path, Path.make_relative(
+                                      source_dir, Path.join(sg.abs_path, sf.rel_path)));
+                        out.format("#include \"{}\"\n", include_path);
                     }
                 }
             }
         }
-        String sourcePath = Path.join(sourceDir, "crowbar_bulk.cpp");
-        FSResult result =
-            FileSystem.makeDirsAndSaveTextIfDifferent(sourcePath, out.moveToString());
+        String source_path = Path.join(source_dir, "crowbar_bulk.cpp");
+        FSResult result = FileSystem.make_dirs_and_save_text_if_different(
+            source_path, out.move_to_string());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
-            Error.log("Error writing {}", sourcePath);
+            Error.log("Error writing {}", source_path);
         }
     }
 
     // Write build.bat
     {
-        Array<Option> combinedOptions = get_combined_options();
+        Array<Option> combined_options = get_combined_options();
         MemOutStream out;
         out << "@echo off\n";
         out << "cl";
 
         // Compilation options
         CompilerSpecificOptions copts;
-        for (const Option& opt : combinedOptions) {
-            if (!hasBitAtIndex(opt.enabledBits, configIndex))
+        for (const Option& opt : combined_options) {
+            if (!has_bit_at_index(opt.enabled_bits, config_index))
                 continue;
             if (opt.type == Option::Generic) {
                 translate_toolchain_option(&copts, opt);
@@ -158,8 +157,8 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
         out << " /Fd\"crowbar_bulk.pdb\"";
 
         // Preprocessor definitions
-        for (const Option& opt : combinedOptions) {
-            if (!hasBitAtIndex(opt.enabledBits, configIndex))
+        for (const Option& opt : combined_options) {
+            if (!has_bit_at_index(opt.enabled_bits, config_index))
                 continue;
             if (opt.type == Option::PreprocessorDef) {
                 if (opt.value) {
@@ -171,11 +170,11 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
         }
 
         // Include directories
-        for (const Option& opt : combinedOptions) {
-            if (!hasBitAtIndex(opt.enabledBits, configIndex))
+        for (const Option& opt : combined_options) {
+            if (!has_bit_at_index(opt.enabled_bits, config_index))
                 continue;
             if (opt.type == Option::IncludeDir) {
-                out.format(" /I\"{}\"", Path.makeRelative(Workspace.path, opt.key));
+                out.format(" /I\"{}\"", Path.make_relative(Workspace.path, opt.key));
             }
         }
 
@@ -188,7 +187,7 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
                 out << ' ' << opt;
             }
         }
-        for (const Option& opt : combinedOptions) {
+        for (const Option& opt : combined_options) {
             if (opt.type == Option::LinkerInput) {
                 out << ' ' << opt.key;
             }
@@ -198,11 +197,11 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
         out << "del crowbar_bulk.obj\n";
         out << "del crowbar_bulk.pdb\n";
 
-        String batPath = Path.join(Workspace.path, "setup.bat");
-        FSResult result =
-            FileSystem.makeDirsAndSaveTextIfDifferent(batPath, out.moveToString());
+        String bat_path = Path.join(Workspace.path, "setup.bat");
+        FSResult result = FileSystem.make_dirs_and_save_text_if_different(
+            bat_path, out.move_to_string());
         if ((result != FSResult::OK) && (result != FSResult::Unchanged)) {
-            Error.log("Error writing {}", batPath);
+            Error.log("Error writing {}", bat_path);
         }
     }
 }
@@ -214,13 +213,13 @@ void write_bootstrap(BuildFolder_t* build_folder, u32 configIndex) {
 //         ██
 
 void command_open(BuildFolder_t* bf) {
-    if (bf->cmakeOptions.generator == "Unix Makefiles") {
+    if (bf->cmake_options.generator == "Unix Makefiles") {
         Error.log("No IDE to open for Unix Makefiles");
 #if PLY_TARGET_WIN32
-    } else if (bf->cmakeOptions.generator.startsWith("Visual Studio")) {
-        String slnPath = Path.join(bf->absPath, "build", bf->solutionName + ".sln");
-        if (FileSystem.exists(slnPath) != ExistsResult::File) {
-            Error.log("Can't find '{}'", slnPath);
+    } else if (bf->cmake_options.generator.starts_with("Visual Studio")) {
+        String sln_path = Path.join(bf->abs_path, "build", bf->solution_name + ".sln");
+        if (FileSystem.exists(sln_path) != ExistsResult::File) {
+            Error.log("Can't find '{}'", sln_path);
         }
 
         // Open IDE
@@ -229,30 +228,29 @@ void command_open(BuildFolder_t* bf) {
             Error.log("Unable to initialize COM");
             exit(1);
         }
-        ShellExecuteW(NULL, L"open", toWString(slnPath), NULL, NULL, SW_SHOWNORMAL);
+        ShellExecuteW(NULL, L"open", to_wstring(sln_path), NULL, NULL, SW_SHOWNORMAL);
         return;
 #endif // PLY_TARGET_WIN32
 #if PLY_TARGET_APPLE
-    } else if (folder->cmakeOptions.generator == "Xcode") {
-        String projPath = Path.join(folder->getAbsPath(), "build",
-                                    folder->solutionName + ".xcodeproj");
-        if (FileSystem.exists(projPath) != ExistsResult::Directory) {
-            fatalError(String::format("Can't find '{}'", projPath));
+    } else if (folder->cmake_options.generator == "Xcode") {
+        String proj_path = Path.join(folder->get_abs_path(), "build",
+                                     folder->solution_name + ".xcodeproj");
+        if (FileSystem.exists(proj_path) != ExistsResult::Directory) {
+            fatal_error(String::format("Can't find '{}'", proj_path));
         }
 
         // Open IDE
-        Owned<Process> sub =
-            Process::exec("open", Array<StringView>{projPath}.view(), {},
-                             Process::Output::inherit());
+        Owned<Process> sub = Process::exec("open", Array<StringView>{proj_path}.view(),
+                                           {}, Process::Output::inherit());
         if (!sub) {
-            fatalError("Unable to open IDE using 'open'");
+            fatal_error("Unable to open IDE using 'open'");
         }
         sub->join();
 #endif // PLY_TARGET_APPLE
     }
 
     Error.log("Don't know how to open IDE for generator '{}'",
-              bf->cmakeOptions.generator);
+              bf->cmake_options.generator);
     exit(1);
 }
 
@@ -270,8 +268,8 @@ bool create_build_folder(StringView name) {
     }
 
     BuildFolder_t bf;
-    bf.solutionName = name;
-    bf.absPath = abs_path;
+    bf.solution_name = name;
+    bf.abs_path = abs_path;
     bf.save();
     return true;
 }
@@ -279,8 +277,8 @@ bool create_build_folder(StringView name) {
 Array<String> get_build_folders() {
     Array<String> result;
     for (const FileInfo& file_info :
-         FileSystem.listDir(Path.join(Workspace.path, "data/build"), 0)) {
-        if (file_info.isDir) {
+         FileSystem.list_dir(Path.join(Workspace.path, "data/build"), 0)) {
+        if (file_info.is_dir) {
             if (FileSystem.exists(Path.join(Workspace.path, "data/build",
                                             file_info.name, "info.pylon")) ==
                 ExistsResult::File) {
@@ -298,6 +296,6 @@ bool set_build_folder(StringView name) {
         return false;
     }
 
-    Workspace.currentBuildFolder = name;
+    Workspace.current_build_folder = name;
     return Workspace.save();
 }

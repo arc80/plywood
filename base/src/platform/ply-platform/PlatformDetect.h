@@ -57,7 +57,7 @@
         #endif
     #endif
     #if defined(__MACH__)
-        // Mach kernel, eg. Apple MacOS/iOS
+        // Mach kernel, eg. Apple MacOS/i_os
         #define PLY_KERNEL_MACH 1
     #endif
     #if defined(__MINGW32__) || defined(__MINGW64__)

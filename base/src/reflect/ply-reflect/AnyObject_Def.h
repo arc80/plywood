@@ -29,11 +29,11 @@ struct AnyObject {
     template <class T>
     T* cast() const;
     template <class T>
-    T* safeCast() const;
+    T* safe_cast() const;
     template <class S>
     const S& refine() const;
 
-    static AnyObject create(TypeDescriptor* typeDesc);
+    static AnyObject create(TypeDescriptor* type_desc);
     void destroy();
     void construct();
     void destruct();

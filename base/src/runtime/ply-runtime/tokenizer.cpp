@@ -8,7 +8,7 @@
 
 namespace ply {
 
-StringView tokenRepr[] = {
+StringView token_repr[] = {
     "",   // TK_EOF
     "",   // TK_Invalid
     "",   // TK_Whitespace
@@ -51,7 +51,7 @@ StringView tokenRepr[] = {
     "&",  // TK_Ampersand
     "&&", // TK_DoubleAmpersand
 };
-PLY_STATIC_ASSERT(PLY_STATIC_ARRAY_SIZE(tokenRepr) == (u32) TK_Count);
+PLY_STATIC_ASSERT(PLY_STATIC_ARRAY_SIZE(token_repr) == (u32) TK_Count);
 
 TokenKind read_string(Tokenizer* tkr) {
     PLY_ASSERT(tkr->string_status == SS_InsideString);
@@ -131,7 +131,7 @@ TokenKind read_string(Tokenizer* tkr) {
     }
 
     // Return a segment of this string.
-    tkr->string_value = mout.moveToString();
+    tkr->string_value = mout.move_to_string();
     PLY_ASSERT(tkr->string_value);
     return TK_StringLiteral;
 }

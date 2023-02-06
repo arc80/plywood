@@ -10,7 +10,7 @@
 
 namespace pylon {
 
-void write(OutStream& out, const Node* aNode);
-String toString(const Node* aNode);
+void write(OutStream& out, const Node* a_node);
+String to_string(const Node* a_node);
 
 } // namespace pylon

@@ -14,7 +14,7 @@ namespace build {
 struct Repository {
     struct Plyfile {
         String src;
-        biscuit::Tokenizer tkr; // For tokenData and FileLocationMap (only)
+        biscuit::Tokenizer tkr; // For token_data and FileLocationMap (only)
         Owned<biscuit::StatementBlock> contents;
     };
 
@@ -28,10 +28,10 @@ struct Repository {
 
         Plyfile* plyfile = nullptr;
         Owned<biscuit::Statement> stmt;
-        Owned<biscuit::Statement> generateBlock;
-        bool generatedOnce = false;
-        Owned<ConfigOptions> defaultOptions;
-        Owned<ConfigOptions> currentOptions;
+        Owned<biscuit::Statement> generate_block;
+        bool generated_once = false;
+        Owned<ConfigOptions> default_options;
+        Owned<ConfigOptions> current_options;
     };
 
     struct TargetConfigBlock {
@@ -41,23 +41,23 @@ struct Repository {
 
     struct ConfigList {
         Plyfile* plyfile = nullptr;
-        u32 fileOffset = 0;
-        Owned<biscuit::Statement> blockStmt;
+        u32 file_offset = 0;
+        Owned<biscuit::Statement> block_stmt;
     };
 
     Array<Owned<Plyfile>> plyfiles;
     Array<Owned<Function>> targets;
     Array<Owned<Function>> functions;
-    Map<Label, Function*> globalScope; // Maps names to targets & functions
-    Array<TargetConfigBlock> targetConfigBlocks;
-    Owned<ConfigList> configList;
+    Map<Label, Function*> global_scope; // Maps names to targets & functions
+    Array<TargetConfigBlock> target_config_blocks;
+    Owned<ConfigList> config_list;
 
     static void create();
 };
 
 extern Repository* g_repository;
 
-bool parsePlyfile(StringView path);
+bool parse_plyfile(StringView path);
 
 } // namespace build
 

@@ -12,42 +12,42 @@ namespace ply {
 //---------------------------------------------------------------
 // Primitives for printing numeric types
 //----------------------------------------------------------------
-PLY_INLINE char toDigit(u32 d) {
-    const char* digitTable = "0123456789abcdefghijklmnopqrstuvwxyz";
-    return (d <= 35) ? digitTable[d] : '?';
+PLY_INLINE char to_digit(u32 d) {
+    const char* digit_table = "0123456789abcdefghijklmnopqrstuvwxyz";
+    return (d <= 35) ? digit_table[d] : '?';
 }
 
-PLY_NO_INLINE void printString(OutStream& out, u64 value, u32 radix) {
+PLY_NO_INLINE void print_string(OutStream& out, u64 value, u32 radix) {
     PLY_ASSERT(radix >= 2);
-    char digitBuffer[64];
-    s32 digitIndex = PLY_STATIC_ARRAY_SIZE(digitBuffer);
+    char digit_buffer[64];
+    s32 digit_index = PLY_STATIC_ARRAY_SIZE(digit_buffer);
 
     if (value == 0) {
-        digitBuffer[--digitIndex] = '0';
+        digit_buffer[--digit_index] = '0';
     } else {
         while (value > 0) {
             u64 quotient = value / radix;
             u32 digit = u32(value - quotient * radix);
-            PLY_ASSERT(digitIndex > 0);
-            digitBuffer[--digitIndex] = toDigit(digit);
+            PLY_ASSERT(digit_index > 0);
+            digit_buffer[--digit_index] = to_digit(digit);
             value = quotient;
         }
     }
 
-    out << StringView{digitBuffer + digitIndex,
-                      (u32) PLY_STATIC_ARRAY_SIZE(digitBuffer) - digitIndex};
+    out << StringView{digit_buffer + digit_index,
+                      (u32) PLY_STATIC_ARRAY_SIZE(digit_buffer) - digit_index};
 }
 
-PLY_NO_INLINE void printString(OutStream& out, s64 value, u32 radix) {
+PLY_NO_INLINE void print_string(OutStream& out, s64 value, u32 radix) {
     if (value >= 0) {
-        printString(out, (u64) value, radix);
+        print_string(out, (u64) value, radix);
     } else {
         out << '-';
-        printString(out, (u64) -value, radix);
+        print_string(out, (u64) -value, radix);
     }
 }
 
-PLY_NO_INLINE void printString(OutStream& out, double value, u32 radix) {
+PLY_NO_INLINE void print_string(OutStream& out, double value, u32 radix) {
     PLY_ASSERT(radix >= 2);
 
 #if PLY_COMPILER_GCC
@@ -69,36 +69,36 @@ PLY_NO_INLINE void printString(OutStream& out, double value, u32 radix) {
         u32 radix3 = radix * radix * radix;
         u32 radix6 = radix3 * radix3;
         if (value == 0.0 || (value * radix3 > radix && value < radix6)) {
-            u64 fixedPoint = u64(value * radix3);
-            printString(out, fixedPoint / radix3, radix);
+            u64 fixed_point = u64(value * radix3);
+            print_string(out, fixed_point / radix3, radix);
             out << '.';
-            u64 fractionalPart = fixedPoint % radix3;
+            u64 fractional_part = fixed_point % radix3;
             {
                 // Print zeroed
-                char digitBuffer[3];
+                char digit_buffer[3];
                 for (s32 i = 2; i >= 0; i--) {
-                    u64 quotient = fractionalPart / radix;
-                    u32 digit = u32(fractionalPart - quotient * radix);
-                    digitBuffer[i] = toDigit(digit);
-                    fractionalPart = quotient;
+                    u64 quotient = fractional_part / radix;
+                    u32 digit = u32(fractional_part - quotient * radix);
+                    digit_buffer[i] = to_digit(digit);
+                    fractional_part = quotient;
                 }
-                out << StringView{digitBuffer, PLY_STATIC_ARRAY_SIZE(digitBuffer)};
+                out << StringView{digit_buffer, PLY_STATIC_ARRAY_SIZE(digit_buffer)};
             }
         } else {
             // Scientific notation
-            double logBase = log(value) / log(radix);
-            double exponent = floor(logBase);
+            double log_base = log(value) / log(radix);
+            double exponent = floor(log_base);
             double m = value / pow(radix, exponent); // mantissa (initially)
             s32 digit = clamp<s32>((s32) floor(m), 1, radix - 1);
-            out << toDigit(digit);
+            out << to_digit(digit);
             out << '.';
             for (u32 i = 0; i < 3; i++) {
                 m = (m - digit) * radix;
                 digit = clamp<s32>((s32) floor(m), 0, radix - 1);
-                out << toDigit(digit);
+                out << to_digit(digit);
             }
             out << 'e';
-            printString(out, (s64) exponent, radix);
+            print_string(out, (s64) exponent, radix);
         }
     }
 }
@@ -107,11 +107,11 @@ PLY_NO_INLINE void printString(OutStream& out, double value, u32 radix) {
 // OutStream
 //----------------------------------------------------------------
 void OutStream::format_args(StringView fmt, ArrayView<const FormatArg> args) {
-    u32 argIndex = 0;
-    while (fmt.numBytes > 0) {
+    u32 arg_index = 0;
+    while (fmt.num_bytes > 0) {
         if (fmt[0] == '{') {
-            fmt.offsetHead(1);
-            if (fmt.numBytes == 0) {
+            fmt.offset_head(1);
+            if (fmt.num_bytes == 0) {
                 PLY_ASSERT(0); // Invalid format string!
                 break;
             }
@@ -119,16 +119,16 @@ void OutStream::format_args(StringView fmt, ArrayView<const FormatArg> args) {
                 *this << '{';
             } else if (fmt[0] == '}') {
                 PLY_ASSERT(
-                    argIndex <
-                    args.numItems); // Not enough arguments provided for format string!
-                args[argIndex].print(*this);
-                argIndex++;
+                    arg_index <
+                    args.num_items); // Not enough arguments provided for format string!
+                args[arg_index].print(*this);
+                arg_index++;
             } else {
                 PLY_ASSERT(0); // Invalid format string!
             }
         } else if (fmt[0] == '}') {
-            fmt.offsetHead(1);
-            if (fmt.numBytes == 0) {
+            fmt.offset_head(1);
+            if (fmt.num_bytes == 0) {
                 PLY_ASSERT(0); // Invalid format string!
                 break;
             }
@@ -140,10 +140,10 @@ void OutStream::format_args(StringView fmt, ArrayView<const FormatArg> args) {
         } else {
             *this << fmt[0];
         }
-        fmt.offsetHead(1);
+        fmt.offset_head(1);
     }
-    PLY_ASSERT(argIndex ==
-               args.numItems); // Too many arguments provided for format string!
+    PLY_ASSERT(arg_index ==
+               args.num_items); // Too many arguments provided for format string!
 }
 
 //----------------------------------------------------
@@ -158,25 +158,25 @@ void FormatArg::default_print(OutStream& out, const FormatArg& arg) {
             break;
 
         case S64:
-            printString(out, arg.s64_, arg.radix);
+            print_string(out, arg.s64_, arg.radix);
             break;
 
         case U64:
-            printString(out, arg.u64_, arg.radix);
+            print_string(out, arg.u64_, arg.radix);
             break;
 
         case Double:
-            printString(out, arg.double_, arg.radix);
+            print_string(out, arg.double_, arg.radix);
             break;
     }
 }
 
 void escape::do_print(OutStream& out, const FormatArg& arg) {
     PLY_ASSERT(arg.type == View);
-    StringView srcUnits = arg.view;
+    StringView src_units = arg.view;
     u32 points = 0;
-    while (srcUnits.numBytes > 0) {
-        char c = srcUnits.bytes[0];
+    while (src_units.num_bytes > 0) {
+        char c = src_units.bytes[0];
         switch (c) {
             case '"': {
                 out << "\\\"";
@@ -211,16 +211,16 @@ void escape::do_print(OutStream& out, const FormatArg& arg) {
             }
         }
         points++;
-        srcUnits.offsetHead(1);
+        src_units.offset_head(1);
     }
 }
 
 void xml_escape::do_print(OutStream& out, const FormatArg& arg) {
     PLY_ASSERT(arg.type == View);
-    StringView srcUnits = arg.view;
+    StringView src_units = arg.view;
     u32 points = 0;
-    while (srcUnits.numBytes > 0) {
-        char c = srcUnits.bytes[0];
+    while (src_units.num_bytes > 0) {
+        char c = src_units.bytes[0];
         switch (c) {
             case '<': {
                 out << "&lt;";
@@ -244,34 +244,34 @@ void xml_escape::do_print(OutStream& out, const FormatArg& arg) {
             }
         }
         points++;
-        srcUnits.offsetHead(1);
+        src_units.offset_head(1);
     }
 }
 
 void CmdLineArg_WinCrt::do_print(OutStream& out, const FormatArg& arg) {
     PLY_ASSERT(arg.type == View);
-    bool needsQuote = false;
+    bool needs_quote = false;
     const char* end = arg.view.end();
     for (const char* cur = arg.view.bytes; cur < end; cur++) {
-        if (isWhite(*cur) || *cur == '"') {
-            needsQuote = true;
+        if (is_white(*cur) || *cur == '"') {
+            needs_quote = true;
             break;
         }
     }
-    if (needsQuote) {
+    if (needs_quote) {
         out << '"';
-        u32 backslashCount = 0;
+        u32 backslash_count = 0;
         for (const char* cur = arg.view.bytes; cur < end; cur++) {
             char c = *cur;
             if (c == '\\') {
-                backslashCount++;
+                backslash_count++;
             } else if (*cur == '"') {
-                for (; backslashCount > 0; backslashCount--) {
+                for (; backslash_count > 0; backslash_count--) {
                     out << "\\\\";
                 }
                 out << "\\\"";
             } else {
-                for (; backslashCount > 0; backslashCount--) {
+                for (; backslash_count > 0; backslash_count--) {
                     out << '\\';
                 }
                 out << c;

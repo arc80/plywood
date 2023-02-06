@@ -16,8 +16,8 @@ PLY_TEST_CASE("Decode truncated UTF-8") {
     // e3 80 82 is the valid UTF-8 encoding of U+3002
     // This is the truncated version of it
     // As such, it should be decoded as two 8-bit characters
-    StringView badUTF8 = "\xe3\x80";
-    ViewInStream in{badUTF8};
+    StringView bad_utf8 = "\xe3\x80";
+    ViewInStream in{bad_utf8};
     Unicode decoder{UTF8};
     PLY_TEST_CHECK(decoder.decode_point(in) == 0xe3);
     PLY_TEST_CHECK(decoder.decode_point(in) == 0x80);

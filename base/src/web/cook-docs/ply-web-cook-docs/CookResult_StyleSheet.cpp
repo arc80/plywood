@@ -11,34 +11,39 @@
 namespace ply {
 namespace docs {
 
-void StyleSheet_cook(cook::CookResult* cookResult, AnyObject) {
-    PLY_ASSERT(cookResult->job->id.desc.isEmpty());
+void StyleSheet_cook(cook::CookResult* cook_result, AnyObject) {
+    PLY_ASSERT(cook_result->job->id.desc.is_empty());
 
     // Add dependency
-    String filePath =
+    String file_path =
         Path.join(Workspace.path, "repos/plywood/src/web/theme/style.scss");
-    cook::CookResult::FileDepScope fdScope = cookResult->createFileDependency(filePath);
-    PLY_UNUSED(fdScope);
+    cook::CookResult::FileDepScope fd_scope =
+        cook_result->create_file_dependency(file_path);
+    PLY_UNUSED(fd_scope);
 
     // FIXME: Get names of any included files, too!
-    web::SassResult result = web::convertSassToStylesheet(filePath.withNullTerminator().bytes);
+    web::SassResult result =
+        web::convert_sass_to_stylesheet(file_path.with_null_terminator().bytes);
     int error_status = sass_context_get_error_status((Sass_Context*) result.context);
     if (error_status != 0) {
-        StringView errorMessage = sass_context_get_error_message((Sass_Context*) result.context);
-        cookResult->addError(errorMessage);
+        StringView error_message =
+            sass_context_get_error_message((Sass_Context*) result.context);
+        cook_result->add_error(error_message);
         return;
     }
 
     // Save result
     // FIXME: Implement strategy to delete orphaned CSS files
-    String cssPath = Path.join(Workspace.path, "data/docsite/static/stylesheet.css");
-    StringView cssText = sass_context_get_output_string((Sass_Context*) result.context);
-    FileSystem.makeDirsAndSaveTextIfDifferent(cssPath, cssText, TextFormat::unixUTF8());
+    String css_path = Path.join(Workspace.path, "data/docsite/static/stylesheet.css");
+    StringView css_text =
+        sass_context_get_output_string((Sass_Context*) result.context);
+    FileSystem.make_dirs_and_save_text_if_different(css_path, css_text,
+                                                    TextFormat::unix_utf8());
 }
 
 cook::CookJobType CookJobType_StyleSheetID = {
     "stylesheet",
-    getTypeDescriptor<cook::CookResult>(),
+    get_type_descriptor<cook::CookResult>(),
     nullptr,
     StyleSheet_cook,
 };

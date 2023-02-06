@@ -12,8 +12,8 @@
 namespace ply {
 
 struct BaseInterpreter {
-    ObjectStack localVariableStorage;
-    AnyObject returnValue;
+    ObjectStack local_variable_storage;
+    AnyObject return_value;
     Func<void(StringView message)> error;
 };
 

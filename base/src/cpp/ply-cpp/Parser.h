@@ -22,7 +22,7 @@ struct PPVisitedFiles;
 
 struct ParseSupervisor {
     Parser* parser = nullptr;
-    // scopeStack items can be:
+    // scope_stack items can be:
     //  - grammar::TranslationUnit
     //  - grammar::DeclSpecifier::Record
     //  - grammar::DeclSpecifier::Enum_
@@ -30,33 +30,34 @@ struct ParseSupervisor {
     //  - grammar::Declaration::Namespace_
     //  - grammar::Declaration::Template_
     //  - grammar::Declaration::Simple (must be a function with a body!)
-    Array<AnyObject> scopeStack;
+    Array<AnyObject> scope_stack;
 
     virtual void enter(AnyObject node) {
     }
     virtual void exit(AnyObject node) {
     }
-    virtual void onGotDeclaration(const grammar::Declaration& decl) {
+    virtual void on_got_declaration(const grammar::Declaration& decl) {
     }
-    virtual void onGotEnumerator(const grammar::InitEnumeratorWithComma* initEnor) {
+    virtual void on_got_enumerator(const grammar::InitEnumeratorWithComma* init_enor) {
     }
-    virtual void gotMacroOrComment(Token token) {
+    virtual void got_macro_or_comment(Token token) {
     }
-    virtual void onGotInclude(StringView directive) {
+    virtual void on_got_include(StringView directive) {
     }
-    virtual bool handleError(Owned<BaseError>&& err) {
+    virtual bool handle_error(Owned<BaseError>&& err) {
         return false;
     }
 
-    PLY_INLINE void doEnter(AnyObject node) {
-        this->scopeStack.append(node);
+    PLY_INLINE void do_enter(AnyObject node) {
+        this->scope_stack.append(node);
         this->enter(node);
     }
-    void doExit(AnyObject node);
-    void gotDeclaration(grammar::Declaration&& decl);
+    void do_exit(AnyObject node);
+    void got_declaration(grammar::Declaration&& decl);
 
-    String getClassName(StringView withSep = "::", bool withNameSpace = true) const;
-    String getNamespacePrefix() const;
+    String get_class_name(StringView with_sep = "::",
+                          bool with_name_space = true) const;
+    String get_namespace_prefix() const;
 };
 
 enum class ExpectedToken {
@@ -114,17 +115,20 @@ struct ParseError : BaseError {
 
     PLY_REFLECT()
     Type type = Invalid;
-    Token errorToken;
+    Token error_token;
     ExpectedToken expected = ExpectedToken::None; // Only used by some error types
-    Token precedingToken;                         // Only used by some error types
+    Token preceding_token;                        // Only used by some error types
     // ply reflect off
 
     PLY_INLINE ParseError() = default;
-    PLY_INLINE ParseError(Type type, Token errorToken, ExpectedToken expected = ExpectedToken::None,
-                          Token precedingToken = {})
-        : type{type}, errorToken{errorToken}, expected{expected}, precedingToken{precedingToken} {
+    PLY_INLINE ParseError(Type type, Token error_token,
+                          ExpectedToken expected = ExpectedToken::None,
+                          Token preceding_token = {})
+        : type{type}, error_token{error_token}, expected{expected},
+          preceding_token{preceding_token} {
     }
-    virtual void writeMessage(OutStream& out, const PPVisitedFiles* visitedFiles) const override;
+    virtual void write_message(OutStream& out,
+                               const PPVisitedFiles* visited_files) const override;
 };
 
 struct Parser {
@@ -140,24 +144,24 @@ struct Parser {
     Preprocessor* pp = nullptr;
 
     // This is temporary until we have a better way to do backtracking and pushback
-    bool restorePointEnabled = false;
-    Array<Token> tokenQueue;
-    u32 tokenQueuePos = 0;
+    bool restore_point_enabled = false;
+    Array<Token> token_queue;
+    u32 token_queue_pos = 0;
 
     // Status
-    u32 passNumber = 1;
-    bool atDeclarationScope = true;
+    u32 pass_number = 1;
+    bool at_declaration_scope = true;
 
     // Error recovery
-    u32 rawErrorCount = 0;
-    bool muteErrors = false;
-    u32 outerAcceptFlags = 0;
+    u32 raw_error_count = 0;
+    bool mute_errors = false;
+    u32 outer_accept_flags = 0;
 
-    PLY_INLINE void stopMutingErrors() {
-        this->muteErrors = false;
+    PLY_INLINE void stop_muting_errors() {
+        this->mute_errors = false;
     }
 
-    void error(bool beginMuting, ParseError&& err);
+    void error(bool begin_muting, ParseError&& err);
 };
 
 enum class ParseQualifiedMode {
@@ -166,40 +170,45 @@ enum class ParseQualifiedMode {
     RequireCompleteOrEmpty,
 };
 
-// Consumes as much as it can; unrecognized tokens are returned to caller without logging an error
-grammar::QualifiedID parseQualifiedID(Parser* parser, ParseQualifiedMode mode);
+// Consumes as much as it can; unrecognized tokens are returned to caller without
+// logging an error
+grammar::QualifiedID parse_qualified_id(Parser* parser, ParseQualifiedMode mode);
 
 // Declarators and specifiers
-void parseSpecifiersAndDeclarators(Parser* parser, grammar::Declaration::Simple& simple,
-                                   const SpecDcorMode& mode);
+void parse_specifiers_and_declarators(Parser* parser,
+                                      grammar::Declaration::Simple& simple,
+                                      const SpecDcorMode& mode);
 
-void parseParameterDeclarationList(Parser* parser, grammar::ParamDeclarationList& params,
-                                   bool forTemplate);
-grammar::FunctionQualifierSeq parseFunctionQualifierSeq(Parser* parser);
+void parse_parameter_declaration_list(Parser* parser,
+                                      grammar::ParamDeclarationList& params,
+                                      bool for_template);
+grammar::FunctionQualifierSeq parse_function_qualifier_seq(Parser* parser);
 
 grammar::DeclaratorProduction*
-parseParameterList(Parser* parser, Owned<grammar::DeclaratorProduction>** prodToModify);
-void parseOptionalFunctionBody(Parser* parser, grammar::Initializer& result,
-                               const grammar::Declaration::Simple& simple);
-void parseOptionalTypeIDInitializer(Parser* parser, grammar::Initializer& result);
-void parseOptionalVariableInitializer(Parser* parser, grammar::Initializer& result,
-                                      bool allowBracedInit);
-void parseInitDeclarators(Parser* parser, grammar::Declaration::Simple& simple,
-                          const SpecDcorMode& mode);
+parse_parameter_list(Parser* parser,
+                     Owned<grammar::DeclaratorProduction>** prod_to_modify);
+void parse_optional_function_body(Parser* parser, grammar::Initializer& result,
+                                  const grammar::Declaration::Simple& simple);
+void parse_optional_type_idinitializer(Parser* parser, grammar::Initializer& result);
+void parse_optional_variable_initializer(Parser* parser, grammar::Initializer& result,
+                                         bool allow_braced_init);
+void parse_init_declarators(Parser* parser, grammar::Declaration::Simple& simple,
+                            const SpecDcorMode& mode);
 // Returns true if any tokens were consumed:
-bool parseDeclaration(Parser* parser, StringView enclosingClassName);
-void parseDeclarationList(Parser* parser, Token* outCloseCurly, StringView enclosingClassName);
-grammar::TranslationUnit parseTranslationUnit(Parser* parser);
+bool parse_declaration(Parser* parser, StringView enclosing_class_name);
+void parse_declaration_list(Parser* parser, Token* out_close_curly,
+                            StringView enclosing_class_name);
+grammar::TranslationUnit parse_translation_unit(Parser* parser);
 
 // Expressions
-Tuple<Token, Token> parseExpression(Parser* parser, bool optional = false);
+Tuple<Token, Token> parse_expression(Parser* parser, bool optional = false);
 
 // Misc
-void parseEnumBody(Parser* parser, grammar::DeclSpecifier::Enum_* en);
+void parse_enum_body(Parser* parser, grammar::DeclSpecifier::Enum_* en);
 
-void dumpParseTree(OutStream& out, AnyObject any, u32 indent = 0,
-                   const PPVisitedFiles* visitedFiles = nullptr);
-bool closeScope(Parser* parser, Token* outCloseToken, const Token& openToken);
+void dump_parse_tree(OutStream& out, AnyObject any, u32 indent = 0,
+                     const PPVisitedFiles* visited_files = nullptr);
+bool close_scope(Parser* parser, Token* out_close_token, const Token& open_token);
 
 } // namespace cpp
 

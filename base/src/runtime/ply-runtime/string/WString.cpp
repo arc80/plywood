@@ -9,15 +9,15 @@
 
 namespace ply {
 
-WString toWString(StringView str) {
+WString to_wstring(StringView str) {
     ViewInStream str_in{str};
     OutPipe_ConvertUnicode encoder{MemOutStream{}, UTF16_LE};
     encoder.write(str);
     encoder.child_stream.raw_write<u16>(0); // Null terminator
-    return WString::moveFromString(encoder.child_stream.moveToString());
+    return WString::move_from_string(encoder.child_stream.move_to_string());
 }
 
-String fromWString(WStringView str) {
+String from_wstring(WStringView str) {
     InPipe_ConvertUnicode decoder{ViewInStream{str.raw_bytes()}, UTF16_LE};
     MemOutStream out;
     while (out.ensure_writable()) {
@@ -27,7 +27,7 @@ String fromWString(WStringView str) {
             break;
         out.cur_byte += num_bytes;
     }
-    return out.moveToString();
+    return out.move_to_string();
 }
 
 } // namespace ply

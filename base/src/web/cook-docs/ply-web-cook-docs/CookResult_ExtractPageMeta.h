@@ -17,30 +17,30 @@ extern cook::CookJobType CookJobType_ExtractPageMeta;
 
 struct CookResult_ExtractPageMeta : cook::CookResult {
     PLY_REFLECT()
-    bool markdownExists = false;
-    String linkID;
+    bool markdown_exists = false;
+    String link_id;
     String title;
-    Array<Reference<cook::CookJob>> childPages;
+    Array<Reference<cook::CookJob>> child_pages;
     String synopsis;
-    Array<Owned<SymbolPagePair>> symbolPagePairs;
+    Array<Owned<SymbolPagePair>> symbol_page_pairs;
     // ply reflect off
 
-    PLY_INLINE String getLinkDestination() const {
-        PLY_ASSERT(this->job->id.desc.startsWith("/"));
-        if (!markdownExists)
+    PLY_INLINE String get_link_destination() const {
+        PLY_ASSERT(this->job->id.desc.starts_with("/"));
+        if (!markdown_exists)
             return {};
-        if (this->job->id.desc.endsWith("/index")) {
+        if (this->job->id.desc.ends_with("/index")) {
             if (this->job->id.desc == "/index") {
                 return "/";
             } else {
-                return StringView{"/docs"} + this->job->id.desc.shortenedBy(6);
+                return StringView{"/docs"} + this->job->id.desc.shortened_by(6);
             }
         } else {
             return StringView{"/docs"} + this->job->id.desc;
         }
     }
-    PLY_INLINE String getMarkdownPath() const {
-        PLY_ASSERT(this->job->id.desc.startsWith("/"));
+    PLY_INLINE String get_markdown_path() const {
+        PLY_ASSERT(this->job->id.desc.starts_with("/"));
         return Path.join(Workspace.path, "repos/plywood/docs",
                          this->job->id.desc.ltrim([](char c) { return c == '/'; }) +
                              ".md");

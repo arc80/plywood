@@ -57,7 +57,7 @@ InStream Console_t::in(ConsoleMode mode) {
     if (mode == CM_Text) {
         InStream in{get_console_in_pipe(), false};
         // Always create a filter to make newlines consistent.
-        return createInNewLineFilter(std::move(in));
+        return create_in_new_line_filter(std::move(in));
     } else {
         return {get_console_in_pipe(), false};
     }
@@ -65,22 +65,22 @@ InStream Console_t::in(ConsoleMode mode) {
 
 OutStream Console_t::out(ConsoleMode mode) {
     OutStream out{get_console_out_pipe(), false};
-    bool writeCRLF = false;
+    bool write_crlf = false;
 #if PLY_TARGET_WIN32
-    writeCRLF = true;
+    write_crlf = true;
 #endif
     // Always create a filter to make newlines consistent.
-    return createOutNewLineFilter(std::move(out), writeCRLF);
+    return create_out_new_line_filter(std::move(out), write_crlf);
 }
 
 OutStream Console_t::error(ConsoleMode mode) {
     OutStream out{get_console_error_pipe(), false};
-    bool writeCRLF = false;
+    bool write_crlf = false;
 #if PLY_TARGET_WIN32
-    writeCRLF = true;
+    write_crlf = true;
 #endif
     // Always create a filter to make newlines consistent.
-    return createOutNewLineFilter(std::move(out), writeCRLF);
+    return create_out_new_line_filter(std::move(out), write_crlf);
 }
 
 } // namespace ply

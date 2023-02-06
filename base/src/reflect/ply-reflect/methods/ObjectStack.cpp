@@ -10,23 +10,24 @@
 
 namespace ply {
 
-AnyObject* ObjectStack::appendObject(TypeDescriptor* type) {
-    void* data = this->storage.appendBytes(type->fixedSize);
+AnyObject* ObjectStack::append_object(TypeDescriptor* type) {
+    void* data = this->storage.append_bytes(type->fixed_size);
     AnyObject* obj = &this->items.append(data, type);
     obj->construct();
     return obj;
 }
 
-void ObjectStack::popLastObject() {
-    AnyObject* lastObj = &this->items.tail();
-    PLY_ASSERT(PLY_PTR_OFFSET(lastObj->data, lastObj->type->fixedSize) ==
+void ObjectStack::pop_last_object() {
+    AnyObject* last_obj = &this->items.tail();
+    PLY_ASSERT(PLY_PTR_OFFSET(last_obj->data, last_obj->type->fixed_size) ==
                this->storage.tail->unused());
-    lastObj->destruct();
-    this->storage.popLastBytes(lastObj->type->fixedSize);
-    this->items.popTail();
+    last_obj->destruct();
+    this->storage.pop_last_bytes(last_obj->type->fixed_size);
+    this->items.pop_tail();
 }
 
-void ObjectStack::deleteRange(const ObjectStack::Boundary& from, const WeakSequenceRef<AnyObject>& to) {
+void ObjectStack::delete_range(const ObjectStack::Boundary& from,
+                               const WeakSequenceRef<AnyObject>& to) {
     // Destruct items in the specified range.
     WeakSequenceRef<AnyObject> cur = from.item.normalized();
     for (; cur != to; ++cur) {
@@ -37,30 +38,30 @@ void ObjectStack::deleteRange(const ObjectStack::Boundary& from, const WeakSeque
     BlockList::WeakRef dst = from.storage.normalized();
     WeakSequenceRef<AnyObject> end = this->items.end();
     for (; cur != end; ++cur) {
-        u32 numBytes = cur->type->fixedSize;
-        if (safeDemote<u32>(dst.block->end() - dst.byte) < numBytes) {
+        u32 num_bytes = cur->type->fixed_size;
+        if (safe_demote<u32>(dst.block->end() - dst.byte) < num_bytes) {
             // FIXME: Handle objects larger than the block size
-            PLY_ASSERT(dst.block->nextBlock->blockSize >= numBytes);
-            dst = {dst.block->nextBlock, dst.block->bytes};
+            PLY_ASSERT(dst.block->next_block->block_size >= num_bytes);
+            dst = {dst.block->next_block, dst.block->bytes};
         }
         // FIXME: Handle alignment
-        memmove(dst.byte, cur->data, cur->type->fixedSize);
+        memmove(dst.byte, cur->data, cur->type->fixed_size);
         cur->data = dst.byte;
-        dst.byte += cur->type->fixedSize;
+        dst.byte += cur->type->fixed_size;
     }
 
     // Trim storage.
-    dst.block->numBytesUsed = dst.block->offsetOf(dst.byte);
-    dst.block->nextBlock.clear();
+    dst.block->num_bytes_used = dst.block->offset_of(dst.byte);
+    dst.block->next_block.clear();
     this->storage.tail = dst.block;
 
     // Delete items in the specified range.
-    WeakSequenceRef<AnyObject> dstItem = from.item.normalized();
-    for (WeakSequenceRef<AnyObject> srcItem = to; srcItem != end; ++srcItem) {
-        *dstItem = *srcItem;
-        ++dstItem;
+    WeakSequenceRef<AnyObject> dst_item = from.item.normalized();
+    for (WeakSequenceRef<AnyObject> src_item = to; src_item != end; ++src_item) {
+        *dst_item = *src_item;
+        ++dst_item;
     }
-    this->items.truncate(dstItem);
+    this->items.truncate(dst_item);
 }
 
 } // namespace ply

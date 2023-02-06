@@ -19,18 +19,18 @@
 
 struct Subst {
     u32 start = 0;
-    u32 numBytes = 0;
+    u32 num_bytes = 0;
     String replacement;
 
     PLY_INLINE bool operator<(const Subst& other) const {
         return (this->start < other.start) ||
-               (this->start == other.start && this->numBytes < other.numBytes);
+               (this->start == other.start && this->num_bytes < other.num_bytes);
     }
 };
 
 struct ReflectedClass {
     PLY_REFLECT()
-    String cppInlPath;
+    String cpp_inl_path;
     String name;
     Array<String> members;
     // ply reflect off
@@ -40,9 +40,9 @@ struct ReflectedClass {
 // Find a way to simplify.
 struct ReflectedEnum {
     PLY_REFLECT()
-    String cppInlPath;
-    String namespacePrefix;
-    String enumName;
+    String cpp_inl_path;
+    String namespace_prefix;
+    String enum_name;
     Array<String> enumerators;
     // ply reflect off
 };
@@ -50,10 +50,10 @@ struct ReflectedEnum {
 struct SwitchInfo {
     PLY_REFLECT()
     cpp::Token macro;
-    String inlineInlPath;
-    String cppInlPath;
+    String inline_inl_path;
+    String cpp_inl_path;
     String name;
-    bool isReflected = false;
+    bool is_reflected = false;
     Array<String> states;
     // ply reflect off
 };
@@ -66,53 +66,54 @@ struct ReflectionInfoAggregator {
 
 struct SingleFileReflectionInfo {
     // May later need to generalize to multiple files
-    Array<Subst> substsInParsedFile;
+    Array<Subst> substs_in_parsed_file;
     Array<SwitchInfo*> switches;
 };
 
 namespace ply {
 namespace cpp {
-void parsePlywoodSrcFile(StringView absSrcPath, cpp::PPVisitedFiles* visitedFiles,
-                         cpp::ParseSupervisor* visor);
+void parse_plywood_src_file(StringView abs_src_path, cpp::PPVisitedFiles* visited_files,
+                            cpp::ParseSupervisor* visor);
 } // namespace cpp
 } // namespace ply
 
 // FIXME: Just call this once per parsed file
-String makeInlRelPath(StringView relPath) {
-    auto splitPath = Path.split(relPath);
-    return Path.join(splitPath.first, "codegen",
-                     Path.splitExt(splitPath.second).first + ".inl");
+String make_inl_rel_path(StringView rel_path) {
+    auto split_path = Path.split(rel_path);
+    return Path.join(split_path.first, "codegen",
+                     Path.split_ext(split_path.second).first + ".inl");
 }
 
-Subst insertDirectiveSubst(StringView view, const char* marker, String&& replacement) {
+Subst insert_directive_subst(StringView view, const char* marker,
+                             String&& replacement) {
     Subst subst;
     subst.replacement = std::move(replacement);
-    const char* insertPos = marker;
-    while (view.bytes < insertPos) {
-        char c = insertPos[-1];
+    const char* insert_pos = marker;
+    while (view.bytes < insert_pos) {
+        char c = insert_pos[-1];
         if (c == '\n') {
             break;
-        } else if (!isWhite(c)) {
-            const char* firstNonWhite = insertPos - 1;
-            const char* lineStart = firstNonWhite;
-            while (view.bytes < lineStart) {
-                c = lineStart[-1];
+        } else if (!is_white(c)) {
+            const char* first_non_white = insert_pos - 1;
+            const char* line_start = first_non_white;
+            while (view.bytes < line_start) {
+                c = line_start[-1];
                 if (c == '\n')
                     break;
-                lineStart--;
-                if (!isWhite(c)) {
-                    firstNonWhite = lineStart;
+                line_start--;
+                if (!is_white(c)) {
+                    first_non_white = line_start;
                 }
             }
             subst.replacement = String::format(
                 "\n{}{}", subst.replacement,
-                StringView{lineStart, safeDemote<u32>(firstNonWhite - lineStart)});
+                StringView{line_start, safe_demote<u32>(first_non_white - line_start)});
             break;
         }
-        insertPos--;
+        insert_pos--;
     }
-    subst.start = safeDemote<u32>(insertPos - view.bytes);
-    subst.numBytes = 0;
+    subst.start = safe_demote<u32>(insert_pos - view.bytes);
+    subst.num_bytes = 0;
     return subst;
 }
 
@@ -133,24 +134,24 @@ struct ReflectionHookError : cpp::BaseError {
 
     PLY_REFLECT()
     Type type = Unknown;
-    cpp::LinearLocation linearLoc = -1;
-    cpp::LinearLocation otherLoc = -1;
+    cpp::LinearLocation linear_loc = -1;
+    cpp::LinearLocation other_loc = -1;
     // ply reflect off
 
-    PLY_INLINE ReflectionHookError(Type type, cpp::LinearLocation linearLoc,
-                                   cpp::LinearLocation otherLoc = -1)
-        : type{type}, linearLoc{linearLoc}, otherLoc{otherLoc} {
+    PLY_INLINE ReflectionHookError(Type type, cpp::LinearLocation linear_loc,
+                                   cpp::LinearLocation other_loc = -1)
+        : type{type}, linear_loc{linear_loc}, other_loc{other_loc} {
     }
-    virtual void writeMessage(OutStream& out,
-                              const cpp::PPVisitedFiles* visitedFiles) const override;
+    virtual void write_message(OutStream& out,
+                               const cpp::PPVisitedFiles* visited_files) const override;
 };
 
 PLY_DECLARE_TYPE_DESCRIPTOR(ReflectionHookError::Type)
 
-void ReflectionHookError::writeMessage(OutStream& out,
-                                       const cpp::PPVisitedFiles* visitedFiles) const {
+void ReflectionHookError::write_message(
+    OutStream& out, const cpp::PPVisitedFiles* visited_files) const {
     out.format("{}: error: ",
-               expandFileLocation(visitedFiles, this->linearLoc).toString());
+               expand_file_location(visited_files, this->linear_loc).to_string());
     switch (this->type) {
         case ReflectionHookError::SwitchMayOnlyContainStructs: {
             out << "a switch may only contain structs\n";
@@ -166,14 +167,16 @@ void ReflectionHookError::writeMessage(OutStream& out,
         }
         case ReflectionHookError::CannotInjectCodeIntoMacro: {
             out << "can't inject code inside macro\n";
-            out.format("{}: note: for code injected by this command\n",
-                       expandFileLocation(visitedFiles, this->otherLoc).toString());
+            out.format(
+                "{}: note: for code injected by this command\n",
+                expand_file_location(visited_files, this->other_loc).to_string());
             break;
         }
         case ReflectionHookError::DuplicateCommand: {
             out << "duplicate command\n";
-            out.format("{}: note: see previous command\n",
-                       expandFileLocation(visitedFiles, this->otherLoc).toString());
+            out.format(
+                "{}: note: see previous command\n",
+                expand_file_location(visited_files, this->other_loc).to_string());
             break;
         }
         case ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope: {
@@ -202,40 +205,40 @@ void ReflectionHookError::writeMessage(OutStream& out,
 struct ReflectionHooks : cpp::ParseSupervisor {
     struct State {
         ReflectedClass* clazz = nullptr;
-        cpp::Token captureMembersToken;
+        cpp::Token capture_members_token;
         Owned<SwitchInfo> switch_ = nullptr;
         Owned<ReflectedEnum> enum_ = nullptr;
-        cpp::Token keepReflectedEnumToken;
+        cpp::Token keep_reflected_enum_token;
     };
     Array<State> stack;
-    StringView filePath;
+    StringView file_path;
     ReflectionInfoAggregator* agg = nullptr;
     SingleFileReflectionInfo* sfri = nullptr;
-    bool anyError = false;
+    bool any_error = false;
 
     virtual void enter(AnyObject node) override {
         State& state = this->stack.append();
 
         if (node.is<cpp::grammar::DeclSpecifier::Enum_>()) {
             state.enum_ = new ReflectedEnum;
-            state.enum_->cppInlPath = makeInlRelPath(this->filePath);
-            state.enum_->namespacePrefix = this->getNamespacePrefix();
-            state.enum_->enumName = this->getClassName("::", false);
+            state.enum_->cpp_inl_path = make_inl_rel_path(this->file_path);
+            state.enum_->namespace_prefix = this->get_namespace_prefix();
+            state.enum_->enum_name = this->get_class_name("::", false);
             return;
         }
 
-        if (this->stack.numItems() > 1) {
-            State& parentState = this->stack.back(-2);
+        if (this->stack.num_items() > 1) {
+            State& parent_state = this->stack.back(-2);
 
-            if (parentState.switch_) {
-                auto* record = node.safeCast<cpp::grammar::DeclSpecifier::Record>();
-                if (!record || record->classKey.identifier == "union") {
-                    this->parser->pp->errorHandler(new ReflectionHookError{
+            if (parent_state.switch_) {
+                auto* record = node.safe_cast<cpp::grammar::DeclSpecifier::Record>();
+                if (!record || record->class_key.identifier == "union") {
+                    this->parser->pp->error_handler(new ReflectionHookError{
                         ReflectionHookError::SwitchMayOnlyContainStructs,
-                        parentState.switch_->macro.linearLoc});
+                        parent_state.switch_->macro.linear_loc});
                     return;
                 }
-                parentState.switch_->states.append(record->qid.toString());
+                parent_state.switch_->states.append(record->qid.to_string());
                 return;
             }
         }
@@ -243,52 +246,54 @@ struct ReflectionHooks : cpp::ParseSupervisor {
 
     virtual void exit(AnyObject node) override {
         State& state = this->stack.back();
-        if (state.captureMembersToken.isValid()) {
-            this->parser->pp->errorHandler(
+        if (state.capture_members_token.is_valid()) {
+            this->parser->pp->error_handler(
                 new ReflectionHookError{ReflectionHookError::MissingReflectOffCommand,
-                                        state.captureMembersToken.linearLoc});
+                                        state.capture_members_token.linear_loc});
         }
 
-        if (state.keepReflectedEnumToken.isValid()) {
+        if (state.keep_reflected_enum_token.is_valid()) {
             this->agg->enums.append(std::move(state.enum_));
         }
 
         if (state.switch_) {
-            auto* record = node.safeCast<cpp::grammar::DeclSpecifier::Record>();
-            PLY_ASSERT(record);                                 // guaranteed by enter()
-            PLY_ASSERT(record->classKey.identifier != "union"); // guaranteed by enter()
-            if (record->closeCurly.isValid()) {
-                cpp::PPVisitedFiles* vf = this->parser->pp->visitedFiles;
-                auto iter =
-                    vf->locationMap.findLastLessThan(record->closeCurly.linearLoc + 1);
-                const cpp::PPVisitedFiles::LocationMapTraits::Item& lmItem =
-                    iter.getItem();
+            auto* record = node.safe_cast<cpp::grammar::DeclSpecifier::Record>();
+            PLY_ASSERT(record); // guaranteed by enter()
+            PLY_ASSERT(record->class_key.identifier !=
+                       "union"); // guaranteed by enter()
+            if (record->close_curly.is_valid()) {
+                cpp::PPVisitedFiles* vf = this->parser->pp->visited_files;
+                auto iter = vf->location_map.find_last_less_than(
+                    record->close_curly.linear_loc + 1);
+                const cpp::PPVisitedFiles::LocationMapTraits::Item& lm_item =
+                    iter.get_item();
                 const cpp::PPVisitedFiles::IncludeChain& chain =
-                    vf->includeChains[lmItem.includeChainIdx];
-                if (chain.isMacroExpansion) {
-                    this->parser->pp->errorHandler(new ReflectionHookError{
+                    vf->include_chains[lm_item.include_chain_idx];
+                if (chain.is_macro_expansion) {
+                    this->parser->pp->error_handler(new ReflectionHookError{
                         ReflectionHookError::CannotInjectCodeIntoMacro,
-                        record->closeCurly.linearLoc, state.switch_->macro.linearLoc});
+                        record->close_curly.linear_loc,
+                        state.switch_->macro.linear_loc});
                 } else {
-                    const cpp::PPVisitedFiles::SourceFile& srcFile =
-                        vf->sourceFiles[chain.fileOrExpIdx];
-                    String curAbsPath = Path.join(Workspace.path, this->filePath);
+                    const cpp::PPVisitedFiles::SourceFile& src_file =
+                        vf->source_files[chain.file_or_exp_idx];
+                    String cur_abs_path = Path.join(Workspace.path, this->file_path);
                     // FIXME: Improve this if we ever start following includes while
                     // collecting reflection info:
-                    PLY_ASSERT(srcFile.fileLocationMap.path == curAbsPath);
-                    const char* endCurly =
-                        srcFile.contents.bytes +
-                        (lmItem.offset + record->closeCurly.linearLoc -
-                         lmItem.linearLoc);
-                    PLY_ASSERT(*endCurly == '}');
-                    String genFileName =
-                        String::format("switch-{}.inl", this->getClassName("-"));
-                    state.switch_->inlineInlPath = Path.join(
-                        Path.split(this->filePath).first, "codegen", genFileName);
-                    this->sfri->substsInParsedFile.append(insertDirectiveSubst(
-                        srcFile.contents, endCurly,
+                    PLY_ASSERT(src_file.file_location_map.path == cur_abs_path);
+                    const char* end_curly =
+                        src_file.contents.bytes +
+                        (lm_item.offset + record->close_curly.linear_loc -
+                         lm_item.linear_loc);
+                    PLY_ASSERT(*end_curly == '}');
+                    String gen_file_name =
+                        String::format("switch-{}.inl", this->get_class_name("-"));
+                    state.switch_->inline_inl_path = Path.join(
+                        Path.split(this->file_path).first, "codegen", gen_file_name);
+                    this->sfri->substs_in_parsed_file.append(insert_directive_subst(
+                        src_file.contents, end_curly,
                         String::format("#include \"codegen/{}\" //@@ply\n",
-                                       genFileName)));
+                                       gen_file_name)));
 
                     // Add section(s) to .cpp .inl
                     this->sfri->switches.append(state.switch_);
@@ -299,15 +304,15 @@ struct ReflectionHooks : cpp::ParseSupervisor {
         stack.pop();
     }
 
-    virtual void onGotDeclaration(const cpp::grammar::Declaration& decl) override {
+    virtual void on_got_declaration(const cpp::grammar::Declaration& decl) override {
         State& state = this->stack.back();
-        if (state.captureMembersToken.isValid()) {
+        if (state.capture_members_token.is_valid()) {
             if (auto simple = decl.simple()) {
-                if (!simple->initDeclarators.isEmpty()) {
-                    const cpp::grammar::InitDeclaratorWithComma& initDecl =
-                        simple->initDeclarators[0];
-                    if (!initDecl.dcor.isFunction()) {
-                        state.clazz->members.append(initDecl.dcor.qid.toString());
+                if (!simple->init_declarators.is_empty()) {
+                    const cpp::grammar::InitDeclaratorWithComma& init_decl =
+                        simple->init_declarators[0];
+                    if (!init_decl.dcor.is_function()) {
+                        state.clazz->members.append(init_decl.dcor.qid.to_string());
                     }
                 }
             }
@@ -315,186 +320,187 @@ struct ReflectionHooks : cpp::ParseSupervisor {
     }
 
     virtual void
-    onGotEnumerator(const cpp::grammar::InitEnumeratorWithComma* initEnor) override {
+    on_got_enumerator(const cpp::grammar::InitEnumeratorWithComma* init_enor) override {
         State& state = this->stack.back();
         PLY_ASSERT(state.enum_);
-        state.enum_->enumerators.append(initEnor->identifier.identifier);
+        state.enum_->enumerators.append(init_enor->identifier.identifier);
     }
 
-    virtual void onGotInclude(StringView directive) override {
-        const cpp::Preprocessor::StackItem& ppItem = this->parser->pp->stack.back();
-        const char* ppItemStartUnit = (const char*) ppItem.in.cur_byte;
-        PLY_ASSERT(directive.bytes >= ppItemStartUnit &&
-                   directive.end() <= (const char*) ppItem.in.end_byte);
-        if (!directive.rtrim([](char c) { return isWhite(c); }).endsWith("//@@ply"))
+    virtual void on_got_include(StringView directive) override {
+        const cpp::Preprocessor::StackItem& pp_item = this->parser->pp->stack.back();
+        const char* pp_item_start_unit = (const char*) pp_item.in.cur_byte;
+        PLY_ASSERT(directive.bytes >= pp_item_start_unit &&
+                   directive.end() <= (const char*) pp_item.in.end_byte);
+        if (!directive.rtrim([](char c) { return is_white(c); }).ends_with("//@@ply"))
             return;
 
         // This will delete the line containing the #include:
-        const char* startOfLine = directive.bytes;
-        while ((startOfLine > ppItemStartUnit) && (startOfLine[-1] != '\n')) {
-            startOfLine--;
+        const char* start_of_line = directive.bytes;
+        while ((start_of_line > pp_item_start_unit) && (start_of_line[-1] != '\n')) {
+            start_of_line--;
         }
-        Subst& subst = this->sfri->substsInParsedFile.append();
-        subst.start = safeDemote<u32>(startOfLine - ppItemStartUnit);
-        subst.numBytes =
-            safeDemote<u32>((directive.bytes + directive.numBytes) - startOfLine);
+        Subst& subst = this->sfri->substs_in_parsed_file.append();
+        subst.start = safe_demote<u32>(start_of_line - pp_item_start_unit);
+        subst.num_bytes =
+            safe_demote<u32>((directive.bytes + directive.num_bytes) - start_of_line);
     }
 
-    void beginCapture(const cpp::Token& token) {
+    void begin_capture(const cpp::Token& token) {
         State& state = this->stack.back();
         if (state.clazz) {
             // Already have a PLY_REFLECT macro
-            this->parser->pp->errorHandler(new ReflectionHookError{
-                ReflectionHookError::DuplicateCommand, token.linearLoc,
-                state.captureMembersToken.linearLoc});
+            this->parser->pp->error_handler(new ReflectionHookError{
+                ReflectionHookError::DuplicateCommand, token.linear_loc,
+                state.capture_members_token.linear_loc});
             return;
         }
         ReflectedClass* clazz = new ReflectedClass;
-        clazz->cppInlPath = makeInlRelPath(this->filePath);
-        clazz->name = this->getClassName();
+        clazz->cpp_inl_path = make_inl_rel_path(this->file_path);
+        clazz->name = this->get_class_name();
         this->agg->classes.append(clazz);
         state.clazz = clazz;
-        state.captureMembersToken = token;
+        state.capture_members_token = token;
     }
 
-    virtual void gotMacroOrComment(cpp::Token token) override {
+    virtual void got_macro_or_comment(cpp::Token token) override {
         if (token.type == cpp::Token::Macro) {
             if (token.identifier == "PLY_STATE_REFLECT" ||
                 token.identifier == "PLY_REFLECT") {
-                if (!this->parser->atDeclarationScope) {
-                    this->parser->pp->errorHandler(new ReflectionHookError{
+                if (!this->parser->at_declaration_scope) {
+                    this->parser->pp->error_handler(new ReflectionHookError{
                         ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope,
-                        token.linearLoc});
+                        token.linear_loc});
                     return;
                 }
-                auto* record = this->scopeStack.back()
-                                   .safeCast<cpp::grammar::DeclSpecifier::Record>();
-                if (!record || record->classKey.identifier == "union") {
-                    this->parser->pp->errorHandler(new ReflectionHookError{
+                auto* record = this->scope_stack.back()
+                                   .safe_cast<cpp::grammar::DeclSpecifier::Record>();
+                if (!record || record->class_key.identifier == "union") {
+                    this->parser->pp->error_handler(new ReflectionHookError{
                         ReflectionHookError::CommandCanOnlyBeUsedInClassOrStruct,
-                        token.linearLoc});
+                        token.linear_loc});
                     return;
                 }
-                this->beginCapture(token);
+                this->begin_capture(token);
             }
         } else if (token.type == cpp::Token::LineComment) {
-            ViewInStream commentReader{token.identifier};
-            PLY_ASSERT(commentReader.view_readable().startsWith("//"));
-            commentReader.cur_byte += 2;
-            commentReader.parse<fmt::Whitespace>();
-            if (commentReader.view_readable().startsWith("%%")) {
-                commentReader.cur_byte += 2;
-                commentReader.parse<fmt::Whitespace>();
-                StringView cmd = commentReader.readView<fmt::Identifier>();
+            ViewInStream comment_reader{token.identifier};
+            PLY_ASSERT(comment_reader.view_readable().starts_with("//"));
+            comment_reader.cur_byte += 2;
+            comment_reader.parse<fmt::Whitespace>();
+            if (comment_reader.view_readable().starts_with("%%")) {
+                comment_reader.cur_byte += 2;
+                comment_reader.parse<fmt::Whitespace>();
+                StringView cmd = comment_reader.read_view<fmt::Identifier>();
                 if (cmd == "end") {
-                    if (this->parser->atDeclarationScope) {
+                    if (this->parser->at_declaration_scope) {
                         State& state = this->stack.back();
-                        if (!state.captureMembersToken.isValid()) {
+                        if (!state.capture_members_token.is_valid()) {
                             // this->parser->error(); // Not capturing
                             return;
                         }
-                        state.captureMembersToken = {};
+                        state.capture_members_token = {};
                     }
                 }
-            } else if (commentReader.view_readable().startsWith("ply ")) {
+            } else if (comment_reader.view_readable().starts_with("ply ")) {
                 String fixed = String::format(
                     "// {}\n",
-                    StringView{" "}.join(commentReader.view_readable()
-                                             .rtrim([](char c) { return isWhite(c); })
-                                             .splitByte(' ')));
+                    StringView{" "}.join(comment_reader.view_readable()
+                                             .rtrim([](char c) { return is_white(c); })
+                                             .split_byte(' ')));
                 if (fixed == "// ply make switch\n" ||
                     fixed == "// ply make reflected switch\n") {
                     // This is a switch
-                    if (!this->parser->atDeclarationScope) {
-                        this->parser->pp->errorHandler(new ReflectionHookError{
+                    if (!this->parser->at_declaration_scope) {
+                        this->parser->pp->error_handler(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope,
-                            token.linearLoc});
+                            token.linear_loc});
                         return;
                     }
-                    auto* record = this->scopeStack.back()
-                                       .safeCast<cpp::grammar::DeclSpecifier::Record>();
-                    if (!record || record->classKey.identifier == "union") {
-                        this->parser->pp->errorHandler(new ReflectionHookError{
+                    auto* record =
+                        this->scope_stack.back()
+                            .safe_cast<cpp::grammar::DeclSpecifier::Record>();
+                    if (!record || record->class_key.identifier == "union") {
+                        this->parser->pp->error_handler(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedInClassOrStruct,
-                            token.linearLoc});
+                            token.linear_loc});
                         return;
                     }
                     State& state = this->stack.back();
                     if (state.switch_) {
-                        this->parser->pp->errorHandler(new ReflectionHookError{
-                            ReflectionHookError::DuplicateCommand, token.linearLoc,
-                            state.switch_->macro.linearLoc});
+                        this->parser->pp->error_handler(new ReflectionHookError{
+                            ReflectionHookError::DuplicateCommand, token.linear_loc,
+                            state.switch_->macro.linear_loc});
                         return;
                     }
                     SwitchInfo* switch_ = new SwitchInfo;
                     switch_->macro = token;
-                    switch_->cppInlPath = makeInlRelPath(this->filePath);
-                    switch_->name = this->getClassName();
+                    switch_->cpp_inl_path = make_inl_rel_path(this->file_path);
+                    switch_->name = this->get_class_name();
                     state.switch_ = switch_;
                     if (fixed == "// ply make reflected switch\n") {
-                        switch_->isReflected = true;
+                        switch_->is_reflected = true;
                     }
                 } else if (fixed == "// ply reflect off\n") {
-                    if (!this->parser->atDeclarationScope) {
-                        this->parser->pp->errorHandler(new ReflectionHookError{
+                    if (!this->parser->at_declaration_scope) {
+                        this->parser->pp->error_handler(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedAtDeclarationScope,
-                            token.linearLoc});
+                            token.linear_loc});
                         return;
                     }
                     State& state = this->stack.back();
-                    if (!state.captureMembersToken.isValid()) {
-                        this->parser->pp->errorHandler(new ReflectionHookError{
+                    if (!state.capture_members_token.is_valid()) {
+                        this->parser->pp->error_handler(new ReflectionHookError{
                             ReflectionHookError::UnexpectedReflectOffCommand,
-                            token.linearLoc});
+                            token.linear_loc});
                         return;
                     }
-                    state.captureMembersToken = {};
+                    state.capture_members_token = {};
                 } else if (fixed == "// ply reflect enum\n") {
-                    auto* enum_ = this->scopeStack.back()
-                                      .safeCast<cpp::grammar::DeclSpecifier::Enum_>();
+                    auto* enum_ = this->scope_stack.back()
+                                      .safe_cast<cpp::grammar::DeclSpecifier::Enum_>();
                     if (!enum_) {
-                        this->parser->pp->errorHandler(new ReflectionHookError{
+                        this->parser->pp->error_handler(new ReflectionHookError{
                             ReflectionHookError::CommandCanOnlyBeUsedInsideEnum,
-                            token.linearLoc});
+                            token.linear_loc});
                         return;
                     }
                     State& state = this->stack.back();
-                    if (state.keepReflectedEnumToken.isValid()) {
-                        this->parser->pp->errorHandler(new ReflectionHookError{
-                            ReflectionHookError::DuplicateCommand, token.linearLoc,
-                            state.keepReflectedEnumToken.linearLoc});
+                    if (state.keep_reflected_enum_token.is_valid()) {
+                        this->parser->pp->error_handler(new ReflectionHookError{
+                            ReflectionHookError::DuplicateCommand, token.linear_loc,
+                            state.keep_reflected_enum_token.linear_loc});
                         return;
                     }
-                    state.keepReflectedEnumToken = token;
+                    state.keep_reflected_enum_token = token;
                 } else {
-                    this->parser->pp->errorHandler(new ReflectionHookError{
-                        ReflectionHookError::UnrecognizedCommand, token.linearLoc});
+                    this->parser->pp->error_handler(new ReflectionHookError{
+                        ReflectionHookError::UnrecognizedCommand, token.linear_loc});
                     return;
                 }
             }
         }
     }
 
-    virtual bool handleError(Owned<cpp::BaseError>&& err) override {
-        this->anyError = true;
+    virtual bool handle_error(Owned<cpp::BaseError>&& err) override {
+        this->any_error = true;
         OutStream out = Console.error();
-        err->writeMessage(out, this->parser->pp->visitedFiles);
+        err->write_message(out, this->parser->pp->visited_files);
         return true;
     }
 };
 
-Tuple<SingleFileReflectionInfo, bool> extractReflection(ReflectionInfoAggregator* agg,
-                                                        StringView relPath) {
+Tuple<SingleFileReflectionInfo, bool> extract_reflection(ReflectionInfoAggregator* agg,
+                                                         StringView rel_path) {
     SingleFileReflectionInfo sfri;
     ReflectionHooks visor;
-    visor.filePath = relPath;
+    visor.file_path = rel_path;
     visor.agg = agg;
     visor.sfri = &sfri;
 
-    cpp::PPVisitedFiles visitedFiles;
-    parsePlywoodSrcFile(Path.join(Workspace.path, relPath), &visitedFiles, &visor);
+    cpp::PPVisitedFiles visited_files;
+    parse_plywood_src_file(Path.join(Workspace.path, rel_path), &visited_files, &visor);
 
-    return {std::move(sfri), !visor.anyError};
+    return {std::move(sfri), !visor.any_error};
 }
 
 //                   ▄▄
@@ -509,7 +515,7 @@ struct CodeGenerator {
     virtual void write(OutStream& out) = 0;
 };
 
-String getSwitchInl(SwitchInfo* switch_) {
+String get_switch_inl(SwitchInfo* switch_) {
     MemOutStream mout;
     mout << "enum class ID : u16 {\n";
     for (StringView state : switch_->states) {
@@ -519,80 +525,81 @@ String getSwitchInl(SwitchInfo* switch_) {
     mout << "};\n";
     mout << "union Storage_ {\n";
     for (StringView state : switch_->states) {
-        mout.format("    {} {}{};\n", state, state.left(1).lowerAsc(), state.subStr(1));
+        mout.format("    {} {}{};\n", state, state.left(1).lower_asc(),
+                    state.sub_str(1));
     }
     mout << "    PLY_INLINE Storage_() {}\n";
     mout << "    PLY_INLINE ~Storage_() {}\n";
     mout << "};\n";
-    StringView className = switch_->name.splitByte(':').back(); // FIXME: more elegant
+    StringView class_name = switch_->name.split_byte(':').back(); // FIXME: more elegant
     // FIXME: Log an error if there are no states
-    mout.format("SWITCH_FOOTER({}, {})\n", className, switch_->states[0]);
+    mout.format("SWITCH_FOOTER({}, {})\n", class_name, switch_->states[0]);
     for (StringView state : switch_->states) {
-        mout.format("SWITCH_ACCESSOR({}, {}{})\n", state, state.left(1).lowerAsc(),
-                    state.subStr(1));
+        mout.format("SWITCH_ACCESSOR({}, {}{})\n", state, state.left(1).lower_asc(),
+                    state.sub_str(1));
     }
-    if (switch_->isReflected) {
+    if (switch_->is_reflected) {
         mout << "PLY_SWITCH_REFLECT()\n";
     }
-    return mout.moveToString();
+    return mout.move_to_string();
 }
 
-void writeSwitchInl(SwitchInfo* switch_, const TextFormat& tff) {
-    String absInlPath = Path.join(Workspace.path, switch_->inlineInlPath);
-    FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
-        absInlPath, getSwitchInl(switch_), tff);
-    OutStream stdOut = Console.out();
+void write_switch_inl(SwitchInfo* switch_, const TextFormat& tff) {
+    String abs_inl_path = Path.join(Workspace.path, switch_->inline_inl_path);
+    FSResult result = FileSystem.make_dirs_and_save_text_if_different(
+        abs_inl_path, get_switch_inl(switch_), tff);
+    OutStream std_out = Console.out();
     if (result == FSResult::OK) {
-        stdOut.format("Wrote {}\n", absInlPath);
+        std_out.format("Wrote {}\n", abs_inl_path);
     } else if (result != FSResult::Unchanged) {
-        stdOut.format("Error writing {}\n", absInlPath);
+        std_out.format("Error writing {}\n", abs_inl_path);
     }
 }
 
-String performSubsts(StringView absPath, ArrayView<Subst> substs) {
-    String src = FileSystem.loadTextAutodetect(absPath);
-    if (FileSystem.lastResult() != FSResult::OK)
+String perform_substs(StringView abs_path, ArrayView<Subst> substs) {
+    String src = FileSystem.load_text_autodetect(abs_path);
+    if (FileSystem.last_result() != FSResult::OK)
         return {};
 
     MemOutStream mout;
-    u32 prevEndPos = 0;
+    u32 prev_end_pos = 0;
     for (const Subst& subst : substs) {
-        PLY_ASSERT(subst.start >= prevEndPos);
-        u32 endPos = subst.start + subst.numBytes;
-        PLY_ASSERT(endPos < src.numBytes);
-        mout << StringView{src.bytes + prevEndPos, subst.start - prevEndPos};
+        PLY_ASSERT(subst.start >= prev_end_pos);
+        u32 end_pos = subst.start + subst.num_bytes;
+        PLY_ASSERT(end_pos < src.num_bytes);
+        mout << StringView{src.bytes + prev_end_pos, subst.start - prev_end_pos};
         mout << subst.replacement;
-        prevEndPos = endPos;
+        prev_end_pos = end_pos;
     }
-    mout << StringView{src.bytes + prevEndPos, src.numBytes - prevEndPos};
-    return mout.moveToString();
+    mout << StringView{src.bytes + prev_end_pos, src.num_bytes - prev_end_pos};
+    return mout.move_to_string();
 }
 
-void performSubstsAndSave(StringView absPath, ArrayView<Subst> substs,
-                          const TextFormat& tff) {
+void perform_substs_and_save(StringView abs_path, ArrayView<Subst> substs,
+                             const TextFormat& tff) {
     // FIXME: Don't reload the file here!!!!!!!!!!
     // It may have changed, making the Substs invalid!!!!!!!!
-    String srcWithSubst = performSubsts(absPath, substs);
-    if (FileSystem.lastResult() == FSResult::OK) {
-        FSResult result =
-            FileSystem.makeDirsAndSaveTextIfDifferent(absPath, srcWithSubst, tff);
-        OutStream stdOut = Console.out();
+    String src_with_subst = perform_substs(abs_path, substs);
+    if (FileSystem.last_result() == FSResult::OK) {
+        FSResult result = FileSystem.make_dirs_and_save_text_if_different(
+            abs_path, src_with_subst, tff);
+        OutStream std_out = Console.out();
         if (result == FSResult::OK) {
-            stdOut.format("Wrote {}\n", absPath);
+            std_out.format("Wrote {}\n", abs_path);
         } else if (result != FSResult::Unchanged) {
-            stdOut.format("Error writing {}\n", absPath);
+            std_out.format("Error writing {}\n", abs_path);
         }
     }
 }
 
-void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
+void generate_all_cpp_inls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
     struct CodeGenerator {
         virtual ~CodeGenerator() {
         }
         virtual void write(OutStream& out) = 0;
     };
 
-    Map<String, Array<Owned<CodeGenerator>>> fileToGeneratorList;
+    Map<String, Array<Owned<CodeGenerator>>> file_to_generator_list;
 
     for (ReflectedClass* clazz : agg->classes) {
         struct StructGenerator : CodeGenerator {
@@ -607,7 +614,7 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
             StructGenerator(ReflectedClass* clazz) : clazz{clazz} {
             }
         };
-        fileToGeneratorList.insert_or_find(clazz->cppInlPath)
+        file_to_generator_list.insert_or_find(clazz->cpp_inl_path)
             ->append(new StructGenerator{clazz});
     }
 
@@ -615,11 +622,11 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
         struct EnumGenerator : CodeGenerator {
             ReflectedEnum* enum_;
             virtual void write(OutStream& out) override {
-                out.format("PLY_ENUM_BEGIN({}, {})\n", this->enum_->namespacePrefix,
-                           this->enum_->enumName);
-                for (u32 i = 0; i < this->enum_->enumerators.numItems(); i++) {
+                out.format("PLY_ENUM_BEGIN({}, {})\n", this->enum_->namespace_prefix,
+                           this->enum_->enum_name);
+                for (u32 i = 0; i < this->enum_->enumerators.num_items(); i++) {
                     StringView enumerator = this->enum_->enumerators[i];
-                    if ((i != this->enum_->enumerators.numItems() - 1) ||
+                    if ((i != this->enum_->enumerators.num_items() - 1) ||
                         (enumerator != "Count")) {
                         out.format("PLY_ENUM_IDENTIFIER({})\n", enumerator);
                     }
@@ -629,7 +636,7 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
             EnumGenerator(ReflectedEnum* enum_) : enum_{enum_} {
             }
         };
-        fileToGeneratorList.insert_or_find(enum_->cppInlPath)
+        file_to_generator_list.insert_or_find(enum_->cpp_inl_path)
             ->append(new EnumGenerator{enum_});
     }
 
@@ -644,7 +651,7 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
                 }
                 out.format("SWITCH_TABLE_END({})\n\n", this->switch_->name);
 
-                if (this->switch_->isReflected) {
+                if (this->switch_->is_reflected) {
                     out.format("PLY_SWITCH_BEGIN({})\n", this->switch_->name);
                     for (StringView state : this->switch_->states) {
                         out.format("PLY_SWITCH_MEMBER({})\n", state);
@@ -655,25 +662,25 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
             SwitchGenerator(SwitchInfo* switch_) : switch_{switch_} {
             }
         };
-        fileToGeneratorList.insert_or_find(switch_->cppInlPath)
+        file_to_generator_list.insert_or_find(switch_->cpp_inl_path)
             ->append(new SwitchGenerator{switch_});
     }
 
-    for (const auto& item : fileToGeneratorList) {
-        PLY_ASSERT(item.key.endsWith(".inl"));
-        String absPath = Path.join(Workspace.path, item.key);
+    for (const auto& item : file_to_generator_list) {
+        PLY_ASSERT(item.key.ends_with(".inl"));
+        String abs_path = Path.join(Workspace.path, item.key);
 
         MemOutStream mout;
         for (CodeGenerator* generator : item.value) {
             generator->write(mout);
         }
-        FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
-            absPath, mout.moveToString(), tff);
-        OutStream stdOut = Console.out();
+        FSResult result = FileSystem.make_dirs_and_save_text_if_different(
+            abs_path, mout.move_to_string(), tff);
+        OutStream std_out = Console.out();
         if (result == FSResult::OK) {
-            stdOut.format("Wrote {}\n", absPath);
+            std_out.format("Wrote {}\n", abs_path);
         } else if (result != FSResult::Unchanged) {
-            stdOut.format("Error writing {}\n", absPath);
+            std_out.format("Error writing {}\n", abs_path);
         }
     }
 }
@@ -681,11 +688,11 @@ void generateAllCppInls(ReflectionInfoAggregator* agg, const TextFormat& tff) {
 void do_codegen() {
     ReflectionInfoAggregator agg;
 
-    u32 fileNum = 0;
-    for (const FileInfo& entry : FileSystem.listDir(Workspace.path, 0)) {
-        if (!entry.isDir)
+    u32 file_num = 0;
+    for (const FileInfo& entry : FileSystem.list_dir(Workspace.path, 0)) {
+        if (!entry.is_dir)
             continue;
-        if (entry.name.startsWith("."))
+        if (entry.name.starts_with("."))
             continue;
         if (entry.name == "data")
             continue;
@@ -694,19 +701,19 @@ void do_codegen() {
              FileSystem.walk(Path.join(Workspace.path, entry.name))) {
             // Sort child directories and filenames so that files are visited in a
             // deterministic order:
-            sort(triple.dirNames);
+            sort(triple.dir_names);
             sort(triple.files,
                  [](const FileInfo& a, const FileInfo& b) { return a.name < b.name; });
 
-            if (find(triple.files, [](const auto& fileInfo) {
-                    return fileInfo.name == "nocodegen";
+            if (find(triple.files, [](const auto& file_info) {
+                    return file_info.name == "nocodegen";
                 }) >= 0) {
-                triple.dirNames.clear();
+                triple.dir_names.clear();
                 continue;
             }
 
             for (const FileInfo& file : triple.files) {
-                if (file.name.endsWith(".cpp") || file.name.endsWith(".h")) {
+                if (file.name.ends_with(".cpp") || file.name.ends_with(".h")) {
                     // FIXME: Eliminate exclusions
                     for (StringView exclude : {
                              "Sort.h",
@@ -717,36 +724,37 @@ void do_codegen() {
                              "Pool.h",
                          }) {
                         if (file.name == exclude)
-                            goto skipIt;
+                            goto skip_it;
                     }
                     {
-                        fileNum++;
+                        file_num++;
 
-                        Tuple<SingleFileReflectionInfo, bool> sfri = extractReflection(
-                            &agg, Path.join(triple.dirPath, file.name));
+                        Tuple<SingleFileReflectionInfo, bool> sfri = extract_reflection(
+                            &agg, Path.join(triple.dir_path, file.name));
                         if (sfri.second) {
                             for (SwitchInfo* switch_ : sfri.first.switches) {
-                                writeSwitchInl(switch_,
-                                               Workspace.getSourceTextFormat());
+                                write_switch_inl(switch_,
+                                                 Workspace.get_source_text_format());
                             }
-                            performSubstsAndSave(Path.join(triple.dirPath, file.name),
-                                                 sfri.first.substsInParsedFile,
-                                                 Workspace.getSourceTextFormat());
+                            perform_substs_and_save(
+                                Path.join(triple.dir_path, file.name),
+                                sfri.first.substs_in_parsed_file,
+                                Workspace.get_source_text_format());
                         }
                     }
-                skipIt:;
+                skip_it:;
                 }
             }
             for (StringView exclude : {"Shell_iOS", "opengl-support"}) {
-                s32 i = find(triple.dirNames, exclude);
+                s32 i = find(triple.dir_names, exclude);
                 if (i >= 0) {
-                    triple.dirNames.erase(i);
+                    triple.dir_names.erase(i);
                 }
             }
         }
     }
 
-    generateAllCppInls(&agg, Workspace.getSourceTextFormat());
+    generate_all_cpp_inls(&agg, Workspace.get_source_text_format());
 }
 
 #include "codegen/codegen.inl" //%%

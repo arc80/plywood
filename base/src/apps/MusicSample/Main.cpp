@@ -8,7 +8,7 @@
 
 using namespace ply;
 
-PLY_INLINE s16 floatToS16(float v) {
+PLY_INLINE s16 float_to_s16(float v) {
     if (v >= 1.f)
         return 32767;
     else if (v < -1.f)
@@ -45,13 +45,13 @@ struct Voice_Tone : Voice {
     }
 
     virtual bool play(const audio::Buffer& buf) override {
-        PLY_ASSERT(buf.format.numChannels == 1);
-        PLY_ASSERT(buf.format.sampleType == audio::Format::SampleType::S16);
+        PLY_ASSERT(buf.format.num_channels == 1);
+        PLY_ASSERT(buf.format.sample_type == audio::Format::SampleType::S16);
         PLY_ASSERT(buf.format.stride == 2);
-        PLY_ASSERT(buf.sampleRate == 44100.f);
+        PLY_ASSERT(buf.sample_rate == 44100.f);
 
         s16* cur = (s16*) buf.samples;
-        s16* end = (s16*) buf.getEndPtr();
+        s16* end = (s16*) buf.get_end_ptr();
         for (; cur < end; cur++) {
             if (this->duration <= 0)
                 return false;
@@ -62,7 +62,7 @@ struct Voice_Tone : Voice {
                 float x = fmodf(this->pos + 0.25f, 1.f);
                 value = (x < 0.5f ? x * 4.f : (1.f - x) * 4.f) - 1.f;
             }
-            *cur += floatToS16(value * this->amplitude);
+            *cur += float_to_s16(value * this->amplitude);
             this->pos = fmodf(this->pos + this->step, 1.f);
             this->duration--;
         }
@@ -82,21 +82,21 @@ struct Voice_Noise : Voice {
     }
 
     virtual bool play(const audio::Buffer& buf) override {
-        PLY_ASSERT(buf.format.numChannels == 1);
-        PLY_ASSERT(buf.format.sampleType == audio::Format::SampleType::S16);
+        PLY_ASSERT(buf.format.num_channels == 1);
+        PLY_ASSERT(buf.format.sample_type == audio::Format::SampleType::S16);
         PLY_ASSERT(buf.format.stride == 2);
-        PLY_ASSERT(buf.sampleRate == 44100.f);
+        PLY_ASSERT(buf.sample_rate == 44100.f);
 
         s16* cur = (s16*) buf.samples;
-        s16* end = (s16*) buf.getEndPtr();
+        s16* end = (s16*) buf.get_end_ptr();
         for (; cur < end; cur++) {
             if (this->duration <= 0)
                 return false;
             float value = 0.f;
-            float raw = this->random.nextFloat() * 2.f - 1.f;
+            float raw = this->random.next_float() * 2.f - 1.f;
             this->w = mix(this->w, raw, 0.8f);
             value = this->w;
-            *cur += floatToS16(value * this->amplitude);
+            *cur += float_to_s16(value * this->amplitude);
             this->duration--;
         }
         return true;
@@ -115,19 +115,20 @@ struct Voice_Kick : Voice {
     }
 
     virtual bool play(const audio::Buffer& buf) override {
-        PLY_ASSERT(buf.format.numChannels == 1);
-        PLY_ASSERT(buf.format.sampleType == audio::Format::SampleType::S16);
+        PLY_ASSERT(buf.format.num_channels == 1);
+        PLY_ASSERT(buf.format.sample_type == audio::Format::SampleType::S16);
         PLY_ASSERT(buf.format.stride == 2);
-        PLY_ASSERT(buf.sampleRate == 44100.f);
+        PLY_ASSERT(buf.sample_rate == 44100.f);
 
         s16* cur = (s16*) buf.samples;
-        s16* end = (s16*) buf.getEndPtr();
+        s16* end = (s16*) buf.get_end_ptr();
         for (; cur < end; cur++) {
             if (this->pos >= 1.f)
                 return false;
             float value = 0.5f - cosf(this->pos * 2 * Pi) * 0.5f;
-            value *= (sinf(this->pos * 5 * Pi) + 0.2f * (this->random.nextFloat() * 2.f - 1.f));
-            *cur += floatToS16(value * this->amplitude);
+            value *= (sinf(this->pos * 5 * Pi) +
+                      0.2f * (this->random.next_float() * 2.f - 1.f));
+            *cur += float_to_s16(value * this->amplitude);
             this->pos += this->step;
         }
         return true;
@@ -135,10 +136,10 @@ struct Voice_Kick : Voice {
 };
 
 struct Event {
-    float qTime;
+    float q_time;
     VoiceType type;
     float note;
-    float qDur;
+    float q_dur;
     float amplitude;
 };
 
@@ -203,51 +204,58 @@ Array<Event> events = {
 };
 
 int main() {
-    Owned<OutPipe> out = FileSystem.openPipeForWrite("music-sample.mp3");
-    AudioOptions audioOpts;
-    Owned<Muxer> muxer = createMuxer(out, nullptr, &audioOpts, "mp3");
+    Owned<OutPipe> out = FileSystem.open_pipe_for_write("music-sample.mp3");
+    AudioOptions audio_opts;
+    Owned<Muxer> muxer = create_muxer(out, nullptr, &audio_opts, "mp3");
 
-    sort(events.view(), [](const Event& a, const Event& b) { return a.qTime < b.qTime; });
+    sort(events.view(),
+         [](const Event& a, const Event& b) { return a.q_time < b.q_time; });
 
-    float secsPerBeat = 60.f / 100.f;
-    s32 sampleTime = s32(44100.f * events[0].qTime * (secsPerBeat * 0.25f));
+    float secs_per_beat = 60.f / 100.f;
+    s32 sample_time = s32(44100.f * events[0].q_time * (secs_per_beat * 0.25f));
     Array<Owned<Voice>> voices;
-    u32 eventIdx = 0;
-    while (eventIdx < events.numItems()) {
+    u32 event_idx = 0;
+    while (event_idx < events.num_items()) {
         audio::Buffer buffer;
-        muxer->beginAudioFrame(buffer);
-        memset(buffer.samples, 0, buffer.getSizeBytes());
-        u32 sampleOfs = 0;
-        while (sampleOfs < buffer.numSamples && eventIdx < events.numItems()) {
-            const Event* nextEvt = events.get(eventIdx);
-            s32 nextEventTime = s32(44100.f * nextEvt->qTime * (secsPerBeat * 0.25f));
-            s32 samplesToFill = min((s32) (buffer.numSamples - sampleOfs), (nextEventTime - sampleTime));
-            if (samplesToFill > 0) {
-                for (u32 i = 0; i < voices.numItems();) {
-                    if (voices[i]->play(buffer.getSubregion(sampleOfs, samplesToFill))) {
+        muxer->begin_audio_frame(buffer);
+        memset(buffer.samples, 0, buffer.get_size_bytes());
+        u32 sample_ofs = 0;
+        while (sample_ofs < buffer.num_samples && event_idx < events.num_items()) {
+            const Event* next_evt = events.get(event_idx);
+            s32 next_event_time =
+                s32(44100.f * next_evt->q_time * (secs_per_beat * 0.25f));
+            s32 samples_to_fill = min((s32) (buffer.num_samples - sample_ofs),
+                                      (next_event_time - sample_time));
+            if (samples_to_fill > 0) {
+                for (u32 i = 0; i < voices.num_items();) {
+                    if (voices[i]->play(
+                            buffer.get_subregion(sample_ofs, samples_to_fill))) {
                         i++;
                     } else {
-                        voices.eraseQuick(i);
+                        voices.erase_quick(i);
                     }
                 }
-                sampleTime += samplesToFill;
-                sampleOfs += samplesToFill;
+                sample_time += samples_to_fill;
+                sample_ofs += samples_to_fill;
             } else {
-                if (nextEvt->type == VoiceType::Kick) {
-                    voices.append(new Voice_Kick{nextEvt->qDur * (secsPerBeat * 0.25f),
-                                                 nextEvt->amplitude * 0.9f});
-                } else if (nextEvt->type == VoiceType::Noise) {
-                    voices.append(new Voice_Noise{nextEvt->qDur * (secsPerBeat * 0.25f),
-                                                  nextEvt->amplitude * 0.9f});
+                if (next_evt->type == VoiceType::Kick) {
+                    voices.append(
+                        new Voice_Kick{next_evt->q_dur * (secs_per_beat * 0.25f),
+                                       next_evt->amplitude * 0.9f});
+                } else if (next_evt->type == VoiceType::Noise) {
+                    voices.append(
+                        new Voice_Noise{next_evt->q_dur * (secs_per_beat * 0.25f),
+                                        next_evt->amplitude * 0.9f});
                 } else {
-                    voices.append(new Voice_Tone{nextEvt->type, nextEvt->note,
-                                                 nextEvt->qDur * (secsPerBeat * 0.25f),
-                                                 nextEvt->amplitude * 0.9f});
+                    voices.append(
+                        new Voice_Tone{next_evt->type, next_evt->note,
+                                       next_evt->q_dur * (secs_per_beat * 0.25f),
+                                       next_evt->amplitude * 0.9f});
                 }
-                eventIdx++;
+                event_idx++;
             }
         }
-        muxer->endAudioFrame(sampleOfs);
+        muxer->end_audio_frame(sample_ofs);
     }
     return 0;
 }

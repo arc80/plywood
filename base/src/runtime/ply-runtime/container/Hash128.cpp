@@ -14,8 +14,8 @@
 //   April 10 2012: buffer overflow on platforms without unaligned reads
 //   July 12 2012: was passing out variables in final to in/out in short
 //   July 30 2012: I reintroduced the buffer overflow
-//   August 5 2012: SpookyV2: d = should be d += in short hash, and remove extra mix from long
-//   hash
+//   August 5 2012: SpookyV2: d = should be d += in short hash, and remove extra mix
+//   from long hash
 
 #include <ply-runtime/Precomp.h>
 #include <ply-runtime/container/Hash128.h>
@@ -181,7 +181,7 @@ void SpookyHash::Init(u64 seed1, u64 seed2) {
 // add a message fragment to the state
 void SpookyHash::Update(const void* message, size_t length) {
     u64 h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11;
-    size_t newLength = length + m_remainder;
+    size_t new_length = length + m_remainder;
     u8 remainder;
     union {
         const u8* p8;
@@ -191,10 +191,10 @@ void SpookyHash::Update(const void* message, size_t length) {
     const u64* end;
 
     // Is this message fragment too short?  If it is, stuff it away.
-    if (newLength < sc_bufSize) {
+    if (new_length < sc_bufSize) {
         memcpy(&((u8*) m_data)[m_remainder], message, length);
         m_length = length + m_length;
-        m_remainder = (u8) newLength;
+        m_remainder = (u8) new_length;
         return;
     }
 
@@ -234,7 +234,7 @@ void SpookyHash::Update(const void* message, size_t length) {
 
     // handle all whole blocks of sc_blockSize bytes
     end = u.p64 + (length / sc_blockSize) * sc_numVars;
-    remainder = (u8)(length - ((const u8*) end - u.p8));
+    remainder = (u8) (length - ((const u8*) end - u.p8));
     if (PLY_ALLOW_UNALIGNED_READS || (u.i & 0x7) == 0) {
         while (u.p64 < end) {
             Mix(u.p64, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
@@ -319,7 +319,7 @@ PLY_NO_INLINE Hash128::Hash128() {
 }
 
 PLY_NO_INLINE void Hash128::append(StringView view) {
-    this->state.Update(view.bytes, view.numBytes);
+    this->state.Update(view.bytes, view.num_bytes);
 }
 
 PLY_NO_INLINE u128 Hash128::get() const {

@@ -71,14 +71,14 @@ struct InStream {
     bool at_eof() const {
         return this->status.eof != 0;
     }
-    bool anyParseError() const {
+    bool any_parse_error() const {
         return this->status.parse_error != 0;
     }
     u32 num_bytes_readable() const {
-        return safeDemote<u32>(this->end_byte - this->cur_byte);
+        return safe_demote<u32>(this->end_byte - this->cur_byte);
     }
     StringView view_readable() const {
-        return {this->cur_byte, safeDemote<u32>(this->end_byte - this->cur_byte)};
+        return {this->cur_byte, safe_demote<u32>(this->end_byte - this->cur_byte)};
     }
     bool load_more_data();
     bool ensure_readable() {
@@ -88,10 +88,10 @@ struct InStream {
     }
     bool read_internal(MutStringView dst);
     bool read(MutStringView dst) {
-        if (dst.numBytes > safeDemote<u32>(this->end_byte - this->cur_byte))
+        if (dst.num_bytes > safe_demote<u32>(this->end_byte - this->cur_byte))
             return this->read_internal(dst);
-        memcpy(dst.bytes, this->cur_byte, dst.numBytes);
-        this->cur_byte += dst.numBytes;
+        memcpy(dst.bytes, this->cur_byte, dst.num_bytes);
+        this->cur_byte += dst.num_bytes;
         return true;
     }
     template <typename T>
@@ -110,8 +110,8 @@ struct InStream {
     String read_remaining_contents();
 
     template <typename Type>
-    PLY_INLINE Type parse(const decltype(fmt::TypeParser<Type>::defaultFormat())&
-                              format = fmt::TypeParser<Type>::defaultFormat()) {
+    PLY_INLINE Type parse(const decltype(fmt::TypeParser<Type>::default_format())&
+                              format = fmt::TypeParser<Type>::default_format()) {
         return fmt::TypeParser<Type>::parse(*this, format);
     }
     template <typename Format,
@@ -120,18 +120,19 @@ struct InStream {
         return fmt::FormatParser<Format>::parse(*this, format);
     }
     template <typename Type>
-    PLY_INLINE String readString(const decltype(fmt::TypeParser<Type>::defaultFormat())&
-                                     format = fmt::TypeParser<Type>::defaultFormat()) {
-        BlockList::Ref startPos = this->getBlockRef();
+    PLY_INLINE String
+    read_string(const decltype(fmt::TypeParser<Type>::default_format())& format =
+                    fmt::TypeParser<Type>::default_format()) {
+        BlockList::Ref start_pos = this->get_block_ref();
         fmt::TypeParser<Type>::parse(this, format); // ignore return value
-        return BlockList::toString(std::move(startPos), this->getBlockRef());
+        return BlockList::to_string(std::move(start_pos), this->get_block_ref());
     }
     template <typename Format,
               typename = void_t<decltype(fmt::FormatParser<Format>::parse)>>
-    PLY_INLINE String readString(const Format& format = {}) {
-        BlockList::Ref startPos = this->getBlockRef();
+    PLY_INLINE String read_string(const Format& format = {}) {
+        BlockList::Ref start_pos = this->get_block_ref();
         fmt::FormatParser<Format>::parse(this, format); // ignore return value
-        return BlockList::toString(std::move(startPos), this->getBlockRef());
+        return BlockList::to_string(std::move(start_pos), this->get_block_ref());
     }
 };
 
@@ -139,29 +140,29 @@ struct ViewInStream : InStream {
     ViewInStream() = default;
     explicit ViewInStream(StringView view);
 
-    PLY_INLINE StringView getViewFrom(const BlockList::WeakRef& savePoint) const {
-        PLY_ASSERT(uptr(this->cur_byte - savePoint.byte) <=
+    PLY_INLINE StringView get_view_from(const BlockList::WeakRef& save_point) const {
+        PLY_ASSERT(uptr(this->cur_byte - save_point.byte) <=
                    uptr(this->end_byte - this->start_byte));
-        return StringView::fromRange(savePoint.byte, this->cur_byte);
+        return StringView::from_range(save_point.byte, this->cur_byte);
     }
 
     template <typename Type>
     PLY_INLINE StringView
-    readView(const decltype(fmt::TypeParser<Type>::defaultFormat())& format =
-                 fmt::TypeParser<Type>::defaultFormat()) {
+    read_view(const decltype(fmt::TypeParser<Type>::default_format())& format =
+                  fmt::TypeParser<Type>::default_format()) {
         PLY_ASSERT(!this->block);
-        const char* startByte = (const char*) this->cur_byte;
+        const char* start_byte = (const char*) this->cur_byte;
         fmt::TypeParser<Type>::parse(*this, format); // ignore return value
-        return StringView::fromRange(startByte, (const char*) this->cur_byte);
+        return StringView::from_range(start_byte, (const char*) this->cur_byte);
     }
 
     template <typename Format,
               typename = void_t<decltype(fmt::FormatParser<Format>::parse)>>
-    PLY_INLINE StringView readView(const Format& format = {}) {
+    PLY_INLINE StringView read_view(const Format& format = {}) {
         PLY_ASSERT(!this->block);
-        const char* startByte = (const char*) this->cur_byte;
+        const char* start_byte = (const char*) this->cur_byte;
         fmt::FormatParser<Format>::parse(*this, format); // ignore return value
-        return StringView::fromRange(startByte, (const char*) this->cur_byte);
+        return StringView::from_range(start_byte, (const char*) this->cur_byte);
     }
 };
 
@@ -184,13 +185,13 @@ public:
 };
 
 template <typename T>
-PLY_NO_INLINE T StringView::to(const T& defaultValue) const {
-    ViewInStream vins{this->trim(isWhite)};
+PLY_NO_INLINE T StringView::to(const T& default_value) const {
+    ViewInStream vins{this->trim(is_white)};
     T value = vins.parse<T>();
-    if (vins.at_eof() && !vins.anyParseError()) {
+    if (vins.at_eof() && !vins.any_parse_error()) {
         return value;
     }
-    return defaultValue;
+    return default_value;
 }
 
 //   ▄▄▄▄          ▄▄    ▄▄▄▄   ▄▄
@@ -255,10 +256,10 @@ struct OutStream {
         return this->status.eof != 0;
     }
     u32 num_writable_bytes() const {
-        return safeDemote<u32>(this->end_byte - this->cur_byte);
+        return safe_demote<u32>(this->end_byte - this->cur_byte);
     }
     MutStringView view_writable() {
-        return {cur_byte, safeDemote<u32>(end_byte - cur_byte)};
+        return {cur_byte, safe_demote<u32>(end_byte - cur_byte)};
     }
     bool make_writable();
     bool ensure_writable() {
@@ -294,7 +295,7 @@ struct OutStream {
         FixedArray<FormatArg, sizeof...(Args)> fa{args...};
         this->format_args(fmt, fa);
     }
-    String moveToString(); // Must be a MemOutStream.
+    String move_to_string(); // Must be a MemOutStream.
 };
 
 struct MemOutStream : OutStream {
@@ -333,14 +334,14 @@ template <typename... Args>
 PLY_INLINE String String::format(StringView fmt, const Args&... args) {
     MemOutStream mout;
     mout.format(fmt, args...);
-    return mout.moveToString();
+    return mout.move_to_string();
 }
 
 template <typename T>
 String to_string(T&& value) {
     MemOutStream mout;
     FormatArg{std::forward<T>(value)}.print(mout);
-    return mout.moveToString();
+    return mout.move_to_string();
 }
 
 //  ▄▄▄▄        ▄▄▄▄▄  ▄▄
@@ -482,7 +483,7 @@ struct OutPipe_FD : OutPipe {
 InPipe* get_console_in_pipe();
 OutPipe* get_console_out_pipe();
 OutPipe* get_console_error_pipe();
-    
+
 enum ConsoleMode {
     CM_Text,
     CM_Binary,
@@ -506,47 +507,47 @@ struct Process {
     enum struct Pipe {
         Open,
         Redirect, // This will redirect output to /dev/null if corresponding OutPipe
-                  // (stdOutPipe/stdErrPipe) is unopened
+                  // (std_out_pipe/std_err_pipe) is unopened
         StdOut,
     };
 
     struct Output {
-        Pipe stdOut = Pipe::Redirect;
-        Pipe stdErr = Pipe::Redirect;
-        OutPipe* stdOutPipe = nullptr;
-        OutPipe* stdErrPipe = nullptr;
+        Pipe std_out = Pipe::Redirect;
+        Pipe std_err = Pipe::Redirect;
+        OutPipe* std_out_pipe = nullptr;
+        OutPipe* std_err_pipe = nullptr;
 
         static PLY_INLINE Output ignore() {
             return {};
         }
         static PLY_INLINE Output inherit() {
             Output h;
-            h.stdOutPipe = get_console_out_pipe();
-            h.stdErrPipe = get_console_error_pipe();
+            h.std_out_pipe = get_console_out_pipe();
+            h.std_err_pipe = get_console_error_pipe();
             return h;
         }
-        static PLY_INLINE Output openSeparate() {
+        static PLY_INLINE Output open_separate() {
             Output h;
-            h.stdOut = Pipe::Open;
-            h.stdErr = Pipe::Open;
+            h.std_out = Pipe::Open;
+            h.std_err = Pipe::Open;
             return h;
         }
-        static PLY_INLINE Output openMerged() {
+        static PLY_INLINE Output open_merged() {
             Output h;
-            h.stdOut = Pipe::Open;
-            h.stdErr = Pipe::StdOut;
+            h.std_out = Pipe::Open;
+            h.std_err = Pipe::StdOut;
             return h;
         }
-        static PLY_INLINE Output openStdOutOnly() {
+        static PLY_INLINE Output open_std_out_only() {
             Output h;
-            h.stdOut = Pipe::Open;
+            h.std_out = Pipe::Open;
             return h;
         }
     };
 
     struct Input {
-        Pipe stdIn = Pipe::Redirect;
-        InPipe* stdInPipe = nullptr;
+        Pipe std_in = Pipe::Redirect;
+        InPipe* std_in_pipe = nullptr;
 
         static PLY_INLINE Input ignore() {
             return {};
@@ -560,28 +561,27 @@ struct Process {
     };
 
     // Members
-    Owned<OutPipe> writeToStdIn;
-    Owned<InPipe> readFromStdOut;
-    Owned<InPipe> readFromStdErr;
+    Owned<OutPipe> write_to_std_in;
+    Owned<InPipe> read_from_std_out;
+    Owned<InPipe> read_from_std_err;
 
 #if PLY_TARGET_WIN32
-    HANDLE childProcess = INVALID_HANDLE_VALUE;
-    HANDLE childMainThread = INVALID_HANDLE_VALUE;
+    HANDLE child_process = INVALID_HANDLE_VALUE;
+    HANDLE child_main_thread = INVALID_HANDLE_VALUE;
 #elif PLY_TARGET_POSIX
-    int childPID = -1;
+    int child_pid = -1;
 #endif
 
     PLY_INLINE Process() = default;
     ~Process();
     s32 join();
 
-    static PLY_DLL_ENTRY Owned<Process> execArgStr(StringView exePath, StringView argStr,
-                                                      StringView initialDir, const Output& output,
-                                                      const Input& input = Input::open());
-    static PLY_DLL_ENTRY Owned<Process> exec(StringView exePath,
-                                                ArrayView<const StringView> args,
-                                                StringView initialDir, const Output& output,
-                                                const Input& input = Input::open());
+    static PLY_DLL_ENTRY Owned<Process>
+    exec_arg_str(StringView exe_path, StringView arg_str, StringView initial_dir,
+                 const Output& output, const Input& input = Input::open());
+    static PLY_DLL_ENTRY Owned<Process>
+    exec(StringView exe_path, ArrayView<const StringView> args, StringView initial_dir,
+         const Output& output, const Input& input = Input::open());
 };
 
 //  ▄▄  ▄▄        ▄▄                  ▄▄
@@ -681,18 +681,18 @@ struct TextFormat {
     static constexpr u32 NumBytesForAutodetect = 4000;
 
     UnicodeType encoding = UTF8;
-    NewLine newLine = NewLine::LF;
+    NewLine new_line = NewLine::LF;
     bool bom = true;
 
     static TextFormat default_utf8();
     static TextFormat autodetect(InStream& in);
 
-    Owned<InPipe> createImporter(InStream&& in) const;
-    Owned<OutPipe> createExporter(OutStream&& out) const;
+    Owned<InPipe> create_importer(InStream&& in) const;
+    Owned<OutPipe> create_exporter(OutStream&& out) const;
 
     PLY_INLINE bool operator==(const TextFormat& other) const {
-        return (this->encoding == other.encoding) && (this->newLine == other.newLine) &&
-               (this->bom == other.bom);
+        return (this->encoding == other.encoding) &&
+               (this->new_line == other.new_line) && (this->bom == other.bom);
     }
 };
 
@@ -706,69 +706,74 @@ struct Path_t {
     // On Windows:
     //  \ is the default separator
     //  / and \ are both recognized as separators
-    //  (eg. CMake-style path such as "C:/path/to/file" can be manipulated as a Windows path)
-    //  Drive letters are recognized when joining paths
-    //  Absolute paths must begin with a drive letter
-    //  (FIXME: Should also recognize UNC paths, eg. \\server\share, as absolute)
+    //  (eg. CMake-style path such as "C:/path/to/file" can be manipulated as a Windows
+    //  path) Drive letters are recognized when joining paths Absolute paths must begin
+    //  with a drive letter (FIXME: Should also recognize UNC paths, eg. \\server\share,
+    //  as absolute)
     //
     // On POSIX:
     //  / is the only separator
     //  Windows-style drive letters are treated like any other path component
 
-    bool isWindows = false;
+    bool is_windows = false;
 
-    PLY_INLINE bool isSepByte(char c) const {
-        return c == '/' || (this->isWindows && c == '\\');
+    PLY_INLINE bool is_sep_byte(char c) const {
+        return c == '/' || (this->is_windows && c == '\\');
     }
 
-    PLY_INLINE char sepByte() const {
-        return this->isWindows ? '\\' : '/';
+    PLY_INLINE char sep_byte() const {
+        return this->is_windows ? '\\' : '/';
     }
 
-    PLY_INLINE bool hasDriveLetter(StringView path) const {
-        if (!this->isWindows)
+    PLY_INLINE bool has_drive_letter(StringView path) const {
+        if (!this->is_windows)
             return false;
-        return path.numBytes >= 2 && isAsciiLetter(path.bytes[0]) && path.bytes[1] == ':';
+        return path.num_bytes >= 2 && is_ascii_letter(path.bytes[0]) &&
+               path.bytes[1] == ':';
     }
 
-    PLY_INLINE StringView getDriveLetter(StringView path) const {
-        return hasDriveLetter(path) ? path.left(2) : StringView{};
+    PLY_INLINE StringView get_drive_letter(StringView path) const {
+        return has_drive_letter(path) ? path.left(2) : StringView{};
     }
 
-    PLY_INLINE bool isAbsolute(StringView path) const {
-        if (this->isWindows) {
-            return path.numBytes >= 3 && this->hasDriveLetter(path) && this->isSepByte(path[2]);
+    PLY_INLINE bool is_absolute(StringView path) const {
+        if (this->is_windows) {
+            return path.num_bytes >= 3 && this->has_drive_letter(path) &&
+                   this->is_sep_byte(path[2]);
         } else {
-            return path.numBytes >= 1 && this->isSepByte(path[0]);
+            return path.num_bytes >= 1 && this->is_sep_byte(path[0]);
         }
     }
 
-    PLY_INLINE bool isRelative(StringView path) const {
-        return !this->hasDriveLetter(path) && path.numBytes > 0 && !this->isSepByte(path[0]);
+    PLY_INLINE bool is_relative(StringView path) const {
+        return !this->has_drive_letter(path) && path.num_bytes > 0 &&
+               !this->is_sep_byte(path[0]);
     }
 
     PLY_DLL_ENTRY Tuple<StringView, StringView> split(StringView path) const;
-    PLY_DLL_ENTRY Array<StringView> splitFull(StringView path) const;
-    PLY_DLL_ENTRY Tuple<StringView, StringView> splitExt(StringView path) const;
-    PLY_DLL_ENTRY String joinArray(ArrayView<const StringView> components) const;
+    PLY_DLL_ENTRY Array<StringView> split_full(StringView path) const;
+    PLY_DLL_ENTRY Tuple<StringView, StringView> split_ext(StringView path) const;
+    PLY_DLL_ENTRY String join_array(ArrayView<const StringView> components) const;
 
     template <typename... StringViews>
-    PLY_INLINE String join(StringViews&&... pathComponentArgs) const {
+    PLY_INLINE String join(StringViews&&... path_component_args) const {
         FixedArray<StringView, sizeof...(StringViews)> components{
-            std::forward<StringViews>(pathComponentArgs)...};
-        return joinArray(components);
+            std::forward<StringViews>(path_component_args)...};
+        return join_array(components);
     }
 
-    PLY_DLL_ENTRY String makeRelative(StringView ancestor, StringView descendant) const;
-    PLY_DLL_ENTRY HybridString from(const Path_t& srcFormat, StringView srcPath) const;
+    PLY_DLL_ENTRY String make_relative(StringView ancestor,
+                                       StringView descendant) const;
+    PLY_DLL_ENTRY HybridString from(const Path_t& src_format,
+                                    StringView src_path) const;
 
-    PLY_INLINE bool endsWithSep(StringView path) {
-        return path.numBytes > 0 && this->isSepByte(path.back());
+    PLY_INLINE bool ends_with_sep(StringView path) {
+        return path.num_bytes > 0 && this->is_sep_byte(path.back());
     }
 };
 
 struct WString;
-WString win32PathArg(StringView path, bool allowExtended = true);
+WString win32_path_arg(StringView path, bool allow_extended = true);
 
 extern Path_t Path;
 extern Path_t WindowsPath;
@@ -799,18 +804,18 @@ enum class ExistsResult {
 };
 
 struct FileInfo {
-    FSResult result = FSResult::Unknown; // Result of getFileInfo()
+    FSResult result = FSResult::Unknown; // Result of get_file_info()
     String name;
-    bool isDir = false;
-    u64 fileSize = 0;            // Size of the file in bytes
-    double creationTime = 0;     // The file's POSIX creation time
-    double accessTime = 0;       // The file's POSIX access time
-    double modificationTime = 0; // The file's POSIX modification time
+    bool is_dir = false;
+    u64 file_size = 0;            // Size of the file in bytes
+    double creation_time = 0;     // The file's POSIX creation time
+    double access_time = 0;       // The file's POSIX access time
+    double modification_time = 0; // The file's POSIX modification time
 };
 
 struct WalkTriple {
-    String dirPath;
-    Array<String> dirNames;
+    String dir_path;
+    Array<String> dir_names;
     Array<FileInfo> files;
 };
 
@@ -820,8 +825,8 @@ class FileSystemWalker {
 private:
     struct StackItem {
         String path;
-        Array<String> dirNames;
-        u32 dirIndex;
+        Array<String> dir_names;
+        u32 dir_index;
     };
 
     WalkTriple triple;
@@ -830,7 +835,7 @@ private:
     u32 flags = 0;
 
     friend struct FileSystemIface;
-    void visit(StringView dirPath);
+    void visit(StringView dir_path);
 
 public:
     PLY_INLINE FileSystemWalker() = default;
@@ -844,7 +849,7 @@ public:
         }
         void operator++();
         PLY_INLINE bool operator!=(const Iterator&) const {
-            return !this->walker->triple.dirPath.isEmpty();
+            return !this->walker->triple.dir_path.is_empty();
         }
     };
     PLY_INLINE Iterator begin() {
@@ -860,52 +865,54 @@ struct FileSystemIface {
     static const u32 WithSizes = 0x1;
     static const u32 WithTimes = 0x2;
 
-    static ThreadLocal<FSResult> lastResult_;
+    static ThreadLocal<FSResult> last_result_;
 
-    static PLY_INLINE FSResult setLastResult(FSResult result) {
-        FileSystemIface::lastResult_.store(result);
+    static PLY_INLINE FSResult set_last_result(FSResult result) {
+        FileSystemIface::last_result_.store(result);
         return result;
     }
-    static PLY_INLINE FSResult lastResult() {
-        return FileSystemIface::lastResult_.load();
+    static PLY_INLINE FSResult last_result() {
+        return FileSystemIface::last_result_.load();
     }
 
     virtual ~FileSystemIface() {
     }
-    virtual Path_t pathFormat() = 0;
-    virtual FSResult setWorkingDirectory(StringView path) = 0;
-    virtual String getWorkingDirectory() = 0;
+    virtual Path_t path_format() = 0;
+    virtual FSResult set_working_directory(StringView path) = 0;
+    virtual String get_working_directory() = 0;
     virtual ExistsResult exists(StringView path) = 0;
-    virtual Array<FileInfo> listDir(StringView path,
-                                    u32 flags = WithSizes | WithTimes) = 0;
-    virtual FSResult makeDir(StringView path) = 0;
-    virtual FSResult moveFile(StringView srcPath, StringView dstPath) = 0;
-    virtual FSResult deleteFile(StringView path) = 0;
-    virtual FSResult removeDirTree(StringView dirPath) = 0;
-    virtual FileInfo getFileInfo(StringView path) = 0; // Doesn't set FileInfo::name
-    virtual Owned<InPipe> openPipeForRead(StringView path) = 0;
-    virtual Owned<OutPipe> openPipeForWrite(StringView path) = 0;
+    virtual Array<FileInfo> list_dir(StringView path,
+                                     u32 flags = WithSizes | WithTimes) = 0;
+    virtual FSResult make_dir(StringView path) = 0;
+    virtual FSResult move_file(StringView src_path, StringView dst_path) = 0;
+    virtual FSResult delete_file(StringView path) = 0;
+    virtual FSResult remove_dir_tree(StringView dir_path) = 0;
+    virtual FileInfo get_file_info(StringView path) = 0; // Doesn't set FileInfo::name
+    virtual Owned<InPipe> open_pipe_for_read(StringView path) = 0;
+    virtual Owned<OutPipe> open_pipe_for_write(StringView path) = 0;
 
-    PLY_INLINE bool isDir(StringView path) {
+    PLY_INLINE bool is_dir(StringView path) {
         return this->exists(path) == ExistsResult::Directory;
     }
 
     FileSystemWalker walk(StringView top, u32 flags = WithSizes | WithTimes);
-    FSResult makeDirs(StringView path);
-    InStream openStreamForRead(StringView path);
-    OutStream openStreamForWrite(StringView path);
-    InStream openTextForRead(StringView path,
-                             const TextFormat& format = TextFormat::default_utf8());
-    InStream openTextForReadAutodetect(StringView path,
-                                       TextFormat* out_format = nullptr);
-    OutStream openTextForWrite(StringView path,
-                               const TextFormat& format = TextFormat::default_utf8());
-    String loadBinary(StringView path);
-    String loadText(StringView path, const TextFormat& format);
-    String loadTextAutodetect(StringView path, TextFormat* out_format = nullptr);
-    FSResult makeDirsAndSaveBinaryIfDifferent(StringView path, StringView contents);
-    FSResult makeDirsAndSaveTextIfDifferent(
-        StringView path, StringView strContents,
+    FSResult make_dirs(StringView path);
+    InStream open_stream_for_read(StringView path);
+    OutStream open_stream_for_write(StringView path);
+    InStream open_text_for_read(StringView path,
+                                const TextFormat& format = TextFormat::default_utf8());
+    InStream open_text_for_read_autodetect(StringView path,
+                                           TextFormat* out_format = nullptr);
+    OutStream
+    open_text_for_write(StringView path,
+                        const TextFormat& format = TextFormat::default_utf8());
+    String load_binary(StringView path);
+    String load_text(StringView path, const TextFormat& format);
+    String load_text_autodetect(StringView path, TextFormat* out_format = nullptr);
+    FSResult make_dirs_and_save_binary_if_different(StringView path,
+                                                    StringView contents);
+    FSResult make_dirs_and_save_text_if_different(
+        StringView path, StringView str_contents,
         const TextFormat& format = TextFormat::default_utf8());
 };
 
@@ -913,27 +920,27 @@ struct FileSystem_t : FileSystemIface {
 #if PLY_TARGET_WIN32
     // ReadWriteLock used to mitigate data race issues with SetCurrentDirectoryW:
     // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setcurrentdirectory
-    ReadWriteLock workingDirLock;
+    ReadWriteLock working_dir_lock;
 
     // Direct access to Windows handles:
-    HANDLE openHandleForRead(StringView path);
-    HANDLE openHandleForWrite(StringView path);
-    FileInfo getFileInfo(HANDLE handle);
+    HANDLE open_handle_for_read(StringView path);
+    HANDLE open_handle_for_write(StringView path);
+    FileInfo get_file_info(HANDLE handle);
 #endif
 
-    virtual Array<FileInfo> listDir(StringView path,
-                                    u32 flags = WithSizes | WithTimes) override;
-    virtual FSResult makeDir(StringView path) override;
-    virtual Path_t pathFormat() override;
-    virtual String getWorkingDirectory() override;
-    virtual FSResult setWorkingDirectory(StringView path) override;
+    virtual Array<FileInfo> list_dir(StringView path,
+                                     u32 flags = WithSizes | WithTimes) override;
+    virtual FSResult make_dir(StringView path) override;
+    virtual Path_t path_format() override;
+    virtual String get_working_directory() override;
+    virtual FSResult set_working_directory(StringView path) override;
     virtual ExistsResult exists(StringView path) override;
-    virtual Owned<InPipe> openPipeForRead(StringView path) override;
-    virtual Owned<OutPipe> openPipeForWrite(StringView path) override;
-    virtual FSResult moveFile(StringView srcPath, StringView dstPath) override;
-    virtual FSResult deleteFile(StringView path) override;
-    virtual FSResult removeDirTree(StringView dirPath) override;
-    virtual FileInfo getFileInfo(StringView path) override;
+    virtual Owned<InPipe> open_pipe_for_read(StringView path) override;
+    virtual Owned<OutPipe> open_pipe_for_write(StringView path) override;
+    virtual FSResult move_file(StringView src_path, StringView dst_path) override;
+    virtual FSResult delete_file(StringView path) override;
+    virtual FSResult remove_dir_tree(StringView dir_path) override;
+    virtual FileInfo get_file_info(StringView path) override;
 
     virtual ~FileSystem_t() {
     }

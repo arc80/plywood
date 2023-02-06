@@ -10,10 +10,12 @@
 
 namespace ply {
 
-// void writeTypeSignature(BinaryBuffer& sig, const TypeDescriptor* typeDesc); disabled for now
+// void write_type_signature(BinaryBuffer& sig, const TypeDescriptor* type_desc);
+// disabled for now
 
-void createConversionRecipe(OutStream& out, const TypeDescriptor_Struct* dstStruct,
-                            const ArrayView<TypeDescriptor_Struct*>& srcStructs);
-void applyConversionRecipe(const BlockList::Footer* recipe, void* dstPtr, ArrayView<void*> srcPtrs);
+void create_conversion_recipe(OutStream& out, const TypeDescriptor_Struct* dst_struct,
+                              const ArrayView<TypeDescriptor_Struct*>& src_structs);
+void apply_conversion_recipe(const BlockList::Footer* recipe, void* dst_ptr,
+                             ArrayView<void*> src_ptrs);
 
 } // namespace ply

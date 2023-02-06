@@ -22,29 +22,29 @@ enum Status {
 
 struct TargetWithStatus {
     Target* target = nullptr;
-    Status statusInCurrentConfig = NotInstantiated;
+    Status status_in_current_config = NotInstantiated;
 };
 
 struct TargetInstantiator {
-    Map<Label, AnyObject> globalNamespace;
+    Map<Label, AnyObject> global_namespace;
 
     // These members are modified during instantiation.
-    Map<Label, TargetWithStatus> targetMap;
-    u64 configBit = 0;
+    Map<Label, TargetWithStatus> target_map;
+    u64 config_bit = 0;
 };
 
-FnResult instantiateTargetForCurrentConfig(Target** target, TargetInstantiator* mi,
+FnResult instantiate_target_for_current_config(Target** target, TargetInstantiator* mi,
                                                Label name);
 
 struct PropertyCollector {
     biscuit::Interpreter* interp;
-    String basePath;
+    String base_path;
     Array<Option>* options;
-    u64 configBit = 0;
-    bool isTarget = false;
+    u64 config_bit = 0;
+    bool is_target = false;
 };
 
-FnResult doCustomBlockInsideConfig(PropertyCollector* pc,
+FnResult do_custom_block_inside_config(PropertyCollector* pc,
                                        const biscuit::Statement::CustomBlock* cb);
 void instantiate_all_configs(BuildFolder_t* build_folder);
 

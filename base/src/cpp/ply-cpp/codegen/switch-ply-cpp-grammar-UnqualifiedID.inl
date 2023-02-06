@@ -1,4 +1,4 @@
-enum class ID : u16 {
+﻿enum class ID : u16 {
     Empty,
     Identifier,
     TemplateID,
@@ -11,20 +11,22 @@ enum class ID : u16 {
 union Storage_ {
     Empty empty;
     Identifier identifier;
-    TemplateID templateID;
-    DeclType declType;
+    TemplateID template_id;
+    DeclType decl_type;
     Destructor destructor;
-    OperatorFunc operatorFunc;
-    ConversionFunc conversionFunc;
-    PLY_INLINE Storage_() {}
-    PLY_INLINE ~Storage_() {}
+    OperatorFunc operator_func;
+    ConversionFunc conversion_func;
+    PLY_INLINE Storage_() {
+    }
+    PLY_INLINE ~Storage_() {
+    }
 };
 SWITCH_FOOTER(UnqualifiedID, Empty)
 SWITCH_ACCESSOR(Empty, empty)
 SWITCH_ACCESSOR(Identifier, identifier)
-SWITCH_ACCESSOR(TemplateID, templateID)
-SWITCH_ACCESSOR(DeclType, declType)
+SWITCH_ACCESSOR(TemplateID, template_id)
+SWITCH_ACCESSOR(DeclType, decl_type)
 SWITCH_ACCESSOR(Destructor, destructor)
-SWITCH_ACCESSOR(OperatorFunc, operatorFunc)
-SWITCH_ACCESSOR(ConversionFunc, conversionFunc)
+SWITCH_ACCESSOR(OperatorFunc, operator_func)
+SWITCH_ACCESSOR(ConversionFunc, conversion_func)
 PLY_SWITCH_REFLECT()

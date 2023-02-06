@@ -43,7 +43,8 @@ struct TempString {
 };
 
 #undef av_err2str
-#define av_err2str(errnum) av_make_error_string(TempString{}, AV_ERROR_MAX_STRING_SIZE, errnum)
+#define av_err2str(errnum) \
+    av_make_error_string(TempString{}, AV_ERROR_MAX_STRING_SIZE, errnum)
 #undef av_ts2str
 #define av_ts2str(ts) av_ts_make_string(TempString{}, ts)
 #undef av_ts2timestr
@@ -51,7 +52,8 @@ struct TempString {
 
 static void log_packet(const AVFormatContext* fmt_ctx, const AVPacket* pkt) {
     AVRational* time_base = &fmt_ctx->streams[pkt->stream_index]->time_base;
-    log("pts:%s pts_time:%s dts:%s dts_time:%s duration:%s duration_time:%s stream_index:%d\n",
+    log("pts:%s pts_time:%s dts:%s dts_time:%s duration:%s duration_time:%s "
+        "stream_index:%d\n",
         av_ts2str(pkt->pts), av_ts2timestr(pkt->pts, time_base), av_ts2str(pkt->dts),
         av_ts2timestr(pkt->dts, time_base), av_ts2str(pkt->duration),
         av_ts2timestr(pkt->duration, time_base), pkt->stream_index);
@@ -68,7 +70,7 @@ public:
     struct SwsContext* sws_ctx;
     int64_t next_pts = 0;
 
-    bool isValid() const {
+    bool is_valid() const {
         return enc != nullptr;
     }
 
@@ -93,7 +95,8 @@ public:
         return picture;
     }
 
-    VideoEncoder(AVFormatContext* oc, AVDictionary* opt_arg, const VideoOptions* videoOpts)
+    VideoEncoder(AVFormatContext* oc, AVDictionary* opt_arg,
+                 const VideoOptions* video_opts)
         : oc(oc) {
         // Find AVCodec
         enum AVCodecID codec_id = oc->oformat->video_codec;
@@ -124,10 +127,10 @@ public:
 
         // Configure AVCodecContext & AVStream
         enc->codec_id = codec_id;
-        enc->bit_rate = videoOpts->bitRate;
+        enc->bit_rate = video_opts->bit_rate;
         // Resolution must be a multiple of two
-        enc->width = videoOpts->width;
-        enc->height = videoOpts->height;
+        enc->width = video_opts->width;
+        enc->height = video_opts->height;
         st->time_base = AVRational{1, 30};
         enc->time_base = st->time_base;
         enc->gop_size = 12; // emit one intra frame every twelve frames at most
@@ -177,8 +180,9 @@ public:
         }
 
         // Create SwsContext (software scaler)
-        sws_ctx = sws_getContext(enc->width, enc->height, AV_PIX_FMT_BGRA, enc->width, enc->height,
-                                 enc->pix_fmt, SCALE_FLAGS, NULL, NULL, NULL);
+        sws_ctx =
+            sws_getContext(enc->width, enc->height, AV_PIX_FMT_BGRA, enc->width,
+                           enc->height, enc->pix_fmt, SCALE_FLAGS, NULL, NULL, NULL);
         if (!sws_ctx) {
             log("Could not initialize the conversion context\n");
             cleanup();
@@ -200,24 +204,24 @@ public:
     ~VideoEncoder() {
     }
 
-    void beginFrame(image::Image& rgbIm) {
+    void begin_frame(image::Image& rgb_im) {
         if (!enc) {
             // Return empty buffer
-            rgbIm = image::Image{nullptr, 0, 0, 0, image::Format::BGRA};
+            rgb_im = image::Image{nullptr, 0, 0, 0, image::Format::BGRA};
             return;
         }
 
-        rgbIm = image::Image{(char*) tmp_frame->data[0], tmp_frame->linesize[0], enc->width, enc->height,
-                             image::Format::BGRA};
+        rgb_im = image::Image{(char*) tmp_frame->data[0], tmp_frame->linesize[0],
+                              enc->width, enc->height, image::Format::BGRA};
     }
 
-    void endFrame() {
+    void end_frame() {
         if (!enc)
             return;
 
         // Convert tmp_frame to frame
-        sws_scale(sws_ctx, (const uint8_t* const*) tmp_frame->data, tmp_frame->linesize, 0,
-                  enc->height, frame->data, frame->linesize);
+        sws_scale(sws_ctx, (const uint8_t* const*) tmp_frame->data, tmp_frame->linesize,
+                  0, enc->height, frame->data, frame->linesize);
 
         // Encode
         frame->pts = next_pts++;
@@ -228,10 +232,10 @@ public:
             return;
         }
 
-        processVideo();
+        process_video();
     }
 
-    void processVideo() {
+    void process_video() {
         AVPacket pkt = {0};
         av_init_packet(&pkt);
 
@@ -253,14 +257,15 @@ public:
             log_packet(oc, &pkt);
             ret = av_interleaved_write_frame(oc, &pkt);
             if (ret < 0) {
-                log("Error writing compressed video to media file: %s\n", av_err2str(ret));
+                log("Error writing compressed video to media file: %s\n",
+                    av_err2str(ret));
                 cleanup();
                 return;
             }
         }
     }
 
-    void flushVideo() {
+    void flush_video() {
         if (!enc)
             return;
 
@@ -270,7 +275,7 @@ public:
             cleanup();
             return;
         }
-        processVideo();
+        process_video();
     }
 };
 
@@ -286,12 +291,13 @@ public:
     int64_t next_pts = 0;
     int samples_count = 0;
 
-    bool isValid() const {
+    bool is_valid() const {
         return enc != nullptr;
     }
 
-    static AVFrame* alloc_audio_frame(enum AVSampleFormat sample_fmt, uint64_t channel_layout,
-                                      int sample_rate, int nb_samples) {
+    static AVFrame* alloc_audio_frame(enum AVSampleFormat sample_fmt,
+                                      uint64_t channel_layout, int sample_rate,
+                                      int nb_samples) {
         AVFrame* frame = av_frame_alloc();
         int ret;
 
@@ -315,7 +321,8 @@ public:
         return frame;
     }
 
-    AudioEncoder(AVFormatContext* oc, AVDictionary* opt_arg, const AudioOptions* audioOpts)
+    AudioEncoder(AVFormatContext* oc, AVDictionary* opt_arg,
+                 const AudioOptions* audio_opts)
         : oc(oc) {
         // Find AVCodec
         enum AVCodecID codec_id = oc->oformat->audio_codec;
@@ -345,31 +352,32 @@ public:
         }
 
         // Configure AVCodecContext & AVStream
-        enc->sample_fmt = codec->sample_fmts ? codec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
-        enc->bit_rate = audioOpts->bitRate;
-        enc->sample_rate = audioOpts->sampleRate;
+        enc->sample_fmt =
+            codec->sample_fmts ? codec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+        enc->bit_rate = audio_opts->bit_rate;
+        enc->sample_rate = audio_opts->sample_rate;
         if (codec->supported_samplerates) {
             enc->sample_rate = codec->supported_samplerates[0];
             for (int i = 0; codec->supported_samplerates[i]; i++) {
-                if (codec->supported_samplerates[i] == (int) audioOpts->sampleRate)
-                    enc->sample_rate = audioOpts->sampleRate;
+                if (codec->supported_samplerates[i] == (int) audio_opts->sample_rate)
+                    enc->sample_rate = audio_opts->sample_rate;
             }
         }
         enc->channels = av_get_channel_layout_nb_channels(enc->channel_layout);
-        uint64_t desiredChannelLayout = AV_CH_LAYOUT_MONO;
-        if (audioOpts->numChannels == 1) {
-            desiredChannelLayout = AV_CH_LAYOUT_MONO;
-        } else if (audioOpts->numChannels == 2) {
-            desiredChannelLayout = AV_CH_LAYOUT_STEREO;
+        uint64_t desired_channel_layout = AV_CH_LAYOUT_MONO;
+        if (audio_opts->num_channels == 1) {
+            desired_channel_layout = AV_CH_LAYOUT_MONO;
+        } else if (audio_opts->num_channels == 2) {
+            desired_channel_layout = AV_CH_LAYOUT_STEREO;
         } else {
             PLY_ASSERT(0); // Unsupported
         }
-        enc->channel_layout = desiredChannelLayout;
+        enc->channel_layout = desired_channel_layout;
         if (codec->channel_layouts) {
             enc->channel_layout = codec->channel_layouts[0];
             for (int i = 0; codec->channel_layouts[i]; i++) {
-                if (codec->channel_layouts[i] == desiredChannelLayout)
-                    enc->channel_layout = desiredChannelLayout;
+                if (codec->channel_layouts[i] == desired_channel_layout)
+                    enc->channel_layout = desired_channel_layout;
             }
         }
         enc->channels = av_get_channel_layout_nb_channels(enc->channel_layout);
@@ -399,16 +407,17 @@ public:
         }
 
         // Create AVFrames
-        int nb_samples =
-            (enc->codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE) ? 10000 : enc->frame_size;
-        frame =
-            alloc_audio_frame(enc->sample_fmt, enc->channel_layout, enc->sample_rate, nb_samples);
+        int nb_samples = (enc->codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE)
+                             ? 10000
+                             : enc->frame_size;
+        frame = alloc_audio_frame(enc->sample_fmt, enc->channel_layout,
+                                  enc->sample_rate, nb_samples);
         if (!frame) {
             cleanup();
             return;
         }
-        tmp_frame =
-            alloc_audio_frame(AV_SAMPLE_FMT_S16, enc->channel_layout, enc->sample_rate, nb_samples);
+        tmp_frame = alloc_audio_frame(AV_SAMPLE_FMT_S16, enc->channel_layout,
+                                      enc->sample_rate, nb_samples);
         if (!tmp_frame) {
             cleanup();
             return;
@@ -452,7 +461,7 @@ public:
         cleanup();
     }
 
-    void beginFrame(audio::Buffer& buffer) {
+    void begin_frame(audio::Buffer& buffer) {
         if (!enc) {
             // Return empty buffer
             buffer = audio::Buffer{nullptr, 0, 44100.f, audio::Format::StereoS16};
@@ -462,34 +471,37 @@ public:
         tmp_frame->pts = next_pts;
         next_pts += tmp_frame->nb_samples;
         buffer = audio::Buffer{
-            (char*) tmp_frame->data[0], (u32) tmp_frame->nb_samples, (float) enc->sample_rate,
+            (char*) tmp_frame->data[0], (u32) tmp_frame->nb_samples,
+            (float) enc->sample_rate,
             audio::Format::encode((u8) enc->channels, audio::Format::SampleType::S16)};
     }
 
-    void endFrame(u32 numSamples) {
+    void end_frame(u32 num_samples) {
         if (!enc)
             return;
 
         // Compute destination number of samples
-        int dst_nb_samples =
-            (int) av_rescale_rnd(swr_get_delay(swr_ctx, enc->sample_rate) + tmp_frame->nb_samples,
-                                 enc->sample_rate, enc->sample_rate, AV_ROUND_UP);
+        int dst_nb_samples = (int) av_rescale_rnd(
+            swr_get_delay(swr_ctx, enc->sample_rate) + tmp_frame->nb_samples,
+            enc->sample_rate, enc->sample_rate, AV_ROUND_UP);
         PLY_ASSERT(dst_nb_samples == frame->nb_samples);
 
-        // When we pass a frame to the encoder, it may keep a reference to it internally.
-        // Make sure we do not overwrite it here.
+        // When we pass a frame to the encoder, it may keep a reference to it
+        // internally. Make sure we do not overwrite it here.
         int ret = av_frame_make_writable(frame);
         if (ret < 0) {
             cleanup();
             return;
         }
 
-        // Note: Only the last frame is allowed to have numSamples < tmp_frame->nb_samples.
-        PLY_ASSERT(numSamples <= safeDemote<u32>(tmp_frame->nb_samples));
+        // Note: Only the last frame is allowed to have num_samples <
+        // tmp_frame->nb_samples.
+        PLY_ASSERT(num_samples <= safe_demote<u32>(tmp_frame->nb_samples));
 
-        // Convert samples from native format to destination codec format, using the resampler
-        ret = swr_convert(swr_ctx, frame->data, dst_nb_samples, (const uint8_t**) tmp_frame->data,
-                          numSamples);
+        // Convert samples from native format to destination codec format, using the
+        // resampler
+        ret = swr_convert(swr_ctx, frame->data, dst_nb_samples,
+                          (const uint8_t**) tmp_frame->data, num_samples);
         if (ret < 0) {
             log("Error while converting\n");
             cleanup();
@@ -497,7 +509,8 @@ public:
         }
 
         // Send converted samples to encoder
-        frame->pts = av_rescale_q(samples_count, AVRational{1, enc->sample_rate}, enc->time_base);
+        frame->pts = av_rescale_q(samples_count, AVRational{1, enc->sample_rate},
+                                  enc->time_base);
         samples_count += dst_nb_samples;
         ret = avcodec_send_frame(enc, frame);
         if (ret < 0) {
@@ -506,10 +519,10 @@ public:
             return;
         }
 
-        processAudio();
+        process_audio();
     }
 
-    void processAudio() {
+    void process_audio() {
         AVPacket pkt = {0};
         av_init_packet(&pkt);
 
@@ -531,14 +544,15 @@ public:
             log_packet(oc, &pkt);
             ret = av_interleaved_write_frame(oc, &pkt);
             if (ret < 0) {
-                log("Error writing compressed audio to media file: %s\n", av_err2str(ret));
+                log("Error writing compressed audio to media file: %s\n",
+                    av_err2str(ret));
                 cleanup();
                 return;
             }
         }
     }
 
-    void flushAudio() {
+    void flush_audio() {
         if (!enc)
             return;
 
@@ -548,7 +562,7 @@ public:
             cleanup();
             return;
         }
-        processAudio();
+        process_audio();
     }
 };
 
@@ -556,13 +570,13 @@ class Muxer_FFmpeg : public Muxer {
 public:
     AVDictionary* opt = NULL;
     AVFormatContext* oc = nullptr;
-    VideoEncoder* videoEnc = nullptr;
-    AudioEncoder* audioEnc = nullptr;
-    AVIOContext* avioCtx = nullptr;
+    VideoEncoder* video_enc = nullptr;
+    AudioEncoder* audio_enc = nullptr;
+    AVIOContext* avio_ctx = nullptr;
     bool m_isValid = false;
 
-    Muxer_FFmpeg(OutPipe* out, const VideoOptions* videoOpts, const AudioOptions* audioOpts,
-                 StringView containerFormat) {
+    Muxer_FFmpeg(OutPipe* out, const VideoOptions* video_opts,
+                 const AudioOptions* audio_opts, StringView container_format) {
         int ret;
 
         // for (i = 2; i+1 < argc; i+=2) {
@@ -572,7 +586,7 @@ public:
 
         // Create AVFormatContext
         AVOutputFormat* oformat =
-            av_guess_format(containerFormat.withNullTerminator().bytes, NULL, NULL);
+            av_guess_format(container_format.with_null_terminator().bytes, NULL, NULL);
         if (!oformat) {
             cleanup();
             return;
@@ -585,59 +599,61 @@ public:
         }
 
         // Create video/audio encoders
-        if (videoOpts) {
-            videoEnc = new VideoEncoder(oc, opt, videoOpts);
+        if (video_opts) {
+            video_enc = new VideoEncoder(oc, opt, video_opts);
         }
-        if (audioOpts) {
-            audioEnc = new AudioEncoder(oc, opt, audioOpts);
-            sampleRate = (float) audioEnc->enc->sample_rate;
+        if (audio_opts) {
+            audio_enc = new AudioEncoder(oc, opt, audio_opts);
+            sample_rate = (float) audio_enc->enc->sample_rate;
         }
 
         // Create AVIOContext, to supply our output callbacks
         PLY_ASSERT((oc->oformat->flags & AVFMT_NOFILE) == 0);
-        int bufferSize = 4096;
-        u8* buffer = (u8*) av_malloc(bufferSize);
+        int buffer_size = 4096;
+        u8* buffer = (u8*) av_malloc(buffer_size);
         if (!buffer) {
             log("av_malloc failed\n");
             cleanup();
             return;
         }
-        auto writePacket = [](void* opaque, uint8_t* buf, int len) -> int {
-            return reinterpret_cast<OutPipe*>(opaque)->write({(char*) buf, safeDemote<u32>(len)});
+        auto write_packet = [](void* opaque, uint8_t* buf, int len) -> int {
+            return reinterpret_cast<OutPipe*>(opaque)->write(
+                {(char*) buf, safe_demote<u32>(len)});
         };
         auto seek = [](void* opaque, int64_t offset, int whence) -> int64_t {
-            SeekDir seekDir = SeekDir::Cur;
+            SeekDir seek_dir = SeekDir::Cur;
             switch (whence) {
                 case SEEK_SET: {
-                    seekDir = SeekDir::Set;
+                    seek_dir = SeekDir::Set;
                     break;
                 }
                 case SEEK_CUR: {
-                    seekDir = SeekDir::Cur;
+                    seek_dir = SeekDir::Cur;
                     break;
                 }
                 case SEEK_END: {
-                    seekDir = SeekDir::End;
+                    seek_dir = SeekDir::End;
                     break;
                 }
                 default: {
                     PLY_ASSERT(0); // Unrecognized whence
                 }
             }
-            return reinterpret_cast<OutPipe*>(opaque)->seek(offset, seekDir);
+            return reinterpret_cast<OutPipe*>(opaque)->seek(offset, seek_dir);
         };
-        avioCtx = avio_alloc_context(buffer, bufferSize, 1, out, NULL, writePacket, seek);
-        if (!avioCtx) {
+        avio_ctx =
+            avio_alloc_context(buffer, buffer_size, 1, out, NULL, write_packet, seek);
+        if (!avio_ctx) {
             log("avio_alloc_context failed\n");
             av_free(buffer);
             cleanup();
             return;
         }
-        oc->pb = avioCtx;
+        oc->pb = avio_ctx;
 
         // Log the format
         // FIXME: Should we pass logging callbacks into FFmpeg?
-        // av_dump_format(oc, 0, nullTermFilename.bytes, 1);
+        // av_dump_format(oc, 0, null_term_filename.bytes, 1);
 
         // Write the stream header, if any.
         ret = avformat_write_header(oc, &opt);
@@ -652,15 +668,15 @@ public:
     }
 
     void cleanup() {
-        if (avioCtx) {
-            av_free(avioCtx->buffer);
-            av_free(avioCtx);
-            avioCtx = nullptr;
+        if (avio_ctx) {
+            av_free(avio_ctx->buffer);
+            av_free(avio_ctx);
+            avio_ctx = nullptr;
         }
-        delete audioEnc; // nullptr is OK
-        audioEnc = nullptr;
-        delete videoEnc; // nullptr is OK
-        videoEnc = nullptr;
+        delete audio_enc; // nullptr is OK
+        audio_enc = nullptr;
+        delete video_enc; // nullptr is OK
+        video_enc = nullptr;
         if (oc) {
             avformat_free_context(oc);
             oc = nullptr;
@@ -669,11 +685,11 @@ public:
     }
 
     virtual ~Muxer_FFmpeg() override {
-        if (this->videoEnc) {
-            this->videoEnc->flushVideo();
+        if (this->video_enc) {
+            this->video_enc->flush_video();
         }
-        if (this->audioEnc) {
-            this->audioEnc->flushAudio();
+        if (this->audio_enc) {
+            this->audio_enc->flush_audio();
         }
         if (m_isValid) {
             // Write the trailer, if any. The trailer must be written before you
@@ -685,52 +701,52 @@ public:
         cleanup();
     }
 
-    virtual void beginVideoFrame(image::Image& rgbIm) override {
-        videoEnc->beginFrame(rgbIm);
+    virtual void begin_video_frame(image::Image& rgb_im) override {
+        video_enc->begin_frame(rgb_im);
     }
 
-    virtual void endVideoFrame() override {
-        videoEnc->endFrame();
+    virtual void end_video_frame() override {
+        video_enc->end_frame();
     }
 
-    virtual double getVideoTime() override {
-        return videoEnc->next_pts * av_q2d(videoEnc->enc->time_base);
+    virtual double get_video_time() override {
+        return video_enc->next_pts * av_q2d(video_enc->enc->time_base);
     }
 
-    virtual u32 getVideoFrameNumber() override {
-        return (u32) videoEnc->next_pts;
+    virtual u32 get_video_frame_number() override {
+        return (u32) video_enc->next_pts;
     }
 
-    virtual void flushVideo() override {
-        videoEnc->flushVideo();
+    virtual void flush_video() override {
+        video_enc->flush_video();
     }
 
-    virtual void beginAudioFrame(audio::Buffer& buffer) override {
-        audioEnc->beginFrame(buffer);
+    virtual void begin_audio_frame(audio::Buffer& buffer) override {
+        audio_enc->begin_frame(buffer);
     }
 
-    virtual void endAudioFrame(u32 numSamples) override {
-        audioEnc->endFrame(numSamples);
+    virtual void end_audio_frame(u32 num_samples) override {
+        audio_enc->end_frame(num_samples);
     }
 
-    virtual double getAudioTime() override {
-        return audioEnc->next_pts * av_q2d(audioEnc->enc->time_base);
+    virtual double get_audio_time() override {
+        return audio_enc->next_pts * av_q2d(audio_enc->enc->time_base);
     }
 
-    virtual void flushAudio() override {
-        audioEnc->flushAudio();
+    virtual void flush_audio() override {
+        audio_enc->flush_audio();
     }
 };
 
-Owned<Muxer> createMuxer(OutPipe* out, const VideoOptions* videoOpts, const AudioOptions* audioOpts,
-                         StringView containerFormat) {
+Owned<Muxer> create_muxer(OutPipe* out, const VideoOptions* video_opts,
+                          const AudioOptions* audio_opts, StringView container_format) {
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 9, 100)
     static Initializer init{[] {
         av_register_all();
         avcodec_register_all();
     }};
 #endif
-    return new Muxer_FFmpeg(out, videoOpts, audioOpts, containerFormat);
+    return new Muxer_FFmpeg(out, video_opts, audio_opts, container_format);
 }
 
 } // namespace ply

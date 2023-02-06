@@ -22,18 +22,18 @@ struct WriteContext {
         }
     }
 
-    PLY_NO_INLINE void write(const Node* aNode) {
-        if (aNode->isObject()) {
+    PLY_NO_INLINE void write(const Node* a_node) {
+        if (a_node->is_object()) {
             this->out << "{\n";
             this->depth++;
-            const Node::Object& objNode = aNode->object();
-            u32 numItems = objNode.items.numItems();
-            for (u32 i = 0; i < numItems; i++) {
-                const Node::Object::Item& objItem = objNode.items[i];
+            const Node::Object& obj_node = a_node->object();
+            u32 num_items = obj_node.items.num_items();
+            for (u32 i = 0; i < num_items; i++) {
+                const Node::Object::Item& obj_item = obj_node.items[i];
                 indent();
-                this->out.format("\"{}\": ", escape(objItem.key));
-                write(objItem.value);
-                if (i + 1 < numItems) {
+                this->out.format("\"{}\": ", escape(obj_item.key));
+                write(obj_item.value);
+                if (i + 1 < num_items) {
                     this->out << ',';
                 }
                 this->out << '\n';
@@ -41,15 +41,15 @@ struct WriteContext {
             this->depth--;
             indent();
             this->out << '}';
-        } else if (aNode->isArray()) {
+        } else if (a_node->is_array()) {
             this->out << "[\n";
             this->depth++;
-            ArrayView<const Node* const> arrNode = aNode->arrayView();
-            u32 numItems = arrNode.numItems;
-            for (u32 i = 0; i < numItems; i++) {
+            ArrayView<const Node* const> arr_node = a_node->array_view();
+            u32 num_items = arr_node.num_items;
+            for (u32 i = 0; i < num_items; i++) {
                 indent();
-                write(arrNode[i]);
-                if (i + 1 < numItems) {
+                write(arr_node[i]);
+                if (i + 1 < num_items) {
                     this->out << ',';
                 }
                 this->out << '\n';
@@ -57,23 +57,23 @@ struct WriteContext {
             this->depth--;
             indent();
             this->out << ']';
-        } else if (aNode->isText()) {
-            this->out.format("\"{}\"", escape(aNode->text()));
+        } else if (a_node->is_text()) {
+            this->out.format("\"{}\"", escape(a_node->text()));
         } else {
-            PLY_ASSERT(0);  // unsupported
+            PLY_ASSERT(0); // unsupported
         }
     }
 };
 
-PLY_NO_INLINE void write(OutStream& out, const Node* aNode) {
+PLY_NO_INLINE void write(OutStream& out, const Node* a_node) {
     WriteContext ctx{out};
-    ctx.write(aNode);
+    ctx.write(a_node);
 }
 
-PLY_NO_INLINE String toString(const Node* aNode) {
+PLY_NO_INLINE String to_string(const Node* a_node) {
     MemOutStream out;
-    write(out, aNode);
-    return out.moveToString();
+    write(out, a_node);
+    return out.move_to_string();
 }
 
 } // namespace pylon

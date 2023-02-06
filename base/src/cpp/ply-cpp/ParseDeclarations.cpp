@@ -12,22 +12,23 @@
 namespace ply {
 namespace cpp {
 
-PLY_NO_INLINE Token parseRequiredSemicolon(Parser* parser) {
-    Token semiToken = readToken(parser);
-    if (semiToken.type == Token::Semicolon) {
-        parser->stopMutingErrors();
-        return semiToken;
+PLY_NO_INLINE Token parse_required_semicolon(Parser* parser) {
+    Token semi_token = read_token(parser);
+    if (semi_token.type == Token::Semicolon) {
+        parser->stop_muting_errors();
+        return semi_token;
     } else {
         // expected ;
-        parser->error(true, {ParseError::Expected, semiToken, ExpectedToken::Semicolon});
-        pushBackToken(parser, semiToken);
+        parser->error(true,
+                      {ParseError::Expected, semi_token, ExpectedToken::Semicolon});
+        push_back_token(parser, semi_token);
         return {};
     }
 }
 
-PLY_NO_INLINE bool isTypeDeclaration(const grammar::Declaration::Simple& simple) {
-    for (const grammar::DeclSpecifier* declSpec : simple.declSpecifierSeq) {
-        switch (declSpec->id) {
+PLY_NO_INLINE bool is_type_declaration(const grammar::Declaration::Simple& simple) {
+    for (const grammar::DeclSpecifier* decl_spec : simple.decl_specifier_seq) {
+        switch (decl_spec->id) {
             case grammar::DeclSpecifier::ID::Record:
             case grammar::DeclSpecifier::ID::Enum_:
                 return true;
@@ -38,284 +39,299 @@ PLY_NO_INLINE bool isTypeDeclaration(const grammar::Declaration::Simple& simple)
     return false;
 }
 
-PLY_NO_INLINE void parseEnumBody(Parser* parser, grammar::DeclSpecifier::Enum_* en) {
-    parser->stopMutingErrors();
-    SetAcceptFlagsInScope acceptScope{parser, Token::OpenCurly};
+PLY_NO_INLINE void parse_enum_body(Parser* parser, grammar::DeclSpecifier::Enum_* en) {
+    parser->stop_muting_errors();
+    SetAcceptFlagsInScope accept_scope{parser, Token::OpenCurly};
 
     for (;;) {
-        Token token = readToken(parser);
+        Token token = read_token(parser);
         if (token.type == Token::CloseCurly) {
             // Done
-            parser->stopMutingErrors();
-            en->closeCurly = token;
+            parser->stop_muting_errors();
+            en->close_curly = token;
             break;
         } else if (token.type == Token::Identifier) {
-            parser->stopMutingErrors();
+            parser->stop_muting_errors();
 
             // Create enumerator
-            grammar::InitEnumeratorWithComma* initEnor =
+            grammar::InitEnumeratorWithComma* init_enor =
                 en->enumerators.append(new grammar::InitEnumeratorWithComma);
-            initEnor->identifier = token;
-            parseOptionalVariableInitializer(parser, initEnor->init, false);
-            Token token2 = readToken(parser);
+            init_enor->identifier = token;
+            parse_optional_variable_initializer(parser, init_enor->init, false);
+            Token token2 = read_token(parser);
             bool done = false;
             if (token2.type == Token::Comma) {
-                parser->stopMutingErrors();
-                initEnor->comma = token2;
+                parser->stop_muting_errors();
+                init_enor->comma = token2;
             } else if (token2.type == Token::CloseCurly) {
                 // Done
-                parser->stopMutingErrors();
-                en->closeCurly = token2;
+                parser->stop_muting_errors();
+                en->close_curly = token2;
                 done = true;
             } else {
                 // expected , or } after enum member
                 if (token2.type == Token::Identifier) {
-                    parser->error(true,
-                                  {ParseError::MissingCommaAfterEnumerator, token2, {}, token});
+                    parser->error(
+                        true,
+                        {ParseError::MissingCommaAfterEnumerator, token2, {}, token});
                 }
                 // Other tokens will generate an error on next loop iteration
-                pushBackToken(parser, token2);
+                push_back_token(parser, token2);
             }
-            parser->visor->onGotEnumerator(initEnor);
+            parser->visor->on_got_enumerator(init_enor);
             if (done)
                 break;
         } else {
             // expected enumerator or }
-            parser->error(true,
-                          {ParseError::Expected, token, ExpectedToken::EnumeratorOrCloseCurly});
-            if (!handleUnexpectedToken(parser, nullptr, token))
+            parser->error(true, {ParseError::Expected, token,
+                                 ExpectedToken::EnumeratorOrCloseCurly});
+            if (!handle_unexpected_token(parser, nullptr, token))
                 return;
         }
     }
 }
 
-PLY_NO_INLINE void parseSimpleDeclaration(Parser* parser, StringView enclosingClassName) {
-    Token startLoc = readToken(parser);
-    pushBackToken(parser, startLoc);
+PLY_NO_INLINE void parse_simple_declaration(Parser* parser,
+                                            StringView enclosing_class_name) {
+    Token start_loc = read_token(parser);
+    push_back_token(parser, start_loc);
     ParseActivity pa{parser};
     grammar::Declaration::Simple simple;
-    parseSpecifiersAndDeclarators(parser, simple,
-                                  {SpecDcorMode::GlobalOrMember, enclosingClassName});
-    if (!pa.errorOccurred()) {
-        parser->stopMutingErrors();
-        if (simple.initDeclarators.isEmpty() && !isTypeDeclaration(simple)) {
-            // FIXME: It feels like this should be a higher-level error (or just a warning
-            // actually!), since it's more of a semantic than a syntactic error. Similarly, it
-            // should not be possible to define a class inside a function parameter!
-            parser->error(false, {ParseError::MissingDeclaration, startLoc});
+    parse_specifiers_and_declarators(
+        parser, simple, {SpecDcorMode::GlobalOrMember, enclosing_class_name});
+    if (!pa.error_occurred()) {
+        parser->stop_muting_errors();
+        if (simple.init_declarators.is_empty() && !is_type_declaration(simple)) {
+            // FIXME: It feels like this should be a higher-level error (or just a
+            // warning actually!), since it's more of a semantic than a syntactic error.
+            // Similarly, it should not be possible to define a class inside a function
+            // parameter!
+            parser->error(false, {ParseError::MissingDeclaration, start_loc});
         }
     }
 
-    bool requiresTrailingSemicolon = false;
-    if (simple.initDeclarators.numItems() > 0) {
-        const grammar::InitDeclaratorWithComma& initDcor = simple.initDeclarators.back();
-        requiresTrailingSemicolon = !initDcor.init.functionBody();
+    bool requires_trailing_semicolon = false;
+    if (simple.init_declarators.num_items() > 0) {
+        const grammar::InitDeclaratorWithComma& init_dcor =
+            simple.init_declarators.back();
+        requires_trailing_semicolon = !init_dcor.init.function_body();
     }
 
-    if (requiresTrailingSemicolon) {
-        simple.semicolon = parseRequiredSemicolon(parser);
+    if (requires_trailing_semicolon) {
+        simple.semicolon = parse_required_semicolon(parser);
     }
 
-    parser->visor->gotDeclaration(std::move(simple));
+    parser->visor->got_declaration(std::move(simple));
 }
 
 // Returns false if no input was read.
-PLY_NO_INLINE bool parseDeclaration(Parser* parser, StringView enclosingClassName) {
-    Token token = readToken(parser);
+PLY_NO_INLINE bool parse_declaration(Parser* parser, StringView enclosing_class_name) {
+    Token token = read_token(parser);
 
-    PLY_SET_IN_SCOPE(parser->atDeclarationScope, false);
+    PLY_SET_IN_SCOPE(parser->at_declaration_scope, false);
     if (token.type == Token::Identifier) {
         if (token.identifier == "extern") {
             // Possible linkage specification
-            parser->stopMutingErrors();
-            pushBackToken(parser, token);
+            parser->stop_muting_errors();
+            push_back_token(parser, token);
             RestorePoint rp{parser};
-            token = readToken(parser);
+            token = read_token(parser);
             grammar::Declaration::Linkage linkage;
             linkage.extern_ = token;
 
-            token = readToken(parser);
+            token = read_token(parser);
             if (token.type != Token::StringLiteral) {
                 rp.backtrack();
-                parseSimpleDeclaration(parser, enclosingClassName);
+                parse_simple_declaration(parser, enclosing_class_name);
             } else {
                 linkage.literal = token;
 
-                token = readToken(parser);
+                token = read_token(parser);
                 if (token.type == Token::OpenCurly) {
                     // It's a linkage specification block, such as
                     //      extern "C" {
                     //          ...
                     //      }
                     rp.cancel();
-                    linkage.openCurly = token;
-                    parser->visor->doEnter(AnyObject::bind(&linkage));
-                    parseDeclarationList(parser, &linkage.closeCurly, {});
-                    parser->visor->doExit(AnyObject::bind(&linkage));
-                    parser->visor->gotDeclaration(std::move(linkage));
+                    linkage.open_curly = token;
+                    parser->visor->do_enter(AnyObject::bind(&linkage));
+                    parse_declaration_list(parser, &linkage.close_curly, {});
+                    parser->visor->do_exit(AnyObject::bind(&linkage));
+                    parser->visor->got_declaration(std::move(linkage));
                 } else {
                     // It's a linkage specifier for the current declaration, such as
                     //      extern "C" void foo();
                     //      ^^^^^^^^^^
                     // FIXME: Make Declaration type for this
                     rp.backtrack();
-                    parseSimpleDeclaration(parser, enclosingClassName);
+                    parse_simple_declaration(parser, enclosing_class_name);
                 }
             }
         } else if (token.identifier == "public" || token.identifier == "private" ||
                    token.identifier == "protected") {
             // Access specifier
-            parser->stopMutingErrors();
-            Token puncToken = readToken(parser);
-            if (puncToken.type == Token::SingleColon) {
-                parser->visor->gotDeclaration(
-                    grammar::Declaration::AccessSpecifier{token, puncToken});
+            parser->stop_muting_errors();
+            Token punc_token = read_token(parser);
+            if (punc_token.type == Token::SingleColon) {
+                parser->visor->got_declaration(
+                    grammar::Declaration::AccessSpecifier{token, punc_token});
             } else {
                 // expected :
-                parser->error(true, {ParseError::Expected, puncToken, ExpectedToken::Colon, token});
-                pushBackToken(parser, puncToken);
+                parser->error(true, {ParseError::Expected, punc_token,
+                                     ExpectedToken::Colon, token});
+                push_back_token(parser, punc_token);
             }
         } else if (token.identifier == "static_assert") {
             // static_assert
-            parser->stopMutingErrors();
-            Token puncToken = readToken(parser);
-            if (puncToken.type != Token::OpenParen) {
+            parser->stop_muting_errors();
+            Token punc_token = read_token(parser);
+            if (punc_token.type != Token::OpenParen) {
                 // expected (
-                parser->error(true,
-                              {ParseError::Expected, puncToken, ExpectedToken::OpenParen, token});
-                pushBackToken(parser, puncToken);
+                parser->error(true, {ParseError::Expected, punc_token,
+                                     ExpectedToken::OpenParen, token});
+                push_back_token(parser, punc_token);
             } else {
-                Token closeToken;
-                bool continueNormally = skipAnyScope(parser, &closeToken, puncToken);
-                if (continueNormally) {
+                Token close_token;
+                bool continue_normally =
+                    skip_any_scope(parser, &close_token, punc_token);
+                if (continue_normally) {
                     grammar::Declaration::StaticAssert sa;
                     sa.keyword = token;
-                    sa.argList.openParen = puncToken;
-                    sa.argList.closeParen = closeToken;
-                    sa.semicolon = parseRequiredSemicolon(parser);
-                    parser->visor->gotDeclaration(grammar::Declaration{std::move(sa)});
+                    sa.arg_list.open_paren = punc_token;
+                    sa.arg_list.close_paren = close_token;
+                    sa.semicolon = parse_required_semicolon(parser);
+                    parser->visor->got_declaration(grammar::Declaration{std::move(sa)});
                 }
             }
         } else if (token.identifier == "namespace") {
             // namespace
-            parser->stopMutingErrors();
+            parser->stop_muting_errors();
             grammar::Declaration::Namespace_ ns;
             ns.keyword = token;
 
-            Token token = readToken(parser);
+            Token token = read_token(parser);
             if (token.type == Token::Identifier) {
                 // FIXME: Ensure it's not a reserved word
-                pushBackToken(parser, token);
-                ns.qid = parseQualifiedID(parser, ParseQualifiedMode::RequireComplete);
-                token = readToken(parser);
+                push_back_token(parser, token);
+                ns.qid =
+                    parse_qualified_id(parser, ParseQualifiedMode::RequireComplete);
+                token = read_token(parser);
             }
 
             if (token.type == Token::OpenCurly) {
-                ns.openCurly = token;
-                parser->visor->doEnter(AnyObject::bind(&ns));
-                parseDeclarationList(parser, &ns.closeCurly, {});
-                parser->visor->doExit(AnyObject::bind(&ns));
+                ns.open_curly = token;
+                parser->visor->do_enter(AnyObject::bind(&ns));
+                parse_declaration_list(parser, &ns.close_curly, {});
+                parser->visor->do_exit(AnyObject::bind(&ns));
             } else {
                 // expected {
-                parser->error(true, {ParseError::Expected, token, ExpectedToken::OpenCurly});
-                pushBackToken(parser, token);
+                parser->error(true,
+                              {ParseError::Expected, token, ExpectedToken::OpenCurly});
+                push_back_token(parser, token);
             }
-            parser->visor->gotDeclaration(std::move(ns));
+            parser->visor->got_declaration(std::move(ns));
         } else if (token.identifier == "template") {
             // template
-            parser->stopMutingErrors();
+            parser->stop_muting_errors();
             grammar::Declaration::Template_ tmpl;
             tmpl.keyword = token;
-            Token token2 = readToken(parser);
+            Token token2 = read_token(parser);
             if (token2.type == Token::OpenAngle) {
-                pushBackToken(parser, token2);
+                push_back_token(parser, token2);
                 {
-                    PLY_SET_IN_SCOPE(parser->pp->tokenizeCloseAnglesOnly, true);
-                    parseParameterDeclarationList(parser, tmpl.params, true);
+                    PLY_SET_IN_SCOPE(parser->pp->tokenize_close_angles_only, true);
+                    parse_parameter_declaration_list(parser, tmpl.params, true);
                 }
             } else {
-                pushBackToken(parser, token2);
+                push_back_token(parser, token2);
             }
-            parser->visor->doEnter(AnyObject::bind(&tmpl));
-            parseDeclaration(parser, enclosingClassName);
-            parser->visor->doExit(AnyObject::bind(&tmpl));
-            parser->visor->gotDeclaration(grammar::Declaration{std::move(tmpl)});
+            parser->visor->do_enter(AnyObject::bind(&tmpl));
+            parse_declaration(parser, enclosing_class_name);
+            parser->visor->do_exit(AnyObject::bind(&tmpl));
+            parser->visor->got_declaration(grammar::Declaration{std::move(tmpl)});
         } else if (token.identifier == "using") {
             // using directive or type alias
-            parser->stopMutingErrors();
-            Token token2 = readToken(parser);
+            parser->stop_muting_errors();
+            Token token2 = read_token(parser);
             if (token2.type == Token::Identifier && token2.identifier == "namespace") {
-                grammar::Declaration::UsingDirective usingDir;
-                usingDir.using_ = token;
-                usingDir.namespace_ = token2;
+                grammar::Declaration::UsingDirective using_dir;
+                using_dir.using_ = token;
+                using_dir.namespace_ = token2;
 
-                usingDir.qid = parseQualifiedID(parser, ParseQualifiedMode::RequireComplete);
-                usingDir.semicolon = parseRequiredSemicolon(parser);
+                using_dir.qid =
+                    parse_qualified_id(parser, ParseQualifiedMode::RequireComplete);
+                using_dir.semicolon = parse_required_semicolon(parser);
 
-                parser->visor->gotDeclaration(grammar::Declaration{std::move(usingDir)});
+                parser->visor->got_declaration(
+                    grammar::Declaration{std::move(using_dir)});
             } else {
                 grammar::Declaration::Alias alias;
                 alias.using_ = token;
                 alias.name = token2;
 
-                Token equalToken = readToken(parser);
-                if (equalToken.type != Token::SingleEqual) {
+                Token equal_token = read_token(parser);
+                if (equal_token.type != Token::SingleEqual) {
                     // expected =
-                    parser->error(true,
-                                  {ParseError::Expected, equalToken, ExpectedToken::Equal, token2});
-                    pushBackToken(parser, equalToken);
+                    parser->error(true, {ParseError::Expected, equal_token,
+                                         ExpectedToken::Equal, token2});
+                    push_back_token(parser, equal_token);
                 } else {
-                    alias.equals = equalToken;
+                    alias.equals = equal_token;
 
                     grammar::Declaration::Simple simple;
-                    parseSpecifiersAndDeclarators(parser, simple, SpecDcorMode::TypeID);
-                    alias.declSpecifierSeq = std::move(simple.declSpecifierSeq);
-                    PLY_ASSERT(simple.initDeclarators.numItems() ==
+                    parse_specifiers_and_declarators(parser, simple,
+                                                     SpecDcorMode::TypeID);
+                    alias.decl_specifier_seq = std::move(simple.decl_specifier_seq);
+                    PLY_ASSERT(simple.init_declarators.num_items() ==
                                1); // because SpecDcorMode::TypeID
-                    alias.dcor = std::move(simple.initDeclarators[0].dcor);
-                    alias.semicolon = parseRequiredSemicolon(parser);
+                    alias.dcor = std::move(simple.init_declarators[0].dcor);
+                    alias.semicolon = parse_required_semicolon(parser);
 
-                    parser->visor->gotDeclaration(grammar::Declaration{std::move(alias)});
+                    parser->visor->got_declaration(
+                        grammar::Declaration{std::move(alias)});
                 }
             }
         } else {
-            pushBackToken(parser, token);
-            parseSimpleDeclaration(parser, enclosingClassName);
+            push_back_token(parser, token);
+            parse_simple_declaration(parser, enclosing_class_name);
         }
     } else if (token.type == Token::Semicolon) {
         grammar::Declaration::Empty empty;
         empty.semicolon = token;
-        parser->visor->gotDeclaration(grammar::Declaration{std::move(empty)});
+        parser->visor->got_declaration(grammar::Declaration{std::move(empty)});
     } else if (token.type == Token::Tilde) {
-        pushBackToken(parser, token);
-        parseSimpleDeclaration(parser, enclosingClassName);
+        push_back_token(parser, token);
+        parse_simple_declaration(parser, enclosing_class_name);
     } else {
         // Can't handle this token.
-        pushBackToken(parser, token);
+        push_back_token(parser, token);
         return false;
     }
     return true;
 }
 
-void parseDeclarationList(Parser* parser, Token* outCloseCurly, StringView enclosingClassName) {
+void parse_declaration_list(Parser* parser, Token* out_close_curly,
+                            StringView enclosing_class_name) {
     // Always handle close curly at this scope, even if it's file scope:
-    SetAcceptFlagsInScope acceptScope{parser, Token::OpenCurly};
-    PLY_SET_IN_SCOPE(parser->atDeclarationScope, true);
+    SetAcceptFlagsInScope accept_scope{parser, Token::OpenCurly};
+    PLY_SET_IN_SCOPE(parser->at_declaration_scope, true);
 
     for (;;) {
-        Token token = readToken(parser);
-        if (token.type == (outCloseCurly ? Token::CloseCurly : Token::EndOfFile)) {
-            if (outCloseCurly) {
-                *outCloseCurly = token;
+        Token token = read_token(parser);
+        if (token.type == (out_close_curly ? Token::CloseCurly : Token::EndOfFile)) {
+            if (out_close_curly) {
+                *out_close_curly = token;
             }
             break;
         }
-        pushBackToken(parser, token);
-        if (!parseDeclaration(parser, enclosingClassName)) {
-            token = readToken(parser);
-            parser->error(true, {ParseError::Expected, token, ExpectedToken::Declaration});
-            if (token.type != Token::CloseCurly) { // consume close curlies after logging the error
-                if (!handleUnexpectedToken(parser, nullptr, token)) {
+        push_back_token(parser, token);
+        if (!parse_declaration(parser, enclosing_class_name)) {
+            token = read_token(parser);
+            parser->error(true,
+                          {ParseError::Expected, token, ExpectedToken::Declaration});
+            if (token.type !=
+                Token::CloseCurly) { // consume close curlies after logging the error
+                if (!handle_unexpected_token(parser, nullptr, token)) {
                     PLY_ASSERT(token.type == Token::EndOfFile); // can only be EOF here
                     break;
                 }
@@ -324,14 +340,14 @@ void parseDeclarationList(Parser* parser, Token* outCloseCurly, StringView enclo
     }
 }
 
-grammar::TranslationUnit parseTranslationUnit(Parser* parser) {
+grammar::TranslationUnit parse_translation_unit(Parser* parser) {
     grammar::TranslationUnit tu;
-    parser->visor->doEnter(AnyObject::bind(&tu));
-    parseDeclarationList(parser, nullptr, {});
-    Token eofTok = readToken(parser);
-    PLY_ASSERT(eofTok.type == Token::EndOfFile); // EOF is the only possible token here
-    PLY_UNUSED(eofTok);
-    parser->visor->doExit(AnyObject::bind(&tu));
+    parser->visor->do_enter(AnyObject::bind(&tu));
+    parse_declaration_list(parser, nullptr, {});
+    Token eof_tok = read_token(parser);
+    PLY_ASSERT(eof_tok.type == Token::EndOfFile); // EOF is the only possible token here
+    PLY_UNUSED(eof_tok);
+    parser->visor->do_exit(AnyObject::bind(&tu));
     return tu;
 }
 

@@ -47,7 +47,7 @@ struct Any {
 
     template <typename T>
     void destruct() {
-        subst::destructByMember(get<T>());
+        subst::destruct_by_member(get<T>());
         if (sizeof(T) > sizeof(storage)) {
             Heap.free((void*) storage);
         }
@@ -63,87 +63,88 @@ struct Any {
 template <typename Derived>
 struct StringMixin {
     template <typename T>
-    T to(const T& defaultValue = subst::createDefault<T>()) const {
-        return static_cast<const Derived*>(this)->view().to(defaultValue);
+    T to(const T& default_value = subst::create_default<T>()) const {
+        return static_cast<const Derived*>(this)->view().to(default_value);
     }
 
     explicit operator bool() const {
         return (bool) static_cast<const Derived*>(this)->view();
     }
 
-    bool isEmpty() const {
-        return static_cast<const Derived*>(this)->view().isEmpty();
+    bool is_empty() const {
+        return static_cast<const Derived*>(this)->view().is_empty();
     }
 
-    StringView subStr(u32 start) const {
-        return static_cast<const Derived*>(this)->view().subStr(start);
+    StringView sub_str(u32 start) const {
+        return static_cast<const Derived*>(this)->view().sub_str(start);
     }
-    StringView subStr(u32 start, u32 numBytes) const {
-        return static_cast<const Derived*>(this)->view().subStr(start, numBytes);
+    StringView sub_str(u32 start, u32 num_bytes) const {
+        return static_cast<const Derived*>(this)->view().sub_str(start, num_bytes);
     }
 
-    StringView left(u32 numBytes) const {
-        return static_cast<const Derived*>(this)->view().left(numBytes);
+    StringView left(u32 num_bytes) const {
+        return static_cast<const Derived*>(this)->view().left(num_bytes);
     }
-    StringView shortenedBy(u32 numBytes) const {
-        return static_cast<const Derived*>(this)->view().shortenedBy(numBytes);
+    StringView shortened_by(u32 num_bytes) const {
+        return static_cast<const Derived*>(this)->view().shortened_by(num_bytes);
     }
-    StringView right(u32 numBytes) const {
-        return static_cast<const Derived*>(this)->view().right(numBytes);
+    StringView right(u32 num_bytes) const {
+        return static_cast<const Derived*>(this)->view().right(num_bytes);
     }
     String operator+(StringView other) const;
     String operator*(u32 count) const;
-    s32 findByte(char matchByte, u32 startPos = 0) const {
-        return static_cast<const Derived*>(this)->view().findByte(matchByte, startPos);
+    s32 find_byte(char match_byte, u32 start_pos = 0) const {
+        return static_cast<const Derived*>(this)->view().find_byte(match_byte,
+                                                                   start_pos);
     }
     template <typename MatchFuncOrChar>
-    s32 findByte(const MatchFuncOrChar& matchFuncOrByte, u32 startPos = 0) const {
-        return static_cast<const Derived*>(this)->view().findByte(matchFuncOrByte,
-                                                                  startPos);
+    s32 find_byte(const MatchFuncOrChar& match_func_or_byte, u32 start_pos = 0) const {
+        return static_cast<const Derived*>(this)->view().find_byte(match_func_or_byte,
+                                                                   start_pos);
     }
 
     template <typename MatchFuncOrChar>
-    s32 rfindByte(const MatchFuncOrChar& matchFuncOrByte, u32 startPos) const {
-        return static_cast<const Derived*>(this)->view().rfindByte(matchFuncOrByte,
-                                                                   startPos);
+    s32 rfind_byte(const MatchFuncOrChar& match_func_or_byte, u32 start_pos) const {
+        return static_cast<const Derived*>(this)->view().rfind_byte(match_func_or_byte,
+                                                                    start_pos);
     }
     template <typename MatchFuncOrChar>
-    s32 rfindByte(const MatchFuncOrChar& matchFuncOrByte) const {
-        return static_cast<const Derived*>(this)->view().rfindByte(
-            matchFuncOrByte, static_cast<const Derived*>(this)->numBytes - 1);
+    s32 rfind_byte(const MatchFuncOrChar& match_func_or_byte) const {
+        return static_cast<const Derived*>(this)->view().rfind_byte(
+            match_func_or_byte, static_cast<const Derived*>(this)->num_bytes - 1);
     }
 
-    bool startsWith(StringView arg) const {
-        return static_cast<const Derived*>(this)->view().startsWith(arg);
+    bool starts_with(StringView arg) const {
+        return static_cast<const Derived*>(this)->view().starts_with(arg);
     }
-    bool endsWith(StringView arg) const {
-        return static_cast<const Derived*>(this)->view().endsWith(arg);
+    bool ends_with(StringView arg) const {
+        return static_cast<const Derived*>(this)->view().ends_with(arg);
     }
 
-    StringView trim(bool (*matchFunc)(char) = isWhite, bool left = true,
+    StringView trim(bool (*match_func)(char) = is_white, bool left = true,
                     bool right = true) const {
-        return static_cast<const Derived*>(this)->view().trim(matchFunc, left, right);
+        return static_cast<const Derived*>(this)->view().trim(match_func, left, right);
     }
-    StringView ltrim(bool (*matchFunc)(char) = isWhite) const {
-        return static_cast<const Derived*>(this)->view().ltrim(matchFunc);
+    StringView ltrim(bool (*match_func)(char) = is_white) const {
+        return static_cast<const Derived*>(this)->view().ltrim(match_func);
     }
-    StringView rtrim(bool (*matchFunc)(char) = isWhite) const {
-        return static_cast<const Derived*>(this)->view().rtrim(matchFunc);
+    StringView rtrim(bool (*match_func)(char) = is_white) const {
+        return static_cast<const Derived*>(this)->view().rtrim(match_func);
     }
     String join(ArrayView<const StringView> comps) const;
-    auto splitByte(char sep) const {
-        return static_cast<const Derived*>(this)->view().splitByte(sep);
+    auto split_byte(char sep) const {
+        return static_cast<const Derived*>(this)->view().split_byte(sep);
     }
-    String upperAsc() const;
-    String lowerAsc() const;
-    String reversedBytes() const;
-    String filterBytes(char (*filterFunc)(char)) const;
-    bool includesNullTerminator() const {
-        return static_cast<const Derived*>(this)->view().includesNullTerminator();
+    String upper_asc() const;
+    String lower_asc() const;
+    String reversed_bytes() const;
+    String filter_bytes(char (*filter_func)(char)) const;
+    bool includes_null_terminator() const {
+        return static_cast<const Derived*>(this)->view().includes_null_terminator();
     }
-    HybridString withNullTerminator() const;
-    StringView withoutNullTerminator() const {
-        return static_cast<const Derived*>(this)->view().withoutNullTerminator();
+    HybridString with_null_terminator() const;
+    StringView without_null_terminator() const {
+        return static_cast<const Derived*>(this)->view().without_null_terminator();
     }
 };
 
@@ -159,7 +160,7 @@ struct String : StringMixin<String> {
     using View = StringView;
 
     char* bytes = nullptr;
-    u32 numBytes = 0;
+    u32 num_bytes = 0;
 
     String() = default;
     String(StringView other);
@@ -170,9 +171,9 @@ struct String : StringMixin<String> {
     template <typename U, typename = std::enable_if_t<std::is_same<U, char>::value>>
     String(const U& u) : String{StringView{&u, 1}} {
     }
-    String(String&& other) : bytes{other.bytes}, numBytes{other.numBytes} {
+    String(String&& other) : bytes{other.bytes}, num_bytes{other.num_bytes} {
         other.bytes = nullptr;
-        other.numBytes = 0;
+        other.num_bytes = 0;
     }
     String(HybridString&& other);
 
@@ -184,10 +185,10 @@ struct String : StringMixin<String> {
 
     template <typename = void>
     void operator=(StringView other) {
-        char* bytesToFree = this->bytes;
+        char* bytes_to_free = this->bytes;
         new (this) String{other};
-        if (bytesToFree) {
-            Heap.free(bytesToFree);
+        if (bytes_to_free) {
+            Heap.free(bytes_to_free);
         }
     }
 
@@ -212,25 +213,25 @@ struct String : StringMixin<String> {
             Heap.free(this->bytes);
         }
         this->bytes = nullptr;
-        this->numBytes = 0;
+        this->num_bytes = 0;
     }
 
     void operator+=(StringView other) {
         *this = this->view() + other;
     }
-    static String allocate(u32 numBytes);
-    void resize(u32 numBytes);
-    static String adopt(char* bytes, u32 numBytes) {
+    static String allocate(u32 num_bytes);
+    void resize(u32 num_bytes);
+    static String adopt(char* bytes, u32 num_bytes) {
         String str;
         str.bytes = bytes;
-        str.numBytes = numBytes;
+        str.num_bytes = num_bytes;
         return str;
     }
 
     char* release() {
         char* r = this->bytes;
         this->bytes = nullptr;
-        this->numBytes = 0;
+        this->num_bytes = 0;
         return r;
     }
 
@@ -238,21 +239,21 @@ struct String : StringMixin<String> {
     static String format(StringView fmt, const Args&... args);
 
     const char& operator[](u32 index) const {
-        PLY_ASSERT(index < this->numBytes);
+        PLY_ASSERT(index < this->num_bytes);
         return this->bytes[index];
     }
     char& operator[](u32 index) {
-        PLY_ASSERT(index < this->numBytes);
+        PLY_ASSERT(index < this->num_bytes);
         return this->bytes[index];
     }
 
     const char& back(s32 ofs = -1) const {
-        PLY_ASSERT(u32(-ofs - 1) < this->numBytes);
-        return this->bytes[this->numBytes + ofs];
+        PLY_ASSERT(u32(-ofs - 1) < this->num_bytes);
+        return this->bytes[this->num_bytes + ofs];
     }
     char& back(s32 ofs = -1) {
-        PLY_ASSERT(u32(-ofs - 1) < this->numBytes);
-        return this->bytes[this->numBytes + ofs];
+        PLY_ASSERT(u32(-ofs - 1) < this->num_bytes);
+        return this->bytes[this->num_bytes + ofs];
     }
 };
 
@@ -288,23 +289,23 @@ String StringMixin<Derived>::join(ArrayView<const StringView> comps) const {
 }
 
 template <typename Derived>
-String StringMixin<Derived>::upperAsc() const {
-    return static_cast<const Derived*>(this)->view().upperAsc();
+String StringMixin<Derived>::upper_asc() const {
+    return static_cast<const Derived*>(this)->view().upper_asc();
 }
 
 template <typename Derived>
-String StringMixin<Derived>::lowerAsc() const {
-    return static_cast<const Derived*>(this)->view().lowerAsc();
+String StringMixin<Derived>::lower_asc() const {
+    return static_cast<const Derived*>(this)->view().lower_asc();
 }
 
 template <typename Derived>
-String StringMixin<Derived>::reversedBytes() const {
-    return static_cast<const Derived*>(this)->view().reversedBytes();
+String StringMixin<Derived>::reversed_bytes() const {
+    return static_cast<const Derived*>(this)->view().reversed_bytes();
 }
 
 template <typename Derived>
-String StringMixin<Derived>::filterBytes(char (*filterFunc)(char)) const {
-    return static_cast<const Derived*>(this)->view().filterBytes(filterFunc);
+String StringMixin<Derived>::filter_bytes(char (*filter_func)(char)) const {
+    return static_cast<const Derived*>(this)->view().filter_bytes(filter_func);
 }
 
 //  ▄▄  ▄▄        ▄▄            ▄▄     ▄▄  ▄▄▄▄   ▄▄          ▄▄
@@ -315,43 +316,43 @@ String StringMixin<Derived>::filterBytes(char (*filterFunc)(char)) const {
 
 struct HybridString : StringMixin<HybridString> {
     char* bytes;
-    u32 isOwner : 1;
-    u32 numBytes : 31;
+    u32 is_owner : 1;
+    u32 num_bytes : 31;
 
-    HybridString() : bytes{nullptr}, isOwner{0}, numBytes{0} {
+    HybridString() : bytes{nullptr}, is_owner{0}, num_bytes{0} {
     }
     HybridString(StringView view)
-        : bytes{const_cast<char*>(view.bytes)}, isOwner{0}, numBytes{view.numBytes} {
-        PLY_ASSERT(view.numBytes < (1u << 30));
+        : bytes{const_cast<char*>(view.bytes)}, is_owner{0}, num_bytes{view.num_bytes} {
+        PLY_ASSERT(view.num_bytes < (1u << 30));
     }
 
     HybridString(const String& str) : HybridString{str.view()} {
     }
     HybridString(String&& str) {
-        this->isOwner = 1;
-        PLY_ASSERT(str.numBytes < (1u << 30));
-        this->numBytes = str.numBytes;
+        this->is_owner = 1;
+        PLY_ASSERT(str.num_bytes < (1u << 30));
+        this->num_bytes = str.num_bytes;
         this->bytes = str.release();
     }
 
     HybridString(HybridString&& other)
-        : bytes{other.bytes}, isOwner{other.isOwner}, numBytes{other.numBytes} {
+        : bytes{other.bytes}, is_owner{other.is_owner}, num_bytes{other.num_bytes} {
         other.bytes = nullptr;
-        other.isOwner = 0;
-        other.numBytes = 0;
+        other.is_owner = 0;
+        other.num_bytes = 0;
     }
 
     HybridString(const HybridString& other);
 
     HybridString(const char* s)
-        : bytes{const_cast<char*>(s)}, isOwner{0},
-          numBytes{(u32) std::char_traits<char>::length(s)} {
-        PLY_ASSERT(s[this->numBytes] ==
-                   0); // Sanity check; numBytes must fit in 31-bit field
+        : bytes{const_cast<char*>(s)}, is_owner{0},
+          num_bytes{(u32) std::char_traits<char>::length(s)} {
+        PLY_ASSERT(s[this->num_bytes] ==
+                   0); // Sanity check; num_bytes must fit in 31-bit field
     }
 
     ~HybridString() {
-        if (this->isOwner) {
+        if (this->is_owner) {
             Heap.free(this->bytes);
         }
     }
@@ -367,17 +368,17 @@ struct HybridString : StringMixin<HybridString> {
     }
 
     operator StringView() const {
-        return {this->bytes, this->numBytes};
+        return {this->bytes, this->num_bytes};
     }
 
     StringView view() const {
-        return {this->bytes, this->numBytes};
+        return {this->bytes, this->num_bytes};
     }
 };
 
 template <typename Derived>
-HybridString StringMixin<Derived>::withNullTerminator() const {
-    return static_cast<const Derived*>(this)->view().withNullTerminator();
+HybridString StringMixin<Derived>::with_null_terminator() const {
+    return static_cast<const Derived*>(this)->view().with_null_terminator();
 }
 
 //   ▄▄▄▄
@@ -393,19 +394,19 @@ struct BaseArray {
 
     BaseArray() = default;
 
-    void alloc(u32 numItems, u32 itemSize);
-    void realloc(u32 numItems, u32 itemSize);
+    void alloc(u32 num_items, u32 item_size);
+    void realloc(u32 num_items, u32 item_size);
     void free();
-    void reserve(u32 numItems, u32 itemSize);
-    void reserveIncrement(u32 itemSize);
-    void truncate(u32 itemSize);
+    void reserve(u32 num_items, u32 item_size);
+    void reserve_increment(u32 item_size);
+    void truncate(u32 item_size);
 };
 
 template <typename T>
 class Array {
 private:
     T* items;
-    u32 numItems_;
+    u32 num_items_;
     u32 allocated;
 
     // T cannot be const
@@ -420,134 +421,135 @@ private:
     template <typename>
     friend class Array;
 
-    Array(T* items, u32 numItems, u32 allocator)
-        : items{items}, numItems_{numItems}, allocated{allocated} {
+    Array(T* items, u32 num_items, u32 allocator)
+        : items{items}, num_items_{num_items}, allocated{allocated} {
     }
 
 public:
     // Constructors
-    Array() : items{nullptr}, numItems_{0}, allocated{0} {
+    Array() : items{nullptr}, num_items_{0}, allocated{0} {
     }
     Array(const Array& other) {
-        ((BaseArray*) this)->alloc(other.numItems_, (u32) sizeof(T));
-        subst::unsafeConstructArrayFrom(this->items, other.items, other.numItems_);
+        ((BaseArray*) this)->alloc(other.num_items_, (u32) sizeof(T));
+        subst::unsafe_construct_array_from(this->items, other.items, other.num_items_);
     }
     Array(Array&& other)
-        : items{other.items}, numItems_{other.numItems_}, allocated{other.allocated} {
+        : items{other.items}, num_items_{other.num_items_}, allocated{other.allocated} {
         other.items = nullptr;
-        other.numItems_ = 0;
+        other.num_items_ = 0;
         other.allocated = 0;
     }
     Array(InitList<T> init) {
-        u32 initSize = safeDemote<u32>(init.size());
-        ((BaseArray*) this)->alloc(initSize, (u32) sizeof(T));
-        subst::constructArrayFrom(this->items, init.begin(), initSize);
+        u32 init_size = safe_demote<u32>(init.size());
+        ((BaseArray*) this)->alloc(init_size, (u32) sizeof(T));
+        subst::construct_array_from(this->items, init.begin(), init_size);
     }
     template <typename Other, typename U = impl::ArrayViewType<Other>>
     Array(Other&& other) {
-        ((BaseArray*) this)->alloc(ArrayView<U>{other}.numItems, (u32) sizeof(T));
-        impl::moveOrCopyConstruct(this->items, std::forward<Other>(other));
+        ((BaseArray*) this)->alloc(ArrayView<U>{other}.num_items, (u32) sizeof(T));
+        impl::move_or_copy_construct(this->items, std::forward<Other>(other));
     }
     ~Array() {
         PLY_STATIC_ASSERT(sizeof(Array) == sizeof(BaseArray));
-        subst::destructArray(this->items, this->numItems_);
+        subst::destruct_array(this->items, this->num_items_);
         Heap.free(this->items);
     }
 
     void operator=(const Array& other) {
-        ArrayView<T> arrayToFree = {this->items, this->numItems_};
+        ArrayView<T> array_to_free = {this->items, this->num_items_};
         new (this) Array{other};
-        subst::destructArray(arrayToFree.items, arrayToFree.numItems);
-        Heap.free(arrayToFree.items);
+        subst::destruct_array(array_to_free.items, array_to_free.num_items);
+        Heap.free(array_to_free.items);
     }
 
     void operator=(Array&& other) {
-        ArrayView<T> arrayToFree = {this->items, this->numItems_};
+        ArrayView<T> array_to_free = {this->items, this->num_items_};
         new (this) Array{std::move(other)};
-        subst::destructArray(arrayToFree.items, arrayToFree.numItems);
-        Heap.free(arrayToFree.items);
+        subst::destruct_array(array_to_free.items, array_to_free.num_items);
+        Heap.free(array_to_free.items);
     }
     void operator=(std::initializer_list<T> init) {
-        subst::destructArray(this->items, this->numItems_);
-        u32 initSize = safeDemote<u32>(init.size());
-        ((BaseArray*) this)->realloc(initSize, (u32) sizeof(T));
-        subst::unsafeConstructArrayFrom(this->items, init.begin(), initSize);
+        subst::destruct_array(this->items, this->num_items_);
+        u32 init_size = safe_demote<u32>(init.size());
+        ((BaseArray*) this)->realloc(init_size, (u32) sizeof(T));
+        subst::unsafe_construct_array_from(this->items, init.begin(), init_size);
     }
     template <typename Other, typename = impl::ArrayViewType<Other>>
     void operator=(Other&& other) {
-        ArrayView<T> arrayToFree = {this->items, this->numItems_};
+        ArrayView<T> array_to_free = {this->items, this->num_items_};
         new (this) Array{std::forward<Other>(other)};
-        subst::destructArray(arrayToFree.items, arrayToFree.numItems);
-        Heap.free(arrayToFree.items);
+        subst::destruct_array(array_to_free.items, array_to_free.num_items);
+        Heap.free(array_to_free.items);
     }
 
     T& operator[](u32 index) {
-        PLY_ASSERT(index < this->numItems_);
+        PLY_ASSERT(index < this->num_items_);
         return this->items[index];
     }
     const T& operator[](u32 index) const {
-        PLY_ASSERT(index < this->numItems_);
+        PLY_ASSERT(index < this->num_items_);
         return this->items[index];
     }
 
     T* get(u32 index = 0) {
-        PLY_ASSERT(index < this->numItems_);
+        PLY_ASSERT(index < this->num_items_);
         return this->items + index;
     }
     const T* get(u32 index = 0) const {
-        PLY_ASSERT(index < this->numItems_);
+        PLY_ASSERT(index < this->num_items_);
         return this->items + index;
     }
 
     T& back(s32 offset = -1) {
-        PLY_ASSERT(offset < 0 && u32(-offset) <= this->numItems_);
-        return this->items[this->numItems_ + offset];
+        PLY_ASSERT(offset < 0 && u32(-offset) <= this->num_items_);
+        return this->items[this->num_items_ + offset];
     }
     const T& back(s32 offset = -1) const {
-        PLY_ASSERT(offset < 0 && u32(-offset) <= this->numItems_);
-        return this->items[this->numItems_ + offset];
+        PLY_ASSERT(offset < 0 && u32(-offset) <= this->num_items_);
+        return this->items[this->num_items_ + offset];
     }
 
     T* begin() const {
         return this->items;
     }
     T* end() const {
-        return this->items + this->numItems_;
+        return this->items + this->num_items_;
     }
 
     explicit operator bool() const {
-        return this->numItems_ > 0;
+        return this->num_items_ > 0;
     }
-    bool isEmpty() const {
-        return this->numItems_ == 0;
+    bool is_empty() const {
+        return this->num_items_ == 0;
     }
-    u32 numItems() const {
-        return this->numItems_;
+    u32 num_items() const {
+        return this->num_items_;
     }
-    u32 sizeBytes() const {
-        return this->numItems_ * (u32) sizeof(T);
+    u32 size_bytes() const {
+        return this->num_items_ * (u32) sizeof(T);
     }
     void clear() {
-        subst::destructArray(this->items, this->numItems_);
+        subst::destruct_array(this->items, this->num_items_);
         Heap.free(this->items);
         this->items = nullptr;
-        this->numItems_ = 0;
+        this->num_items_ = 0;
         this->allocated = 0;
     }
 
-    void reserve(u32 numItems) {
-        ((BaseArray*) this)->reserve(numItems, (u32) sizeof(T));
+    void reserve(u32 num_items) {
+        ((BaseArray*) this)->reserve(num_items, (u32) sizeof(T));
     }
-    void resize(u32 numItems) {
-        if (numItems < this->numItems_) {
-            subst::destructArray(this->items + numItems, this->numItems_ - numItems);
+    void resize(u32 num_items) {
+        if (num_items < this->num_items_) {
+            subst::destruct_array(this->items + num_items,
+                                  this->num_items_ - num_items);
         }
-        ((BaseArray*) this)->reserve(numItems, (u32) sizeof(T));
-        if (numItems > this->numItems_) {
-            subst::constructArray(this->items + this->numItems_,
-                                  numItems - this->numItems_);
+        ((BaseArray*) this)->reserve(num_items, (u32) sizeof(T));
+        if (num_items > this->num_items_) {
+            subst::construct_array(this->items + this->num_items_,
+                                   num_items - this->num_items_);
         }
-        this->numItems_ = numItems;
+        this->num_items_ = num_items;
     }
 
     void truncate() {
@@ -556,106 +558,108 @@ public:
 
     T& append(T&& item) {
         // The argument must not be a reference to an existing item in the array:
-        PLY_ASSERT((&item < this->items) || (&item >= this->items + this->numItems_));
-        if (this->numItems_ >= this->allocated) {
-            ((BaseArray*) this)->reserveIncrement((u32) sizeof(T));
+        PLY_ASSERT((&item < this->items) || (&item >= this->items + this->num_items_));
+        if (this->num_items_ >= this->allocated) {
+            ((BaseArray*) this)->reserve_increment((u32) sizeof(T));
         }
-        T* result = new (this->items + this->numItems_) T{std::move(item)};
-        this->numItems_++;
+        T* result = new (this->items + this->num_items_) T{std::move(item)};
+        this->num_items_++;
         return *result;
     }
     T& append(const T& item) {
         // The argument must not be a reference to an existing item in the array:
-        PLY_ASSERT((&item < this->items) || (&item >= this->items + this->numItems_));
-        if (this->numItems_ >= this->allocated) {
-            ((BaseArray*) this)->reserveIncrement((u32) sizeof(T));
+        PLY_ASSERT((&item < this->items) || (&item >= this->items + this->num_items_));
+        if (this->num_items_ >= this->allocated) {
+            ((BaseArray*) this)->reserve_increment((u32) sizeof(T));
         }
-        T* result = new (this->items + this->numItems_) T{item};
-        this->numItems_++;
+        T* result = new (this->items + this->num_items_) T{item};
+        this->num_items_++;
         return *result;
     }
     template <typename... Args>
     T& append(Args&&... args) {
-        if (this->numItems_ >= this->allocated) {
-            ((BaseArray*) this)->reserveIncrement((u32) sizeof(T));
+        if (this->num_items_ >= this->allocated) {
+            ((BaseArray*) this)->reserve_increment((u32) sizeof(T));
         }
-        T* result = new (this->items + this->numItems_) T{std::forward<Args>(args)...};
-        this->numItems_++;
+        T* result = new (this->items + this->num_items_) T{std::forward<Args>(args)...};
+        this->num_items_++;
         return *result;
     }
 
     void extend(InitList<T> init) {
-        u32 initSize = safeDemote<u32>(init.size());
-        ((BaseArray*) this)->reserve(this->numItems_ + initSize, (u32) sizeof(T));
-        subst::constructArrayFrom(this->items + this->numItems_, init.begin(),
-                                  initSize);
-        this->numItems_ += initSize;
+        u32 init_size = safe_demote<u32>(init.size());
+        ((BaseArray*) this)->reserve(this->num_items_ + init_size, (u32) sizeof(T));
+        subst::construct_array_from(this->items + this->num_items_, init.begin(),
+                                    init_size);
+        this->num_items_ += init_size;
     }
     template <typename Other, typename U = impl::ArrayViewType<Other>>
     void extend(Other&& other) {
-        u32 numOtherItems = ArrayView<U>{other}.numItems;
-        ((BaseArray&) *this).reserve(this->numItems_ + numOtherItems, (u32) sizeof(T));
-        impl::moveOrCopyConstruct(this->items + this->numItems_,
-                                  std::forward<Other>(other));
-        this->numItems_ += numOtherItems;
+        u32 num_other_items = ArrayView<U>{other}.num_items;
+        ((BaseArray&) *this)
+            .reserve(this->num_items_ + num_other_items, (u32) sizeof(T));
+        impl::move_or_copy_construct(this->items + this->num_items_,
+                                     std::forward<Other>(other));
+        this->num_items_ += num_other_items;
     }
-    void moveExtend(ArrayView<T> other) {
+    void move_extend(ArrayView<T> other) {
         // The argument must not be a subview into the array itself:
         PLY_ASSERT((other.end() <= this->items) || (other.items >= this->end()));
-        ((BaseArray&) *this).reserve(this->numItems_ + other.numItems, (u32) sizeof(T));
-        subst::moveConstructArray(this->items + this->numItems_, other.items,
-                                  other.numItems);
-        this->numItems_ += other.numItems;
+        ((BaseArray&) *this)
+            .reserve(this->num_items_ + other.num_items, (u32) sizeof(T));
+        subst::move_construct_array(this->items + this->num_items_, other.items,
+                                    other.num_items);
+        this->num_items_ += other.num_items;
     }
 
     void pop(u32 count = 1) {
-        PLY_ASSERT(count <= this->numItems_);
-        resize(this->numItems_ - count);
+        PLY_ASSERT(count <= this->num_items_);
+        resize(this->num_items_ - count);
     }
     T& insert(u32 pos, u32 count = 1) {
-        PLY_ASSERT(pos <= this->numItems_);
-        ((BaseArray*) this)->reserve(this->numItems_ + count, (u32) sizeof(T));
+        PLY_ASSERT(pos <= this->num_items_);
+        ((BaseArray*) this)->reserve(this->num_items_ + count, (u32) sizeof(T));
         memmove(static_cast<void*>(this->items + pos + count),
                 static_cast<const void*>(this->items + pos),
-                (this->numItems_ - pos) * sizeof(T)); // Underlying type is relocatable
-        subst::constructArray(this->items + pos, count);
-        this->numItems_ += count;
+                (this->num_items_ - pos) * sizeof(T)); // Underlying type is relocatable
+        subst::construct_array(this->items + pos, count);
+        this->num_items_ += count;
         return this->items[pos];
     }
 
     void erase(u32 pos, u32 count = 1) {
-        PLY_ASSERT(pos + count <= this->numItems_);
-        subst::destructArray(this->items + pos, count);
+        PLY_ASSERT(pos + count <= this->num_items_);
+        subst::destruct_array(this->items + pos, count);
         memmove(static_cast<void*>(this->items + pos),
                 static_cast<const void*>(this->items + pos + count),
-                (this->numItems_ - (pos + count)) *
+                (this->num_items_ - (pos + count)) *
                     sizeof(T)); // Underlying type is relocatable
-        this->numItems_ -= count;
+        this->num_items_ -= count;
     }
-    void eraseQuick(u32 pos) {
-        PLY_ASSERT(pos < this->numItems_);
+    void erase_quick(u32 pos) {
+        PLY_ASSERT(pos < this->num_items_);
         this->items[pos].~T();
         memcpy(static_cast<void*>(this->items + pos),
-               static_cast<const void*>(this->items + (this->numItems_ - 1)),
+               static_cast<const void*>(this->items + (this->num_items_ - 1)),
                sizeof(T));
-        this->numItems_--;
+        this->num_items_--;
     }
-    void eraseQuick(u32 pos, u32 count) {
-        PLY_ASSERT(pos + count <= this->numItems_);
-        subst::destructArray(this->items + pos, count);
+    void erase_quick(u32 pos, u32 count) {
+        PLY_ASSERT(pos + count <= this->num_items_);
+        subst::destruct_array(this->items + pos, count);
         memmove(static_cast<void*>(this->items + pos),
-                static_cast<const void*>(this->items + this->numItems_ - count),
+                static_cast<const void*>(this->items + this->num_items_ - count),
                 count * sizeof(T)); // Underlying type is relocatable
-        this->numItems_ -= count;
+        this->num_items_ -= count;
     }
 
-    static Array adopt(T* items, u32 numItems) {
-        return {items, numItems, numItems};
+    static Array adopt(T* items, u32 num_items) {
+        return {items, num_items, num_items};
     }
     T* release() {
         T* items = this->items;
         this->items = nullptr;
-        this->numItems_ = 0;
+        this->num_items_ = 0;
         this->allocated = 0;
         return items;
     }
@@ -664,37 +668,37 @@ public:
     friend auto operator+(Arr0&& a, Arr1&& b);
 
     ArrayView<T> view() {
-        return {this->items, this->numItems_};
+        return {this->items, this->num_items_};
     }
     ArrayView<const T> view() const {
-        return {this->items, this->numItems_};
+        return {this->items, this->num_items_};
     }
     operator ArrayView<T>() {
-        return {this->items, this->numItems_};
+        return {this->items, this->num_items_};
     }
     operator ArrayView<const T>() const {
-        return {this->items, this->numItems_};
+        return {this->items, this->num_items_};
     }
 
-    StringView stringView() const {
+    StringView string_view() const {
         return {(const char*) this->items,
-                safeDemote<u32>(this->numItems_ * sizeof(T))};
+                safe_demote<u32>(this->num_items_ * sizeof(T))};
     }
-    MutStringView mutableStringView() const {
-        return {(char*) this->items, safeDemote<u32>(this->numItems_ * sizeof(T))};
+    MutStringView mutable_string_view() const {
+        return {(char*) this->items, safe_demote<u32>(this->num_items_ * sizeof(T))};
     }
 
-    ArrayView<T> subView(u32 start) {
-        return view().subView(start);
+    ArrayView<T> sub_view(u32 start) {
+        return view().sub_view(start);
     }
-    ArrayView<const T> subView(u32 start) const {
-        return view().subView(start);
+    ArrayView<const T> sub_view(u32 start) const {
+        return view().sub_view(start);
     }
-    ArrayView<T> subView(u32 start, u32 numItems_) {
-        return view().subView(start, numItems_);
+    ArrayView<T> sub_view(u32 start, u32 num_items_) {
+        return view().sub_view(start, num_items_);
     }
-    ArrayView<const T> subView(u32 start, u32 numItems_) const {
-        return view().subView(start, numItems_);
+    ArrayView<const T> sub_view(u32 start, u32 num_items_) const {
+        return view().sub_view(start, num_items_);
     }
 };
 
@@ -714,13 +718,13 @@ struct ArrayTraits<Array<T>> {
 template <typename Arr0, typename Arr1, typename T0 = impl::ArrayViewType<Arr0>,
           typename T1 = impl::ArrayViewType<Arr1>>
 auto operator+(Arr0&& a, Arr1&& b) {
-    u32 numItemsA = ArrayView<T0>{a}.numItems;
-    u32 numItemsB = ArrayView<T1>{b}.numItems;
+    u32 num_items_a = ArrayView<T0>{a}.num_items;
+    u32 num_items_b = ArrayView<T1>{b}.num_items;
 
     Array<std::remove_const_t<T0>> result;
-    ((BaseArray&) result).alloc(numItemsA + numItemsB, (u32) sizeof(T0));
-    impl::moveOrCopyConstruct(result.items, std::forward<Arr0>(a));
-    impl::moveOrCopyConstruct(result.items + numItemsA, std::forward<Arr1>(b));
+    ((BaseArray&) result).alloc(num_items_a + num_items_b, (u32) sizeof(T0));
+    impl::move_or_copy_construct(result.items, std::forward<Arr0>(a));
+    impl::move_or_copy_construct(result.items + num_items_a, std::forward<Arr1>(b));
     return result;
 }
 
@@ -746,7 +750,7 @@ struct FixedArray {
 
     FixedArray(InitList<T> args) {
         PLY_ASSERT(Size == args.size());
-        subst::constructArrayFrom(this->items, args.begin(), Size);
+        subst::construct_array_from(this->items, args.begin(), Size);
     }
 
     template <typename... Args>
@@ -755,7 +759,7 @@ struct FixedArray {
         impl::InitItems<T>::init(items, std::forward<Args>(args)...);
     }
 
-    constexpr u32 numItems() const {
+    constexpr u32 num_items() const {
         return Size;
     }
 
@@ -785,13 +789,13 @@ struct FixedArray {
         return {items, Size};
     }
 
-    MutStringView mutableStringView() {
-        return {reinterpret_cast<char*>(items), safeDemote<u32>(Size * sizeof(T))};
+    MutStringView mutable_string_view() {
+        return {reinterpret_cast<char*>(items), safe_demote<u32>(Size * sizeof(T))};
     }
 
-    StringView stringView() const {
+    StringView string_view() const {
         return {reinterpret_cast<const char*>(items),
-                safeDemote<u32>(Size * sizeof(T))};
+                safe_demote<u32>(Size * sizeof(T))};
     }
 
     T* begin() {
@@ -839,25 +843,25 @@ private:
     typedef Return Handler(void*, Args...);
 
     Handler* handler = nullptr;
-    void* storedArg = nullptr;
+    void* stored_arg = nullptr;
 
 public:
     Func() = default;
 
     PLY_INLINE Func(const Func& other)
-        : handler{other.handler}, storedArg{other.storedArg} {
+        : handler{other.handler}, stored_arg{other.stored_arg} {
     }
 
     template <typename T>
-    PLY_INLINE Func(Return (*handler)(T*, Args...), T* storedArg)
-        : handler{(Handler*) handler}, storedArg{(void*) storedArg} {
+    PLY_INLINE Func(Return (*handler)(T*, Args...), T* stored_arg)
+        : handler{(Handler*) handler}, stored_arg{(void*) stored_arg} {
     }
 
     template <typename T>
     PLY_INLINE Func(Return (T::*handler)(Args...), T* target)
-        : storedArg{(void*) target} {
+        : stored_arg{(void*) target} {
         this->handler = [this](void* target, Args... args) {
-            return ((T*) target)->*(this->hiddenArg)(std::forward<Args>(args)...);
+            return ((T*) target)->*(this->hidden_arg)(std::forward<Args>(args)...);
         };
     }
 
@@ -865,7 +869,7 @@ public:
     template <
         typename Callable,
         typename = void_t<decltype(std::declval<Callable>()(std::declval<Args>()...))>>
-    Func(const Callable& callable) : storedArg{(void*) &callable} {
+    Func(const Callable& callable) : stored_arg{(void*) &callable} {
         this->handler = [](void* callable, Args... args) -> Return {
             return (*(const Callable*) callable)(std::forward<Args>(args)...);
         };
@@ -873,7 +877,7 @@ public:
 
     PLY_INLINE void operator=(const Func& other) {
         this->handler = other.handler;
-        this->storedArg = other.storedArg;
+        this->stored_arg = other.stored_arg;
     }
 
     PLY_INLINE explicit operator bool() const {
@@ -883,9 +887,9 @@ public:
     template <typename... CallArgs>
     PLY_INLINE Return operator()(CallArgs&&... args) const {
         if (!this->handler)
-            return subst::createDefault<Return>();
+            return subst::create_default<Return>();
         PLY_PUN_SCOPE
-        return this->handler(this->storedArg, std::forward<CallArgs>(args)...);
+        return this->handler(this->stored_arg, std::forward<CallArgs>(args)...);
     }
 };
 
@@ -914,7 +918,7 @@ public:
     PLY_INLINE Owned(Owned<Derived>&& other) : ptr{other.release()} {
     }
     PLY_INLINE ~Owned() {
-        subst::destroyByMember(this->ptr);
+        subst::destroy_by_member(this->ptr);
     }
     static PLY_INLINE Owned adopt(T* ptr) {
         Owned result;
@@ -923,19 +927,19 @@ public:
     }
     PLY_INLINE void operator=(Owned&& other) {
         PLY_ASSERT(!this->ptr || this->ptr != other.ptr);
-        subst::destroyByMember(this->ptr);
+        subst::destroy_by_member(this->ptr);
         this->ptr = other.release();
     }
     template <typename Derived,
               typename std::enable_if_t<std::is_base_of<T, Derived>::value, int> = 0>
     PLY_INLINE void operator=(Owned<Derived>&& other) {
         PLY_ASSERT(!this->ptr || this->ptr != other.ptr);
-        subst::destroyByMember(this->ptr);
+        subst::destroy_by_member(this->ptr);
         this->ptr = other.release();
     }
     PLY_INLINE void operator=(T* ptr) {
         PLY_ASSERT(!this->ptr || this->ptr != ptr);
-        subst::destroyByMember(this->ptr);
+        subst::destroy_by_member(this->ptr);
         this->ptr = ptr;
     }
     template <typename... Args>
@@ -957,7 +961,7 @@ public:
         return ptr;
     }
     PLY_INLINE void clear() {
-        subst::destroyByMember(this->ptr);
+        subst::destroy_by_member(this->ptr);
         this->ptr = nullptr;
     }
 };
@@ -974,19 +978,19 @@ private:
     Atomic<s32> m_refCount = 0;
 
 public:
-    PLY_INLINE void incRef() {
-        s32 oldCount = m_refCount.fetchAdd(1, Relaxed);
-        PLY_ASSERT(oldCount >= 0 && oldCount < UINT16_MAX);
-        PLY_UNUSED(oldCount);
+    PLY_INLINE void inc_ref() {
+        s32 old_count = m_refCount.fetch_add(1, Relaxed);
+        PLY_ASSERT(old_count >= 0 && old_count < UINT16_MAX);
+        PLY_UNUSED(old_count);
     }
-    PLY_INLINE void decRef() {
-        s32 oldCount = m_refCount.fetchSub(1, Relaxed);
-        PLY_ASSERT(oldCount >= 1 && oldCount < UINT16_MAX);
-        if (oldCount == 1) {
-            static_cast<Mixin*>(this)->onRefCountZero();
+    PLY_INLINE void dec_ref() {
+        s32 old_count = m_refCount.fetch_sub(1, Relaxed);
+        PLY_ASSERT(old_count >= 1 && old_count < UINT16_MAX);
+        if (old_count == 1) {
+            static_cast<Mixin*>(this)->on_ref_count_zero();
         }
     }
-    PLY_INLINE s32 getRefCount() const {
+    PLY_INLINE s32 get_ref_count() const {
         return m_refCount.load(Relaxed);
     }
 
@@ -1009,18 +1013,18 @@ public:
     }
     PLY_INLINE Reference(T* ptr) : ptr(ptr) {
         if (this->ptr)
-            this->ptr->incRef();
+            this->ptr->inc_ref();
     }
     PLY_INLINE Reference(const Reference& ref) : ptr(ref.ptr) {
         if (this->ptr)
-            this->ptr->incRef();
+            this->ptr->inc_ref();
     }
     PLY_INLINE Reference(Reference&& ref) : ptr(ref.ptr) {
         ref.ptr = nullptr;
     }
     PLY_INLINE ~Reference() {
         if (this->ptr)
-            this->ptr->decRef();
+            this->ptr->dec_ref();
     }
     PLY_INLINE T* operator->() const {
         return this->ptr;
@@ -1032,25 +1036,25 @@ public:
         return this->ptr;
     }
     PLY_INLINE void operator=(T* ptr) {
-        T* oldPtr = this->ptr;
+        T* old_ptr = this->ptr;
         this->ptr = ptr;
         if (this->ptr)
-            this->ptr->incRef();
-        if (oldPtr)
-            oldPtr->decRef();
+            this->ptr->inc_ref();
+        if (old_ptr)
+            old_ptr->dec_ref();
     }
 
     PLY_INLINE void operator=(const Reference& ref) {
-        T* oldPtr = this->ptr;
+        T* old_ptr = this->ptr;
         this->ptr = ref.ptr;
         if (this->ptr)
-            this->ptr->incRef();
-        if (oldPtr)
-            oldPtr->decRef();
+            this->ptr->inc_ref();
+        if (old_ptr)
+            old_ptr->dec_ref();
     }
     PLY_INLINE void operator=(Reference&& ref) {
         if (this->ptr)
-            this->ptr->decRef();
+            this->ptr->dec_ref();
         this->ptr = ref.ptr;
         ref.ptr = nullptr;
     }
@@ -1064,10 +1068,10 @@ public:
     };
     PLY_INLINE void clear() {
         if (this->ptr)
-            this->ptr->decRef();
+            this->ptr->dec_ref();
         this->ptr = nullptr;
     }
-    PLY_INLINE bool isEmpty() const {
+    PLY_INLINE bool is_empty() const {
         return this->ptr == nullptr;
     }
 };
@@ -1086,48 +1090,48 @@ private:
     Atomic<u32> m_dualRefCount = 0;
 
 public:
-    void incRef() {
-        u32 oldDualCount = m_dualRefCount.fetchAdd(1, Relaxed);
-        PLY_ASSERT((oldDualCount & 0xffffu) < INT16_MAX);
-        PLY_UNUSED(oldDualCount);
+    void inc_ref() {
+        u32 old_dual_count = m_dualRefCount.fetch_add(1, Relaxed);
+        PLY_ASSERT((old_dual_count & 0xffffu) < INT16_MAX);
+        PLY_UNUSED(old_dual_count);
     }
 
-    void decRef() {
-        u32 oldDualCount = m_dualRefCount.fetchSub(1, Relaxed);
-        PLY_ASSERT((oldDualCount & 0xffffu) > 0);
-        PLY_ASSERT((oldDualCount & 0xffffu) < INT16_MAX);
-        if ((oldDualCount & 0xffffu) == 1) {
-            static_cast<Mixin*>(this)->onPartialRefCountZero();
-            if (oldDualCount == 1) {
-                static_cast<Mixin*>(this)->onFullRefCountZero();
+    void dec_ref() {
+        u32 old_dual_count = m_dualRefCount.fetch_sub(1, Relaxed);
+        PLY_ASSERT((old_dual_count & 0xffffu) > 0);
+        PLY_ASSERT((old_dual_count & 0xffffu) < INT16_MAX);
+        if ((old_dual_count & 0xffffu) == 1) {
+            static_cast<Mixin*>(this)->on_partial_ref_count_zero();
+            if (old_dual_count == 1) {
+                static_cast<Mixin*>(this)->on_full_ref_count_zero();
             }
         }
     }
 
-    void incWeakRef() {
-        u32 oldDualCount = m_dualRefCount.fetchAdd(0x10000, Relaxed);
-        PLY_ASSERT((oldDualCount & 0xffffu) > 0); // Must have some strong refs
-        PLY_ASSERT((oldDualCount >> 16) < INT16_MAX);
-        PLY_UNUSED(oldDualCount);
+    void inc_weak_ref() {
+        u32 old_dual_count = m_dualRefCount.fetch_add(0x10000, Relaxed);
+        PLY_ASSERT((old_dual_count & 0xffffu) > 0); // Must have some strong refs
+        PLY_ASSERT((old_dual_count >> 16) < INT16_MAX);
+        PLY_UNUSED(old_dual_count);
     }
 
-    void decWeakRef() {
-        u32 oldDualCount = m_dualRefCount.fetchSub(0x10000, Relaxed);
-        PLY_ASSERT((oldDualCount >> 16) > 0);
-        PLY_ASSERT((oldDualCount >> 16) < INT16_MAX);
-        PLY_UNUSED(oldDualCount);
-        if ((oldDualCount >> 16) == 1) {
-            if (oldDualCount == 0x10000) {
-                static_cast<Mixin*>(this)->onFullRefCountZero();
+    void dec_weak_ref() {
+        u32 old_dual_count = m_dualRefCount.fetch_sub(0x10000, Relaxed);
+        PLY_ASSERT((old_dual_count >> 16) > 0);
+        PLY_ASSERT((old_dual_count >> 16) < INT16_MAX);
+        PLY_UNUSED(old_dual_count);
+        if ((old_dual_count >> 16) == 1) {
+            if (old_dual_count == 0x10000) {
+                static_cast<Mixin*>(this)->on_full_ref_count_zero();
             }
         }
     }
 
-    u32 getRefCount() const {
+    u32 get_ref_count() const {
         return m_dualRefCount.load(Relaxed) & 0xffffu;
     }
 
-    u32 getWeakRefCount() const {
+    u32 get_weak_ref_count() const {
         return m_dualRefCount.load(Relaxed) >> 16;
     }
 
@@ -1145,12 +1149,12 @@ public:
 
     WeakRef(T* ptr) : m_ptr{ptr} {
         if (m_ptr)
-            m_ptr->incWeakRef();
+            m_ptr->inc_weak_ref();
     }
 
     WeakRef(const WeakRef& ref) : m_ptr{ref.m_ptr} {
         if (m_ptr)
-            m_ptr->incWeakRef();
+            m_ptr->inc_weak_ref();
     }
 
     WeakRef(WeakRef&& ref) : m_ptr{ref.m_ptr} {
@@ -1159,7 +1163,7 @@ public:
 
     ~WeakRef() {
         if (m_ptr)
-            m_ptr->decWeakRef();
+            m_ptr->dec_weak_ref();
     }
 
     T* operator->() const {
@@ -1170,34 +1174,34 @@ public:
         return m_ptr;
     }
 
-    void setFromNull(T* ptr) {
+    void set_from_null(T* ptr) {
         PLY_ASSERT(!m_ptr);
         PLY_ASSERT(ptr);
         m_ptr = ptr;
-        ptr->incWeakRef();
+        ptr->inc_weak_ref();
     }
 
     void operator=(T* ptr) {
-        T* oldPtr = m_ptr;
+        T* old_ptr = m_ptr;
         m_ptr = ptr;
         if (m_ptr)
-            m_ptr->incWeakRef();
-        if (oldPtr)
-            oldPtr->decWeakRef();
+            m_ptr->inc_weak_ref();
+        if (old_ptr)
+            old_ptr->dec_weak_ref();
     }
 
     void operator=(const WeakRef& ref) {
-        T* oldPtr = m_ptr;
+        T* old_ptr = m_ptr;
         m_ptr = ref.m_ptr;
         if (m_ptr)
-            m_ptr->incWeakRef();
-        if (oldPtr)
-            oldPtr->decWeakRef();
+            m_ptr->inc_weak_ref();
+        if (old_ptr)
+            old_ptr->dec_weak_ref();
     }
 
     void operator=(WeakRef&& ref) {
         if (m_ptr)
-            m_ptr->decWeakRef();
+            m_ptr->dec_weak_ref();
         m_ptr = ref.m_ptr;
         ref.m_ptr = nullptr;
     }
@@ -1357,57 +1361,57 @@ struct Numeric {
     enum Type { U64, S64, Double };
     Type type;
     union {
-        u64 repU64;
-        s64 repS64;
-        double repDouble;
+        u64 rep_u64;
+        s64 rep_s64;
+        double rep_double;
     };
 
-    Numeric() : type(U64), repU64(0) {
+    Numeric() : type(U64), rep_u64(0) {
     }
 
     void operator=(bool v) {
         type = U64;
-        repU64 = v;
+        rep_u64 = v;
     }
     void operator=(u8 v) {
         type = U64;
-        repU64 = v;
+        rep_u64 = v;
     }
     void operator=(u16 v) {
         type = U64;
-        repU64 = v;
+        rep_u64 = v;
     }
     void operator=(u32 v) {
         type = U64;
-        repU64 = v;
+        rep_u64 = v;
     }
     void operator=(u64 v) {
         type = U64;
-        repU64 = v;
+        rep_u64 = v;
     }
     void operator=(s8 v) {
         type = S64;
-        repS64 = v;
+        rep_s64 = v;
     }
     void operator=(s16 v) {
         type = S64;
-        repS64 = v;
+        rep_s64 = v;
     }
     void operator=(s32 v) {
         type = S64;
-        repS64 = v;
+        rep_s64 = v;
     }
     void operator=(s64 v) {
         type = S64;
-        repS64 = v;
+        rep_s64 = v;
     }
     void operator=(float v) {
         type = Double;
-        repDouble = v;
+        rep_double = v;
     }
     void operator=(double v) {
         type = Double;
-        repDouble = v;
+        rep_double = v;
     }
 
     template <typename T>
@@ -1415,16 +1419,16 @@ struct Numeric {
         T result;
         switch (type) {
             case U64:
-                result = (T) repU64;
-                precise = ((u64) result == repU64);
+                result = (T) rep_u64;
+                precise = ((u64) result == rep_u64);
                 break;
             case S64:
-                result = (T) repS64;
-                precise = ((s64) result == repS64);
+                result = (T) rep_s64;
+                precise = ((s64) result == rep_s64);
                 break;
             case Double:
-                result = (T) repDouble;
-                precise = ((double) result == repDouble);
+                result = (T) rep_double;
+                precise = ((double) result == rep_double);
                 break;
         }
         return result;
@@ -1445,23 +1449,23 @@ struct Numeric {
 
 template <typename T, typename V>
 struct SetInScope {
-    T& target;                           // The variable to set/reset
-    std::remove_reference_t<T> oldValue; // Backup of original value
-    const V& newValueRef; // Extends the lifetime of temporary values in the case of eg.
-                          // SetInScope<StringView, String>
+    T& target;                            // The variable to set/reset
+    std::remove_reference_t<T> old_value; // Backup of original value
+    const V& new_value_ref; // Extends the lifetime of temporary values in the case of
+                            // eg. SetInScope<StringView, String>
 
     template <typename U>
-    SetInScope(T& target, U&& newValue)
-        : target{target}, oldValue{std::move(target)}, newValueRef{newValue} {
-        target = std::forward<U>(newValue);
+    SetInScope(T& target, U&& new_value)
+        : target{target}, old_value{std::move(target)}, new_value_ref{new_value} {
+        target = std::forward<U>(new_value);
     }
     ~SetInScope() {
-        this->target = std::move(this->oldValue);
+        this->target = std::move(this->old_value);
     }
 };
 
 #define PLY_SET_IN_SCOPE(target, value) \
-    SetInScope<decltype(target), decltype(value)> PLY_UNIQUE_VARIABLE(setInScope) { \
+    SetInScope<decltype(target), decltype(value)> PLY_UNIQUE_VARIABLE(set_in_scope) { \
         target, value \
     }
 
@@ -1476,11 +1480,11 @@ struct OnScopeExit {
     }
 };
 template <typename Callback>
-PLY_INLINE OnScopeExit<Callback> setOnScopeExit(Callback&& cb) {
+PLY_INLINE OnScopeExit<Callback> set_on_scope_exit(Callback&& cb) {
     return {std::forward<Callback>(cb)};
 }
 #define PLY_ON_SCOPE_EXIT(cb) \
-    auto PLY_UNIQUE_VARIABLE(onScopeExit) = setOnScopeExit([&] cb)
+    auto PLY_UNIQUE_VARIABLE(on_scope_exit) = set_on_scope_exit([&] cb)
 
 //   ▄▄▄▄           ▄▄  ▄▄         ▄▄
 //  ██  ▀▀ ▄▄    ▄▄ ▄▄ ▄██▄▄  ▄▄▄▄ ██▄▄▄
@@ -1500,12 +1504,12 @@ struct SwitchType {
             // construct
             [](void* ptr) { new (ptr) T{}; },
             // destruct
-            [](void* ptr) { subst::destructByMember((T*) ptr); },
+            [](void* ptr) { subst::destruct_by_member((T*) ptr); },
             // move
-            [](void* dst, void* src) { subst::unsafeMove<T>((T*) dst, (T*) src); },
+            [](void* dst, void* src) { subst::unsafe_move<T>((T*) dst, (T*) src); },
             // copy
             [](void* dst, const void* src) {
-                subst::unsafeCopy<T>((T*) dst, (const T*) src);
+                subst::unsafe_copy<T>((T*) dst, (const T*) src);
             },
         };
     };
@@ -1521,8 +1525,8 @@ struct SwitchWrapper {
         return ctr.id == RequiredID;
     }
     template <typename... Args>
-    PLY_INLINE SwitchWrapper& switchTo(Args&&... args) {
-        Container::idToType[ureg(ctr.id)].destruct(&ctr.storage);
+    PLY_INLINE SwitchWrapper& switch_to(Args&&... args) {
+        Container::id_to_type[ureg(ctr.id)].destruct(&ctr.storage);
         ctr.id = RequiredID;
         new (&ctr.storage) State{std::forward<Args>(args)...};
         return *this;
@@ -1555,40 +1559,40 @@ struct SwitchWrapper {
 
 #define PLY_STATE(name)
 
-#define SWITCH_FOOTER(ctrName, defaultState) \
-    using T = ctrName; \
+#define SWITCH_FOOTER(ctr_name, default_state) \
+    using T = ctr_name; \
     ID id; \
     Storage_ storage; \
-    static SwitchType idToType[]; \
+    static SwitchType id_to_type[]; \
     template <typename, typename = void> \
     struct TypeToID; \
-    PLY_INLINE ctrName() : id{ID::defaultState} { new (&storage) defaultState{}; } \
-    PLY_INLINE ~ctrName() { idToType[ply::ureg(id)].destruct(&storage); } \
-    PLY_INLINE ctrName(const ctrName& other) : id{other.id} { \
-        idToType[ply::ureg(id)].construct(&storage); \
-        idToType[ply::ureg(id)].copy(&storage, &other.storage); \
+    PLY_INLINE ctr_name() : id{ID::default_state} { new (&storage) default_state{}; } \
+    PLY_INLINE ~ctr_name() { id_to_type[ply::ureg(id)].destruct(&storage); } \
+    PLY_INLINE ctr_name(const ctr_name& other) : id{other.id} { \
+        id_to_type[ply::ureg(id)].construct(&storage); \
+        id_to_type[ply::ureg(id)].copy(&storage, &other.storage); \
     } \
-    PLY_INLINE ctrName(ctrName&& other) : id{other.id} { \
-        idToType[ply::ureg(id)].construct(&storage); \
-        idToType[ply::ureg(id)].move(&storage, &other.storage); \
+    PLY_INLINE ctr_name(ctr_name&& other) : id{other.id} { \
+        id_to_type[ply::ureg(id)].construct(&storage); \
+        id_to_type[ply::ureg(id)].move(&storage, &other.storage); \
     } \
     template <typename S, typename = ply::void_t<decltype(TypeToID<S>::value)>> \
-    PLY_INLINE ctrName(S&& other) : id{TypeToID<S>::value} { \
-        idToType[ply::ureg(id)].construct(&storage); \
-        idToType[ply::ureg(id)].move(&storage, &other); \
+    PLY_INLINE ctr_name(S&& other) : id{TypeToID<S>::value} { \
+        id_to_type[ply::ureg(id)].construct(&storage); \
+        id_to_type[ply::ureg(id)].move(&storage, &other); \
     } \
-    PLY_INLINE void switchTo(ID newID) { \
-        idToType[ply::ureg(id)].destruct(&storage); \
-        id = newID; \
-        idToType[ply::ureg(id)].construct(&storage); \
+    PLY_INLINE void switch_to(ID new_id) { \
+        id_to_type[ply::ureg(id)].destruct(&storage); \
+        id = new_id; \
+        id_to_type[ply::ureg(id)].construct(&storage); \
     } \
-    PLY_INLINE void operator=(const ctrName& other) { \
-        switchTo(other.id); \
-        idToType[ply::ureg(id)].copy(&storage, &other.storage); \
+    PLY_INLINE void operator=(const ctr_name& other) { \
+        switch_to(other.id); \
+        id_to_type[ply::ureg(id)].copy(&storage, &other.storage); \
     } \
-    PLY_INLINE void operator=(ctrName&& other) { \
-        switchTo(other.id); \
-        idToType[ply::ureg(id)].move(&storage, &other.storage); \
+    PLY_INLINE void operator=(ctr_name&& other) { \
+        switch_to(other.id); \
+        id_to_type[ply::ureg(id)].move(&storage, &other.storage); \
     }
 
 // We use partial specialization on TypeToID<> because of
@@ -1604,16 +1608,16 @@ struct SwitchWrapper {
         return {*this}; \
     }
 
-#define SWITCH_TABLE_BEGIN(ctrName) ply::SwitchType ctrName::idToType[] = {
+#define SWITCH_TABLE_BEGIN(ctr_name) ply::SwitchType ctr_name::id_to_type[] = {
 
-#define SWITCH_TABLE_STATE(ctrName, state) ply::SwitchType::get<ctrName::state>(),
+#define SWITCH_TABLE_STATE(ctr_name, state) ply::SwitchType::get<ctr_name::state>(),
 
-#define SWITCH_TABLE_END(ctrName) \
+#define SWITCH_TABLE_END(ctr_name) \
     } \
     ; \
-    PLY_STATIC_ASSERT(PLY_STATIC_ARRAY_SIZE(ctrName::idToType) == \
-                      (ply::ureg) ctrName::ID::Count); \
-    PLY_STATIC_ASSERT((ply::ureg) ctrName::ID::Count > 0);
+    PLY_STATIC_ASSERT(PLY_STATIC_ARRAY_SIZE(ctr_name::id_to_type) == \
+                      (ply::ureg) ctr_name::ID::Count); \
+    PLY_STATIC_ASSERT((ply::ureg) ctr_name::ID::Count > 0);
 
 //  ▄▄▄▄▄                ▄▄▄
 //  ██  ██  ▄▄▄▄   ▄▄▄▄   ██
@@ -1648,11 +1652,11 @@ public:
 #endif
 
     BasePool();
-    void baseReserve(u32 newSize, u32 itemSize);
-    u32 baseAlloc(u32 itemSize);
-    void baseFree(u32 index, u32 itemSize);
-    PLY_DLL_ENTRY void baseSortFreeList(u32 stride) const;
-    void baseClear();
+    void base_reserve(u32 new_size, u32 item_size);
+    u32 base_alloc(u32 item_size);
+    void base_free(u32 index, u32 item_size);
+    PLY_DLL_ENTRY void base_sort_free_list(u32 stride) const;
+    void base_clear();
 };
 
 //-----------------------------------------------------------------------
@@ -1668,15 +1672,15 @@ public:
     void clear();
     ~Pool();
     template <typename Index, typename... Args>
-    PoolIndex<T, Index> newItem(Args&&... args);
+    PoolIndex<T, Index> new_item(Args&&... args);
     template <typename Index>
-    void delItem(PoolIndex<T, Index> index);
+    void del_item(PoolIndex<T, Index> index);
 
     template <typename Index>
     PoolPtr<T> get(PoolIndex<T, Index>);
     template <typename Index>
     PoolPtr<const T> get(PoolIndex<T, Index>) const;
-    u32 indexOf(const T* item) const;
+    u32 index_of(const T* item) const;
 
     PoolIterator<T> begin();
     PoolIterator<T> end();
@@ -1701,7 +1705,7 @@ public:
     PoolIndex(u32 idx);
     PoolIndex(const PoolIndex<const T, Index>& other);
     // Don't allow implicit cast to integer type (and no implicit bool cast either!)
-    bool isValid() const;
+    bool is_valid() const;
     bool operator==(const PoolIndex& other) const;
     bool operator!=(const PoolIndex& other) const;
 };
@@ -1733,15 +1737,15 @@ private:
     u32 m_index;
 
 public:
-    PoolIterator(const Pool<T>* pool, u32 nextFree, u32 index);
+    PoolIterator(const Pool<T>* pool, u32 next_free, u32 index);
     ~PoolIterator();
     PoolIterator(const PoolIterator& other);
     void operator=(const PoolIterator&) = delete;
     template <typename Index>
-    PoolIndex<T, Index> getIndex() const;
+    PoolIndex<T, Index> get_index() const;
     PoolPtr<T> operator*() const;
     PoolIterator& operator++();
-    bool isValid() const;
+    bool is_valid() const;
     bool operator==(const PoolIterator& other) const;
     bool operator!=(const PoolIterator& other) const;
 };
@@ -1777,7 +1781,7 @@ public:
 // PoolIndex<T, Index> inline functions
 //------------------------------------------------------------------------------------
 template <typename T, typename Index>
-PoolIndex<T, Index>::PoolIndex(u32 idx) : idx{safeDemote<Index>(idx)} {
+PoolIndex<T, Index>::PoolIndex(u32 idx) : idx{safe_demote<Index>(idx)} {
 }
 
 template <typename T, typename Index>
@@ -1786,7 +1790,7 @@ PoolIndex<T, Index>::PoolIndex(const PoolIndex<const T, Index>& other)
 }
 
 template <typename T, typename Index>
-bool PoolIndex<T, Index>::isValid() const {
+bool PoolIndex<T, Index>::is_valid() const {
     return idx != InvalidIndex;
 }
 
@@ -1913,40 +1917,40 @@ inline BasePool::BasePool() {
     m_freeListSize = 0;
 }
 
-inline void BasePool::baseReserve(u32 newSize, u32 itemSize) {
-    m_allocated = (u32) roundUpPowerOf2(max<u32>(
-        newSize, 8)); // FIXME: Generalize to other resize strategies when needed
+inline void BasePool::base_reserve(u32 new_size, u32 item_size) {
+    m_allocated = (u32) round_up_power_of2(max<u32>(
+        new_size, 8)); // FIXME: Generalize to other resize strategies when needed
     PLY_ASSERT(m_allocated != 0); // Overflow check
     m_items = Heap.realloc(
         m_items,
-        itemSize * m_allocated); // FIXME: Generalize to other heaps when needed
+        item_size * m_allocated); // FIXME: Generalize to other heaps when needed
 }
 
-inline u32 BasePool::baseAlloc(u32 itemSize) {
+inline u32 BasePool::base_alloc(u32 item_size) {
     if (m_firstFree != u32(-1)) {
-        u32 nextFree = *(u32*) PLY_PTR_OFFSET(m_items, m_firstFree * itemSize);
+        u32 next_free = *(u32*) PLY_PTR_OFFSET(m_items, m_firstFree * item_size);
         u32 index = m_firstFree;
-        m_firstFree = nextFree;
+        m_firstFree = next_free;
         m_freeListSize--;
         PLY_ASSERT((m_freeListSize == 0) == (m_firstFree == u32(-1)));
         return index;
     }
     if (m_size >= m_allocated) {
-        baseReserve(m_size + 1, itemSize);
+        base_reserve(m_size + 1, item_size);
     }
     return m_size++;
 }
 
-inline void BasePool::baseFree(u32 index, u32 itemSize) {
+inline void BasePool::base_free(u32 index, u32 item_size) {
     PLY_ASSERT(index < m_size);
-    *(u32*) PLY_PTR_OFFSET(m_items, index * itemSize) = m_firstFree;
+    *(u32*) PLY_PTR_OFFSET(m_items, index * item_size) = m_firstFree;
     m_firstFree = index;
     m_sortedFreeList = 0;
     PLY_ASSERT(m_freeListSize < (1u << 31) - 1);
     m_freeListSize++;
 }
 
-inline void BasePool::baseClear() {
+inline void BasePool::base_clear() {
     Heap.free(m_items);
     m_items = nullptr;
     m_size = 0;
@@ -1966,24 +1970,24 @@ Pool<T>::Pool() {
 template <typename T>
 void Pool<T>::clear() {
     if (!std::is_trivially_destructible<T>::value) {
-        baseSortFreeList(sizeof(T));
+        base_sort_free_list(sizeof(T));
         T* item = static_cast<T*>(m_items);
         T* end = item + m_size;
-        u32 skipIndex = m_firstFree;
+        u32 skip_index = m_firstFree;
         for (;;) {
-            T* skip =
-                static_cast<T*>(m_items) + (skipIndex == u32(-1) ? m_size : skipIndex);
+            T* skip = static_cast<T*>(m_items) +
+                      (skip_index == u32(-1) ? m_size : skip_index);
             while (item < skip) {
                 item->~T();
                 item++;
             }
             if (item == end)
                 break;
-            skipIndex = *reinterpret_cast<u32*>(skip);
+            skip_index = *reinterpret_cast<u32*>(skip);
             item++;
         }
     }
-    baseClear();
+    base_clear();
 }
 
 template <typename T>
@@ -1993,25 +1997,25 @@ Pool<T>::~Pool() {
 
 template <typename T>
 template <typename Index, typename... Args>
-PoolIndex<T, Index> Pool<T>::newItem(Args&&... args) {
+PoolIndex<T, Index> Pool<T>::new_item(Args&&... args) {
 #if PLY_WITH_POOL_DEBUG_CHECKS
     // There must not be any Iterators or Ptrs when modifying the pool!
     PLY_ASSERT(m_numReaders == 0);
 #endif
-    u32 index = baseAlloc(sizeof(T));
+    u32 index = base_alloc(sizeof(T));
     new (static_cast<T*>(m_items) + index) T{std::forward<Args>(args)...};
     return index;
 }
 
 template <typename T>
 template <typename Index>
-void Pool<T>::delItem(PoolIndex<T, Index> index) {
+void Pool<T>::del_item(PoolIndex<T, Index> index) {
 #if PLY_WITH_POOL_DEBUG_CHECKS
     // There must not be any Iterators or Ptrs when modifying the pool!
     PLY_ASSERT(m_numReaders == 0);
 #endif
     static_cast<T*>(m_items)[index.idx].~T();
-    baseFree(index.idx, sizeof(T));
+    base_free(index.idx, sizeof(T));
 }
 
 template <typename T>
@@ -2029,8 +2033,8 @@ PoolPtr<const T> Pool<T>::get(PoolIndex<T, Index> index) const {
 }
 
 template <typename T>
-u32 Pool<T>::indexOf(const T* item) const {
-    u32 index = safeDemote<u32>(item - static_cast<const T*>(m_items));
+u32 Pool<T>::index_of(const T* item) const {
+    u32 index = safe_demote<u32>(item - static_cast<const T*>(m_items));
     PLY_ASSERT(index < m_size);
     return index;
 }
@@ -2039,7 +2043,7 @@ u32 Pool<T>::indexOf(const T* item) const {
 //! The pool must not be modified during iteration.
 template <typename T>
 PoolIterator<T> Pool<T>::begin() {
-    baseSortFreeList(sizeof(T));
+    base_sort_free_list(sizeof(T));
     PoolIterator<T> iter{this, m_firstFree, u32(-1)};
     ++iter;
     return iter;
@@ -2056,7 +2060,7 @@ PoolIterator<T> Pool<T>::end() {
 //! The pool must not be modified during iteration.
 template <typename T>
 PoolIterator<const T> Pool<T>::begin() const {
-    baseSortFreeList(sizeof(T));
+    base_sort_free_list(sizeof(T));
     PoolIterator<const T> iter{(Pool<const T>*) this, m_firstFree, u32(-1)};
     ++iter;
     return iter;
@@ -2073,8 +2077,8 @@ PoolIterator<const T> Pool<T>::end() const {
 // PoolIterator<T> inline functions
 //------------------------------------------------------------------------------------
 template <typename T>
-PoolIterator<T>::PoolIterator(const Pool<T>* pool, u32 nextFree, u32 index)
-    : m_pool(pool), m_nextFree(nextFree), m_index(index) {
+PoolIterator<T>::PoolIterator(const Pool<T>* pool, u32 next_free, u32 index)
+    : m_pool(pool), m_nextFree(next_free), m_index(index) {
 #if PLY_WITH_POOL_DEBUG_CHECKS
     m_pool->m_numReaders++;
 #endif
@@ -2099,7 +2103,7 @@ PoolIterator<T>::PoolIterator(const PoolIterator& other) : m_pool(other.m_pool) 
 
 template <typename T>
 template <typename Index>
-PoolIndex<T, Index> PoolIterator<T>::getIndex() const {
+PoolIndex<T, Index> PoolIterator<T>::get_index() const {
     return {m_index};
 }
 
@@ -2124,7 +2128,7 @@ PoolIterator<T>& PoolIterator<T>::operator++() {
 }
 
 template <typename T>
-bool PoolIterator<T>::isValid() const {
+bool PoolIterator<T>::is_valid() const {
     return m_index < m_pool->m_size;
 }
 
@@ -2157,7 +2161,7 @@ OwnPoolHandle<Traits>::OwnPoolHandle(OwnPoolHandle<Traits>&& other)
 template <typename Traits>
 OwnPoolHandle<Traits>::~OwnPoolHandle() {
     if (this->idx != this->InvalidIndex) {
-        Traits::getPool().delItem(*this);
+        Traits::get_pool().del_item(*this);
     }
 }
 
@@ -2165,7 +2169,7 @@ template <typename Traits>
 void OwnPoolHandle<Traits>::assign(
     PoolIndex<typename Traits::T, typename Traits::Index> other) {
     if (this->idx != this->InvalidIndex) {
-        Traits::getPool().delItem(*this);
+        Traits::get_pool().del_item(*this);
     }
     this->idx = other.idx;
 }
@@ -2173,14 +2177,14 @@ void OwnPoolHandle<Traits>::assign(
 template <typename Traits>
 void OwnPoolHandle<Traits>::clear() {
     if (this->idx != this->InvalidIndex) {
-        Traits::getPool().delItem(*this);
+        Traits::get_pool().del_item(*this);
     }
     this->idx = this->InvalidIndex;
 }
 
 template <typename Traits>
 PoolPtr<typename Traits::T> OwnPoolHandle<Traits>::get() const {
-    return Traits::getPool().get(*this);
+    return Traits::get_pool().get(*this);
 }
 
 //  ▄▄▄▄▄  ▄▄        ▄▄▄▄▄                ▄▄▄
@@ -2194,61 +2198,61 @@ PLY_STATIC_ASSERT(PLY_PTR_SIZE == 8);
 
 struct BaseBigPool {
     char* base = nullptr;
-    uptr numReservedBytes = 0;
-    uptr numCommittedBytes = 0;
+    uptr num_reserved_bytes = 0;
+    uptr num_committed_bytes = 0;
 
     static constexpr uptr DefaultNumReservedBytes = 1024 * 1024 * 1024;
 
-    BaseBigPool(uptr numReservedBytes = DefaultNumReservedBytes);
+    BaseBigPool(uptr num_reserved_bytes = DefaultNumReservedBytes);
     ~BaseBigPool();
-    void commitPages(uptr newTotalBytes);
+    void commit_pages(uptr new_total_bytes);
 };
 
 template <typename T = char>
 class BigPool : protected BaseBigPool {
 private:
-    uptr numItems_ = 0;
+    uptr num_items_ = 0;
 
 public:
-    PLY_INLINE BigPool(uptr numReservedBytes = DefaultNumReservedBytes)
-        : BaseBigPool{numReservedBytes} {
+    PLY_INLINE BigPool(uptr num_reserved_bytes = DefaultNumReservedBytes)
+        : BaseBigPool{num_reserved_bytes} {
     }
-    PLY_INLINE uptr numItems() const {
-        return this->numItems_;
+    PLY_INLINE uptr num_items() const {
+        return this->num_items_;
     }
     PLY_INLINE const T& operator[](uptr idx) const {
-        PLY_ASSERT(idx < this->numItems_);
+        PLY_ASSERT(idx < this->num_items_);
         return ((const T*) this->base)[idx];
     }
     PLY_INLINE T& operator[](uptr idx) {
-        PLY_ASSERT(idx < this->numItems_);
+        PLY_ASSERT(idx < this->num_items_);
         return ((T*) this->base)[idx];
     }
     PLY_INLINE const T* end() const {
-        return ((const T*) this->base) + this->numItems_;
+        return ((const T*) this->base) + this->num_items_;
     }
     PLY_INLINE T* get(uptr idx) const {
-        PLY_ASSERT(idx < this->numItems_);
+        PLY_ASSERT(idx < this->num_items_);
         return ((T*) this->base) + idx;
     }
     PLY_INLINE T& back(sptr ofs = -1) const {
-        PLY_ASSERT(ofs < 0 && uptr(-ofs) <= this->numItems_);
-        return ((T*) this->base)[this->numItems_ + ofs];
+        PLY_ASSERT(ofs < 0 && uptr(-ofs) <= this->num_items_);
+        return ((T*) this->base)[this->num_items_ + ofs];
     }
-    PLY_INLINE T* beginWrite(uptr maxNumItems = 1) {
-        uptr newTotalBytes = sizeof(T) * (this->numItems_ + maxNumItems);
-        if (newTotalBytes > this->numCommittedBytes) {
-            this->commitPages(newTotalBytes);
+    PLY_INLINE T* begin_write(uptr max_num_items = 1) {
+        uptr new_total_bytes = sizeof(T) * (this->num_items_ + max_num_items);
+        if (new_total_bytes > this->num_committed_bytes) {
+            this->commit_pages(new_total_bytes);
         }
-        return ((T*) this->base) + this->numItems_;
+        return ((T*) this->base) + this->num_items_;
     }
-    PLY_INLINE void endWrite(uptr numItems = 1) {
-        this->numItems_ += numItems;
-        PLY_ASSERT(sizeof(T) * this->numItems_ <= this->numCommittedBytes);
+    PLY_INLINE void end_write(uptr num_items = 1) {
+        this->num_items_ += num_items;
+        PLY_ASSERT(sizeof(T) * this->num_items_ <= this->num_committed_bytes);
     }
-    PLY_INLINE T* alloc(uptr numItems = 1) {
-        T* result = beginWrite(numItems);
-        endWrite(numItems);
+    PLY_INLINE T* alloc(uptr num_items = 1) {
+        T* result = begin_write(num_items);
+        end_write(num_items);
         return result;
     }
     PLY_INLINE T& append(T&& item) {
@@ -2281,49 +2285,49 @@ struct BlockList {
     // memory immediately following the block data.
     //--------------------------------------
     struct Footer {
-        u64 fileOffset = 0; // Total number of bytes used in all preceding blocks
-        Reference<Footer> nextBlock;
-        Footer* prevBlock = nullptr;
+        u64 file_offset = 0; // Total number of bytes used in all preceding blocks
+        Reference<Footer> next_block;
+        Footer* prev_block = nullptr;
         char* bytes = nullptr;
-        u32 startOffset = 0;
-        u32 numBytesUsed = 0; // Number of bytes in this block that contain valid data
-        u32 blockSize = 0;    // Total number of bytes allocated for this block
-        mutable s32 refCount = 0;
+        u32 start_offset = 0;
+        u32 num_bytes_used = 0; // Number of bytes in this block that contain valid data
+        u32 block_size = 0;     // Total number of bytes allocated for this block
+        mutable s32 ref_count = 0;
 
-        PLY_DLL_ENTRY void onRefCountZero();
-        PLY_INLINE void incRef() {
-            this->refCount++;
+        PLY_DLL_ENTRY void on_ref_count_zero();
+        PLY_INLINE void inc_ref() {
+            this->ref_count++;
         }
-        PLY_INLINE void decRef() {
-            PLY_ASSERT(this->refCount > 0);
-            if (--this->refCount == 0) {
-                this->onRefCountZero();
+        PLY_INLINE void dec_ref() {
+            PLY_ASSERT(this->ref_count > 0);
+            if (--this->ref_count == 0) {
+                this->on_ref_count_zero();
             }
         }
         PLY_INLINE char* start() const {
-            return this->bytes + this->startOffset;
+            return this->bytes + this->start_offset;
         }
         PLY_INLINE char* unused() const {
-            return this->bytes + this->numBytesUsed;
+            return this->bytes + this->num_bytes_used;
         }
         PLY_INLINE char* end() const {
-            return this->bytes + this->blockSize;
+            return this->bytes + this->block_size;
         }
-        PLY_INLINE u32 offsetOf(char* byte) {
+        PLY_INLINE u32 offset_of(char* byte) {
             uptr ofs = byte - this->bytes;
-            PLY_ASSERT(ofs <= this->numBytesUsed);
+            PLY_ASSERT(ofs <= this->num_bytes_used);
             return (u32) ofs;
         }
-        PLY_INLINE StringView viewUsedBytes() const {
-            return {this->start(), this->numBytesUsed - this->startOffset};
+        PLY_INLINE StringView view_used_bytes() const {
+            return {this->start(), this->num_bytes_used - this->start_offset};
         }
-        PLY_INLINE MutStringView viewUnusedBytes() {
-            return {this->unused(), this->blockSize - this->numBytesUsed};
+        PLY_INLINE MutStringView view_unused_bytes() {
+            return {this->unused(), this->block_size - this->num_bytes_used};
         }
         // Returns a WeakRef to next block, and the next byte after the last byte in
-        // this block, taking the difference in fileOffsets into account since it's
+        // this block, taking the difference in file_offsets into account since it's
         // possible for adjacent blocks to overlap.
-        PLY_DLL_ENTRY WeakRef weakRefToNext() const;
+        PLY_DLL_ENTRY WeakRef weak_ref_to_next() const;
     };
 
     //--------------------------------------
@@ -2339,11 +2343,11 @@ struct BlockList {
             : block{other.block}, byte{other.byte} {
         }
         PLY_INLINE WeakRef(Footer* block, char* byte) : block{block}, byte{byte} {
-            PLY_ASSERT(!block || (uptr(byte - block->bytes) <= block->blockSize));
+            PLY_ASSERT(!block || (uptr(byte - block->bytes) <= block->block_size));
         }
         PLY_INLINE WeakRef(Footer* block, u32 offset)
             : block{block}, byte{block->bytes + offset} {
-            PLY_ASSERT(offset <= block->blockSize);
+            PLY_ASSERT(offset <= block->block_size);
         }
         PLY_INLINE void operator=(const WeakRef& other) {
             this->block = other.block;
@@ -2353,8 +2357,8 @@ struct BlockList {
             return this->block != other.block || this->byte != other.byte;
         }
         PLY_INLINE WeakRef normalized() const {
-            if (this->block->nextBlock && (this->byte == this->block->unused())) {
-                return {this->block->nextBlock, this->block->start()};
+            if (this->block->next_block && (this->byte == this->block->unused())) {
+                return {this->block->next_block, this->block->start()};
             }
             return *this;
         }
@@ -2376,22 +2380,22 @@ struct BlockList {
         PLY_INLINE Ref(Footer* block) : block{block}, byte{block->bytes} {
         }
         PLY_INLINE Ref(Footer* block, char* byte) : block{block}, byte{byte} {
-            PLY_ASSERT(!block || (uptr(byte - block->bytes) <= block->blockSize));
+            PLY_ASSERT(!block || (uptr(byte - block->bytes) <= block->block_size));
         }
         PLY_INLINE Ref(Reference<Footer>&& block, char* byte)
             : block{std::move(block)}, byte{byte} {
             PLY_ASSERT(!block ||
-                       (uptr(byte - this->block->bytes) <= this->block->blockSize));
+                       (uptr(byte - this->block->bytes) <= this->block->block_size));
         }
-        PLY_INLINE Ref(const WeakRef& weakRef)
-            : block{weakRef.block}, byte{weakRef.byte} {
+        PLY_INLINE Ref(const WeakRef& weak_ref)
+            : block{weak_ref.block}, byte{weak_ref.byte} {
         }
         PLY_INLINE operator WeakRef() const {
             return {this->block, this->byte};
         }
-        PLY_INLINE void operator=(const WeakRef& weakRef) {
-            this->block = weakRef.block;
-            this->byte = weakRef.byte;
+        PLY_INLINE void operator=(const WeakRef& weak_ref) {
+            this->block = weak_ref.block;
+            this->byte = weak_ref.byte;
         }
         PLY_INLINE void operator=(Ref&& other) {
             this->block = std::move(other.block);
@@ -2403,11 +2407,11 @@ struct BlockList {
     // RangeForIterator
     //--------------------------------------
     struct RangeForIterator {
-        WeakRef curPos;
-        WeakRef endPos;
+        WeakRef cur_pos;
+        WeakRef end_pos;
 
-        RangeForIterator(const WeakRef& startPos, const WeakRef& endPos = {})
-            : curPos{startPos}, endPos{endPos} {
+        RangeForIterator(const WeakRef& start_pos, const WeakRef& end_pos = {})
+            : cur_pos{start_pos}, end_pos{end_pos} {
         }
         PLY_INLINE RangeForIterator& begin() {
             return *this;
@@ -2416,37 +2420,39 @@ struct BlockList {
             return *this;
         }
         PLY_INLINE void operator++() {
-            this->curPos = this->curPos.block->weakRefToNext();
+            this->cur_pos = this->cur_pos.block->weak_ref_to_next();
         }
         PLY_INLINE bool operator!=(const RangeForIterator&) const {
-            return this->curPos != this->endPos;
+            return this->cur_pos != this->end_pos;
         }
         PLY_INLINE StringView operator*() const {
-            return StringView::fromRange(this->curPos.byte,
-                                         (this->curPos.block == this->endPos.block)
-                                             ? this->endPos.byte
-                                             : this->curPos.block->unused());
+            return StringView::from_range(this->cur_pos.byte,
+                                          (this->cur_pos.block == this->end_pos.block)
+                                              ? this->end_pos.byte
+                                              : this->cur_pos.block->unused());
         }
     };
 
     //--------------------------------------
     // Static member functions
     //--------------------------------------
-    static PLY_DLL_ENTRY Reference<Footer> createBlock(u32 numBytes = DefaultBlockSize);
-    static PLY_DLL_ENTRY Reference<Footer> createOverlayBlock(const WeakRef& pos,
-                                                              u32 numBytes);
-    static PLY_DLL_ENTRY Footer* appendBlock(Footer* block,
-                                             u32 numBytes = DefaultBlockSize);
-    static PLY_DLL_ENTRY void appendBlockWithRecycle(Reference<Footer>& block,
-                                                     u32 numBytes = DefaultBlockSize);
-    static PLY_INLINE RangeForIterator iterateOverViews(const WeakRef& start,
-                                                        const WeakRef& end = {}) {
+    static PLY_DLL_ENTRY Reference<Footer>
+    create_block(u32 num_bytes = DefaultBlockSize);
+    static PLY_DLL_ENTRY Reference<Footer> create_overlay_block(const WeakRef& pos,
+                                                                u32 num_bytes);
+    static PLY_DLL_ENTRY Footer* append_block(Footer* block,
+                                              u32 num_bytes = DefaultBlockSize);
+    static PLY_DLL_ENTRY void
+    append_block_with_recycle(Reference<Footer>& block,
+                              u32 num_bytes = DefaultBlockSize);
+    static PLY_INLINE RangeForIterator iterate_over_views(const WeakRef& start,
+                                                          const WeakRef& end = {}) {
         return {start, end};
     }
-    static PLY_DLL_ENTRY u32 jumpToNextBlock(WeakRef* weakRef);
-    static PLY_DLL_ENTRY u32 jumpToPrevBlock(WeakRef* weakRef);
+    static PLY_DLL_ENTRY u32 jump_to_next_block(WeakRef* weak_ref);
+    static PLY_DLL_ENTRY u32 jump_to_prev_block(WeakRef* weak_ref);
 
-    static PLY_DLL_ENTRY String toString(Ref&& start, const WeakRef& end = {});
+    static PLY_DLL_ENTRY String to_string(Ref&& start, const WeakRef& end = {});
 
     //--------------------------------------
     // BlockList object
@@ -2456,8 +2462,8 @@ struct BlockList {
 
     PLY_DLL_ENTRY BlockList();
     PLY_DLL_ENTRY ~BlockList();
-    PLY_DLL_ENTRY char* appendBytes(u32 numBytes);
-    PLY_DLL_ENTRY void popLastBytes(u32 numBytes);
+    PLY_DLL_ENTRY char* append_bytes(u32 num_bytes);
+    PLY_DLL_ENTRY void pop_last_bytes(u32 num_bytes);
     PLY_INLINE WeakRef end() const {
         return {tail, tail->unused()};
     }
@@ -2470,14 +2476,14 @@ struct BlockList {
 //                    ██
 
 namespace impl {
-PLY_DLL_ENTRY void destructSequence(Reference<BlockList::Footer>* headRef,
-                                    void (*destructViewAs)(StringView));
-PLY_DLL_ENTRY void beginWriteInternal(BlockList::Footer** tail, u32 numBytes);
-PLY_DLL_ENTRY void popTail(BlockList::Footer** tail, u32 numBytes,
-                           void (*destructViewAs)(StringView));
+PLY_DLL_ENTRY void destruct_sequence(Reference<BlockList::Footer>* head_ref,
+                                     void (*destruct_view_as)(StringView));
+PLY_DLL_ENTRY void begin_write_internal(BlockList::Footer** tail, u32 num_bytes);
+PLY_DLL_ENTRY void pop_tail(BlockList::Footer** tail, u32 num_bytes,
+                            void (*destruct_view_as)(StringView));
 PLY_DLL_ENTRY void truncate(BlockList::Footer** tail, const BlockList::WeakRef& to);
-PLY_DLL_ENTRY u32 getTotalNumBytes(BlockList::Footer* head);
-PLY_DLL_ENTRY char* read(BlockList::WeakRef* weakRef, u32 itemSize);
+PLY_DLL_ENTRY u32 get_total_num_bytes(BlockList::Footer* head);
+PLY_DLL_ENTRY char* read(BlockList::WeakRef* weak_ref, u32 item_size);
 } // namespace impl
 
 template <typename T>
@@ -2498,20 +2504,20 @@ private:
 
 public:
     PLY_INLINE WeakSequenceRef() = default;
-    PLY_INLINE ArrayView<T> beginRead() {
-        sptr numBytesAvailable = this->impl.block->unused() - this->impl.byte;
-        if (numBytesAvailable == 0) {
-            numBytesAvailable = BlockList::jumpToNextBlock(&impl);
+    PLY_INLINE ArrayView<T> begin_read() {
+        sptr num_bytes_available = this->impl.block->unused() - this->impl.byte;
+        if (num_bytes_available == 0) {
+            num_bytes_available = BlockList::jump_to_next_block(&impl);
         } else {
-            // numBytesAvailable should always be a multiple of sizeof(T).
-            PLY_ASSERT(numBytesAvailable >= sizeof(T));
+            // num_bytes_available should always be a multiple of sizeof(T).
+            PLY_ASSERT(num_bytes_available >= sizeof(T));
         }
-        return ArrayView<T>::from(StringView{this->impl.byte, numBytesAvailable});
+        return ArrayView<T>::from(StringView{this->impl.byte, num_bytes_available});
     }
-    PLY_INLINE void endRead(u32 numItems) {
+    PLY_INLINE void end_read(u32 num_items) {
         PLY_ASSERT(this->impl.block->unused() - this->impl.byte >=
-                   sizeof(T) * numItems);
-        this->impl.byte += sizeof(T) * numItems;
+                   sizeof(T) * num_items);
+        this->impl.byte += sizeof(T) * num_items;
     }
     PLY_INLINE WeakSequenceRef normalized() const {
         return this->impl.normalized();
@@ -2529,26 +2535,26 @@ public:
         return (T*) this->impl.byte;
     }
     PLY_INLINE void operator++() {
-        sptr numBytesAvailable = this->impl.block->unused() - this->impl.byte;
+        sptr num_bytes_available = this->impl.block->unused() - this->impl.byte;
         // It is illegal to call operator++ at the end of the sequence.
-        PLY_ASSERT(numBytesAvailable >= sizeof(T));
+        PLY_ASSERT(num_bytes_available >= sizeof(T));
         this->impl.byte += sizeof(T);
-        numBytesAvailable -= sizeof(T);
-        if (numBytesAvailable == 0) {
-            numBytesAvailable = BlockList::jumpToNextBlock(&impl);
+        num_bytes_available -= sizeof(T);
+        if (num_bytes_available == 0) {
+            num_bytes_available = BlockList::jump_to_next_block(&impl);
             // We might now be at the end of the sequence.
         } else {
-            // numBytesAvailable should always be a multiple of sizeof(T).
-            PLY_ASSERT(numBytesAvailable >= sizeof(T));
+            // num_bytes_available should always be a multiple of sizeof(T).
+            PLY_ASSERT(num_bytes_available >= sizeof(T));
         }
     }
     PLY_INLINE void operator--() {
-        sptr numBytesPreceding = this->impl.byte - this->impl.block->start();
-        if (numBytesPreceding == 0) {
-            numBytesPreceding = BlockList::jumpToPrevBlock(&impl);
+        sptr num_bytes_preceding = this->impl.byte - this->impl.block->start();
+        if (num_bytes_preceding == 0) {
+            num_bytes_preceding = BlockList::jump_to_prev_block(&impl);
         }
         // It is illegal to call operator-- at the start of the sequence.
-        PLY_ASSERT(numBytesPreceding >= sizeof(T));
+        PLY_ASSERT(num_bytes_preceding >= sizeof(T));
         this->impl.byte -= sizeof(T);
     }
     PLY_INLINE bool operator!=(const WeakSequenceRef& other) const {
@@ -2568,115 +2574,117 @@ public:
 template <typename T>
 class Sequence {
 private:
-    Reference<BlockList::Footer> headBlock;
-    BlockList::Footer* tailBlock = nullptr;
+    Reference<BlockList::Footer> head_block;
+    BlockList::Footer* tail_block = nullptr;
 
 public:
-    PLY_INLINE Sequence() : headBlock{BlockList::createBlock()}, tailBlock{headBlock} {
+    PLY_INLINE Sequence()
+        : head_block{BlockList::create_block()}, tail_block{head_block} {
     }
 
     PLY_INLINE Sequence(Sequence&& other)
-        : headBlock{std::move(other.headBlock)}, tailBlock{other.tailBlock} {
+        : head_block{std::move(other.head_block)}, tail_block{other.tail_block} {
     }
 
     PLY_INLINE ~Sequence() {
-        impl::destructSequence(&headBlock, subst::destructViewAs<T>);
+        impl::destruct_sequence(&head_block, subst::destruct_view_as<T>);
     }
 
     PLY_INLINE void operator=(Sequence&& other) {
-        impl::destructSequence(&headBlock, subst::destructViewAs<T>);
+        impl::destruct_sequence(&head_block, subst::destruct_view_as<T>);
         new (this) Sequence{std::move(other)};
     }
 
     PLY_INLINE T& head() {
         // It is illegal to call head() on an empty sequence.
-        PLY_ASSERT(this->headBlock->viewUsedBytes().numBytes >= sizeof(T));
-        return *(T*) this->headBlock->start();
+        PLY_ASSERT(this->head_block->view_used_bytes().num_bytes >= sizeof(T));
+        return *(T*) this->head_block->start();
     }
     PLY_INLINE T& tail() {
         // It is illegal to call tail() on an empty sequence.
-        PLY_ASSERT(this->tailBlock->viewUsedBytes().numBytes >= sizeof(T));
-        return ((T*) this->tailBlock->unused())[-1];
+        PLY_ASSERT(this->tail_block->view_used_bytes().num_bytes >= sizeof(T));
+        return ((T*) this->tail_block->unused())[-1];
     }
 
-    PLY_INLINE bool isEmpty() const {
+    PLY_INLINE bool is_empty() const {
         // Only an empty sequence can have an empty head block.
-        return this->headBlock->viewUsedBytes().isEmpty();
+        return this->head_block->view_used_bytes().is_empty();
     }
-    PLY_INLINE u32 numItems() const {
+    PLY_INLINE u32 num_items() const {
         // Fast division by integer constant.
-        return impl::getTotalNumBytes(this->headBlock) / sizeof(T);
+        return impl::get_total_num_bytes(this->head_block) / sizeof(T);
     }
 
-    PLY_INLINE ArrayView<T> beginWriteViewNoConstruct() {
-        if (this->tailBlock->viewUnusedBytes().numBytes < sizeof(T)) {
-            impl::beginWriteInternal(&this->tailBlock, sizeof(T));
+    PLY_INLINE ArrayView<T> begin_write_view_no_construct() {
+        if (this->tail_block->view_unused_bytes().num_bytes < sizeof(T)) {
+            impl::begin_write_internal(&this->tail_block, sizeof(T));
         }
-        return ArrayView<T>::from(this->tailBlock->viewUnusedBytes());
+        return ArrayView<T>::from(this->tail_block->view_unused_bytes());
     }
 
-    PLY_INLINE T* beginWriteNoConstruct() {
-        if (this->tailBlock->viewUnusedBytes().numBytes < sizeof(T)) {
-            impl::beginWriteInternal(&this->tailBlock, sizeof(T));
+    PLY_INLINE T* begin_write_no_construct() {
+        if (this->tail_block->view_unused_bytes().num_bytes < sizeof(T)) {
+            impl::begin_write_internal(&this->tail_block, sizeof(T));
         }
-        return (T*) this->tailBlock->unused();
+        return (T*) this->tail_block->unused();
     }
 
-    PLY_INLINE void endWrite(u32 numItems = 1) {
-        PLY_ASSERT(sizeof(T) * numItems <= this->tailBlock->viewUnusedBytes().numBytes);
-        this->tailBlock->numBytesUsed += sizeof(T) * numItems;
+    PLY_INLINE void end_write(u32 num_items = 1) {
+        PLY_ASSERT(sizeof(T) * num_items <=
+                   this->tail_block->view_unused_bytes().num_bytes);
+        this->tail_block->num_bytes_used += sizeof(T) * num_items;
     }
 
     PLY_INLINE T& append(const T& item) {
-        T* result = beginWriteNoConstruct();
+        T* result = begin_write_no_construct();
         new (result) T{item};
-        endWrite();
+        end_write();
         return *result;
     }
     PLY_INLINE T& append(T&& item) {
-        T* result = beginWriteNoConstruct();
+        T* result = begin_write_no_construct();
         new (result) T{std::move(item)};
-        endWrite();
+        end_write();
         return *result;
     }
     template <typename... Args>
     PLY_INLINE T& append(Args&&... args) {
-        T* result = beginWriteNoConstruct();
+        T* result = begin_write_no_construct();
         new (result) T{std::forward<Args>(args)...};
-        endWrite();
+        end_write();
         return *result;
     }
 
-    PLY_INLINE void popTail(u32 numItems = 1) {
-        impl::popTail(&this->tailBlock, numItems * (u32) sizeof(T),
-                      subst::destructViewAs<T>);
+    PLY_INLINE void pop_tail(u32 num_items = 1) {
+        impl::pop_tail(&this->tail_block, num_items * (u32) sizeof(T),
+                       subst::destruct_view_as<T>);
     }
     PLY_INLINE void truncate(const WeakSequenceRef<T>& to) {
-        impl::truncate(&this->tailBlock, to.impl);
+        impl::truncate(&this->tail_block, to.impl);
     }
 
     PLY_INLINE void clear() {
         *this = Sequence{};
     }
 
-    PLY_INLINE Array<T> moveToArray() {
-        char* startByte = this->headBlock->start();
-        String str = BlockList::toString({std::move(this->headBlock), startByte});
-        u32 numItems = str.numBytes / sizeof(T); // Divide by constant is fast
-        return Array<T>::adopt((T*) str.release(), numItems);
+    PLY_INLINE Array<T> move_to_array() {
+        char* start_byte = this->head_block->start();
+        String str = BlockList::to_string({std::move(this->head_block), start_byte});
+        u32 num_items = str.num_bytes / sizeof(T); // Divide by constant is fast
+        return Array<T>::adopt((T*) str.release(), num_items);
     }
 
     WeakSequenceRef<T> begin() {
-        return BlockList::WeakRef{this->headBlock, this->headBlock->start()};
+        return BlockList::WeakRef{this->head_block, this->head_block->start()};
     }
     WeakSequenceRef<T> end() {
-        return BlockList::WeakRef{this->tailBlock, this->tailBlock->unused()};
+        return BlockList::WeakRef{this->tail_block, this->tail_block->unused()};
     }
     WeakSequenceRef<const T> begin() const {
-        return BlockList::WeakRef{this->headBlock, this->headBlock->start()};
+        return BlockList::WeakRef{this->head_block, this->head_block->start()};
     }
     WeakSequenceRef<const T> end() const {
-        return BlockList::WeakRef{this->tailBlock, this->tailBlock->unused()};
+        return BlockList::WeakRef{this->tail_block, this->tail_block->unused()};
     }
 };
 
@@ -2800,7 +2808,7 @@ struct HashMap {
     static constexpr u32 InitialSize = 4;
     static constexpr u32 LinearSearchLimit = 128;
     static constexpr u8 EmptySlot = 0xff;
-    // Flags passed to insertOrFind():
+    // Flags passed to insert_or_find():
     static constexpr u32 AllowFind = 1;
     static constexpr u32 AllowInsert = 2;
 
@@ -2818,18 +2826,18 @@ struct HashMap {
     struct FindInfo {
         // FIXME: Merge FindResult and return these from internal functions
         u32 idx;
-        u8* prevLink;
-        void* itemSlot;
+        u8* prev_link;
+        void* item_slot;
     };
 
     struct Callbacks {
-        u32 itemSize = 0;
-        bool isTriviallyDestructible = false;
-        bool requiresContext = false;
+        u32 item_size = 0;
+        bool is_trivially_destructible = false;
+        bool requires_context = false;
         void (*construct)(void* item, const void* key) = nullptr;
         void (*destruct)(void* item) = nullptr;
-        void (*moveConstruct)(void* dstItem, void* srcItem) = nullptr;
-        void (*moveAssign)(void* dstItem, void* srcItem) = nullptr;
+        void (*move_construct)(void* dst_item, void* src_item) = nullptr;
+        void (*move_assign)(void* dst_item, void* src_item) = nullptr;
         u32 (*hash)(const void* key) = nullptr;
         bool (*match)(const void* item, const void* key, const void* context) = nullptr;
     };
@@ -2879,14 +2887,14 @@ struct HashMap {
             ((Item*) item)->~Item();
         }
 
-        // moveConstruct
-        static PLY_NO_INLINE void moveConstruct(void* dstItem, void* srcItem) {
-            new (dstItem) Item{std::move(*(Item*) srcItem)};
+        // move_construct
+        static PLY_NO_INLINE void move_construct(void* dst_item, void* src_item) {
+            new (dst_item) Item{std::move(*(Item*) src_item)};
         }
 
-        // moveAssign
-        static PLY_NO_INLINE void moveAssign(void* dstItem, void* srcItem) {
-            *(Item*) dstItem = std::move(*(Item*) srcItem);
+        // move_assign
+        static PLY_NO_INLINE void move_assign(void* dst_item, void* src_item) {
+            *(Item*) dst_item = std::move(*(Item*) src_item);
         }
 
         // hash
@@ -2919,8 +2927,8 @@ struct HashMap {
                 HasContext<Traits>,
                 &construct,
                 &destruct,
-                &moveConstruct,
-                &moveAssign,
+                &move_construct,
+                &move_assign,
                 &hash,
                 &match,
             };
@@ -2930,8 +2938,8 @@ struct HashMap {
 
     // Note: Must be kept binary compatible with HashMap<>::CellGroup
     struct CellGroup {
-        u8 nextDelta[4]; // EmptySlot means the slot is unused
-        u8 firstDelta[4];
+        u8 next_delta[4]; // EmptySlot means the slot is unused
+        u8 first_delta[4];
         u32 hashes[4];
     };
 
@@ -2940,22 +2948,22 @@ struct HashMap {
     u32 m_sizeMask;
     u32 m_population;
 
-    PLY_DLL_ENTRY HashMap(const Callbacks* cb, u32 initialSize);
+    PLY_DLL_ENTRY HashMap(const Callbacks* cb, u32 initial_size);
     PLY_DLL_ENTRY HashMap(HashMap&& other);
-    PLY_DLL_ENTRY void moveAssign(const Callbacks* cb, HashMap&& other);
+    PLY_DLL_ENTRY void move_assign(const Callbacks* cb, HashMap&& other);
     PLY_DLL_ENTRY void clear(const Callbacks* cb);
-    static PLY_DLL_ENTRY CellGroup* createTable(const Callbacks* cb,
-                                                u32 size = InitialSize);
-    static PLY_DLL_ENTRY void destroyTable(const Callbacks* cb, CellGroup* cellGroups,
-                                           u32 size);
-    PLY_DLL_ENTRY void migrateToNewTable(const Callbacks* cb);
-    PLY_DLL_ENTRY FindResult findNext(FindInfo* info, const Callbacks* cb,
-                                      const void* key, const void* context) const;
-    PLY_DLL_ENTRY FindResult insertOrFind(FindInfo* info, const Callbacks* cb,
-                                          const void* key, const void* context,
-                                          u32 flags);
-    PLY_DLL_ENTRY void* insertForMigration(u32 itemSize, u32 hash);
-    PLY_DLL_ENTRY void erase(FindInfo* info, const Callbacks* cb, u8*& linkToAdjust);
+    static PLY_DLL_ENTRY CellGroup* create_table(const Callbacks* cb,
+                                                 u32 size = InitialSize);
+    static PLY_DLL_ENTRY void destroy_table(const Callbacks* cb, CellGroup* cell_groups,
+                                            u32 size);
+    PLY_DLL_ENTRY void migrate_to_new_table(const Callbacks* cb);
+    PLY_DLL_ENTRY FindResult find_next(FindInfo* info, const Callbacks* cb,
+                                       const void* key, const void* context) const;
+    PLY_DLL_ENTRY FindResult insert_or_find(FindInfo* info, const Callbacks* cb,
+                                            const void* key, const void* context,
+                                            u32 flags);
+    PLY_DLL_ENTRY void* insert_for_migration(u32 item_size, u32 hash);
+    PLY_DLL_ENTRY void erase(FindInfo* info, const Callbacks* cb, u8*& link_to_adjust);
 
     // Must be kept binary compatible with HashMap<>::Cursor:
     struct Cursor {
@@ -2963,9 +2971,9 @@ struct HashMap {
         FindInfo m_findInfo;
         FindResult m_findResult;
 
-        PLY_DLL_ENTRY void constructFindWithInsert(const Callbacks* cb, HashMap* map,
-                                                   const void* key, const void* context,
-                                                   u32 flags);
+        PLY_DLL_ENTRY void construct_find_with_insert(const Callbacks* cb, HashMap* map,
+                                                      const void* key,
+                                                      const void* context, u32 flags);
     };
 };
 } // namespace impl
@@ -2983,14 +2991,14 @@ class CursorMixin {
 public:
     PLY_INLINE Item* operator->() {
         Cursor* cursor = static_cast<Cursor*>(this);
-        PLY_ASSERT(cursor->m_findInfo.itemSlot);
-        return cursor->m_findInfo.itemSlot;
+        PLY_ASSERT(cursor->m_findInfo.item_slot);
+        return cursor->m_findInfo.item_slot;
     }
 
     PLY_INLINE const Item* operator->() const {
         const Cursor* cursor = static_cast<const Cursor*>(this);
-        PLY_ASSERT(cursor->m_findInfo.itemSlot);
-        return cursor->m_findInfo.itemSlot;
+        PLY_ASSERT(cursor->m_findInfo.item_slot);
+        return cursor->m_findInfo.item_slot;
     }
 };
 
@@ -2999,8 +3007,8 @@ class CursorMixin<Cursor, Item, true> {
 public:
     PLY_INLINE Item operator->() const {
         const Cursor* cursor = static_cast<const Cursor*>(this);
-        PLY_ASSERT(*cursor->m_findInfo.itemSlot);
-        return *cursor->m_findInfo.itemSlot;
+        PLY_ASSERT(*cursor->m_findInfo.item_slot);
+        return *cursor->m_findInfo.item_slot;
     }
 };
 
@@ -3014,8 +3022,8 @@ private:
 
     // Note: Must be kept binary compatible with impl::HashMap::CellGroup
     struct CellGroup {
-        u8 nextDelta[4]; // EmptySlot means the slot is unused
-        u8 firstDelta[4];
+        u8 next_delta[4]; // EmptySlot means the slot is unused
+        u8 first_delta[4];
         u32 hashes[4];
         Item items[4];
     };
@@ -3028,13 +3036,13 @@ private:
     // Must be kept binary-compatible with impl::HashMap::FindInfo:
     struct FindInfo {
         u32 idx;
-        u8* prevLink;
-        Item* itemSlot; // null means not found
+        u8* prev_link;
+        Item* item_slot; // null means not found
     };
 
 public:
-    PLY_INLINE HashMap(u32 initialSize = 8) {
-        new (this) impl::HashMap(Callbacks::instance(), initialSize);
+    PLY_INLINE HashMap(u32 initial_size = 8) {
+        new (this) impl::HashMap(Callbacks::instance(), initial_size);
     }
 
     PLY_INLINE HashMap(HashMap&& other) {
@@ -3044,14 +3052,14 @@ public:
 
     PLY_INLINE ~HashMap() {
         if (m_cellGroups) {
-            impl::HashMap::destroyTable(Callbacks::instance(),
-                                        (impl::HashMap::CellGroup*) m_cellGroups,
-                                        m_sizeMask + 1);
+            impl::HashMap::destroy_table(Callbacks::instance(),
+                                         (impl::HashMap::CellGroup*) m_cellGroups,
+                                         m_sizeMask + 1);
         }
     }
 
     PLY_INLINE void operator=(HashMap&& other) {
-        reinterpret_cast<impl::HashMap*>(this)->moveAssign(
+        reinterpret_cast<impl::HashMap*>(this)->move_assign(
             Callbacks::instance(), std::move(reinterpret_cast<impl::HashMap&>(other)));
         other.m_cellGroups = nullptr;
     }
@@ -3077,14 +3085,14 @@ public:
         // Find without insert
         PLY_INLINE Cursor(HashMap* map, const Key& key, const Context* context)
             : m_map{map} {
-            m_findResult = reinterpret_cast<impl::HashMap*>(m_map)->insertOrFind(
+            m_findResult = reinterpret_cast<impl::HashMap*>(m_map)->insert_or_find(
                 (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
                 context, impl::HashMap::AllowFind);
         }
         // Find with insert
         PLY_INLINE Cursor(HashMap* map, const Key& key, const Context* context,
                           u32 flags) {
-            reinterpret_cast<impl::HashMap::Cursor*>(this)->constructFindWithInsert(
+            reinterpret_cast<impl::HashMap::Cursor*>(this)->construct_find_with_insert(
                 Callbacks::instance(), (impl::HashMap*) map, &key, context, flags);
         }
 
@@ -3094,40 +3102,40 @@ public:
             m_findInfo = other.m_findInfo;
             m_findResult = other.m_findResult;
         }
-        PLY_INLINE bool isValid() const {
+        PLY_INLINE bool is_valid() const {
             return m_findResult != impl::HashMap::FindResult::NotFound;
         }
-        PLY_INLINE bool wasFound() const {
+        PLY_INLINE bool was_found() const {
             return m_findResult == impl::HashMap::FindResult::Found;
         }
         PLY_INLINE void next(const Key& key, const Context& context = {}) {
-            m_findResult = reinterpret_cast<const impl::HashMap*>(m_map)->findNext(
+            m_findResult = reinterpret_cast<const impl::HashMap*>(m_map)->find_next(
                 (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
                 &context);
         }
         PLY_INLINE Item& operator*() {
-            PLY_ASSERT(m_findInfo.itemSlot);
-            return *m_findInfo.itemSlot;
+            PLY_ASSERT(m_findInfo.item_slot);
+            return *m_findInfo.item_slot;
         }
         PLY_INLINE const Item& operator*() const {
-            PLY_ASSERT(m_findInfo.itemSlot);
-            return *m_findInfo.itemSlot;
+            PLY_ASSERT(m_findInfo.item_slot);
+            return *m_findInfo.item_slot;
         }
         PLY_INLINE void erase() {
-            u8* unusedLink = nullptr;
+            u8* unused_link = nullptr;
             reinterpret_cast<impl::HashMap*>(m_map)->erase(
                 (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(),
-                unusedLink);
+                unused_link);
             m_findResult = impl::HashMap::FindResult::NotFound;
         }
-        PLY_INLINE void eraseAndAdvance(const Key& key, const Context& context = {}) {
-            FindInfo infoToErase = m_findInfo;
-            m_findResult = reinterpret_cast<const impl::HashMap&>(m_map).findNext(
+        PLY_INLINE void erase_and_advance(const Key& key, const Context& context = {}) {
+            FindInfo info_to_erase = m_findInfo;
+            m_findResult = reinterpret_cast<const impl::HashMap&>(m_map).find_next(
                 (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
                 &context);
             reinterpret_cast<impl::HashMap*>(m_map)->erase(
-                (impl::HashMap::FindInfo*) &infoToErase, Callbacks::instance(),
-                m_findInfo.prevLink);
+                (impl::HashMap::FindInfo*) &info_to_erase, Callbacks::instance(),
+                m_findInfo.prev_link);
         }
     };
 
@@ -3149,9 +3157,9 @@ public:
                                const Context* context)
             : m_map{map} {
             m_findResult = ((impl::HashMap*) m_map)
-                               ->insertOrFind((impl::HashMap::FindInfo*) &m_findInfo,
-                                              Callbacks::instance(), &key, context,
-                                              impl::HashMap::AllowFind);
+                               ->insert_or_find((impl::HashMap::FindInfo*) &m_findInfo,
+                                                Callbacks::instance(), &key, context,
+                                                impl::HashMap::AllowFind);
         }
 
     public:
@@ -3160,44 +3168,44 @@ public:
             m_findInfo = other.m_findInfo;
             m_findResult = other.m_findResult;
         }
-        PLY_INLINE bool isValid() const {
+        PLY_INLINE bool is_valid() const {
             return m_findResult != impl::HashMap::FindResult::NotFound;
         }
-        PLY_INLINE bool wasFound() const {
+        PLY_INLINE bool was_found() const {
             return m_findResult == impl::HashMap::FindResult::Found;
         }
         PLY_INLINE void next(const Key& key, const Context& context = {}) {
-            m_findResult = reinterpret_cast<const impl::HashMap&>(m_map).findNext(
+            m_findResult = reinterpret_cast<const impl::HashMap&>(m_map).find_next(
                 (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
                 &context);
         }
         PLY_INLINE Item& operator*() {
-            PLY_ASSERT(m_findInfo.itemSlot);
-            return *m_findInfo.itemSlot;
+            PLY_ASSERT(m_findInfo.item_slot);
+            return *m_findInfo.item_slot;
         }
         PLY_INLINE const Item& operator*() const {
-            PLY_ASSERT(m_findInfo.itemSlot);
-            return *m_findInfo.itemSlot;
+            PLY_ASSERT(m_findInfo.item_slot);
+            return *m_findInfo.item_slot;
         }
     };
 
-    PLY_INLINE bool isEmpty() const {
+    PLY_INLINE bool is_empty() const {
         return m_population == 0;
     }
 
-    PLY_INLINE u32 numItems() const {
+    PLY_INLINE u32 num_items() const {
         return m_population;
     }
 
-    PLY_INLINE Cursor insertOrFind(const Key& key, const Context* context = nullptr) {
+    PLY_INLINE Cursor insert_or_find(const Key& key, const Context* context = nullptr) {
         return {this, key, context,
                 impl::HashMap::AllowFind | impl::HashMap::AllowInsert};
     }
 
-    // insertMulti is experimental and should not be used. Will likely delete.
+    // insert_multi is experimental and should not be used. Will likely delete.
     // FIXME: Delete this function and its associated support code, including
     // Cursor::next()
-    PLY_INLINE Cursor insertMulti(const Key& key, const Context* context = nullptr) {
+    PLY_INLINE Cursor insert_multi(const Key& key, const Context* context = nullptr) {
         return {this, key, context, impl::HashMap::AllowInsert};
     }
 
@@ -3222,7 +3230,7 @@ public:
         Iterator(HashMap& map, u32 idx) : m_map{map}, m_idx{idx} {
         }
 
-        bool isValid() const {
+        bool is_valid() const {
             return m_idx <= m_map.m_sizeMask;
         }
 
@@ -3234,7 +3242,7 @@ public:
                     break;
                 CellGroup* group =
                     m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
-                if (group->nextDelta[m_idx & 3] != impl::HashMap::EmptySlot)
+                if (group->next_delta[m_idx & 3] != impl::HashMap::EmptySlot)
                     break;
             }
         }
@@ -3251,7 +3259,7 @@ public:
         Item& operator*() const {
             PLY_ASSERT(m_idx <= m_map.m_sizeMask);
             CellGroup* group = m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
-            PLY_ASSERT(group->nextDelta[m_idx & 3] != impl::HashMap::EmptySlot);
+            PLY_ASSERT(group->next_delta[m_idx & 3] != impl::HashMap::EmptySlot);
             return group->items[m_idx & 3];
         }
 
@@ -3273,7 +3281,7 @@ public:
         ConstIterator(const HashMap& map, u32 idx) : m_map{map}, m_idx{idx} {
         }
 
-        bool isValid() const {
+        bool is_valid() const {
             return m_idx <= m_map.m_sizeMask;
         }
 
@@ -3285,7 +3293,7 @@ public:
                     break;
                 CellGroup* group =
                     m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
-                if (group->nextDelta[m_idx & 3] != impl::HashMap::EmptySlot)
+                if (group->next_delta[m_idx & 3] != impl::HashMap::EmptySlot)
                     break;
             }
         }
@@ -3302,7 +3310,7 @@ public:
         const Item& operator*() const {
             PLY_ASSERT(m_idx <= m_map.m_sizeMask);
             CellGroup* group = m_map.m_cellGroups + ((m_idx & m_map.m_sizeMask) >> 2);
-            PLY_ASSERT(group->nextDelta[m_idx & 3] != impl::HashMap::EmptySlot);
+            PLY_ASSERT(group->next_delta[m_idx & 3] != impl::HashMap::EmptySlot);
             return group->items[m_idx & 3];
         }
 
@@ -3373,7 +3381,7 @@ void* map_operate(BaseMap* map, MapOperation op, View<Prim> key, const MapTypeIn
 
 // MapHelper<> helps adapt Map<> to different key types.
 template <typename K>
-struct MapHelper { // Base template for u32, u64 and StringView.
+struct MapHelper {  // Base template for u32, u64 and StringView.
     using Prim = K; // The internal type used by map_operate().
     static K prim(K key) {
         return key;
@@ -3443,7 +3451,7 @@ struct Map {
         *((Value*) value) = std::forward<T>(arg);
     }
     u32 num_items() const {
-        return this->items.numItems();
+        return this->items.num_items();
     }
 
     // Range-for support.
@@ -3470,7 +3478,7 @@ struct Map {
 namespace impl {
 
 struct LabelEncoder {
-    static PLY_INLINE u32 decodeValue(const char*& ptr) {
+    static PLY_INLINE u32 decode_value(const char*& ptr) {
         u32 value = 0;
         for (;;) {
             u8 c = *ptr;
@@ -3483,17 +3491,17 @@ struct LabelEncoder {
         return value;
     }
 
-    static PLY_INLINE u32 getEncLen(u32 value) {
-        u32 encLen = 0;
+    static PLY_INLINE u32 get_enc_len(u32 value) {
+        u32 enc_len = 0;
         do {
-            encLen++;
+            enc_len++;
             value >>= 7;
         } while (value > 0);
-        return encLen;
+        return enc_len;
     }
 
-    static PLY_NO_INLINE void encodeValue(char*& ptr, u32 value) {
-        u32 shift = (getEncLen(value) - 1) * 7;
+    static PLY_NO_INLINE void encode_value(char*& ptr, u32 value) {
+        u32 shift = (get_enc_len(value) - 1) * 7;
         for (;;) {
             *ptr = u8(((value >> shift) & 127) | ((shift != 0) << 7));
             ptr++;
@@ -3512,16 +3520,16 @@ private:
         using Key = StringView;
         using Item = u32;
         using Context = BigPool<>;
-        static bool match(u32 id, const StringView& key, const BigPool<>& bigPool) {
-            const char* ptr = bigPool.get(id);
-            u32 numBytes = impl::LabelEncoder::decodeValue(ptr);
-            return StringView{ptr, numBytes} == key;
+        static bool match(u32 id, const StringView& key, const BigPool<>& big_pool) {
+            const char* ptr = big_pool.get(id);
+            u32 num_bytes = impl::LabelEncoder::decode_value(ptr);
+            return StringView{ptr, num_bytes} == key;
         }
     };
 
-    PLY_DEFINE_RACE_DETECTOR(raceDetector)
-    BigPool<> bigPool;
-    HashMap<Traits> strToIndex;
+    PLY_DEFINE_RACE_DETECTOR(race_detector)
+    BigPool<> big_pool;
+    HashMap<Traits> str_to_index;
 
 public:
     LabelStorage();

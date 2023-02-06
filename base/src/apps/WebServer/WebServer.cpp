@@ -17,37 +17,40 @@ using namespace web;
 
 struct AllParams {
     DocServer docs;
-    FetchFromFileSystem fileSys;
-    SourceCode sourceCode;
+    FetchFromFileSystem file_sys;
+    SourceCode source_code;
 };
 
-void myRequestHandler(AllParams* params, StringView requestPath, ResponseIface* responseIface) {
-    if (requestPath.startsWith("/static/")) {
-        FetchFromFileSystem::serve(&params->fileSys, requestPath, responseIface);
-    } else if (requestPath.startsWith("/file/")) {
-        SourceCode::serve(&params->sourceCode, requestPath.subStr(6), responseIface);
-    } else if (requestPath.rtrim([](char c) { return c == '/'; }) == "/echo") {
-        echo_serve(nullptr, requestPath, responseIface);
-    } else if (requestPath.startsWith("/docs/")) {
-        params->docs.serve(requestPath.subStr(6), responseIface);
-    } else if (requestPath.startsWith("/content?path=/docs/")) {
-        params->docs.serveContentOnly(requestPath.subStr(20), responseIface);
-    } else if (requestPath == "/") {
-        params->docs.serve("", responseIface);
-    } else if (requestPath == "/favicon.ico") {
-        FetchFromFileSystem::serve(&params->fileSys, "/static/favicon@32x32.png", responseIface);
+void my_request_handler(AllParams* params, StringView request_path,
+                        ResponseIface* response_iface) {
+    if (request_path.starts_with("/static/")) {
+        FetchFromFileSystem::serve(&params->file_sys, request_path, response_iface);
+    } else if (request_path.starts_with("/file/")) {
+        SourceCode::serve(&params->source_code, request_path.sub_str(6),
+                          response_iface);
+    } else if (request_path.rtrim([](char c) { return c == '/'; }) == "/echo") {
+        echo_serve(nullptr, request_path, response_iface);
+    } else if (request_path.starts_with("/docs/")) {
+        params->docs.serve(request_path.sub_str(6), response_iface);
+    } else if (request_path.starts_with("/content?path=/docs/")) {
+        params->docs.serve_content_only(request_path.sub_str(20), response_iface);
+    } else if (request_path == "/") {
+        params->docs.serve("", response_iface);
+    } else if (request_path == "/favicon.ico") {
+        FetchFromFileSystem::serve(&params->file_sys, "/static/favicon@32x32.png",
+                                   response_iface);
     } else {
-        responseIface->respondGeneric(ResponseCode::NotFound);
+        response_iface->respond_generic(ResponseCode::NotFound);
     }
 }
 
-void writeMsgAndExit(StringView msg) {
-    OutStream stdErr = StdErr::text();
-    stdErr << "Error: " << msg;
-    if (!msg.endsWith("\n")) {
-        stdErr << '\n';
+void write_msg_and_exit(StringView msg) {
+    OutStream std_err = StdErr::text();
+    std_err << "Error: " << msg;
+    if (!msg.ends_with("\n")) {
+        std_err << '\n';
     }
-    stdErr.flushMem();
+    std_err.flush_mem();
     exit(1);
 }
 
@@ -59,8 +62,8 @@ struct CommandLine {
         : args{ArrayView<const char*>({(const char**) argv, (u32) argc})} {
     }
 
-    StringView readToken() {
-        if (this->index >= this->args.numItems())
+    StringView read_token() {
+        if (this->index >= this->args.num_items())
             return {};
         return args[index++];
     }
@@ -68,62 +71,65 @@ struct CommandLine {
 
 int main(int argc, char* argv[]) {
     Socket::initialize(IPAddress::V6);
-    String dataRoot;
+    String data_root;
     u16 port = 0;
-    CommandLine cmdLine{argc, argv};
-    while (StringView arg = cmdLine.readToken()) {
-        if (arg.startsWith("-")) {
+    CommandLine cmd_line{argc, argv};
+    while (StringView arg = cmd_line.read_token()) {
+        if (arg.starts_with("-")) {
             if (arg == "-p") {
-                StringView portStr = cmdLine.readToken();
-                if (!portStr) {
-                    writeMsgAndExit(String::format("Expected port number after {}", arg));
+                StringView port_str = cmd_line.read_token();
+                if (!port_str) {
+                    write_msg_and_exit(
+                        String::format("Expected port number after {}", arg));
                 }
-                u16 p = portStr.to<u16>();
+                u16 p = port_str.to<u16>();
                 if (p == 0) {
-                    writeMsgAndExit(String::format("Invalid port number {}", portStr));
+                    write_msg_and_exit(
+                        String::format("Invalid port number {}", port_str));
                 }
                 port = p;
             } else {
-                writeMsgAndExit(String::format("Unrecognized option {}", arg));
+                write_msg_and_exit(String::format("Unrecognized option {}", arg));
             }
         } else {
-            if (dataRoot) {
-                writeMsgAndExit("Too many arguments");
+            if (data_root) {
+                write_msg_and_exit("Too many arguments");
             }
-            if (!FileSystem.isDir(arg)) {
-                writeMsgAndExit(String::format("Can't access directory at {}", arg));
+            if (!FileSystem.is_dir(arg)) {
+                write_msg_and_exit(String::format("Can't access directory at {}", arg));
             }
-            dataRoot = arg;
+            data_root = arg;
         }
     }
 #if PLY_TARGET_POSIX
     if (port == 0) {
-        if (const char* portCStr = getenv("PORT")) {
-            u16 p = StringView{portCStr}.to<u16>();
+        if (const char* port_cstr = getenv("PORT")) {
+            u16 p = StringView{port_cstr}.to<u16>();
             if (p == 0) {
-                writeMsgAndExit(String::format(
-                    "Invalid port number {} found in environment variable PORT", portCStr));
+                write_msg_and_exit(String::format(
+                    "Invalid port number {} found in environment variable PORT",
+                    port_cstr));
             }
         }
     }
     if (port == 0) {
-        if (const char* dataRootCStr = getenv("WEBSERVER_DOC_DIR")) {
-            dataRoot = dataRootCStr;
+        if (const char* data_root_cstr = getenv("WEBSERVER_DOC_DIR")) {
+            data_root = data_root_cstr;
         }
     }
 #endif
     if (port == 0) {
         port = WEBSERVER_DEFAULT_PORT;
     }
-    if (!dataRoot) {
-        dataRoot = WEBSERVER_DEFAULT_DOC_DIR;
+    if (!data_root) {
+        data_root = WEBSERVER_DEFAULT_DOC_DIR;
     }
-    StdOut::text().format("Serving from {} on port {}\n", dataRoot, port);
-    AllParams allParams;
-    allParams.fileSys.rootDir = dataRoot;
-    allParams.docs.init(dataRoot);
-    allParams.sourceCode.rootDir = Path.normalize(Workspace.path);
-    if (!runServer(port, {&allParams, myRequestHandler})) {
+    StdOut::text().format("Serving from {} on port {}\n", data_root, port);
+    AllParams all_params;
+    all_params.file_sys.root_dir = data_root;
+    all_params.docs.init(data_root);
+    all_params.source_code.root_dir = Path.normalize(Workspace.path);
+    if (!run_server(port, {&all_params, my_request_handler})) {
         exit(1);
     }
     Socket::shutdown();

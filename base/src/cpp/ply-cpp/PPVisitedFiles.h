@@ -16,71 +16,71 @@ namespace cpp {
 struct PPVisitedFiles {
     struct SourceFile {
         HybridString contents;
-        FileLocationMap fileLocationMap;
+        FileLocationMap file_location_map;
     };
-    Array<SourceFile> sourceFiles;
+    Array<SourceFile> source_files;
 
     struct MacroExpansion {
-        u32 fromFile : 1;
-        u32 fileIdx : 31;
+        u32 from_file : 1;
+        u32 file_idx : 31;
         union {
             struct {
-                u32 startOfs = 0;
-                u32 endOfs = 0;
+                u32 start_ofs = 0;
+                u32 end_ofs = 0;
             } range;
             String str;
         };
-        bool takesArgs = false;
+        bool takes_args = false;
 
-        PLY_INLINE MacroExpansion() : fromFile{1}, fileIdx{0} {
+        PLY_INLINE MacroExpansion() : from_file{1}, file_idx{0} {
             new (&this->range) decltype(this->range);
         }
         void destruct();
         PLY_INLINE ~MacroExpansion() {
             this->destruct();
         }
-        PLY_INLINE void setString(StringView value) {
+        PLY_INLINE void set_string(StringView value) {
             destruct();
-            this->fromFile = 0;
-            this->fileIdx = 0;
+            this->from_file = 0;
+            this->file_idx = 0;
             new (&this->str) String{value};
         }
     };
-    Array<MacroExpansion> macroExpansions;
+    Array<MacroExpansion> macro_expansions;
 
     struct IncludeChain {
-        u32 isMacroExpansion : 1;
-        u32 fileOrExpIdx : 31;
-        s32 parentIdx = -1;
+        u32 is_macro_expansion : 1;
+        u32 file_or_exp_idx : 31;
+        s32 parent_idx = -1;
 
-        PLY_INLINE IncludeChain() : isMacroExpansion{0}, fileOrExpIdx{0} {
+        PLY_INLINE IncludeChain() : is_macro_expansion{0}, file_or_exp_idx{0} {
         }
     };
-    Array<IncludeChain> includeChains;
+    Array<IncludeChain> include_chains;
 
     struct LocationMapTraits {
         struct Item {
-            LinearLocation linearLoc = -1;
-            u32 includeChainIdx = 0;
-            u32 offset = 0; // linearLoc corresponds to this file offset
+            LinearLocation linear_loc = -1;
+            u32 include_chain_idx = 0;
+            u32 offset = 0; // linear_loc corresponds to this file offset
         };
         using Index = LinearLocation;
         static constexpr u32 NodeCapacity = 8;
-        static PLY_INLINE Index getIndex(const Item& item) {
-            return item.linearLoc;
+        static PLY_INLINE Index get_index(const Item& item) {
+            return item.linear_loc;
         }
         static PLY_INLINE bool less(Index a, Index b) {
             return a < b;
         }
-        static PLY_INLINE void onItemMoved(const Item, void*) {
+        static PLY_INLINE void on_item_moved(const Item, void*) {
         }
         static PLY_INLINE bool match(const Item& a, const Item& b) {
-            return a.linearLoc == b.linearLoc;
+            return a.linear_loc == b.linear_loc;
         }
     };
-    BTree<LocationMapTraits> locationMap;
+    BTree<LocationMapTraits> location_map;
 
-    StringView getContents(u32 includeChainIndex) const;
+    StringView get_contents(u32 include_chain_index) const;
 };
 
 } // namespace cpp

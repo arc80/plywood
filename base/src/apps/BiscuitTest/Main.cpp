@@ -19,15 +19,15 @@ struct ScriptOutStream {
     OutStream* outs;
 };
 
-FnResult doPrint(const FnParams& params) {
+FnResult do_print(const FnParams& params) {
     ScriptOutStream* sos = params.self.cast<ScriptOutStream>();
-    if (params.args.numItems != 1) {
+    if (params.args.num_items != 1) {
         params.base->error("'print' expects exactly one argument");
         return Fn_Error;
     }
 
     const AnyObject& arg = params.args[0];
-    params.base->returnValue = {};
+    params.base->return_value = {};
     if (arg.is<u32>()) {
         *sos->outs << *arg.cast<u32>() << '\n';
     } else if (arg.is<bool>()) {
@@ -36,7 +36,7 @@ FnResult doPrint(const FnParams& params) {
         *sos->outs << *arg.cast<String>() << '\n';
     } else {
         params.base->error(
-            String::format("'{}' does not support printing", arg.type->getName()));
+            String::format("'{}' does not support printing", arg.type->get_name()));
         return Fn_Error;
     }
     return Fn_OK;
@@ -44,61 +44,61 @@ FnResult doPrint(const FnParams& params) {
 
 // FIXME: Move this to the biscuit library:
 struct BuiltInStorage {
-    BoundMethod boundPrint;
+    BoundMethod bound_print;
     bool true_ = true;
     bool false_ = false;
 
     BuiltInStorage(ScriptOutStream* sos) {
-        this->boundPrint = {AnyObject::bind(sos), AnyObject::bind(doPrint)};
+        this->bound_print = {AnyObject::bind(sos), AnyObject::bind(do_print)};
     }
-    void addBuiltIns(Map<Label, AnyObject>& ns) {
-        ns.assign(g_labelStorage.insert("print"), AnyObject::bind(&this->boundPrint));
+    void add_built_ins(Map<Label, AnyObject>& ns) {
+        ns.assign(g_labelStorage.insert("print"), AnyObject::bind(&this->bound_print));
         ns.assign(g_labelStorage.insert("true"), AnyObject::bind(&this->true_));
         ns.assign(g_labelStorage.insert("false"), AnyObject::bind(&this->false_));
     }
 };
 
-String parseAndTryCall(StringView src, StringView funcName,
-                       ArrayView<const AnyObject> args) {
+String parse_and_try_call(StringView src, StringView func_name,
+                          ArrayView<const AnyObject> args) {
     // Create tokenizer and parser.
     Tokenizer tkr;
-    tkr.setSourceInput({}, src);
+    tkr.set_source_input({}, src);
     Parser parser;
     parser.tkr = &tkr;
-    MemOutStream errorOut;
-    parser.error = [&errorOut](StringView message) { errorOut << message; };
-    parser.filter.allowFunctions = true;
-    parser.filter.allowInstructions = false;
-    Map<Label, Owned<Statement>> fnMap;
-    parser.functionHandler = [&parser, &fnMap](Owned<biscuit::Statement>&& stmt,
-                                               const ExpandedToken& nameToken) {
-        if (!parseParameterList(&parser, stmt->functionDefinition().get()))
+    MemOutStream error_out;
+    parser.error = [&error_out](StringView message) { error_out << message; };
+    parser.filter.allow_functions = true;
+    parser.filter.allow_instructions = false;
+    Map<Label, Owned<Statement>> fn_map;
+    parser.function_handler = [&parser, &fn_map](Owned<biscuit::Statement>&& stmt,
+                                                 const ExpandedToken& name_token) {
+        if (!parse_parameter_list(&parser, stmt->function_definition().get()))
             return;
 
         // Parse function body.
         biscuit::Parser::Filter filter;
-        filter.keywordHandler = [](const KeywordParams&) {
+        filter.keyword_handler = [](const KeywordParams&) {
             return KeywordResult::Illegal;
         };
-        filter.allowInstructions = true;
+        filter.allow_instructions = true;
         PLY_SET_IN_SCOPE(parser.filter, filter);
-        stmt->functionDefinition()->body =
-            parseStatementBlock(&parser, {"function", "parameter list"});
+        stmt->function_definition()->body =
+            parse_statement_block(&parser, {"function", "parameter list"});
 
-        fnMap.assign(nameToken.label, std::move(stmt));
+        fn_map.assign(name_token.label, std::move(stmt));
     };
 
     // Parse the script.
     biscuit::StatementBlockProperties props{"file"};
     Owned<biscuit::StatementBlock> file =
-        parseStatementBlockInner(&parser, props, true);
-    if (parser.errorCount > 0)
-        return errorOut.moveToString();
+        parse_statement_block_inner(&parser, props, true);
+    if (parser.error_count > 0)
+        return error_out.move_to_string();
 
     // Invoke function if it exists
-    if (Owned<Statement>* stmt = fnMap.find(g_labelStorage.find(funcName))) {
-        const Statement::FunctionDefinition* fnDef =
-            (*stmt)->functionDefinition().get();
+    if (Owned<Statement>* stmt = fn_map.find(g_labelStorage.find(func_name))) {
+        const Statement::FunctionDefinition* fn_def =
+            (*stmt)->function_definition().get();
         MemOutStream outs;
         ScriptOutStream sos{&outs};
         BuiltInStorage bis{&sos};
@@ -106,32 +106,32 @@ String parseAndTryCall(StringView src, StringView funcName,
         // Create interpreter
         Interpreter interp;
         interp.base.error = [&outs, &interp](StringView message) {
-            logErrorWithStack(outs, &interp, message);
+            log_error_with_stack(outs, &interp, message);
         };
-        Map<Label, AnyObject> biMap;
-        bis.addBuiltIns(biMap);
-        interp.resolveName = [&biMap, &fnMap](Label identifier) -> AnyObject {
-            if (AnyObject* builtIn = biMap.find(identifier))
-                return *builtIn;
-            if (Owned<Statement>* foundStmt = fnMap.find(identifier))
-                return AnyObject::bind((*foundStmt)->functionDefinition().get());
+        Map<Label, AnyObject> bi_map;
+        bis.add_built_ins(bi_map);
+        interp.resolve_name = [&bi_map, &fn_map](Label identifier) -> AnyObject {
+            if (AnyObject* built_in = bi_map.find(identifier))
+                return *built_in;
+            if (Owned<Statement>* found_stmt = fn_map.find(identifier))
+                return AnyObject::bind((*found_stmt)->function_definition().get());
             return {};
         };
 
         // Invoke function
         Interpreter::StackFrame frame;
         frame.interp = &interp;
-        frame.desc = [fnDef]() -> HybridString {
-            return String::format("function '{}'", g_labelStorage.view(fnDef->name));
+        frame.desc = [fn_def]() -> HybridString {
+            return String::format("function '{}'", g_labelStorage.view(fn_def->name));
         };
         frame.tkr = &tkr;
-        PLY_ASSERT(fnDef->parameterNames.numItems() == args.numItems);
-        for (u32 i = 0; i < args.numItems; i++) {
-            frame.localVariableTable.assign(fnDef->parameterNames[i], args[i]);
+        PLY_ASSERT(fn_def->parameter_names.num_items() == args.num_items);
+        for (u32 i = 0; i < args.num_items; i++) {
+            frame.local_variable_table.assign(fn_def->parameter_names[i], args[i]);
         }
-        execFunction(&frame, fnDef->body);
+        exec_function(&frame, fn_def->body);
 
-        return outs.moveToString();
+        return outs.move_to_string();
     }
 
     return {};
@@ -164,7 +164,7 @@ fn test(obj) {
 )";
 
     // Parse the script and call function "test" with obj as its argument.
-    String result = parseAndTryCall(script, "test", {AnyObject::bind(&obj)});
+    String result = parse_and_try_call(script, "test", {AnyObject::bind(&obj)});
 
     // Check result.
     PLY_TEST_CHECK(result == "banana\n12\n");
@@ -172,43 +172,43 @@ fn test(obj) {
     PLY_TEST_CHECK(obj.value == 13);
 }
 
-void runTestSuite() {
+void run_test_suite() {
     struct SectionReader {
         ViewInStream ins;
         SectionReader(StringView view) : ins{view} {
         }
-        StringView readSection() {
-            StringView line = ins.readView<fmt::Line>();
+        StringView read_section() {
+            StringView line = ins.read_view<fmt::Line>();
             StringView first = line;
             StringView last = line;
-            bool gotResult = false;
-            while (line && !line.startsWith("----")) {
-                line = ins.readView<fmt::Line>();
-                if (!gotResult) {
+            bool got_result = false;
+            while (line && !line.starts_with("----")) {
+                line = ins.read_view<fmt::Line>();
+                if (!got_result) {
                     last = line;
                 }
-                if (line.startsWith("result:")) {
-                    gotResult = true;
+                if (line.starts_with("result:")) {
+                    got_result = true;
                 }
             }
-            StringView result = StringView::fromRange(first.bytes, last.bytes);
-            if (result.endsWith("\n\n")) {
-                result = result.shortenedBy(1);
+            StringView result = StringView::from_range(first.bytes, last.bytes);
+            if (result.ends_with("\n\n")) {
+                result = result.shortened_by(1);
             }
             return result;
         }
     };
 
     // Open input file
-    String testSuitePath = Path.join(get_workspace_path(),
-                                     "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
-    String allTests = FileSystem.loadTextAutodetect(testSuitePath);
-    SectionReader sr{allTests};
+    String test_suite_path = Path.join(get_workspace_path(),
+                                       "base/src/apps/BiscuitTest/AllBiscuitTests.txt");
+    String all_tests = FileSystem.load_text_autodetect(test_suite_path);
+    SectionReader sr{all_tests};
 
     // Iterate over test cases.
     MemOutStream outs;
     for (;;) {
-        StringView src = sr.readSection();
+        StringView src = sr.read_section();
         if (!src) {
             if (sr.ins.at_eof())
                 break;
@@ -216,18 +216,18 @@ void runTestSuite() {
         }
 
         // Run this test case
-        String output = parseAndTryCall(src, "test", {});
+        String output = parse_and_try_call(src, "test", {});
 
         // Append to result
         outs << StringView{"-"} * 60 << '\n';
         outs << src;
-        if (!src.endsWith("\n\n")) {
+        if (!src.ends_with("\n\n")) {
             outs << "\n";
         }
         if (output) {
             outs << "result:\n";
             outs << output;
-            if (!output.isEmpty() && !output.endsWith('\n')) {
+            if (!output.is_empty() && !output.ends_with('\n')) {
                 outs << "\n";
             }
             outs << "\n";
@@ -235,11 +235,12 @@ void runTestSuite() {
     }
 
     // Rewrite BiscuitTests.txt
-    FileSystem.makeDirsAndSaveTextIfDifferent(testSuitePath, outs.moveToString());
+    FileSystem.make_dirs_and_save_text_if_different(test_suite_path,
+                                                    outs.move_to_string());
 }
 
 int main() {
-    runTestSuite();
+    run_test_suite();
     return ply::test::run() ? 0 : 1;
 }
 

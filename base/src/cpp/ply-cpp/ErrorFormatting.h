@@ -12,14 +12,14 @@ namespace ply {
 namespace cpp {
 
 struct ExpandedFileLocation {
-    const PPVisitedFiles::SourceFile* srcFile;
-    FileLocation fileLoc;
+    const PPVisitedFiles::SourceFile* src_file;
+    FileLocation file_loc;
 
-    String toString() const;
+    String to_string() const;
 };
 
-ExpandedFileLocation expandFileLocation(const PPVisitedFiles* visitedFiles,
-                                        LinearLocation linearLoc);
+ExpandedFileLocation expand_file_location(const PPVisitedFiles* visited_files,
+                                          LinearLocation linear_loc);
 
 } // namespace cpp
 } // namespace ply

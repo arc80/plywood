@@ -20,13 +20,13 @@ void dump(OutStream* outs, const Node* node, u32 level) {
         }
         case Node::List: {
             *outs << "list";
-            if (node->isLoose) {
+            if (node->is_loose) {
                 *outs << " (loose";
             } else {
                 *outs << " (tight";
             }
-            if (node->isOrderedList()) {
-                outs->format(", ordered, start={})", node->listStartNumber);
+            if (node->is_ordered_list()) {
+                outs->format(", ordered, start={})", node->list_start_number);
             } else {
                 *outs << ", unordered)";
             }
@@ -41,7 +41,7 @@ void dump(OutStream* outs, const Node* node, u32 level) {
             break;
         }
         case Node::Heading: {
-            outs->format("heading level={}", node->indentOrLevel);
+            outs->format("heading level={}", node->indent_or_level);
             break;
         }
         case Node::Paragraph: {
@@ -83,7 +83,7 @@ void dump(OutStream* outs, const Node* node, u32 level) {
         }
     }
     *outs << "\n";
-    for (StringView text : node->rawLines) {
+    for (StringView text : node->raw_lines) {
         outs->format("{}  \"{}\"\n", indent, fmt::EscapedString{text});
     }
     for (const Node* child : node->children) {

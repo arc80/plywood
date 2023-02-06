@@ -1,8 +1,8 @@
-PLY_STRUCT_BEGIN(ply::cpp::ParseError)
+﻿PLY_STRUCT_BEGIN(ply::cpp::ParseError)
 PLY_STRUCT_MEMBER(type)
-PLY_STRUCT_MEMBER(errorToken)
+PLY_STRUCT_MEMBER(error_token)
 PLY_STRUCT_MEMBER(expected)
-PLY_STRUCT_MEMBER(precedingToken)
+PLY_STRUCT_MEMBER(preceding_token)
 PLY_STRUCT_END()
 
 PLY_ENUM_BEGIN(ply::cpp::, ExpectedToken)
@@ -54,4 +54,3 @@ PLY_ENUM_IDENTIFIER(ScopedEnumRequiresName)
 PLY_ENUM_IDENTIFIER(MissingDeclaration)
 PLY_ENUM_IDENTIFIER(DuplicateVirtSpecifier)
 PLY_ENUM_END()
-

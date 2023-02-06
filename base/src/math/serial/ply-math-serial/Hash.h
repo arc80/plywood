@@ -10,8 +10,9 @@
 
 namespace ply {
 
-// These functions should be made part of the math library, but enabled as an optional feature that
-// implies a dependency on ply-runtime. However, that'll require changes to the build system first.
+// These functions should be made part of the math library, but enabled as an optional
+// feature that implies a dependency on ply-runtime. However, that'll require changes to
+// the build system first.
 
 PLY_INLINE Hasher& operator<<(Hasher& hasher, const Float2& v) {
     return hasher << v.x << v.y;
@@ -30,8 +31,8 @@ PLY_INLINE Hasher& operator<<(Hasher& hasher, const AxisRot& rot) {
     return hasher << value;
 }
 
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const AxisRotPos& rotPos) {
-    return hasher << rotPos.rot << rotPos.pos;
+PLY_INLINE Hasher& operator<<(Hasher& hasher, const AxisRotPos& rot_pos) {
+    return hasher << rot_pos.rot << rot_pos.pos;
 }
 
 } // namespace ply

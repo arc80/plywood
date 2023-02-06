@@ -16,32 +16,33 @@ struct Tokenizer;
 
 struct Interpreter {
     struct Hooks {
-        Func<FnResult(const Statement::CustomBlock* customBlock)> doCustomBlock;
-        Func<bool(const AnyObject& attributes)> onEvaluate = [](const AnyObject&) {
+        Func<FnResult(const Statement::CustomBlock* custom_block)> do_custom_block;
+        Func<bool(const AnyObject& attributes)> on_evaluate = [](const AnyObject&) {
             return true;
         };
-        Func<bool(const AnyObject& attributes, Label label)> assignToLocal;
+        Func<bool(const AnyObject& attributes, Label label)> assign_to_local;
     };
 
     struct StackFrame {
         Interpreter* interp = nullptr;
         Func<HybridString()> desc;
-        Map<Label, AnyObject> localVariableTable;
+        Map<Label, AnyObject> local_variable_table;
         Tokenizer* tkr = nullptr;
-        const Statement::CustomBlock* customBlock = nullptr;
-        u32 tokenIdx = 0;
-        StackFrame* prevFrame = nullptr;
+        const Statement::CustomBlock* custom_block = nullptr;
+        u32 token_idx = 0;
+        StackFrame* prev_frame = nullptr;
         Hooks hooks;
     };
 
     BaseInterpreter base;
-    Func<AnyObject(Label identifier)> resolveName;
-    StackFrame* currentFrame = nullptr;
+    Func<AnyObject(Label identifier)> resolve_name;
+    StackFrame* current_frame = nullptr;
 };
 
-void logErrorWithStack(OutStream& out, const Interpreter* interp, StringView message);
-FnResult execFunction(Interpreter::StackFrame* frame, const StatementBlock* block);
-FnResult execBlock(Interpreter::StackFrame* frame, const StatementBlock* block);
+void log_error_with_stack(OutStream& out, const Interpreter* interp,
+                          StringView message);
+FnResult exec_function(Interpreter::StackFrame* frame, const StatementBlock* block);
+FnResult exec_block(Interpreter::StackFrame* frame, const StatementBlock* block);
 FnResult eval(Interpreter::StackFrame* frame, const Expression* expr);
 
 } // namespace biscuit

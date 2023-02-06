@@ -40,21 +40,21 @@ struct AnyOwnedObject : AnyObject {
     void assign(Owned<T>&& other) {
         destroy();
         data = other.release();
-        type = getTypeDescriptor<T>();
+        type = get_type_descriptor<T>();
     }
     template <typename T>
     static AnyOwnedObject bind(T* data) {
-        // FIXME: Find a better way to handle cases where this function is passed a pointer to
-        // const.
+        // FIXME: Find a better way to handle cases where this function is passed a
+        // pointer to const.
         return AnyOwnedObject{(void*) data, TypeDescriptorSpecializer<T>::get()};
     }
     template <typename T, typename... Args>
     static AnyOwnedObject create(Args&&... args) {
         return bind(new T{std::forward<Args>(args)...});
     }
-    static AnyOwnedObject create(TypeDescriptor* typeDesc) {
-        void* data = Heap.alloc(typeDesc->fixedSize);
-        AnyOwnedObject result{data, typeDesc};
+    static AnyOwnedObject create(TypeDescriptor* type_desc) {
+        void* data = Heap.alloc(type_desc->fixed_size);
+        AnyOwnedObject result{data, type_desc};
         result.construct();
         return result;
     }

@@ -15,7 +15,8 @@ namespace cpp {
 struct BaseError {
     virtual ~BaseError() {
     }
-    virtual void writeMessage(OutStream& out, const PPVisitedFiles* visitedFiles) const = 0;
+    virtual void write_message(OutStream& out,
+                               const PPVisitedFiles* visited_files) const = 0;
 };
 
 } // namespace cpp

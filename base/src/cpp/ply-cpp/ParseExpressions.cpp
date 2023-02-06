@@ -11,35 +11,36 @@
 namespace ply {
 namespace cpp {
 
-void consumeSpecifier(Parser* parser) {
+void consume_specifier(Parser* parser) {
     for (;;) {
-        Token token = readToken(parser);
+        Token token = read_token(parser);
         if (token.type == Token::OpenAngle) {
             // Template type
             // FIXME: Does < always indicate a template type here?
             // FIXME: This needs to handle "Tmpl<(2 > 1)>" and ""Tmpl<(2 >> 1)>"
-            PLY_SET_IN_SCOPE(parser->pp->tokenizeCloseAnglesOnly, true);
-            Token closeToken;
-            skipAnyScope(parser, &closeToken, token);
-            token = readToken(parser);
+            PLY_SET_IN_SCOPE(parser->pp->tokenize_close_angles_only, true);
+            Token close_token;
+            skip_any_scope(parser, &close_token, token);
+            token = read_token(parser);
         }
         if (token.type == Token::DoubleColon) {
-            Token specToken = readToken(parser);
-            if (specToken.type != Token::Identifier) {
+            Token spec_token = read_token(parser);
+            if (spec_token.type != Token::Identifier) {
                 // expected identifier after ::
-                parser->error(true, {ParseError::Expected, specToken, ExpectedToken::Identifier});
-                pushBackToken(parser, specToken);
+                parser->error(true, {ParseError::Expected, spec_token,
+                                     ExpectedToken::Identifier});
+                push_back_token(parser, spec_token);
                 return;
             }
         } else {
-            pushBackToken(parser, token);
+            push_back_token(parser, token);
             return;
         }
     }
 }
 
-void parseCaptureList(Parser* parser) {
-    Token token = readToken(parser);
+void parse_capture_list(Parser* parser) {
+    Token token = read_token(parser);
     if (token.type != Token::CloseSquare) {
         // FIXME: accept an actual capture list instead of just an empty list
         parser->error(true, {ParseError::Expected, token, ExpectedToken::CloseSquare});
@@ -47,137 +48,138 @@ void parseCaptureList(Parser* parser) {
 }
 
 // FIXME: This needs work.
-// It's enough to parse the initializers used by Plywood, but there are definitely lots of
-// expressions it doesn't handle.
-Tuple<Token, Token> parseExpression(Parser* parser, bool optional) {
-    Token startToken = readToken(parser);
-    Token endToken;
-    switch (startToken.type) {
+// It's enough to parse the initializers used by Plywood, but there are definitely lots
+// of expressions it doesn't handle.
+Tuple<Token, Token> parse_expression(Parser* parser, bool optional) {
+    Token start_token = read_token(parser);
+    Token end_token;
+    switch (start_token.type) {
         case Token::Identifier: {
-            // FIXME: This should use parseQualifiedID instead
-            consumeSpecifier(parser);
-            Token token2 = readToken(parser);
+            // FIXME: This should use parse_qualified_id instead
+            consume_specifier(parser);
+            Token token2 = read_token(parser);
             if (token2.type == Token::OpenParen) {
                 // Function arguments
-                SetAcceptFlagsInScope acceptScope{parser, Token::OpenParen};
+                SetAcceptFlagsInScope accept_scope{parser, Token::OpenParen};
                 for (;;) {
-                    Token token3 = readToken(parser);
+                    Token token3 = read_token(parser);
                     if (token3.type == Token::CloseParen) {
-                        endToken = token3;
+                        end_token = token3;
                         break; // end of arguments
                     } else {
-                        pushBackToken(parser, token3);
-                        parseExpression(parser);
-                        Token token4 = readToken(parser);
+                        push_back_token(parser, token3);
+                        parse_expression(parser);
+                        Token token4 = read_token(parser);
                         if (token4.type == Token::Comma) {
                         } else if (token4.type == Token::CloseParen) {
-                            endToken = token4;
+                            end_token = token4;
                             break; // end of arguments
                         } else {
                             // expected , or ) after argument
                             parser->error(true, {ParseError::Expected, token4,
                                                  ExpectedToken::CommaOrCloseParen});
-                            if (!handleUnexpectedToken(parser, nullptr, token4))
+                            if (!handle_unexpected_token(parser, nullptr, token4))
                                 break;
                         }
                     }
                 }
             } else if (token2.type == Token::OpenCurly) {
                 // It's a braced initializer (list).
-                // FIXME: Not sure, but maybe this case should use a "low priority" curly (???)
-                // Because if ';' is encountered, we should perhaps end the outer declaration.
-                // And if an outer ) is matched, it should maybe cancel the initializer.
-                // However, if we do that, it will be inconsisent with the behavior of
-                // skipAnyScope(). Does that matter?
-                SetAcceptFlagsInScope acceptScope{parser, Token::OpenCurly};
+                // FIXME: Not sure, but maybe this case should use a "low priority"
+                // curly (???) Because if ';' is encountered, we should perhaps end the
+                // outer declaration. And if an outer ) is matched, it should maybe
+                // cancel the initializer. However, if we do that, it will be
+                // inconsisent with the behavior of skip_any_scope(). Does that matter?
+                SetAcceptFlagsInScope accept_scope{parser, Token::OpenCurly};
                 for (;;) {
-                    Token token3 = readToken(parser);
+                    Token token3 = read_token(parser);
                     if (token3.type == Token::CloseCurly) {
-                        endToken = token3;
+                        end_token = token3;
                         break; // end of arguments
                     } else {
-                        pushBackToken(parser, token3);
-                        parseExpression(parser);
-                        Token token4 = readToken(parser);
+                        push_back_token(parser, token3);
+                        parse_expression(parser);
+                        Token token4 = read_token(parser);
                         if (token4.type == Token::Comma) {
                         } else if (token4.type == Token::CloseCurly) {
-                            endToken = token4;
+                            end_token = token4;
                             break; // end of arguments
                         } else {
                             // expected , or } after argument
                             parser->error(true, {ParseError::Expected, token4,
                                                  ExpectedToken::CommaOrCloseCurly});
-                            if (!handleUnexpectedToken(parser, nullptr, token4))
+                            if (!handle_unexpected_token(parser, nullptr, token4))
                                 break;
                         }
                     }
                 }
             } else {
                 // Can't consume any more of expression
-                endToken = startToken;
-                pushBackToken(parser, token2);
+                end_token = start_token;
+                push_back_token(parser, token2);
             }
             break;
         }
 
         case Token::NumericLiteral: {
             // Consume it
-            endToken = startToken;
+            end_token = start_token;
             break;
         }
 
         case Token::StringLiteral: {
-            endToken = startToken;
+            end_token = start_token;
             for (;;) {
                 // concatenate multiple string literals
-                Token token = readToken(parser);
+                Token token = read_token(parser);
                 if (token.type != Token::StringLiteral) {
-                    pushBackToken(parser, token);
+                    push_back_token(parser, token);
                     break;
                 }
-                endToken = token;
+                end_token = token;
             }
             break;
         }
 
         case Token::OpenParen: {
-            SetAcceptFlagsInScope acceptScope{parser, Token::OpenParen};
-            parseExpression(parser);
-            Token token2 = readToken(parser);
+            SetAcceptFlagsInScope accept_scope{parser, Token::OpenParen};
+            parse_expression(parser);
+            Token token2 = read_token(parser);
             if (token2.type == Token::CloseParen) {
                 // Treat as a C-style cast.
-                // FIXME: This should only be done if the inner expression identifies a type!
-                // Otherwise, it's just a parenthesized expression:
-                endToken = parseExpression(parser, true).second;
+                // FIXME: This should only be done if the inner expression identifies a
+                // type! Otherwise, it's just a parenthesized expression:
+                end_token = parse_expression(parser, true).second;
             } else {
                 // expected ) after expression
-                pushBackToken(parser, token2);
-                Token closeParen;
-                closeScope(parser, &closeParen, startToken); // This will log an error
-                endToken = closeParen;
+                push_back_token(parser, token2);
+                Token close_paren;
+                close_scope(parser, &close_paren,
+                            start_token); // This will log an error
+                end_token = close_paren;
             }
             break;
         }
 
         case Token::OpenCurly: {
             for (;;) {
-                Token token2 = readToken(parser);
+                Token token2 = read_token(parser);
                 if (token2.type == Token::CloseCurly) {
-                    endToken = token2;
+                    end_token = token2;
                     break;
                 } else {
-                    pushBackToken(parser, token2);
-                    parseExpression(parser);
-                    Token token4 = readToken(parser);
+                    push_back_token(parser, token2);
+                    parse_expression(parser);
+                    Token token4 = read_token(parser);
                     if (token4.type == Token::Comma) {
                     } else if (token4.type == Token::CloseCurly) {
-                        endToken = token4;
+                        end_token = token4;
                         break; // end of braced initializer
                     } else {
                         // expected , or } after expression
-                        parser->error(
-                            true, {ParseError::Expected, token4, ExpectedToken::CommaOrCloseCurly});
-                        if (!handleUnexpectedToken(parser, nullptr, token4))
+                        parser->error(true, {ParseError::Expected, token4,
+                                             ExpectedToken::CommaOrCloseCurly});
+                        if (!handle_unexpected_token(parser, nullptr, token4))
                             break;
                     }
                 }
@@ -188,45 +190,47 @@ Tuple<Token, Token> parseExpression(Parser* parser, bool optional) {
         case Token::Bang:
         case Token::SingleAmpersand:
         case Token::SingleMinus: {
-            endToken = parseExpression(parser).second;
+            end_token = parse_expression(parser).second;
             break;
         }
 
         case Token::OpenSquare: {
             // lambda expression
-            parseCaptureList(parser);
-            Token openParen = readToken(parser);
-            pushBackToken(parser, openParen);
-            if (openParen.type == Token::OpenParen) {
-                grammar::ParamDeclarationList unusedParams;
-                parseParameterDeclarationList(parser, unusedParams, false);
+            parse_capture_list(parser);
+            Token open_paren = read_token(parser);
+            push_back_token(parser, open_paren);
+            if (open_paren.type == Token::OpenParen) {
+                grammar::ParamDeclarationList unused_params;
+                parse_parameter_declaration_list(parser, unused_params, false);
             } else {
-                // FIXME: Could be cool to state, in this error message, that the '(' is needed for
-                // the parameter list of a lambda expression:
-                parser->error(true, {ParseError::Expected, openParen, ExpectedToken::OpenParen});
+                // FIXME: Could be cool to state, in this error message, that the '(' is
+                // needed for the parameter list of a lambda expression:
+                parser->error(
+                    true, {ParseError::Expected, open_paren, ExpectedToken::OpenParen});
             }
-            Token token2 = readToken(parser);
+            Token token2 = read_token(parser);
             if (token2.type == Token::Arrow) {
                 grammar::Declaration::Simple simple;
-                parseSpecifiersAndDeclarators(parser, simple, SpecDcorMode::TypeID);
-                token2 = readToken(parser);
+                parse_specifiers_and_declarators(parser, simple, SpecDcorMode::TypeID);
+                token2 = read_token(parser);
             }
             if (token2.type != Token::OpenCurly) {
-                // FIXME: Could be cool to state, in this error message, that the '{' is needed for
-                // the body of a lambda expression:
-                parser->error(true, {ParseError::Expected, token2, ExpectedToken::OpenCurly});
-                pushBackToken(parser, token2);
+                // FIXME: Could be cool to state, in this error message, that the '{' is
+                // needed for the body of a lambda expression:
+                parser->error(true,
+                              {ParseError::Expected, token2, ExpectedToken::OpenCurly});
+                push_back_token(parser, token2);
             } else {
-                Token closeToken;
-                skipAnyScope(parser, &closeToken, token2);
-                endToken = closeToken;
+                Token close_token;
+                skip_any_scope(parser, &close_token, token2);
+                end_token = close_token;
             }
             break;
         }
 
         default: {
             if (optional) {
-                pushBackToken(parser, startToken);
+                push_back_token(parser, start_token);
             } else {
                 PLY_ASSERT(0);
             }
@@ -234,14 +238,14 @@ Tuple<Token, Token> parseExpression(Parser* parser, bool optional) {
         }
     }
 
-    Token token = readToken(parser);
+    Token token = read_token(parser);
     switch (token.type) {
         case Token::CloseAngle: {
-            if (parser->pp->tokenizeCloseAnglesOnly) {
-                pushBackToken(parser, token);
+            if (parser->pp->tokenize_close_angles_only) {
+                push_back_token(parser, token);
                 break;
             } else {
-                endToken = parseExpression(parser).second;
+                end_token = parse_expression(parser).second;
             }
         };
 
@@ -260,31 +264,32 @@ Tuple<Token, Token> parseExpression(Parser* parser, bool optional) {
         case Token::Star:
         case Token::Dot:
         case Token::ForwardSlash: {
-            endToken = parseExpression(parser).second;
+            end_token = parse_expression(parser).second;
             break;
         }
 
         case Token::QuestionMark: {
-            parseExpression(parser);
-            token = readToken(parser);
+            parse_expression(parser);
+            token = read_token(parser);
             if (token.type != Token::SingleColon) {
                 // expected : after expression
-                // FIXME: It would be cool the mention, in the error message, that the colon is
-                // needed to match the '?' that was encountered earlier
-                parser->error(true, {ParseError::Expected, token, ExpectedToken::Colon});
-                pushBackToken(parser, token);
+                // FIXME: It would be cool the mention, in the error message, that the
+                // colon is needed to match the '?' that was encountered earlier
+                parser->error(true,
+                              {ParseError::Expected, token, ExpectedToken::Colon});
+                push_back_token(parser, token);
             } else {
-                endToken = parseExpression(parser).second;
+                end_token = parse_expression(parser).second;
             }
             break;
         };
 
         default: {
-            pushBackToken(parser, token);
+            push_back_token(parser, token);
             break;
         }
     }
-    return {startToken, endToken};
+    return {start_token, end_token};
 }
 
 } // namespace cpp

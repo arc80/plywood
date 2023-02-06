@@ -29,11 +29,11 @@ struct Box {
         return mins.length2() + maxs.length2();
     }
 
-    static Box<V> fromSize(T minx, T miny, T width, T height) {
+    static Box<V> from_size(T minx, T miny, T width, T height) {
         return {{minx, miny}, {T(minx + width), T(miny + height)}};
     }
 
-    static Box<V> fromSize(const V& mins, const V& size) {
+    static Box<V> from_size(const V& mins, const V& size) {
         return {mins, mins + size};
     }
 
@@ -92,7 +92,7 @@ struct Box {
         return maxs - mins;
     }
 
-    bool isEmpty() const {
+    bool is_empty() const {
         return any(maxs <= mins);
     }
 
@@ -142,11 +142,11 @@ struct Box {
         return clamp(arg, mins, maxs);
     }
 
-    V topLeft() const {
+    V top_left() const {
         return V{mins.x, maxs.y};
     }
 
-    V bottomRight() const {
+    V bottom_right() const {
         return V{maxs.x, mins.y};
     }
 
@@ -160,7 +160,7 @@ struct Box {
     }
 
     bool intersects(const Box& arg) const {
-        return !intersect(*this, arg).isEmpty();
+        return !intersect(*this, arg).is_empty();
     }
 
     static Box zero() {
@@ -177,17 +177,17 @@ struct Box {
 };
 
 template <typename V>
-Box<V> makeUnion(const V& p0, const V& p1) {
+Box<V> make_union(const V& p0, const V& p1) {
     return Box<V>(min(p0, p1), max(p0, p1));
 }
 
 template <typename V>
-Box<V> makeUnion(const Box<V>& box, const V& arg) {
+Box<V> make_union(const Box<V>& box, const V& arg) {
     return Box<V>(min(box.mins, arg), max(box.maxs, arg));
 }
 
 template <typename V>
-Box<V> makeUnion(const Box<V>& a, const Box<V>& b) {
+Box<V> make_union(const Box<V>& a, const Box<V>& b) {
     return Box<V>(min(a.mins, b.mins), max(a.maxs, b.maxs));
 }
 
@@ -197,18 +197,18 @@ Box<V> intersect(const Box<V>& a, const Box<V>& b) {
 }
 
 template <typename V>
-Box<V> makeSolid(const Box<V>& a) {
+Box<V> make_solid(const Box<V>& a) {
     return Box<V>(min(a.mins, a.maxs), max(a.mins, a.maxs));
 }
 
 template <typename V>
-Box<V> roundNearest(const Box<V>& a, float spacing = 1) {
-    return {roundNearest(a.mins, spacing), roundNearest(a.maxs, spacing)};
+Box<V> round_nearest(const Box<V>& a, float spacing = 1) {
+    return {round_nearest(a.mins, spacing), round_nearest(a.maxs, spacing)};
 }
 
 template <typename V>
-PLY_INLINE Box<V> roundExpand(const Box<V>& a, float spacing = 1) {
-    return {roundDown(a.mins, spacing), roundUp(a.maxs, spacing)};
+PLY_INLINE Box<V> round_expand(const Box<V>& a, float spacing = 1) {
+    return {round_down(a.mins, spacing), round_up(a.maxs, spacing)};
 }
 
 } // namespace ply

@@ -15,20 +15,23 @@ namespace ply {
 //-----------------------------------------------------------------------
 struct WStringView {
     const char16_t* units = nullptr;
-    u32 numUnits = 0;
+    u32 num_units = 0;
 
     PLY_INLINE WStringView() = default;
-    PLY_INLINE WStringView(const char16_t* units, u32 numUnits) : units{units}, numUnits{numUnits} {
+    PLY_INLINE WStringView(const char16_t* units, u32 num_units)
+        : units{units}, num_units{num_units} {
     }
     PLY_INLINE StringView raw_bytes() const {
-        return {(const char*) this->units, this->numUnits << 1};
+        return {(const char*) this->units, this->num_units << 1};
     }
 #if PLY_TARGET_WIN32
     WStringView(LPCWSTR units)
-        : units{(const char16_t*) units}, numUnits{(u32) std::char_traits<char16_t>::length(
-                                              (const char16_t*) units)} {
+        : units{(const char16_t*) units}, num_units{
+                                              (u32) std::char_traits<char16_t>::length(
+                                                  (const char16_t*) units)} {
     }
-    WStringView(LPCWSTR units, u32 numUnits) : units{(const char16_t*) units}, numUnits{numUnits} {
+    WStringView(LPCWSTR units, u32 num_units)
+        : units{(const char16_t*) units}, num_units{num_units} {
     }
 #endif
 };
@@ -39,12 +42,13 @@ struct WStringView {
 struct WString {
     using View = WStringView;
     char16_t* units = nullptr;
-    u32 numUnits = 0;
+    u32 num_units = 0;
 
     PLY_INLINE WString() = default;
-    PLY_INLINE WString(WString&& other) : units{other.units}, numUnits{other.numUnits} {
+    PLY_INLINE WString(WString&& other)
+        : units{other.units}, num_units{other.num_units} {
         other.units = nullptr;
-        other.numUnits = 0;
+        other.num_units = 0;
     }
     PLY_INLINE ~WString() {
         if (units) {
@@ -55,36 +59,36 @@ struct WString {
         this->~WString();
         new (this) WString{std::move(other)};
     }
-    PLY_INLINE static WString moveFromString(String&& other) {
-        PLY_ASSERT(isAlignedPowerOf2(uptr(other.bytes), 2));
-        PLY_ASSERT(isAlignedPowerOf2(other.numBytes, 2));
+    PLY_INLINE static WString move_from_string(String&& other) {
+        PLY_ASSERT(is_aligned_power_of2(uptr(other.bytes), 2));
+        PLY_ASSERT(is_aligned_power_of2(other.num_bytes, 2));
         WString result;
         result.units = (char16_t*) other.bytes;
-        result.numUnits = other.numBytes >> 1;
+        result.num_units = other.num_bytes >> 1;
         other.bytes = nullptr;
-        other.numBytes = 0;
+        other.num_bytes = 0;
         return result;
     }
 
-    PLY_INLINE bool includesNullTerminator() const {
-        return this->numUnits > 0 && this->units[this->numUnits - 1] == 0;
+    PLY_INLINE bool includes_null_terminator() const {
+        return this->num_units > 0 && this->units[this->num_units - 1] == 0;
     }
-    PLY_INLINE static WString allocate(u32 numUnits) {
+    PLY_INLINE static WString allocate(u32 num_units) {
         WString result;
-        result.units = (char16_t*) Heap.alloc(numUnits << 1);
-        result.numUnits = numUnits;
+        result.units = (char16_t*) Heap.alloc(num_units << 1);
+        result.num_units = num_units;
         return result;
     }
 
 #if PLY_TARGET_WIN32
     operator LPWSTR() const {
-        PLY_ASSERT(this->includesNullTerminator()); // must be null terminated
+        PLY_ASSERT(this->includes_null_terminator()); // must be null terminated
         return (LPWSTR) this->units;
     }
 #endif
 };
 
-WString toWString(StringView str);
-String fromWString(WStringView str);
+WString to_wstring(StringView str);
+String from_wstring(WStringView str);
 
 } // namespace ply

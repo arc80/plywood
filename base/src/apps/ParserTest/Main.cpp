@@ -17,65 +17,68 @@ using namespace ply;
 struct ParserTestSupervisor : cpp::ParseSupervisor {
     Array<Owned<cpp::BaseError>> errors;
 
-    virtual bool handleError(Owned<cpp::BaseError>&& err) override {
+    virtual bool handle_error(Owned<cpp::BaseError>&& err) override {
         this->errors.append(std::move(err));
         return true;
     }
 };
 
-void runTest(StringView testPath) {
-    String testFileContents = FileSystem.loadTextAutodetect(testPath).first;
+void run_test(StringView test_path) {
+    String test_file_contents = FileSystem.load_text_autodetect(test_path).first;
 
     // Find the line with five dashes
-    ViewInStream vins{testFileContents};
-    const char* dashedLine = nullptr;
+    ViewInStream vins{test_file_contents};
+    const char* dashed_line = nullptr;
     for (;;) {
-        StringView line = vins.readView<fmt::Line>();
-        if (line.isEmpty())
+        StringView line = vins.read_view<fmt::Line>();
+        if (line.is_empty())
             break;
-        if (line.startsWith("-----")) {
-            dashedLine = line.bytes;
+        if (line.starts_with("-----")) {
+            dashed_line = line.bytes;
             break;
         }
     }
-    if (!dashedLine) {
+    if (!dashed_line) {
         // No dashed line. Consider the whole file source code:
-        dashedLine = (const char*) vins.curByte;
+        dashed_line = (const char*) vins.cur_byte;
     }
 
-    StringView sourceCode = StringView::fromRange(testFileContents.bytes, dashedLine);
-    // Note: We could maybe avoid this copy by changing the Preprocessor so that it doesn't always
-    // take memory ownership of the input file contents.
-    cpp::PPVisitedFiles visitedFiles;
+    StringView source_code =
+        StringView::from_range(test_file_contents.bytes, dashed_line);
+    // Note: We could maybe avoid this copy by changing the Preprocessor so that it
+    // doesn't always take memory ownership of the input file contents.
+    cpp::PPVisitedFiles visited_files;
     ParserTestSupervisor visor;
-    cpp::grammar::TranslationUnit parseResult = cpp::parse(sourceCode, &visitedFiles, {}, {}, &visor);
+    cpp::grammar::TranslationUnit parse_result =
+        cpp::parse(source_code, &visited_files, {}, {}, &visor);
 
     MemOutStream mout;
-    mout << sourceCode;
-    if (!sourceCode.endsWith("\n")) {
+    mout << source_code;
+    if (!source_code.ends_with("\n")) {
         mout << "\n";
     }
     mout << "-----\n";
     for (const cpp::BaseError* err : visor.errors) {
-        err->writeMessage(&mout, &visitedFiles);
+        err->write_message(&mout, &visited_files);
     }
-    mout.flushMem();
-    FileSystem.makeDirsAndSaveTextIfDifferent(testPath, mout.moveToString(), TextFormat::platformPreference());
+    mout.flush_mem();
+    FileSystem.make_dirs_and_save_text_if_different(test_path, mout.move_to_string(),
+                                                    TextFormat::platform_preference());
 }
 
-void runTestSuite() {
-    String testsFolder =
+void run_test_suite() {
+    String tests_folder =
         Path.join(Workspace.path, "repos/plywood/src/apps/ParserTest/tests");
     OutStream outs = StdOut::text();
-    for (const DirectoryEntry& entry : FileSystem.listDir(testsFolder)) {
-        if (!entry.isDir && entry.name.endsWith(".txt")) {
+    for (const DirectoryEntry& entry : FileSystem.list_dir(tests_folder)) {
+        if (!entry.is_dir && entry.name.ends_with(".txt")) {
             outs << entry.name << '\n';
-            outs.flushMem();
-            runTest(Path.join(testsFolder, entry.name));
+            outs.flush_mem();
+            run_test(Path.join(tests_folder, entry.name));
         }
     }
 }
 
 int main() {
-    runTestSuite();
+    run_test_suite();
 }

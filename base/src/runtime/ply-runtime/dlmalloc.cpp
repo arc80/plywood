@@ -1268,9 +1268,9 @@ static int init_mparams(void) {
   ACQUIRE_MALLOC_GLOBAL_LOCK();
   if (mparams.magic == 0) {
     size_t magic;
-    const ply::MemPage::Info& info = ply::MemPage::getInfo();
-    size_t psize = (size_t) info.pageSize;
-    ply::ureg gsize = info.allocationGranularity;
+    const ply::MemPage::Info& info = ply::MemPage::get_info();
+    size_t psize = (size_t) info.page_size;
+    ply::ureg gsize = info.allocation_granularity;
 
     /* Sanity-check configuration:
        size_t must be unsigned and as wide as pointer type.
@@ -1627,9 +1627,9 @@ static void internal_malloc_stats(mstate m, HeapStats& stats) {
       }
     }
     POSTACTION(m); /* drop lock */
-    stats.peakSystemBytes = maxfp;
-    stats.systemBytes = fp;
-    stats.inUseBytes = used;
+    stats.peak_system_bytes = maxfp;
+    stats.system_bytes = fp;
+    stats.in_use_bytes = used;
   }
 }
 #endif /* NO_MALLOC_STATS */
@@ -2724,7 +2724,7 @@ void* dlmalloc(size_t bytes, mstate gm) {
 #if PLY_DLMALLOC_FAST_STATS
     // Note: Actual chunk size may be slightly larger than the original nb (derived from pad_request(bytes)) if the
     // space left over would have been too small to be useful. For example, in the "exhaust dv" case seen above.
-    gm->inUseBytes += chunksize(mem2chunk(mem));
+    gm->in_use_bytes += chunksize(mem2chunk(mem));
 #endif
     return mem;
   }
@@ -2757,7 +2757,7 @@ void dlfree(void* mem, mstate gm) {
       if (RTCHECK(ok_address(fm, p) && ok_inuse(p))) {
         size_t psize = chunksize(p);
 #if PLY_DLMALLOC_FAST_STATS
-        fm->inUseBytes -= psize;
+        fm->in_use_bytes -= psize;
 #endif
         mchunkptr next = chunk_plus_offset(p, psize);
         if (!pinuse(p)) {

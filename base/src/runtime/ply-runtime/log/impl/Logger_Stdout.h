@@ -17,12 +17,14 @@ namespace ply {
 
 class Logger_Stdout {
 public:
-    static void log(StringView strWithOptionalNullTerm) {
-        StringView strWithoutNullTerm = strWithOptionalNullTerm.withoutNullTerminator();
+    static void log(StringView str_with_optional_null_term) {
+        StringView str_without_null_term =
+            str_with_optional_null_term.without_null_terminator();
 #if PLY_TARGET_WIN32
-        _write(1, strWithoutNullTerm.bytes, strWithoutNullTerm.numBytes);
+        _write(1, str_without_null_term.bytes, str_without_null_term.num_bytes);
 #else
-        ssize_t rc = ::write(STDOUT_FILENO, strWithoutNullTerm.bytes, strWithoutNullTerm.numBytes);
+        ssize_t rc = ::write(STDOUT_FILENO, str_without_null_term.bytes,
+                             str_without_null_term.num_bytes);
         PLY_UNUSED(rc);
 #endif
     }

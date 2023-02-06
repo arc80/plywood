@@ -9,19 +9,19 @@
 
 namespace ply {
 
-CPUTimer::Point LogChannel::startTime = CPUTimer::get();
+CPUTimer::Point LogChannel::start_time = CPUTimer::get();
 CPUTimer::Converter LogChannel::converter;
 
-PLY_NO_INLINE LogChannel::LineHandler::LineHandler(StringView channelName) {
+PLY_NO_INLINE LogChannel::LineHandler::LineHandler(StringView channel_name) {
     CPUTimer::Point now = CPUTimer::get();
-    TID tid = getCurrentThreadID();
-    this->mout << (now - startTime); // Timestamp
-    this->mout.format(" 0x{}[{}] ", hex(tid), channelName);
+    TID tid = get_current_thread_id();
+    this->mout << (now - start_time); // Timestamp
+    this->mout.format(" 0x{}[{}] ", hex(tid), channel_name);
 }
 
 PLY_NO_INLINE LogChannel::LineHandler::~LineHandler() {
     this->mout << StringView{"\n", 2}; // include null terminator
-    Logger::log(this->mout.moveToString());
+    Logger::log(this->mout.move_to_string());
 }
 
 } // namespace ply

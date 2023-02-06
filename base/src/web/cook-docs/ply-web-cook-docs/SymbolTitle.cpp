@@ -11,7 +11,7 @@
 namespace ply {
 namespace docs {
 
-void writeParseTitleError(OutStream* outs, ParseTitleError err, StringView arg) {
+void write_parse_title_error(OutStream* outs, ParseTitleError err, StringView arg) {
     switch (err) {
         case ParseTitleError::ExpectedSpanTypeAfterOpenSquare: {
             *outs << "expected span type immediately following '['\n";
@@ -40,100 +40,104 @@ void writeParseTitleError(OutStream* outs, ParseTitleError err, StringView arg) 
     }
 }
 
-Array<TitleSpan> parseTitle(
-    StringView srcText,
-    const Functor<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback) {
+Array<TitleSpan> parse_title(StringView src_text,
+                             const Functor<void(ParseTitleError err, StringView arg,
+                                                const char* loc)>& error_callback) {
     Array<TitleSpan> result;
-    ViewInStream vins{srcText};
+    ViewInStream vins{src_text};
     MemOutStream mout;
-    TitleSpan::Type inSpanType = TitleSpan::Normal;
-    const char* spanStart = srcText.bytes;
+    TitleSpan::Type in_span_type = TitleSpan::Normal;
+    const char* span_start = src_text.bytes;
 
-    auto flushSpan = [&] {
-        String text = mout.moveToString();
+    auto flush_span = [&] {
+        String text = mout.move_to_string();
         if (text) {
-            result.append({inSpanType, std::move(text)});
+            result.append({in_span_type, std::move(text)});
         }
         mout = {}; // Begin new MemOutStream
     };
 
-    while (vins.numBytesAvailable() > 0) {
-        char c = vins.readByte();
+    while (vins.num_bytes_available() > 0) {
+        char c = vins.read_byte();
         if (c == '\\') {
-            if (vins.numBytesAvailable() > 0) {
-                mout << (char) vins.readByte();
+            if (vins.num_bytes_available() > 0) {
+                mout << (char) vins.read_byte();
             }
         } else if (c == '[') {
-            if (inSpanType != TitleSpan::Normal) {
-                errorCallback(ParseTitleError::UnclosedSpan, {}, spanStart);
+            if (in_span_type != TitleSpan::Normal) {
+                error_callback(ParseTitleError::UnclosedSpan, {}, span_start);
             }
-            flushSpan();
-            spanStart = (const char*) vins.curByte - 1;
-            StringView spanType = vins.readView<fmt::Identifier>();
-            if (!spanType) {
-                errorCallback(ParseTitleError::ExpectedSpanTypeAfterOpenSquare, {}, spanStart);
-            } else if (spanType == "strong") {
-                inSpanType = TitleSpan::Strong;
-            } else if (spanType == "em") {
-                inSpanType = TitleSpan::Em;
-            } else if (spanType == "qid") {
-                inSpanType = TitleSpan::QID;
+            flush_span();
+            span_start = (const char*) vins.cur_byte - 1;
+            StringView span_type = vins.read_view<fmt::Identifier>();
+            if (!span_type) {
+                error_callback(ParseTitleError::ExpectedSpanTypeAfterOpenSquare, {},
+                               span_start);
+            } else if (span_type == "strong") {
+                in_span_type = TitleSpan::Strong;
+            } else if (span_type == "em") {
+                in_span_type = TitleSpan::Em;
+            } else if (span_type == "qid") {
+                in_span_type = TitleSpan::QID;
             } else {
-                errorCallback(ParseTitleError::UnrecognizedSpanType, spanType, spanType.bytes);
-                inSpanType = TitleSpan::Strong;
+                error_callback(ParseTitleError::UnrecognizedSpanType, span_type,
+                               span_type.bytes);
+                in_span_type = TitleSpan::Strong;
             }
-            if (vins.numBytesAvailable() == 0 || vins.peekByte() != ' ') {
-                errorCallback(ParseTitleError::ExpectedSpaceAfterSpanType, spanType,
-                              (const char*) vins.curByte);
+            if (vins.num_bytes_available() == 0 || vins.peek_byte() != ' ') {
+                error_callback(ParseTitleError::ExpectedSpaceAfterSpanType, span_type,
+                               (const char*) vins.cur_byte);
             } else {
-                vins.advanceByte();
+                vins.advance_byte();
             }
         } else if (c == ']') {
-            if (inSpanType == TitleSpan::Normal) {
-                errorCallback(ParseTitleError::UnexpectedCloseSquare, {},
-                              (const char*) vins.curByte - 1);
+            if (in_span_type == TitleSpan::Normal) {
+                error_callback(ParseTitleError::UnexpectedCloseSquare, {},
+                               (const char*) vins.cur_byte - 1);
             } else {
-                flushSpan();
-                inSpanType = TitleSpan::Normal;
+                flush_span();
+                in_span_type = TitleSpan::Normal;
             }
         } else {
             mout << c;
         }
     }
 
-    if (inSpanType != TitleSpan::Normal) {
-        errorCallback(ParseTitleError::UnclosedSpan, {}, spanStart);
+    if (in_span_type != TitleSpan::Normal) {
+        error_callback(ParseTitleError::UnclosedSpan, {}, span_start);
     }
-    flushSpan();
+    flush_span();
 
     return result;
 }
 
-void writeAltMemberTitle(OutStream& htmlWriter, ArrayView<const TitleSpan> spans,
-                         const LookupContext& lookupCtx,
-                         String (*getLinkDestination)(StringView, const LookupContext&)) {
+void write_alt_member_title(OutStream& html_writer, ArrayView<const TitleSpan> spans,
+                            const LookupContext& lookup_ctx,
+                            String (*get_link_destination)(StringView,
+                                                           const LookupContext&)) {
     for (const TitleSpan& span : spans) {
         switch (span.type) {
             case TitleSpan::Normal: {
-                htmlWriter << fmt::XMLEscape{span.text};
+                html_writer << fmt::XMLEscape{span.text};
                 break;
             }
             case TitleSpan::Strong: {
-                htmlWriter.format("<strong>{}</strong>", fmt::XMLEscape{span.text});
+                html_writer.format("<strong>{}</strong>", fmt::XMLEscape{span.text});
                 break;
             }
             case TitleSpan::Em: {
-                htmlWriter.format("<em>{}</em>", fmt::XMLEscape{span.text});
+                html_writer.format("<em>{}</em>", fmt::XMLEscape{span.text});
                 break;
             }
             case TitleSpan::QID: {
-                String linkDestination = getLinkDestination(span.text, lookupCtx);
-                if (linkDestination) {
-                    htmlWriter.format("<a href=\"{}\">", fmt::XMLEscape{linkDestination});
+                String link_destination = get_link_destination(span.text, lookup_ctx);
+                if (link_destination) {
+                    html_writer.format("<a href=\"{}\">",
+                                       fmt::XMLEscape{link_destination});
                 }
-                htmlWriter << fmt::XMLEscape{span.text};
-                if (linkDestination) {
-                    htmlWriter << "</a>";
+                html_writer << fmt::XMLEscape{span.text};
+                if (link_destination) {
+                    html_writer << "</a>";
                 }
                 break;
             }

@@ -1,4 +1,4 @@
-enum class ID : u16 {
+﻿enum class ID : u16 {
     Parenthesized,
     PointerTo,
     ArrayOf,
@@ -8,17 +8,19 @@ enum class ID : u16 {
 };
 union Storage_ {
     Parenthesized parenthesized;
-    PointerTo pointerTo;
-    ArrayOf arrayOf;
+    PointerTo pointer_to;
+    ArrayOf array_of;
     Function function;
     Qualifier qualifier;
-    PLY_INLINE Storage_() {}
-    PLY_INLINE ~Storage_() {}
+    PLY_INLINE Storage_() {
+    }
+    PLY_INLINE ~Storage_() {
+    }
 };
 SWITCH_FOOTER(Type, Parenthesized)
 SWITCH_ACCESSOR(Parenthesized, parenthesized)
-SWITCH_ACCESSOR(PointerTo, pointerTo)
-SWITCH_ACCESSOR(ArrayOf, arrayOf)
+SWITCH_ACCESSOR(PointerTo, pointer_to)
+SWITCH_ACCESSOR(ArrayOf, array_of)
 SWITCH_ACCESSOR(Function, function)
 SWITCH_ACCESSOR(Qualifier, qualifier)
 PLY_SWITCH_REFLECT()

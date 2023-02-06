@@ -10,7 +10,7 @@
 
 namespace ply {
 
-NativeBindings& getNativeBindings_Array() {
+NativeBindings& get_native_bindings_array() {
     static NativeBindings bindings{
         // create
         [](TypeDescriptor*) -> AnyObject {
@@ -25,16 +25,16 @@ NativeBindings& getNativeBindings_Array() {
         [](AnyObject obj) { new (obj.data) BaseArray; },
         // destruct
         [](AnyObject obj) {
-            TypeDescriptor_Array* arrayType = obj.type->cast<TypeDescriptor_Array>();
-            TypeDescriptor* itemType = arrayType->itemType;
+            TypeDescriptor_Array* array_type = obj.type->cast<TypeDescriptor_Array>();
+            TypeDescriptor* item_type = array_type->item_type;
             BaseArray* arr = (BaseArray*) obj.data;
             void* item = arr->items;
-            u32 itemSize = itemType->fixedSize;
-            // FIXME: Skip this loop if itemType is trivially
+            u32 item_size = item_type->fixed_size;
+            // FIXME: Skip this loop if item_type is trivially
             // destructible (Need a way to determine that)
             for (u32 i = 0; i < arr->num_items; i++) {
-                itemType->bindings.destruct({item, itemType});
-                item = PLY_PTR_OFFSET(item, itemSize);
+                item_type->bindings.destruct({item, item_type});
+                item = PLY_PTR_OFFSET(item, item_size);
             }
             arr->~BaseArray();
         },

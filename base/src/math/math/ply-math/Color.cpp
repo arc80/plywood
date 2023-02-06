@@ -9,8 +9,8 @@
 
 namespace ply {
 
-void convertFromHex(float* values, size_t numValues, const char* hex) {
-    for (size_t i = 0; i < numValues; i++) {
+void convert_from_hex(float* values, size_t num_values, const char* hex) {
+    for (size_t i = 0; i < num_values; i++) {
         int c = 0;
         for (int j = 0; j < 2; j++) {
             c <<= 4;

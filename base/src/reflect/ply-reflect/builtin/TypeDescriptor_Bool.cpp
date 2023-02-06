@@ -19,46 +19,52 @@ namespace ply {
 struct BoolMethodTable {
     static PLY_INLINE MethodTable make() {
         MethodTable methods;
-        methods.binaryOp = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
-                              const AnyObject& first, const AnyObject& second) -> FnResult {
+        methods.binary_op = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
+                               const AnyObject& first,
+                               const AnyObject& second) -> FnResult {
             switch (op) {
                 case MethodTable::BinaryOp::DoubleEqual: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-                    *interp->returnValue.cast<bool>() =
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<bool>());
+                    *interp->return_value.cast<bool>() =
                         (*first.cast<bool>() == *second.cast<bool>());
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::LogicalAnd: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-                    *interp->returnValue.cast<bool>() =
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<bool>());
+                    *interp->return_value.cast<bool>() =
                         (*first.cast<bool>() && *second.cast<bool>());
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::LogicalOr: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-                    *interp->returnValue.cast<bool>() =
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<bool>());
+                    *interp->return_value.cast<bool>() =
                         (*first.cast<bool>() || *second.cast<bool>());
                     return Fn_OK;
                 }
                 default: {
-                    return MethodTable::unsupportedBinaryOp(interp, op, first, second);
+                    return MethodTable::unsupported_binary_op(interp, op, first,
+                                                              second);
                 }
             }
         };
-        methods.unaryOp = [](BaseInterpreter* interp, MethodTable::UnaryOp op,
-                             const AnyObject& obj) -> FnResult {
+        methods.unary_op = [](BaseInterpreter* interp, MethodTable::UnaryOp op,
+                              const AnyObject& obj) -> FnResult {
             switch (op) {
                 case MethodTable::UnaryOp::LogicalNot: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-                    *interp->returnValue.cast<bool>() = !*obj.cast<bool>();
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<bool>());
+                    *interp->return_value.cast<bool>() = !*obj.cast<bool>();
                     return Fn_OK;
                 }
                 default: {
-                    return MethodTable::unsupportedUnaryOp(interp, op, obj);
+                    return MethodTable::unsupported_unary_op(interp, op, obj);
                 }
             }
         };
@@ -69,10 +75,10 @@ struct BoolMethodTable {
 #endif // PLY_WITH_METHOD_TABLES
 
 PLY_DEFINE_TYPE_DESCRIPTOR(bool) {
-    static TypeDescriptor typeDesc{&TypeKey_Bool, (bool*) nullptr,
-                                   NativeBindings::make<bool>()
-                                       PLY_METHOD_TABLES_ONLY(, BoolMethodTable::make())};
-    return &typeDesc;
+    static TypeDescriptor type_desc{
+        &TypeKey_Bool, (bool*) nullptr,
+        NativeBindings::make<bool>() PLY_METHOD_TABLES_ONLY(, BoolMethodTable::make())};
+    return &type_desc;
 };
 
 } // namespace ply

@@ -8,36 +8,36 @@
 
 using namespace ply;
 
-Tuple<bool, TextFormat> extractFormatFromName(StringView name) {
+Tuple<bool, TextFormat> extract_format_from_name(StringView name) {
     TextFormat tf;
 
-    Array<StringView> nameComps = name.splitByte('.');
-    if (nameComps.numItems() != 4)
+    Array<StringView> name_comps = name.split_byte('.');
+    if (name_comps.num_items() != 4)
         return {false, TextFormat{}};
 
-    if (nameComps[1] == "utf8") {
+    if (name_comps[1] == "utf8") {
         tf.encoding = TextFormat::Encoding::UTF8;
-    } else if (nameComps[1] == "utf16le") {
+    } else if (name_comps[1] == "utf16le") {
         tf.encoding = TextFormat::Encoding::UTF16_le;
-    } else if (nameComps[1] == "utf16be") {
+    } else if (name_comps[1] == "utf16be") {
         tf.encoding = TextFormat::Encoding::UTF16_be;
-    } else if (nameComps[1] == "win1252") {
+    } else if (name_comps[1] == "win1252") {
         tf.encoding = TextFormat::Encoding::Bytes;
     } else {
         return {false, TextFormat{}};
     }
 
-    if (nameComps[2] == "lf") {
-        tf.newLine = TextFormat::NewLine::LF;
-    } else if (nameComps[2] == "crlf") {
-        tf.newLine = TextFormat::NewLine::CRLF;
+    if (name_comps[2] == "lf") {
+        tf.new_line = TextFormat::NewLine::LF;
+    } else if (name_comps[2] == "crlf") {
+        tf.new_line = TextFormat::NewLine::CRLF;
     } else {
         return {false, TextFormat{}};
     }
 
-    if (nameComps[3] == "bom") {
+    if (name_comps[3] == "bom") {
         tf.bom = true;
-    } else if (nameComps[3] == "nobom") {
+    } else if (name_comps[3] == "nobom") {
         tf.bom = false;
     } else {
         return {false, TextFormat{}};
@@ -46,27 +46,27 @@ Tuple<bool, TextFormat> extractFormatFromName(StringView name) {
     return {true, tf};
 }
 
-bool runTestSuite() {
-    String testsFolder =
+bool run_test_suite() {
+    String tests_folder =
         Path.join(Workspace.path, "repos/plywood/src/apps/AutodetectTest/tests");
     OutStream outs = StdOut::text();
     u32 succeeded = 0;
     u32 failed = 0;
-    for (const DirectoryEntry& entry : FileSystem.listDir(testsFolder)) {
+    for (const DirectoryEntry& entry : FileSystem.list_dir(tests_folder)) {
         // if (entry.name == "japanese.utf8.lf.bom.txt")
         //    PLY_DEBUG_BREAK();
-        if (!entry.isDir && entry.name.endsWith(".txt")) {
+        if (!entry.is_dir && entry.name.ends_with(".txt")) {
             outs << entry.name << "... ";
-            Tuple<bool, TextFormat> expected = extractFormatFromName(entry.name.shortenedBy(4));
+            Tuple<bool, TextFormat> expected =
+                extract_format_from_name(entry.name.shortened_by(4));
             if (!expected.first) {
                 outs << "***can't parse filename***\n";
                 failed++;
                 outs.flush();
                 continue;
             }
-            auto contents =
-                FileSystem::native()
-                    ->loadTextAutodetect(Path.join(testsFolder, entry.name));
+            auto contents = FileSystem::native()->load_text_autodetect(
+                Path.join(tests_folder, entry.name));
             if (!(contents.second == expected.second)) {
                 outs << "***format detection failed***\n";
                 failed++;
@@ -74,10 +74,9 @@ bool runTestSuite() {
                 continue;
             }
 
-            auto compareTo = 
-                FileSystem::native()
-                    ->loadTextAutodetect(Path.join(testsFolder, entry.name.splitByte('.')[0] + ".utf8.crlf.bom.txt"));
-            if (contents.first != compareTo.first) {
+            auto compare_to = FileSystem::native()->load_text_autodetect(Path.join(
+                tests_folder, entry.name.split_byte('.')[0] + ".utf8.crlf.bom.txt"));
+            if (contents.first != compare_to.first) {
                 outs << "***bad contents***\n";
                 failed++;
                 outs.flush();
@@ -95,5 +94,5 @@ bool runTestSuite() {
 }
 
 int main() {
-    return runTestSuite() ? 0 : 1;
+    return run_test_suite() ? 0 : 1;
 }

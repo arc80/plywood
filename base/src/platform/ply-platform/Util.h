@@ -23,26 +23,30 @@ struct SizedInt<8> {
 };
 
 template <typename I>
-constexpr PLY_INLINE std::enable_if_t<std::is_integral<I>::value, bool> isPowerOf2(I v) {
+constexpr PLY_INLINE std::enable_if_t<std::is_integral<I>::value, bool>
+is_power_of2(I v) {
     return (v & (v - 1)) == 0;
 }
 
 template <typename I0, typename I1>
-PLY_INLINE std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, I0>
-alignPowerOf2(I0 v, I1 a) {
-    PLY_ASSERT(isPowerOf2(a));
+PLY_INLINE
+    std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, I0>
+    align_power_of2(I0 v, I1 a) {
+    PLY_ASSERT(is_power_of2(a));
     return (v + a - 1) & ~I0(a - 1);
 }
 
 template <typename I0, typename I1>
-PLY_INLINE std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, bool>
-isAlignedPowerOf2(I0 v, I1 a) {
-    PLY_ASSERT(isPowerOf2(a));
+PLY_INLINE
+    std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, bool>
+    is_aligned_power_of2(I0 v, I1 a) {
+    PLY_ASSERT(is_power_of2(a));
     return (v & (a - 1)) == 0;
 }
 
 template <typename I>
-PLY_INLINE std::enable_if_t<std::is_integral<I>::value && sizeof(I) == 8, I> roundUpPowerOf2(I v) {
+PLY_INLINE std::enable_if_t<std::is_integral<I>::value && sizeof(I) == 8, I>
+round_up_power_of2(I v) {
     v--;
     v |= v >> 1;
     v |= v >> 2;
@@ -55,7 +59,8 @@ PLY_INLINE std::enable_if_t<std::is_integral<I>::value && sizeof(I) == 8, I> rou
 }
 
 template <typename I>
-PLY_INLINE std::enable_if_t<std::is_integral<I>::value && sizeof(I) <= 4, I> roundUpPowerOf2(I v_) {
+PLY_INLINE std::enable_if_t<std::is_integral<I>::value && sizeof(I) <= 4, I>
+round_up_power_of2(I v_) {
     u32 v = (u32) v_ - 1;
     v |= v >> 1;
     v |= v >> 2;
@@ -67,7 +72,7 @@ PLY_INLINE std::enable_if_t<std::is_integral<I>::value && sizeof(I) <= 4, I> rou
 }
 
 template <typename I>
-PLY_INLINE std::enable_if_t<std::is_integral<I>::value, u32> countSetBits(I mask) {
+PLY_INLINE std::enable_if_t<std::is_integral<I>::value, u32> count_set_bits(I mask) {
     u32 count = 0;
     while (mask) {
         count += (mask & 1);
@@ -77,15 +82,17 @@ PLY_INLINE std::enable_if_t<std::is_integral<I>::value, u32> countSetBits(I mask
 }
 
 template <typename Dst, typename Src>
-PLY_INLINE constexpr std::enable_if_t<std::is_unsigned<Src>::value, Dst> safeDemote(Src src) {
+PLY_INLINE constexpr std::enable_if_t<std::is_unsigned<Src>::value, Dst>
+safe_demote(Src src) {
     // src is unsigned
     PLY_ASSERT(src <= (typename std::make_unsigned_t<Dst>) Limits<Dst>::Max);
     return (Dst) src;
 }
 
 template <typename Dst, typename Src>
-PLY_INLINE constexpr std::enable_if_t<std::is_signed<Src>::value && std::is_signed<Dst>::value, Dst>
-safeDemote(Src src) {
+PLY_INLINE constexpr std::enable_if_t<
+    std::is_signed<Src>::value && std::is_signed<Dst>::value, Dst>
+safe_demote(Src src) {
     // src and dst are both signed
     PLY_ASSERT(src >= Limits<Dst>::Min);
     PLY_ASSERT(src <= Limits<Dst>::Max);
@@ -93,8 +100,9 @@ safeDemote(Src src) {
 }
 
 template <typename Dst, typename Src>
-PLY_INLINE constexpr std::enable_if_t<std::is_signed<Src>::value && std::is_unsigned<Dst>::value, Dst>
-safeDemote(Src src) {
+PLY_INLINE constexpr std::enable_if_t<
+    std::is_signed<Src>::value && std::is_unsigned<Dst>::value, Dst>
+safe_demote(Src src) {
     // src is signed, dst is unsigned
     PLY_ASSERT(src >= 0);
     PLY_ASSERT((typename std::make_unsigned_t<Src>) src <= Limits<Dst>::Max);

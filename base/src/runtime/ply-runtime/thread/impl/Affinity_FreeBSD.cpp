@@ -21,11 +21,11 @@
 
 namespace ply {
 
-static bool setAffinityRaw(u32 logicalProcessor) {
-    cpuset_t cpuSet;
-    CPU_ZERO(&cpuSet);
-    CPU_SET(logicalProcessor, &cpuSet);
-    int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpuSet), &cpuSet);
+static bool set_affinity_raw(u32 logical_processor) {
+    cpuset_t cpu_set;
+    CPU_ZERO(&cpu_set);
+    CPU_SET(logical_processor, &cpu_set);
+    int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set), &cpu_set);
     return (rc == 0);
 }
 
@@ -84,7 +84,7 @@ static bool cpuid(pcpu_regs_t regs) {
     return true;
 }
 
-static bool getTopology(s32* _physical, s32* _core) {
+static bool get_topology(s32* _physical, s32* _core) {
     static x2apic_level_t socket = {0}, core = {0}, thread = {0};
     cpu_regs_t regs = {0};
     u32 id;
@@ -166,58 +166,61 @@ Affinity_FreeBSD::Affinity_FreeBSD() : m_isAccurate(false), m_numHWThreads(0) {
             }
         };
 
-        s32 logicalProcessor;
-        CoreID coreID;
-        std::map<CoreID, u32> coreIDToIndex;
+        s32 logical_processor;
+        CoreID core_id;
+        std::map<CoreID, u32> core_idto_index;
 
-        CoreInfoCollector() : logicalProcessor(-1) {
+        CoreInfoCollector() : logical_processor(-1) {
         }
 
         void flush(Affinity_FreeBSD& affinity) {
-            if (logicalProcessor >= 0) {
-                if (coreID.physical < 0 && coreID.core < 0) {
-                    // On PowerPC Linux 3.2.0-4, /proc/cpuinfo outputs "processor", but not
-                    // "physical id" or "core id". Emulate a single physical CPU with N cores:
-                    coreID.physical = 0;
-                    coreID.core = logicalProcessor;
+            if (logical_processor >= 0) {
+                if (core_id.physical < 0 && core_id.core < 0) {
+                    // On PowerPC Linux 3.2.0-4, /proc/cpuinfo outputs "processor", but
+                    // not "physical id" or "core id". Emulate a single physical CPU
+                    // with N cores:
+                    core_id.physical = 0;
+                    core_id.core = logical_processor;
                 }
-                std::map<CoreID, u32>::iterator iter = coreIDToIndex.find(coreID);
-                u32 coreIndex;
-                if (iter == coreIDToIndex.end()) {
-                    coreIndex = (u32) affinity.m_coreIndexToInfo.size();
-                    affinity.m_coreIndexToInfo.resize(coreIndex + 1);
-                    coreIDToIndex[coreID] = coreIndex;
+                std::map<CoreID, u32>::iterator iter = core_idto_index.find(core_id);
+                u32 core_index;
+                if (iter == core_idto_index.end()) {
+                    core_index = (u32) affinity.m_coreIndexToInfo.size();
+                    affinity.m_coreIndexToInfo.resize(core_index + 1);
+                    core_idto_index[core_id] = core_index;
                 } else {
-                    coreIndex = iter->second;
+                    core_index = iter->second;
                 }
-                affinity.m_coreIndexToInfo[coreIndex].hwThreadIndexToLogicalProcessor.push_back(
-                    logicalProcessor);
+                affinity.m_coreIndexToInfo[core_index]
+                    .hw_thread_index_to_logical_processor.push_back(logical_processor);
                 affinity.m_numHWThreads++;
             }
-            logicalProcessor = -1;
-            coreID = CoreID();
+            logical_processor = -1;
+            core_id = CoreID();
         }
     };
 
     CoreInfoCollector collector;
-    u32 logicalProcessor = 0;
-    for (u32 logicalProcessor = 0; setAffinityRaw(logicalProcessor); logicalProcessor++) {
-        collector.logicalProcessor = logicalProcessor;
-        getTopology(&collector.coreID.physical, &collector.coreID.core);
+    u32 logical_processor = 0;
+    for (u32 logical_processor = 0; set_affinity_raw(logical_processor);
+         logical_processor++) {
+        collector.logical_processor = logical_processor;
+        get_topology(&collector.core_id.physical, &collector.core_id.core);
         collector.flush(*this);
     }
 
     m_isAccurate = (m_numHWThreads > 0);
     if (!m_isAccurate) {
         m_coreIndexToInfo.resize(1);
-        m_coreIndexToInfo[0].hwThreadIndexToLogicalProcessor.push_back(0);
+        m_coreIndexToInfo[0].hw_thread_index_to_logical_processor.push_back(0);
         m_numHWThreads = 1;
     }
 }
 
-bool Affinity_FreeBSD::setAffinity(ureg core, ureg hwThread) {
-    u32 logicalProcessor = m_coreIndexToInfo[core].hwThreadIndexToLogicalProcessor[hwThread];
-    return setAffinityRaw(logicalProcessor);
+bool Affinity_FreeBSD::set_affinity(ureg core, ureg hw_thread) {
+    u32 logical_processor =
+        m_coreIndexToInfo[core].hw_thread_index_to_logical_processor[hw_thread];
+    return set_affinity_raw(logical_processor);
 }
 
 } // namespace ply

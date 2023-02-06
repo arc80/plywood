@@ -12,9 +12,9 @@ namespace ply {
 namespace cpp {
 
 struct ParseParams {
-    Token::Type openPunc = Token::OpenParen;
-    Token::Type closePunc = Token::CloseParen;
-    SpecDcorMode specDcorMode = SpecDcorMode::Param;
+    Token::Type open_punc = Token::OpenParen;
+    Token::Type close_punc = Token::CloseParen;
+    SpecDcorMode spec_dcor_mode = SpecDcorMode::Param;
 
     static ParseParams Func;
     static ParseParams Template;
@@ -27,106 +27,109 @@ ParseParams ParseParams::Template = {
     SpecDcorMode::TemplateParam,
 };
 
-PLY_NO_INLINE void parseParameterDeclarationList(Parser* parser,
-                                                 grammar::ParamDeclarationList& params,
-                                                 bool forTemplate) {
-    const ParseParams* pp = forTemplate ? &ParseParams::Template : &ParseParams::Func;
+PLY_NO_INLINE void
+parse_parameter_declaration_list(Parser* parser, grammar::ParamDeclarationList& params,
+                                 bool for_template) {
+    const ParseParams* pp = for_template ? &ParseParams::Template : &ParseParams::Func;
 
     // Get open punctuator
     // Caller is responsible for ensuring the expected punctuator is next!
-    Token token = readToken(parser);
+    Token token = read_token(parser);
     // FIXME: Maybe we should log an error here instead of asserting. This could let us
-    // remove some of the checks performed in some callers, potentially cleaning up code.
-    PLY_ASSERT(token.type == pp->openPunc); // Guaranteed by caller
-    params.openPunc = token;
-    parser->stopMutingErrors();
+    // remove some of the checks performed in some callers, potentially cleaning up
+    // code.
+    PLY_ASSERT(token.type == pp->open_punc); // Guaranteed by caller
+    params.open_punc = token;
+    parser->stop_muting_errors();
 
-    token = readToken(parser);
-    if (token.type == pp->closePunc) {
+    token = read_token(parser);
+    if (token.type == pp->close_punc) {
         // Empty parameter declaration list
-        params.closePunc = token;
+        params.close_punc = token;
         return;
     } else {
-        pushBackToken(parser, token);
+        push_back_token(parser, token);
     }
 
-    SetAcceptFlagsInScope acceptScope{parser, pp->openPunc};
+    SetAcceptFlagsInScope accept_scope{parser, pp->open_punc};
 
     for (;;) {
         // A parameter declaration is expected here.
         grammar::ParamDeclarationWithComma* pdc = nullptr;
-        bool anyTokensConsumed = false;
+        bool any_tokens_consumed = false;
 
-        Token expectedLoc = readToken(parser);
-        if (expectedLoc.type == Token::Ellipsis && !forTemplate) {
+        Token expected_loc = read_token(parser);
+        if (expected_loc.type == Token::Ellipsis && !for_template) {
             // FIXME: Check somewhere that this is the last parameter
             pdc = &params.params.append();
-            grammar::DeclSpecifier* declSpec = new grammar::DeclSpecifier;
-            auto ellipsis = declSpec->ellipsis().switchTo();
-            ellipsis->ellipsisToken = expectedLoc;
-            pdc->declSpecifierSeq.append(declSpec);
-            anyTokensConsumed = true;
-        } else if (forTemplate && expectedLoc.identifier == "template") {
+            grammar::DeclSpecifier* decl_spec = new grammar::DeclSpecifier;
+            auto ellipsis = decl_spec->ellipsis().switch_to();
+            ellipsis->ellipsis_token = expected_loc;
+            pdc->decl_specifier_seq.append(decl_spec);
+            any_tokens_consumed = true;
+        } else if (for_template && expected_loc.identifier == "template") {
             // template template parameter
             // FIXME: Extend the grammar and store the result in params
             grammar::Declaration::Template_ tmpl;
-            tmpl.keyword = expectedLoc;
-            Token token2 = readToken(parser);
+            tmpl.keyword = expected_loc;
+            Token token2 = read_token(parser);
             if (token2.type != Token::OpenAngle) {
                 // expected <
-                parser->error(true, {ParseError::Expected, token2, ExpectedToken::OpenAngle});
-                pushBackToken(parser, token2);
-                goto endOfParam;
+                parser->error(true,
+                              {ParseError::Expected, token2, ExpectedToken::OpenAngle});
+                push_back_token(parser, token2);
+                goto end_of_param;
             }
-            pushBackToken(parser, token2);
+            push_back_token(parser, token2);
             ParseActivity pa{parser};
             {
-                PLY_SET_IN_SCOPE(parser->pp->tokenizeCloseAnglesOnly, true);
-                parseParameterDeclarationList(parser, tmpl.params, true);
+                PLY_SET_IN_SCOPE(parser->pp->tokenize_close_angles_only, true);
+                parse_parameter_declaration_list(parser, tmpl.params, true);
             }
-            if (pa.errorOccurred())
-                goto endOfParam;
-            Token classToken = readToken(parser);
-            if (classToken.identifier != "class") { // C++17 also accepts 'typename'
-                parser->error(true, {ParseError::Expected, classToken, ExpectedToken::OpenAngle});
-                pushBackToken(parser, classToken);
-                goto endOfParam;
+            if (pa.error_occurred())
+                goto end_of_param;
+            Token class_token = read_token(parser);
+            if (class_token.identifier != "class") { // C++17 also accepts 'typename'
+                parser->error(true, {ParseError::Expected, class_token,
+                                     ExpectedToken::OpenAngle});
+                push_back_token(parser, class_token);
+                goto end_of_param;
             }
             // read stuff after that
             grammar::Declaration::Simple simple;
-            parseSpecifiersAndDeclarators(parser, simple, SpecDcorMode::TypeID);
-            if (!pa.errorOccurred()) {
+            parse_specifiers_and_declarators(parser, simple, SpecDcorMode::TypeID);
+            if (!pa.error_occurred()) {
                 // We successfully parsed a template template parameter declaration.
-                parser->stopMutingErrors();
+                parser->stop_muting_errors();
             }
         } else {
-            pushBackToken(parser, expectedLoc);
+            push_back_token(parser, expected_loc);
             grammar::Declaration::Simple simple;
             ParseActivity pa{parser};
-            parseSpecifiersAndDeclarators(parser, simple, pp->specDcorMode);
-            if (!pa.errorOccurred()) {
+            parse_specifiers_and_declarators(parser, simple, pp->spec_dcor_mode);
+            if (!pa.error_occurred()) {
                 // We successfully parsed a parameter declaration.
-                parser->stopMutingErrors();
+                parser->stop_muting_errors();
             }
-            if (!simple.initDeclarators.isEmpty()) {
-                // If there are no parse errors, parseSpecifiersAndDeclarators is guaranteed to
-                // return exactly one initDeclarator when specDcorMode == TemplateParam or Param,
-                // even if it's empty, as is the case for an abstract declarator.
-                PLY_ASSERT(simple.initDeclarators.numItems() == 1);
+            if (!simple.init_declarators.is_empty()) {
+                // If there are no parse errors, parse_specifiers_and_declarators is
+                // guaranteed to return exactly one init_declarator when spec_dcor_mode
+                // == TemplateParam or Param, even if it's empty, as is the case for an
+                // abstract declarator.
+                PLY_ASSERT(simple.init_declarators.num_items() == 1);
                 pdc = &params.params.append();
-                pdc->declSpecifierSeq = std::move(simple.declSpecifierSeq);
-                pdc->dcor = std::move(simple.initDeclarators[0].dcor);
-                pdc->init = std::move(simple.initDeclarators[0].init);
+                pdc->decl_specifier_seq = std::move(simple.decl_specifier_seq);
+                pdc->dcor = std::move(simple.init_declarators[0].dcor);
+                pdc->init = std::move(simple.init_declarators[0].init);
             }
-            anyTokensConsumed = pa.anyTokensConsumed();
+            any_tokens_consumed = pa.any_tokens_consumed();
         }
-    endOfParam:
-        ;
+    end_of_param:;
 
-        token = readToken(parser);
-        if (token.type == pp->closePunc) {
+        token = read_token(parser);
+        if (token.type == pp->close_punc) {
             // End of parameter declaration list
-            params.closePunc = token;
+            params.close_punc = token;
             break;
         } else if (token.type == Token::Comma) {
             // Comma
@@ -136,33 +139,34 @@ PLY_NO_INLINE void parseParameterDeclarationList(Parser* parser,
         } else {
             // Unexpected token
             parser->error(true, {ParseError::Expected, token,
-                                 forTemplate ? ExpectedToken::CommaOrCloseAngle
-                                             : ExpectedToken::CommaOrCloseParen});
-            if (anyTokensConsumed) {
-                if (!handleUnexpectedToken(parser, nullptr, token))
+                                 for_template ? ExpectedToken::CommaOrCloseAngle
+                                              : ExpectedToken::CommaOrCloseParen});
+            if (any_tokens_consumed) {
+                if (!handle_unexpected_token(parser, nullptr, token))
                     break;
             } else {
-                if (!okToStayInScope(parser, token))
+                if (!ok_to_stay_in_scope(parser, token))
                     break;
-                pushBackToken(parser, token);
+                push_back_token(parser, token);
             }
         }
     }
 }
 
-grammar::FunctionQualifierSeq parseFunctionQualifierSeq(Parser* parser) {
+grammar::FunctionQualifierSeq parse_function_qualifier_seq(Parser* parser) {
     grammar::FunctionQualifierSeq qualifiers;
 
     // Read trailing qualifiers
     for (;;) {
-        Token token = readToken(parser);
+        Token token = read_token(parser);
         if (token.type == Token::Identifier &&
             (token.identifier == "const" || token.identifier == "override")) {
             qualifiers.tokens.append(token);
-        } else if (token.type == Token::SingleAmpersand || token.type == Token::DoubleAmpersand) {
+        } else if (token.type == Token::SingleAmpersand ||
+                   token.type == Token::DoubleAmpersand) {
             qualifiers.tokens.append(token);
         } else {
-            pushBackToken(parser, token);
+            push_back_token(parser, token);
             break;
         }
     }
@@ -171,27 +175,30 @@ grammar::FunctionQualifierSeq parseFunctionQualifierSeq(Parser* parser) {
 }
 
 PLY_NO_INLINE grammar::DeclaratorProduction*
-parseParameterList(Parser* parser, Owned<grammar::DeclaratorProduction>** prodToModify) {
-    Token openParen = readToken(parser);
-    if (openParen.type != Token::OpenParen) {
-        // Currently, we only hit this case when optimistically trying to parse a constructor
-        PLY_ASSERT(parser->restorePointEnabled); // Just a sanity check
-        parser->error(true, {ParseError::Expected, openParen, ExpectedToken::OpenParen});
-        pushBackToken(parser, openParen);
+parse_parameter_list(Parser* parser,
+                     Owned<grammar::DeclaratorProduction>** prod_to_modify) {
+    Token open_paren = read_token(parser);
+    if (open_paren.type != Token::OpenParen) {
+        // Currently, we only hit this case when optimistically trying to parse a
+        // constructor
+        PLY_ASSERT(parser->restore_point_enabled); // Just a sanity check
+        parser->error(true,
+                      {ParseError::Expected, open_paren, ExpectedToken::OpenParen});
+        push_back_token(parser, open_paren);
         return nullptr;
     }
 
-    parser->stopMutingErrors();
+    parser->stop_muting_errors();
 
     auto* prod = new grammar::DeclaratorProduction;
-    auto func = prod->type.function().switchTo();
-    prod->target = std::move(**prodToModify);
-    **prodToModify = prod;
-    *prodToModify = &prod->target;
+    auto func = prod->type.function().switch_to();
+    prod->target = std::move(**prod_to_modify);
+    **prod_to_modify = prod;
+    *prod_to_modify = &prod->target;
 
-    pushBackToken(parser, openParen);
-    parseParameterDeclarationList(parser, func->params, false);
-    func->qualifiers = parseFunctionQualifierSeq(parser);
+    push_back_token(parser, open_paren);
+    parse_parameter_declaration_list(parser, func->params, false);
+    func->qualifiers = parse_function_qualifier_seq(parser);
     return prod;
 }
 

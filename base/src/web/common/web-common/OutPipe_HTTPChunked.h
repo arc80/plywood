@@ -16,13 +16,13 @@ namespace web {
 struct OutPipe_HTTPChunked : OutPipe {
     static Funcs Funcs_;
     OptionallyOwned<OutStream> outs;
-    bool chunkMode = false;
+    bool chunk_mode = false;
 
     PLY_INLINE OutPipe_HTTPChunked(OptionallyOwned<OutStream>&& outs)
         : OutPipe{&Funcs_}, outs{std::move(outs)} {
     }
-    PLY_INLINE void setChunkMode(bool chunkMode) {
-        this->chunkMode = chunkMode;
+    PLY_INLINE void set_chunk_mode(bool chunk_mode) {
+        this->chunk_mode = chunk_mode;
     }
 };
 

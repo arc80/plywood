@@ -35,27 +35,30 @@ struct Stringifier {
         RootDeclarator,
     };
 
-    docs::SemaEntity* fromScope = nullptr;
-    bool prependClassName = false;
+    docs::SemaEntity* from_scope = nullptr;
+    bool prepend_class_name = false;
 
-    Array<Stringifier::Component> toStringComps(const TemplateArg::Type& templateArgType);
-    Array<Stringifier::Component> applyProductions(const DeclaratorProduction* prod,
-                                                   Array<Stringifier::Component>&& inner);
-    Array<Stringifier::Component> toStringComps(const QualifiedID& qid, QIDRole role);
-    Array<Stringifier::Component> toStringComps(ArrayView<const DeclSpecifier> declSpecifierSeq,
-                                                const DeclaratorProduction* prod,
-                                                const QualifiedID& qid, const Initializer& init,
-                                                bool forRootDeclarator);
-    PLY_INLINE Array<Stringifier::Component> toStringComps(const SingleDeclaration& single,
-                                                           bool forRootDeclarator) {
-        return this->toStringComps(single.declSpecifierSeq, single.dcor.prod,
-                                   single.dcor.qid, single.init, forRootDeclarator);
+    Array<Stringifier::Component>
+    to_string_comps(const TemplateArg::Type& template_arg_type);
+    Array<Stringifier::Component>
+    apply_productions(const DeclaratorProduction* prod,
+                      Array<Stringifier::Component>&& inner);
+    Array<Stringifier::Component> to_string_comps(const QualifiedID& qid, QIDRole role);
+    Array<Stringifier::Component>
+    to_string_comps(ArrayView<const DeclSpecifier> decl_specifier_seq,
+                    const DeclaratorProduction* prod, const QualifiedID& qid,
+                    const Initializer& init, bool for_root_declarator);
+    PLY_INLINE Array<Stringifier::Component>
+    to_string_comps(const SingleDeclaration& single, bool for_root_declarator) {
+        return this->to_string_comps(single.decl_specifier_seq, single.dcor.prod,
+                                     single.dcor.qid, single.init, for_root_declarator);
     }
 };
 
-Array<Stringifier::Component> toStringComps(const SingleDeclaration& single,
-                                            docs::SemaEntity* fromScope, bool prependClassName);
-String toString(const SingleDeclaration& single);
+Array<Stringifier::Component> to_string_comps(const SingleDeclaration& single,
+                                              docs::SemaEntity* from_scope,
+                                              bool prepend_class_name);
+String to_string(const SingleDeclaration& single);
 
 } // namespace sema
 } // namespace cpp

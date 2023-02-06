@@ -10,17 +10,17 @@ namespace ply {
 namespace biscuit {
 
 PLY_NO_INLINE Tokenizer::Tokenizer()
-    : tokenData{1024 * 1024 * 1024}, fileOffsetTable{4 * 1024 * 1024} {
+    : token_data{1024 * 1024 * 1024}, file_offset_table{4 * 1024 * 1024} {
 }
 
-PLY_NO_INLINE void Tokenizer::setSourceInput(StringView path, StringView src) {
-    this->fileLocationMap = FileLocationMap::fromView(path, src);
+PLY_NO_INLINE void Tokenizer::set_source_input(StringView path, StringView src) {
+    this->file_location_map = FileLocationMap::from_view(path, src);
     this->vin.start = src.bytes;
     this->vin.end = src.end();
     this->vin.cur = src.bytes;
 }
 
-StringView tokenRepr[] = {
+StringView token_repr[] = {
     "",   // Invalid
     "",   // EndOfFile
     "",   // NewLine
@@ -62,7 +62,7 @@ StringView tokenRepr[] = {
     "&",  // Ampersand
     "&&", // DoubleAmpersand
 };
-PLY_STATIC_ASSERT(PLY_STATIC_ARRAY_SIZE(tokenRepr) == (u32) TokenType::Count);
+PLY_STATIC_ASSERT(PLY_STATIC_ARRAY_SIZE(token_repr) == (u32) TokenType::Count);
 
 String ExpandedToken::desc() const {
     switch (this->type) {
@@ -78,85 +78,90 @@ String ExpandedToken::desc() const {
     }
 }
 
-PLY_NO_INLINE void writeCompact(Tokenizer* tkr, u32 value) {
-    char* start = tkr->tokenData.beginWrite(5);
+PLY_NO_INLINE void write_compact(Tokenizer* tkr, u32 value) {
+    char* start = tkr->token_data.begin_write(5);
     char* end = start;
-    impl::LabelEncoder::encodeValue(end, value);
-    tkr->tokenData.endWrite(end - start);
+    impl::LabelEncoder::encode_value(end, value);
+    tkr->token_data.end_write(end - start);
 }
 
-PLY_NO_INLINE void encodeToken(Tokenizer* tkr, const ExpandedToken& expToken) {
-    PLY_ASSERT(tkr->nextTokenIdx == safeDemote<u32>(tkr->tokenData.numItems()));
+PLY_NO_INLINE void encode_token(Tokenizer* tkr, const ExpandedToken& exp_token) {
+    PLY_ASSERT(tkr->next_token_idx == safe_demote<u32>(tkr->token_data.num_items()));
 
-    // Write the token's file offset as a compact offset from the current fileOffsetTable entry.
-    u32 fot_idx = expToken.tokenIdx >> 8;
-    while (safeDemote<u32>(tkr->fileOffsetTable.numItems()) <= fot_idx) {
-        // Write a new entry to the fileOffsetTable.
-        tkr->fileOffsetTable.append(expToken.fileOffset);
+    // Write the token's file offset as a compact offset from the current
+    // file_offset_table entry.
+    u32 fot_idx = exp_token.token_idx >> 8;
+    while (safe_demote<u32>(tkr->file_offset_table.num_items()) <= fot_idx) {
+        // Write a new entry to the file_offset_table.
+        tkr->file_offset_table.append(exp_token.file_offset);
     }
 
     // Encode the file offset
-    u32 fot_value = tkr->fileOffsetTable.back();
-    PLY_ASSERT(fot_value <= expToken.fileOffset);
-    writeCompact(tkr, expToken.fileOffset - fot_value);
+    u32 fot_value = tkr->file_offset_table.back();
+    PLY_ASSERT(fot_value <= exp_token.file_offset);
+    write_compact(tkr, exp_token.file_offset - fot_value);
 
     // Write the token type as a single byte.
     PLY_STATIC_ASSERT((u32) TokenType::Count < 256);
-    tkr->tokenData.append((char) expToken.type);
+    tkr->token_data.append((char) exp_token.type);
 
-    if (expToken.type == TokenType::Identifier || expToken.type == TokenType::StringLiteral) {
+    if (exp_token.type == TokenType::Identifier ||
+        exp_token.type == TokenType::StringLiteral) {
         // Write the string key
-        writeCompact(tkr, expToken.label.idx);
+        write_compact(tkr, exp_token.label.idx);
     }
-    tkr->nextTokenIdx = safeDemote<u32>(tkr->tokenData.numItems());
+    tkr->next_token_idx = safe_demote<u32>(tkr->token_data.num_items());
 }
 
-PLY_NO_INLINE void makeEndOfFileToken(ExpandedToken& expToken, Tokenizer* tkr) {
-    expToken.tokenIdx = tkr->nextTokenIdx;
-    expToken.fileOffset = safeDemote<u32>(tkr->vin.end - tkr->vin.start);
-    expToken.type = TokenType::EndOfFile;
+PLY_NO_INLINE void make_end_of_file_token(ExpandedToken& exp_token, Tokenizer* tkr) {
+    exp_token.token_idx = tkr->next_token_idx;
+    exp_token.file_offset = safe_demote<u32>(tkr->vin.end - tkr->vin.start);
+    exp_token.type = TokenType::EndOfFile;
 }
 
-PLY_NO_INLINE u32 expandTokenInternal(ExpandedToken& expToken, Tokenizer* tkr, u32 tokenIdx) {
-    // Expand the compact token located at the specified tokenIdx and return its compact length.
-    PLY_ASSERT(tokenIdx <= tkr->tokenData.numItems());
-    if (tokenIdx == tkr->tokenData.numItems()) {
-        makeEndOfFileToken(expToken, tkr);
+PLY_NO_INLINE u32 expand_token_internal(ExpandedToken& exp_token, Tokenizer* tkr,
+                                        u32 token_idx) {
+    // Expand the compact token located at the specified token_idx and return its
+    // compact length.
+    PLY_ASSERT(token_idx <= tkr->token_data.num_items());
+    if (token_idx == tkr->token_data.num_items()) {
+        make_end_of_file_token(exp_token, tkr);
         return 0;
     } else {
-        expToken.tokenIdx = tokenIdx;
-        const char* start = tkr->tokenData.get(tokenIdx);
+        exp_token.token_idx = token_idx;
+        const char* start = tkr->token_data.get(token_idx);
         const char* data = start;
-        expToken.fileOffset =
-            tkr->fileOffsetTable[tokenIdx >> 8] + impl::LabelEncoder::decodeValue(data);
-        expToken.type = (TokenType) (u8) *data++;
-        if (expToken.type == TokenType::Identifier || expToken.type == TokenType::StringLiteral) {
+        exp_token.file_offset = tkr->file_offset_table[token_idx >> 8] +
+                                impl::LabelEncoder::decode_value(data);
+        exp_token.type = (TokenType) (u8) *data++;
+        if (exp_token.type == TokenType::Identifier ||
+            exp_token.type == TokenType::StringLiteral) {
             // Read the label index
-            expToken.label.idx = impl::LabelEncoder::decodeValue(data);
+            exp_token.label.idx = impl::LabelEncoder::decode_value(data);
         }
-        PLY_ASSERT(data <= tkr->tokenData.end());
-        u32 compactLength = safeDemote<u32>(data - start);
-        u32 endOffset = safeDemote<u32>(tkr->vin.cur - tkr->vin.start);
-        if (data < tkr->tokenData.end()) {
-            endOffset =
-                tkr->fileOffsetTable[(tokenIdx + 1) >> 8] + impl::LabelEncoder::decodeValue(data);
+        PLY_ASSERT(data <= tkr->token_data.end());
+        u32 compact_length = safe_demote<u32>(data - start);
+        u32 end_offset = safe_demote<u32>(tkr->vin.cur - tkr->vin.start);
+        if (data < tkr->token_data.end()) {
+            end_offset = tkr->file_offset_table[(token_idx + 1) >> 8] +
+                         impl::LabelEncoder::decode_value(data);
         }
         // FIXME: this text includes any whitespace between the two tokens
-        expToken.text =
-            StringView::fromRange(tkr->vin.start + expToken.fileOffset, tkr->vin.start + endOffset);
-        return compactLength;
+        exp_token.text = StringView::from_range(tkr->vin.start + exp_token.file_offset,
+                                                tkr->vin.start + end_offset);
+        return compact_length;
     }
 }
 
-ExpandedToken Tokenizer::expandToken(u32 tokenIdx) {
+ExpandedToken Tokenizer::expand_token(u32 token_idx) {
     ExpandedToken result;
-    expandTokenInternal(result, this, tokenIdx);
+    expand_token_internal(result, this, token_idx);
     return result;
 }
 
-PLY_NO_INLINE void skipLineComment(Tokenizer* tkr) {
+PLY_NO_INLINE void skip_line_comment(Tokenizer* tkr) {
     tkr->vin.next();
-    while (!tkr->vin.atEOF()) {
+    while (!tkr->vin.at_eof()) {
         char c = tkr->vin.peek();
         if (c == '\n')
             return; // End of line comment
@@ -164,12 +169,12 @@ PLY_NO_INLINE void skipLineComment(Tokenizer* tkr) {
     }
 }
 
-PLY_NO_INLINE void skipCStyleComment(Tokenizer* tkr) {
+PLY_NO_INLINE void skip_cstyle_comment(Tokenizer* tkr) {
     tkr->vin.next();
-    while (!tkr->vin.atEOF()) {
+    while (!tkr->vin.at_eof()) {
         char c = tkr->vin.next();
         while (c == '*') {
-            if (tkr->vin.atEOF())
+            if (tkr->vin.at_eof())
                 break;
             c = tkr->vin.next();
             if (c == '/')
@@ -179,11 +184,11 @@ PLY_NO_INLINE void skipCStyleComment(Tokenizer* tkr) {
     // FIXME: raise an error if comment is unclosed
 }
 
-PLY_NO_INLINE void readIdentifier(ExpandedToken& expToken, Tokenizer* tkr) {
+PLY_NO_INLINE void read_identifier(ExpandedToken& exp_token, Tokenizer* tkr) {
     // Find end of identifier
     const char* start = tkr->vin.cur;
     tkr->vin.next();
-    while (!tkr->vin.atEOF()) {
+    while (!tkr->vin.at_eof()) {
         char c = tkr->vin.peek();
         if (c < 0 || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ||
             (c >= '0' && c <= '9')) {
@@ -193,17 +198,17 @@ PLY_NO_INLINE void readIdentifier(ExpandedToken& expToken, Tokenizer* tkr) {
         }
     }
 
-    StringView text = StringView::fromRange(start, tkr->vin.cur);
-    expToken.type = TokenType::Identifier;
-    expToken.label = g_labelStorage.insert(text);
-    expToken.text = text;
+    StringView text = StringView::from_range(start, tkr->vin.cur);
+    exp_token.type = TokenType::Identifier;
+    exp_token.label = g_labelStorage.insert(text);
+    exp_token.text = text;
 }
 
-PLY_NO_INLINE void readNumeric(ExpandedToken& expToken, Tokenizer* tkr) {
+PLY_NO_INLINE void read_numeric(ExpandedToken& exp_token, Tokenizer* tkr) {
     // Find end of identifier
     const char* start = tkr->vin.cur;
     tkr->vin.next();
-    while (!tkr->vin.atEOF()) {
+    while (!tkr->vin.at_eof()) {
         char c = tkr->vin.peek();
         if (c >= '0' && c <= '9') {
             tkr->vin.next();
@@ -212,112 +217,114 @@ PLY_NO_INLINE void readNumeric(ExpandedToken& expToken, Tokenizer* tkr) {
         }
     }
 
-    StringView text = StringView::fromRange(start, tkr->vin.cur);
-    expToken.type = TokenType::NumericLiteral;
-    expToken.text = text;
+    StringView text = StringView::from_range(start, tkr->vin.cur);
+    exp_token.type = TokenType::NumericLiteral;
+    exp_token.text = text;
 }
 
-PLY_NO_INLINE void readString(ExpandedToken& expToken, Tokenizer* tkr) {
+PLY_NO_INLINE void read_string(ExpandedToken& exp_token, Tokenizer* tkr) {
     MemOutStream mout;
     for (;;) {
-        if (tkr->vin.atEOF())
-            goto eofError;
+        if (tkr->vin.at_eof())
+            goto eof_error;
         char c = tkr->vin.peek();
         if (c == '\\') {
             tkr->vin.next();
-            if (tkr->vin.atEOF())
-                goto eofError;
+            if (tkr->vin.at_eof())
+                goto eof_error;
             mout << tkr->vin.next();
         } else if (c == '"') {
-            if (tkr->behavior.isMultilineString) {
-                if ((sptr(tkr->vin.end - tkr->vin.cur) >= 3) && (tkr->vin.cur[0] == '"') &&
-                    (tkr->vin.cur[1] == '"') && (tkr->vin.cur[2] == '"')) {
+            if (tkr->behavior.is_multiline_string) {
+                if ((sptr(tkr->vin.end - tkr->vin.cur) >= 3) &&
+                    (tkr->vin.cur[0] == '"') && (tkr->vin.cur[1] == '"') &&
+                    (tkr->vin.cur[2] == '"')) {
                     if (mout.get_seek_pos() > 0)
-                        goto gotStringLiteral;
+                        goto got_string_literal;
                     tkr->vin.cur += 3;
-                    expToken.type = TokenType::EndString;
+                    exp_token.type = TokenType::EndString;
                     return;
                 }
                 mout << c;
                 tkr->vin.next();
             } else {
                 if (mout.get_seek_pos() > 0)
-                    goto gotStringLiteral;
+                    goto got_string_literal;
                 tkr->vin.next();
-                expToken.type = TokenType::EndString;
+                exp_token.type = TokenType::EndString;
                 return;
             }
         } else if (c == '$') {
             tkr->vin.next();
-            if (!tkr->vin.atEOF()) {
+            if (!tkr->vin.at_eof()) {
                 c = tkr->vin.peek();
                 if (c == '{') {
                     if (mout.get_seek_pos() == 0) {
-                        expToken.type = TokenType::BeginStringEmbed;
+                        exp_token.type = TokenType::BeginStringEmbed;
                         tkr->vin.next();
                         return;
                     }
                     tkr->vin.cur--; // rewind to start of '${'
-                    goto gotStringLiteral;
+                    goto got_string_literal;
                 }
             }
             mout << '$';
         } else {
-            if ((c == '\n') && !tkr->behavior.isMultilineString) {
+            if ((c == '\n') && !tkr->behavior.is_multiline_string) {
                 PLY_ASSERT(0); // FIXME: handle gracefully
             }
             mout << c;
             tkr->vin.next();
         }
     }
-eofError:
+eof_error:
     PLY_ASSERT(0);
-gotStringLiteral:
-    String text = mout.moveToString();
-    expToken.type = TokenType::StringLiteral;
-    expToken.label = g_labelStorage.insert(text);
-    expToken.text = g_labelStorage.view(expToken.label);
+got_string_literal:
+    String text = mout.move_to_string();
+    exp_token.type = TokenType::StringLiteral;
+    exp_token.label = g_labelStorage.insert(text);
+    exp_token.text = g_labelStorage.view(exp_token.label);
 }
 
-PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
-    ExpandedToken expToken;
-    while (this->nextTokenIdx < this->tokenData.numItems()) {
-        u32 offset = expandTokenInternal(expToken, this, this->nextTokenIdx);
-        this->nextTokenIdx += offset;
-        if (!(expToken.type == TokenType::NewLine && !this->behavior.tokenizeNewLine))
-            return expToken;
+PLY_NO_INLINE ExpandedToken Tokenizer::read_token() {
+    ExpandedToken exp_token;
+    while (this->next_token_idx < this->token_data.num_items()) {
+        u32 offset = expand_token_internal(exp_token, this, this->next_token_idx);
+        this->next_token_idx += offset;
+        if (!(exp_token.type == TokenType::NewLine &&
+              !this->behavior.tokenize_new_line))
+            return exp_token;
     }
 
     for (;;) {
-        if (this->vin.atEOF()) {
-            expToken.tokenIdx = this->nextTokenIdx;
-            expToken.fileOffset = safeDemote<u32>(this->vin.end - this->vin.start);
-            expToken.type = TokenType::EndOfFile;
-            return expToken;
+        if (this->vin.at_eof()) {
+            exp_token.token_idx = this->next_token_idx;
+            exp_token.file_offset = safe_demote<u32>(this->vin.end - this->vin.start);
+            exp_token.type = TokenType::EndOfFile;
+            return exp_token;
         }
 
-        expToken.fileOffset = safeDemote<u32>(this->vin.cur - this->vin.start);
-        expToken.tokenIdx = safeDemote<u32>(this->tokenData.numItems());
-        if (this->behavior.insideString) {
-            readString(expToken, this);
-            return expToken;
+        exp_token.file_offset = safe_demote<u32>(this->vin.cur - this->vin.start);
+        exp_token.token_idx = safe_demote<u32>(this->token_data.num_items());
+        if (this->behavior.inside_string) {
+            read_string(exp_token, this);
+            return exp_token;
         }
 
         char c = this->vin.peek();
         if (c < 0 || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
-            readIdentifier(expToken, this);
+            read_identifier(exp_token, this);
             goto result;
         }
         if (c >= '0' && c <= '9') {
-            readNumeric(expToken, this);
+            read_numeric(exp_token, this);
             goto result;
         }
         this->vin.next();
         switch (c) {
             // newline
             case '\n': {
-                if (this->behavior.tokenizeNewLine) {
-                    expToken.type = TokenType::NewLine;
+                if (this->behavior.tokenize_new_line) {
+                    exp_token.type = TokenType::NewLine;
                     goto result;
                 }
                 break;
@@ -327,7 +334,7 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
             case '\r':
             case '\t':
             case ' ': {
-                while (!this->vin.atEOF()) {
+                while (!this->vin.at_eof()) {
                     char n = this->vin.peek();
                     if (!(n == '\r' || n == '\t' || n == ' '))
                         break;
@@ -337,7 +344,7 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
             }
 
             case ';': {
-                expToken.type = TokenType::Semicolon;
+                exp_token.type = TokenType::Semicolon;
                 goto result;
             }
 
@@ -345,172 +352,173 @@ PLY_NO_INLINE ExpandedToken Tokenizer::readToken() {
                 if (sptr(this->vin.end - this->vin.cur) >= 2) {
                     if ((this->vin.cur[0] == '"') && (this->vin.cur[1] == '"')) {
                         this->vin.cur += 2;
-                        expToken.type = TokenType::BeginMultilineString;
-                        if (!this->vin.atEOF() && (this->vin.peek() == '\n')) {
+                        exp_token.type = TokenType::BeginMultilineString;
+                        if (!this->vin.at_eof() && (this->vin.peek() == '\n')) {
                             // Consume the initial newline
                             this->vin.next();
                         }
                         goto result;
                     }
                 }
-                expToken.type = TokenType::BeginString;
+                exp_token.type = TokenType::BeginString;
                 goto result;
             }
 
             case '/': {
-                if (!this->vin.atEOF()) {
+                if (!this->vin.at_eof()) {
                     if (this->vin.peek() == '/') {
                         // Line comment
-                        skipLineComment(this);
+                        skip_line_comment(this);
                         break;
                     } else if (this->vin.peek() == '*') {
                         // C-Style comment
-                        skipCStyleComment(this);
+                        skip_cstyle_comment(this);
                         break;
                     } else if (this->vin.peek() == '=') {
                         // Slash equal
                         this->vin.next();
-                        expToken.type = TokenType::SlashEqual;
+                        exp_token.type = TokenType::SlashEqual;
                         goto result;
                     }
                 }
                 // Slash
-                expToken.type = TokenType::Slash;
+                exp_token.type = TokenType::Slash;
                 goto result;
                 break;
             }
 
             case '%': {
-                expToken.type = TokenType::Percent;
+                exp_token.type = TokenType::Percent;
                 goto result;
             }
 
             case '!': {
-                expToken.type = TokenType::Bang;
+                exp_token.type = TokenType::Bang;
                 goto result;
             }
 
             case '~': {
-                expToken.type = TokenType::Tilde;
+                exp_token.type = TokenType::Tilde;
                 goto result;
             }
 
             case '{': {
-                expToken.type = TokenType::OpenCurly;
+                exp_token.type = TokenType::OpenCurly;
                 goto result;
             }
 
             case '}': {
-                expToken.type = TokenType::CloseCurly;
+                exp_token.type = TokenType::CloseCurly;
                 goto result;
             }
 
             case '(': {
-                expToken.type = TokenType::OpenParen;
+                exp_token.type = TokenType::OpenParen;
                 goto result;
             }
 
             case ')': {
-                expToken.type = TokenType::CloseParen;
+                exp_token.type = TokenType::CloseParen;
                 goto result;
             }
 
             case '.': {
-                expToken.type = TokenType::Dot;
+                exp_token.type = TokenType::Dot;
                 goto result;
             }
 
             case ',': {
-                expToken.type = TokenType::Comma;
+                exp_token.type = TokenType::Comma;
                 goto result;
             }
 
             case '+': {
-                expToken.type = TokenType::Plus;
+                exp_token.type = TokenType::Plus;
                 goto result;
             }
 
             case '-': {
-                expToken.type = TokenType::Minus;
+                exp_token.type = TokenType::Minus;
                 goto result;
             }
 
             case '*': {
-                expToken.type = TokenType::Asterisk;
+                exp_token.type = TokenType::Asterisk;
                 goto result;
             }
 
             case '=': {
-                if (!this->vin.atEOF()) {
+                if (!this->vin.at_eof()) {
                     if (this->vin.peek() == '=') {
                         this->vin.next();
-                        expToken.type = TokenType::DoubleEqual;
+                        exp_token.type = TokenType::DoubleEqual;
                         goto result;
                     }
                 }
-                expToken.type = TokenType::Equal;
+                exp_token.type = TokenType::Equal;
                 goto result;
             }
 
             case '<': {
-                if (!this->vin.atEOF()) {
+                if (!this->vin.at_eof()) {
                     if (this->vin.peek() == '=') {
                         this->vin.next();
-                        expToken.type = TokenType::LessThanOrEqual;
+                        exp_token.type = TokenType::LessThanOrEqual;
                         goto result;
                     }
                 }
-                expToken.type = TokenType::LessThan;
+                exp_token.type = TokenType::LessThan;
                 goto result;
             }
 
             case '>': {
-                if (!this->vin.atEOF()) {
+                if (!this->vin.at_eof()) {
                     if (this->vin.peek() == '=') {
                         this->vin.next();
-                        expToken.type = TokenType::GreaterThanOrEqual;
+                        exp_token.type = TokenType::GreaterThanOrEqual;
                         goto result;
                     }
                 }
-                expToken.type = TokenType::GreaterThan;
+                exp_token.type = TokenType::GreaterThan;
                 goto result;
             }
 
             case '|': {
-                if (!this->vin.atEOF()) {
+                if (!this->vin.at_eof()) {
                     if (this->vin.peek() == '|') {
                         this->vin.next();
-                        expToken.type = TokenType::DoubleVerticalBar;
+                        exp_token.type = TokenType::DoubleVerticalBar;
                         goto result;
                     }
                 }
-                expToken.type = TokenType::VerticalBar;
+                exp_token.type = TokenType::VerticalBar;
                 goto result;
             }
 
             case '&': {
-                if (!this->vin.atEOF()) {
+                if (!this->vin.at_eof()) {
                     if (this->vin.peek() == '&') {
                         this->vin.next();
-                        expToken.type = TokenType::DoubleAmpersand;
+                        exp_token.type = TokenType::DoubleAmpersand;
                         goto result;
                     }
                 }
-                expToken.type = TokenType::Ampersand;
+                exp_token.type = TokenType::Ampersand;
                 goto result;
             }
 
             default: {
-                expToken.type = TokenType::Invalid;
+                exp_token.type = TokenType::Invalid;
                 goto result;
             }
         }
     }
 
 result:
-    expToken.text = StringView::fromRange(this->vin.start + expToken.fileOffset, this->vin.cur);
-    encodeToken(this, expToken);
-    return expToken;
+    exp_token.text =
+        StringView::from_range(this->vin.start + exp_token.file_offset, this->vin.cur);
+    encode_token(this, exp_token);
+    return exp_token;
 }
 
 } // namespace biscuit

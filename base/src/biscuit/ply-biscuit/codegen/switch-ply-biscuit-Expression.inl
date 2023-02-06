@@ -1,4 +1,4 @@
-enum class ID : u16 {
+﻿enum class ID : u16 {
     NameLookup,
     IntegerLiteral,
     InterpolatedString,
@@ -9,21 +9,23 @@ enum class ID : u16 {
     Count,
 };
 union Storage_ {
-    NameLookup nameLookup;
-    IntegerLiteral integerLiteral;
-    InterpolatedString interpolatedString;
-    PropertyLookup propertyLookup;
-    BinaryOp binaryOp;
-    UnaryOp unaryOp;
+    NameLookup name_lookup;
+    IntegerLiteral integer_literal;
+    InterpolatedString interpolated_string;
+    PropertyLookup property_lookup;
+    BinaryOp binary_op;
+    UnaryOp unary_op;
     Call call;
-    PLY_INLINE Storage_() {}
-    PLY_INLINE ~Storage_() {}
+    PLY_INLINE Storage_() {
+    }
+    PLY_INLINE ~Storage_() {
+    }
 };
 SWITCH_FOOTER(Expression, NameLookup)
-SWITCH_ACCESSOR(NameLookup, nameLookup)
-SWITCH_ACCESSOR(IntegerLiteral, integerLiteral)
-SWITCH_ACCESSOR(InterpolatedString, interpolatedString)
-SWITCH_ACCESSOR(PropertyLookup, propertyLookup)
-SWITCH_ACCESSOR(BinaryOp, binaryOp)
-SWITCH_ACCESSOR(UnaryOp, unaryOp)
+SWITCH_ACCESSOR(NameLookup, name_lookup)
+SWITCH_ACCESSOR(IntegerLiteral, integer_literal)
+SWITCH_ACCESSOR(InterpolatedString, interpolated_string)
+SWITCH_ACCESSOR(PropertyLookup, property_lookup)
+SWITCH_ACCESSOR(BinaryOp, binary_op)
+SWITCH_ACCESSOR(UnaryOp, unary_op)
 SWITCH_ACCESSOR(Call, call)

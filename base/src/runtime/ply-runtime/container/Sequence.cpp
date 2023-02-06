@@ -9,79 +9,80 @@
 namespace ply {
 namespace impl {
 
-PLY_NO_INLINE void destructSequence(Reference<BlockList::Footer>* headRef,
-                                    void (*destructViewAs)(StringView)) {
-    BlockList::Footer* blockToFree = headRef->release();
-    while (blockToFree) {
+PLY_NO_INLINE void destruct_sequence(Reference<BlockList::Footer>* head_ref,
+                                     void (*destruct_view_as)(StringView)) {
+    BlockList::Footer* block_to_free = head_ref->release();
+    while (block_to_free) {
         // There should be only own reference: the Sequence.
-        PLY_ASSERT(blockToFree->refCount == 1);
-        destructViewAs(blockToFree->viewUsedBytes());
-        BlockList::Footer* nextBlock = blockToFree->nextBlock.release();
-        // The destructor of this->nextBlock is now trivial, so we can skip it, and when we free the
-        // block data from the heap, it also frees the footer.
-        Heap.free(blockToFree->bytes);
-        blockToFree = nextBlock;
+        PLY_ASSERT(block_to_free->ref_count == 1);
+        destruct_view_as(block_to_free->view_used_bytes());
+        BlockList::Footer* next_block = block_to_free->next_block.release();
+        // The destructor of this->next_block is now trivial, so we can skip it, and
+        // when we free the block data from the heap, it also frees the footer.
+        Heap.free(block_to_free->bytes);
+        block_to_free = next_block;
     }
 }
 
-PLY_NO_INLINE void beginWriteInternal(BlockList::Footer** tail, u32 numBytes) {
-    PLY_ASSERT((*tail)->viewUnusedBytes().numBytes < numBytes);
-    *tail = BlockList::appendBlock(*tail, max(BlockList::DefaultBlockSize, numBytes));
+PLY_NO_INLINE void begin_write_internal(BlockList::Footer** tail, u32 num_bytes) {
+    PLY_ASSERT((*tail)->view_unused_bytes().num_bytes < num_bytes);
+    *tail = BlockList::append_block(*tail, max(BlockList::DefaultBlockSize, num_bytes));
 }
 
-PLY_NO_INLINE void popTail(BlockList::Footer** tail, u32 numBytes, void (*destructViewAs)(StringView)) {
+PLY_NO_INLINE void pop_tail(BlockList::Footer** tail, u32 num_bytes,
+                            void (*destruct_view_as)(StringView)) {
     BlockList::Footer* block = *tail;
-    while (numBytes > 0) {
-        u32 bytesToPop = min(numBytes, block->viewUsedBytes().numBytes);
+    while (num_bytes > 0) {
+        u32 bytes_to_pop = min(num_bytes, block->view_used_bytes().num_bytes);
         // It is illegal to attempt to pop more items than the sequence contains.
-        PLY_ASSERT(bytesToPop > 0);
-        destructViewAs({block->unused() - bytesToPop, bytesToPop});
-        block->numBytesUsed -= bytesToPop;
-        numBytes -= bytesToPop;
-        if (block->viewUsedBytes().numBytes > 0) {
-            PLY_ASSERT(numBytes == 0);
+        PLY_ASSERT(bytes_to_pop > 0);
+        destruct_view_as({block->unused() - bytes_to_pop, bytes_to_pop});
+        block->num_bytes_used -= bytes_to_pop;
+        num_bytes -= bytes_to_pop;
+        if (block->view_used_bytes().num_bytes > 0) {
+            PLY_ASSERT(num_bytes == 0);
             break;
         }
-        block = block->prevBlock;
+        block = block->prev_block;
         if (!block)
             break;
         *tail = block;
-        block->nextBlock.clear();
+        block->next_block.clear();
     }
 }
 
 PLY_NO_INLINE void truncate(BlockList::Footer** tail, const BlockList::WeakRef& to) {
-    if (to.byte == to.block->start() && to.block->prevBlock) {
-        *tail = to.block->prevBlock;
-    } else  {
+    if (to.byte == to.block->start() && to.block->prev_block) {
+        *tail = to.block->prev_block;
+    } else {
         *tail = to.block;
-        to.block->numBytesUsed = to.block->offsetOf(to.byte);
+        to.block->num_bytes_used = to.block->offset_of(to.byte);
     }
-    (*tail)->nextBlock.clear();
+    (*tail)->next_block.clear();
 }
 
-PLY_NO_INLINE u32 getTotalNumBytes(BlockList::Footer* head) {
-    u32 numBytes = 0;
+PLY_NO_INLINE u32 get_total_num_bytes(BlockList::Footer* head) {
+    u32 num_bytes = 0;
     while (head) {
-        numBytes += head->viewUsedBytes().numBytes;
-        head = head->nextBlock;
+        num_bytes += head->view_used_bytes().num_bytes;
+        head = head->next_block;
     }
-    return numBytes;
+    return num_bytes;
 }
 
-PLY_NO_INLINE char* read(BlockList::WeakRef* weakRef, u32 itemSize) {
-    sptr numBytesAvailable = weakRef->block->unused() - weakRef->byte;
+PLY_NO_INLINE char* read(BlockList::WeakRef* weak_ref, u32 item_size) {
+    sptr num_bytes_available = weak_ref->block->unused() - weak_ref->byte;
     // It's illegal to call this function at the end of a sequence.
-    PLY_ASSERT(numBytesAvailable >= itemSize);
-    char* result = weakRef->byte;
-    weakRef->byte += itemSize;
-    numBytesAvailable -= itemSize;
-    if (numBytesAvailable == 0) {
-        numBytesAvailable = BlockList::jumpToNextBlock(weakRef);
+    PLY_ASSERT(num_bytes_available >= item_size);
+    char* result = weak_ref->byte;
+    weak_ref->byte += item_size;
+    num_bytes_available -= item_size;
+    if (num_bytes_available == 0) {
+        num_bytes_available = BlockList::jump_to_next_block(weak_ref);
         // We might now be at the end of the sequence.
     } else {
-        // numBytesAvailable should always be a multiple of the item size.
-        PLY_ASSERT(numBytesAvailable >= itemSize);
+        // num_bytes_available should always be a multiple of the item size.
+        PLY_ASSERT(num_bytes_available >= item_size);
     }
     return result;
 }

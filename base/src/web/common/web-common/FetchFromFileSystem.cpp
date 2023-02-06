@@ -23,50 +23,50 @@ PLY_NO_INLINE FetchFromFileSystem::FetchFromFileSystem() {
                              {".css", "text/css"},
                              {".svg", "image/svg+xml"},
                              {".js", "text/javascript"}}) {
-        auto cursor = this->extensionToContentType.insertOrFind(pair.key);
-        cursor->mimeType = pair.value;
+        auto cursor = this->extension_to_content_type.insert_or_find(pair.key);
+        cursor->mime_type = pair.value;
     }
 }
 
 PLY_NO_INLINE void FetchFromFileSystem::serve(const FetchFromFileSystem* params,
-                                              StringView requestPath,
-                                              ResponseIface* responseIface) {
-    s32 getPos = requestPath.findByte('?');
-    if (getPos >= 0) {
-        requestPath = requestPath.subStr(0, getPos);
+                                              StringView request_path,
+                                              ResponseIface* response_iface) {
+    s32 get_pos = request_path.find_byte('?');
+    if (get_pos >= 0) {
+        request_path = request_path.sub_str(0, get_pos);
     }
 
-    String filename = Path.split(requestPath).second;
-    s32 dotPos = filename.findByte('.');
-    if (dotPos <= 0) {
+    String filename = Path.split(request_path).second;
+    s32 dot_pos = filename.find_byte('.');
+    if (dot_pos <= 0) {
         // no file extension
-        responseIface->respondGeneric(ResponseCode::NotFound);
+        response_iface->respond_generic(ResponseCode::NotFound);
         return;
     }
 
-    auto cursor = params->extensionToContentType.find(filename.subStr(dotPos));
-    if (!cursor.wasFound()) {
+    auto cursor = params->extension_to_content_type.find(filename.sub_str(dot_pos));
+    if (!cursor.was_found()) {
         // unrecognized file extension
-        responseIface->respondGeneric(ResponseCode::NotFound);
+        response_iface->respond_generic(ResponseCode::NotFound);
         return;
     }
 
-    String nativePath =
-        Path.join(params->rootDir, requestPath.ltrim([](char c) { return c == '/'; }));
+    String native_path = Path.join(params->root_dir,
+                                   request_path.ltrim([](char c) { return c == '/'; }));
 
     // FIXME: Don't load the whole file completely in memory first.
     // Could open the raw pipe and feed it to outs.
-    String bin = FileSystem.loadBinary(nativePath);
-    if (FileSystem.lastResult() != FSResult::OK) {
+    String bin = FileSystem.load_binary(native_path);
+    if (FileSystem.last_result() != FSResult::OK) {
         // file could not be loaded
-        responseIface->respondGeneric(ResponseCode::NotFound);
+        response_iface->respond_generic(ResponseCode::NotFound);
         return;
     }
 
-    OutStream* outs = responseIface->beginResponseHeader(ResponseCode::OK);
-    outs->format("Content-Type: {}\r\n", cursor->mimeType);
+    OutStream* outs = response_iface->begin_response_header(ResponseCode::OK);
+    outs->format("Content-Type: {}\r\n", cursor->mime_type);
     *outs << "Cache-Control: max-age=1200\r\n\r\n";
-    responseIface->endResponseHeader();
+    response_iface->end_response_header();
     outs->write(bin);
 }
 

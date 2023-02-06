@@ -13,7 +13,7 @@
 //             ▄▄▄█▀
 
 char* GlyphData[] = {
-// clang-format off
+    // clang-format off
     "A ,,,, B,,,,, C ,,,, D,,,,, E,,,,,F,,,,,G ,,,, H,,  ,,I,,,,J    ,,K,,  ,,L,,   M,,   ,,",
     " ##  ## ##  ## ##  `` ##  ## ##    ##    ##  `` ##  ##  ##      ## ##,#`  ##    ###,###",
     " ##``## ##``#, ##     ##  ## ##``  ##``  ## `## ##``##  ##  ,,  ## ###,   ##    ##`#`##",
@@ -39,7 +39,7 @@ char* GlyphData[] = {
     " ##` ##  ##   ,#``    ``#, ##,,##, ````#, ##``#,   ,#`  ,#``#,  ```##      ",
     " `#,,#` ,##, ##,,,, `#,,#`     ##  `#,,#` `#,,#`   ##   `#,,#`  ,,,#` ,,,,,",
     "                                                                           ",
-// clang-format on
+    // clang-format on
 };
 
 struct BigGlyph {
@@ -52,17 +52,17 @@ struct BigGlyph {
 void print_bigfont(StringView text) {
     Array<BigGlyph> glyphs;
     glyphs.resize(128);
-    u32 numRows = PLY_STATIC_ARRAY_SIZE(GlyphData) / BigGlyph::height;
-    for (u32 i = 0; i < numRows; i++) {
+    u32 num_rows = PLY_STATIC_ARRAY_SIZE(GlyphData) / BigGlyph::height;
+    for (u32 i = 0; i < num_rows; i++) {
         char* row = GlyphData[i * BigGlyph::height];
-        char startCol = 0;
-        for (u32 j = startCol + 1;; j++) {
-            if (StringView{" ,#`"}.findByte(row[j]) < 0) {
-                char c = row[startCol];
+        char start_col = 0;
+        for (u32 j = start_col + 1;; j++) {
+            if (StringView{" ,#`"}.find_byte(row[j]) < 0) {
+                char c = row[start_col];
                 glyphs[c].row = i;
-                glyphs[c].col = startCol + 1;
-                glyphs[c].width = j - startCol - 1;
-                startCol = j;
+                glyphs[c].col = start_col + 1;
+                glyphs[c].width = j - start_col - 1;
+                start_col = j;
             }
             if (row[j] == 0)
                 break;
@@ -72,10 +72,10 @@ void print_bigfont(StringView text) {
     OutStream out = Console.out(CM_Text);
     for (u32 i = 0; i < BigGlyph::height; i++) {
         out << "// ";
-        for (u32 j = 0; j < text.numBytes; j++) {
+        for (u32 j = 0; j < text.num_bytes; j++) {
             // Look up glyph
             char c = text[j];
-            if (c >= glyphs.numItems())
+            if (c >= glyphs.num_items())
                 continue;
             const BigGlyph& glyph = glyphs[c];
             if (glyph.width == 0)

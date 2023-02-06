@@ -14,7 +14,7 @@
 namespace ply {
 
 #if !PLY_TARGET_MINGW
-PLY_NO_INLINE void Thread_POSIX::sleepMillis(ureg millis) {
+PLY_NO_INLINE void Thread_POSIX::sleep_millis(ureg millis) {
     timespec ts;
     ts.tv_sec = millis / 1000;
     ts.tv_nsec = (millis % 1000) * 1000000;

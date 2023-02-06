@@ -14,7 +14,7 @@
 
 namespace ply {
 
-NativeBindings& getNativeBindings_NativeFunction() {
+NativeBindings& get_native_bindings_native_function() {
     static NativeBindings bindings{
         // create
         [](TypeDescriptor*) -> AnyObject {
@@ -42,22 +42,22 @@ NativeBindings& getNativeBindings_NativeFunction() {
 }
 
 TypeKey TypeKey_NativeFunction{
-    // getName
-    [](const TypeDescriptor* typeDesc) -> HybridString { //
+    // get_name
+    [](const TypeDescriptor* type_desc) -> HybridString { //
         return "built-in function";
     },
-    // hashDescriptor
-    [](Hasher& hasher, const TypeDescriptor* typeDesc) {
+    // hash_descriptor
+    [](Hasher& hasher, const TypeDescriptor* type_desc) {
         PLY_FORCE_CRASH(); // FIXME
     },
-    // equalDescriptors
+    // equal_descriptors
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
         PLY_FORCE_CRASH(); // FIXME
         return true;
     },
 };
 
-NativeBindings& getNativeBindings_BoundNativeMethod() {
+NativeBindings& get_native_bindings_bound_native_method() {
     static NativeBindings bindings{
         // create
         [](TypeDescriptor*) -> AnyObject {
@@ -85,15 +85,15 @@ NativeBindings& getNativeBindings_BoundNativeMethod() {
 }
 
 TypeKey TypeKey_BoundNativeMethod{
-    // getName
-    [](const TypeDescriptor* typeDesc) -> HybridString { //
+    // get_name
+    [](const TypeDescriptor* type_desc) -> HybridString { //
         return "built-in function";
     },
-    // hashDescriptor
-    [](Hasher& hasher, const TypeDescriptor* typeDesc) {
+    // hash_descriptor
+    [](Hasher& hasher, const TypeDescriptor* type_desc) {
         PLY_FORCE_CRASH(); // FIXME
     },
-    // equalDescriptors
+    // equal_descriptors
     [](const TypeDescriptor* type0, const TypeDescriptor* type1) -> bool {
         PLY_FORCE_CRASH(); // FIXME
         return true;

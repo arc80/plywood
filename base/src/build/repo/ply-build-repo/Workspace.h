@@ -14,16 +14,16 @@ struct Workspace_t {
     String path; // absolute path to folder
 
     PLY_REFLECT()
-    String currentBuildFolder;
-    build::CMakeGeneratorOptions defaultCMakeOptions;
-    String defaultConfig;
-    String sourceNewLines;
+    String current_build_folder;
+    build::CMakeGeneratorOptions default_cmake_options;
+    String default_config;
+    String source_new_lines;
     // ply reflect off
 
     void load();
     bool save() const;
 
-    TextFormat getSourceTextFormat() const;
+    TextFormat get_source_text_format() const;
 };
 
 extern Workspace_t Workspace;

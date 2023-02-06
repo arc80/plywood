@@ -11,11 +11,11 @@
 namespace ply {
 namespace build {
 
-PLY_INLINE bool hasAllBits(u64 bitsToCheck, u64 desiredBits) {
-    return (bitsToCheck & desiredBits) == desiredBits;
+PLY_INLINE bool has_all_bits(u64 bits_to_check, u64 desired_bits) {
+    return (bits_to_check & desired_bits) == desired_bits;
 }
-PLY_INLINE bool hasBitAtIndex(u64 bitsToCheck, u32 index) {
-    return (bitsToCheck & (u64{1} << index)) != 0;
+PLY_INLINE bool has_bit_at_index(u64 bits_to_check, u32 index) {
+    return (bits_to_check & (u64{1} << index)) != 0;
 }
 
 struct Option {
@@ -31,8 +31,8 @@ struct Option {
     Type type = Type::IncludeDir;
     String key;
     String value;
-    u64 enabledBits = 0;  // whether option is enabled for each config
-    u64 isPublicBits = 0; // whether option is public/private for each config
+    u64 enabled_bits = 0;   // whether option is enabled for each config
+    u64 is_public_bits = 0; // whether option is public/private for each config
 
     PLY_INLINE Option(Type type, StringView key, StringView value = {})
         : type{type}, key{key}, value{value} {
@@ -47,17 +47,17 @@ struct Target;
 
 struct Dependency {
     Target* target = nullptr;
-    u64 enabledBits = 0;  // whether dependency is enabled for each config
-    u64 isPublicBits = 0; // whether dependency is public/private for each config
+    u64 enabled_bits = 0;   // whether dependency is enabled for each config
+    u64 is_public_bits = 0; // whether dependency is public/private for each config
 };
 
 struct SourceFile {
-    String relPath;
-    u64 enabledBits = 0; // whether path is enabled for each config
+    String rel_path;
+    u64 enabled_bits = 0; // whether path is enabled for each config
 };
 
 struct SourceGroup {
-    String absPath;
+    String abs_path;
     Array<SourceFile> files;
 };
 
@@ -69,15 +69,15 @@ struct Target {
     };
 
     Label name;
-    u64 enabledBits = 0;      // ie. must be built and/or has a dependent, per-config
-    u64 hasBuildStepBits = 0; // ie. contains .cpp files, per-config
+    u64 enabled_bits = 0;        // ie. must be built and/or has a dependent, per-config
+    u64 has_build_step_bits = 0; // ie. contains .cpp files, per-config
     Type type = Library;
     Array<Option> options;
     Array<Dependency> dependencies;
-    Array<SourceGroup> sourceGroups;
-    bool didInheritance = false;
+    Array<SourceGroup> source_groups;
+    bool did_inheritance = false;
 
-    PLY_INLINE void onRefCountZero() {
+    PLY_INLINE void on_ref_count_zero() {
         delete this;
     }
 };
@@ -87,22 +87,23 @@ struct CompilerSpecificOptions {
     Array<String> link;
 };
 
-extern void (*translate_toolchain_option)(CompilerSpecificOptions* copts, const Option& opt);
+extern void (*translate_toolchain_option)(CompilerSpecificOptions* copts,
+                                          const Option& opt);
 
 void init_toolchain_msvc();
 void init_toolchain_gcc();
 
 struct Project_ {
     String name;
-    Array<String> configNames;
-    Array<Option> perConfigOptions;
+    Array<String> config_names;
+    Array<Option> per_config_options;
     Array<Owned<Target>> targets;
-    bool didInheritance = false;
+    bool did_inheritance = false;
 };
 
 extern Project_ Project;
 
-void append_option(Array<Option>& options, const Option& srcOpt);
+void append_option(Array<Option>& options, const Option& src_opt);
 void do_inheritance();
 Array<Option> get_combined_options();
 void write_CMakeLists_txt_if_different(StringView path);

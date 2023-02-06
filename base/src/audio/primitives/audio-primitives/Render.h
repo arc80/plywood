@@ -13,25 +13,26 @@ namespace audio {
 
 struct MixPitchedDirectParams {
     char* dst;
-    char* dstEnd;
+    char* dst_end;
     char* src;
-    char* srcEnd;
+    char* src_end;
     u32 sf16;
-    u32 srcStep;
+    u32 src_step;
     s32 volume16;
 };
 
 struct MixLeveledDirectParams {
     char* dst;
-    char* dstEnd;
+    char* dst_end;
     char* src;
     s32 level16;
 };
 
-void mix(const Buffer& dstBuffer, const Buffer& srcBuffer);
-void mixLeveled(const Buffer& dstBuffer, const Buffer& srcBuffer, s32 level16);
-void mixDynLevel(const Buffer& dstBuffer, const Buffer& srcBuffer, u32 level30, s32 stepLevel30);
-void mixPitchedDirect(const MixPitchedDirectParams& params);
+void mix(const Buffer& dst_buffer, const Buffer& src_buffer);
+void mix_leveled(const Buffer& dst_buffer, const Buffer& src_buffer, s32 level16);
+void mix_dyn_level(const Buffer& dst_buffer, const Buffer& src_buffer, u32 level30,
+                   s32 step_level30);
+void mix_pitched_direct(const MixPitchedDirectParams& params);
 
 } // namespace audio
 } // namespace ply

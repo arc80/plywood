@@ -13,29 +13,29 @@
 namespace ply {
 
 Process::~Process() {
-    PLY_ASSERT(this->childProcess != INVALID_HANDLE_VALUE);
-    CloseHandle(this->childProcess);
-    CloseHandle(this->childMainThread);
+    PLY_ASSERT(this->child_process != INVALID_HANDLE_VALUE);
+    CloseHandle(this->child_process);
+    CloseHandle(this->child_main_thread);
 }
 
 s32 Process::join() {
-    PLY_ASSERT(this->childProcess != INVALID_HANDLE_VALUE);
-    DWORD rc = WaitForSingleObject(this->childProcess, INFINITE);
+    PLY_ASSERT(this->child_process != INVALID_HANDLE_VALUE);
+    DWORD rc = WaitForSingleObject(this->child_process, INFINITE);
     PLY_ASSERT(rc == WAIT_OBJECT_0);
     PLY_UNUSED(rc);
-    // FIXME: Add an assert here to ensure that readFromStdOut & readFromStdErr have
-    // been drained (?).
-    DWORD exitCode;
-    BOOL rc2 = GetExitCodeProcess(this->childProcess, &exitCode);
+    // FIXME: Add an assert here to ensure that read_from_std_out & read_from_std_err
+    // have been drained (?).
+    DWORD exit_code;
+    BOOL rc2 = GetExitCodeProcess(this->child_process, &exit_code);
     PLY_ASSERT(rc2 != 0);
     PLY_UNUSED(rc2);
-    return (s32) exitCode;
+    return (s32) exit_code;
 }
 
 //--------------------------------
 // NULL input/output
 //--------------------------------
-HANDLE getNullInHandle_Win32() {
+HANDLE get_null_in_handle_win32() {
     struct NullInPipe {
         HANDLE handle = INVALID_HANDLE_VALUE;
 
@@ -58,11 +58,11 @@ HANDLE getNullInHandle_Win32() {
         }
     };
 
-    static NullInPipe nullInPipe;
-    return nullInPipe.handle;
+    static NullInPipe null_in_pipe;
+    return null_in_pipe.handle;
 }
 
-HANDLE getNullOutHandle_Win32() {
+HANDLE get_null_out_handle_win32() {
     struct NullOutPipe {
         HANDLE handle = INVALID_HANDLE_VALUE;
 
@@ -85,173 +85,174 @@ HANDLE getNullOutHandle_Win32() {
         }
     };
 
-    static NullOutPipe nullOutPipe;
-    return nullOutPipe.handle;
+    static NullOutPipe null_out_pipe;
+    return null_out_pipe.handle;
 }
 
-HANDLE createInheritableHandle(HANDLE origHandle) {
-    HANDLE currentProcess = GetCurrentProcess();
-    HANDLE dupHandle = INVALID_HANDLE_VALUE;
-    BOOL rc = DuplicateHandle(currentProcess, origHandle, currentProcess, &dupHandle, 0,
-                              TRUE, DUPLICATE_SAME_ACCESS);
+HANDLE create_inheritable_handle(HANDLE orig_handle) {
+    HANDLE current_process = GetCurrentProcess();
+    HANDLE dup_handle = INVALID_HANDLE_VALUE;
+    BOOL rc = DuplicateHandle(current_process, orig_handle, current_process,
+                              &dup_handle, 0, TRUE, DUPLICATE_SAME_ACCESS);
     PLY_ASSERT(rc != 0);
-    PLY_ASSERT(dupHandle != INVALID_HANDLE_VALUE);
-    return dupHandle;
+    PLY_ASSERT(dup_handle != INVALID_HANDLE_VALUE);
+    return dup_handle;
 }
 
-Owned<Process> Process::execArgStr(StringView exePath, StringView argStr,
-                                         StringView initialDir, const Output& output,
-                                         const Input& input) {
+Owned<Process> Process::exec_arg_str(StringView exe_path, StringView arg_str,
+                                     StringView initial_dir, const Output& output,
+                                     const Input& input) {
     // These are temporary handles meant for the subprocess to inherit.
     // They're manually closed (below) after the call to CreateProcessW:
-    HANDLE hChildStd_IN_Rd = INVALID_HANDLE_VALUE;
-    HANDLE hChildStd_OUT_Wr = INVALID_HANDLE_VALUE;
-    HANDLE hChildStd_ERR_Wr = INVALID_HANDLE_VALUE;
+    HANDLE h_child_stdin_rd = INVALID_HANDLE_VALUE;
+    HANDLE h_child_stdout_wr = INVALID_HANDLE_VALUE;
+    HANDLE h_child_stderr_wr = INVALID_HANDLE_VALUE;
 
     // These are the In/OutPipes that will be used to communicate with the subprocess
     // (depending on the Output settings). They'll be moved to the SubProcess object on
     // success (or automatically closed on failure):
-    Owned<OutPipe> writeToChildStdIn;
-    Owned<InPipe> readFromChildStdOut;
-    Owned<InPipe> readFromChildStdErr;
+    Owned<OutPipe> write_to_child_std_in;
+    Owned<InPipe> read_from_child_std_out;
+    Owned<InPipe> read_from_child_std_err;
 
     // Default SECURITY_ATTRIBUTES for any Win32 pipes created here:
-    SECURITY_ATTRIBUTES saAttr;
-    ZeroMemory(&saAttr, sizeof(saAttr));
-    saAttr.nLength = sizeof(saAttr);
-    saAttr.bInheritHandle = TRUE;
-    saAttr.lpSecurityDescriptor = NULL;
+    SECURITY_ATTRIBUTES sa_attr;
+    ZeroMemory(&sa_attr, sizeof(sa_attr));
+    sa_attr.nLength = sizeof(sa_attr);
+    sa_attr.bInheritHandle = TRUE;
+    sa_attr.lpSecurityDescriptor = NULL;
 
     // Prepare STARTUPINFO:
-    STARTUPINFOW startupInfo;
-    ZeroMemory(&startupInfo, sizeof(startupInfo));
-    startupInfo.cb = sizeof(startupInfo);
-    startupInfo.dwFlags = STARTF_USESTDHANDLES;
-    startupInfo.hStdError = INVALID_HANDLE_VALUE;  // Will get filled in
-    startupInfo.hStdOutput = INVALID_HANDLE_VALUE; // Will get filled in
-    startupInfo.hStdInput = INVALID_HANDLE_VALUE;  // Will get filled in
+    STARTUPINFOW startup_info;
+    ZeroMemory(&startup_info, sizeof(startup_info));
+    startup_info.cb = sizeof(startup_info);
+    startup_info.dwFlags = STARTF_USESTDHANDLES;
+    startup_info.hStdError = INVALID_HANDLE_VALUE;  // Will get filled in
+    startup_info.hStdOutput = INVALID_HANDLE_VALUE; // Will get filled in
+    startup_info.hStdInput = INVALID_HANDLE_VALUE;  // Will get filled in
 
     //-----------------------------------------------------------
     // Configure child process's stdin
     //-----------------------------------------------------------
-    if (input.stdIn == Pipe::Redirect) {
-        if (input.stdInPipe) {
-            // input.stdInPipe MUST be valid InPipe_Handle. Will assert here otherwise:
-            hChildStd_IN_Rd =
-                createInheritableHandle(input.stdInPipe->cast<InPipe_Handle>()->handle);
-            startupInfo.hStdInput = hChildStd_IN_Rd;
+    if (input.std_in == Pipe::Redirect) {
+        if (input.std_in_pipe) {
+            // input.std_in_pipe MUST be valid InPipe_Handle. Will assert here
+            // otherwise:
+            h_child_stdin_rd = create_inheritable_handle(
+                input.std_in_pipe->cast<InPipe_Handle>()->handle);
+            startup_info.hStdInput = h_child_stdin_rd;
         } else {
             // Ignore the input
-            startupInfo.hStdInput = getNullInHandle_Win32();
+            startup_info.hStdInput = get_null_in_handle_win32();
         }
     } else {
-        PLY_ASSERT(input.stdIn == Pipe::Open);
+        PLY_ASSERT(input.std_in == Pipe::Open);
 
         // Create a pipe for the child process's stdin:
-        HANDLE hChildStd_IN_Wr = INVALID_HANDLE_VALUE;
-        BOOL rc = CreatePipe(&hChildStd_IN_Rd, &hChildStd_IN_Wr, &saAttr, 0);
+        HANDLE h_child_stdin_wr = INVALID_HANDLE_VALUE;
+        BOOL rc = CreatePipe(&h_child_stdin_rd, &h_child_stdin_wr, &sa_attr, 0);
         PLY_ASSERT(rc != 0);
-        PLY_ASSERT(hChildStd_IN_Rd != INVALID_HANDLE_VALUE);
-        PLY_ASSERT(hChildStd_IN_Wr != INVALID_HANDLE_VALUE);
+        PLY_ASSERT(h_child_stdin_rd != INVALID_HANDLE_VALUE);
+        PLY_ASSERT(h_child_stdin_wr != INVALID_HANDLE_VALUE);
         // Ensure the write handle to the pipe for STDIN is not inherited:
-        rc = SetHandleInformation(hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0);
+        rc = SetHandleInformation(h_child_stdin_wr, HANDLE_FLAG_INHERIT, 0);
         PLY_ASSERT(rc != 0);
-        startupInfo.hStdInput = hChildStd_IN_Rd;
-        writeToChildStdIn = new OutPipe_Handle{hChildStd_IN_Wr};
+        startup_info.hStdInput = h_child_stdin_rd;
+        write_to_child_std_in = new OutPipe_Handle{h_child_stdin_wr};
     }
 
     //-----------------------------------------------------------
     // Configure child process's stdout
     //-----------------------------------------------------------
-    if (output.stdOut == Pipe::Redirect) {
-        if (output.stdOutPipe) {
-            // output.stdOutPipe MUST be valid OutPipe_Handle. Will assert here
+    if (output.std_out == Pipe::Redirect) {
+        if (output.std_out_pipe) {
+            // output.std_out_pipe MUST be valid OutPipe_Handle. Will assert here
             // otherwise:
-            hChildStd_OUT_Wr = createInheritableHandle(
-                output.stdOutPipe->cast<OutPipe_Handle>()->handle);
-            startupInfo.hStdOutput = hChildStd_OUT_Wr;
+            h_child_stdout_wr = create_inheritable_handle(
+                output.std_out_pipe->cast<OutPipe_Handle>()->handle);
+            startup_info.hStdOutput = h_child_stdout_wr;
         } else {
             // Ignore the output
-            startupInfo.hStdOutput = getNullOutHandle_Win32();
+            startup_info.hStdOutput = get_null_out_handle_win32();
         }
     } else {
-        PLY_ASSERT(output.stdOut ==
-                   Pipe::Open); // Only output.stdErr can be set to Pipe::StdOut
+        PLY_ASSERT(output.std_out ==
+                   Pipe::Open); // Only output.std_err can be set to Pipe::StdOut
 
         // Create a pipe for the child process's stdout:
-        HANDLE hChildStd_OUT_Rd = INVALID_HANDLE_VALUE;
-        BOOL rc = CreatePipe(&hChildStd_OUT_Rd, &hChildStd_OUT_Wr, &saAttr, 0);
+        HANDLE h_child_stdout_rd = INVALID_HANDLE_VALUE;
+        BOOL rc = CreatePipe(&h_child_stdout_rd, &h_child_stdout_wr, &sa_attr, 0);
         PLY_ASSERT(rc != 0);
-        PLY_ASSERT(hChildStd_OUT_Rd != INVALID_HANDLE_VALUE);
-        PLY_ASSERT(hChildStd_OUT_Wr != INVALID_HANDLE_VALUE);
+        PLY_ASSERT(h_child_stdout_rd != INVALID_HANDLE_VALUE);
+        PLY_ASSERT(h_child_stdout_wr != INVALID_HANDLE_VALUE);
         // Ensure the read handle to the pipe for STDOUT is not inherited:
-        rc = SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0);
+        rc = SetHandleInformation(h_child_stdout_rd, HANDLE_FLAG_INHERIT, 0);
         PLY_ASSERT(rc != 0);
-        startupInfo.hStdOutput = hChildStd_OUT_Wr;
-        readFromChildStdOut = new InPipe_Handle{hChildStd_OUT_Rd};
+        startup_info.hStdOutput = h_child_stdout_wr;
+        read_from_child_std_out = new InPipe_Handle{h_child_stdout_rd};
     }
 
     //-----------------------------------------------------------
     // Configure child process's stderr
     //-----------------------------------------------------------
-    if (output.stdErr == Pipe::Redirect) {
-        if (output.stdErrPipe) {
-            // output.stdErrPipe MUST be valid OutPipe_Handle. Will assert here
+    if (output.std_err == Pipe::Redirect) {
+        if (output.std_err_pipe) {
+            // output.std_err_pipe MUST be valid OutPipe_Handle. Will assert here
             // otherwise:
-            hChildStd_ERR_Wr = createInheritableHandle(
-                output.stdErrPipe->cast<OutPipe_Handle>()->handle);
-            startupInfo.hStdError = hChildStd_ERR_Wr;
+            h_child_stderr_wr = create_inheritable_handle(
+                output.std_err_pipe->cast<OutPipe_Handle>()->handle);
+            startup_info.hStdError = h_child_stderr_wr;
         } else {
             // Ignore the output
-            startupInfo.hStdError = getNullOutHandle_Win32();
+            startup_info.hStdError = get_null_out_handle_win32();
         }
-    } else if (output.stdErr == Pipe::StdOut) {
-        startupInfo.hStdError = startupInfo.hStdOutput;
+    } else if (output.std_err == Pipe::StdOut) {
+        startup_info.hStdError = startup_info.hStdOutput;
     } else {
-        PLY_ASSERT(output.stdErr == Pipe::Open);
+        PLY_ASSERT(output.std_err == Pipe::Open);
 
         // Create a pipe for the child process's stderr:
-        HANDLE hChildStd_ERR_Rd = INVALID_HANDLE_VALUE;
-        BOOL rc = CreatePipe(&hChildStd_ERR_Rd, &hChildStd_ERR_Wr, &saAttr, 0);
-        PLY_ASSERT(hChildStd_ERR_Rd != INVALID_HANDLE_VALUE);
-        PLY_ASSERT(hChildStd_ERR_Wr != INVALID_HANDLE_VALUE);
+        HANDLE h_child_stderr_rd = INVALID_HANDLE_VALUE;
+        BOOL rc = CreatePipe(&h_child_stderr_rd, &h_child_stderr_wr, &sa_attr, 0);
+        PLY_ASSERT(h_child_stderr_rd != INVALID_HANDLE_VALUE);
+        PLY_ASSERT(h_child_stderr_wr != INVALID_HANDLE_VALUE);
         PLY_ASSERT(rc != 0);
         // Ensure the read handle to the pipe for STDERR is not inherited:
-        rc = SetHandleInformation(hChildStd_ERR_Rd, HANDLE_FLAG_INHERIT, 0);
+        rc = SetHandleInformation(h_child_stderr_rd, HANDLE_FLAG_INHERIT, 0);
         PLY_ASSERT(rc != 0);
-        startupInfo.hStdError = hChildStd_ERR_Wr;
-        readFromChildStdErr = new InPipe_Handle{hChildStd_ERR_Rd};
+        startup_info.hStdError = h_child_stderr_wr;
+        read_from_child_std_err = new InPipe_Handle{h_child_stderr_rd};
     }
 
     // Create command line
-    MemOutStream cmdLine;
-    cmdLine.format(CmdLineArg_WinCrt{exePath});
-    if (argStr) {
-        cmdLine << ' ' << argStr;
+    MemOutStream cmd_line;
+    cmd_line.format(CmdLineArg_WinCrt{exe_path});
+    if (arg_str) {
+        cmd_line << ' ' << arg_str;
     }
-    cmdLine << '\0';
-    WString wCmdLine = toWString(cmdLine.moveToString());
+    cmd_line << '\0';
+    WString w_cmd_line = to_wstring(cmd_line.move_to_string());
 
     // Create the child process:
-    WString win32Dir;
-    if (!initialDir.isEmpty()) {
-        win32Dir = win32PathArg(initialDir, false);
+    WString win32_dir;
+    if (!initial_dir.is_empty()) {
+        win32_dir = win32_path_arg(initial_dir, false);
     }
-    PROCESS_INFORMATION procInfo;
-    BOOL rc = CreateProcessW(NULL, wCmdLine, NULL, NULL,
+    PROCESS_INFORMATION proc_info;
+    BOOL rc = CreateProcessW(NULL, w_cmd_line, NULL, NULL,
                              TRUE, // inherit handles
                              0,    // creation flags
-                             NULL, initialDir.isEmpty() ? NULL : (LPCWSTR) win32Dir,
-                             &startupInfo, &procInfo);
+                             NULL, initial_dir.is_empty() ? NULL : (LPCWSTR) win32_dir,
+                             &startup_info, &proc_info);
 
     // Manually close any temporary handles that were passed to the subprocess:
-    PLY_ASSERT(hChildStd_IN_Rd != INVALID_HANDLE_VALUE);
-    CloseHandle(hChildStd_IN_Rd);
-    if (hChildStd_OUT_Wr != INVALID_HANDLE_VALUE) {
-        CloseHandle(hChildStd_OUT_Wr);
+    PLY_ASSERT(h_child_stdin_rd != INVALID_HANDLE_VALUE);
+    CloseHandle(h_child_stdin_rd);
+    if (h_child_stdout_wr != INVALID_HANDLE_VALUE) {
+        CloseHandle(h_child_stdout_wr);
     }
-    if (hChildStd_ERR_Wr != INVALID_HANDLE_VALUE) {
-        CloseHandle(hChildStd_ERR_Wr);
+    if (h_child_stderr_wr != INVALID_HANDLE_VALUE) {
+        CloseHandle(h_child_stderr_wr);
     }
 
     if (!rc) {
@@ -261,19 +262,19 @@ Owned<Process> Process::execArgStr(StringView exePath, StringView argStr,
 
     // Success! Create Process object and return it:
     Process* subprocess = new Process;
-    PLY_ASSERT(procInfo.hProcess != INVALID_HANDLE_VALUE);
-    PLY_ASSERT(procInfo.hThread != INVALID_HANDLE_VALUE);
-    subprocess->childProcess = procInfo.hProcess;
-    subprocess->childMainThread = procInfo.hThread;
-    subprocess->writeToStdIn = std::move(writeToChildStdIn);
-    subprocess->readFromStdOut = std::move(readFromChildStdOut);
-    subprocess->readFromStdErr = std::move(readFromChildStdErr);
+    PLY_ASSERT(proc_info.hProcess != INVALID_HANDLE_VALUE);
+    PLY_ASSERT(proc_info.hThread != INVALID_HANDLE_VALUE);
+    subprocess->child_process = proc_info.hProcess;
+    subprocess->child_main_thread = proc_info.hThread;
+    subprocess->write_to_std_in = std::move(write_to_child_std_in);
+    subprocess->read_from_std_out = std::move(read_from_child_std_out);
+    subprocess->read_from_std_err = std::move(read_from_child_std_err);
     return subprocess;
 }
 
-Owned<Process>
-Process::exec(StringView exePath, ArrayView<const StringView> args,
-                 StringView initialDir, const Output& output, const Input& input) {
+Owned<Process> Process::exec(StringView exe_path, ArrayView<const StringView> args,
+                             StringView initial_dir, const Output& output,
+                             const Input& input) {
     MemOutStream mout;
     for (StringView arg : args) {
         if (mout.get_seek_pos() > 0) {
@@ -281,8 +282,8 @@ Process::exec(StringView exePath, ArrayView<const StringView> args,
         }
         mout.format(CmdLineArg_WinCrt{arg});
     }
-    return Process::execArgStr(exePath, mout.moveToString(), initialDir, output,
-                                  input);
+    return Process::exec_arg_str(exe_path, mout.move_to_string(), initial_dir, output,
+                                 input);
 }
 
 } // namespace ply

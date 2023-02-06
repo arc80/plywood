@@ -150,20 +150,20 @@ using void_t = typename make_void<Ts...>::type;
     template <typename T0, typename T1> static constexpr bool name<T0, T1, ::ply::void_t<decltype(expr)>> = true;
 
 namespace ply {
-PLY_INLINE constexpr u32 reverseBytes(u32 v) {
+PLY_INLINE constexpr u32 reverse_bytes(u32 v) {
     return ((v >> 24) & 0xff) | ((v >> 8) & 0xff00) | ((v << 8) & 0xff0000) | ((v << 24) & 0xff000000u);
 }
-PLY_INLINE constexpr u16 reverseBytes(u16 v) {
+PLY_INLINE constexpr u16 reverse_bytes(u16 v) {
     return ((v >> 8) & 0xff) | ((v << 8) & 0xff00);
 }
 } // namespace ply
 
 #if PLY_IS_BIG_ENDIAN
     #define PLY_CONVERT_BIG_ENDIAN(x) (x)
-    #define PLY_CONVERT_LITTLE_ENDIAN(x) ::ply::reverseBytes(x)
+    #define PLY_CONVERT_LITTLE_ENDIAN(x) ::ply::reverse_bytes(x)
 #else
     #define PLY_CONVERT_LITTLE_ENDIAN(x) (x)
-    #define PLY_CONVERT_BIG_ENDIAN(x) ::ply::reverseBytes(x)
+    #define PLY_CONVERT_BIG_ENDIAN(x) ::ply::reverse_bytes(x)
 #endif
 
 //---------------------------------------------

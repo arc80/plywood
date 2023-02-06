@@ -12,7 +12,7 @@ namespace ply {
 
 class DirectoryWatcher_Mac {
 public:
-    using Callback = void(StringView path, bool mustRecurse);
+    using Callback = void(StringView path, bool must_recurse);
     String m_root;
     Func<Callback> m_callback;
 
@@ -20,7 +20,7 @@ private:
     Thread m_watcherThread;
 
     // FIXME: Implement a way to stop the watcher
-    void runWatcher();
+    void run_watcher();
 
 public:
     PLY_DLL_ENTRY DirectoryWatcher_Mac();

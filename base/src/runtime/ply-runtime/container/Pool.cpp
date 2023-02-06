@@ -9,8 +9,8 @@
 
 namespace ply {
 
-void BasePool::baseSortFreeList(u32 itemSize) const {
-    PLY_ASSERT(itemSize >= sizeof(u32));
+void BasePool::base_sort_free_list(u32 item_size) const {
+    PLY_ASSERT(item_size >= sizeof(u32));
     if (m_sortedFreeList)
         return;
     if (m_firstFree == u32(-1))
@@ -18,24 +18,24 @@ void BasePool::baseSortFreeList(u32 itemSize) const {
 
     // There is at least one item in the freelist
     PLY_ASSERT(m_freeListSize > 0);
-    u32* freeIndices = new u32[m_freeListSize];
-    u32 numFreeIndices = 0;
-    for (u32 freeIndex = m_firstFree; freeIndex != u32(-1);) {
-        freeIndices[numFreeIndices] = freeIndex;
-        freeIndex = *(u32*) PLY_PTR_OFFSET(m_items, freeIndex * itemSize);
-        numFreeIndices++;
+    u32* free_indices = new u32[m_freeListSize];
+    u32 num_free_indices = 0;
+    for (u32 free_index = m_firstFree; free_index != u32(-1);) {
+        free_indices[num_free_indices] = free_index;
+        free_index = *(u32*) PLY_PTR_OFFSET(m_items, free_index * item_size);
+        num_free_indices++;
     }
-    PLY_ASSERT(numFreeIndices == m_freeListSize);
-    std::sort(freeIndices, freeIndices + numFreeIndices);
-    u32 prevIndex = freeIndices[0];
-    m_firstFree = prevIndex;
-    for (u32 i = 1; i < numFreeIndices; i++) {
-        u32 nextFree = freeIndices[i];
-        *(u32*) PLY_PTR_OFFSET(m_items, prevIndex * itemSize) = nextFree;
-        prevIndex = nextFree;
+    PLY_ASSERT(num_free_indices == m_freeListSize);
+    std::sort(free_indices, free_indices + num_free_indices);
+    u32 prev_index = free_indices[0];
+    m_firstFree = prev_index;
+    for (u32 i = 1; i < num_free_indices; i++) {
+        u32 next_free = free_indices[i];
+        *(u32*) PLY_PTR_OFFSET(m_items, prev_index * item_size) = next_free;
+        prev_index = next_free;
     }
-    *(u32*) PLY_PTR_OFFSET(m_items, prevIndex * itemSize) = u32(-1);
-    delete[] freeIndices;
+    *(u32*) PLY_PTR_OFFSET(m_items, prev_index * item_size) = u32(-1);
+    delete[] free_indices;
     m_sortedFreeList = true;
 }
 

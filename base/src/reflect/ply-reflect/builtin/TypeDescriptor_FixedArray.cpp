@@ -11,7 +11,7 @@
 
 namespace ply {
 
-NativeBindings& getNativeBindings_FixedArray() {
+NativeBindings& get_native_bindings_fixed_array() {
     static NativeBindings bindings{
         // create
         [](TypeDescriptor*) -> AnyObject {
@@ -24,24 +24,26 @@ NativeBindings& getNativeBindings_FixedArray() {
         },
         // construct
         [](AnyObject obj) {
-            TypeDescriptor_FixedArray* arrType = obj.type->cast<TypeDescriptor_FixedArray>();
-            TypeDescriptor* itemType = arrType->itemType;
-            u32 itemSize = itemType->fixedSize;
+            TypeDescriptor_FixedArray* arr_type =
+                obj.type->cast<TypeDescriptor_FixedArray>();
+            TypeDescriptor* item_type = arr_type->item_type;
+            u32 item_size = item_type->fixed_size;
             void* item = obj.data;
-            for (u32 i = 0; i < arrType->numItems; i++) {
-                itemType->bindings.construct({item, itemType});
-                item = PLY_PTR_OFFSET(item, itemSize);
+            for (u32 i = 0; i < arr_type->num_items; i++) {
+                item_type->bindings.construct({item, item_type});
+                item = PLY_PTR_OFFSET(item, item_size);
             }
         },
         // destruct
         [](AnyObject obj) {
-            TypeDescriptor_FixedArray* arrType = obj.type->cast<TypeDescriptor_FixedArray>();
-            TypeDescriptor* itemType = arrType->itemType;
-            u32 itemSize = itemType->fixedSize;
+            TypeDescriptor_FixedArray* arr_type =
+                obj.type->cast<TypeDescriptor_FixedArray>();
+            TypeDescriptor* item_type = arr_type->item_type;
+            u32 item_size = item_type->fixed_size;
             void* item = obj.data;
-            for (u32 i = 0; i < arrType->numItems; i++) {
-                itemType->bindings.destruct({item, itemType});
-                item = PLY_PTR_OFFSET(item, itemSize);
+            for (u32 i = 0; i < arr_type->num_items; i++) {
+                item_type->bindings.destruct({item, item_type});
+                item = PLY_PTR_OFFSET(item, item_size);
             }
         },
         // move
@@ -50,35 +52,41 @@ NativeBindings& getNativeBindings_FixedArray() {
         },
         // copy
         [](AnyObject dst, const AnyObject src) {
-            TypeDescriptor_FixedArray* dstArrType = dst.type->cast<TypeDescriptor_FixedArray>();
-            TypeDescriptor* dstItemType = dstArrType->itemType;
-            if (src.type->typeKey == &TypeKey_FixedArray) {
-                const TypeDescriptor_FixedArray* srcArrType =
+            TypeDescriptor_FixedArray* dst_arr_type =
+                dst.type->cast<TypeDescriptor_FixedArray>();
+            TypeDescriptor* dst_item_type = dst_arr_type->item_type;
+            if (src.type->type_key == &TypeKey_FixedArray) {
+                const TypeDescriptor_FixedArray* src_arr_type =
                     src.type->cast<TypeDescriptor_FixedArray>();
-                TypeDescriptor* srcItemType = srcArrType->itemType;
+                TypeDescriptor* src_item_type = src_arr_type->item_type;
                 // FIXME: Warn about size mismatch
-                u32 itemsToCopy = min<u32>(dstArrType->numItems, srcArrType->numItems);
-                AnyObject dstItem = {dst.data, dstItemType};
-                AnyObject srcItem = {src.data, srcItemType};
-                while (itemsToCopy--) {
-                    dstItem.copy(srcItem);
+                u32 items_to_copy =
+                    min<u32>(dst_arr_type->num_items, src_arr_type->num_items);
+                AnyObject dst_item = {dst.data, dst_item_type};
+                AnyObject src_item = {src.data, src_item_type};
+                while (items_to_copy--) {
+                    dst_item.copy(src_item);
                     // FIXME: Support different strides
-                    dstItem.data = PLY_PTR_OFFSET(dstItem.data, dstArrType->stride);
-                    srcItem.data = PLY_PTR_OFFSET(srcItem.data, srcArrType->stride);
+                    dst_item.data = PLY_PTR_OFFSET(dst_item.data, dst_arr_type->stride);
+                    src_item.data = PLY_PTR_OFFSET(src_item.data, src_arr_type->stride);
                 }
-            } else if (src.type->typeKey == &TypeKey_Array) {
-                const TypeDescriptor_Array* srcArrType = src.type->cast<TypeDescriptor_Array>();
-                const BaseArray* baseSrcArray = reinterpret_cast<BaseArray*>(src.data);
-                TypeDescriptor* srcItemType = srcArrType->itemType;
+            } else if (src.type->type_key == &TypeKey_Array) {
+                const TypeDescriptor_Array* src_arr_type =
+                    src.type->cast<TypeDescriptor_Array>();
+                const BaseArray* base_src_array =
+                    reinterpret_cast<BaseArray*>(src.data);
+                TypeDescriptor* src_item_type = src_arr_type->item_type;
                 // FIXME: Warn about size mismatch
-                u32 itemsToCopy = min<u32>(dstArrType->numItems, baseSrcArray->num_items);
-                AnyObject dstItem = {dst.data, dstItemType};
-                AnyObject srcItem = {baseSrcArray->items, srcItemType};
-                while (itemsToCopy--) {
-                    dstItem.copy(srcItem);
+                u32 items_to_copy =
+                    min<u32>(dst_arr_type->num_items, base_src_array->num_items);
+                AnyObject dst_item = {dst.data, dst_item_type};
+                AnyObject src_item = {base_src_array->items, src_item_type};
+                while (items_to_copy--) {
+                    dst_item.copy(src_item);
                     // FIXME: Support different strides
-                    dstItem.data = PLY_PTR_OFFSET(dstItem.data, dstArrType->stride);
-                    srcItem.data = PLY_PTR_OFFSET(srcItem.data, srcItemType->fixedSize);
+                    dst_item.data = PLY_PTR_OFFSET(dst_item.data, dst_arr_type->stride);
+                    src_item.data =
+                        PLY_PTR_OFFSET(src_item.data, src_item_type->fixed_size);
                 }
             } else {
                 PLY_ASSERT(0); // Not implemented yet

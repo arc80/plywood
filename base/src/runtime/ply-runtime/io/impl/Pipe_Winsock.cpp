@@ -20,7 +20,7 @@ InPipe_Winsock::~InPipe_Winsock() {
 }
 
 u32 InPipe_Winsock::read(MutStringView buf) {
-    int rc = recv(this->socket, buf.bytes, buf.numBytes, 0);
+    int rc = recv(this->socket, buf.bytes, buf.num_bytes, 0);
     if (rc <= 0) // Handles SOCKET_ERROR.
         return 0;
     return rc;
@@ -36,11 +36,11 @@ OutPipe_Winsock::~OutPipe_Winsock() {
 }
 
 bool OutPipe_Winsock::write(StringView buf) {
-    while (buf.numBytes > 0) {
-        int rc = send(this->socket, buf.bytes, buf.numBytes, 0);
-        if (u32(rc) > buf.numBytes) // Handles SOCKET_ERROR.
+    while (buf.num_bytes > 0) {
+        int rc = send(this->socket, buf.bytes, buf.num_bytes, 0);
+        if (u32(rc) > buf.num_bytes) // Handles SOCKET_ERROR.
             return false;
-        buf.offsetHead(rc);
+        buf.offset_head(rc);
     }
     return true;
 }

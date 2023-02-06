@@ -33,12 +33,12 @@ void cmd_tidy(CommandLine& cl) {
 
 void cmd_target(CommandLine& cl) {
     StringView cmd = cl.next_arg();
-    if (cmd.isEmpty())
+    if (cmd.is_empty())
         goto print_usage;
 
     if (prefix_match(cmd, "add")) {
-        StringView targetName = cl.next_arg();
-        if (targetName.isEmpty()) {
+        StringView target_name = cl.next_arg();
+        if (target_name.is_empty()) {
             Error.log("Expected target name after 'add'");
             goto print_usage;
         }
@@ -65,7 +65,8 @@ void cmd_generate(CommandLine& cl) {
     Repository::create();
 
     BuildFolder_t bf;
-    String path = Path.join(Workspace.path, "data/build", Workspace.currentBuildFolder);
+    String path =
+        Path.join(Workspace.path, "data/build", Workspace.current_build_folder);
     bf.load(path);
     generate(&bf);
 }
@@ -77,17 +78,17 @@ void cmd_generate(CommandLine& cl) {
 //                                                        ██
 
 void cmd_bootstrap(CommandLine& cl) {
-    StringView configName;
-    cl.find_option("config", &configName);
+    StringView config_name;
+    cl.find_option("config", &config_name);
     cl.check_for_unused_args();
 
     Common::initialize();
     Repository::create();
 
     BuildFolder_t bf;
-    bf.absPath = Path.join(Workspace.path, "data/build/crowbar");
-    bf.solutionName = "crowbar";
-    bf.rootTargets.append("crowbar");
+    bf.abs_path = Path.join(Workspace.path, "data/build/crowbar");
+    bf.solution_name = "crowbar";
+    bf.root_targets.append("crowbar");
 
     write_bootstrap(&bf, 0);
 }
@@ -102,7 +103,8 @@ void cmd_open(CommandLine& cl) {
     cl.check_for_unused_args();
 
     BuildFolder_t bf;
-    String path = Path.join(Workspace.path, "data/build", Workspace.currentBuildFolder);
+    String path =
+        Path.join(Workspace.path, "data/build", Workspace.current_build_folder);
     if (!bf.load(path)) {
         exit(1);
     }
@@ -137,7 +139,7 @@ void cmd_bigfont(CommandLine& cl) {
     }
     cl.check_for_unused_args();
 
-    print_bigfont(out.moveToString());
+    print_bigfont(out.move_to_string());
 }
 
 //                         ▄▄▄  ▄▄▄  ▄▄
@@ -156,7 +158,7 @@ void cmd_smallbox(CommandLine& cl) {
     }
     cl.check_for_unused_args();
 
-    print_smallbox(out.moveToString());
+    print_smallbox(out.move_to_string());
 }
 
 //    ▄▄▄        ▄▄▄      ▄▄
@@ -167,7 +169,7 @@ void cmd_smallbox(CommandLine& cl) {
 
 void cmd_folder(CommandLine& cl) {
     StringView cmd = cl.next_arg();
-    if (cmd.isEmpty())
+    if (cmd.is_empty())
         goto print_usage;
 
     if (prefix_match(cmd, "create")) {
@@ -190,7 +192,7 @@ void cmd_folder(CommandLine& cl) {
         OutStream out = Console.out();
         for (StringView name : folder_names) {
             out << name;
-            if (name == Workspace.currentBuildFolder) {
+            if (name == Workspace.current_build_folder) {
                 out << " (current)";
             }
             out << '\n';

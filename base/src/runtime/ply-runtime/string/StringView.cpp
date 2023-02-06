@@ -18,64 +18,66 @@ u32 StringView::num_codepoints(UnicodeType decoder_type) const {
     return num_codepoints;
 }
 
-PLY_NO_INLINE bool StringView::startsWith(StringView other) const {
-    if (other.numBytes > numBytes)
+PLY_NO_INLINE bool StringView::starts_with(StringView other) const {
+    if (other.num_bytes > num_bytes)
         return false;
-    return memcmp(bytes, other.bytes, other.numBytes) == 0;
+    return memcmp(bytes, other.bytes, other.num_bytes) == 0;
 }
 
-PLY_NO_INLINE bool StringView::endsWith(StringView other) const {
-    if (other.numBytes > numBytes)
+PLY_NO_INLINE bool StringView::ends_with(StringView other) const {
+    if (other.num_bytes > num_bytes)
         return false;
-    return memcmp(bytes + numBytes - other.numBytes, other.bytes, other.numBytes) == 0;
+    return memcmp(bytes + num_bytes - other.num_bytes, other.bytes, other.num_bytes) ==
+           0;
 }
 
-PLY_NO_INLINE StringView StringView::trim(bool (*matchFunc)(char), bool left, bool right) const {
+PLY_NO_INLINE StringView StringView::trim(bool (*match_func)(char), bool left,
+                                          bool right) const {
     const char* start = this->bytes;
-    const char* end = start + this->numBytes;
+    const char* end = start + this->num_bytes;
     if (left) {
-        while ((start < end) && matchFunc(*start)) {
+        while ((start < end) && match_func(*start)) {
             start++;
         }
     }
     if (right) {
-        while ((start < end) && matchFunc(end[-1])) {
+        while ((start < end) && match_func(end[-1])) {
             end--;
         }
     }
-    return StringView::fromRange(start, end);
+    return StringView::from_range(start, end);
 }
 
-PLY_NO_INLINE Array<StringView> StringView::splitByte(char sep) const {
+PLY_NO_INLINE Array<StringView> StringView::split_byte(char sep) const {
     Array<StringView> result;
     const char* cur = this->bytes;
-    const char* end = this->bytes + this->numBytes;
-    const char* splitStart = nullptr;
+    const char* end = this->bytes + this->num_bytes;
+    const char* split_start = nullptr;
     while (cur < end) {
         if (*cur == sep) {
-            if (splitStart) {
-                result.append(StringView::fromRange(splitStart, cur));
-                splitStart = nullptr;
+            if (split_start) {
+                result.append(StringView::from_range(split_start, cur));
+                split_start = nullptr;
             }
         } else {
-            if (!splitStart) {
-                splitStart = cur;
+            if (!split_start) {
+                split_start = cur;
             }
         }
         cur++;
     }
-    if (splitStart) {
-        result.append(StringView::fromRange(splitStart, cur));
+    if (split_start) {
+        result.append(StringView::from_range(split_start, cur));
     }
-    if (result.isEmpty()) {
+    if (result.is_empty()) {
         result.append({this->bytes, 0});
     }
     return result;
 }
 
-PLY_NO_INLINE String StringView::upperAsc() const {
-    String result = String::allocate(this->numBytes);
-    for (u32 i = 0; i < this->numBytes; i++) {
+PLY_NO_INLINE String StringView::upper_asc() const {
+    String result = String::allocate(this->num_bytes);
+    for (u32 i = 0; i < this->num_bytes; i++) {
         char c = this->bytes[i];
         if (c >= 'a' && c <= 'z') {
             c += 'A' - 'a';
@@ -85,9 +87,9 @@ PLY_NO_INLINE String StringView::upperAsc() const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::lowerAsc() const {
-    String result = String::allocate(this->numBytes);
-    for (u32 i = 0; i < this->numBytes; i++) {
+PLY_NO_INLINE String StringView::lower_asc() const {
+    String result = String::allocate(this->num_bytes);
+    for (u32 i = 0; i < this->num_bytes; i++) {
         char c = this->bytes[i];
         if (c >= 'A' && c <= 'Z') {
             c += 'a' - 'A';
@@ -97,20 +99,20 @@ PLY_NO_INLINE String StringView::lowerAsc() const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::reversedBytes() const {
-    String result = String::allocate(this->numBytes);
-    const char* src = this->bytes + this->numBytes;
-    for (u32 i = 0; i < this->numBytes; i++) {
+PLY_NO_INLINE String StringView::reversed_bytes() const {
+    String result = String::allocate(this->num_bytes);
+    const char* src = this->bytes + this->num_bytes;
+    for (u32 i = 0; i < this->num_bytes; i++) {
         src--;
         result.bytes[i] = *src;
     }
     return result;
 }
 
-PLY_NO_INLINE String StringView::filterBytes(char (*filterFunc)(char)) const {
-    String result = String::allocate(this->numBytes);
-    for (u32 i = 0; i < this->numBytes; i++) {
-        result.bytes[i] = filterFunc(this->bytes[i]);
+PLY_NO_INLINE String StringView::filter_bytes(char (*filter_func)(char)) const {
+    String result = String::allocate(this->num_bytes);
+    for (u32 i = 0; i < this->num_bytes; i++) {
+        result.bytes[i] = filter_func(this->bytes[i]);
     }
     return result;
 }
@@ -125,54 +127,54 @@ PLY_NO_INLINE String StringView::join(ArrayView<const StringView> comps) const {
         mout << comp;
         first = false;
     }
-    return mout.moveToString();
+    return mout.move_to_string();
 }
 
-PLY_NO_INLINE HybridString StringView::withNullTerminator() const {
-    if (this->includesNullTerminator()) {
+PLY_NO_INLINE HybridString StringView::with_null_terminator() const {
+    if (this->includes_null_terminator()) {
         return *this;
     }
-    String result = String::allocate(this->numBytes + 1);
-    memcpy(result.bytes, this->bytes, this->numBytes);
-    result.bytes[this->numBytes] = 0;
+    String result = String::allocate(this->num_bytes + 1);
+    memcpy(result.bytes, this->bytes, this->num_bytes);
+    result.bytes[this->num_bytes] = 0;
     return result;
 }
 
-PLY_NO_INLINE StringView StringView::withoutNullTerminator() const {
-    if (!this->includesNullTerminator()) {
+PLY_NO_INLINE StringView StringView::without_null_terminator() const {
+    if (!this->includes_null_terminator()) {
         return *this;
     }
-    return {this->bytes, this->numBytes - 1};
+    return {this->bytes, this->num_bytes - 1};
 }
 
 PLY_NO_INLINE s32 compare(StringView a, StringView b) {
-    u32 compareBytes = min(a.numBytes, b.numBytes);
+    u32 compare_bytes = min(a.num_bytes, b.num_bytes);
     const u8* u0 = (const u8*) a.bytes;
     const u8* u1 = (const u8*) b.bytes;
-    const u8* uEnd0 = u0 + compareBytes;
-    while (u0 < uEnd0) {
+    const u8* u_end0 = u0 + compare_bytes;
+    while (u0 < u_end0) {
         s32 diff = *u0 - *u1;
         if (diff != 0)
             return diff;
         u0++;
         u1++;
     }
-    return a.numBytes - b.numBytes;
+    return a.num_bytes - b.num_bytes;
 }
 
 PLY_NO_INLINE String operator+(StringView a, StringView b) {
-    String result = String::allocate(a.numBytes + b.numBytes);
-    memcpy(result.bytes, a.bytes, a.numBytes);
-    memcpy(result.bytes + a.numBytes, b.bytes, b.numBytes);
+    String result = String::allocate(a.num_bytes + b.num_bytes);
+    memcpy(result.bytes, a.bytes, a.num_bytes);
+    memcpy(result.bytes + a.num_bytes, b.bytes, b.num_bytes);
     return result;
 }
 
 PLY_NO_INLINE String operator*(StringView str, u32 count) {
-    String result = String::allocate(str.numBytes * count);
+    String result = String::allocate(str.num_bytes * count);
     char* dst = result.bytes;
     for (u32 i = 0; i < count; i++) {
-        memcpy(dst, str.bytes, str.numBytes);
-        dst += str.numBytes;
+        memcpy(dst, str.bytes, str.num_bytes);
+        dst += str.num_bytes;
     }
     return result;
 }

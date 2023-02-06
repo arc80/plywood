@@ -15,35 +15,36 @@ namespace ply {
 PLY_DLL_ENTRY extern TypeKey TypeKey_Switch;
 
 struct TypeDescriptor_Switch : TypeDescriptor {
-    PLY_DLL_ENTRY static TypeKey* typeKey;
+    PLY_DLL_ENTRY static TypeKey* type_key;
     struct State {
         String name;
 #if PLY_WITH_ASSERTS
         u16 id; // Used only by PLY_SWITCH_END() to ensure that the order of
                 // PLY_SWITCH_MEMBER() macros matches the real IDs used at runtime
 #endif
-        TypeDescriptor_Struct* structType;
+        TypeDescriptor_Struct* struct_type;
     };
 
     String name;
-    u16 storageOffset;
+    u16 storage_offset;
     Array<State> states;
 
     // Constructor for TypeDescriptor_Switch of an existing C++ class:
     template <class T>
-    TypeDescriptor_Switch(T* typedArg, StringView name, std::initializer_list<State> states = {})
-        : TypeDescriptor{&TypeKey_Switch, typedArg,
+    TypeDescriptor_Switch(T* typed_arg, StringView name,
+                          std::initializer_list<State> states = {})
+        : TypeDescriptor{&TypeKey_Switch, typed_arg,
                          NativeBindings::make<T>() PLY_METHOD_TABLES_ONLY(, {})},
-          name{name}, storageOffset{PLY_MEMBER_OFFSET(T, storage)}, states{states} {
+          name{name}, storage_offset{PLY_MEMBER_OFFSET(T, storage)}, states{states} {
     }
-    void ensureStateIs(AnyObject obj, u16 stateID) {
+    void ensure_state_is(AnyObject obj, u16 state_id) {
         PLY_ASSERT(obj.type == this);
-        u16 oldStateID = *(u16*) obj.data;
-        if (oldStateID != stateID) {
-            void* storage = PLY_PTR_OFFSET(obj.data, storageOffset);
-            AnyObject{storage, states[oldStateID].structType}.destruct();
-            *(u16*) obj.data = stateID;
-            AnyObject{storage, states[stateID].structType}.construct();
+        u16 old_state_id = *(u16*) obj.data;
+        if (old_state_id != state_id) {
+            void* storage = PLY_PTR_OFFSET(obj.data, storage_offset);
+            AnyObject{storage, states[old_state_id].struct_type}.destruct();
+            *(u16*) obj.data = state_id;
+            AnyObject{storage, states[state_id].struct_type}.construct();
         }
     }
 };
@@ -51,35 +52,35 @@ struct TypeDescriptor_Switch : TypeDescriptor {
 // clang-format off
 #define PLY_SWITCH_REFLECT(...) \
     template <typename> friend struct ply::TypeDescriptorSpecializer; \
-    static __VA_ARGS__ ply::TypeDescriptor* bindTypeDescriptor(); \
-    static ply::Initializer initTypeDescriptor; \
-    static void initTypeDescriptorStates();
+    static __VA_ARGS__ ply::TypeDescriptor* bind_type_descriptor(); \
+    static ply::Initializer init_type_descriptor; \
+    static void init_type_descriptor_states();
 
 #define PLY_SWITCH_BEGIN(type) \
-    PLY_NO_INLINE ply::TypeDescriptor* type::bindTypeDescriptor() { \
-        static ply::TypeDescriptor_Switch typeDesc{(type*) nullptr, #type}; \
-        return &typeDesc; \
+    PLY_NO_INLINE ply::TypeDescriptor* type::bind_type_descriptor() { \
+        static ply::TypeDescriptor_Switch type_desc{(type*) nullptr, #type}; \
+        return &type_desc; \
     } \
-    ply::Initializer type::initTypeDescriptor{type::initTypeDescriptorStates}; \
-    void type::initTypeDescriptorStates() { \
+    ply::Initializer type::init_type_descriptor{type::init_type_descriptor_states}; \
+    void type::init_type_descriptor_states() { \
         using T = type; \
         PLY_UNUSED((T*) nullptr); \
-        auto* switchType = T::bindTypeDescriptor()->cast<ply::TypeDescriptor_Switch>(); \
-        switchType->states = {
+        auto* switch_type = T::bind_type_descriptor()->cast<ply::TypeDescriptor_Switch>(); \
+        switch_type->states = {
 
 #if PLY_WITH_ASSERTS
 #define PLY_SWITCH_MEMBER(id) \
-            {#id, (u16) T::ID::id, ply::getTypeDescriptor<T::id>()->cast<ply::TypeDescriptor_Struct>()},
+            {#id, (u16) T::ID::id, ply::get_type_descriptor<T::id>()->cast<ply::TypeDescriptor_Struct>()},
 #else
 #define PLY_SWITCH_MEMBER(id) \
-            {#id, ply::getTypeDescriptor<T::id>()->cast<ply::TypeDescriptor_Struct>()},
+            {#id, ply::get_type_descriptor<T::id>()->cast<ply::TypeDescriptor_Struct>()},
 #endif
 
 #define PLY_SWITCH_END() \
         }; \
-        PLY_ASSERT(switchType->states.numItems() == (u32) T::ID::Count); \
-        for (u32 i = 0; i < switchType->states.numItems(); i++) { \
-            PLY_ASSERT(switchType->states[i].id == i); \
+        PLY_ASSERT(switch_type->states.num_items() == (u32) T::ID::Count); \
+        for (u32 i = 0; i < switch_type->states.num_items(); i++) { \
+            PLY_ASSERT(switch_type->states[i].id == i); \
         } \
     }
 // clang-format on

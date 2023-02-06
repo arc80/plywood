@@ -16,49 +16,49 @@ namespace ply {
 Workspace_t Workspace;
 
 PLY_NO_INLINE void Workspace_t::load() {
-    this->path = FileSystem.getWorkingDirectory();
-    static const StringView fileName = "workspace-settings.pylon";
-    String settingsPath;
+    this->path = FileSystem.get_working_directory();
+    static const StringView file_name = "workspace-settings.pylon";
+    String settings_path;
 
     // Search each parent directory for workspace-settings.pylon:
     while (true) {
-        settingsPath = Path.join(this->path, fileName);
-        if (FileSystem.exists(settingsPath) == ExistsResult::File)
+        settings_path = Path.join(this->path, file_name);
+        if (FileSystem.exists(settings_path) == ExistsResult::File)
             break;
-        String nextDir = Path.split(this->path).first;
-        if (this->path == nextDir) {
+        String next_dir = Path.split(this->path).first;
+        if (this->path == next_dir) {
             // We've reached the topmost directory.
-            Error.log("Can't locate {}", fileName);
+            Error.log("Can't locate {}", file_name);
             exit(1);
         }
-        this->path = nextDir;
+        this->path = next_dir;
     }
 
-    String contents = FileSystem.loadTextAutodetect(settingsPath);
-    if (FileSystem.lastResult() != FSResult::OK) {
-        Error.log("Can't read {}", settingsPath);
+    String contents = FileSystem.load_text_autodetect(settings_path);
+    if (FileSystem.last_result() != FSResult::OK) {
+        Error.log("Can't read {}", settings_path);
         exit(1);
     }
 
-    auto aRoot = pylon::Parser{}.parse(settingsPath, contents).root;
-    if (!aRoot->isValid()) {
+    auto a_root = pylon::Parser{}.parse(settings_path, contents).root;
+    if (!a_root->is_valid()) {
         exit(1);
     }
 
-    importInto(AnyObject::bind(this), aRoot);
-    if (!this->sourceNewLines) {
-        this->sourceNewLines =
-            (TextFormat::default_utf8().newLine == TextFormat::NewLine::CRLF ? "crlf"
-                                                                             : "lf");
+    import_into(AnyObject::bind(this), a_root);
+    if (!this->source_new_lines) {
+        this->source_new_lines =
+            (TextFormat::default_utf8().new_line == TextFormat::NewLine::CRLF ? "crlf"
+                                                                              : "lf");
     }
 }
 
 PLY_NO_INLINE bool Workspace_t::save() const {
-    static const StringView fileName = "workspace-settings.pylon";
-    auto aRoot = pylon::exportObj(AnyObject::bind(this));
-    String contents = pylon::toString(aRoot);
-    FSResult result = FileSystem.makeDirsAndSaveTextIfDifferent(
-        Path.join(this->path, fileName), contents, this->getSourceTextFormat());
+    static const StringView file_name = "workspace-settings.pylon";
+    auto a_root = pylon::export_obj(AnyObject::bind(this));
+    String contents = pylon::to_string(a_root);
+    FSResult result = FileSystem.make_dirs_and_save_text_if_different(
+        Path.join(this->path, file_name), contents, this->get_source_text_format());
     if (result != FSResult::OK && result != FSResult::Unchanged) {
         Error.log("Can't save workspace settings to {}", this->path);
         return false;
@@ -66,12 +66,12 @@ PLY_NO_INLINE bool Workspace_t::save() const {
     return true;
 }
 
-PLY_NO_INLINE TextFormat Workspace_t::getSourceTextFormat() const {
+PLY_NO_INLINE TextFormat Workspace_t::get_source_text_format() const {
     TextFormat tff = TextFormat::default_utf8();
-    if (this->sourceNewLines == "crlf") {
-        tff.newLine = TextFormat::NewLine::CRLF;
-    } else if (this->sourceNewLines == "lf") {
-        tff.newLine = TextFormat::NewLine::LF;
+    if (this->source_new_lines == "crlf") {
+        tff.new_line = TextFormat::NewLine::CRLF;
+    } else if (this->source_new_lines == "lf") {
+        tff.new_line = TextFormat::NewLine::LF;
     }
     return tff;
 }

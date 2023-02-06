@@ -8,36 +8,37 @@
 
 namespace ply {
 
-void BaseArray::alloc(u32 numItems, u32 itemSize) {
-    this->allocated = roundUpPowerOf2(numItems);
-    this->items = Heap.alloc(ureg(this->allocated) * itemSize);
-    this->num_items = numItems;
+void BaseArray::alloc(u32 num_items, u32 item_size) {
+    this->allocated = round_up_power_of2(num_items);
+    this->items = Heap.alloc(ureg(this->allocated) * item_size);
+    this->num_items = num_items;
 }
 
-void BaseArray::realloc(u32 numItems, u32 itemSize) {
-    this->allocated = roundUpPowerOf2(numItems);
-    this->items = Heap.realloc(this->items, ureg(this->allocated) * itemSize);
-    this->num_items = numItems;
+void BaseArray::realloc(u32 num_items, u32 item_size) {
+    this->allocated = round_up_power_of2(num_items);
+    this->items = Heap.realloc(this->items, ureg(this->allocated) * item_size);
+    this->num_items = num_items;
 }
 
 void BaseArray::free() {
     Heap.free(this->items);
 }
 
-void BaseArray::reserve(u32 numItems, u32 itemSize) {
-    if (numItems > this->allocated) {
-        this->allocated = roundUpPowerOf2(numItems); // FIXME: Generalize to other resize strategies?
-        this->items = Heap.realloc(this->items, ureg(this->allocated) * itemSize);
+void BaseArray::reserve(u32 num_items, u32 item_size) {
+    if (num_items > this->allocated) {
+        this->allocated = round_up_power_of2(
+            num_items); // FIXME: Generalize to other resize strategies?
+        this->items = Heap.realloc(this->items, ureg(this->allocated) * item_size);
     }
 }
 
-void BaseArray::reserveIncrement(u32 itemSize) {
-    reserve(this->num_items + 1, itemSize);
+void BaseArray::reserve_increment(u32 item_size) {
+    reserve(this->num_items + 1, item_size);
 }
 
-void BaseArray::truncate(u32 itemSize) {
+void BaseArray::truncate(u32 item_size) {
     this->allocated = this->num_items;
-    this->items = Heap.realloc(this->items, ureg(this->allocated) * itemSize);
+    this->items = Heap.realloc(this->items, ureg(this->allocated) * item_size);
 }
 
 } // namespace ply

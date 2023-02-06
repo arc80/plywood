@@ -9,32 +9,33 @@
 namespace ply {
 namespace build {
 
-void inherit_option(Array<Option>& options, const Option& srcOpt, u64 enabledBits, u64 publicBits) {
-    if ((srcOpt.enabledBits & enabledBits) == 0)
+void inherit_option(Array<Option>& options, const Option& src_opt, u64 enabled_bits,
+                    u64 public_bits) {
+    if ((src_opt.enabled_bits & enabled_bits) == 0)
         return;
 
-    s32 i = find(options, [&](const Option& o) { return o == srcOpt; });
+    s32 i = find(options, [&](const Option& o) { return o == src_opt; });
     if (i < 0) {
-        i = options.numItems();
-        options.append({srcOpt.type, srcOpt.key, srcOpt.value});
+        i = options.num_items();
+        options.append({src_opt.type, src_opt.key, src_opt.value});
     }
-    options[i].enabledBits |= (srcOpt.enabledBits & enabledBits);
-    options[i].isPublicBits |= (srcOpt.isPublicBits & publicBits);
+    options[i].enabled_bits |= (src_opt.enabled_bits & enabled_bits);
+    options[i].is_public_bits |= (src_opt.is_public_bits & public_bits);
 }
 
-void append_option(Array<Option>& options, const Option& srcOpt) {
-    bool wasFound = false;
-    for (u32 i = 0; i < options.numItems(); i++) {
-        Option& dstOpt = options[i];
-        if ((dstOpt.type == srcOpt.type) && (dstOpt.key == srcOpt.key)) {
-            if (dstOpt.value == srcOpt.value) {
-                wasFound = true;
-                dstOpt.enabledBits |= srcOpt.enabledBits;
-                dstOpt.isPublicBits |= srcOpt.isPublicBits;
+void append_option(Array<Option>& options, const Option& src_opt) {
+    bool was_found = false;
+    for (u32 i = 0; i < options.num_items(); i++) {
+        Option& dst_opt = options[i];
+        if ((dst_opt.type == src_opt.type) && (dst_opt.key == src_opt.key)) {
+            if (dst_opt.value == src_opt.value) {
+                was_found = true;
+                dst_opt.enabled_bits |= src_opt.enabled_bits;
+                dst_opt.is_public_bits |= src_opt.is_public_bits;
             } else {
-                dstOpt.enabledBits &= ~srcOpt.enabledBits;
-                dstOpt.isPublicBits &= ~srcOpt.enabledBits;
-                if (dstOpt.enabledBits == 0) {
+                dst_opt.enabled_bits &= ~src_opt.enabled_bits;
+                dst_opt.is_public_bits &= ~src_opt.enabled_bits;
+                if (dst_opt.enabled_bits == 0) {
                     options.erase(i);
                     i--;
                     continue;
@@ -42,32 +43,34 @@ void append_option(Array<Option>& options, const Option& srcOpt) {
             }
         }
     }
-    if (!wasFound) {
-        options.append(srcOpt);
+    if (!was_found) {
+        options.append(src_opt);
     }
 }
 
-void inherit_dependency(Array<Dependency>& dependencies, Target* srcTarget, u64 enabledBits) {
-    if (enabledBits == 0)
+void inherit_dependency(Array<Dependency>& dependencies, Target* src_target,
+                        u64 enabled_bits) {
+    if (enabled_bits == 0)
         return;
 
-    s32 i = find(dependencies, [&](const Dependency& o) { return o.target == srcTarget; });
+    s32 i =
+        find(dependencies, [&](const Dependency& o) { return o.target == src_target; });
     if (i < 0) {
-        i = dependencies.numItems();
-        dependencies.append({srcTarget, 0});
+        i = dependencies.num_items();
+        dependencies.append({src_target, 0});
     }
-    dependencies[i].enabledBits |= enabledBits;
+    dependencies[i].enabled_bits |= enabled_bits;
 }
 
 void do_inheritance(Target* target) {
-    if (target->didInheritance)
+    if (target->did_inheritance)
         return;
 
     Array<Option> options;
     Array<Dependency> dependencies;
 
     // Inherit from config.
-    options = Project.perConfigOptions;
+    options = Project.per_config_options;
 
     // Inherit from dependencies.
     for (const Dependency& dep : target->dependencies) {
@@ -78,13 +81,14 @@ void do_inheritance(Target* target) {
 
         // Inherit dependency's dependencies (for linker inputs).
         for (const Dependency& dep2 : dep.target->dependencies) {
-            inherit_dependency(dependencies, dep2.target, dep.enabledBits & dep2.enabledBits);
+            inherit_dependency(dependencies, dep2.target,
+                               dep.enabled_bits & dep2.enabled_bits);
         }
-        inherit_dependency(dependencies, dep.target, dep.enabledBits);
+        inherit_dependency(dependencies, dep.target, dep.enabled_bits);
 
         // Inherit dependency's options.
         for (const Option& opt : dep.target->options) {
-            inherit_option(options, opt, dep.enabledBits, dep.isPublicBits);
+            inherit_option(options, opt, dep.enabled_bits, dep.is_public_bits);
         }
     }
 
@@ -96,22 +100,22 @@ void do_inheritance(Target* target) {
     // Done.
     target->options = std::move(options);
     target->dependencies = std::move(dependencies);
-    target->didInheritance = true;
+    target->did_inheritance = true;
 }
 
 Project_ Project;
 
 void do_inheritance() {
     PLY_ASSERT(Project.name);
-    PLY_ASSERT(!Project.configNames.isEmpty());
-    PLY_ASSERT(Project.configNames.numItems() < 64);
-    PLY_ASSERT(!Project.didInheritance);
+    PLY_ASSERT(!Project.config_names.is_empty());
+    PLY_ASSERT(Project.config_names.num_items() < 64);
+    PLY_ASSERT(!Project.did_inheritance);
 
     for (Target* target : Project.targets) {
         do_inheritance(target);
     }
 
-    Project.didInheritance = true;
+    Project.did_inheritance = true;
 }
 
 Array<Option> get_combined_options() {

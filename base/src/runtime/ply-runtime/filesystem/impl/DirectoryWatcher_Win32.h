@@ -12,7 +12,7 @@ namespace ply {
 
 class DirectoryWatcher_Win32 {
 public:
-    using Callback = void(StringView path, bool mustRecurse);
+    using Callback = void(StringView path, bool must_recurse);
 
 private:
     SLOG_CHANNEL(m_log, "DirectoryWatcher_Win32")
@@ -22,7 +22,7 @@ private:
     Func<Callback> m_callback;
     HANDLE m_endEvent = INVALID_HANDLE_VALUE;
 
-    void runWatcher();
+    void run_watcher();
 
 public:
     PLY_DLL_ENTRY DirectoryWatcher_Win32();

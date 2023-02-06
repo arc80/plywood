@@ -11,11 +11,11 @@
 namespace ply {
 namespace image {
 
-OwnImage readPNG(ply::InStream* in) {
+OwnImage read_png(ply::InStream* in) {
     return {0, 0, Format::Unknown};
 }
 
-void writePNG(const Image& im, ply::OutStream* out) {
+void write_png(const Image& im, ply::OutStream* out) {
     // Create png_ptr
     png_structp png_ptr = png_create_write_struct(
         PNG_LIBPNG_VER_STRING, nullptr,
@@ -35,8 +35,8 @@ void writePNG(const Image& im, ply::OutStream* out) {
     png_infop info_ptr = png_create_info_struct(png_ptr);
     PLY_ASSERT(info_ptr);
 
-    // FIXME: user_error_fn should do a longjmp to here. See png_safe_execute (pngerror.c) for
-    // example.
+    // FIXME: user_error_fn should do a longjmp to here. See png_safe_execute
+    // (pngerror.c) for example.
     if (setjmp(png_jmpbuf(png_ptr))) {
         png_destroy_write_struct(&png_ptr, &info_ptr);
         PLY_FORCE_CRASH();
@@ -48,30 +48,31 @@ void writePNG(const Image& im, ply::OutStream* out) {
         png_ptr, out,
         [](png_structp png_ptr, png_bytep buf, png_size_t size) {
             ply::OutStream* out = (ply::OutStream*) png_get_io_ptr(png_ptr);
-            out->write({(const char*) buf, safeDemote<u32>(size)});
+            out->write({(const char*) buf, safe_demote<u32>(size)});
         },
         [](png_structp png_ptr) {
             ply::OutStream* out = (ply::OutStream*) png_get_io_ptr(png_ptr);
-            out->flushMem();
+            out->flush_mem();
         });
 
     // Write header
-    int pngColorType = PNG_COLOR_TYPE_RGB_ALPHA;
+    int png_color_type = PNG_COLOR_TYPE_RGB_ALPHA;
     switch (im.format) {
         case image::Format::BGRA:
         case image::Format::RGBA:
             PLY_ASSERT(im.bytespp == 4);
             break;
         case image::Format::Byte:
-            pngColorType = PNG_COLOR_TYPE_GRAY;
+            png_color_type = PNG_COLOR_TYPE_GRAY;
             PLY_ASSERT(im.bytespp == 1);
             break;
         default:
             PLY_ASSERT(0); // Unsupported format
             break;
     }
-    png_set_IHDR(png_ptr, info_ptr, im.width, im.height, 8, pngColorType, PNG_INTERLACE_NONE,
-                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    png_set_IHDR(png_ptr, info_ptr, im.width, im.height, 8, png_color_type,
+                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+                 PNG_FILTER_TYPE_DEFAULT);
     png_set_sRGB(png_ptr, info_ptr, PNG_sRGB_INTENT_PERCEPTUAL);
     png_write_info(png_ptr, info_ptr);
     switch (im.format) {
@@ -88,7 +89,7 @@ void writePNG(const Image& im, ply::OutStream* out) {
 
     // Write data
     for (s32 y = 0; y < im.height; y++) {
-        png_write_row(png_ptr, (png_const_bytep) im.getPixel(0, y));
+        png_write_row(png_ptr, (png_const_bytep) im.get_pixel(0, y));
     }
     png_write_end(png_ptr, info_ptr);
 

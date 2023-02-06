@@ -10,18 +10,18 @@
 namespace ply {
 namespace cpp {
 
-PLY_NO_INLINE void Parser::error(bool beginMuting, ParseError&& err) {
-    rawErrorCount++;
-    if (this->restorePointEnabled)
+PLY_NO_INLINE void Parser::error(bool begin_muting, ParseError&& err) {
+    raw_error_count++;
+    if (this->restore_point_enabled)
         return;
 
     // Only invoke error handler if not muted:
-    if (!this->muteErrors) {
-        this->pp->errorHandler(new ParseError{std::move(err)});
+    if (!this->mute_errors) {
+        this->pp->error_handler(new ParseError{std::move(err)});
     }
 
-    if (beginMuting) {
-        this->muteErrors = true;
+    if (begin_muting) {
+        this->mute_errors = true;
     }
 }
 

@@ -24,26 +24,26 @@ struct DocInfo {
     struct Entry {
         struct Title {
             SemaEntity* member = nullptr;
-            String srcPath; // FIXME: Deduplicate this (optimization)
-            u32 lineNumber = 0;
+            String src_path; // FIXME: Deduplicate this (optimization)
+            u32 line_number = 0;
         };
 
         Array<Title> titles;
-        String markdownDesc;
-        s32 categoryIndex = -1;
+        String markdown_desc;
+        s32 category_index = -1;
     };
 
     SemaEntity* class_ = nullptr;
-    String classMarkdownDesc;
+    String class_markdown_desc;
     Array<Entry> entries;
     Array<Category> categories;
 };
 
 // Note: SemaEntity doesn't really have to be refcounted.
-// We could instead make them all directly owned by CookResult_ExtractAPI objects, and implement
-// some kind of mark-and-sweep algorithm to clean up orphaned SemaEntities (eg. ones that are no
-// longer accessible from any CookResult_ExtractAPI).
-// But for now, stick with refcounting.
+// We could instead make them all directly owned by CookResult_ExtractAPI objects, and
+// implement some kind of mark-and-sweep algorithm to clean up orphaned SemaEntities
+// (eg. ones that are no longer accessible from any CookResult_ExtractAPI). But for now,
+// stick with refcounting.
 struct SemaEntity : RefCounted<SemaEntity> {
     enum Type {
         Namespace, // the global namespace has no parent
@@ -58,13 +58,13 @@ struct SemaEntity : RefCounted<SemaEntity> {
         using Item = SemaEntity*;
         using Index = StringView;
         static constexpr u32 NodeCapacity = 8;
-        static PLY_INLINE StringView getIndex(SemaEntity* ent) {
+        static PLY_INLINE StringView get_index(SemaEntity* ent) {
             return ent->name;
         }
         static PLY_INLINE bool less(const Index& a, const Index& b) {
             return a < b;
         }
-        static PLY_INLINE void onItemMoved(SemaEntity*, void*) {
+        static PLY_INLINE void on_item_moved(SemaEntity*, void*) {
         }
     };
 
@@ -74,46 +74,47 @@ struct SemaEntity : RefCounted<SemaEntity> {
     SemaEntity* parent = nullptr; // adds a reference if parent is a Namespace
     Type type = Namespace;
     String name;
-    u128 hash = 0;                                  // If Class
-    Reference<SemaEntity> templateParams = nullptr; // If template Class or Member
-    Array<cpp::sema::QualifiedID> baseClasses;      // If Class
-    Array<Reference<SemaEntity>> childSeq;          // If Class or ParamList
-    BTree<ChildBTreeTraits> nameToChild;            // If Namespace, Class or ParamList
-    cpp::sema::SingleDeclaration singleDecl;        // If Member
+    u128 hash = 0;                                   // If Class
+    Reference<SemaEntity> template_params = nullptr; // If template Class or Member
+    Array<cpp::sema::QualifiedID> base_classes;      // If Class
+    Array<Reference<SemaEntity>> child_seq;          // If Class or ParamList
+    BTree<ChildBTreeTraits> name_to_child;           // If Namespace, Class or ParamList
+    cpp::sema::SingleDeclaration single_decl;        // If Member
 
     // Specific to documentation extractor
     // Currently only set for Classes
-    // (Perhaps this should be stored in a generic way so that the SemaEntity class can be reused)
-    Owned<DocInfo> docInfo;
+    // (Perhaps this should be stored in a generic way so that the SemaEntity class can
+    // be reused)
+    Owned<DocInfo> doc_info;
 
-    PLY_INLINE void setParent(SemaEntity* p) {
+    PLY_INLINE void set_parent(SemaEntity* p) {
         PLY_ASSERT(p);
         this->parent = p;
         if (p->type == Namespace) {
-            p->incRef();
+            p->inc_ref();
         }
     }
     ~SemaEntity();
-    PLY_INLINE void onRefCountZero() {
+    PLY_INLINE void on_ref_count_zero() {
         delete this;
     }
-    PLY_INLINE bool isFunction() const {
+    PLY_INLINE bool is_function() const {
         PLY_ASSERT(this->type == Type::Member);
-        return this->singleDecl.dcor.prod && this->singleDecl.dcor.prod->function();
+        return this->single_decl.dcor.prod && this->single_decl.dcor.prod->function();
     }
-    void setClassHash();
-    void appendToQualifiedID(OutStream* outs) const;
-    PLY_INLINE String getQualifiedID() const {
+    void set_class_hash();
+    void append_to_qualified_id(OutStream* outs) const;
+    PLY_INLINE String get_qualified_id() const {
         PLY_ASSERT(this->type == SemaEntity::Class);
         MemOutStream mout;
-        this->appendToQualifiedID(&mout);
-        return mout.moveToString();
+        this->append_to_qualified_id(&mout);
+        return mout.move_to_string();
     }
-    SemaEntity* lookup(StringView name, bool checkParents = true);
-    SemaEntity* lookupChain(ArrayView<const StringView> components);
+    SemaEntity* lookup(StringView name, bool check_parents = true);
+    SemaEntity* lookup_chain(ArrayView<const StringView> components);
 };
 
-void dumpSemaEnts(OutStream* outs, SemaEntity* scope, u32 level = 0);
+void dump_sema_ents(OutStream* outs, SemaEntity* scope, u32 level = 0);
 
 } // namespace docs
 } // namespace ply

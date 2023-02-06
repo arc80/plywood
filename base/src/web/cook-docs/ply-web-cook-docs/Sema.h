@@ -13,7 +13,8 @@ namespace cpp {
 namespace sema {
 
 // These are based on cpp::grammar, except that they can outlive the parsed file
-// because there are no Tokens (which are only valid as long as PPVisitedFiles continues to exist).
+// because there are no Tokens (which are only valid as long as PPVisitedFiles continues
+// to exist).
 
 // Idea: Deduplicate common decl-specifier-sequences by hashing them?
 
@@ -32,8 +33,8 @@ struct TemplateArg {
         };
         struct TypeID {
             PLY_REFLECT()
-            Array<DeclSpecifier> declSpecifierSeq;
-            Owned<DeclaratorProduction> abstractDcor;
+            Array<DeclSpecifier> decl_specifier_seq;
+            Owned<DeclaratorProduction> abstract_dcor;
             // ply reflect off
         };
 #include "codegen/switch-ply-cpp-sema-TemplateArg-Type.inl" //@@ply
@@ -100,8 +101,8 @@ struct UnqualifiedID {
     };
     struct ConversionFunc {
         PLY_REFLECT()
-        Array<DeclSpecifier> declSpecifierSeq;
-        Owned<DeclaratorProduction> abstractDcor;
+        Array<DeclSpecifier> decl_specifier_seq;
+        Owned<DeclaratorProduction> abstract_dcor;
         // ply reflect off
     };
 #include "codegen/switch-ply-cpp-sema-UnqualifiedID.inl" //@@ply
@@ -109,14 +110,14 @@ struct UnqualifiedID {
 
 struct QualifiedID {
     PLY_REFLECT()
-    Array<NestedNameComponent> nestedName;
+    Array<NestedNameComponent> nested_name;
     UnqualifiedID unqual;
     // ply reflect off
 
-    PLY_INLINE bool isEmpty() const {
-        return this->nestedName.isEmpty() && this->unqual.empty();
+    PLY_INLINE bool is_empty() const {
+        return this->nested_name.is_empty() && this->unqual.empty();
     }
-    Array<StringView> getSimplifiedComponents() const;
+    Array<StringView> get_simplified_components() const;
 };
 
 struct DeclSpecifier {
@@ -128,14 +129,14 @@ struct DeclSpecifier {
     };
     struct TypeID { // FIXME: Should be called TypeSpec?
         PLY_REFLECT()
-        bool hasTypename = false;
-        bool wasAssumed = false;
+        bool has_typename = false;
+        bool was_assumed = false;
         QualifiedID qid;
         // ply reflect off
     };
     struct TypeParam {
         PLY_REFLECT()
-        bool hasEllipsis = false;
+        bool has_ellipsis = false;
         // ply reflect off
     };
 #include "codegen/switch-ply-cpp-sema-DeclSpecifier.inl" //@@ply
@@ -145,7 +146,7 @@ struct DeclaratorProduction {
     // ply make reflected switch
     struct PointerTo {
         PLY_REFLECT()
-        cpp::Token::Type puncType;
+        cpp::Token::Type punc_type;
         Owned<DeclaratorProduction> target;
         // ply reflect off
     };
@@ -158,7 +159,8 @@ struct DeclaratorProduction {
     };
     struct Qualifier {
         PLY_REFLECT()
-        String keyword; // FIXME: Change to token type once const/volatile become token types
+        String keyword; // FIXME: Change to token type once const/volatile become token
+                        // types
         Owned<DeclaratorProduction> target;
         // ply reflect off
     };
@@ -199,7 +201,7 @@ struct Initializer {
 
 struct SingleDeclaration {
     PLY_REFLECT()
-    Array<DeclSpecifier> declSpecifierSeq;
+    Array<DeclSpecifier> decl_specifier_seq;
     Declarator dcor;
     Initializer init;
     // ply reflect off

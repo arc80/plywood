@@ -9,36 +9,37 @@
 namespace ply {
 
 PLY_NO_INLINE String::String(StringView other)
-    : bytes{(char*) Heap.alloc(other.numBytes)}, numBytes{other.numBytes} {
-    memcpy(this->bytes, other.bytes, other.numBytes);
+    : bytes{(char*) Heap.alloc(other.num_bytes)}, num_bytes{other.num_bytes} {
+    memcpy(this->bytes, other.bytes, other.num_bytes);
 }
 
-PLY_NO_INLINE String::String(HybridString&& other) : bytes{other.bytes}, numBytes{other.numBytes} {
-    if (!other.isOwner) {
-        this->bytes = (char*) Heap.alloc(other.numBytes);
-        memcpy(this->bytes, other.bytes, other.numBytes);
+PLY_NO_INLINE String::String(HybridString&& other)
+    : bytes{other.bytes}, num_bytes{other.num_bytes} {
+    if (!other.is_owner) {
+        this->bytes = (char*) Heap.alloc(other.num_bytes);
+        memcpy(this->bytes, other.bytes, other.num_bytes);
     } else {
         other.bytes = nullptr;
-        other.isOwner = 0;
-        other.numBytes = 0;
+        other.is_owner = 0;
+        other.num_bytes = 0;
     }
 }
 
-PLY_NO_INLINE String String::allocate(u32 numBytes) {
+PLY_NO_INLINE String String::allocate(u32 num_bytes) {
     String result;
-    result.bytes = (char*) Heap.alloc(numBytes);
-    result.numBytes = numBytes;
+    result.bytes = (char*) Heap.alloc(num_bytes);
+    result.num_bytes = num_bytes;
     return result;
 }
 
-PLY_NO_INLINE void String::resize(u32 numBytes) {
-    this->bytes = (char*) Heap.realloc(this->bytes, numBytes);
-    this->numBytes = numBytes;
+PLY_NO_INLINE void String::resize(u32 num_bytes) {
+    this->bytes = (char*) Heap.realloc(this->bytes, num_bytes);
+    this->num_bytes = num_bytes;
 }
 
 PLY_NO_INLINE HybridString::HybridString(const HybridString& other)
-    : bytes{other.bytes}, isOwner{other.isOwner}, numBytes{other.numBytes} {
-    if (isOwner) {
+    : bytes{other.bytes}, is_owner{other.is_owner}, num_bytes{other.num_bytes} {
+    if (is_owner) {
         this->bytes = String{other.view()}.release();
     }
 }

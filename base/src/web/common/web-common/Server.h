@@ -11,7 +11,7 @@
 namespace ply {
 namespace web {
 
-bool runServer(u16 port, const RequestHandler& reqHandler);
+bool run_server(u16 port, const RequestHandler& req_handler);
 
 } // namespace web
 } // namespace ply

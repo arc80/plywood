@@ -18,9 +18,9 @@ struct Node {
     };
 
     u64 type : 4;
-    // StringView and FileLocationMap don't support files greater than 4GB yet, even though we
-    // support large file offsets here:
-    u64 fileOfs : 60;
+    // StringView and FileLocationMap don't support files greater than 4GB yet, even
+    // though we support large file offsets here:
+    u64 file_ofs : 60;
 
     struct Object {
         struct Item {
@@ -52,15 +52,15 @@ struct Node {
 
     Owned<Node> copy() const;
 
-    static PLY_NO_INLINE Owned<Node> createInvalid();
-    static PLY_NO_INLINE Owned<Node> allocText();
-    static PLY_NO_INLINE Owned<Node> createArray(u64 fileOfs = 0);
-    static PLY_NO_INLINE Owned<Node> createObject(u64 fileOfs = 0);
+    static PLY_NO_INLINE Owned<Node> create_invalid();
+    static PLY_NO_INLINE Owned<Node> alloc_text();
+    static PLY_NO_INLINE Owned<Node> create_array(u64 file_ofs = 0);
+    static PLY_NO_INLINE Owned<Node> create_object(u64 file_ofs = 0);
 
-    static PLY_INLINE Owned<Node> createText(HybridString&& text, u64 fileOfs = 0) {
-        Owned<Node> node = allocText();
+    static PLY_INLINE Owned<Node> create_text(HybridString&& text, u64 file_ofs = 0) {
+        Owned<Node> node = alloc_text();
         node->type = (u64) Type::Text;
-        node->fileOfs = fileOfs;
+        node->file_ofs = file_ofs;
         new (&node->text_) decltype(node->text_){std::move(text)};
         return node;
     }
@@ -68,7 +68,7 @@ struct Node {
     static u64 InvalidNodeHeader;
     static Object EmptyObject;
 
-    PLY_INLINE bool isValid() const {
+    PLY_INLINE bool is_valid() const {
         return this->type != (u64) Type::Invalid;
     }
 
@@ -76,7 +76,7 @@ struct Node {
     // Text
     //-----------------------------------------------------------
 
-    PLY_INLINE bool isText() const {
+    PLY_INLINE bool is_text() const {
         return this->type == (u64) Type::Text;
     }
 
@@ -90,7 +90,7 @@ struct Node {
         }
     }
 
-    PLY_INLINE void setText(HybridString&& text) {
+    PLY_INLINE void set_text(HybridString&& text) {
         if (this->type == (u64) Type::Text) {
             this->text_ = std::move(text);
         }
@@ -100,14 +100,14 @@ struct Node {
     // Array
     //-----------------------------------------------------------
 
-    PLY_INLINE bool isArray() const {
+    PLY_INLINE bool is_array() const {
         return this->type == (u64) Type::Array;
     }
 
     PLY_INLINE Node* get(u32 i) {
         if (this->type != (u64) Type::Array)
             return (Node*) &InvalidNodeHeader;
-        if (i >= this->array_.numItems())
+        if (i >= this->array_.num_items())
             return (Node*) &InvalidNodeHeader;
         return this->array_[i];
     }
@@ -116,7 +116,7 @@ struct Node {
         return const_cast<Node*>(this)->get(i);
     }
 
-    PLY_INLINE ArrayView<const Node* const> arrayView() const {
+    PLY_INLINE ArrayView<const Node* const> array_view() const {
         if (this->type == (u64) Type::Array) {
             return reinterpret_cast<const Array<const Node*>&>(this->array_);
         } else {
@@ -133,7 +133,7 @@ struct Node {
     // Object
     //-----------------------------------------------------------
 
-    PLY_INLINE bool isObject() const {
+    PLY_INLINE bool is_object() const {
         return this->type == (u64) Type::Object;
     }
 

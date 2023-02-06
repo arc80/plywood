@@ -10,29 +10,29 @@
 namespace ply {
 namespace web {
 
-PLY_NO_INLINE void OutPipe_HTTPChunked_destroy(OutPipe* outPipe_) {
-    OutPipe_HTTPChunked* outPipe = static_cast<OutPipe_HTTPChunked*>(outPipe_);
+PLY_NO_INLINE void OutPipe_HTTPChunked_destroy(OutPipe* out_pipe_) {
+    OutPipe_HTTPChunked* out_pipe = static_cast<OutPipe_HTTPChunked*>(out_pipe_);
     // End of chunk stream
-    *outPipe->outs << "0\r\n\r\n";
-    outPipe->outs->flushMem();
+    *out_pipe->outs << "0\r\n\r\n";
+    out_pipe->outs->flush_mem();
 }
 
-PLY_NO_INLINE bool OutPipe_HTTPChunked_write(OutPipe* outPipe_, StringView srcBuf) {
-    OutPipe_HTTPChunked* outPipe = static_cast<OutPipe_HTTPChunked*>(outPipe_);
-    if (outPipe->chunkMode) {
-        PLY_ASSERT(srcBuf.numBytes > 0);
-        outPipe->outs->format("{}\r\n", fmt::Hex{srcBuf.numBytes, true});
+PLY_NO_INLINE bool OutPipe_HTTPChunked_write(OutPipe* out_pipe_, StringView src_buf) {
+    OutPipe_HTTPChunked* out_pipe = static_cast<OutPipe_HTTPChunked*>(out_pipe_);
+    if (out_pipe->chunk_mode) {
+        PLY_ASSERT(src_buf.num_bytes > 0);
+        out_pipe->outs->format("{}\r\n", fmt::Hex{src_buf.num_bytes, true});
     }
-    outPipe->outs->write(srcBuf);
-    if (outPipe->chunkMode) {
-        *outPipe->outs << "\r\n";
+    out_pipe->outs->write(src_buf);
+    if (out_pipe->chunk_mode) {
+        *out_pipe->outs << "\r\n";
     }
-    return !outPipe->outs->atEOF();
+    return !out_pipe->outs->at_eof();
 }
 
-PLY_NO_INLINE bool OutPipe_HTTPChunked_flush(OutPipe* outPipe_, bool toDevice) {
-    OutPipe_HTTPChunked* outPipe = static_cast<OutPipe_HTTPChunked*>(outPipe_);
-    return outPipe->outs->flush(toDevice);
+PLY_NO_INLINE bool OutPipe_HTTPChunked_flush(OutPipe* out_pipe_, bool to_device) {
+    OutPipe_HTTPChunked* out_pipe = static_cast<OutPipe_HTTPChunked*>(out_pipe_);
+    return out_pipe->outs->flush(to_device);
 }
 
 OutPipe::Funcs OutPipe_HTTPChunked::Funcs_ = {

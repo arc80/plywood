@@ -10,7 +10,7 @@
 
 namespace ply {
 
-NativeBindings& getNativeBindings_Enum() {
+NativeBindings& get_native_bindings_enum() {
     static NativeBindings bindings{
         // create
         [](TypeDescriptor*) -> AnyObject {
@@ -27,14 +27,14 @@ NativeBindings& getNativeBindings_Enum() {
         [](AnyObject obj) {},
         // move
         [](AnyObject dst, AnyObject src) {
-            PLY_ASSERT(dst.type->typeKey == &TypeKey_Enum);
+            PLY_ASSERT(dst.type->type_key == &TypeKey_Enum);
             PLY_ASSERT(dst.type == src.type);
-            TypeDescriptor_Enum* enumType = dst.type->cast<TypeDescriptor_Enum>();
-            if (enumType->fixedSize == 1) {
+            TypeDescriptor_Enum* enum_type = dst.type->cast<TypeDescriptor_Enum>();
+            if (enum_type->fixed_size == 1) {
                 *(u8*) dst.data = *(u8*) src.data;
-            } else if (enumType->fixedSize == 2) {
+            } else if (enum_type->fixed_size == 2) {
                 *(u16*) dst.data = *(u16*) src.data;
-            } else if (enumType->fixedSize == 4) {
+            } else if (enum_type->fixed_size == 4) {
                 *(u32*) dst.data = *(u32*) src.data;
             } else {
                 PLY_ASSERT(0);

@@ -15,8 +15,8 @@ namespace ply {
 //---------------------------------------------------
 struct BaseStaticPtr {
     struct PossibleValues {
-        Array<StringView> enumeratorNames;
-        Array<void*> ptrValues;
+        Array<StringView> enumerator_names;
+        Array<void*> ptr_values;
     };
 };
 
@@ -48,25 +48,26 @@ public:
 // TypeDescriptor_StaticPtr
 //---------------------------------------------------
 PLY_DLL_ENTRY extern TypeKey TypeKey_StaticPtr;
-PLY_DLL_ENTRY NativeBindings& getNativeBindings_StaticPtr();
+PLY_DLL_ENTRY NativeBindings& get_native_bindings_static_ptr();
 
 struct TypeDescriptor_StaticPtr : TypeDescriptor {
-    static constexpr TypeKey* typeKey = &TypeKey_StaticPtr;
+    static constexpr TypeKey* type_key = &TypeKey_StaticPtr;
 
-    // Note: for now, we must manually initialize possibleValues at app startup
-    BaseStaticPtr::PossibleValues* possibleValues = nullptr;
+    // Note: for now, we must manually initialize possible_values at app startup
+    BaseStaticPtr::PossibleValues* possible_values = nullptr;
 
     TypeDescriptor_StaticPtr()
         : TypeDescriptor{&TypeKey_StaticPtr, (StaticPtr<void>*) nullptr,
-                         getNativeBindings_StaticPtr() PLY_METHOD_TABLES_ONLY(, {})} {
+                         get_native_bindings_static_ptr()
+                             PLY_METHOD_TABLES_ONLY(, {})} {
     }
 };
 
 template <typename T>
 struct TypeDescriptorSpecializer<StaticPtr<T>> {
     static TypeDescriptor_StaticPtr* get() {
-        static TypeDescriptor_StaticPtr typeDesc;
-        return &typeDesc;
+        static TypeDescriptor_StaticPtr type_desc;
+        return &type_desc;
     }
 };
 

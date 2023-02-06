@@ -18,7 +18,7 @@ struct Boxed {};
 template <>
 struct Boxed<String> {
     static void write(NativeEndianWriter& wr, StringView view) {
-        wr.write(view.numBytes);
+        wr.write(view.num_bytes);
         wr.out << view;
     }
 

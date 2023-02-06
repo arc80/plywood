@@ -10,30 +10,31 @@
 namespace ply {
 namespace docs {
 
-void cook_CopyStatic(cook::CookResult* cookResult, AnyObject) {
-    PLY_ASSERT(!cookResult->job->id.desc.isEmpty());
+void cook_CopyStatic(cook::CookResult* cook_result, AnyObject) {
+    PLY_ASSERT(!cook_result->job->id.desc.is_empty());
 
     // Create destination folder(s) if missing
-    String dstPath =
-        Path.join(Workspace.path, "data/docsite/static", cookResult->job->id.desc);
-    FSResult r = FileSystem.makeDirs(Path.split(dstPath).first);
+    String dst_path =
+        Path.join(Workspace.path, "data/docsite/static", cook_result->job->id.desc);
+    FSResult r = FileSystem.make_dirs(Path.split(dst_path).first);
     if (r != FSResult::OK && r != FSResult::AlreadyExists) {
         // FIXME: add reason from r
-        cookResult->addError(String::format("unable to create '{}'", dstPath));
+        cook_result->add_error(String::format("unable to create '{}'", dst_path));
         return;
     }
 
     // Create Dependency on source file
-    String srcPath = Path.join(Workspace.path, "repos/plywood/src/web/theme",
-                               cookResult->job->id.desc);
-    cook::CookResult::FileDepScope fdScope = cookResult->createFileDependency(srcPath);
-    PLY_UNUSED(fdScope);
+    String src_path = Path.join(Workspace.path, "repos/plywood/src/web/theme",
+                                cook_result->job->id.desc);
+    cook::CookResult::FileDepScope fd_scope =
+        cook_result->create_file_dependency(src_path);
+    PLY_UNUSED(fd_scope);
 
     // Open source file
-    Owned<InPipe> inPipe = FileSystem.openPipeForRead(srcPath);
-    if (!inPipe) {
-        // FIXME: add reason from lastResult()
-        cookResult->addError(String::format("can't open '{}'", srcPath));
+    Owned<InPipe> in_pipe = FileSystem.open_pipe_for_read(src_path);
+    if (!in_pipe) {
+        // FIXME: add reason from last_result()
+        cook_result->add_error(String::format("can't open '{}'", src_path));
         return;
     }
 
@@ -42,26 +43,26 @@ void cook_CopyStatic(cook::CookResult* cookResult, AnyObject) {
 
     // Open destination file
     // FIXME: Copy to temporary file first, then rename it
-    Owned<OutPipe> outPipe = FileSystem.openPipeForWrite(dstPath);
-    if (!outPipe) {
-        // FIXME: add reason from lastResult()
-        cookResult->addError(String::format("unable to create '{}'", dstPath));
+    Owned<OutPipe> out_pipe = FileSystem.open_pipe_for_write(dst_path);
+    if (!out_pipe) {
+        // FIXME: add reason from last_result()
+        cook_result->add_error(String::format("unable to create '{}'", dst_path));
         return;
     }
 
     // Copy in chunks
     for (;;) {
-        u32 numBytes = inPipe->readSome({buf.bytes, buf.numBytes});
+        u32 num_bytes = in_pipe->read_some({buf.bytes, buf.num_bytes});
         // FIXME: Distinguish failed read from EOF
-        if (numBytes == 0)
+        if (num_bytes == 0)
             break;
-        outPipe->write(buf.left(numBytes));
+        out_pipe->write(buf.left(num_bytes));
     }
 }
 
 cook::CookJobType CookJobType_CopyStatic = {
     "copyStatic",
-    getTypeDescriptor<cook::CookResult>(),
+    get_type_descriptor<cook::CookResult>(),
     nullptr,
     cook_CopyStatic,
 };

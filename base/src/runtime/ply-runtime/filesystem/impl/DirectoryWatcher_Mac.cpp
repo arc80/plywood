@@ -13,51 +13,54 @@
 
 namespace ply {
 
-PLY_NO_INLINE void myCallback(ConstFSEventStreamRef streamRef, void* clientCallBackInfo,
-                              size_t numEvents, void* eventPaths,
-                              const FSEventStreamEventFlags eventFlags[],
-                              const FSEventStreamEventId eventIds[]) {
-    DirectoryWatcher_Mac* watcher = (DirectoryWatcher_Mac*) clientCallBackInfo;
-    char** paths = (char**) eventPaths;
-    for (int i = 0; i < numEvents; i++) {
+PLY_NO_INLINE void my_callback(ConstFSEventStreamRef stream_ref,
+                               void* client_call_back_info, size_t num_events,
+                               void* event_paths,
+                               const FSEventStreamEventFlags event_flags[],
+                               const FSEventStreamEventId event_ids[]) {
+    DirectoryWatcher_Mac* watcher = (DirectoryWatcher_Mac*) client_call_back_info;
+    char** paths = (char**) event_paths;
+    for (int i = 0; i < num_events; i++) {
         /* flags are unsigned long, IDs are uint64_t */
         StringView p = paths[i];
-        FSEventStreamEventFlags flags = eventFlags[i];
-        PLY_ASSERT(p.startsWith(watcher->m_root));
-        p = p.subStr(watcher->m_root.numBytes);
+        FSEventStreamEventFlags flags = event_flags[i];
+        PLY_ASSERT(p.starts_with(watcher->m_root));
+        p = p.sub_str(watcher->m_root.num_bytes);
 
-        // puts(String::format("change {} in {}, flags {}/0x{}", eventIds[i],
-        // String::convert(p), flags, String::toHex(flags)).bytes());
-        bool mustRecurse = false;
+        // puts(String::format("change {} in {}, flags {}/0x{}", event_ids[i],
+        // String::convert(p), flags, String::to_hex(flags)).bytes());
+        bool must_recurse = false;
         if ((flags & kFSEventStreamEventFlagMustScanSubDirs) != 0) {
-            mustRecurse = true;
+            must_recurse = true;
         }
         if ((flags & kFSEventStreamEventFlagItemIsDir) != 0) {
-            mustRecurse = true;
+            must_recurse = true;
         }
         // FIXME: check kFSEventStreamEventFlagEventIdsWrapped
-        watcher->m_callback(p, mustRecurse);
+        watcher->m_callback(p, must_recurse);
     }
 }
 
-PLY_NO_INLINE void DirectoryWatcher_Mac::runWatcher() {
-    CFStringRef rootPath = CFStringCreateWithCString(NULL, m_root.bytes, kCFStringEncodingASCII);
-    CFArrayRef pathsToWatch = CFArrayCreate(NULL, (const void**) &rootPath, 1, NULL);
+PLY_NO_INLINE void DirectoryWatcher_Mac::run_watcher() {
+    CFStringRef root_path =
+        CFStringCreateWithCString(NULL, m_root.bytes, kCFStringEncodingASCII);
+    CFArrayRef paths_to_watch = CFArrayCreate(NULL, (const void**) &root_path, 1, NULL);
     FSEventStreamContext context;
     context.version = 0;
     context.info = this;
     context.retain = NULL;
     context.release = NULL;
-    context.copyDescription = NULL;
-    // FIXME: should use kFSEventStreamCreateFlagWatchRoot to check if the folder being watched
-    // gets moved?
-    FSEventStreamRef stream =
-        FSEventStreamCreate(NULL, myCallback, &context, pathsToWatch, kFSEventStreamEventIdSinceNow,
-                            0.15, // latency
-                            kFSEventStreamCreateFlagFileEvents);
-    CFRelease(pathsToWatch);
-    CFRelease(rootPath);
-    FSEventStreamScheduleWithRunLoop(stream, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+    context.copy_description = NULL;
+    // FIXME: should use kFSEventStreamCreateFlagWatchRoot to check if the folder being
+    // watched gets moved?
+    FSEventStreamRef stream = FSEventStreamCreate(
+        NULL, my_callback, &context, paths_to_watch, kFSEventStreamEventIdSinceNow,
+        0.15, // latency
+        kFSEventStreamCreateFlagFileEvents);
+    CFRelease(paths_to_watch);
+    CFRelease(root_path);
+    FSEventStreamScheduleWithRunLoop(stream, CFRunLoopGetCurrent(),
+                                     kCFRunLoopDefaultMode);
     Boolean rc = FSEventStreamStart(stream);
     PLY_ASSERT(rc == TRUE);
     PLY_UNUSED(rc);
@@ -65,7 +68,8 @@ PLY_NO_INLINE void DirectoryWatcher_Mac::runWatcher() {
     CFRunLoopRun();
 
     FSEventStreamStop(stream);
-    FSEventStreamUnscheduleFromRunLoop(stream, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+    FSEventStreamUnscheduleFromRunLoop(stream, CFRunLoopGetCurrent(),
+                                       kCFRunLoopDefaultMode);
     FSEventStreamInvalidate(stream);
     FSEventStreamRelease(stream);
 }
@@ -73,13 +77,14 @@ PLY_NO_INLINE void DirectoryWatcher_Mac::runWatcher() {
 PLY_NO_INLINE DirectoryWatcher_Mac::DirectoryWatcher_Mac() {
 }
 
-PLY_NO_INLINE void DirectoryWatcher_Mac::start(StringView root, Func<Callback>&& callback) {
-    PLY_ASSERT(m_root.isEmpty());
+PLY_NO_INLINE void DirectoryWatcher_Mac::start(StringView root,
+                                               Func<Callback>&& callback) {
+    PLY_ASSERT(m_root.is_empty());
     PLY_ASSERT(!m_callback);
-    PLY_ASSERT(!m_watcherThread.isValid());
+    PLY_ASSERT(!m_watcherThread.is_valid());
     m_root = root;
     m_callback = std::move(callback);
-    m_watcherThread.run([this]() { runWatcher(); });
+    m_watcherThread.run([this]() { run_watcher(); });
 }
 
 } // namespace ply

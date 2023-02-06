@@ -116,8 +116,9 @@ public:
     //   When run forward or backwards one Mix
     // I tried 3 pairs of each; they all differed by at least 212 bits.
     //
-    static PLY_INLINE void Mix(const u64* data, u64& s0, u64& s1, u64& s2, u64& s3, u64& s4,
-                               u64& s5, u64& s6, u64& s7, u64& s8, u64& s9, u64& s10, u64& s11) {
+    static PLY_INLINE void Mix(const u64* data, u64& s0, u64& s1, u64& s2, u64& s3,
+                               u64& s4, u64& s5, u64& s6, u64& s7, u64& s8, u64& s9,
+                               u64& s10, u64& s11) {
         // clang-format off
         s0 += data[0];      s2 ^= s10;   s11 ^= s0;   s0 = Rot64(s0,11);    s11 += s1;
         s1 += data[1];      s3 ^= s11;   s0 ^= s1;    s1 = Rot64(s1,32);    s0 += s2;
@@ -150,8 +151,9 @@ public:
     // Two iterations was almost good enough for a 64-bit result, but a
     // 128-bit result is reported, so End() does three iterations.
     //
-    static PLY_INLINE void EndPartial(u64& h0, u64& h1, u64& h2, u64& h3, u64& h4, u64& h5, u64& h6,
-                                      u64& h7, u64& h8, u64& h9, u64& h10, u64& h11) {
+    static PLY_INLINE void EndPartial(u64& h0, u64& h1, u64& h2, u64& h3, u64& h4,
+                                      u64& h5, u64& h6, u64& h7, u64& h8, u64& h9,
+                                      u64& h10, u64& h11) {
         // clang-format off
         h11+= h1;    h2 ^= h11;   h1 = Rot64(h1,44);
         h0 += h2;    h3 ^= h0;    h2 = Rot64(h2,15);
@@ -168,8 +170,9 @@ public:
         // clang-format on
     }
 
-    static PLY_INLINE void End(const u64* data, u64& h0, u64& h1, u64& h2, u64& h3, u64& h4,
-                               u64& h5, u64& h6, u64& h7, u64& h8, u64& h9, u64& h10, u64& h11) {
+    static PLY_INLINE void End(const u64* data, u64& h0, u64& h1, u64& h2, u64& h3,
+                               u64& h4, u64& h5, u64& h6, u64& h7, u64& h8, u64& h9,
+                               u64& h10, u64& h11) {
         // clang-format off
         h0 += data[0];   h1 += data[1];   h2 += data[2];   h3 += data[3];
         h4 += data[4];   h5 += data[5];   h6 += data[6];   h7 += data[7];
@@ -247,10 +250,11 @@ private:
     // keys, the cost crossover is at about 192 bytes.  The two modes were
     // held to the same quality bar.
     //
-    static void Short(const void* message, // message (array of bytes, not necessarily aligned)
-                      size_t length,       // length of message (in bytes)
-                      u64* hash1,          // in/out: in the seed, out the hash value
-                      u64* hash2);         // in/out: in the seed, out the hash value
+    static void
+    Short(const void* message, // message (array of bytes, not necessarily aligned)
+          size_t length,       // length of message (in bytes)
+          u64* hash1,          // in/out: in the seed, out the hash value
+          u64* hash2);         // in/out: in the seed, out the hash value
 
     // number of u64's in internal state
     static const size_t sc_numVars = 12;

@@ -11,13 +11,13 @@
 
 namespace ply {
 
-void convertFromHex(float* values, size_t numValues, const char* hex);
+void convert_from_hex(float* values, size_t num_values, const char* hex);
 
 template <typename V>
-V fromHex(const char* hex) {
+V from_hex(const char* hex) {
     static constexpr u32 Rows = sizeof(V) / sizeof(V::x);
     V result;
-    convertFromHex(&result.x, Rows, hex);
+    convert_from_hex(&result.x, Rows, hex);
     return result;
 }
 
@@ -26,34 +26,34 @@ inline Int4<u8> to8888(const Float4 value) {
 }
 
 // FIXME: Accelerate this using a lookup table
-inline float sRGBToLinear(float s) {
+inline float s_rgbto_linear(float s) {
     if (s < 0.0404482362771082f)
         return s / 12.92f;
     else
         return powf(((s + 0.055f) / 1.055f), 2.4f);
 }
 
-inline float linearToSRGB(float l) {
+inline float linear_to_srgb(float l) {
     if (l < 0.00313066844250063f)
         return l * 12.92f;
     else
         return 1.055f * powf(l, 1 / 2.4f) - 0.055f;
 }
 
-inline Float3 fromSRGB(const Float3& vec) {
-    return {sRGBToLinear(vec.x), sRGBToLinear(vec.y), sRGBToLinear(vec.z)};
+inline Float3 from_srgb(const Float3& vec) {
+    return {s_rgbto_linear(vec.x), s_rgbto_linear(vec.y), s_rgbto_linear(vec.z)};
 }
 
-inline Float4 fromSRGB(const Float4& vec) {
-    return {sRGBToLinear(vec.x), sRGBToLinear(vec.y), sRGBToLinear(vec.z), vec.w};
+inline Float4 from_srgb(const Float4& vec) {
+    return {s_rgbto_linear(vec.x), s_rgbto_linear(vec.y), s_rgbto_linear(vec.z), vec.w};
 }
 
-inline Float3 toSRGB(const Float3& vec) {
-    return {linearToSRGB(vec.x), linearToSRGB(vec.y), linearToSRGB(vec.z)};
+inline Float3 to_srgb(const Float3& vec) {
+    return {linear_to_srgb(vec.x), linear_to_srgb(vec.y), linear_to_srgb(vec.z)};
 }
 
-inline Float4 toSRGB(const Float4& vec) {
-    return {linearToSRGB(vec.x), linearToSRGB(vec.y), linearToSRGB(vec.z), vec.w};
+inline Float4 to_srgb(const Float4& vec) {
+    return {linear_to_srgb(vec.x), linear_to_srgb(vec.y), linear_to_srgb(vec.z), vec.w};
 }
 
 } // namespace ply

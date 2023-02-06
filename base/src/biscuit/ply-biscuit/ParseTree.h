@@ -15,7 +15,7 @@ namespace biscuit {
 struct StatementBlock;
 
 struct Expression {
-    u32 tokenIdx = 0;
+    u32 token_idx = 0;
 
     // ply make switch
     struct NameLookup {
@@ -33,7 +33,7 @@ struct Expression {
     };
     struct PropertyLookup {
         Owned<Expression> obj;
-        Label propertyName;
+        Label property_name;
     };
     struct BinaryOp {
         MethodTable::BinaryOp op;
@@ -52,14 +52,14 @@ struct Expression {
 };
 
 struct Statement {
-    u32 tokenIdx = 0; // FIXME: Delete this member because it's not actually useful?
-    u32 fileOffset = 0;
+    u32 token_idx = 0; // FIXME: Delete this member because it's not actually useful?
+    u32 file_offset = 0;
 
     // ply make switch
     struct If_ {
         Owned<Expression> condition;
-        Owned<StatementBlock> trueBlock;
-        Owned<StatementBlock> falseBlock;
+        Owned<StatementBlock> true_block;
+        Owned<StatementBlock> false_block;
     };
     struct While_ {
         Owned<Expression> condition;
@@ -83,7 +83,7 @@ struct Statement {
 
         Label name;
         Tokenizer* tkr = nullptr;
-        Array<Label> parameterNames;
+        Array<Label> parameter_names;
         Owned<StatementBlock> body;
     };
     struct CustomBlock {

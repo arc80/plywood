@@ -208,11 +208,11 @@ struct Int3 {
     Int3(T x, T y, T z) : x{x}, y{y}, z{z} {
     }
 
-    Int2<T>& asInt2() {
+    Int2<T>& as_int2() {
         return reinterpret_cast<Int2<T>&>(*this);
     }
 
-    const Int2<T>& asInt2() const {
+    const Int2<T>& as_int2() const {
         return reinterpret_cast<const Int2<T>&>(*this);
     }
 
@@ -238,7 +238,8 @@ struct Int3 {
     }
 
     Int3 swizzle(size_t i0, size_t i1, size_t i2) const {
-        return Int3{((const T*) (this))[i0], ((const T*) (this))[i1], ((const T*) (this))[i2]};
+        return Int3{((const T*) (this))[i0], ((const T*) (this))[i1],
+                    ((const T*) (this))[i2]};
     }
 
     Int3 reverse() const {
@@ -403,8 +404,8 @@ struct Int4 {
     }
 
     Int4 swizzle(size_t i0, size_t i1, size_t i2, size_t i3) const {
-        return Int4{((const T*) (this))[i0], ((const T*) (this))[i1], ((const T*) (this))[i2],
-                    ((const T*) (this))[i3]};
+        return Int4{((const T*) (this))[i0], ((const T*) (this))[i1],
+                    ((const T*) (this))[i2], ((const T*) (this))[i3]};
     }
 
     Int4 reverse() const {

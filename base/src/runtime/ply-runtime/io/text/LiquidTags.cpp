@@ -9,12 +9,12 @@
 
 namespace ply {
 
-PLY_NO_INLINE void extractLiquidTags(OutStream& out, ViewInStream& vin,
-                                     Func<void(StringView, StringView)> tagHandler) {
-    // advanceByte consumes the current byte from the InStream and returns true if there is
-    // another byte available. Note that the return value is the same as vin.isValid(), so you
-    // can ignore it and just test vin.isValid() later.
-    auto advanceByte = [&]() -> bool {
+PLY_NO_INLINE void extract_liquid_tags(OutStream& out, ViewInStream& vin,
+                                       Func<void(StringView, StringView)> tag_handler) {
+    // advance_byte consumes the current byte from the InStream and returns true if
+    // there is another byte available. Note that the return value is the same as
+    // vin.is_valid(), so you can ignore it and just test vin.is_valid() later.
+    auto advance_byte = [&]() -> bool {
         PLY_ASSERT(vin.num_bytes_readable() > 0);
         vin.cur_byte++;
         return vin.ensure_readable();
@@ -29,14 +29,14 @@ PLY_NO_INLINE void extractLiquidTags(OutStream& out, ViewInStream& vin,
             0); // At start of this loop, there is always a byte available to read
         u8 unit = *vin.cur_byte;
         if (unit == '<') {
-            const char* startByte = vin.cur_byte;
-            if (!advanceByte()) {
+            const char* start_byte = vin.cur_byte;
+            if (!advance_byte()) {
                 out << unit;
                 return;
             }
             if (*vin.cur_byte == '%') {
                 // Start of tag
-                if (!advanceByte()) {
+                if (!advance_byte()) {
                     // FIXME: Raise error: EOF between tags
                     return;
                 }
@@ -44,15 +44,16 @@ PLY_NO_INLINE void extractLiquidTags(OutStream& out, ViewInStream& vin,
                 // read everything up to %>
                 for (;;) {
                     PLY_ASSERT(vin.num_bytes_readable() >
-                        0); // At start of this loop, there is always a byte available to read
+                               0); // At start of this loop, there is always a byte
+                                   // available to read
                     unit = *vin.cur_byte;
                     if (unit == '%') {
-                        if (!advanceByte()) {
+                        if (!advance_byte()) {
                             // FIXME: Raise error: EOF between tags
                             return;
                         }
                         if (*vin.cur_byte == '>') {
-                            advanceByte();
+                            advance_byte();
                             // End of tag
                             break;
                         } else {
@@ -61,14 +62,15 @@ PLY_NO_INLINE void extractLiquidTags(OutStream& out, ViewInStream& vin,
                         }
                     } else {
                         mout << unit;
-                        if (!advanceByte()) {
+                        if (!advance_byte()) {
                             // FIXME: Raise error: EOF between tags
                             break;
                         }
                     }
                 }
 
-                tagHandler(StringView::fromRange(startByte, vin.cur_byte), mout.moveToString());
+                tag_handler(StringView::from_range(start_byte, vin.cur_byte),
+                            mout.move_to_string());
 
                 if (vin.at_eof()) {
                     // EOF encountered immediately after closing tag
@@ -77,12 +79,12 @@ PLY_NO_INLINE void extractLiquidTags(OutStream& out, ViewInStream& vin,
             } else {
                 out << unit;
                 out << *vin.cur_byte;
-                if (!advanceByte())
+                if (!advance_byte())
                     return; // EOF
             }
         } else {
             out << unit;
-            if (!advanceByte())
+            if (!advance_byte())
                 return; // EOF
         }
     }

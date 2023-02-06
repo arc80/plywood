@@ -1,7 +1,6 @@
-PLY_STRUCT_BEGIN(Workspace_t)
-PLY_STRUCT_MEMBER(currentBuildFolder)
-PLY_STRUCT_MEMBER(defaultCMakeOptions)
-PLY_STRUCT_MEMBER(defaultConfig)
-PLY_STRUCT_MEMBER(sourceNewLines)
+﻿PLY_STRUCT_BEGIN(Workspace_t)
+PLY_STRUCT_MEMBER(current_build_folder)
+PLY_STRUCT_MEMBER(default_cmake_options)
+PLY_STRUCT_MEMBER(default_config)
+PLY_STRUCT_MEMBER(source_new_lines)
 PLY_STRUCT_END()
-

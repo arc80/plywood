@@ -14,8 +14,8 @@
 namespace ply {
 
 PLY_DEFINE_TYPE_DESCRIPTOR(BoundMethod) {
-    static TypeDescriptor_Struct typeDesc{(BoundMethod*) nullptr, "BoundMethod"};
-    return &typeDesc;
+    static TypeDescriptor_Struct type_desc{(BoundMethod*) nullptr, "BoundMethod"};
+    return &type_desc;
 }
 
 } // namespace ply

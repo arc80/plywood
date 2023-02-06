@@ -67,19 +67,19 @@ struct Token {
         EndOfFile,
     };
 
-    LinearLocation linearLoc = -1;
+    LinearLocation linear_loc = -1;
     StringView identifier; // FIXME: Rename to text
 
     PLY_REFLECT()
     Type type = Invalid;
     // ply reflect off
 
-    PLY_INLINE bool isValid() const {
+    PLY_INLINE bool is_valid() const {
         return this->type != Invalid;
     }
     Token() = default;
-    Token(LinearLocation linearLoc, Type type, StringView identifier = {})
-        : linearLoc{linearLoc}, identifier{identifier}, type{type} {
+    Token(LinearLocation linear_loc, Type type, StringView identifier = {})
+        : linear_loc{linear_loc}, identifier{identifier}, type{type} {
     }
     bool operator==(const Token& other) {
         if (this->type != other.type)
@@ -90,10 +90,10 @@ struct Token {
             return true;
         }
     }
-    HybridString toString() const;
+    HybridString to_string() const;
 };
 
-StringView getPunctuationString(Token::Type tok);
+StringView get_punctuation_string(Token::Type tok);
 
 } // namespace cpp
 

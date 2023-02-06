@@ -37,61 +37,61 @@ PLY_NO_INLINE Node::~Node() {
 Owned<Node> Node::copy() const {
     switch ((Type) this->type) {
         case Type::Text: {
-            return createText(this->text_.view(), this->fileOfs);
+            return create_text(this->text_.view(), this->file_ofs);
         }
 
         case Type::Array: {
-            Owned<Node> dst = createArray(this->fileOfs);
-            dst->array_.resize(this->array_.numItems());
-            for (u32 i = 0; i < this->array_.numItems(); i++) {
+            Owned<Node> dst = create_array(this->file_ofs);
+            dst->array_.resize(this->array_.num_items());
+            for (u32 i = 0; i < this->array_.num_items(); i++) {
                 dst->array_[i] = this->array_[i]->copy();
             }
             return dst;
         }
 
         case Type::Object: {
-            Owned<Node> dst = createObject(this->fileOfs);
-            dst->object_.items.resize(this->object_.items.numItems());
-            for (u32 i = 0; i < this->object_.items.numItems(); i++) {
-                Object::Item& dstItem = dst->object_.items[i];
-                dstItem.key = this->object_.items[i].key.view();
-                dstItem.value = this->object_.items[i].value->copy();
-                *dst->object_.index.insertOrFind(dstItem.key) = i;
+            Owned<Node> dst = create_object(this->file_ofs);
+            dst->object_.items.resize(this->object_.items.num_items());
+            for (u32 i = 0; i < this->object_.items.num_items(); i++) {
+                Object::Item& dst_item = dst->object_.items[i];
+                dst_item.key = this->object_.items[i].key.view();
+                dst_item.value = this->object_.items[i].value->copy();
+                *dst->object_.index.insert_or_find(dst_item.key) = i;
             }
             return dst;
         }
 
         default: {
-            return createInvalid();
+            return create_invalid();
         }
     }
 }
 
-PLY_NO_INLINE Owned<Node> Node::createInvalid() {
+PLY_NO_INLINE Owned<Node> Node::create_invalid() {
     Owned<Node> node = (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, text_));
     node->type = (u64) Type::Invalid;
-    node->fileOfs = 0;
+    node->file_ofs = 0;
     return node;
 }
 
-PLY_NO_INLINE Owned<Node> Node::allocText() {
+PLY_NO_INLINE Owned<Node> Node::alloc_text() {
     return (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, text_) + sizeof(Node::text_));
 }
 
-PLY_NO_INLINE Owned<Node> Node::createArray(u64 fileOfs) {
+PLY_NO_INLINE Owned<Node> Node::create_array(u64 file_ofs) {
     Owned<Node> node =
         (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, array_) + sizeof(Node::array_));
     node->type = (u64) Type::Array;
-    node->fileOfs = fileOfs;
+    node->file_ofs = file_ofs;
     new (&node->array_) decltype(node->array_);
     return node;
 }
 
-PLY_NO_INLINE Owned<Node> Node::createObject(u64 fileOfs) {
+PLY_NO_INLINE Owned<Node> Node::create_object(u64 file_ofs) {
     Owned<Node> node =
         (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, object_) + sizeof(Node::object_));
     node->type = (u64) Type::Object;
-    node->fileOfs = fileOfs;
+    node->file_ofs = file_ofs;
     new (&node->object_) decltype(node->object_);
     return node;
 }
@@ -102,7 +102,7 @@ PLY_NO_INLINE Tuple<bool, double> Node::numeric() const {
 
     ViewInStream vins{this->text_};
     double value = vins.parse<double>();
-    return {!vins.anyParseError(), value};
+    return {!vins.any_parse_error(), value};
 }
 
 PLY_NO_INLINE Node* Node::get(StringView key) {
@@ -110,7 +110,7 @@ PLY_NO_INLINE Node* Node::get(StringView key) {
         return (Node*) &InvalidNodeHeader;
 
     auto cursor = this->object_.index.find(key, &this->object_.items);
-    if (!cursor.wasFound())
+    if (!cursor.was_found())
         return (Node*) &InvalidNodeHeader;
 
     return this->object_.items[*cursor].value;
@@ -121,11 +121,11 @@ PLY_NO_INLINE Node* Node::set(HybridString&& key, Owned<Node>&& value) {
     if (this->type != (u64) Type::Object)
         return result;
 
-    auto cursor = this->object_.index.insertOrFind(key.view(), &this->object_.items);
-    if (cursor.wasFound()) {
+    auto cursor = this->object_.index.insert_or_find(key.view(), &this->object_.items);
+    if (cursor.was_found()) {
         this->object_.items[*cursor].value = std::move(value);
     } else {
-        *cursor = this->object_.items.numItems();
+        *cursor = this->object_.items.num_items();
         this->object_.items.append({std::move(key), std::move(value)});
     }
     return result;
@@ -136,16 +136,16 @@ PLY_NO_INLINE Owned<Node> Node::remove(StringView key) {
         return nullptr;
 
     auto cursor = this->object_.index.find(key, &this->object_.items);
-    if (!cursor.wasFound())
+    if (!cursor.was_found())
         return nullptr;
 
     u32 index = *cursor;
     cursor.erase();
     Owned<Node> result = std::move(this->object_.items[index].value);
     this->object_.items.erase(index);
-    for (u32& toAdjust : this->object_.index) {
-        if (toAdjust > index) {
-            toAdjust--;
+    for (u32& to_adjust : this->object_.index) {
+        if (to_adjust > index) {
+            to_adjust--;
         }
     }
     return result;

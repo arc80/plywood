@@ -12,6 +12,6 @@
 namespace pylon {
 
 using FilterFunc = Func<Owned<Node>(AnyObject)>;
-Owned<Node> exportObj(AnyObject obj, const FilterFunc& filter = {});
+Owned<Node> export_obj(AnyObject obj, const FilterFunc& filter = {});
 
 } // namespace pylon

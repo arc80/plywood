@@ -21,32 +21,36 @@ namespace ply {
 struct StringMethodTable {
     static PLY_INLINE MethodTable make() {
         MethodTable methods;
-        methods.binaryOp = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
-                              const AnyObject& first, const AnyObject& second) {
+        methods.binary_op = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
+                               const AnyObject& first, const AnyObject& second) {
             switch (op) {
                 case MethodTable::BinaryOp::Add: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<String>());
-                    *interp->returnValue.cast<String>() =
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<String>());
+                    *interp->return_value.cast<String>() =
                         *first.cast<String>() + *second.cast<String>();
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::Multiply: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<String>());
-                    *interp->returnValue.cast<String>() =
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<String>());
+                    *interp->return_value.cast<String>() =
                         *first.cast<String>() * *second.cast<u32>();
                     return Fn_OK;
                 }
                 case MethodTable::BinaryOp::DoubleEqual: {
-                    interp->returnValue =
-                        *interp->localVariableStorage.appendObject(getTypeDescriptor<bool>());
-                    *interp->returnValue.cast<bool>() =
+                    interp->return_value =
+                        *interp->local_variable_storage.append_object(
+                            get_type_descriptor<bool>());
+                    *interp->return_value.cast<bool>() =
                         (*first.cast<String>() == *second.cast<String>());
                     return Fn_OK;
                 }
                 default: {
-                    return MethodTable::unsupportedBinaryOp(interp, op, first, second);
+                    return MethodTable::unsupported_binary_op(interp, op, first,
+                                                              second);
                 }
             }
         };
@@ -57,10 +61,11 @@ struct StringMethodTable {
 #endif // PLY_WITH_METHOD_TABLES
 
 PLY_DEFINE_TYPE_DESCRIPTOR(String) {
-    static TypeDescriptor typeDesc{&TypeKey_String, (String*) nullptr,
-                                   NativeBindings::make<String>()
-                                       PLY_METHOD_TABLES_ONLY(, StringMethodTable::make())};
-    return &typeDesc;
+    static TypeDescriptor type_desc{
+        &TypeKey_String, (String*) nullptr,
+        NativeBindings::make<String>()
+            PLY_METHOD_TABLES_ONLY(, StringMethodTable::make())};
+    return &type_desc;
 }
 
 } // namespace ply

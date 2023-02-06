@@ -12,8 +12,9 @@ namespace ply {
 namespace web {
 struct URLEscape {
     StringView view;
-    u32 maxPoints = 0;
-    PLY_INLINE URLEscape(StringView view, u32 maxPoints = 0) : view{view}, maxPoints{maxPoints} {
+    u32 max_points = 0;
+    PLY_INLINE URLEscape(StringView view, u32 max_points = 0)
+        : view{view}, max_points{max_points} {
     }
 };
 } // namespace web

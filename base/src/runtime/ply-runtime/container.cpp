@@ -38,8 +38,8 @@ void map_reindex(BaseMap* map, u32 num_indices, const MapTypeInfo* ti) {
     }
 
     // Rebuild indices.
-    PLY_ASSERT(isPowerOf2(map->indices.numItems()));
-    u32 mask = map->indices.numItems() - 1;
+    PLY_ASSERT(is_power_of2(map->indices.num_items()));
+    u32 mask = map->indices.num_items() - 1;
     for (u32 item_idx = 0; item_idx < map->items.num_items; item_idx++) {
         void* key = PLY_PTR_OFFSET(map->items.items, item_idx * ti->item_size);
         for (u32 idx = new_hash(*(Key*) key);; idx++) {
@@ -57,7 +57,7 @@ template void map_reindex<StringView>(BaseMap*, u32, const MapTypeInfo*);
 
 u32 best_num_indices(u32 num_items) {
     if (num_items >= 8) {
-        return roundUpPowerOf2(u32((u64{num_items} * 5) >> 2));
+        return round_up_power_of2(u32((u64{num_items} * 5) >> 2));
     }
     return (num_items < 4) ? 4 : 8;
 }
@@ -70,7 +70,7 @@ void* map_operate(BaseMap* map, MapOperation op, View<Key> key, const MapTypeInf
     }
     if (op == M_Insert) {
         u32 min_indices = best_num_indices(map->items.num_items + 1);
-        if (map->indices.numItems() < min_indices) {
+        if (map->indices.num_items() < min_indices) {
             PLY_PUN_SCOPE
             map_reindex<View<Key>>(map, min_indices, ti);
         }
@@ -78,8 +78,8 @@ void* map_operate(BaseMap* map, MapOperation op, View<Key> key, const MapTypeInf
         return nullptr;
     }
 
-    PLY_ASSERT(isPowerOf2(map->indices.numItems()));
-    u32 mask = map->indices.numItems() - 1;
+    PLY_ASSERT(is_power_of2(map->indices.num_items()));
+    u32 mask = map->indices.num_items() - 1;
     for (u32 idx = new_hash(key);; idx++) {
         s32 item_idx = map->indices[idx & mask];
         if (item_idx >= 0) {
@@ -96,12 +96,12 @@ void* map_operate(BaseMap* map, MapOperation op, View<Key> key, const MapTypeInf
                 return nullptr;
             } else {
                 // Store item index.
-                item_idx = safeDemote<s32>(map->items.num_items);
+                item_idx = safe_demote<s32>(map->items.num_items);
                 map->indices[idx & mask] = item_idx;
 
                 // Construct new item.
                 if (map->items.num_items >= map->items.allocated) {
-                    map->items.reserveIncrement(ti->item_size);
+                    map->items.reserve_increment(ti->item_size);
                 }
                 map->items.num_items++;
                 void* item = PLY_PTR_OFFSET(map->items.items, item_idx * ti->item_size);

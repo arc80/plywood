@@ -16,19 +16,21 @@ namespace ply {
 
 #if PLY_WITH_METHOD_TABLES
 
-PLY_NO_INLINE MethodTable getMethodTable_Struct() {
+PLY_NO_INLINE MethodTable get_method_table_struct() {
     MethodTable methods;
-    methods.propertyLookup = [](BaseInterpreter* interp, const AnyObject& obj,
-                                StringView propertyName) -> FnResult {
-        const TypeDescriptor_Struct* structType = obj.type->cast<TypeDescriptor_Struct>();
-        const TypeDescriptor_Struct::Member* member = structType->findMember(propertyName);
+    methods.property_lookup = [](BaseInterpreter* interp, const AnyObject& obj,
+                                 StringView property_name) -> FnResult {
+        const TypeDescriptor_Struct* struct_type =
+            obj.type->cast<TypeDescriptor_Struct>();
+        const TypeDescriptor_Struct::Member* member =
+            struct_type->find_member(property_name);
         if (!member) {
-            interp->returnValue = {};
-            interp->error(String::format("property '{}' not found in type '{}'", propertyName,
-                                         obj.type->getName()));
+            interp->return_value = {};
+            interp->error(String::format("property '{}' not found in type '{}'",
+                                         property_name, obj.type->get_name()));
             return Fn_Error;
         }
-        interp->returnValue = {PLY_PTR_OFFSET(obj.data, member->offset), member->type};
+        interp->return_value = {PLY_PTR_OFFSET(obj.data, member->offset), member->type};
         return Fn_OK;
     };
     return methods;
@@ -36,12 +38,12 @@ PLY_NO_INLINE MethodTable getMethodTable_Struct() {
 
 #endif // PLY_WITH_METHOD_TABLES
 
-NativeBindings& getNativeBindings_SynthesizedStruct() {
+NativeBindings& get_native_bindings_synthesized_struct() {
     static NativeBindings bindings{
         // create
-        [](TypeDescriptor* typeDesc) -> AnyObject {
-            void* data = Heap.alloc(typeDesc->fixedSize);
-            AnyObject obj{data, typeDesc};
+        [](TypeDescriptor* type_desc) -> AnyObject {
+            void* data = Heap.alloc(type_desc->fixed_size);
+            AnyObject obj{data, type_desc};
             obj.construct();
             return obj;
         },
@@ -52,20 +54,20 @@ NativeBindings& getNativeBindings_SynthesizedStruct() {
         },
         // construct
         [](AnyObject obj) {
-            TypeDescriptor_Struct* structType = (TypeDescriptor_Struct*) obj.type;
-            // Zero-initialize the struct before calling the constructors of any members.
-            // I'm not sure this is always what we want, but it will help set the padding to
-            // zero when exporting synthesized vertex attributes:
-            memset(obj.data, 0, structType->fixedSize);
-            for (TypeDescriptor_Struct::Member& member : structType->members) {
+            TypeDescriptor_Struct* struct_type = (TypeDescriptor_Struct*) obj.type;
+            // Zero-initialize the struct before calling the constructors of any
+            // members. I'm not sure this is always what we want, but it will help set
+            // the padding to zero when exporting synthesized vertex attributes:
+            memset(obj.data, 0, struct_type->fixed_size);
+            for (TypeDescriptor_Struct::Member& member : struct_type->members) {
                 member.type->bindings.construct(
                     {PLY_PTR_OFFSET(obj.data, member.offset), member.type});
             }
         },
         // destruct
         [](AnyObject obj) {
-            TypeDescriptor_Struct* structType = (TypeDescriptor_Struct*) obj.type;
-            for (TypeDescriptor_Struct::Member& member : structType->members) {
+            TypeDescriptor_Struct* struct_type = (TypeDescriptor_Struct*) obj.type;
+            for (TypeDescriptor_Struct::Member& member : struct_type->members) {
                 member.type->bindings.destruct(
                     {PLY_PTR_OFFSET(obj.data, member.offset), member.type});
             }
@@ -77,10 +79,11 @@ NativeBindings& getNativeBindings_SynthesizedStruct() {
         // copy
         [](AnyObject dst, const AnyObject src) {
             PLY_ASSERT(dst.type == src.type);
-            TypeDescriptor_Struct* structType = (TypeDescriptor_Struct*) dst.type;
-            for (TypeDescriptor_Struct::Member& member : structType->members) {
-                member.type->bindings.copy({PLY_PTR_OFFSET(dst.data, member.offset), member.type},
-                                           {PLY_PTR_OFFSET(src.data, member.offset), member.type});
+            TypeDescriptor_Struct* struct_type = (TypeDescriptor_Struct*) dst.type;
+            for (TypeDescriptor_Struct::Member& member : struct_type->members) {
+                member.type->bindings.copy(
+                    {PLY_PTR_OFFSET(dst.data, member.offset), member.type},
+                    {PLY_PTR_OFFSET(src.data, member.offset), member.type});
             }
         },
     };

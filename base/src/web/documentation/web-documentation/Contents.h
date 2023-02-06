@@ -13,7 +13,7 @@ namespace web {
 struct Contents {
     PLY_REFLECT()
     String title;
-    String linkDestination;
+    String link_destination;
     Array<Owned<Contents>> children;
     // ply reflect off
 

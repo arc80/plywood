@@ -11,88 +11,90 @@
 namespace ply {
 namespace audio {
 
-void mix(const Buffer& dstBuffer, const Buffer& srcBuffer) {
-    PLY_ASSERT(dstBuffer.numSamples == srcBuffer.numSamples);
-    PLY_ASSERT(dstBuffer.sampleRate == srcBuffer.sampleRate);
-    PLY_ASSERT(dstBuffer.format == srcBuffer.format);
-    PLY_ASSERT(dstBuffer.format.sampleType == Format::SampleType::S16);
+void mix(const Buffer& dst_buffer, const Buffer& src_buffer) {
+    PLY_ASSERT(dst_buffer.num_samples == src_buffer.num_samples);
+    PLY_ASSERT(dst_buffer.sample_rate == src_buffer.sample_rate);
+    PLY_ASSERT(dst_buffer.format == src_buffer.format);
+    PLY_ASSERT(dst_buffer.format.sample_type == Format::SampleType::S16);
 
-    s16* dst = (s16*) dstBuffer.samples;
-    s16* dstEnd = (s16*) dstBuffer.getEndPtr();
-    s16* src = (s16*) srcBuffer.samples;
-    while (dst < dstEnd) {
-        *dst = saturatingAdd(*dst, *src);
+    s16* dst = (s16*) dst_buffer.samples;
+    s16* dst_end = (s16*) dst_buffer.get_end_ptr();
+    s16* src = (s16*) src_buffer.samples;
+    while (dst < dst_end) {
+        *dst = saturating_add(*dst, *src);
         dst++;
         src++;
     }
 }
 
-void mixLeveled(const Buffer& dstBuffer, const Buffer& srcBuffer, s32 level16) {
-    PLY_ASSERT(dstBuffer.numSamples == srcBuffer.numSamples);
-    PLY_ASSERT(dstBuffer.sampleRate == srcBuffer.sampleRate);
-    PLY_ASSERT(dstBuffer.format == srcBuffer.format);
-    PLY_ASSERT(dstBuffer.format.sampleType == Format::SampleType::S16);
+void mix_leveled(const Buffer& dst_buffer, const Buffer& src_buffer, s32 level16) {
+    PLY_ASSERT(dst_buffer.num_samples == src_buffer.num_samples);
+    PLY_ASSERT(dst_buffer.sample_rate == src_buffer.sample_rate);
+    PLY_ASSERT(dst_buffer.format == src_buffer.format);
+    PLY_ASSERT(dst_buffer.format.sample_type == Format::SampleType::S16);
 
-    s16* dst = (s16*) dstBuffer.samples;
-    s16* dstEnd = (s16*) dstBuffer.getEndPtr();
-    s16* src = (s16*) srcBuffer.samples;
-    while (dst < dstEnd) {
-        *dst = saturatingAdd(*dst, (*src * level16) >> 16);
+    s16* dst = (s16*) dst_buffer.samples;
+    s16* dst_end = (s16*) dst_buffer.get_end_ptr();
+    s16* src = (s16*) src_buffer.samples;
+    while (dst < dst_end) {
+        *dst = saturating_add(*dst, (*src * level16) >> 16);
         dst++;
         src++;
     }
 }
 
-void mixDynLevel(const Buffer& dstBuffer, const Buffer& srcBuffer, u32 level30, s32 stepLevel30) {
-    PLY_ASSERT(dstBuffer.numSamples == srcBuffer.numSamples);
-    PLY_ASSERT(dstBuffer.sampleRate == srcBuffer.sampleRate);
-    PLY_ASSERT(dstBuffer.format == srcBuffer.format);
-    PLY_ASSERT(dstBuffer.format == Format::StereoS16);
+void mix_dyn_level(const Buffer& dst_buffer, const Buffer& src_buffer, u32 level30,
+                   s32 step_level30) {
+    PLY_ASSERT(dst_buffer.num_samples == src_buffer.num_samples);
+    PLY_ASSERT(dst_buffer.sample_rate == src_buffer.sample_rate);
+    PLY_ASSERT(dst_buffer.format == src_buffer.format);
+    PLY_ASSERT(dst_buffer.format == Format::StereoS16);
 
-    s16* dst = (s16*) dstBuffer.samples;
-    s16* dstEnd = (s16*) dstBuffer.getEndPtr();
-    s16* src = (s16*) srcBuffer.samples;
-    while (dst < dstEnd) {
-        *dst = saturatingAdd(*dst, (*src * (level30 >> 14)) >> 16);
+    s16* dst = (s16*) dst_buffer.samples;
+    s16* dst_end = (s16*) dst_buffer.get_end_ptr();
+    s16* src = (s16*) src_buffer.samples;
+    while (dst < dst_end) {
+        *dst = saturating_add(*dst, (*src * (level30 >> 14)) >> 16);
         dst++;
         src++;
-        *dst = saturatingAdd(*dst, (*src * (level30 >> 14)) >> 16);
+        *dst = saturating_add(*dst, (*src * (level30 >> 14)) >> 16);
         dst++;
         src++;
-        level30 += stepLevel30;
+        level30 += step_level30;
     }
 }
 
-void mixPitchedDirect(const MixPitchedDirectParams& params) {
+void mix_pitched_direct(const MixPitchedDirectParams& params) {
     struct Sample {
         s16 left;
         s16 right;
     };
 
     Sample* src = (Sample*) params.src;
-    Sample* srcEnd = (Sample*) params.srcEnd;
+    Sample* src_end = (Sample*) params.src_end;
     Sample* dst = (Sample*) params.dst;
-    Sample* dstEnd = (Sample*) params.dstEnd;
+    Sample* dst_end = (Sample*) params.dst_end;
     s32 sf16 = params.sf16;
-    u32 sampleStep = params.srcStep;
+    u32 sample_step = params.src_step;
     s32 volume16 = params.volume16;
 
-    while (dst < dstEnd) {
-        PLY_ASSERT(src + 1 < srcEnd);
-        s32 leftPreVolume = (src[0].left * (65536 - sf16) + src[1].left * sf16) >> 16;
-        dst->left = saturatingAdd(dst->left, (leftPreVolume * volume16) >> 16);
-        s32 rightPreVolume = (src[0].right * (65536 - sf16) + src[1].right * sf16) >> 16;
-        dst->right = saturatingAdd(dst->right, (rightPreVolume * volume16) >> 16);
+    while (dst < dst_end) {
+        PLY_ASSERT(src + 1 < src_end);
+        s32 left_pre_volume = (src[0].left * (65536 - sf16) + src[1].left * sf16) >> 16;
+        dst->left = saturating_add(dst->left, (left_pre_volume * volume16) >> 16);
+        s32 right_pre_volume =
+            (src[0].right * (65536 - sf16) + src[1].right * sf16) >> 16;
+        dst->right = saturating_add(dst->right, (right_pre_volume * volume16) >> 16);
         dst++;
-        sf16 += sampleStep;
+        sf16 += sample_step;
         src += sf16 >> 16;
         sf16 &= 65535;
     }
 
     // Bounds checks
-    PLY_ASSERT(src + (s32(sf16 - sampleStep) >> 16) < srcEnd - 1);
-    PLY_ASSERT(src <= srcEnd + (sampleStep >> 16));
-    PLY_UNUSED(srcEnd);
+    PLY_ASSERT(src + (s32(sf16 - sample_step) >> 16) < src_end - 1);
+    PLY_ASSERT(src <= src_end + (sample_step >> 16));
+    PLY_UNUSED(src_end);
 }
 
 } // namespace audio

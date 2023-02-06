@@ -9,15 +9,15 @@
 using namespace ply;
 
 template <typename T>
-void testParse(OutStream* outs, StringView type, StringView str, u32 radix) {
+void test_parse(OutStream* outs, StringView type, StringView str, u32 radix) {
     ViewInStream ins{str};
     T result = ins.parse<T>(fmt::Radix{radix});
-    String backToString = String::from(fmt::WithRadix{result, radix});
+    String back_to_string = String::from(fmt::WithRadix{result, radix});
     outs->format("Parsing \"{}\" as {}, radix {} -> \"{}\", {}\n", str, type, radix,
-                 backToString, ins.anyParseError() ? "failed" : "success");
+                 back_to_string, ins.any_parse_error() ? "failed" : "success");
 }
 
-StringView strList[] = {
+StringView str_list[] = {
     "123",
     "24000000",
     "7fffffff",
@@ -45,22 +45,22 @@ StringView strList[] = {
 
 int main() {
     MemOutStream mout;
-    for (u32 i = 0; i < PLY_STATIC_ARRAY_SIZE(strList); i++) {
+    for (u32 i = 0; i < PLY_STATIC_ARRAY_SIZE(str_list); i++) {
         for (u32 s = 0; s < 2; s++) {
-            String str = strList[i];
+            String str = str_list[i];
             if (s == 1) {
                 str = StringView{"-"} + str;
             }
             for (u32 radix : {10, 16}) {
-                testParse<u32>(&mout, "u32", str, radix);
-                testParse<s32>(&mout, "s32", str, radix);
-                testParse<u64>(&mout, "u64", str, radix);
-                testParse<s64>(&mout, "s64", str, radix);
+                test_parse<u32>(&mout, "u32", str, radix);
+                test_parse<s32>(&mout, "s32", str, radix);
+                test_parse<u64>(&mout, "u64", str, radix);
+                test_parse<s64>(&mout, "s64", str, radix);
             }
         }
     }
-    FileSystem.makeDirsAndSaveTextIfDifferent(
+    FileSystem.make_dirs_and_save_text_if_different(
         Path.join(Workspace.path, "repos/plywood/src/apps/StringReaderTest/result.txt"),
-        mout.moveToString(), TextFormat::platformPreference());
+        mout.move_to_string(), TextFormat::platform_preference());
     return 0;
 }

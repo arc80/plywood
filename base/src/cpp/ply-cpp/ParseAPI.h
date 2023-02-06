@@ -16,16 +16,17 @@ namespace cpp {
 struct PreprocessorDefinition {
     String identifier;
     String value;
-    bool takesArgs = false;
+    bool takes_args = false;
 };
 
-grammar::TranslationUnit parse(StringView path, String&& sourceCode, PPVisitedFiles* visitedFiles,
-                               ArrayView<const PreprocessorDefinition> ppDefs = {},
-                               const Func<void(StringView directive)>& includeCallback = {},
-                               ParseSupervisor* visor = nullptr);
+grammar::TranslationUnit
+parse(StringView path, String&& source_code, PPVisitedFiles* visited_files,
+      ArrayView<const PreprocessorDefinition> pp_defs = {},
+      const Func<void(StringView directive)>& include_callback = {},
+      ParseSupervisor* visor = nullptr);
 
 Tuple<grammar::Declaration::Simple, Array<Owned<BaseError>>>
-parseSimpleDeclaration(StringView sourceCode, LinearLocation linearLocOfs = 0);
+parse_simple_declaration(StringView source_code, LinearLocation linear_loc_ofs = 0);
 
 } // namespace cpp
 } // namespace ply

@@ -11,22 +11,22 @@
 namespace ply {
 
 template <typename Encoding>
-void writeText(OutStream& out, CPUTimer::Duration duration){};
+void write_text(OutStream& out, CPUTimer::Duration duration){};
 
 struct LogChannel {
-    StringView channelName;
-    static CPUTimer::Point startTime;
+    StringView channel_name;
+    static CPUTimer::Point start_time;
     static CPUTimer::Converter converter;
 
     struct LineHandler {
         MemOutStream mout;
-        PLY_DLL_ENTRY LineHandler(StringView channelName);
+        PLY_DLL_ENTRY LineHandler(StringView channel_name);
         PLY_DLL_ENTRY ~LineHandler();
     };
 
     template <typename... Args>
     PLY_INLINE void log(const char* fmt, const Args&... args) {
-        LineHandler lh{channelName};
+        LineHandler lh{channel_name};
         lh.mout.format(fmt, args...);
     }
 };

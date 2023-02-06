@@ -16,11 +16,11 @@ namespace ply {
 
 PLY_DLL_ENTRY extern TypeKey TypeKey_Struct;
 
-PLY_DLL_ENTRY NativeBindings& getNativeBindings_SynthesizedStruct();
-PLY_DLL_ENTRY MethodTable getMethodTable_Struct();
+PLY_DLL_ENTRY NativeBindings& get_native_bindings_synthesized_struct();
+PLY_DLL_ENTRY MethodTable get_method_table_struct();
 
 struct TypeDescriptor_Struct : TypeDescriptor {
-    PLY_DLL_ENTRY static TypeKey* typeKey;
+    PLY_DLL_ENTRY static TypeKey* type_key;
     struct TemplateParam {
         String name;
         TypeDescriptor* type;
@@ -32,41 +32,45 @@ struct TypeDescriptor_Struct : TypeDescriptor {
     };
 
     String name;
-    Array<TemplateParam> templateParams;
+    Array<TemplateParam> template_params;
     Array<Member> members;
 
-    // Use expression SFINAE to invoke the object's onPostSerialize() function, if present:
+    // Use expression SFINAE to invoke the object's on_post_serialize() function, if
+    // present:
     template <class T>
-    static PLY_INLINE auto invokePostSerialize(T* obj) -> decltype(obj->onPostSerialize()) {
-        return obj->onPostSerialize();
+    static PLY_INLINE auto invoke_post_serialize(T* obj)
+        -> decltype(obj->on_post_serialize()) {
+        return obj->on_post_serialize();
     }
-    static PLY_INLINE void invokePostSerialize(...) {
+    static PLY_INLINE void invoke_post_serialize(...) {
     }
-    void (*onPostSerialize)(void* data) = [](void*) {};
+    void (*on_post_serialize)(void* data) = [](void*) {};
 
     // Constructor for synthesized TypeDescriptor_Struct:
-    PLY_INLINE TypeDescriptor_Struct(u32 fixedSize, u32 alignment, StringView name)
-        : TypeDescriptor{&TypeKey_Struct, fixedSize, alignment,
-                         getNativeBindings_SynthesizedStruct() PLY_METHOD_TABLES_ONLY(, getMethodTable_Struct())},
+    PLY_INLINE TypeDescriptor_Struct(u32 fixed_size, u32 alignment, StringView name)
+        : TypeDescriptor{&TypeKey_Struct, fixed_size, alignment,
+                         get_native_bindings_synthesized_struct()
+                             PLY_METHOD_TABLES_ONLY(, get_method_table_struct())},
           name{name} {
     }
     // Constructor for TypeDescriptor_Struct of an existing C++ class:
     template <class T>
-    PLY_INLINE TypeDescriptor_Struct(T* typedArg, StringView name,
+    PLY_INLINE TypeDescriptor_Struct(T* typed_arg, StringView name,
                                      std::initializer_list<Member> members = {})
-        : TypeDescriptor{&TypeKey_Struct, typedArg,
-                         NativeBindings::make<T>() PLY_METHOD_TABLES_ONLY(, getMethodTable_Struct())},
+        : TypeDescriptor{&TypeKey_Struct, typed_arg,
+                         NativeBindings::make<T>()
+                             PLY_METHOD_TABLES_ONLY(, get_method_table_struct())},
           name{name}, members{members} {
-        onPostSerialize = [](void* data) { invokePostSerialize((T*) data); };
+        on_post_serialize = [](void* data) { invoke_post_serialize((T*) data); };
     }
 
-    PLY_INLINE void appendMember(StringView name, TypeDescriptor* type) {
+    PLY_INLINE void append_member(StringView name, TypeDescriptor* type) {
         // FIXME: Handle alignment
-        members.append({name, fixedSize, type});
-        fixedSize += type->fixedSize;
+        members.append({name, fixed_size, type});
+        fixed_size += type->fixed_size;
     }
 
-    PLY_NO_INLINE const Member* findMember(StringView name) const {
+    PLY_NO_INLINE const Member* find_member(StringView name) const {
         for (const Member& member : members) {
             if (member.name == name)
                 return &member;
@@ -84,23 +88,23 @@ struct Initializer {
 // clang-format off
 #define PLY_REFLECT(...) \
     template <typename> friend struct ply::TypeDescriptorSpecializer; \
-    static __VA_ARGS__ ply::TypeDescriptor* bindTypeDescriptor(); \
-    static ply::Initializer initTypeDescriptor; \
-    static void initTypeDescriptorMembers();
+    static __VA_ARGS__ ply::TypeDescriptor* bind_type_descriptor(); \
+    static ply::Initializer init_type_descriptor; \
+    static void init_type_descriptor_members();
 
 #define PLY_STRUCT_BEGIN(type) \
-    PLY_NO_INLINE ply::TypeDescriptor* type::bindTypeDescriptor() { \
-        static ply::TypeDescriptor_Struct typeDesc{(type*) nullptr, #type}; \
-        return &typeDesc; \
+    PLY_NO_INLINE ply::TypeDescriptor* type::bind_type_descriptor() { \
+        static ply::TypeDescriptor_Struct type_desc{(type*) nullptr, #type}; \
+        return &type_desc; \
     } \
-    ply::Initializer type::initTypeDescriptor{type::initTypeDescriptorMembers}; \
-    void type::initTypeDescriptorMembers() { \
+    ply::Initializer type::init_type_descriptor{type::init_type_descriptor_members}; \
+    void type::init_type_descriptor_members() { \
         using T = type; \
         PLY_UNUSED((T*) nullptr); \
-        T::bindTypeDescriptor()->cast<ply::TypeDescriptor_Struct>()->members = {
+        T::bind_type_descriptor()->cast<ply::TypeDescriptor_Struct>()->members = {
 
 #define PLY_STRUCT_MEMBER(name) \
-            {#name, PLY_MEMBER_OFFSET(T, name), ply::getTypeDescriptor<decltype(T::name)>()},
+            {#name, PLY_MEMBER_OFFSET(T, name), ply::get_type_descriptor<decltype(T::name)>()},
 
 #define PLY_STRUCT_END() \
         }; \
@@ -108,15 +112,15 @@ struct Initializer {
 
 #define PLY_STRUCT_BEGIN_PRIM(type) \
     PLY_DEFINE_TYPE_DESCRIPTOR(type) { \
-        static ply::TypeDescriptor_Struct typeDesc{(type*) nullptr, #type}; \
-        return &typeDesc; \
+        static ply::TypeDescriptor_Struct type_desc{(type*) nullptr, #type}; \
+        return &type_desc; \
     } \
-    static void PLY_UNIQUE_VARIABLE(initTypeDescriptor_)(); \
-    ply::Initializer PLY_UNIQUE_VARIABLE(initTypeDescriptorCaller_){PLY_UNIQUE_VARIABLE(initTypeDescriptor_)}; \
-    static void PLY_UNIQUE_VARIABLE(initTypeDescriptor_)() { \
+    static void PLY_UNIQUE_VARIABLE(init_type_descriptor_)(); \
+    ply::Initializer PLY_UNIQUE_VARIABLE(init_type_descriptor_caller_){PLY_UNIQUE_VARIABLE(init_type_descriptor_)}; \
+    static void PLY_UNIQUE_VARIABLE(init_type_descriptor_)() { \
         using T = type; \
         PLY_UNUSED((T*) nullptr); \
-        ply::getTypeDescriptor<T>()->cast<ply::TypeDescriptor_Struct>()->members = {
+        ply::get_type_descriptor<T>()->cast<ply::TypeDescriptor_Struct>()->members = {
 
 #define PLY_STRUCT_END_PRIM() \
         }; \

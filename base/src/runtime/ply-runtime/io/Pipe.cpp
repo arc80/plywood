@@ -37,12 +37,12 @@ void OutPipe::seek(s64 offset, SeekDirection dir) {
 }
 
 bool fill_buffer(MutStringView to_buf, InPipe* from_pipe) {
-    while (to_buf.numBytes > 0) {
+    while (to_buf.num_bytes > 0) {
         u32 rc = from_pipe->read(to_buf);
         if (rc == 0)
             return false;
-        PLY_ASSERT(rc <= to_buf.numBytes);
-        to_buf.offsetHead(rc);
+        PLY_ASSERT(rc <= to_buf.num_bytes);
+        to_buf.offset_head(rc);
     }
     return true;
 }

@@ -10,7 +10,7 @@
 
 namespace ply {
 
-NativeBindings& getNativeBindings_Reference() {
+NativeBindings& get_native_bindings_reference() {
     static NativeBindings bindings{
         // create
         [](TypeDescriptor*) -> AnyObject {
@@ -19,11 +19,12 @@ NativeBindings& getNativeBindings_Reference() {
         },
         // destroy
         [](AnyObject obj) {
-            TypeDescriptor_Reference* referenceType = obj.type->cast<TypeDescriptor_Reference>();
+            TypeDescriptor_Reference* reference_type =
+                obj.type->cast<TypeDescriptor_Reference>();
             // Note: This is type punning Reference<T> with void*
             void* target = *(void**) obj.data;
             if (target) {
-                referenceType->decRef(target);
+                reference_type->dec_ref(target);
             }
             Heap.free(obj.data);
         },
@@ -34,21 +35,23 @@ NativeBindings& getNativeBindings_Reference() {
         },
         // destruct
         [](AnyObject obj) {
-            TypeDescriptor_Reference* referenceType = obj.type->cast<TypeDescriptor_Reference>();
+            TypeDescriptor_Reference* reference_type =
+                obj.type->cast<TypeDescriptor_Reference>();
             // Note: This is type punning Reference<T> with void*
             void* target = *(void**) obj.data;
             if (target) {
-                referenceType->decRef(target);
+                reference_type->dec_ref(target);
             }
         },
         // move
         [](AnyObject dst, AnyObject src) {
             PLY_ASSERT(dst.type == src.type);
-            TypeDescriptor_Reference* referenceType = dst.type->cast<TypeDescriptor_Reference>();
+            TypeDescriptor_Reference* reference_type =
+                dst.type->cast<TypeDescriptor_Reference>();
             // Note: This is type punning Reference<T> with void*
-            void* prevTarget = *(void**) dst.data;
-            if (prevTarget) {
-                referenceType->decRef(prevTarget);
+            void* prev_target = *(void**) dst.data;
+            if (prev_target) {
+                reference_type->dec_ref(prev_target);
             }
             *(void**) dst.data = *(void**) src.data;
             *(void**) src.data = nullptr;

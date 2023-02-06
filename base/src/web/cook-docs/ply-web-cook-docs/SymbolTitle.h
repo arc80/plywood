@@ -34,13 +34,14 @@ enum class ParseTitleError {
     NumErrors,
 };
 
-Array<TitleSpan> parseTitle(
-    StringView srcText,
-    const Functor<void(ParseTitleError err, StringView arg, const char* loc)>& errorCallback);
-void writeParseTitleError(OutStream* outs, ParseTitleError err, StringView arg);
-void writeAltMemberTitle(OutStream& htmlWriter, ArrayView<const TitleSpan> spans,
-                         const LookupContext& lookupCtx,
-                         String (*getLinkDestination)(StringView, const LookupContext&));
+Array<TitleSpan> parse_title(StringView src_text,
+                             const Functor<void(ParseTitleError err, StringView arg,
+                                                const char* loc)>& error_callback);
+void write_parse_title_error(OutStream* outs, ParseTitleError err, StringView arg);
+void write_alt_member_title(OutStream& html_writer, ArrayView<const TitleSpan> spans,
+                            const LookupContext& lookup_ctx,
+                            String (*get_link_destination)(StringView,
+                                                           const LookupContext&));
 
 } // namespace docs
 } // namespace ply

@@ -33,45 +33,46 @@ struct Preprocessor {
 
         PLY_REFLECT()
         Type type = Unknown;
-        LinearLocation linearLoc = -1;
-        LinearLocation otherLoc = -1;
+        LinearLocation linear_loc = -1;
+        LinearLocation other_loc = -1;
         // ply reflect off
 
-        PLY_INLINE Error(Type type, LinearLocation linearLoc, LinearLocation otherLoc = -1)
-            : type{type}, linearLoc{linearLoc}, otherLoc{otherLoc} {
+        PLY_INLINE Error(Type type, LinearLocation linear_loc,
+                         LinearLocation other_loc = -1)
+            : type{type}, linear_loc{linear_loc}, other_loc{other_loc} {
         }
-        virtual void writeMessage(OutStream& out,
-                                  const PPVisitedFiles* visitedFiles) const override;
+        virtual void write_message(OutStream& out,
+                                   const PPVisitedFiles* visited_files) const override;
     };
 
-    Func<void(Owned<BaseError>&&)> errorHandler;
-    PPVisitedFiles* visitedFiles = nullptr;
+    Func<void(Owned<BaseError>&&)> error_handler;
+    PPVisitedFiles* visited_files = nullptr;
 
     struct StackItem {
-        u32 includeChainIdx = 0;
+        u32 include_chain_idx = 0;
         ViewInStream in;
     };
     Array<StackItem> stack;
-    LinearLocation linearLocAtEndOfStackTop = -1;
+    LinearLocation linear_loc_at_end_of_stack_top = -1;
     Map<StringView, u32> macros;
 
-    bool tokenizeCloseAnglesOnly = false;
-    bool atStartOfLine = true;
+    bool tokenize_close_angles_only = false;
+    bool at_start_of_line = true;
 
     // This member is only valid when a token type of Macro is returned.
-    // It'll remain valid until the next call to readToken.
-    Array<Token> macroArgs;
+    // It'll remain valid until the next call to read_token.
+    Array<Token> macro_args;
 
-    Func<void(StringView directive)> includeCallback;
+    Func<void(StringView directive)> include_callback;
 
     PLY_INLINE void error(Error&& err) {
-        this->errorHandler(new Error{std::move(err)});
+        this->error_handler(new Error{std::move(err)});
     }
 };
 
-Token readToken(Preprocessor* pp);
-void addPPDef(Preprocessor* pp, StringView identifier, StringView expansion,
-              bool takesArgs = false);
+Token read_token(Preprocessor* pp);
+void add_ppdef(Preprocessor* pp, StringView identifier, StringView expansion,
+               bool takes_args = false);
 
 } // namespace cpp
 

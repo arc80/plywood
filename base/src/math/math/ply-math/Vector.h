@@ -22,12 +22,12 @@ A vector with two floating-point components `x` and `y`.
 */
 struct Float2 {
     /*!
-    \beginGroup
+    \begin_group
     */
     float x;
     float y;
     /*!
-    \endGroup
+    \end_group
     */
 
     /*!
@@ -79,21 +79,22 @@ struct Float2 {
         return sqrtf(length2());
     }
     /*!
-    Returns `true` if the squared length of the vector is sufficiently close to 1.0. The threshold
-    is given by `thresh`.
+    Returns `true` if the squared length of the vector is sufficiently close to 1.0. The
+    threshold is given by `thresh`.
     */
-    PLY_INLINE bool isUnit(float thresh = 0.001f) const {
+    PLY_INLINE bool is_unit(float thresh = 0.001f) const {
         return fabsf(1.f - length2()) < thresh;
     }
     /*!
-    Returns a unit-length vector having the same direction as `this`. No safety check is performed.
+    Returns a unit-length vector having the same direction as `this`. No safety check is
+    performed.
     */
     PLY_NO_DISCARD Float2 normalized() const;
     /*!
     Returns a unit-length vector having the same direction as `this` with safety checks.
     */
-    PLY_NO_DISCARD Float2 safeNormalized(const Float2& fallback = {1, 0},
-                                         float epsilon = 1e-20f) const;
+    PLY_NO_DISCARD Float2 safe_normalized(const Float2& fallback = {1, 0},
+                                          float epsilon = 1e-20f) const;
     /*!
     \category Conversion Functions
     Converts to another 2D vector type such as `IntVec2` or `Int2<s16>`.
@@ -109,9 +110,9 @@ struct Float2 {
     }
     /*!
     \category Color Functions
-    \beginGroup
-    Convenience functions for interpreting the vector as a color. The `r()` and `g()` functions are
-    aliases for the `x` and `y` components respectively.
+    \begin_group
+    Convenience functions for interpreting the vector as a color. The `r()` and `g()`
+    functions are aliases for the `x` and `y` components respectively.
 
         Float4 c = {1.0f, 0.8f};
         Console.out().format("{}, {}", c.r(), c.g());  // "1.0, 0.8"
@@ -129,34 +130,34 @@ struct Float2 {
         return y;
     }
     /*!
-    \endGroup
+    \end_group
     */
     /*!
     \category Swizzle Functions
-    \beginGroup
-    Returns a new vector whose components are taken from the given indices. `x` and `y` are at
-    indices 0 and 1 respectively. Similar to [GLSL
-    swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except that the
-    components are specified by numeric index, and you can't use it to modify the original vector;
-    only to read from it.
+    \begin_group
+    Returns a new vector whose components are taken from the given indices. `x` and `y`
+    are at indices 0 and 1 respectively. Similar to [GLSL
+    swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except
+    that the components are specified by numeric index, and you can't use it to modify
+    the original vector; only to read from it.
 
         Float2 v = {4, 5};
         Console::out() << v.swizzle(1, 0);        // "{5, 4}"
         Console::out() << v.swizzle(0, 1, 1, 0);  // "{4, 5, 5, 4}"
 
-    These functions work correctly in the current version of all major compilers even though they
-    use type punning, which is undefined behavior in standard C++.
+    These functions work correctly in the current version of all major compilers even
+    though they use type punning, which is undefined behavior in standard C++.
     */
     PLY_INLINE PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
     PLY_INLINE PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
     PLY_INLINE PLY_NO_DISCARD Float4 swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const;
     /*!
-    \endGroup
+    \end_group
     */
 };
 
 /*!
-\addToClass Float2
+\add_to_class Float2
 \category Arithmetic Operators
 Unary negation.
 */
@@ -164,14 +165,14 @@ PLY_INLINE Float2 operator-(const Float2& a) {
     return {-a.x, -a.y};
 }
 /*!
-\beginGroup
+\begin_group
 Returns a vector whose components are the result of applying the given operation to the
 corresponding components of `a` and `b`. Each component is acted on independently.
 
     Console::out() << Float2{2, 3} * Float2{4, 1};  // "{8, 3}"
 
-If you specify a scalar value in place of a `Float2`, it will be promoted to a `Float2` by
-replicating the value to each component.
+If you specify a scalar value in place of a `Float2`, it will be promoted to a `Float2`
+by replicating the value to each component.
 
     Console::out() << Float2{2, 3} * 2;  // "{4, 6}"
     Console::out() << 8 / Float2{2, 4};  // "{4, 2}"
@@ -189,14 +190,14 @@ PLY_INLINE Float2 operator/(const Float2& a, const Float2& b) {
     return {a.x / b.x, a.y / b.y};
 }
 /*!
-\endGroup
+\end_group
 */
 PLY_INLINE Float2 operator/(const Float2& a, float b) {
     float oob = 1.f / b;
     return {a.x * oob, a.y * oob};
 }
 /*!
-\beginGroup
+\begin_group
 In-place versions of the above operators.
 
     Float2 v = {2, 3};
@@ -220,7 +221,7 @@ PLY_INLINE void operator/=(Float2& a, const Float2& b) {
     a.y /= b.y;
 }
 /*!
-\endGroup
+\end_group
 */
 PLY_INLINE void operator/=(Float2& a, float b) {
     float oob = 1.f / b;
@@ -246,8 +247,8 @@ PLY_INLINE float cross(const Float2& a, const Float2& b) {
 }
 /*!
 \category Componentwise Functions
-Returns a copy of `v` with each component constrained to lie within the range determined by the
-corresponding components of `mins` and `maxs`.
+Returns a copy of `v` with each component constrained to lie within the range determined
+by the corresponding components of `mins` and `maxs`.
 
     Float2 v = {3, 1.5f};
     Console::out() << clamp(v, Float2{0, 1}, Float2{1, 2});  // "{1, 1.5}"
@@ -257,8 +258,8 @@ PLY_INLINE Float2 clamp(const Float2& v, const Float2& mins, const Float2& maxs)
     return {clamp(v.x, mins.x, maxs.x), clamp(v.y, mins.y, maxs.y)};
 }
 /*!
-Returns a vector with each component set to the absolute value of the corresponding component of
-`a`.
+Returns a vector with each component set to the absolute value of the corresponding
+component of `a`.
 
     Console::out() << abs(Float2{-2, 3});  // "{2, 3}"
 */
@@ -266,8 +267,8 @@ PLY_INLINE Float2 abs(const Float2& a) {
     return {fabsf(a.x), fabsf(a.y)};
 }
 /*!
-Returns a vector with each component set to the corresponding component of `a` raised to the power
-of the corresponding component of `b`.
+Returns a vector with each component set to the corresponding component of `a` raised to
+the power of the corresponding component of `b`.
 
     Console::out() << pow(Float2{1, 2}, Float2{2, 3});  // "{1, 8}"
     Console::out() << pow(Float2{1, 2}, 2);             // "{1, 4}"
@@ -276,7 +277,8 @@ PLY_INLINE Float2 pow(const Float2& a, const Float2& b) {
     return {powf(a.x, b.x), powf(a.y, b.y)};
 }
 /*!
-Returns a vector with each component set to minimum of the corresponding components of `a` and `b`.
+Returns a vector with each component set to minimum of the corresponding components of
+`a` and `b`.
 
     Console::out() << min(Float2{0, 1}, Float2{1, 0});  // "{0, 0}"
 */
@@ -284,7 +286,8 @@ PLY_INLINE Float2 min(const Float2& a, const Float2& b) {
     return {min(a.x, b.x), min(a.y, b.y)};
 }
 /*!
-Returns a vector with each component set to maximum of the corresponding components of `a` and `b`.
+Returns a vector with each component set to maximum of the corresponding components of
+`a` and `b`.
 
     Console::out() << max(Float2{0, 1}, Float2{1, 0});  // "{1, 1}"
 */
@@ -293,9 +296,9 @@ PLY_INLINE Float2 max(const Float2& a, const Float2& b) {
 }
 /*!
 \category Comparison Functions
-\beginGroup
-Returns `true` if the vectors are equal (or not equal) using floating-point comparison. In
-particular, `Float2{0.f} == Float2{-0.f}` is `true`.
+\begin_group
+Returns `true` if the vectors are equal (or not equal) using floating-point comparison.
+In particular, `Float2{0.f} == Float2{-0.f}` is `true`.
 */
 PLY_INLINE bool operator==(const Float2& a, const Float2& b) {
     return a.x == b.x && a.y == b.y;
@@ -304,27 +307,28 @@ PLY_INLINE bool operator!=(const Float2& a, const Float2& b) {
     return !(a == b);
 }
 /*!
-\endGroup
+\end_group
 */
 /*!
-Returns `true` if `a` is approximately equal to `b`. The tolerance is given by `epsilon`.
+Returns `true` if `a` is approximately equal to `b`. The tolerance is given by
+`epsilon`.
 
     Float2 v = {0.9999f, 0.0001f};
-    Console::out() << isNear(v, Float2{1, 0}, 1e-3f);  // "true"
+    Console::out() << is_near(v, Float2{1, 0}, 1e-3f);  // "true"
 */
-PLY_INLINE bool isNear(const Float2& a, const Float2& b, float epsilon) {
+PLY_INLINE bool is_near(const Float2& a, const Float2& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
 }
 /*!
-\beginGroup
-These functions compare each component individually. The result of each comparison is returned in
-a `Bool2`. Call `all()` to check if the result was `true` for all components, or call `any()` to
-check if the result was `true` for any component.
+\begin_group
+These functions compare each component individually. The result of each comparison is
+returned in a `Bool2`. Call `all()` to check if the result was `true` for all
+components, or call `any()` to check if the result was `true` for any component.
 
     Console::out() << all(Float2{1, 2} > Float2{0, 1});  // "true"
 
-These functions are useful for testing whether a point is inside a box. See the implementation of
-`Box<>::contains` for an example.
+These functions are useful for testing whether a point is inside a box. See the
+implementation of `Box<>::contains` for an example.
 */
 PLY_INLINE Bool2 operator<(const Float2& a, const Float2& b) {
     return {a.x < b.x, a.y < b.y};
@@ -339,39 +343,41 @@ PLY_INLINE Bool2 operator>=(const Float2& a, const Float2& b) {
     return {a.x >= b.x, a.y >= b.y};
 }
 /*!
-\endGroup
+\end_group
 */
 /*!
 \category Rounding Functions
-\beginGroup
-Returns a vector with each component set to the rounded result of the corresponding component of
-`vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
-`spacing` is a power of 2.
+\begin_group
+Returns a vector with each component set to the rounded result of the corresponding
+component of `vec`. The optional `spacing` argument can be used to round to arbitrary
+spacings. Most precise when `spacing` is a power of 2.
 
-    Console::out() << roundUp(Float2{-0.3f, 1.4f});   // "{0, 2}"
-    Console::out() << roundDown(Float2{1.8f}, 0.5f);  // "{1.5, 1.5}"
+    Console::out() << round_up(Float2{-0.3f, 1.4f});   // "{0, 2}"
+    Console::out() << round_down(Float2{1.8f}, 0.5f);  // "{1.5, 1.5}"
 */
-PLY_INLINE Float2 roundUp(const Float2& value, float spacing = 1) {
-    return {roundUp(value.x, spacing), roundUp(value.y, spacing)};
+PLY_INLINE Float2 round_up(const Float2& value, float spacing = 1) {
+    return {round_up(value.x, spacing), round_up(value.y, spacing)};
 }
-PLY_INLINE Float2 roundDown(const Float2& value, float spacing = 1) {
-    return {roundDown(value.x, spacing), roundDown(value.y, spacing)};
+PLY_INLINE Float2 round_down(const Float2& value, float spacing = 1) {
+    return {round_down(value.x, spacing), round_down(value.y, spacing)};
 }
-PLY_INLINE Float2 roundNearest(const Float2& value, float spacing = 1) {
-    // Good to let the compiler see the spacing so it can optimize the divide by constant
-    return {roundNearest(value.x, spacing), roundNearest(value.y, spacing)};
+PLY_INLINE Float2 round_nearest(const Float2& value, float spacing = 1) {
+    // Good to let the compiler see the spacing so it can optimize the divide by
+    // constant
+    return {round_nearest(value.x, spacing), round_nearest(value.y, spacing)};
 }
 /*!
-\endGroup
+\end_group
 */
 /*!
-Returns `true` if every component of `vec` is already rounded. The optional `spacing` argument can
-be used to round to arbitrary spacings. Most precise when `spacing` is a power of 2.
+Returns `true` if every component of `vec` is already rounded. The optional `spacing`
+argument can be used to round to arbitrary spacings. Most precise when `spacing` is a
+power of 2.
 
-    Console::out() << isRounded(Float2{1.5f, 2.5f}, 0.5f);  // "true"
+    Console::out() << is_rounded(Float2{1.5f, 2.5f}, 0.5f);  // "true"
 */
-PLY_INLINE bool isRounded(const Float2& value, float spacing = 1) {
-    return roundNearest(value, spacing) == value;
+PLY_INLINE bool is_rounded(const Float2& value, float spacing = 1) {
+    return round_nearest(value, spacing) == value;
 }
 
 //------------------------------------------------------------------------------------------------
@@ -380,13 +386,13 @@ A vector with three floating-point components `x`, `y` and `z`.
 */
 struct Float3 {
     /*!
-    \beginGroup
+    \begin_group
     */
     float x;
     float y;
     float z;
     /*!
-    \endGroup
+    \end_group
     */
 
     /*!
@@ -450,30 +456,31 @@ struct Float3 {
         return sqrtf(length2());
     }
     /*!
-    Returns `true` if the squared length of the vector is sufficiently close to 1.0. The threshold
-    is given by `thresh`.
+    Returns `true` if the squared length of the vector is sufficiently close to 1.0. The
+    threshold is given by `thresh`.
     */
-    PLY_INLINE bool isUnit(float thresh = 0.001f) const {
+    PLY_INLINE bool is_unit(float thresh = 0.001f) const {
         return fabsf(1.f - length2()) < thresh;
     }
     /*!
-    Returns a unit-length vector having the same direction as `this`. No safety check is performed.
+    Returns a unit-length vector having the same direction as `this`. No safety check is
+    performed.
     */
     PLY_NO_DISCARD Float3 normalized() const;
     /*!
     Returns a unit-length vector having the same direction as `this` with safety checks.
     */
-    PLY_NO_DISCARD Float3 safeNormalized(const Float3& fallback = {1, 0, 0},
-                                         float epsilon = 1e-20f) const;
+    PLY_NO_DISCARD Float3 safe_normalized(const Float3& fallback = {1, 0, 0},
+                                          float epsilon = 1e-20f) const;
     /*!
     \category Conversion Functions
-    Returns a const reference to the first two components as a `Float2` using type punning. This
-    should only be used as a temporary expression.
+    Returns a const reference to the first two components as a `Float2` using type
+    punning. This should only be used as a temporary expression.
 
         Float3 v = {4, 5, 6};
-        Console::out() << v.asFloat2();  // "{4, 5}"
+        Console::out() << v.as_float2();  // "{4, 5}"
     */
-    PLY_INLINE const Float2& asFloat2() const {
+    PLY_INLINE const Float2& as_float2() const {
         PLY_PUN_SCOPE
         return reinterpret_cast<const Float2&>(*this);
     }
@@ -491,9 +498,9 @@ struct Float3 {
     }
     /*!
     \category Color Functions
-    \beginGroup
-    Convenience functions for interpreting the vector as a color. The `r()`, `g()` and `b()`
-    functions are aliases for the `x`, `y` and `z` components respectively.
+    \begin_group
+    Convenience functions for interpreting the vector as a color. The `r()`, `g()` and
+    `b()` functions are aliases for the `x`, `y` and `z` components respectively.
 
         Float3 c = {1.0f, 0.8f, 0.7f};
         Console.out().format("{}, {}, {}", c.r(), c.g(), c.b());  // "1.0, 0.8, 0.7"
@@ -517,34 +524,34 @@ struct Float3 {
         return z;
     }
     /*!
-    \endGroup
+    \end_group
     */
     /*!
     \category Swizzle Functions
-    \beginGroup
-    Returns a new vector whose components are taken from the given indices. `x`, `y` and `z` are at
-    indices 0, 1 and 2 respectively. Similar to [GLSL
-    swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except that the
-    components are specified by numeric index, and you can't use it to modify the original vector;
-    only to read from it.
+    \begin_group
+    Returns a new vector whose components are taken from the given indices. `x`, `y` and
+    `z` are at indices 0, 1 and 2 respectively. Similar to [GLSL
+    swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except
+    that the components are specified by numeric index, and you can't use it to modify
+    the original vector; only to read from it.
 
         Float3 v = {4, 5, 6};
         Console::out() << v.swizzle(1, 0);        // "{5, 4}"
         Console::out() << v.swizzle(2, 0, 2, 1);  // "{6, 4, 6, 5}"
 
-    These functions work correctly in the current version of all major compilers even though they
-    use type punning, which is undefined behavior in standard C++.
+    These functions work correctly in the current version of all major compilers even
+    though they use type punning, which is undefined behavior in standard C++.
     */
     PLY_INLINE PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
     PLY_INLINE PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
     PLY_INLINE PLY_NO_DISCARD Float4 swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const;
     /*!
-    \endGroup
+    \end_group
     */
 };
 
 /*!
-\addToClass Float3
+\add_to_class Float3
 \category Arithmetic Operators
 Unary negation.
 */
@@ -552,14 +559,14 @@ PLY_INLINE Float3 operator-(const Float3& a) {
     return {-a.x, -a.y, -a.z};
 }
 /*!
-\beginGroup
+\begin_group
 Returns a vector whose components are the result of applying the given operation to the
 corresponding components of `a` and `b`. Each component is acted on independently.
 
     Console::out() << Float3{2, 3, 2} * Float3{4, 1, 2};  // "{8, 3, 4}"
 
-If you specify a scalar value in place of a `Float3`, it will be promoted to a `Float3` by
-replicating the value to each component.
+If you specify a scalar value in place of a `Float3`, it will be promoted to a `Float3`
+by replicating the value to each component.
 
     Console::out() << Float3{2, 3, 2} * 2;  // "{4, 6, 4}"
     Console::out() << 8 / Float3{2, 4, 1};  // "{4, 2, 8}"
@@ -577,14 +584,14 @@ PLY_INLINE Float3 operator/(const Float3& a, const Float3& b) {
     return {a.x / b.x, a.y / b.y, a.z / b.z};
 }
 /*!
-\endGroup
+\end_group
 */
 PLY_INLINE Float3 operator/(const Float3& a, float b) {
     float oob = 1.f / b;
     return {a.x * oob, a.y * oob, a.z * oob};
 }
 /*!
-\beginGroup
+\begin_group
 In-place versions of the above operators.
 
     Float3 v = {2, 3, 2};
@@ -612,7 +619,7 @@ PLY_INLINE void operator/=(Float3& a, const Float3& b) {
     a.z /= b.z;
 }
 /*!
-\endGroup
+\end_group
 */
 PLY_INLINE void operator/=(Float3& a, float b) {
     float oob = 1.f / b;
@@ -637,8 +644,8 @@ Returns the cross product of two vectors.
 Float3 cross(const Float3& a, const Float3& b);
 /*!
 \category Componentwise Functions
-Returns a copy of `v` with each component constrained to lie within the range determined by the
-corresponding components of `mins` and `maxs`.
+Returns a copy of `v` with each component constrained to lie within the range determined
+by the corresponding components of `mins` and `maxs`.
 
     Float3 v = {3, 1.5f, 0};
     Console::out() << clamp(v, Float3{0, 1, 2}, Float3{1, 2, 3});  // "{1, 1.5, 2}"
@@ -646,8 +653,8 @@ corresponding components of `mins` and `maxs`.
 */
 Float3 clamp(const Float3& v, const Float3& mins, const Float3& maxs);
 /*!
-Returns a vector with each component set to the absolute value of the corresponding component of
-`a`.
+Returns a vector with each component set to the absolute value of the corresponding
+component of `a`.
 
     Console::out() << abs(Float3{-2, 3, 0});  // "{2, 3, 0}"
 */
@@ -655,15 +662,16 @@ PLY_INLINE Float3 abs(const Float3& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z)};
 }
 /*!
-Returns a vector with each component set to the corresponding component of `a` raised to the power
-of the corresponding component of `b`.
+Returns a vector with each component set to the corresponding component of `a` raised to
+the power of the corresponding component of `b`.
 
     Console::out() << pow(Float3{1, 2, 2}, Float3{2, 3, 1});  // "{1, 8, 2}"
     Console::out() << pow(Float3{1, 2, 3}, 2);                // "{1, 4, 9}"
 */
 Float3 pow(const Float3& a, const Float3& b);
 /*!
-Returns a vector with each component set to minimum of the corresponding components of `a` and `b`.
+Returns a vector with each component set to minimum of the corresponding components of
+`a` and `b`.
 
     Console::out() << min(Float3{0, 1, 0}, Float3{1, 0, 1});  // "{0, 0, 0}"
 */
@@ -671,7 +679,8 @@ PLY_INLINE Float3 min(const Float3& a, const Float3& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)};
 }
 /*!
-Returns a vector with each component set to maximum of the corresponding components of `a` and `b`.
+Returns a vector with each component set to maximum of the corresponding components of
+`a` and `b`.
 
     Console::out() << max(Float3{0, 1, 0}, Float3{1, 0, 1});  // "{1, 1, 1}"
 */
@@ -680,9 +689,9 @@ PLY_INLINE Float3 max(const Float3& a, const Float3& b) {
 }
 /*!
 \category Comparison Functions
-\beginGroup
-Returns `true` if the vectors are equal (or not equal) using floating-point comparison. In
-particular, `Float3{0.f} == Float3{-0.f}` is `true`.
+\begin_group
+Returns `true` if the vectors are equal (or not equal) using floating-point comparison.
+In particular, `Float3{0.f} == Float3{-0.f}` is `true`.
 */
 PLY_INLINE bool operator==(const Float3& a, const Float3& b) {
     return a.x == b.x && a.y == b.y && a.z == b.z;
@@ -691,27 +700,28 @@ PLY_INLINE bool operator!=(const Float3& a, const Float3& b) {
     return !(a == b);
 }
 /*!
-\endGroup
+\end_group
 */
 /*!
-Returns `true` if `a` is approximately equal to `b`. The tolerance is given by `epsilon`.
+Returns `true` if `a` is approximately equal to `b`. The tolerance is given by
+`epsilon`.
 
     Float3 v = {0.9999f, 0.0001f, 1.9999f};
-    Console::out() << isNear(v, Float3{1, 0, 2}, 1e-3f);  // "true"
+    Console::out() << is_near(v, Float3{1, 0, 2}, 1e-3f);  // "true"
 */
-PLY_INLINE bool isNear(const Float3& a, const Float3& b, float epsilon) {
+PLY_INLINE bool is_near(const Float3& a, const Float3& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
 }
 /*!
-\beginGroup
-These functions compare each component individually. The result of each comparison is returned in
-a `Bool3`. Call `all()` to check if the result was `true` for all components, or call `any()` to
-check if the result was `true` for any component.
+\begin_group
+These functions compare each component individually. The result of each comparison is
+returned in a `Bool3`. Call `all()` to check if the result was `true` for all
+components, or call `any()` to check if the result was `true` for any component.
 
     Console::out() << all(Float3{1, 2, 3} > Float3{0, 1, 2});  // "true"
 
-These functions are useful for testing whether a point is inside a box. See the implementation of
-`Box<>::contains` for an example.
+These functions are useful for testing whether a point is inside a box. See the
+implementation of `Box<>::contains` for an example.
 */
 PLY_INLINE Bool3 operator<(const Float3& a, const Float3& b) {
     return {a.x < b.x, a.y < b.y, a.z < b.z};
@@ -726,39 +736,42 @@ PLY_INLINE Bool3 operator>=(const Float3& a, const Float3& b) {
     return {a.x >= b.x, a.y >= b.y, a.z >= b.z};
 }
 /*!
-\endGroup
+\end_group
 */
 /*!
 \category Rounding Functions
-\beginGroup
-Returns a vector with each component set to the rounded result of the corresponding component of
-`vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
-`spacing` is a power of 2.
+\begin_group
+Returns a vector with each component set to the rounded result of the corresponding
+component of `vec`. The optional `spacing` argument can be used to round to arbitrary
+spacings. Most precise when `spacing` is a power of 2.
 
-    Console::out() << roundUp(Float3{-0.3f, 1.4f, 0.8f});  // "{0, 2, 1}"
-    Console::out() << roundDown(Float3{1.8f}, 0.5f);       // "{1.5, 1.5, 1.5}"
+    Console::out() << round_up(Float3{-0.3f, 1.4f, 0.8f});  // "{0, 2, 1}"
+    Console::out() << round_down(Float3{1.8f}, 0.5f);       // "{1.5, 1.5, 1.5}"
 */
-PLY_INLINE Float3 roundUp(const Float3& value, float spacing = 1) {
-    return {roundUp(value.x, spacing), roundUp(value.y, spacing), roundUp(value.z, spacing)};
+PLY_INLINE Float3 round_up(const Float3& value, float spacing = 1) {
+    return {round_up(value.x, spacing), round_up(value.y, spacing),
+            round_up(value.z, spacing)};
 }
-PLY_INLINE Float3 roundDown(const Float3& value, float spacing = 1) {
-    return {roundDown(value.x, spacing), roundDown(value.y, spacing), roundDown(value.z, spacing)};
+PLY_INLINE Float3 round_down(const Float3& value, float spacing = 1) {
+    return {round_down(value.x, spacing), round_down(value.y, spacing),
+            round_down(value.z, spacing)};
 }
-PLY_INLINE Float3 roundNearest(const Float3& value, float spacing = 1) {
-    return {roundNearest(value.x, spacing), roundNearest(value.y, spacing),
-            roundNearest(value.z, spacing)};
+PLY_INLINE Float3 round_nearest(const Float3& value, float spacing = 1) {
+    return {round_nearest(value.x, spacing), round_nearest(value.y, spacing),
+            round_nearest(value.z, spacing)};
 }
 /*!
-\endGroup
+\end_group
 */
 /*!
-Returns `true` if every component of `vec` is already rounded. The optional `spacing` argument can
-be used to round to arbitrary spacings. Most precise when `spacing` is a power of 2.
+Returns `true` if every component of `vec` is already rounded. The optional `spacing`
+argument can be used to round to arbitrary spacings. Most precise when `spacing` is a
+power of 2.
 
-    Console::out() << isRounded(Float3{1.5f, 0.5f, 0}, 0.5f);  // "true"
+    Console::out() << is_rounded(Float3{1.5f, 0.5f, 0}, 0.5f);  // "true"
 */
-PLY_INLINE bool isRounded(const Float3& value, float spacing = 1) {
-    return roundNearest(value, spacing) == value;
+PLY_INLINE bool is_rounded(const Float3& value, float spacing = 1) {
+    return round_nearest(value, spacing) == value;
 }
 
 //------------------------------------------------------------------------------------------------
@@ -767,7 +780,7 @@ A vector with four floating-point components `x`, `y`, `z` and `w`.
 */
 struct Float4 {
     /*!
-    \beginGroup
+    \begin_group
     `w` is the fourth component. It follows `z` sequentially in memory.
     */
     float x;
@@ -775,7 +788,7 @@ struct Float4 {
     float z;
     float w;
     /*!
-    \endGroup
+    \end_group
     */
 
     /*!
@@ -849,10 +862,10 @@ struct Float4 {
         return sqrtf(length2());
     }
     /*!
-    Returns `true` if the squared length of the vector is sufficiently close to 1.0. The threshold
-    is given by `thresh`.
+    Returns `true` if the squared length of the vector is sufficiently close to 1.0. The
+    threshold is given by `thresh`.
     */
-    PLY_INLINE bool isUnit(float thresh = 0.001f) const {
+    PLY_INLINE bool is_unit(float thresh = 0.001f) const {
         return fabsf(1.f - length2()) < thresh;
     }
     /*!
@@ -863,35 +876,36 @@ struct Float4 {
     /*!
     Returns a unit-length vector having the same direction as `this` with safety checks.
     */
-    PLY_NO_DISCARD Float4 safeNormalized(const Float4& fallback = {1, 0, 0, 0},
-                                         float epsilon = 1e-20f) const;
+    PLY_NO_DISCARD Float4 safe_normalized(const Float4& fallback = {1, 0, 0, 0},
+                                          float epsilon = 1e-20f) const;
     /*!
     \category Conversion Functions
-    Returns a const reference to the first two components as a `Float2` using type punning. This
-    should only be used as a temporary expression.
+    Returns a const reference to the first two components as a `Float2` using type
+    punning. This should only be used as a temporary expression.
 
         Float4 v = {4, 5, 6, 7};
-        Console::out() << v.asFloat2();  // "{4, 5}"
+        Console::out() << v.as_float2();  // "{4, 5}"
     */
-    PLY_INLINE const Float2& asFloat2() const {
+    PLY_INLINE const Float2& as_float2() const {
         PLY_PUN_SCOPE
         return reinterpret_cast<const Float2&>(*this);
     }
     /*!
-    Returns a const reference to the first three components as a `Float3` using type punning. This
-    should only be used as a temporary expression.
+    Returns a const reference to the first three components as a `Float3` using type
+    punning. This should only be used as a temporary expression.
 
         Float4 v = {4, 5, 6, 7};
-        Console::out() << v.asFloat3();  // "{4, 5, 6}"
+        Console::out() << v.as_float3();  // "{4, 5, 6}"
     */
-    PLY_INLINE const Float3& asFloat3() const {
+    PLY_INLINE const Float3& as_float3() const {
         PLY_PUN_SCOPE
         return reinterpret_cast<const Float3&>(*this);
     }
     /*!
-    Casts to `Quaternion` using type punning. This should only be used as a temporary expression.
+    Casts to `Quaternion` using type punning. This should only be used as a temporary
+    expression.
     */
-    PLY_INLINE const Quaternion& asQuaternion() const;
+    PLY_INLINE const Quaternion& as_quaternion() const;
     /*!
     Converts to another 4D vector type such as `IntVec4` or `Int4<s16>`.
 
@@ -906,9 +920,10 @@ struct Float4 {
     }
     /*!
     \category Color Functions
-    \beginGroup
-    Convenience functions for interpreting the vector as a color. The `r()`, `g()`, `b()` and `a()`
-    functions are aliases for the `x`, `y`, `z` and `w` components respectively.
+    \begin_group
+    Convenience functions for interpreting the vector as a color. The `r()`, `g()`,
+    `b()` and `a()` functions are aliases for the `x`, `y`, `z` and `w` components
+    respectively.
 
         Float4 c = {1.0f, 0.8f, 0.7f, 0.5f};
         Console.out().format("{}, {}, {}, {}", c.r(), c.g(), c.b(), c.a());
@@ -939,34 +954,34 @@ struct Float4 {
         return w;
     }
     /*!
-    \endGroup
+    \end_group
     */
     /*!
     \category Swizzle Functions
-    \beginGroup
-    Returns a new vector whose components are taken from the given indices. `x`, `y`, `z` and `w`
-    are at indices 0, 1, 2 and 3 respectively. Similar to [GLSL
-    swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except that the
-    components are specified by numeric index, and you can't use it to modify the original vector;
-    only to read from it.
+    \begin_group
+    Returns a new vector whose components are taken from the given indices. `x`, `y`,
+    `z` and `w` are at indices 0, 1, 2 and 3 respectively. Similar to [GLSL
+    swizzling](https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Swizzling) except
+    that the components are specified by numeric index, and you can't use it to modify
+    the original vector; only to read from it.
 
         Float4 v = {4, 5, 6, 0};
         Console::out() << v.swizzle(1, 0);        // "{5, 4}"
         Console::out() << v.swizzle(2, 3, 2, 1);  // "{6, 0, 6, 5}"
 
-    These functions work correctly in the current version of all major compilers even though they
-    use type punning, which is undefined behavior in standard C++.
+    These functions work correctly in the current version of all major compilers even
+    though they use type punning, which is undefined behavior in standard C++.
     */
     PLY_INLINE PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
     PLY_INLINE PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
     PLY_INLINE PLY_NO_DISCARD Float4 swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const;
     /*!
-    \endGroup
+    \end_group
     */
 };
 
 /*!
-\addToClass Float4
+\add_to_class Float4
 \category Arithmetic Operators
 Unary negation.
 */
@@ -974,14 +989,14 @@ PLY_INLINE Float4 operator-(const Float4& a) {
     return {-a.x, -a.y, -a.z, -a.w};
 }
 /*!
-\beginGroup
+\begin_group
 Returns a vector whose components are the result of applying the given operation to the
 corresponding components of `a` and `b`. Each component is acted on independently.
 
     Console::out() << Float4{2, 3, 2, 0} * Float4{4, 1, 2, 5};  // "{8, 3, 4, 0}"
 
-If you specify a scalar value in place of a `Float4`, it will be promoted to a `Float4` by
-replicating the value to each component.
+If you specify a scalar value in place of a `Float4`, it will be promoted to a `Float4`
+by replicating the value to each component.
 
     Console::out() << Float4{2, 3, 2, 0} * 2;  // "{4, 6, 4, 0}"
     Console::out() << 8 / Float4{2, 4, 1, 8};  // "{4, 2, 8, 1}"
@@ -999,14 +1014,14 @@ PLY_INLINE Float4 operator/(const Float4& a, const Float4& b) {
     return {a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w};
 }
 /*!
-\endGroup
+\end_group
 */
 PLY_INLINE Float4 operator/(const Float4& a, float b) {
     float oob = 1.f / b;
     return {a.x * oob, a.y * oob, a.z * oob, a.w * oob};
 }
 /*!
-\beginGroup
+\begin_group
 In-place versions of the above operators.
 
     Float4 v = {2, 3, 2, 0};
@@ -1038,7 +1053,7 @@ PLY_INLINE void operator/=(Float4& a, const Float4& b) {
     a.w /= b.w;
 }
 /*!
-\endGroup
+\end_group
 */
 PLY_INLINE void operator/=(Float4& a, float b) {
     float oob = 1.f / b;
@@ -1058,20 +1073,21 @@ PLY_INLINE float dot(const Float4& a, const Float4& b) {
 }
 /*!
 \category Componentwise Functions
-Returns a copy of `v` with each component constrained to lie within the range determined by the
-corresponding components of `mins` and `maxs`.
+Returns a copy of `v` with each component constrained to lie within the range determined
+by the corresponding components of `mins` and `maxs`.
 
     Float4 v = {3, 1.5f, 0, 0.5f};
-    Console::out() << clamp(v, Float4{0, 1, 2, 3}, Float4{1, 2, 3, 4});  // "{1, 1.5, 2, 3}"
-    Console::out() << clamp(v, 0, 1);                                    // "{1, 1, 0, 0.5f}"
+    Console::out() << clamp(v, Float4{0, 1, 2, 3}, Float4{1, 2, 3, 4});  // "{1, 1.5, 2,
+3}" Console::out() << clamp(v, 0, 1);                                    // "{1, 1, 0,
+0.5f}"
 */
 PLY_INLINE Float4 clamp(const Float4& v, const Float4& mins, const Float4& maxs) {
-    return {clamp(v.x, mins.x, maxs.x), clamp(v.y, mins.y, maxs.y), clamp(v.z, mins.z, maxs.z),
-            clamp(v.w, mins.w, maxs.w)};
+    return {clamp(v.x, mins.x, maxs.x), clamp(v.y, mins.y, maxs.y),
+            clamp(v.z, mins.z, maxs.z), clamp(v.w, mins.w, maxs.w)};
 }
 /*!
-Returns a vector with each component set to the absolute value of the corresponding component of
-`a`.
+Returns a vector with each component set to the absolute value of the corresponding
+component of `a`.
 
     Console::out() << abs(Float4{-2, 3, 0, -1});  // "{2, 3, 0, 1}"
 */
@@ -1079,15 +1095,16 @@ PLY_INLINE Float4 abs(const Float4& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z), fabsf(a.w)};
 }
 /*!
-Returns a vector with each component set to the corresponding component of `a` raised to the power
-of the corresponding component of `b`.
+Returns a vector with each component set to the corresponding component of `a` raised to
+the power of the corresponding component of `b`.
 
     Console::out() << pow(Float4{1, 2, 2, 3}, Float4{2, 3, 1, 2});  // "{1, 8, 2, 9}"
     Console::out() << pow(Float4{1, 2, 3, -2}, 2);                  // "{1, 4, 9, 4}"
 */
 Float4 pow(const Float4& a, const Float4& b);
 /*!
-Returns a vector with each component set to minimum of the corresponding components of `a` and `b`.
+Returns a vector with each component set to minimum of the corresponding components of
+`a` and `b`.
 
     Console::out() << min(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // "{0, 0, 0, 0}"
 */
@@ -1095,7 +1112,8 @@ PLY_INLINE Float4 min(const Float4& a, const Float4& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w)};
 }
 /*!
-Returns a vector with each component set to maximum of the corresponding components of `a` and `b`.
+Returns a vector with each component set to maximum of the corresponding components of
+`a` and `b`.
 
     Console::out() << max(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // "{1, 1, 1, 1}"
 */
@@ -1104,9 +1122,9 @@ PLY_INLINE Float4 max(const Float4& a, const Float4& b) {
 }
 /*!
 \category Comparison Functions
-\beginGroup
-Returns `true` if the vectors are equal (or not equal) using floating-point comparison. In
-particular, `Float4{0.f} == Float4{-0.f}` is `true`.
+\begin_group
+Returns `true` if the vectors are equal (or not equal) using floating-point comparison.
+In particular, `Float4{0.f} == Float4{-0.f}` is `true`.
 */
 PLY_INLINE bool operator==(const Float4& a, const Float4& b) {
     return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
@@ -1115,27 +1133,28 @@ PLY_INLINE bool operator!=(const Float4& a, const Float4& b) {
     return !(a == b);
 }
 /*!
-\endGroup
+\end_group
 */
 /*!
-Returns `true` if `a` is approximately equal to `b`. The tolerance is given by `epsilon`.
+Returns `true` if `a` is approximately equal to `b`. The tolerance is given by
+`epsilon`.
 
     Float4 v = {0.9999f, 0.0001f, 1.9999f, 3.0001f};
-    Console::out() << isNear(v, Float4{1, 0, 2, 3}, 1e-3f);  // "true"
+    Console::out() << is_near(v, Float4{1, 0, 2, 3}, 1e-3f);  // "true"
 */
-PLY_INLINE bool isNear(const Float4& a, const Float4& b, float epsilon) {
+PLY_INLINE bool is_near(const Float4& a, const Float4& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
 }
 /*!
-\beginGroup
-These functions compare each component individually. The result of each comparison is returned in
-a `Bool4`. Call `all()` to check if the result was `true` for all components, or call `any()` to
-check if the result was `true` for any component.
+\begin_group
+These functions compare each component individually. The result of each comparison is
+returned in a `Bool4`. Call `all()` to check if the result was `true` for all
+components, or call `any()` to check if the result was `true` for any component.
 
     Console::out() << all(Float4{1, 2, 3, 4} > Float4{0, 1, 2, 3});  // "true"
 
-These functions are useful for testing whether a point is inside a box. See the implementation of
-`Box<>::contains` for an example.
+These functions are useful for testing whether a point is inside a box. See the
+implementation of `Box<>::contains` for an example.
 */
 PLY_INLINE Bool4 operator<(const Float4& a, const Float4& b) {
     return {a.x < b.x, a.y < b.y, a.z < b.z, a.w < b.w};
@@ -1150,41 +1169,43 @@ PLY_INLINE Bool4 operator>=(const Float4& a, const Float4& b) {
     return {a.x >= b.x, a.y >= b.y, a.z >= b.z, a.w >= b.w};
 }
 /*!
-\endGroup
+\end_group
 */
 /*!
 \category Rounding Functions
-\beginGroup
-Returns a vector with each component set to the rounded result of the corresponding component of
-`vec`. The optional `spacing` argument can be used to round to arbitrary spacings. Most precise when
-`spacing` is a power of 2.
+\begin_group
+Returns a vector with each component set to the rounded result of the corresponding
+component of `vec`. The optional `spacing` argument can be used to round to arbitrary
+spacings. Most precise when `spacing` is a power of 2.
 
-    Console::out() << roundUp(Float4{-0.3f, 1.4f, 0.8f, -1.2f});  // "{0, 2, 1, -1}"
-    Console::out() << roundDown(Float4{1.8f}, 0.5f);              // "{1.5, 1.5, 1.5, 1.5}"
+    Console::out() << round_up(Float4{-0.3f, 1.4f, 0.8f, -1.2f});  // "{0, 2, 1, -1}"
+    Console::out() << round_down(Float4{1.8f}, 0.5f);              //
+"{1.5, 1.5, 1.5, 1.5}"
 */
-PLY_INLINE Float4 roundUp(const Float4& vec, float spacing = 1) {
-    return {roundUp(vec.x, spacing), roundUp(vec.y, spacing), roundUp(vec.z, spacing),
-            roundUp(vec.w, spacing)};
+PLY_INLINE Float4 round_up(const Float4& vec, float spacing = 1) {
+    return {round_up(vec.x, spacing), round_up(vec.y, spacing),
+            round_up(vec.z, spacing), round_up(vec.w, spacing)};
 }
-PLY_INLINE Float4 roundDown(const Float4& vec, float spacing = 1) {
-    return {roundDown(vec.x, spacing), roundDown(vec.y, spacing), roundDown(vec.z, spacing),
-            roundDown(vec.w, spacing)};
+PLY_INLINE Float4 round_down(const Float4& vec, float spacing = 1) {
+    return {round_down(vec.x, spacing), round_down(vec.y, spacing),
+            round_down(vec.z, spacing), round_down(vec.w, spacing)};
 }
-PLY_INLINE Float4 roundNearest(const Float4& vec, float spacing = 1) {
-    return {roundNearest(vec.x, spacing), roundNearest(vec.y, spacing),
-            roundNearest(vec.z, spacing), roundNearest(vec.w, spacing)};
+PLY_INLINE Float4 round_nearest(const Float4& vec, float spacing = 1) {
+    return {round_nearest(vec.x, spacing), round_nearest(vec.y, spacing),
+            round_nearest(vec.z, spacing), round_nearest(vec.w, spacing)};
 }
 /*!
-\endGroup
+\end_group
 */
 /*!
-Returns `true` if every component of `vec` is already rounded. The optional `spacing` argument can
-be used to round to arbitrary spacings. Most precise when `spacing` is a power of 2.
+Returns `true` if every component of `vec` is already rounded. The optional `spacing`
+argument can be used to round to arbitrary spacings. Most precise when `spacing` is a
+power of 2.
 
-    Console::out() << isRounded(Float4{1.5f, 0.5f, 0, 2}, 0.5f);  // true
+    Console::out() << is_rounded(Float4{1.5f, 0.5f, 0, 2}, 0.5f);  // true
 */
-PLY_INLINE bool isRounded(const Float4& vec, float spacing = 1) {
-    return roundNearest(vec, spacing) == vec;
+PLY_INLINE bool is_rounded(const Float4& vec, float spacing = 1) {
+    return round_nearest(vec, spacing) == vec;
 }
 
 //---------------------------------
@@ -1192,7 +1213,7 @@ PLY_INLINE bool isRounded(const Float4& vec, float spacing = 1) {
 typedef Box<Float2> Rect;
 typedef Box<Float3> Box3D;
 
-Rect rectFromFov(float fovY, float aspect);
+Rect rect_from_fov(float fov_y, float aspect);
 
 //---------------------------------
 

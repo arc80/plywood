@@ -1,3 +1,2 @@
-PLY_STRUCT_BEGIN(ply::EmptyType)
+﻿PLY_STRUCT_BEGIN(ply::EmptyType)
 PLY_STRUCT_END()
-

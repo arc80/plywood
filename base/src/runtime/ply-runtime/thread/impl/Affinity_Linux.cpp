@@ -24,18 +24,20 @@ Affinity_Linux::Affinity_Linux() : m_isAccurate(false), m_numHWThreads(0) {
             std::getline(f, line);
             size_t colon = line.find_first_of(':');
             if (colon != std::string::npos) {
-                size_t endLabel = line.find_last_not_of(" \t", colon > 0 ? colon - 1 : 0);
+                size_t end_label =
+                    line.find_last_not_of(" \t", colon > 0 ? colon - 1 : 0);
                 std::string label =
-                    line.substr(0, endLabel != std::string::npos ? endLabel + 1 : 0);
+                    line.substr(0, end_label != std::string::npos ? end_label + 1 : 0);
                 int value;
-                bool isIntegerValue = (sscanf(line.c_str() + colon + 1, " %d", &value) > 0);
-                if (isIntegerValue && label == "processor") {
+                bool is_integer_value =
+                    (sscanf(line.c_str() + colon + 1, " %d", &value) > 0);
+                if (is_integer_value && label == "processor") {
                     collector.flush(*this);
-                    collector.logicalProcessor = (s32) value;
-                } else if (isIntegerValue && label == "physical id") {
-                    collector.coreID.physical = (s32) value;
-                } else if (isIntegerValue && label == "core id") {
-                    collector.coreID.core = (s32) value;
+                    collector.logical_processor = (s32) value;
+                } else if (is_integer_value && label == "physical id") {
+                    collector.core_id.physical = (s32) value;
+                } else if (is_integer_value && label == "core id") {
+                    collector.core_id.core = (s32) value;
                 }
             }
         }
@@ -44,17 +46,18 @@ Affinity_Linux::Affinity_Linux() : m_isAccurate(false), m_numHWThreads(0) {
     m_isAccurate = (m_numHWThreads > 0);
     if (!m_isAccurate) {
         m_coreIndexToInfo.resize(1);
-        m_coreIndexToInfo[0].hwThreadIndexToLogicalProcessor.push_back(0);
+        m_coreIndexToInfo[0].hw_thread_index_to_logical_processor.push_back(0);
         m_numHWThreads = 1;
     }
 }
 
-bool Affinity_Linux::setAffinity(ureg core, ureg hwThread) {
-    u32 logicalProcessor = m_coreIndexToInfo[core].hwThreadIndexToLogicalProcessor[hwThread];
-    cpu_set_t cpuSet;
-    CPU_ZERO(&cpuSet);
-    CPU_SET(logicalProcessor, &cpuSet);
-    int rc = sched_setaffinity(0, sizeof(cpuSet), &cpuSet); // Note: untested!
+bool Affinity_Linux::set_affinity(ureg core, ureg hw_thread) {
+    u32 logical_processor =
+        m_coreIndexToInfo[core].hw_thread_index_to_logical_processor[hw_thread];
+    cpu_set_t cpu_set;
+    CPU_ZERO(&cpu_set);
+    CPU_SET(logical_processor, &cpu_set);
+    int rc = sched_setaffinity(0, sizeof(cpu_set), &cpu_set); // Note: untested!
     return (rc == 0);
 }
 

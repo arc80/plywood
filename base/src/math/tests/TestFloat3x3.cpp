@@ -12,9 +12,9 @@ namespace ply {
 #define PLY_TEST_CASE_PREFIX Float3x3_
 
 namespace {
-bool isAlmostEqual(const Float3x3& m1, const Float3x3& m2) {
-    return isNear(m1[0], m2[0], 1e-6f) && isNear(m1[1], m2[1], 1e-6f) &&
-           isNear(m1[2], m2[2], 1e-6f);
+bool is_almost_equal(const Float3x3& m1, const Float3x3& m2) {
+    return is_near(m1[0], m2[0], 1e-6f) && is_near(m1[1], m2[1], 1e-6f) &&
+           is_near(m1[2], m2[2], 1e-6f);
 }
 } // namespace
 
@@ -51,44 +51,49 @@ PLY_TEST_CASE("Float3x3 comparisons") {
     PLY_TEST_CHECK(Float3x3{{5, 4, 2}, {3, 2, 1}, {2, 1, 0}} !=
                    Float3x3{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}});
 
-    PLY_TEST_CHECK(
-        !(Float3x3{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}} != Float3x3{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}}));
+    PLY_TEST_CHECK(!(Float3x3{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}} !=
+                     Float3x3{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}}));
     PLY_TEST_CHECK(!(Float3x3{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}} !=
                      Float3x3{{0, -0.f, 0}, {-0.f, 0, 0}, {0, 0, -0.f}}));
-    PLY_TEST_CHECK(
-        !(Float3x3{{5, 4, 2}, {3, 2, 1}, {2, 1, 0}} == Float3x3{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}}));
+    PLY_TEST_CHECK(!(Float3x3{{5, 4, 2}, {3, 2, 1}, {2, 1, 0}} ==
+                     Float3x3{{2, 3, 5}, {4, 5, 6}, {7, 8, 9}}));
 }
 
 PLY_TEST_CASE("Float3x3 creation functions") {
     PLY_TEST_CHECK(Float3x3{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}} == Float3x3::identity());
-    PLY_TEST_CHECK(Float3x3{{2, 0, 0}, {0, 2, 0}, {0, 0, 2}} == Float3x3::makeScale(2.f));
+    PLY_TEST_CHECK(Float3x3{{2, 0, 0}, {0, 2, 0}, {0, 0, 2}} ==
+                   Float3x3::make_scale(2.f));
 }
 
 PLY_TEST_CASE("Float3x3 creation functions from rotation") {
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3{{1.f, 0, 0}, {0, 1.f, 0}, {0, 0, 1.f}},
-                                 Float3x3::makeRotation({1., 0, 0}, 0)));
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3{{1.f, 0, 0}, {0, 1.f, 0}, {0, 0, 1.f}},
-                                 Float3x3::makeRotation({0, 1., 0}, 0)));
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3{{1.f, 0, 0}, {0, 1.f, 0}, {0, 0, 1.f}},
-                                 Float3x3::makeRotation({0, 0, 1.}, 0)));
+    PLY_TEST_CHECK(is_almost_equal(Float3x3{{1.f, 0, 0}, {0, 1.f, 0}, {0, 0, 1.f}},
+                                   Float3x3::make_rotation({1., 0, 0}, 0)));
+    PLY_TEST_CHECK(is_almost_equal(Float3x3{{1.f, 0, 0}, {0, 1.f, 0}, {0, 0, 1.f}},
+                                   Float3x3::make_rotation({0, 1., 0}, 0)));
+    PLY_TEST_CHECK(is_almost_equal(Float3x3{{1.f, 0, 0}, {0, 1.f, 0}, {0, 0, 1.f}},
+                                   Float3x3::make_rotation({0, 0, 1.}, 0)));
 
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3{{1.f, 0, 0}, {0, -1.f, 0}, {0, 0, -1.f}},
-                                 Float3x3::makeRotation({1., 0, 0}, Pi)));
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3{{-1.f, 0, 0}, {0, 1.f, 0}, {0, 0, -1.f}},
-                                 Float3x3::makeRotation({0, 1., 0}, Pi)));
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3{{-1.f, 0, 0}, {0, -1.f, 0}, {0, 0, 1.f}},
-                                 Float3x3::makeRotation({0, 0, 1.}, Pi)));
+    PLY_TEST_CHECK(is_almost_equal(Float3x3{{1.f, 0, 0}, {0, -1.f, 0}, {0, 0, -1.f}},
+                                   Float3x3::make_rotation({1., 0, 0}, Pi)));
+    PLY_TEST_CHECK(is_almost_equal(Float3x3{{-1.f, 0, 0}, {0, 1.f, 0}, {0, 0, -1.f}},
+                                   Float3x3::make_rotation({0, 1., 0}, Pi)));
+    PLY_TEST_CHECK(is_almost_equal(Float3x3{{-1.f, 0, 0}, {0, -1.f, 0}, {0, 0, 1.f}},
+                                   Float3x3::make_rotation({0, 0, 1.}, Pi)));
 }
 
 PLY_TEST_CASE("Float3x3 creation functions from quaternion") {
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3{{1.f, 0, 0}, {0, 1.f, 0}, {0, 0, 1.f}},
-                                 Float3x3::fromQuaternion(Quaternion(Float3{0, 0, 0}, 1))));
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3{{1.f, 0, 0}, {0, -1.f, 0}, {0, 0, -1.f}},
-                                 Float3x3::fromQuaternion(Quaternion(Float3{1., 0, 0}, 0))));
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3{{-1.f, 0, 0}, {0, 1.f, 0}, {0, 0, -1.f}},
-                                 Float3x3::fromQuaternion(Quaternion(Float3{0, 1., 0}, 0))));
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3{{-1.f, 0, 0}, {0, -1.f, 0}, {0, 0, 1.f}},
-                                 Float3x3::fromQuaternion(Quaternion(Float3{0, 0, 1.}, 0))));
+    PLY_TEST_CHECK(
+        is_almost_equal(Float3x3{{1.f, 0, 0}, {0, 1.f, 0}, {0, 0, 1.f}},
+                        Float3x3::from_quaternion(Quaternion(Float3{0, 0, 0}, 1))));
+    PLY_TEST_CHECK(
+        is_almost_equal(Float3x3{{1.f, 0, 0}, {0, -1.f, 0}, {0, 0, -1.f}},
+                        Float3x3::from_quaternion(Quaternion(Float3{1., 0, 0}, 0))));
+    PLY_TEST_CHECK(
+        is_almost_equal(Float3x3{{-1.f, 0, 0}, {0, 1.f, 0}, {0, 0, -1.f}},
+                        Float3x3::from_quaternion(Quaternion(Float3{0, 1., 0}, 0))));
+    PLY_TEST_CHECK(
+        is_almost_equal(Float3x3{{-1.f, 0, 0}, {0, -1.f, 0}, {0, 0, 1.f}},
+                        Float3x3::from_quaternion(Quaternion(Float3{0, 0, 1.}, 0))));
 }
 
 PLY_TEST_CASE("Float3x3 transposition") {
@@ -100,24 +105,29 @@ PLY_TEST_CASE("Float3x3 transposition") {
 
 PLY_TEST_CASE("Float3x3 transforms a vector") {
     Float3 v1 = {1, 2, 3};
-    PLY_TEST_CHECK(isNear(Float3{1, 2, 3}, Float3x3({1, 0, 0}, {0, 1, 0}, {0, 0, 1}) * v1, 0));
-    PLY_TEST_CHECK(isNear(Float3{2, 1, 3}, Float3x3({0, 1, 0}, {1, 0, 0}, {0, 0, 1}) * v1, 0));
-    PLY_TEST_CHECK(isNear(Float3{1, 3, 2}, Float3x3({1, 0, 0}, {0, 0, 1}, {0, 1, 0}) * v1, 0));
+    PLY_TEST_CHECK(
+        is_near(Float3{1, 2, 3}, Float3x3({1, 0, 0}, {0, 1, 0}, {0, 0, 1}) * v1, 0));
+    PLY_TEST_CHECK(
+        is_near(Float3{2, 1, 3}, Float3x3({0, 1, 0}, {1, 0, 0}, {0, 0, 1}) * v1, 0));
+    PLY_TEST_CHECK(
+        is_near(Float3{1, 3, 2}, Float3x3({1, 0, 0}, {0, 0, 1}, {0, 1, 0}) * v1, 0));
 
-    PLY_TEST_CHECK(isNear(Float3{-3, -2, 5}, Float3x3({0, 0, 5}, {0, -1, 0}, {-1, 0, 0}) * v1, 0));
+    PLY_TEST_CHECK(is_near(Float3{-3, -2, 5},
+                           Float3x3({0, 0, 5}, {0, -1, 0}, {-1, 0, 0}) * v1, 0));
 }
 
 PLY_TEST_CASE("Float3x3 matrix multiplication") {
     Float3x3 m = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
 
-    Float3x3 m1 = Float3x3({1, 0, 0}, {0, 1, 0}, {0, 0, 1})  * m;
-    PLY_TEST_CHECK(isAlmostEqual(m, m1));
+    Float3x3 m1 = Float3x3({1, 0, 0}, {0, 1, 0}, {0, 0, 1}) * m;
+    PLY_TEST_CHECK(is_almost_equal(m, m1));
 
-    Float3x3 m2 = Float3x3({0, 1, 0}, {1, 0, 0}, {0, 0, 1})  * m;
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3({2, 1, 3}, {5, 4, 6}, {8, 7, 9}), m2));
+    Float3x3 m2 = Float3x3({0, 1, 0}, {1, 0, 0}, {0, 0, 1}) * m;
+    PLY_TEST_CHECK(is_almost_equal(Float3x3({2, 1, 3}, {5, 4, 6}, {8, 7, 9}), m2));
 
-    Float3x3 m3 = Float3x3({0, 0, 5}, {0, -1, 0}, {-1, 0, 0})  * m;
-    PLY_TEST_CHECK(isAlmostEqual(Float3x3({-3, -2, 5}, {-6, -5, 20}, {-9, -8, 35}), m3));
+    Float3x3 m3 = Float3x3({0, 0, 5}, {0, -1, 0}, {-1, 0, 0}) * m;
+    PLY_TEST_CHECK(
+        is_almost_equal(Float3x3({-3, -2, 5}, {-6, -5, 20}, {-9, -8, 35}), m3));
 }
 
 } // namespace ply

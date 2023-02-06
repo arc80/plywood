@@ -16,67 +16,67 @@
 
 namespace ply {
 
-const MemPage::Info& MemPage::getInfo() {
+const MemPage::Info& MemPage::get_info() {
     static Info info = []() -> Info {
-        SYSTEM_INFO sysInfo;
-        GetSystemInfo(&sysInfo);
-        PLY_ASSERT(isPowerOf2(sysInfo.dwAllocationGranularity));
-        PLY_ASSERT(isPowerOf2(sysInfo.dwPageSize));
-        return {sysInfo.dwAllocationGranularity, sysInfo.dwPageSize};
+        SYSTEM_INFO sys_info;
+        GetSystemInfo(&sys_info);
+        PLY_ASSERT(is_power_of2(sys_info.dwAllocationGranularity));
+        PLY_ASSERT(is_power_of2(sys_info.dwPageSize));
+        return {sys_info.dwAllocationGranularity, sys_info.dwPageSize};
     }();
     return info;
 }
 
-bool MemPage::alloc(char*& outAddr, uptr numBytes) {
-    PLY_ASSERT(isAlignedPowerOf2(numBytes, getInfo().allocationGranularity));
+bool MemPage::alloc(char*& out_addr, uptr num_bytes) {
+    PLY_ASSERT(is_aligned_power_of2(num_bytes, get_info().allocation_granularity));
 
     DWORD type = MEM_RESERVE | MEM_COMMIT;
-    outAddr = (char*) VirtualAlloc(0, (SIZE_T) numBytes, type, PAGE_READWRITE);
-    return (outAddr != NULL);
+    out_addr = (char*) VirtualAlloc(0, (SIZE_T) num_bytes, type, PAGE_READWRITE);
+    return (out_addr != NULL);
 }
 
-bool MemPage::reserve(char*& outAddr, uptr numBytes) {
-    PLY_ASSERT(isAlignedPowerOf2(numBytes, getInfo().allocationGranularity));
+bool MemPage::reserve(char*& out_addr, uptr num_bytes) {
+    PLY_ASSERT(is_aligned_power_of2(num_bytes, get_info().allocation_granularity));
 
     DWORD type = MEM_RESERVE;
-    outAddr = (char*) VirtualAlloc(0, (SIZE_T) numBytes, type, PAGE_READWRITE);
-    return (outAddr != NULL);
+    out_addr = (char*) VirtualAlloc(0, (SIZE_T) num_bytes, type, PAGE_READWRITE);
+    return (out_addr != NULL);
 }
 
-void MemPage::commit(char* addr, uptr numBytes) {
-    PLY_ASSERT(isAlignedPowerOf2((uptr) addr, getInfo().pageSize));
-    PLY_ASSERT(isAlignedPowerOf2(numBytes, getInfo().pageSize));
+void MemPage::commit(char* addr, uptr num_bytes) {
+    PLY_ASSERT(is_aligned_power_of2((uptr) addr, get_info().page_size));
+    PLY_ASSERT(is_aligned_power_of2(num_bytes, get_info().page_size));
 
     DWORD type = MEM_COMMIT;
-    LPVOID result = VirtualAlloc(addr, (SIZE_T) numBytes, type, PAGE_READWRITE);
+    LPVOID result = VirtualAlloc(addr, (SIZE_T) num_bytes, type, PAGE_READWRITE);
     PLY_ASSERT(result != NULL);
     PLY_UNUSED(result);
 }
 
-void MemPage::decommit(char* addr, uptr numBytes) {
-    PLY_ASSERT(isAlignedPowerOf2((uptr) addr, getInfo().pageSize));
-    PLY_ASSERT(isAlignedPowerOf2(numBytes, getInfo().pageSize));
+void MemPage::decommit(char* addr, uptr num_bytes) {
+    PLY_ASSERT(is_aligned_power_of2((uptr) addr, get_info().page_size));
+    PLY_ASSERT(is_aligned_power_of2(num_bytes, get_info().page_size));
 
     DWORD type = MEM_COMMIT;
-    LPVOID result = VirtualAlloc(addr, (SIZE_T) numBytes, type, PAGE_READWRITE);
+    LPVOID result = VirtualAlloc(addr, (SIZE_T) num_bytes, type, PAGE_READWRITE);
     PLY_ASSERT(result != NULL);
     PLY_UNUSED(result);
 }
 
-void MemPage::free(char* addr, uptr numBytes) {
-    PLY_ASSERT(isAlignedPowerOf2((uptr) addr, getInfo().allocationGranularity));
-    PLY_ASSERT(isAlignedPowerOf2(numBytes, getInfo().allocationGranularity));
+void MemPage::free(char* addr, uptr num_bytes) {
+    PLY_ASSERT(is_aligned_power_of2((uptr) addr, get_info().allocation_granularity));
+    PLY_ASSERT(is_aligned_power_of2(num_bytes, get_info().allocation_granularity));
 
 #if PLY_WITH_ASSERTS
     {
         // Must be entire reserved address space range
-        MEMORY_BASIC_INFORMATION memInfo;
-        SIZE_T rc = VirtualQuery(addr, &memInfo, sizeof(memInfo));
+        MEMORY_BASIC_INFORMATION mem_info;
+        SIZE_T rc = VirtualQuery(addr, &mem_info, sizeof(mem_info));
         PLY_ASSERT(rc != 0);
         PLY_UNUSED(rc);
-        PLY_ASSERT(memInfo.BaseAddress == addr);
-        PLY_ASSERT(memInfo.AllocationBase == addr);
-        PLY_ASSERT(memInfo.RegionSize <= numBytes);
+        PLY_ASSERT(mem_info.BaseAddress == addr);
+        PLY_ASSERT(mem_info.AllocationBase == addr);
+        PLY_ASSERT(mem_info.RegionSize <= num_bytes);
     }
 #endif
     BOOL rc2 = VirtualFree(addr, 0, MEM_RELEASE);
@@ -99,56 +99,58 @@ void MemPage::free(char* addr, uptr numBytes) {
 
 namespace ply {
 
-const MemPage::Info& MemPage::getInfo() {
+const MemPage::Info& MemPage::get_info() {
     static Info info = []() -> Info {
         long result = sysconf(_SC_PAGE_SIZE);
-        PLY_ASSERT(isPowerOf2(result));
+        PLY_ASSERT(is_power_of2(result));
         return {(ureg) result, (ureg) result};
     }();
     return info;
 }
 
-bool MemPage::alloc(char*& outAddr, uptr numBytes) {
-    PLY_ASSERT(isAlignedPowerOf2(numBytes, getInfo().allocationGranularity));
+bool MemPage::alloc(char*& out_addr, uptr num_bytes) {
+    PLY_ASSERT(is_aligned_power_of2(num_bytes, get_info().allocation_granularity));
 
-    outAddr = (char*) mmap(0, numBytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    PLY_ASSERT(outAddr != MAP_FAILED);
+    out_addr = (char*) mmap(0, num_bytes, PROT_READ | PROT_WRITE,
+                            MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    PLY_ASSERT(out_addr != MAP_FAILED);
     return true;
 }
 
-bool MemPage::reserve(char*& outAddr, uptr numBytes) {
-    PLY_ASSERT(isAlignedPowerOf2(numBytes, getInfo().allocationGranularity));
+bool MemPage::reserve(char*& out_addr, uptr num_bytes) {
+    PLY_ASSERT(is_aligned_power_of2(num_bytes, get_info().allocation_granularity));
 
-    outAddr = (char*) mmap(0, numBytes, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    PLY_ASSERT(outAddr != MAP_FAILED);
+    out_addr =
+        (char*) mmap(0, num_bytes, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    PLY_ASSERT(out_addr != MAP_FAILED);
     return true;
 }
 
-void MemPage::commit(char* addr, uptr numBytes) {
-    PLY_ASSERT(isAlignedPowerOf2((uptr) addr, getInfo().pageSize));
-    PLY_ASSERT(isAlignedPowerOf2(numBytes, getInfo().pageSize));
+void MemPage::commit(char* addr, uptr num_bytes) {
+    PLY_ASSERT(is_aligned_power_of2((uptr) addr, get_info().page_size));
+    PLY_ASSERT(is_aligned_power_of2(num_bytes, get_info().page_size));
 
-    int rc = mprotect(addr, numBytes, PROT_READ | PROT_WRITE);
+    int rc = mprotect(addr, num_bytes, PROT_READ | PROT_WRITE);
     PLY_ASSERT(rc == 0);
     PLY_UNUSED(rc);
 }
 
-void MemPage::decommit(char* addr, uptr numBytes) {
-    PLY_ASSERT(isAlignedPowerOf2((uptr) addr, getInfo().pageSize));
-    PLY_ASSERT(isAlignedPowerOf2(numBytes, getInfo().pageSize));
+void MemPage::decommit(char* addr, uptr num_bytes) {
+    PLY_ASSERT(is_aligned_power_of2((uptr) addr, get_info().page_size));
+    PLY_ASSERT(is_aligned_power_of2(num_bytes, get_info().page_size));
 
-    int rc = madvise(addr, numBytes, MADV_DONTNEED);
+    int rc = madvise(addr, num_bytes, MADV_DONTNEED);
     PLY_ASSERT(rc == 0);
-    rc = mprotect(addr, numBytes, PROT_NONE);
+    rc = mprotect(addr, num_bytes, PROT_NONE);
     PLY_ASSERT(rc == 0);
     PLY_UNUSED(rc);
 }
 
-void MemPage::free(char* addr, uptr numBytes) {
-    PLY_ASSERT(isAlignedPowerOf2((uptr) addr, getInfo().allocationGranularity));
-    PLY_ASSERT(isAlignedPowerOf2(numBytes, getInfo().allocationGranularity));
+void MemPage::free(char* addr, uptr num_bytes) {
+    PLY_ASSERT(is_aligned_power_of2((uptr) addr, get_info().allocation_granularity));
+    PLY_ASSERT(is_aligned_power_of2(num_bytes, get_info().allocation_granularity));
 
-    munmap(addr, numBytes);
+    munmap(addr, num_bytes);
 }
 
 } // namespace ply

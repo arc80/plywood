@@ -1,4 +1,4 @@
-enum class ID : u16 {
+﻿enum class ID : u16 {
     If_,
     While_,
     Assignment,
@@ -14,10 +14,12 @@ union Storage_ {
     Assignment assignment;
     Evaluate evaluate;
     Return_ return_;
-    FunctionDefinition functionDefinition;
-    CustomBlock customBlock;
-    PLY_INLINE Storage_() {}
-    PLY_INLINE ~Storage_() {}
+    FunctionDefinition function_definition;
+    CustomBlock custom_block;
+    PLY_INLINE Storage_() {
+    }
+    PLY_INLINE ~Storage_() {
+    }
 };
 SWITCH_FOOTER(Statement, If_)
 SWITCH_ACCESSOR(If_, if_)
@@ -25,5 +27,5 @@ SWITCH_ACCESSOR(While_, while_)
 SWITCH_ACCESSOR(Assignment, assignment)
 SWITCH_ACCESSOR(Evaluate, evaluate)
 SWITCH_ACCESSOR(Return_, return_)
-SWITCH_ACCESSOR(FunctionDefinition, functionDefinition)
-SWITCH_ACCESSOR(CustomBlock, customBlock)
+SWITCH_ACCESSOR(FunctionDefinition, function_definition)
+SWITCH_ACCESSOR(CustomBlock, custom_block)

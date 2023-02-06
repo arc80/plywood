@@ -12,146 +12,149 @@ namespace ply {
 PLY_NO_INLINE TextFormat TextFormat::default_utf8() {
     TextFormat tff;
 #if PLY_TARGET_WIN32
-    tff.newLine = TextFormat::NewLine::CRLF;
+    tff.new_line = TextFormat::NewLine::CRLF;
 #endif
     return tff;
 }
 
 struct TextFileStats {
-    u32 numPoints = 0;
-    u32 numValidPoints = 0;
-    u32 totalPointValue =
+    u32 num_points = 0;
+    u32 num_valid_points = 0;
+    u32 total_point_value =
         0; // This value won't be accurate if byte encoding is detected
-    u32 numLines = 0;
-    u32 numCRLF = 0;
-    u32 numControl = 0; // non-whitespace points < 32, including nulls
-    u32 numNull = 0;
-    u32 numPlainAscii = 0; // includes whitespace, excludes control characters < 32
-    u32 numWhitespace = 0;
-    u32 numExtended = 0;
-    float ooNumPoints = 0.f;
+    u32 num_lines = 0;
+    u32 num_crlf = 0;
+    u32 num_control = 0; // non-whitespace points < 32, including nulls
+    u32 num_null = 0;
+    u32 num_plain_ascii = 0; // includes whitespace, excludes control characters < 32
+    u32 num_whitespace = 0;
+    u32 num_extended = 0;
+    float oo_num_points = 0.f;
 
-    PLY_INLINE u32 numInvalidPoints() const {
-        return this->numPoints - this->numValidPoints;
+    PLY_INLINE u32 num_invalid_points() const {
+        return this->num_points - this->num_valid_points;
     }
-    PLY_INLINE TextFormat::NewLine getNewLineType() const {
-        PLY_ASSERT(this->numCRLF <= this->numLines);
-        if (this->numCRLF == 0 || this->numCRLF * 2 < this->numLines) {
+    PLY_INLINE TextFormat::NewLine get_new_line_type() const {
+        PLY_ASSERT(this->num_crlf <= this->num_lines);
+        if (this->num_crlf == 0 || this->num_crlf * 2 < this->num_lines) {
             return TextFormat::NewLine::LF;
         } else {
             return TextFormat::NewLine::CRLF;
         }
     }
-    PLY_INLINE float getScore() const {
-        return (2.5f * this->numWhitespace + this->numPlainAscii -
-                100.f * this->numInvalidPoints() - 50.f * this->numControl +
-                5.f * this->numExtended) *
-               this->ooNumPoints;
+    PLY_INLINE float get_score() const {
+        return (2.5f * this->num_whitespace + this->num_plain_ascii -
+                100.f * this->num_invalid_points() - 50.f * this->num_control +
+                5.f * this->num_extended) *
+               this->oo_num_points;
     }
 };
 
-PLY_NO_INLINE u32 scanTextFile(TextFileStats* stats, InStream& in, Unicode& decoder,
-                               u32 maxBytes) {
-    bool prevWasCR = false;
-    while (in.get_seek_pos() < maxBytes) {
+PLY_NO_INLINE u32 scan_text_file(TextFileStats* stats, InStream& in, Unicode& decoder,
+                                 u32 max_bytes) {
+    bool prev_was_cr = false;
+    while (in.get_seek_pos() < max_bytes) {
         s32 codepoint = decoder.decode_point(in);
         if (codepoint < 0)
             break; // EOF/error
-        stats->numPoints++;
+        stats->num_points++;
         if (decoder.status == DS_OK) {
-            stats->numValidPoints++;
-            stats->totalPointValue += codepoint;
+            stats->num_valid_points++;
+            stats->total_point_value += codepoint;
             if (codepoint < 32) {
                 if (codepoint == '\n') {
-                    stats->numPlainAscii++;
-                    stats->numLines++;
-                    stats->numWhitespace++;
-                    if (prevWasCR) {
-                        stats->numCRLF++;
+                    stats->num_plain_ascii++;
+                    stats->num_lines++;
+                    stats->num_whitespace++;
+                    if (prev_was_cr) {
+                        stats->num_crlf++;
                     }
                 } else if (codepoint == '\t') {
-                    stats->numPlainAscii++;
-                    stats->numWhitespace++;
+                    stats->num_plain_ascii++;
+                    stats->num_whitespace++;
                 } else if (codepoint == '\r') {
-                    stats->numPlainAscii++;
+                    stats->num_plain_ascii++;
                 } else {
-                    stats->numControl++;
+                    stats->num_control++;
                     if (codepoint == 0) {
-                        stats->numNull++;
+                        stats->num_null++;
                     }
                 }
             } else if (codepoint < 127) {
-                stats->numPlainAscii++;
+                stats->num_plain_ascii++;
                 if (codepoint == ' ') {
-                    stats->numWhitespace++;
+                    stats->num_whitespace++;
                 }
             } else if (codepoint >= 65536) {
-                stats->numExtended++;
+                stats->num_extended++;
             }
         }
-        prevWasCR = (codepoint == '\r');
+        prev_was_cr = (codepoint == '\r');
     }
-    if (stats->numPoints > 0) {
-        stats->ooNumPoints = 1.f / stats->numPoints;
+    if (stats->num_points > 0) {
+        stats->oo_num_points = 1.f / stats->num_points;
     }
     return in.get_seek_pos();
 }
 
-PLY_NO_INLINE TextFormat guessFileEncoding(InStream& in) {
+PLY_NO_INLINE TextFormat guess_file_encoding(InStream& in) {
     TextFileStats stats8;
     BlockList::Ref start = in.get_save_point();
 
     // Try UTF8 first:
-    u32 numBytesRead =
-        scanTextFile(&stats8, in, Unicode{UTF8}, TextFormat::NumBytesForAutodetect);
-    if (numBytesRead == 0) {
+    u32 num_bytes_read =
+        scan_text_file(&stats8, in, Unicode{UTF8}, TextFormat::NumBytesForAutodetect);
+    if (num_bytes_read == 0) {
         // Empty file
         return {UTF8, TextFormat::NewLine::LF, false};
     }
     in.rewind(start);
-    if (stats8.numInvalidPoints() == 0 && stats8.numControl == 0) {
+    if (stats8.num_invalid_points() == 0 && stats8.num_control == 0) {
         // No UTF-8 encoding errors, and no weird control characters/nulls. Pick UTF-8.
-        return {UTF8, stats8.getNewLineType(), false};
+        return {UTF8, stats8.get_new_line_type(), false};
     }
 
     // If more than 20% of the high bytes in UTF-8 are encoding errors, reinterpret
     // UTF-8 as just bytes.
     UnicodeType encoding8 = UTF8;
     {
-        u32 numHighBytes = numBytesRead - stats8.numPlainAscii - stats8.numControl;
-        if (stats8.numInvalidPoints() >= numHighBytes * 0.2f) {
+        u32 num_high_bytes =
+            num_bytes_read - stats8.num_plain_ascii - stats8.num_control;
+        if (stats8.num_invalid_points() >= num_high_bytes * 0.2f) {
             // Too many UTF-8 errors. Consider it bytes.
             encoding8 = NotUnicode;
-            stats8.numPoints = numBytesRead;
-            stats8.numValidPoints = numBytesRead;
+            stats8.num_points = num_bytes_read;
+            stats8.num_valid_points = num_bytes_read;
         }
     }
 
     // Examine both UTF16 endianness:
     TextFileStats stats16_le;
-    scanTextFile(&stats16_le, in, Unicode{UTF16_LE}, TextFormat::NumBytesForAutodetect);
+    scan_text_file(&stats16_le, in, Unicode{UTF16_LE},
+                   TextFormat::NumBytesForAutodetect);
     in.rewind(start);
 
     TextFileStats stats16_be;
-    scanTextFile(&stats16_be, in, Unicode{UTF16_BE}, TextFormat::NumBytesForAutodetect);
+    scan_text_file(&stats16_be, in, Unicode{UTF16_BE},
+                   TextFormat::NumBytesForAutodetect);
     in.rewind(start);
 
     // Choose the better UTF16 candidate:
     TextFileStats* stats = &stats16_le;
     UnicodeType encoding = UTF16_LE;
-    if (stats16_be.getScore() > stats16_le.getScore()) {
+    if (stats16_be.get_score() > stats16_le.get_score()) {
         stats = &stats16_be;
         encoding = UTF16_BE;
     }
 
     // Choose between the UTF16 and 8-bit encoding:
-    if (stats8.getScore() >= stats->getScore()) {
+    if (stats8.get_score() >= stats->get_score()) {
         stats = &stats8;
         encoding = encoding8;
     }
 
     // Return best guess
-    return {encoding, stats->getNewLineType(), false};
+    return {encoding, stats->get_new_line_type(), false};
 }
 
 PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream& in) {
@@ -175,24 +178,24 @@ PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream& in) {
     }
     in.rewind(start);
     if (!tff.bom) {
-        return guessFileEncoding(in);
+        return guess_file_encoding(in);
     } else {
         // Detect LF or CRLF
         BlockList::Ref start = in.get_save_point();
         TextFileStats stats;
-        scanTextFile(&stats, in, Unicode{tff.encoding}, NumBytesForAutodetect);
+        scan_text_file(&stats, in, Unicode{tff.encoding}, NumBytesForAutodetect);
         in.rewind(start);
-        tff.newLine = stats.getNewLineType();
+        tff.new_line = stats.get_new_line_type();
         return tff;
     }
 }
 
 //-----------------------------------------------------------------------
 
-Owned<InPipe> TextFormat::createImporter(InStream&& in) const {
+Owned<InPipe> TextFormat::create_importer(InStream&& in) const {
     if (this->bom) {
         BlockList::Ref start = in.get_save_point();
-        bool gotBom = false;
+        bool got_bom = false;
         switch (this->encoding) {
             case NotUnicode: {
                 PLY_ASSERT(0); // Bytes format shouldn't have a BOM
@@ -201,23 +204,23 @@ Owned<InPipe> TextFormat::createImporter(InStream&& in) const {
             case UTF8: {
                 char h[3] = {0};
                 bool valid = in.read({h, PLY_STATIC_ARRAY_SIZE(h)});
-                gotBom = valid && memcmp(h, "\xef\xbb\xbf", 3) == 0;
+                got_bom = valid && memcmp(h, "\xef\xbb\xbf", 3) == 0;
                 break;
             }
             case UTF16_BE: {
                 char h[2] = {0};
                 bool valid = in.read({h, PLY_STATIC_ARRAY_SIZE(h)});
-                gotBom = valid && memcmp(h, "\xfe\xff", 2) == 0;
+                got_bom = valid && memcmp(h, "\xfe\xff", 2) == 0;
                 break;
             }
             case UTF16_LE: {
                 char h[2] = {0};
                 bool valid = in.read({h, PLY_STATIC_ARRAY_SIZE(h)});
-                gotBom = valid && memcmp(h, "\xff\xfe", 2) == 0;
+                got_bom = valid && memcmp(h, "\xff\xfe", 2) == 0;
                 break;
             }
         }
-        if (!gotBom) {
+        if (!got_bom) {
             // Expected a BOM, but didn't actually encounter one
             // FIXME: Some callers may want to know about this
             in.rewind(start);
@@ -234,10 +237,10 @@ Owned<InPipe> TextFormat::createImporter(InStream&& in) const {
 
     // Install newline filter (basically just eats \r)
     // FIXME: Some caller might want the LFs to be unchanged.
-    return createInNewLineFilter(std::move(importer));
+    return create_in_new_line_filter(std::move(importer));
 }
 
-PLY_NO_INLINE Owned<OutPipe> TextFormat::createExporter(OutStream&& out) const {
+PLY_NO_INLINE Owned<OutPipe> TextFormat::create_exporter(OutStream&& out) const {
     OutStream exporter = std::move(out);
 
     switch (this->encoding) {
@@ -271,7 +274,8 @@ PLY_NO_INLINE Owned<OutPipe> TextFormat::createExporter(OutStream&& out) const {
         }
     }
 
-    return createOutNewLineFilter(std::move(exporter), this->newLine == NewLine::CRLF);
+    return create_out_new_line_filter(std::move(exporter),
+                                      this->new_line == NewLine::CRLF);
 }
 
 } // namespace ply

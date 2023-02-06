@@ -145,7 +145,7 @@ PLY_TEST_CASE("Array assign from any (FixedArray) with move semantics") {
 
 PLY_TEST_CASE("Array self-assignment") {
     Array<u32> a = {1, 1, 2, 3, 5, 8};
-    a = a.subView(1);
+    a = a.sub_view(1);
     PLY_TEST_CHECK(a == ArrayView<const u32>{1, 2, 3, 5, 8});
 }
 
@@ -207,23 +207,23 @@ PLY_TEST_CASE("Array operator bool") {
 
 PLY_TEST_CASE("Array isEmpty") {
     Array<u32> a;
-    PLY_TEST_CHECK(a.isEmpty());
+    PLY_TEST_CHECK(a.is_empty());
     a = {4, 5, 6};
-    PLY_TEST_CHECK(!a.isEmpty());
+    PLY_TEST_CHECK(!a.is_empty());
 }
 
 PLY_TEST_CASE("Array numItems") {
     Array<u32> a;
-    PLY_TEST_CHECK(a.numItems() == 0);
+    PLY_TEST_CHECK(a.num_items() == 0);
     a = {4, 5, 6};
-    PLY_TEST_CHECK(a.numItems() == 3);
+    PLY_TEST_CHECK(a.num_items() == 3);
 }
 
 PLY_TEST_CASE("Array sizeBytes") {
     Array<u32> a;
-    PLY_TEST_CHECK(a.sizeBytes() == 0);
+    PLY_TEST_CHECK(a.size_bytes() == 0);
     a = {4, 5, 6};
-    PLY_TEST_CHECK(a.sizeBytes() == 12);
+    PLY_TEST_CHECK(a.size_bytes() == 12);
 }
 
 //--------------------------------
@@ -241,7 +241,7 @@ PLY_TEST_CASE("Array clear") {
 PLY_TEST_CASE("Array resize") {
     Array<u32> a;
     a.resize(3);
-    PLY_TEST_CHECK(a.numItems() == 3);
+    PLY_TEST_CHECK(a.num_items() == 3);
 }
 
 PLY_TEST_CASE("Array resize 2") {
@@ -345,7 +345,7 @@ PLY_TEST_CASE("Array extend from any (HybridString) with move semantics") {
 PLY_TEST_CASE("Array moveExtend") {
     Array<String> a = {"hello", "there"};
     Array<String> b = {"my", "friend"};
-    a.moveExtend(b);
+    a.move_extend(b);
     PLY_TEST_CHECK(a == ArrayView<const StringView>{"hello", "there", "my", "friend"});
     PLY_TEST_CHECK(b == ArrayView<const StringView>{{}, {}});
 }
@@ -382,11 +382,11 @@ PLY_TEST_CASE("Array erase") {
 
 PLY_TEST_CASE("Array eraseQuick") {
     Array<u32> a = {4, 5, 6};
-    a.eraseQuick(0);
+    a.erase_quick(0);
     PLY_TEST_CHECK(a == ArrayView<const u32>{6, 5});
 
     Array<u32> b = {4, 5, 6, 7, 8, 9, 10};
-    b.eraseQuick(1, 2);
+    b.erase_quick(1, 2);
     PLY_TEST_CHECK(b == ArrayView<const u32>{4, 9, 10, 7, 8});
 }
 

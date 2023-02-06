@@ -26,7 +26,7 @@ struct SassResult {
     }
 };
 
-SassResult convertSassToStylesheet(const char* path);
+SassResult convert_sass_to_stylesheet(const char* path);
 
 } // namespace web
 } // namespace ply

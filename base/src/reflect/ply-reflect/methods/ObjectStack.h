@@ -28,9 +28,9 @@ struct ObjectStack {
     BlockList storage;
     Sequence<AnyObject> items;
 
-    AnyObject* appendObject(TypeDescriptor* type);
-    void popLastObject();
-    void deleteRange(const Boundary& from, const WeakSequenceRef<AnyObject>& to);
+    AnyObject* append_object(TypeDescriptor* type);
+    void pop_last_object();
+    void delete_range(const Boundary& from, const WeakSequenceRef<AnyObject>& to);
     PLY_INLINE Boundary end() {
         return {this->storage.end(), this->items.end()};
     }

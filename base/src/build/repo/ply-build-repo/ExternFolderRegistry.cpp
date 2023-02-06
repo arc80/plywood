@@ -18,47 +18,48 @@ namespace build {
 Owned<ExternFolderRegistry> ExternFolderRegistry::instance_;
 
 PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
-    String infoPath = Path.join(path, "info.pylon");
-    String strContents = FileSystem.loadTextAutodetect(infoPath);
-    if (FileSystem.lastResult() != FSResult::OK)
+    String info_path = Path.join(path, "info.pylon");
+    String str_contents = FileSystem.load_text_autodetect(info_path);
+    if (FileSystem.last_result() != FSResult::OK)
         return nullptr;
 
-    auto aRoot = pylon::Parser{}.parse(infoPath, strContents).root;
-    if (!aRoot->isValid())
+    auto a_root = pylon::Parser{}.parse(info_path, str_contents).root;
+    if (!a_root->is_valid())
         return nullptr;
 
-    Owned<ExternFolder> info = pylon::import <ExternFolder>(aRoot);
+    Owned<ExternFolder> info = pylon::import <ExternFolder>(a_root);
     info->path = std::move(path);
 
     return info;
 }
 
 PLY_NO_INLINE bool ExternFolder::save() const {
-    auto aRoot = pylon::exportObj(AnyObject::bind(this));
-    String strContents = pylon::toString(aRoot);
-    String infoPath = Path.join(this->path, "info.pylon");
-    FSResult rc = FileSystem.makeDirsAndSaveTextIfDifferent(infoPath, strContents);
+    auto a_root = pylon::export_obj(AnyObject::bind(this));
+    String str_contents = pylon::to_string(a_root);
+    String info_path = Path.join(this->path, "info.pylon");
+    FSResult rc =
+        FileSystem.make_dirs_and_save_text_if_different(info_path, str_contents);
     return (rc == FSResult::OK || rc == FSResult::Unchanged);
 }
 
 Owned<ExternFolderRegistry> ExternFolderRegistry::create() {
     PLY_ASSERT(!instance_);
-    Owned<ExternFolderRegistry> externFolders = new ExternFolderRegistry;
-    externFolders->folders.clear();
-    String buildFolderRoot = Path.join(Workspace.path, "data/extern");
+    Owned<ExternFolderRegistry> extern_folders = new ExternFolderRegistry;
+    extern_folders->folders.clear();
+    String build_folder_root = Path.join(Workspace.path, "data/extern");
     // FIXME: Use native() or compat() consistently
     // FIXME: Detect and report duplicate extern folders
-    for (const FileInfo& entry : FileSystem.listDir(buildFolderRoot, 0)) {
-        if (!entry.isDir)
+    for (const FileInfo& entry : FileSystem.list_dir(build_folder_root, 0)) {
+        if (!entry.is_dir)
             continue;
-        PLY_ASSERT(!entry.name.isEmpty());
-        String folderPath = Path.join(buildFolderRoot, entry.name);
-        Owned<ExternFolder> folderInfo = ExternFolder::load(std::move(folderPath));
-        if (!folderInfo)
+        PLY_ASSERT(!entry.name.is_empty());
+        String folder_path = Path.join(build_folder_root, entry.name);
+        Owned<ExternFolder> folder_info = ExternFolder::load(std::move(folder_path));
+        if (!folder_info)
             continue;
-        externFolders->folders.append(std::move(folderInfo));
+        extern_folders->folders.append(std::move(folder_info));
     }
-    return externFolders;
+    return extern_folders;
 }
 
 ExternFolder* ExternFolderRegistry::find(StringView desc) const {
@@ -69,26 +70,27 @@ ExternFolder* ExternFolderRegistry::find(StringView desc) const {
     return nullptr;
 }
 
-PLY_NO_INLINE String makeUniqueFileName(StringView parentFolder, StringView prefix) {
+PLY_NO_INLINE String make_unique_file_name(StringView parent_folder,
+                                           StringView prefix) {
     u32 number = 0;
     String suffix;
     for (;;) {
-        String path = Path.join(parentFolder, prefix + suffix);
+        String path = Path.join(parent_folder, prefix + suffix);
         if (FileSystem.exists(path) == ExistsResult::NotFound)
             return path;
         number++;
         suffix = to_string(number);
-        u32 numZeroDigits = max<s32>(3 - suffix.numBytes, 0);
-        suffix = String::format(".{}{}", StringView{"0"} * numZeroDigits, suffix);
+        u32 num_zero_digits = max<s32>(3 - suffix.num_bytes, 0);
+        suffix = String::format(".{}{}", StringView{"0"} * num_zero_digits, suffix);
     }
 }
 
 PLY_NO_INLINE ExternFolder* ExternFolderRegistry::create(StringView desc) {
     // Make directory
-    String folderPath =
-        makeUniqueFileName(Path.join(Workspace.path, "data/extern"), desc);
-    FSResult fsResult = FileSystem.makeDirs(folderPath);
-    if (!(fsResult == FSResult::OK || fsResult == FSResult::AlreadyExists)) {
+    String folder_path =
+        make_unique_file_name(Path.join(Workspace.path, "data/extern"), desc);
+    FSResult fs_result = FileSystem.make_dirs(folder_path);
+    if (!(fs_result == FSResult::OK || fs_result == FSResult::AlreadyExists)) {
         PLY_ASSERT(
             0); // Don't bother to handle gracefully; this library will be deleted soon
         return nullptr;
@@ -96,7 +98,7 @@ PLY_NO_INLINE ExternFolder* ExternFolderRegistry::create(StringView desc) {
 
     // Create ExternFolder object
     ExternFolder* folder = new ExternFolder;
-    folder->path = std::move(folderPath);
+    folder->path = std::move(folder_path);
     folder->desc = desc;
     this->folders.append(folder);
     return folder;

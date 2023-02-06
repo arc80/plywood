@@ -28,7 +28,7 @@ InStream::InStream(InPipe* in_pipe, bool is_pipe_owner) {
 
     if (in_pipe) {
         // Init first block.
-        this->block = BlockList::createBlock(this->status.block_size);
+        this->block = BlockList::create_block(this->status.block_size);
         this->start_byte = this->block->bytes;
         this->cur_byte = this->block->bytes;
         this->end_byte = this->block->bytes;
@@ -55,20 +55,20 @@ bool InStream::load_more_data() {
     PLY_ASSERT(this->end_byte == this->block->unused());
 
     // Does the current block have unused space?
-    if (this->block->numBytesUsed >= this->block->blockSize) {
+    if (this->block->num_bytes_used >= this->block->block_size) {
         // The current block is out of space.
-        if (this->block->nextBlock) {
+        if (this->block->next_block) {
             // The next block already exists. Can happen after rewinding.
-            this->block = this->block->nextBlock;
+            this->block = this->block->next_block;
         } else {
             // Append a new empty block.
-            BlockList::appendBlockWithRecycle(this->block, this->status.block_size);
+            BlockList::append_block_with_recycle(this->block, this->status.block_size);
         }
 
         // Expose the new block's data.
         this->start_byte = this->block->bytes;
         this->cur_byte = this->block->bytes;
-        this->end_byte = this->block->bytes + this->block->numBytesUsed;
+        this->end_byte = this->block->bytes + this->block->num_bytes_used;
 
         // If there is already readable data, such as after rewinding, we are done.
         if (this->cur_byte < this->end_byte)
@@ -76,9 +76,9 @@ bool InStream::load_more_data() {
     }
 
     // Load data into the current block's unused space.
-    PLY_ASSERT(this->block->numBytesUsed < this->block->blockSize);
-    u32 num_bytes_loaded = this->in_pipe->read(this->block->viewUnusedBytes());
-    this->block->numBytesUsed += num_bytes_loaded;
+    PLY_ASSERT(this->block->num_bytes_used < this->block->block_size);
+    u32 num_bytes_loaded = this->in_pipe->read(this->block->view_unused_bytes());
+    this->block->num_bytes_used += num_bytes_loaded;
     this->end_byte += num_bytes_loaded;
     if (num_bytes_loaded == 0) {
         this->status.eof = true;
@@ -87,7 +87,7 @@ bool InStream::load_more_data() {
 }
 
 u64 InStream::get_seek_pos() const {
-    u64 relative_to = this->block ? this->block->fileOffset : 0;
+    u64 relative_to = this->block ? this->block->file_offset : 0;
     return relative_to + (this->cur_byte - this->start_byte);
 }
 
@@ -97,7 +97,7 @@ void InStream::rewind(const BlockList::WeakRef& pos) {
         PLY_ASSERT(this->block);
         this->block = pos.block;
         this->start_byte = pos.block->bytes;
-        this->end_byte = pos.block->bytes + pos.block->numBytesUsed;
+        this->end_byte = pos.block->bytes + pos.block->num_bytes_used;
     } else {
         PLY_ASSERT(!this->block);
     }
@@ -114,15 +114,15 @@ char InStream::read_byte_internal() {
 }
 
 bool InStream::read_internal(MutStringView dst) {
-    while (dst.numBytes > 0) {
+    while (dst.num_bytes > 0) {
         if (!this->load_more_data()) {
-            memset(dst.bytes, 0, dst.numBytes);
+            memset(dst.bytes, 0, dst.num_bytes);
             return false;
         }
-        u32 toCopy = min<u32>(dst.numBytes, this->num_bytes_readable());
-        memcpy(dst.bytes, this->cur_byte, toCopy);
-        this->cur_byte += toCopy;
-        dst.offsetHead(toCopy);
+        u32 to_copy = min<u32>(dst.num_bytes, this->num_bytes_readable());
+        memcpy(dst.bytes, this->cur_byte, to_copy);
+        this->cur_byte += to_copy;
+        dst.offset_head(to_copy);
     }
 
     return true;
@@ -135,7 +135,7 @@ String InStream::read_remaining_contents() {
     }
     PLY_ASSERT(this->status.eof);
     this->close();
-    return BlockList::toString(std::move(save_point));
+    return BlockList::to_string(std::move(save_point));
 }
 
 ViewInStream::ViewInStream(StringView view) {

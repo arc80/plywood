@@ -36,7 +36,7 @@ PLY_DLL_ENTRY size_t dlmalloc_usable_size(void*);
 Heap_t Heap;
 #endif // !PLY_DLL_IMPORTING
 
-void Heap_t::zeroInit() {
+void Heap_t::zero_init() {
     memset(static_cast<void*>(this), 0, sizeof(*this));
 }
 
@@ -45,9 +45,9 @@ void* Heap_t::alloc(ureg size) {
     return memory_dl::dlmalloc((size_t) size, &this->mstate);
 }
 
-void* Heap_t::realloc(void* ptr, ureg newSize) {
+void* Heap_t::realloc(void* ptr, ureg new_size) {
     LockGuard<Mutex_LazyInit> guard(this->mutex);
-    return memory_dl::dlrealloc(ptr, (size_t) newSize, &this->mstate);
+    return memory_dl::dlrealloc(ptr, (size_t) new_size, &this->mstate);
 }
 
 void Heap_t::free(void* ptr) {
@@ -57,16 +57,16 @@ void Heap_t::free(void* ptr) {
     return memory_dl::dlfree(ptr, &this->mstate);
 }
 
-void* Heap_t::allocAligned(ureg size, ureg alignment) {
+void* Heap_t::alloc_aligned(ureg size, ureg alignment) {
     LockGuard<Mutex_LazyInit> guard(this->mutex);
     return memory_dl::dlmemalign((size_t) alignment, (size_t) size, &this->mstate);
 }
 
-void Heap_t::freeAligned(void* ptr) {
+void Heap_t::free_aligned(void* ptr) {
     free(ptr);
 }
 
-HeapStats Heap_t::getStats() {
+HeapStats Heap_t::get_stats() {
     HeapStats stats;
     LockGuard<Mutex_LazyInit> guard(this->mutex);
     memory_dl::dlmalloc_stats(&this->mstate, stats);
@@ -74,12 +74,12 @@ HeapStats Heap_t::getStats() {
 }
 
 #if PLY_DLMALLOC_FAST_STATS
-ureg Heap_t::getInUseBytes() const {
-    return this->mstate.inUseBytes;
+ureg Heap_t::get_in_use_bytes() const {
+    return this->mstate.in_use_bytes;
 }
 #endif
 
-ureg Heap_t::getSize(void* ptr) {
+ureg Heap_t::get_size(void* ptr) {
     // No need to lock
     return memory_dl::dlmalloc_usable_size(ptr);
 }

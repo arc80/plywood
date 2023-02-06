@@ -18,20 +18,20 @@ PLY_NO_INLINE QuatPos QuatPos::identity() {
     return {{0, 0, 0, 1}, {0, 0, 0}};
 }
 
-PLY_NO_INLINE QuatPos QuatPos::makeTranslation(const Float3& pos) {
+PLY_NO_INLINE QuatPos QuatPos::make_translation(const Float3& pos) {
     return {{0, 0, 0, 1}, pos};
 }
 
-PLY_NO_INLINE QuatPos QuatPos::makeRotation(const Float3& unitAxis, float radians) {
-    return {Quaternion::fromAxisAngle(unitAxis, radians), {0, 0, 0}};
+PLY_NO_INLINE QuatPos QuatPos::make_rotation(const Float3& unit_axis, float radians) {
+    return {Quaternion::from_axis_angle(unit_axis, radians), {0, 0, 0}};
 }
 
-PLY_NO_INLINE QuatPos QuatPos::fromOrtho(const Float3x4& m) {
-    return {Quaternion::fromOrtho(m.asFloat3x3()), m[3]};
+PLY_NO_INLINE QuatPos QuatPos::from_ortho(const Float3x4& m) {
+    return {Quaternion::from_ortho(m.as_float3x3()), m[3]};
 }
 
-PLY_NO_INLINE QuatPos QuatPos::fromOrtho(const Float4x4& m) {
-    return {Quaternion::fromOrtho(m), m[3].asFloat3()};
+PLY_NO_INLINE QuatPos QuatPos::from_ortho(const Float4x4& m) {
+    return {Quaternion::from_ortho(m), m[3].as_float3()};
 }
 
 } // namespace ply

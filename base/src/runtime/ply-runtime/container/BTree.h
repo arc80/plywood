@@ -29,36 +29,38 @@ private:
     struct Node {
         Node* parent;
         u16 size;
-        bool isLeaf;
+        bool is_leaf;
 
-        static Node* createInnerNode() {
-            Node* node = (Node*) Heap.allocAligned(
-                sizeof(Node) + sizeof(Link) * Traits::NodeCapacity, Traits::NodeCapacity);
+        static Node* create_inner_node() {
+            Node* node = (Node*) Heap.alloc_aligned(
+                sizeof(Node) + sizeof(Link) * Traits::NodeCapacity,
+                Traits::NodeCapacity);
             new (node) Node{nullptr, 0, false};
             return node;
         }
 
-        static Node* createLeaf() {
-            Node* node = (Node*) Heap.allocAligned(
-                sizeof(Node) + sizeof(Item) * Traits::NodeCapacity, Traits::NodeCapacity);
+        static Node* create_leaf() {
+            Node* node = (Node*) Heap.alloc_aligned(
+                sizeof(Node) + sizeof(Item) * Traits::NodeCapacity,
+                Traits::NodeCapacity);
             new (node) Node{nullptr, 0, true};
             return node;
         }
 
-        Link* getLinks() {
-            PLY_ASSERT(!isLeaf);
+        Link* get_links() {
+            PLY_ASSERT(!is_leaf);
             return (Link*) (this + 1);
         }
 
-        Item* getItems() {
-            PLY_ASSERT(isLeaf);
+        Item* get_items() {
+            PLY_ASSERT(is_leaf);
             return (Item*) (this + 1);
         }
 
-        Node* getLastChildLessThan(const Index& index) {
-            PLY_ASSERT(!isLeaf);
+        Node* get_last_child_less_than(const Index& index) {
+            PLY_ASSERT(!is_leaf);
             PLY_ASSERT(size > 0);
-            Link* links = getLinks();
+            Link* links = get_links();
             u32 lo = 0;
             u32 hi = size - 1;
             while (lo < hi) {
@@ -71,10 +73,10 @@ private:
             return links[lo].child;
         }
 
-        u32 findLink(Node* child) {
-            PLY_ASSERT(!isLeaf);
+        u32 find_link(Node* child) {
+            PLY_ASSERT(!is_leaf);
             u32 s = size;
-            Link* links = getLinks();
+            Link* links = get_links();
             for (u32 i = 0; i < s; i++) {
                 if (links[i].child == child)
                     return i;
@@ -83,98 +85,98 @@ private:
             return 0;
         }
 
-        Node* getRightSibling() {
-            PLY_ASSERT(isLeaf);
+        Node* get_right_sibling() {
+            PLY_ASSERT(is_leaf);
             Node* node = this;
             for (;;) {
                 Node* p = node->parent;
                 if (!p)
                     return nullptr;
-                u32 pos = p->findLink(node);
+                u32 pos = p->find_link(node);
                 if (pos < u32(p->size) - 1) {
-                    node = p->getLinks()[pos + 1].child;
+                    node = p->get_links()[pos + 1].child;
                     break;
                 }
                 node = p;
             }
-            while (!node->isLeaf) {
-                node = node->getLinks()[0].child;
+            while (!node->is_leaf) {
+                node = node->get_links()[0].child;
             }
             return node;
         }
 
-        Node* getLeftSibling() {
-            PLY_ASSERT(isLeaf);
+        Node* get_left_sibling() {
+            PLY_ASSERT(is_leaf);
             Node* node = this;
             for (;;) {
                 Node* p = node->parent;
                 if (!p)
                     return nullptr;
-                u32 pos = p->findLink(node);
+                u32 pos = p->find_link(node);
                 if (pos > 0) {
-                    node = p->getLinks()[pos - 1].child;
+                    node = p->get_links()[pos - 1].child;
                     break;
                 }
                 node = p;
             }
-            while (!node->isLeaf) {
-                node = node->getLinks()[node->size - 1].child;
+            while (!node->is_leaf) {
+                node = node->get_links()[node->size - 1].child;
             }
             return node;
         }
 
-        Index getFirstIndex() {
+        Index get_first_index() {
             PLY_ASSERT(size > 0);
-            if (isLeaf) {
-                return Traits::getIndex(getItems()[0]);
+            if (is_leaf) {
+                return Traits::get_index(get_items()[0]);
             } else {
-                return getLinks()[0].index;
+                return get_links()[0].index;
             }
         }
 
-        void insertLink(Node* child, u32 pos) {
-            PLY_ASSERT(!isLeaf);
+        void insert_link(Node* child, u32 pos) {
+            PLY_ASSERT(!is_leaf);
             PLY_ASSERT(size < Traits::NodeCapacity);
             PLY_ASSERT(pos <= size);
-            Link* links = getLinks();
+            Link* links = get_links();
             u32 s = size;
             new (links + s) Link;
             for (u32 i = s; i > pos; i--) {
                 links[i] = std::move(links[i - 1]);
             }
-            links[pos].index = child->getFirstIndex();
+            links[pos].index = child->get_first_index();
             links[pos].child = child;
             child->parent = this;
             size++;
         }
 
-        void deleteLink(u32 pos) {
-            PLY_ASSERT(!isLeaf);
+        void delete_link(u32 pos) {
+            PLY_ASSERT(!is_leaf);
             PLY_ASSERT(pos < size);
             u32 limit = size - 1;
-            Link* links = getLinks();
+            Link* links = get_links();
             for (u32 i = pos; i < limit; i++) {
                 links[i] = std::move(links[i + 1]);
             }
             links[limit].~Link();
             size--;
-            // FIXME: Don't bother updating the index if the Index type doesn't reference
-            // items. We only really need this eg. when Index is a StringView into a String
-            // owned by an item, as in SemaEntity::nameToChild.
+            // FIXME: Don't bother updating the index if the Index type doesn't
+            // reference items. We only really need this eg. when Index is a StringView
+            // into a String owned by an item, as in SemaEntity::name_to_child.
             if (pos == 0 && limit > 0) {
-                this->updateIndexInParent(links[0].index);
+                this->update_index_in_parent(links[0].index);
             }
         }
 
-        u32 findGreaterOrEqualPos(const Index& index) {
-            PLY_ASSERT(isLeaf);
-            Item* items = getItems();
+        u32 find_greater_or_equal_pos(const Index& index) {
+            PLY_ASSERT(is_leaf);
+            Item* items = get_items();
             u32 lo = 0;
             u32 hi = size;
             while (lo < hi) {
                 u32 mid = (lo + hi) / 2;
-                const Index& otherIndex = Traits::getIndex(items[mid]);
-                if (!Traits::less(otherIndex, index))
+                const Index& other_index = Traits::get_index(items[mid]);
+                if (!Traits::less(other_index, index))
                     hi = mid;
                 else
                     lo = mid + 1;
@@ -182,18 +184,18 @@ private:
             return lo;
         }
 
-        u32 findInsertPos(const Index& index) {
-            // This is different from findGreaterOrEqualPos because, in the case of
-            // CookJobSchedule, we want inserts with the same timestamp to appear *after* the
-            // existing item, so that it acts as a queue.
-            PLY_ASSERT(isLeaf);
-            Item* items = getItems();
+        u32 find_insert_pos(const Index& index) {
+            // This is different from find_greater_or_equal_pos because, in the case of
+            // CookJobSchedule, we want inserts with the same timestamp to appear
+            // *after* the existing item, so that it acts as a queue.
+            PLY_ASSERT(is_leaf);
+            Item* items = get_items();
             u32 lo = 0;
             u32 hi = size;
             while (lo < hi) {
                 u32 mid = (lo + hi) / 2;
-                const Index& otherIndex = Traits::getIndex(items[mid]);
-                if (Traits::less(index, otherIndex))
+                const Index& other_index = Traits::get_index(items[mid]);
+                if (Traits::less(index, other_index))
                     hi = mid;
                 else
                     lo = mid + 1;
@@ -201,11 +203,11 @@ private:
             return lo;
         }
 
-        Item& insertItemAt(u32 pos) {
-            PLY_ASSERT(isLeaf);
+        Item& insert_item_at(u32 pos) {
+            PLY_ASSERT(is_leaf);
             PLY_ASSERT(size < Traits::NodeCapacity);
             PLY_ASSERT(pos <= size);
-            Item* items = getItems();
+            Item* items = get_items();
             u32 s = size;
             new (items + s) Item();
             for (u32 i = s; i > pos; i--) {
@@ -215,139 +217,140 @@ private:
             return items[pos];
         }
 
-        void updateIndexInParent(const Index& index) {
+        void update_index_in_parent(const Index& index) {
             if (this->parent) {
-                u32 i = this->parent->findLink(this);
-                this->parent->getLinks()[i].index = index;
+                u32 i = this->parent->find_link(this);
+                this->parent->get_links()[i].index = index;
                 if (i == 0) {
-                    this->parent->updateIndexInParent(index);
+                    this->parent->update_index_in_parent(index);
                 }
             }
         }
 
-        void deleteItem(u32 pos) {
-            PLY_ASSERT(isLeaf);
+        void delete_item(u32 pos) {
+            PLY_ASSERT(is_leaf);
             PLY_ASSERT(pos < size);
             u32 limit = size - 1;
-            Item* items = getItems();
+            Item* items = get_items();
             for (u32 i = pos; i < limit; i++) {
                 items[i] = std::move(items[i + 1]);
             }
             items[limit].~Item();
             size--;
-            // FIXME: Don't bother updating the index if the Index type doesn't reference
-            // items. We only really need this eg. when Index is a StringView into a String
-            // owned by an item, as in SemaEntity::nameToChild.
+            // FIXME: Don't bother updating the index if the Index type doesn't
+            // reference items. We only really need this eg. when Index is a StringView
+            // into a String owned by an item, as in SemaEntity::name_to_child.
             if (pos == 0 && limit > 0) {
-                this->updateIndexInParent(Traits::getIndex(items[0]));
+                this->update_index_in_parent(Traits::get_index(items[0]));
             }
         }
 
-        Node* splitLeaf() {
-            PLY_ASSERT(isLeaf);
+        Node* split_leaf() {
+            PLY_ASSERT(is_leaf);
             PLY_ASSERT(size >= 2);
             u32 s = size;
             u32 mid = s / 2;
-            Node* rightSibling = createLeaf();
-            Item* leftItems = getItems();
-            Item* rightItems = rightSibling->getItems();
+            Node* right_sibling = create_leaf();
+            Item* left_items = get_items();
+            Item* right_items = right_sibling->get_items();
             for (u32 i = 0; i < s - mid; i++) {
-                Item* src = leftItems + (mid + i);
-                Item* dst = rightItems + i;
+                Item* src = left_items + (mid + i);
+                Item* dst = right_items + i;
                 new (dst) Item(std::move(*src));
-                Traits::onItemMoved(*dst, rightSibling);
+                Traits::on_item_moved(*dst, right_sibling);
                 src->~Item();
             }
             size = mid;
-            rightSibling->size = (s - mid);
-            return rightSibling;
+            right_sibling->size = (s - mid);
+            return right_sibling;
         }
 
-        Node* splitInnerNode() {
-            PLY_ASSERT(!isLeaf);
+        Node* split_inner_node() {
+            PLY_ASSERT(!is_leaf);
             PLY_ASSERT(size >= 2);
             u32 s = size;
             u32 mid = s / 2;
-            Node* rightSibling = createInnerNode();
-            Link* leftLinks = getLinks();
-            Link* rightLinks = rightSibling->getLinks();
+            Node* right_sibling = create_inner_node();
+            Link* left_links = get_links();
+            Link* right_links = right_sibling->get_links();
             for (u32 i = 0; i < s - mid; i++) {
-                Link* src = leftLinks + (mid + i);
-                Link* dst = rightLinks + i;
+                Link* src = left_links + (mid + i);
+                Link* dst = right_links + i;
                 new (dst) Link(std::move(*src));
-                dst->child->parent = rightSibling;
+                dst->child->parent = right_sibling;
                 src->~Link();
             }
             size = mid;
-            rightSibling->size = (s - mid);
-            return rightSibling;
+            right_sibling->size = (s - mid);
+            return right_sibling;
         }
 
-        Node* merge(Node* rightSibling) {
-            PLY_ASSERT(isLeaf == rightSibling->isLeaf);
-            PLY_ASSERT(parent == rightSibling->parent);
-            PLY_ASSERT(size + rightSibling->size <= Traits::NodeCapacity);
+        Node* merge(Node* right_sibling) {
+            PLY_ASSERT(is_leaf == right_sibling->is_leaf);
+            PLY_ASSERT(parent == right_sibling->parent);
+            PLY_ASSERT(size + right_sibling->size <= Traits::NodeCapacity);
             u32 ls = size;
-            u32 rs = rightSibling->size;
-            if (isLeaf) {
-                Item* leftItems = getItems();
-                Item* rightItems = rightSibling->getItems();
+            u32 rs = right_sibling->size;
+            if (is_leaf) {
+                Item* left_items = get_items();
+                Item* right_items = right_sibling->get_items();
                 for (u32 i = 0; i < rs; i++) {
-                    Item* src = rightItems + i;
-                    Item* dst = leftItems + (ls + i);
+                    Item* src = right_items + i;
+                    Item* dst = left_items + (ls + i);
                     new (dst) Item(std::move(*src));
-                    Traits::onItemMoved(*dst, this);
+                    Traits::on_item_moved(*dst, this);
                     src->~Item();
                 }
             } else {
-                Link* leftLinks = getLinks();
-                Link* rightLinks = rightSibling->getLinks();
+                Link* left_links = get_links();
+                Link* right_links = right_sibling->get_links();
                 for (u32 i = 0; i < rs; i++) {
-                    Link* src = rightLinks + i;
-                    Link* dst = leftLinks + (ls + i);
+                    Link* src = right_links + i;
+                    Link* dst = left_links + (ls + i);
                     new (dst) Link(std::move(*src));
                     dst->child->parent = this;
                     src->~Link();
                 }
             }
             size += rs;
-            Heap.freeAligned(rightSibling);
+            Heap.free_aligned(right_sibling);
             return this;
         }
 
-        void destroyRecursively() {
+        void destroy_recursively() {
             u32 s = size;
-            if (isLeaf) {
-                Item* items = getItems();
+            if (is_leaf) {
+                Item* items = get_items();
                 for (u32 i = 0; i < s; i++) {
                     items[i].~Item();
                 }
             } else {
-                Link* links = getLinks();
+                Link* links = get_links();
                 for (u32 i = 0; i < s; i++) {
-                    links[i].child->destroyRecursively();
+                    links[i].child->destroy_recursively();
                     links[i].~Link();
                 }
             }
-            Heap.freeAligned(this);
+            Heap.free_aligned(this);
         }
 
 #if PLY_BTREE_VALIDATE
-        void validate(u32 parentLinkIndex) {
+        void validate(u32 parent_link_index) {
             PLY_ASSERT(size > 0);
-            if (isLeaf) {
+            if (is_leaf) {
                 // Items must be in increasing order
-                Index limit = parent ? parent->getLinks()[parentLinkIndex].index
-                                     : Traits::getIndex(getItems()[0]);
+                Index limit = parent ? parent->get_links()[parent_link_index].index
+                                     : Traits::get_index(get_items()[0]);
                 for (u32 i = 0; i < size; i++) {
-                    const Index& index = Traits::getIndex(getItems()[i]);
+                    const Index& index = Traits::get_index(get_items()[i]);
                     PLY_ASSERT(limit <= index);
                     limit = index;
                 }
             } else {
                 // Links must be in increasing order
-                Link* links = getLinks();
-                Index limit = parent ? parent->getLinks()[parentLinkIndex].index : links[0].index;
+                Link* links = get_links();
+                Index limit = parent ? parent->get_links()[parent_link_index].index
+                                     : links[0].index;
                 for (u32 i = 0; i < size; i++) {
                     PLY_ASSERT(links[i].child->parent == this);
                     const Index& index = links[i].index;
@@ -362,74 +365,75 @@ private:
 
     Node* m_root = nullptr;
 
-    void insertRightChild(Node* node, Node* leftChild, Node* rightChild) {
+    void insert_right_child(Node* node, Node* left_child, Node* right_child) {
         if (node) {
-            PLY_ASSERT(!node->isLeaf);
-            u32 rightPos = node->findLink(leftChild) + 1;
+            PLY_ASSERT(!node->is_leaf);
+            u32 right_pos = node->find_link(left_child) + 1;
             if (node->size >= Traits::NodeCapacity) {
-                Node* rightSibling = node->splitInnerNode();
-                insertRightChild(node->parent, node, rightSibling);
-                if (rightPos > node->size) {
-                    rightPos -= node->size;
-                    node = rightSibling;
-                    PLY_ASSERT(rightPos <= node->size);
+                Node* right_sibling = node->split_inner_node();
+                insert_right_child(node->parent, node, right_sibling);
+                if (right_pos > node->size) {
+                    right_pos -= node->size;
+                    node = right_sibling;
+                    PLY_ASSERT(right_pos <= node->size);
                 }
             }
-            node->insertLink(rightChild, rightPos);
+            node->insert_link(right_child, right_pos);
         } else {
             // Create new root node for both children
-            PLY_ASSERT(m_root == leftChild);
-            Node* node = Node::createInnerNode();
+            PLY_ASSERT(m_root == left_child);
+            Node* node = Node::create_inner_node();
             node->size = 2;
-            Link* links = node->getLinks();
-            new (links + 0) Link{leftChild->getFirstIndex(), leftChild};
-            leftChild->parent = node;
-            new (links + 1) Link{rightChild->getFirstIndex(), rightChild};
-            rightChild->parent = node;
+            Link* links = node->get_links();
+            new (links + 0) Link{left_child->get_first_index(), left_child};
+            left_child->parent = node;
+            new (links + 1) Link{right_child->get_first_index(), right_child};
+            right_child->parent = node;
             m_root = node;
         }
     }
 
     Node* split(Node* node) {
-        PLY_ASSERT(node->isLeaf);
-        Node* rightSibling = node->splitLeaf();
-        insertRightChild(node->parent, node, rightSibling);
-        return rightSibling;
+        PLY_ASSERT(node->is_leaf);
+        Node* right_sibling = node->split_leaf();
+        insert_right_child(node->parent, node, right_sibling);
+        return right_sibling;
     }
 
-    void tryCompact(Node* node) {
+    void try_compact(Node* node) {
         // Note: This BTree is not really self-balancing because we never "steal" from
-        // siblings. We only ever merge two siblings into one. For example, it's possible for
-        // the left-most or right-most child of any node to contain only a single item or link
-        // (if it couldn't be merged with its sibling). If we wanted self-balancing behavior,
-        // we would steal from a sibling any time a node became less than half-full.
+        // siblings. We only ever merge two siblings into one. For example, it's
+        // possible for the left-most or right-most child of any node to contain only a
+        // single item or link (if it couldn't be merged with its sibling). If we wanted
+        // self-balancing behavior, we would steal from a sibling any time a node became
+        // less than half-full.
         Node* parent = node->parent;
         if (parent) {
-            Link* links = parent->getLinks();
-            u32 pos = parent->findLink(node);
+            Link* links = parent->get_links();
+            u32 pos = parent->find_link(node);
             if (node->size == 0) {
-                Heap.freeAligned(node);
-                parent->deleteLink(pos);
-                tryCompact(parent);
+                Heap.free_aligned(node);
+                parent->delete_link(pos);
+                try_compact(parent);
             } else {
                 if (pos > 0) {
-                    Node* leftSibling = links[pos - 1].child;
-                    PLY_ASSERT(node->isLeaf == leftSibling->isLeaf);
-                    if (node->size + leftSibling->size <= Traits::NodeCapacity) {
-                        node = leftSibling->merge(node);
-                        parent->deleteLink(pos);
-                        tryCompact(parent);
+                    Node* left_sibling = links[pos - 1].child;
+                    PLY_ASSERT(node->is_leaf == left_sibling->is_leaf);
+                    if (node->size + left_sibling->size <= Traits::NodeCapacity) {
+                        node = left_sibling->merge(node);
+                        parent->delete_link(pos);
+                        try_compact(parent);
                         return;
                     }
                     // Fall through to other test
                 }
                 if (pos < u32(parent->size) - 1) {
-                    Node* rightSibling = links[pos + 1].child;
-                    PLY_ASSERT(node->isLeaf == rightSibling->isLeaf);
-                    if (node->size + rightSibling->size <= Traits::NodeCapacity) {
-                        node->merge(rightSibling);
-                        parent->deleteLink(pos + 1);
-                        tryCompact(parent);
+                    Node* right_sibling = links[pos + 1].child;
+                    PLY_ASSERT(node->is_leaf == right_sibling->is_leaf);
+                    if (node->size + right_sibling->size <= Traits::NodeCapacity) {
+                        node->merge(right_sibling);
+                        parent->delete_link(pos + 1);
+                        try_compact(parent);
                     }
                 }
             }
@@ -437,11 +441,11 @@ private:
             PLY_ASSERT(node == m_root);
             if (node->size == 0) {
                 clear();
-            } else if (node->size == 1 && !node->isLeaf) {
-                m_root = node->getLinks()[0].child;
+            } else if (node->size == 1 && !node->is_leaf) {
+                m_root = node->get_links()[0].child;
                 m_root->parent = nullptr;
-                node->deleteLink(0);
-                Heap.freeAligned(node);
+                node->delete_link(0);
+                Heap.free_aligned(node);
             }
         }
     }
@@ -451,64 +455,64 @@ public:
     private:
         static constexpr uptr PosMask = uptr(Traits::NodeCapacity - 1);
         friend class BTree;
-        uptr leafPos;
+        uptr leaf_pos;
 
-        Node* getLeaf() const {
-            Node* leaf = (Node*) (leafPos & ~PosMask);
-            PLY_ASSERT(leaf->isLeaf);
+        Node* get_leaf() const {
+            Node* leaf = (Node*) (leaf_pos & ~PosMask);
+            PLY_ASSERT(leaf->is_leaf);
             return leaf;
         }
 
-        u32 getPos() const {
-            return leafPos & PosMask;
+        u32 get_pos() const {
+            return leaf_pos & PosMask;
         }
 
     public:
-        Iterator() : leafPos{0} {
+        Iterator() : leaf_pos{0} {
         }
 
         Iterator(Node* leaf, u32 pos) {
-            PLY_ASSERT(isAlignedPowerOf2((uptr) leaf, Traits::NodeCapacity));
+            PLY_ASSERT(is_aligned_power_of2((uptr) leaf, Traits::NodeCapacity));
             PLY_ASSERT(pos < Traits::NodeCapacity);
-            leafPos = uptr(leaf) | pos;
+            leaf_pos = uptr(leaf) | pos;
         }
 
         // Note: the "end" of the tree is considered valid
-        bool isValid() const {
-            return (leafPos != 0);
+        bool is_valid() const {
+            return (leaf_pos != 0);
         }
 
-        Item& getItem() const {
-            PLY_ASSERT(isValid());
-            return getLeaf()->getItems()[getPos()];
+        Item& get_item() const {
+            PLY_ASSERT(is_valid());
+            return get_leaf()->get_items()[get_pos()];
         }
 
         void next() {
             // Why don't we assert here?
-            if (leafPos != 0) {
-                Node* leaf = getLeaf();
-                if (getPos() + 1 < leaf->size) {
-                    leafPos++;
+            if (leaf_pos != 0) {
+                Node* leaf = get_leaf();
+                if (get_pos() + 1 < leaf->size) {
+                    leaf_pos++;
                     return;
                 }
-                leafPos = (uptr) leaf->getRightSibling(); // pos is 0
-                PLY_ASSERT(isAlignedPowerOf2(leafPos, Traits::NodeCapacity));
+                leaf_pos = (uptr) leaf->get_right_sibling(); // pos is 0
+                PLY_ASSERT(is_aligned_power_of2(leaf_pos, Traits::NodeCapacity));
             }
         }
 
         void prev() {
-            PLY_ASSERT(isValid()); // possibly points beyond end, but that's OK
-            if (getPos() > 0) {
-                leafPos--;
+            PLY_ASSERT(is_valid()); // possibly points beyond end, but that's OK
+            if (get_pos() > 0) {
+                leaf_pos--;
             } else {
-                Node* left = getLeaf()->getLeftSibling();
+                Node* left = get_leaf()->get_left_sibling();
                 PLY_ASSERT(left->size > 0);
-                leafPos = (uptr) left + (left->size - 1);
+                leaf_pos = (uptr) left + (left->size - 1);
             }
         }
 
         bool operator!=(const Iterator& other) {
-            return leafPos != other.leafPos;
+            return leaf_pos != other.leaf_pos;
         }
 
         void operator++() {
@@ -516,47 +520,50 @@ public:
         }
 
         Item& operator*() const {
-            return getItem();
+            return get_item();
         }
 
         Item* operator->() const {
-            return &getItem();
+            return &get_item();
         }
     };
 
 private:
-    void updateLinkIndex(const Iterator& iter) {
-        Node* node = iter.getLeaf();
-        if (node->size > 0 && iter.getPos() == 0) {
+    void update_link_index(const Iterator& iter) {
+        Node* node = iter.get_leaf();
+        if (node->size > 0 && iter.get_pos() == 0) {
             Node* parent = node->parent;
             if (parent) {
-                PLY_ASSERT(!parent->isLeaf);
-                const Index& newIndex = Traits::getIndex(node->getItems()[0]);
-                u32 linkPos;
+                PLY_ASSERT(!parent->is_leaf);
+                const Index& new_index = Traits::get_index(node->get_items()[0]);
+                u32 link_pos;
                 do {
-                    linkPos = parent->findLink(node);
-                    //                    PLY_ASSERT(linkPos == 0 || newIndex >=
-                    //                    parent->getLinks()[linkPos - 1].index);
-                    PLY_ASSERT(linkPos == 0 ||
-                               !Traits::less(newIndex, parent->getLinks()[linkPos - 1].index));
-                    //                    PLY_ASSERT(linkPos == parent->size - 1 || newIndex <=
-                    //                    parent->getLinks()[linkPos + 1].index);
-                    PLY_ASSERT(linkPos == (u32) parent->size - 1 ||
-                               !Traits::less(parent->getLinks()[linkPos + 1].index, newIndex));
-                    Index& linkIndex = parent->getLinks()[linkPos].index;
-                    if (newIndex == linkIndex)
+                    link_pos = parent->find_link(node);
+                    //                    PLY_ASSERT(link_pos == 0 || new_index >=
+                    //                    parent->get_links()[link_pos - 1].index);
+                    PLY_ASSERT(link_pos == 0 ||
+                               !Traits::less(new_index,
+                                             parent->get_links()[link_pos - 1].index));
+                    //                    PLY_ASSERT(link_pos == parent->size - 1 ||
+                    //                    new_index <= parent->get_links()[link_pos +
+                    //                    1].index);
+                    PLY_ASSERT(link_pos == (u32) parent->size - 1 ||
+                               !Traits::less(parent->get_links()[link_pos + 1].index,
+                                             new_index));
+                    Index& link_index = parent->get_links()[link_pos].index;
+                    if (new_index == link_index)
                         return;
-                    linkIndex = newIndex;
+                    link_index = new_index;
                     node = parent;
                     parent = node->parent;
-                } while (parent && linkPos == 0);
+                } while (parent && link_pos == 0);
             }
         }
     }
 
 public:
     BTree() {
-        PLY_ASSERT(isPowerOf2(Traits::NodeCapacity));
+        PLY_ASSERT(is_power_of2(Traits::NodeCapacity));
     }
 
     BTree(BTree&& other) : m_root{other.m_root} {
@@ -565,127 +572,127 @@ public:
 
     ~BTree() {
         if (m_root)
-            m_root->destroyRecursively();
+            m_root->destroy_recursively();
     }
 
-    bool isEmpty() const {
+    bool is_empty() const {
         return (m_root == nullptr);
     }
 
     void clear() {
         if (m_root) {
-            m_root->destroyRecursively();
+            m_root->destroy_recursively();
             m_root = nullptr;
         }
     }
 
-    Iterator findLastLessThan(const Index& index) const {
+    Iterator find_last_less_than(const Index& index) const {
         if (!m_root)
             return {nullptr, 0};
         Node* node = m_root;
-        while (!node->isLeaf) {
-            node = node->getLastChildLessThan(index);
+        while (!node->is_leaf) {
+            node = node->get_last_child_less_than(index);
         }
-        u32 pos = node->findGreaterOrEqualPos(index);
+        u32 pos = node->find_greater_or_equal_pos(index);
         if (pos > 0) {
             return {node, pos - 1};
         } else {
-            node = node->getLeftSibling();
+            node = node->get_left_sibling();
             return {node, node ? node->size - 1 : 0u};
         }
     }
 
-    Iterator findFirstGreaterOrEqualTo(const Index& index) const {
+    Iterator find_first_greater_or_equal_to(const Index& index) const {
         if (!m_root)
             return {nullptr, 0};
         Node* node = m_root;
-        while (!node->isLeaf) {
-            node = node->getLastChildLessThan(index);
+        while (!node->is_leaf) {
+            node = node->get_last_child_less_than(index);
         }
-        u32 pos = node->findGreaterOrEqualPos(index);
+        u32 pos = node->find_greater_or_equal_pos(index);
         if (pos >= node->size)
-            return {node->getRightSibling(), 0};
+            return {node->get_right_sibling(), 0};
         return {node, pos};
     }
 
-    Iterator prepareInsert(const Index& index) {
+    Iterator prepare_insert(const Index& index) {
         if (!m_root)
-            m_root = Node::createLeaf();
+            m_root = Node::create_leaf();
         Node* node = m_root;
-        while (!node->isLeaf) {
-            node = node->getLastChildLessThan(index);
+        while (!node->is_leaf) {
+            node = node->get_last_child_less_than(index);
         }
-        u32 pos = node->findInsertPos(index);
+        u32 pos = node->find_insert_pos(index);
         if (node->size >= Traits::NodeCapacity) {
-            Node* rightSibling = split(node);
+            Node* right_sibling = split(node);
             if (pos > node->size) {
                 pos -= node->size;
-                node = rightSibling;
+                node = right_sibling;
             }
         }
         return Iterator{node, pos};
     }
 
     void insert(const Item& item) {
-        Iterator iter = prepareInsert(Traits::getIndex(item));
-        Item& dstItem = iter.getLeaf()->insertItemAt(iter.getPos());
-        dstItem = item;
-        Traits::onItemMoved(dstItem, iter.getLeaf());
-        updateLinkIndex(iter);
+        Iterator iter = prepare_insert(Traits::get_index(item));
+        Item& dst_item = iter.get_leaf()->insert_item_at(iter.get_pos());
+        dst_item = item;
+        Traits::on_item_moved(dst_item, iter.get_leaf());
+        update_link_index(iter);
     }
 
     void insert(Item&& item) {
-        Iterator iter = prepareInsert(Traits::getIndex(item));
-        Item& dstItem = iter.getLeaf()->insertItemAt(iter.getPos());
-        dstItem = std::move(item);
-        Traits::onItemMoved(dstItem, iter.getLeaf());
-        updateLinkIndex(iter);
+        Iterator iter = prepare_insert(Traits::get_index(item));
+        Item& dst_item = iter.get_leaf()->insert_item_at(iter.get_pos());
+        dst_item = std::move(item);
+        Traits::on_item_moved(dst_item, iter.get_leaf());
+        update_link_index(iter);
     }
 
     // locate() is used when items maintain pointers back to their own Nodes, such as in
-    // CookJobSchedule. "context" is just a pointer to the Node with the type erased. (In
-    // CookJobSchedule, this back-pointer is maintained in Job::btContext, and it gets updated
-    // each time Traits::onItemMoved() is called.) (This avoids having to search for the Job in
-    // the CookJobSchedule from scratch each time. Maybe this strategy is a little bit overkill
-    // and it would be OK to just search for the Job from scratch each time... I'll leave it
-    // as-is for now.)
+    // CookJobSchedule. "context" is just a pointer to the Node with the type erased.
+    // (In CookJobSchedule, this back-pointer is maintained in Job::bt_context, and it
+    // gets updated each time Traits::on_item_moved() is called.) (This avoids having to
+    // search for the Job in the CookJobSchedule from scratch each time. Maybe this
+    // strategy is a little bit overkill and it would be OK to just search for the Job
+    // from scratch each time... I'll leave it as-is for now.)
     template <typename MatchItem>
     Iterator locate(void* context, const MatchItem& item) {
-        Node* inLeaf = (Node*) context;
-        PLY_ASSERT(inLeaf->isLeaf);
-        u32 s = inLeaf->size;
-        Item* items = inLeaf->getItems();
+        Node* in_leaf = (Node*) context;
+        PLY_ASSERT(in_leaf->is_leaf);
+        u32 s = in_leaf->size;
+        Item* items = in_leaf->get_items();
         for (u32 i = 0; i < s; i++) {
             if (Traits::equal(items[i], item))
-                return Iterator{inLeaf, i};
+                return Iterator{in_leaf, i};
         }
         PLY_ASSERT(0); // Shouldn't get here
         return Iterator{nullptr, 0};
     }
 
-    void checkParents(Iterator& iter) {
-        PLY_ASSERT(!isEmpty());
-        Node* node = iter.getLeaf();
-        PLY_ASSERT(node->size > iter.getPos());
-        Index index = Traits::getIndex(node->getItems()[iter.getPos()]);
+    void check_parents(Iterator& iter) {
+        PLY_ASSERT(!is_empty());
+        Node* node = iter.get_leaf();
+        PLY_ASSERT(node->size > iter.get_pos());
+        Index index = Traits::get_index(node->get_items()[iter.get_pos()]);
         while (node->parent) {
-            u32 pos = node->parent->findLink(node);
-            const Index& linkIndex = node->parent->getLinks()[pos].index;
-            PLY_ASSERT(linkIndex <= index);
+            u32 pos = node->parent->find_link(node);
+            const Index& link_index = node->parent->get_links()[pos].index;
+            PLY_ASSERT(link_index <= index);
             node = node->parent;
-            index = linkIndex;
+            index = link_index;
         }
     }
 
     Item remove(Iterator& iter) {
-        PLY_ASSERT(!isEmpty());
-        Node* node = iter.getLeaf();
-        PLY_ASSERT(node->size > iter.getPos());
-        Item* items = node->getItems();
-        Item result = std::move(items[iter.getPos()]);
-        node->deleteItem(iter.getPos());
-        updateLinkIndex(iter);
-        tryCompact(node);
+        PLY_ASSERT(!is_empty());
+        Node* node = iter.get_leaf();
+        PLY_ASSERT(node->size > iter.get_pos());
+        Item* items = node->get_items();
+        Item result = std::move(items[iter.get_pos()]);
+        node->delete_item(iter.get_pos());
+        update_link_index(iter);
+        try_compact(node);
         return result;
     }
 
@@ -693,9 +700,9 @@ public:
     Iterator begin() {
         Node* node = m_root;
         if (node) {
-            while (!node->isLeaf) {
+            while (!node->is_leaf) {
                 PLY_ASSERT(node->size > 0);
-                node = node->getLinks()[0].child;
+                node = node->get_links()[0].child;
             }
             return Iterator{node, 0};
         } else {
@@ -708,12 +715,12 @@ public:
     }
 
     Item& front() {
-        PLY_ASSERT(!isEmpty());
-        return begin().getItem();
+        PLY_ASSERT(!is_empty());
+        return begin().get_item();
     }
 
-    Item popFront() {
-        PLY_ASSERT(!isEmpty());
+    Item pop_front() {
+        PLY_ASSERT(!is_empty());
         Iterator iter = begin();
         return remove(iter);
     }
@@ -724,10 +731,10 @@ public:
             PLY_ASSERT(m_root->parent == nullptr);
             m_root->validate(0);
             // Ensure all items are in increasing order
-            Index limit = m_root->isLeaf ? Traits::getIndex(m_root->getItems()[0])
-                                         : m_root->getLinks()[0].index;
+            Index limit = m_root->is_leaf ? Traits::get_index(m_root->get_items()[0])
+                                          : m_root->get_links()[0].index;
             for (const Item& item : *this) {
-                const Index& index = Traits::getIndex(item);
+                const Index& index = Traits::get_index(item);
                 PLY_ASSERT(limit <= index);
                 limit = index;
             }

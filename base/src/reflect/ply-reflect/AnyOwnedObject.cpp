@@ -13,23 +13,23 @@ namespace ply {
 SLOG_DECLARE_CHANNEL(Load)
 
 TypeKey TypeKey_AnyOwnedObject{
-    // getName
-    [](const TypeDescriptor* typeDesc) -> HybridString { //
+    // get_name
+    [](const TypeDescriptor* type_desc) -> HybridString { //
         return "AnyOwnedObject";
     },
 
-    // hashDescriptor
-    TypeKey::hashEmptyDescriptor,
+    // hash_descriptor
+    TypeKey::hash_empty_descriptor,
 
-    // equalDescriptors
-    TypeKey::alwaysEqualDescriptors,
+    // equal_descriptors
+    TypeKey::always_equal_descriptors,
 };
 
 PLY_DEFINE_TYPE_DESCRIPTOR(AnyOwnedObject) {
-    static TypeDescriptor typeDesc{&TypeKey_AnyOwnedObject, (AnyOwnedObject*) nullptr,
-                                   NativeBindings::make<AnyOwnedObject>()
-                                       PLY_METHOD_TABLES_ONLY(, {})};
-    return &typeDesc;
+    static TypeDescriptor type_desc{&TypeKey_AnyOwnedObject, (AnyOwnedObject*) nullptr,
+                                    NativeBindings::make<AnyOwnedObject>()
+                                        PLY_METHOD_TABLES_ONLY(, {})};
+    return &type_desc;
 }
 
 } // namespace ply
