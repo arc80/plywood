@@ -13,7 +13,7 @@ namespace web {
 struct URLEscape {
     StringView view;
     u32 max_points = 0;
-    PLY_INLINE URLEscape(StringView view, u32 max_points = 0)
+    URLEscape(StringView view, u32 max_points = 0)
         : view{view}, max_points{max_points} {
     }
 };
@@ -21,6 +21,6 @@ struct URLEscape {
 
 template <>
 struct fmt::TypePrinter<web::URLEscape> {
-    static PLY_NO_INLINE void print(OutStream* outs, const web::URLEscape& value);
+    static void print(OutStream* outs, const web::URLEscape& value);
 };
 } // namespace ply

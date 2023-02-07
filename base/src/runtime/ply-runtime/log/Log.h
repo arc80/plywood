@@ -20,12 +20,12 @@ struct LogChannel {
 
     struct LineHandler {
         MemOutStream mout;
-        PLY_DLL_ENTRY LineHandler(StringView channel_name);
-        PLY_DLL_ENTRY ~LineHandler();
+        LineHandler(StringView channel_name);
+        ~LineHandler();
     };
 
     template <typename... Args>
-    PLY_INLINE void log(const char* fmt, const Args&... args) {
+    void log(const char* fmt, const Args&... args) {
         LineHandler lh{channel_name};
         lh.mout.format(fmt, args...);
     }

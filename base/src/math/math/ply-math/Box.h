@@ -207,7 +207,7 @@ Box<V> round_nearest(const Box<V>& a, float spacing = 1) {
 }
 
 template <typename V>
-PLY_INLINE Box<V> round_expand(const Box<V>& a, float spacing = 1) {
+Box<V> round_expand(const Box<V>& a, float spacing = 1) {
     return {round_down(a.mins, spacing), round_up(a.maxs, spacing)};
 }
 

@@ -224,7 +224,7 @@ FnResult sys_fs_download(const FnParams& params) {
     return Fn_OK;
 }
 
-PLY_NO_INLINE MethodTable get_method_table_read_only_dict() {
+MethodTable get_method_table_read_only_dict() {
     MethodTable methods;
     methods.property_lookup = [](BaseInterpreter* interp, const AnyObject& obj,
                                  StringView property_name) -> FnResult {

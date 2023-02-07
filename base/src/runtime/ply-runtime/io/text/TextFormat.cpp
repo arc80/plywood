@@ -9,7 +9,7 @@
 
 namespace ply {
 
-PLY_NO_INLINE TextFormat TextFormat::default_utf8() {
+TextFormat TextFormat::default_utf8() {
     TextFormat tff;
 #if PLY_TARGET_WIN32
     tff.new_line = TextFormat::NewLine::CRLF;
@@ -31,10 +31,10 @@ struct TextFileStats {
     u32 num_extended = 0;
     float oo_num_points = 0.f;
 
-    PLY_INLINE u32 num_invalid_points() const {
+    u32 num_invalid_points() const {
         return this->num_points - this->num_valid_points;
     }
-    PLY_INLINE TextFormat::NewLine get_new_line_type() const {
+    TextFormat::NewLine get_new_line_type() const {
         PLY_ASSERT(this->num_crlf <= this->num_lines);
         if (this->num_crlf == 0 || this->num_crlf * 2 < this->num_lines) {
             return TextFormat::NewLine::LF;
@@ -42,7 +42,7 @@ struct TextFileStats {
             return TextFormat::NewLine::CRLF;
         }
     }
-    PLY_INLINE float get_score() const {
+    float get_score() const {
         return (2.5f * this->num_whitespace + this->num_plain_ascii -
                 100.f * this->num_invalid_points() - 50.f * this->num_control +
                 5.f * this->num_extended) *
@@ -50,8 +50,8 @@ struct TextFileStats {
     }
 };
 
-PLY_NO_INLINE u32 scan_text_file(TextFileStats* stats, InStream& in, Unicode& decoder,
-                                 u32 max_bytes) {
+u32 scan_text_file(TextFileStats* stats, InStream& in, Unicode& decoder,
+                   u32 max_bytes) {
     bool prev_was_cr = false;
     while (in.get_seek_pos() < max_bytes) {
         s32 codepoint = decoder.decode_point(in);
@@ -97,7 +97,7 @@ PLY_NO_INLINE u32 scan_text_file(TextFileStats* stats, InStream& in, Unicode& de
     return in.get_seek_pos();
 }
 
-PLY_NO_INLINE TextFormat guess_file_encoding(InStream& in) {
+TextFormat guess_file_encoding(InStream& in) {
     TextFileStats stats8;
     BlockList::Ref start = in.get_save_point();
 
@@ -157,7 +157,7 @@ PLY_NO_INLINE TextFormat guess_file_encoding(InStream& in) {
     return {encoding, stats->get_new_line_type(), false};
 }
 
-PLY_NO_INLINE TextFormat TextFormat::autodetect(InStream& in) {
+TextFormat TextFormat::autodetect(InStream& in) {
     TextFormat tff;
     BlockList::Ref start = in.get_save_point();
     u8 h[3] = {0};
@@ -240,7 +240,7 @@ Owned<InPipe> TextFormat::create_importer(InStream&& in) const {
     return create_in_new_line_filter(std::move(importer));
 }
 
-PLY_NO_INLINE Owned<OutPipe> TextFormat::create_exporter(OutStream&& out) const {
+Owned<OutPipe> TextFormat::create_exporter(OutStream&& out) const {
     OutStream exporter = std::move(out);
 
     switch (this->encoding) {

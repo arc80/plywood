@@ -86,7 +86,7 @@ FnResult MethodTable::unsupported_print(BaseInterpreter* interp, const AnyObject
     return Fn_Error;
 }
 
-PLY_NO_INLINE MethodTable::MethodTable()
+MethodTable::MethodTable()
     : unary_op{unsupported_unary_op}, binary_op{unsupported_binary_op},
       property_lookup{unsupported_property_lookup}, subscript{unsupported_subscript},
       print{unsupported_print} {

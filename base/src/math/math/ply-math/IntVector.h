@@ -148,39 +148,39 @@ struct Int2 {
 };
 
 template <typename T>
-inline sreg dot(const Int2<T>& a, const Int2<T>& b) {
+sreg dot(const Int2<T>& a, const Int2<T>& b) {
     return sreg(a.x) * b.x + sreg(a.y) * b.y;
 }
 
 template <typename T>
-inline sreg cross(const Int2<T>& a, const Int2<T>& b) {
+sreg cross(const Int2<T>& a, const Int2<T>& b) {
     return sreg(a.x) * b.y - sreg(a.y) * b.x;
 }
 
 template <typename T>
-inline Int2<T> min(const Int2<T>& a, const Int2<T>& b) {
+Int2<T> min(const Int2<T>& a, const Int2<T>& b) {
     return Int2<T>{min(a.x, b.x), min(a.y, b.y)};
 }
 
 template <typename T>
-inline Int2<T> max(const Int2<T>& a, const Int2<T>& b) {
+Int2<T> max(const Int2<T>& a, const Int2<T>& b) {
     return Int2<T>{max(a.x, b.x), max(a.y, b.y)};
 }
 
 template <typename T>
-PLY_INLINE Bool2 operator<(const Int2<T>& a, const Int2<T>& b) {
+Bool2 operator<(const Int2<T>& a, const Int2<T>& b) {
     return {a.x < b.x, a.y < b.y};
 }
 template <typename T>
-PLY_INLINE Bool2 operator<=(const Int2<T>& a, const Int2<T>& b) {
+Bool2 operator<=(const Int2<T>& a, const Int2<T>& b) {
     return {a.x <= b.x, a.y <= b.y};
 }
 template <typename T>
-PLY_INLINE Bool2 operator>(const Int2<T>& a, const Int2<T>& b) {
+Bool2 operator>(const Int2<T>& a, const Int2<T>& b) {
     return {a.x > b.x, a.y > b.y};
 }
 template <typename T>
-PLY_INLINE Bool2 operator>=(const Int2<T>& a, const Int2<T>& b) {
+Bool2 operator>=(const Int2<T>& a, const Int2<T>& b) {
     return {a.x >= b.x, a.y >= b.y};
 }
 
@@ -330,34 +330,34 @@ struct Int3 {
 };
 
 template <typename T>
-inline sreg dot(const Int3<T>& a, const Int3<T>& b) {
+sreg dot(const Int3<T>& a, const Int3<T>& b) {
     return sreg(a.x) * b.x + sreg(a.y) * b.y + sreg(a.z) * b.z;
 }
 
 template <typename T>
-inline Int3<T> min(const Int3<T>& a, const Int3<T>& b) {
+Int3<T> min(const Int3<T>& a, const Int3<T>& b) {
     return Int3<T>{min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)};
 }
 
 template <typename T>
-inline Int3<T> max(const Int3<T>& a, const Int3<T>& b) {
+Int3<T> max(const Int3<T>& a, const Int3<T>& b) {
     return Int3<T>{max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)};
 }
 
 template <typename T>
-PLY_INLINE Bool3 operator<(const Int3<T>& a, const Int3<T>& b) {
+Bool3 operator<(const Int3<T>& a, const Int3<T>& b) {
     return {a.x < b.x, a.y < b.y, a.z < b.z};
 }
 template <typename T>
-PLY_INLINE Bool3 operator<=(const Int3<T>& a, const Int3<T>& b) {
+Bool3 operator<=(const Int3<T>& a, const Int3<T>& b) {
     return {a.x <= b.x, a.y <= b.y, a.z <= b.z};
 }
 template <typename T>
-PLY_INLINE Bool3 operator>(const Int3<T>& a, const Int3<T>& b) {
+Bool3 operator>(const Int3<T>& a, const Int3<T>& b) {
     return {a.x > b.x, a.y > b.y, a.z > b.z};
 }
 template <typename T>
-PLY_INLINE Bool3 operator>=(const Int3<T>& a, const Int3<T>& b) {
+Bool3 operator>=(const Int3<T>& a, const Int3<T>& b) {
     return {a.x >= b.x, a.y >= b.y, a.z >= b.z};
 }
 
@@ -503,34 +503,34 @@ struct Int4 {
 };
 
 template <typename T>
-inline sreg dot(const Int4<T>& a, const Int4<T>& b) {
+sreg dot(const Int4<T>& a, const Int4<T>& b) {
     return sreg(a.x) * b.x + sreg(a.y) * b.y + sreg(a.z) * b.z + sreg(a.w) * b.w;
 }
 
 template <typename T>
-inline Int4<T> min(const Int4<T>& a, const Int4<T>& b) {
+Int4<T> min(const Int4<T>& a, const Int4<T>& b) {
     return Int4<T>{min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w)};
 }
 
 template <typename T>
-inline Int4<T> max(const Int4<T>& a, const Int4<T>& b) {
+Int4<T> max(const Int4<T>& a, const Int4<T>& b) {
     return Int4<T>{max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w)};
 }
 
 template <typename T>
-PLY_INLINE Bool4 operator<(const Int4<T>& a, const Int4<T>& b) {
+Bool4 operator<(const Int4<T>& a, const Int4<T>& b) {
     return {a.x < b.x, a.y < b.y, a.z < b.z, a.w < b.w};
 }
 template <typename T>
-PLY_INLINE Bool4 operator<=(const Int4<T>& a, const Int4<T>& b) {
+Bool4 operator<=(const Int4<T>& a, const Int4<T>& b) {
     return {a.x <= b.x, a.y <= b.y, a.z <= b.z, a.w <= b.w};
 }
 template <typename T>
-PLY_INLINE Bool4 operator>(const Int4<T>& a, const Int4<T>& b) {
+Bool4 operator>(const Int4<T>& a, const Int4<T>& b) {
     return {a.x > b.x, a.y > b.y, a.z > b.z, a.w > b.w};
 }
 template <typename T>
-PLY_INLINE Bool4 operator>=(const Int4<T>& a, const Int4<T>& b) {
+Bool4 operator>=(const Int4<T>& a, const Int4<T>& b) {
     return {a.x >= b.x, a.y >= b.y, a.z >= b.z, a.w >= b.w};
 }
 

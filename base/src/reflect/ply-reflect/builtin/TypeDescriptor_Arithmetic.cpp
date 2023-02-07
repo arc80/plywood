@@ -19,7 +19,7 @@ namespace ply {
 
 struct ArithmeticMethodTable {
     template <typename T>
-    static PLY_INLINE MethodTable make() {
+    static MethodTable make() {
         MethodTable methods;
         methods.binary_op = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
                                const AnyObject& first,

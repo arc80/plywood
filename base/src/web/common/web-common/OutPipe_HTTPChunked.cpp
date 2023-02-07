@@ -10,14 +10,14 @@
 namespace ply {
 namespace web {
 
-PLY_NO_INLINE void OutPipe_HTTPChunked_destroy(OutPipe* out_pipe_) {
+void OutPipe_HTTPChunked_destroy(OutPipe* out_pipe_) {
     OutPipe_HTTPChunked* out_pipe = static_cast<OutPipe_HTTPChunked*>(out_pipe_);
     // End of chunk stream
     *out_pipe->outs << "0\r\n\r\n";
     out_pipe->outs->flush_mem();
 }
 
-PLY_NO_INLINE bool OutPipe_HTTPChunked_write(OutPipe* out_pipe_, StringView src_buf) {
+bool OutPipe_HTTPChunked_write(OutPipe* out_pipe_, StringView src_buf) {
     OutPipe_HTTPChunked* out_pipe = static_cast<OutPipe_HTTPChunked*>(out_pipe_);
     if (out_pipe->chunk_mode) {
         PLY_ASSERT(src_buf.num_bytes > 0);
@@ -30,7 +30,7 @@ PLY_NO_INLINE bool OutPipe_HTTPChunked_write(OutPipe* out_pipe_, StringView src_
     return !out_pipe->outs->at_eof();
 }
 
-PLY_NO_INLINE bool OutPipe_HTTPChunked_flush(OutPipe* out_pipe_, bool to_device) {
+bool OutPipe_HTTPChunked_flush(OutPipe* out_pipe_, bool to_device) {
     OutPipe_HTTPChunked* out_pipe = static_cast<OutPipe_HTTPChunked*>(out_pipe_);
     return out_pipe->outs->flush(to_device);
 }

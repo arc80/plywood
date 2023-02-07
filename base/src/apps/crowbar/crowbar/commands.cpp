@@ -41,9 +41,9 @@ bool is_multi_config_cmake_generator(StringView generator) {
     }
 }
 
-PLY_NO_INLINE Tuple<s32, String>
-generate_cmake_project(StringView cmake_lists_folder,
-                       const CMakeGeneratorOptions& generator_opts, StringView config) {
+Tuple<s32, String> generate_cmake_project(StringView cmake_lists_folder,
+                                          const CMakeGeneratorOptions& generator_opts,
+                                          StringView config) {
     PLY_ASSERT(generator_opts.generator);
     bool is_multi_config = is_multi_config_cmake_generator(generator_opts.generator);
     PLY_ASSERT(is_multi_config || config);

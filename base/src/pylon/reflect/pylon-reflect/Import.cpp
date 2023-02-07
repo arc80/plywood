@@ -18,7 +18,7 @@ struct PylonTypeImporter {
         : type_from_name{type_from_name} {
     }
 
-    PLY_NO_INLINE TypeDescriptor* convert_type(const Node* a_node) {
+    TypeDescriptor* convert_type(const Node* a_node) {
         if (a_node->is_text()) {
             // It's a primitive type, represented by a string in Pylon.
             // FIXME: This could use a hash table.
@@ -96,16 +96,16 @@ struct PylonTypeImporter {
     }
 };
 
-PLY_NO_INLINE TypeDescriptorOwner*
-convert_type_from(const Node* a_node, const Func<TypeFromName>& type_from_name) {
+TypeDescriptorOwner* convert_type_from(const Node* a_node,
+                                       const Func<TypeFromName>& type_from_name) {
     PylonTypeImporter importer{type_from_name};
     importer.type_owner = new TypeDescriptorOwner;
     importer.type_owner->set_root_type(importer.convert_type(a_node));
     return importer.type_owner;
 }
 
-PLY_NO_INLINE void convert_from(AnyObject obj, const Node* a_node,
-                                const Func<TypeFromName>& type_from_name) {
+void convert_from(AnyObject obj, const Node* a_node,
+                  const Func<TypeFromName>& type_from_name) {
     auto error = [&] {}; // FIXME: Decide where these go
 
     PLY_ASSERT(a_node->is_valid());
@@ -233,15 +233,15 @@ PLY_NO_INLINE void convert_from(AnyObject obj, const Node* a_node,
     }
 }
 
-PLY_NO_INLINE AnyOwnedObject import(TypeDescriptor* type_desc, const Node* a_root,
-                                    const Func<TypeFromName>& type_from_name) {
+AnyOwnedObject import(TypeDescriptor* type_desc, const Node* a_root,
+                      const Func<TypeFromName>& type_from_name) {
     AnyOwnedObject result = AnyObject::create(type_desc);
     convert_from(result, a_root, type_from_name);
     return result;
 }
 
-PLY_NO_INLINE void import_into(AnyObject obj, const Node* a_root,
-                               const Func<TypeFromName>& type_from_name) {
+void import_into(AnyObject obj, const Node* a_root,
+                 const Func<TypeFromName>& type_from_name) {
     convert_from(obj, a_root, type_from_name);
 }
 

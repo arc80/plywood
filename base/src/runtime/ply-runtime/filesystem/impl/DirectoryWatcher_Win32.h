@@ -25,13 +25,13 @@ private:
     void run_watcher();
 
 public:
-    PLY_DLL_ENTRY DirectoryWatcher_Win32();
-    PLY_DLL_ENTRY void start(StringView root, Func<Callback>&& callback);
-    PLY_INLINE DirectoryWatcher_Win32(StringView root, Func<Callback>&& callback)
+    DirectoryWatcher_Win32();
+    void start(StringView root, Func<Callback>&& callback);
+    DirectoryWatcher_Win32(StringView root, Func<Callback>&& callback)
         : DirectoryWatcher_Win32{} {
         start(root, std::move(callback));
     }
-    PLY_DLL_ENTRY ~DirectoryWatcher_Win32();
+    ~DirectoryWatcher_Win32();
 };
 
 } // namespace ply

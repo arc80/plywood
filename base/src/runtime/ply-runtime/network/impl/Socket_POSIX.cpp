@@ -31,7 +31,7 @@ bool Socket_POSIX::IsInit = false;
 bool Socket_POSIX::HasIPv6 = false;
 ThreadLocal<IPResult> Socket_POSIX::last_result_;
 
-PLY_NO_INLINE void Socket_POSIX::initialize(IPAddress::Version ip_version) {
+void Socket_POSIX::initialize(IPAddress::Version ip_version) {
     // FIXME: Move this to some kind of generic Plywood initialization function, since
     // this disables SIGPIPE for all file descriptors, not just sockets, and we probably
     // always want that. In particular, we want that when communicating with a
@@ -54,17 +54,17 @@ PLY_NO_INLINE void Socket_POSIX::initialize(IPAddress::Version ip_version) {
 #endif
 }
 
-PLY_NO_INLINE void Socket_POSIX::shutdown() {
+void Socket_POSIX::shutdown() {
     PLY_ASSERT(IsInit);
     IsInit = false;
 }
 
-PLY_NO_INLINE TCPConnection_POSIX::~TCPConnection_POSIX() {
+TCPConnection_POSIX::~TCPConnection_POSIX() {
     // Prevent double-deletion of file descriptor
     this->out_pipe.fd = -1;
 }
 
-PLY_NO_INLINE Owned<TCPConnection_POSIX> TCPListener_POSIX::accept() {
+Owned<TCPConnection_POSIX> TCPListener_POSIX::accept() {
     if (this->listen_socket < 0) {
         Socket_POSIX::last_result_.store(IPResult::NoSocket);
         return nullptr;
@@ -107,7 +107,7 @@ PLY_NO_INLINE Owned<TCPConnection_POSIX> TCPListener_POSIX::accept() {
     return tcp_conn;
 }
 
-PLY_NO_INLINE int create_socket(int type) {
+int create_socket(int type) {
     int family = AF_INET;
     if (PLY_IF_IPV6(Socket_POSIX::HasIPv6, false)) {
         family = AF_INET6;
@@ -137,7 +137,7 @@ PLY_NO_INLINE int create_socket(int type) {
     return s;
 }
 
-PLY_NO_INLINE TCPListener_POSIX Socket_POSIX::bind_tcp(u16 port) {
+TCPListener_POSIX Socket_POSIX::bind_tcp(u16 port) {
     int listen_socket = create_socket(SOCK_STREAM);
     if (listen_socket < 0) { // last_result_ is already set
         return {};
@@ -215,8 +215,8 @@ PLY_NO_INLINE TCPListener_POSIX Socket_POSIX::bind_tcp(u16 port) {
     return {};
 }
 
-PLY_NO_INLINE Owned<TCPConnection_POSIX>
-Socket_POSIX::connect_tcp(const IPAddress& address, u16 port) {
+Owned<TCPConnection_POSIX> Socket_POSIX::connect_tcp(const IPAddress& address,
+                                                     u16 port) {
     int connect_socket = create_socket(SOCK_STREAM);
     if (connect_socket < 0) { // last_result_ is already set
         return {};
@@ -280,8 +280,8 @@ Socket_POSIX::connect_tcp(const IPAddress& address, u16 port) {
     return nullptr;
 }
 
-PLY_NO_INLINE IPAddress Socket_POSIX::resolve_host_name(StringView host_name,
-                                                        IPAddress::Version ip_version) {
+IPAddress Socket_POSIX::resolve_host_name(StringView host_name,
+                                          IPAddress::Version ip_version) {
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;

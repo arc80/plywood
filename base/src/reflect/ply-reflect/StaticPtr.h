@@ -26,20 +26,20 @@ private:
     T* ptr = nullptr;
 
 public:
-    PLY_INLINE StaticPtr(T* ptr = nullptr) : ptr{ptr} {
+    StaticPtr(T* ptr = nullptr) : ptr{ptr} {
     }
-    PLY_INLINE ~StaticPtr() {
+    ~StaticPtr() {
     }
-    PLY_INLINE void operator=(const StaticPtr& other) {
+    void operator=(const StaticPtr& other) {
         this->ptr = other.ptr;
     }
-    PLY_INLINE T* operator->() const {
+    T* operator->() const {
         return this->ptr;
     }
-    PLY_INLINE operator T*() const {
+    operator T*() const {
         return this->ptr;
     }
-    PLY_INLINE T* get() const {
+    T* get() const {
         return this->ptr;
     }
 };
@@ -47,8 +47,8 @@ public:
 //---------------------------------------------------
 // TypeDescriptor_StaticPtr
 //---------------------------------------------------
-PLY_DLL_ENTRY extern TypeKey TypeKey_StaticPtr;
-PLY_DLL_ENTRY NativeBindings& get_native_bindings_static_ptr();
+extern TypeKey TypeKey_StaticPtr;
+NativeBindings& get_native_bindings_static_ptr();
 
 struct TypeDescriptor_StaticPtr : TypeDescriptor {
     static constexpr TypeKey* type_key = &TypeKey_StaticPtr;

@@ -9,7 +9,7 @@
 
 namespace pylon {
 
-PLY_NO_INLINE Owned<pylon::Node> export_obj(AnyObject obj, const FilterFunc& filter) {
+Owned<pylon::Node> export_obj(AnyObject obj, const FilterFunc& filter) {
     if (filter) {
         if (Owned<Node> result = filter(obj))
             return result;

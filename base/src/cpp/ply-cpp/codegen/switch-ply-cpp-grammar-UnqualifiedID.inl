@@ -16,9 +16,9 @@ union Storage_ {
     Destructor destructor;
     OperatorFunc operator_func;
     ConversionFunc conversion_func;
-    PLY_INLINE Storage_() {
+    Storage_() {
     }
-    PLY_INLINE ~Storage_() {
+    ~Storage_() {
     }
 };
 SWITCH_FOOTER(UnqualifiedID, Empty)

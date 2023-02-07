@@ -86,8 +86,7 @@ FileLocation FileLocationMap::get_file_location(u32 offset) const {
     }
 }
 
-PLY_NO_INLINE String FileLocationMap::format_file_location(u32 offset,
-                                                           bool with_path) const {
+String FileLocationMap::format_file_location(u32 offset, bool with_path) const {
     FileLocation file_loc = this->get_file_location(offset);
     return String::format("{}({}, {})", (with_path ? this->path : ""),
                           file_loc.line_number, file_loc.column_number);

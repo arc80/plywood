@@ -12,9 +12,9 @@ union Storage_ {
     ArrayOf array_of;
     Function function;
     Qualifier qualifier;
-    PLY_INLINE Storage_() {
+    Storage_() {
     }
-    PLY_INLINE ~Storage_() {
+    ~Storage_() {
     }
 };
 SWITCH_FOOTER(Type, Parenthesized)

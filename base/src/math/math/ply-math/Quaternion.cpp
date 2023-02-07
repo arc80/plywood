@@ -10,16 +10,14 @@
 
 namespace ply {
 
-PLY_NO_INLINE Quaternion Quaternion::from_axis_angle(const Float3& unit_axis,
-                                                     float radians) {
+Quaternion Quaternion::from_axis_angle(const Float3& unit_axis, float radians) {
     PLY_ASSERT(unit_axis.is_unit());
     float c = cosf(radians / 2);
     float s = sinf(radians / 2);
     return {s * unit_axis.x, s * unit_axis.y, s * unit_axis.z, c};
 }
 
-PLY_NO_INLINE Quaternion Quaternion::from_unit_vectors(const Float3& start,
-                                                       const Float3& end) {
+Quaternion Quaternion::from_unit_vectors(const Float3& start, const Float3& end) {
     // Float4{cross(start, end), dot(start, end)} gives you double the desired rotation.
     // To get the desired rotation, "average" (really just sum) that with Float4{0, 0,
     // 0, 1}, then normalize.
@@ -37,7 +35,7 @@ PLY_NO_INLINE Quaternion Quaternion::from_unit_vectors(const Float3& start,
 }
 
 template <typename M>
-PLY_INLINE Quaternion quaternion_from_ortho(M m) {
+Quaternion quaternion_from_ortho(M m) {
     float t; // This will be set to 4*c*c for some quaternion component c.
     // At least one component's square must be >= 1/4. (Otherwise, it isn't a unit
     // quaternion.) Let's require t >= 1/2. This will accept any component whose square
@@ -71,50 +69,49 @@ PLY_INLINE Quaternion quaternion_from_ortho(M m) {
     return {0, 0, 0, 1};
 }
 
-PLY_NO_INLINE Quaternion Quaternion::from_ortho(const Float3x3& m) {
+Quaternion Quaternion::from_ortho(const Float3x3& m) {
     PLY_PUN_SCOPE
     return quaternion_from_ortho(reinterpret_cast<const float(*)[3]>(&m));
 }
 
-PLY_NO_INLINE Quaternion Quaternion::from_ortho(const Float4x4& m) {
+Quaternion Quaternion::from_ortho(const Float4x4& m) {
     PLY_PUN_SCOPE
     return quaternion_from_ortho(reinterpret_cast<const float(*)[4]>(&m));
 }
 
-PLY_NO_INLINE Float3 Quaternion::rotate_unit_x() const {
+Float3 Quaternion::rotate_unit_x() const {
     return {1 - 2 * y * y - 2 * z * z, 2 * x * y + 2 * z * w, 2 * x * z - 2 * y * w};
 }
 
-PLY_NO_INLINE Float3 Quaternion::rotate_unit_y() const {
+Float3 Quaternion::rotate_unit_y() const {
     return {2 * x * y - 2 * z * w, 1 - 2 * x * x - 2 * z * z, 2 * y * z + 2 * x * w};
 }
 
-PLY_NO_INLINE Float3 Quaternion::rotate_unit_z() const {
+Float3 Quaternion::rotate_unit_z() const {
     return {2 * x * z + 2 * y * w, 2 * y * z - 2 * x * w, 1 - 2 * x * x - 2 * y * y};
 }
 
-PLY_NO_INLINE Quaternion
-Quaternion::negated_if_closer_to(const Quaternion& other) const {
+Quaternion Quaternion::negated_if_closer_to(const Quaternion& other) const {
     const Float4& v0 = as_float4();
     const Float4& v1 = other.as_float4();
     return (v0 - v1).length2() < (-v0 - v1).length2() ? v0.as_quaternion()
                                                       : (-v0).as_quaternion();
 }
 
-PLY_NO_INLINE Float3 operator*(const Quaternion& q, const Float3& v) {
+Float3 operator*(const Quaternion& q, const Float3& v) {
     // From https://gist.github.com/rygorous/8da6651b597f3d825862
     Float3 t = cross(q.as_float3(), v) * 2.f;
     return v + t * q.w + cross(q.as_float3(), t);
 }
 
-PLY_NO_INLINE Quaternion operator*(const Quaternion& a, const Quaternion& b) {
+Quaternion operator*(const Quaternion& a, const Quaternion& b) {
     return {a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
             a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
             a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
             a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z};
 }
 
-PLY_NO_INLINE Quaternion mix(const Quaternion& a, const Quaternion& b, float f) {
+Quaternion mix(const Quaternion& a, const Quaternion& b, float f) {
     return mix(a.negated_if_closer_to(b).as_float4(), b.as_float4(), f)
         .normalized()
         .as_quaternion();

@@ -25,7 +25,7 @@ struct CookResult_ExtractPageMeta : cook::CookResult {
     Array<Owned<SymbolPagePair>> symbol_page_pairs;
     // ply reflect off
 
-    PLY_INLINE String get_link_destination() const {
+    String get_link_destination() const {
         PLY_ASSERT(this->job->id.desc.starts_with("/"));
         if (!markdown_exists)
             return {};
@@ -39,7 +39,7 @@ struct CookResult_ExtractPageMeta : cook::CookResult {
             return StringView{"/docs"} + this->job->id.desc;
         }
     }
-    PLY_INLINE String get_markdown_path() const {
+    String get_markdown_path() const {
         PLY_ASSERT(this->job->id.desc.starts_with("/"));
         return Path.join(Workspace.path, "repos/plywood/docs",
                          this->job->id.desc.ltrim([](char c) { return c == '/'; }) +

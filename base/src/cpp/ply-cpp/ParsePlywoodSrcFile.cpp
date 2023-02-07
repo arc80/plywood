@@ -23,7 +23,7 @@ void parse_plywood_src_file(StringView abs_src_path, cpp::PPVisitedFiles* visite
     if (FileSystem.last_result() != FSResult::OK) {
         struct ErrorWrapper : BaseError {
             String msg;
-            PLY_INLINE ErrorWrapper(String&& msg) : msg{std::move(msg)} {
+            ErrorWrapper(String&& msg) : msg{std::move(msg)} {
             }
             void write_message(OutStream& out, const PPVisitedFiles*) const override {
                 out << msg;
@@ -57,7 +57,6 @@ void parse_plywood_src_file(StringView abs_src_path, cpp::PPVisitedFiles* visite
     add_ppdef(&pp, "PLY_INLINE", "");
     add_ppdef(&pp, "PLY_NO_INLINE", "");
     add_ppdef(&pp, "PLY_NO_DISCARD", "");
-    add_ppdef(&pp, "PLY_DLL_ENTRY", "");
     add_ppdef(&pp, "PLY_BUILD_ENTRY", "");
     add_ppdef(&pp, "PYLON_ENTRY", "");
     add_ppdef(&pp, "PLY_STATIC_ASSERT", "static_assert");

@@ -30,7 +30,7 @@
 #define PLY_FORCE_CRASH() __ud2()
 #define PLY_COMPILER_BARRIER() _ReadWriteBarrier()
 
-PLY_INLINE void ply_yieldHWThread() {
+inline void ply_yieldHWThread() {
     YieldProcessor();
 }
 

@@ -81,10 +81,10 @@ PLY_MAKE_LIMITS(double, -DBL_MAX, DBL_MAX)
 //---------------------------------------------
 // Basic comparisons
 //---------------------------------------------
-template<typename T> inline T abs(T v) { return (v >= 0) ? v : -v; }
-template<typename T> inline T min(T a, T b) { return (a < b) ? a : b; }
-template<typename T> inline T max(T a, T b) { return (a < b) ? b : a; }
-template<typename T> inline T clamp(T arg, T lo, T hi) { return (arg < lo) ? lo : (arg < hi) ? arg : hi; }
+template<typename T> T abs(T v) { return (v >= 0) ? v : -v; }
+template<typename T> T min(T a, T b) { return (a < b) ? a : b; }
+template<typename T> T max(T a, T b) { return (a < b) ? b : a; }
+template<typename T> T clamp(T arg, T lo, T hi) { return (arg < lo) ? lo : (arg < hi) ? arg : hi; }
 
 struct Empty {};
 } // namespace ply
@@ -150,10 +150,10 @@ using void_t = typename make_void<Ts...>::type;
     template <typename T0, typename T1> static constexpr bool name<T0, T1, ::ply::void_t<decltype(expr)>> = true;
 
 namespace ply {
-PLY_INLINE constexpr u32 reverse_bytes(u32 v) {
+inline constexpr u32 reverse_bytes(u32 v) {
     return ((v >> 24) & 0xff) | ((v >> 8) & 0xff00) | ((v << 8) & 0xff0000) | ((v << 24) & 0xff000000u);
 }
-PLY_INLINE constexpr u16 reverse_bytes(u16 v) {
+inline constexpr u16 reverse_bytes(u16 v) {
     return ((v >> 8) & 0xff) | ((v << 8) & 0xff00);
 }
 } // namespace ply
@@ -185,23 +185,12 @@ using InitList = std::initializer_list<T>;
 // PLY_PUN_SCOPE
 //---------------------------------------------
 struct PunScope {
-    PLY_INLINE PunScope() {
+    PunScope() {
         PLY_COMPILER_BARRIER();
     }
-    PLY_INLINE ~PunScope() {
+    ~PunScope() {
         PLY_COMPILER_BARRIER();
     }
 };
 
 #define PLY_PUN_SCOPE PunScope PLY_UNIQUE_VARIABLE(_punScope_);
-
-//---------------------------------------------
-// PLY_DLL_ENTRY
-//---------------------------------------------
-#if PLY_DLL_IMPORTING
-    #define PLY_DLL_ENTRY PLY_DLL_IMPORT
-#elif PLY_DLL_EXPORTING
-    #define PLY_DLL_ENTRY PLY_DLL_EXPORT
-#else
-    #define PLY_DLL_ENTRY
-#endif

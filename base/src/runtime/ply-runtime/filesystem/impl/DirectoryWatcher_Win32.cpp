@@ -13,7 +13,7 @@
 
 namespace ply {
 
-PLY_NO_INLINE void DirectoryWatcher_Win32::run_watcher() {
+void DirectoryWatcher_Win32::run_watcher() {
     // FIXME: prepend \\?\ to the path to get past MAX_PATH limitation
     HANDLE h_directory = CreateFileW(
         win32_path_arg(m_root), FILE_LIST_DIRECTORY,
@@ -80,11 +80,10 @@ PLY_NO_INLINE void DirectoryWatcher_Win32::run_watcher() {
     CloseHandle(h_directory);
 }
 
-PLY_NO_INLINE DirectoryWatcher_Win32::DirectoryWatcher_Win32() {
+DirectoryWatcher_Win32::DirectoryWatcher_Win32() {
 }
 
-PLY_NO_INLINE void DirectoryWatcher_Win32::start(StringView root,
-                                                 Func<Callback>&& callback) {
+void DirectoryWatcher_Win32::start(StringView root, Func<Callback>&& callback) {
     PLY_ASSERT(m_root.is_empty());
     PLY_ASSERT(!m_callback);
     PLY_ASSERT(m_endEvent = INVALID_HANDLE_VALUE);

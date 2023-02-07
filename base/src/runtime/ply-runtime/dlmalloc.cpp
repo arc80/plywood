@@ -177,13 +177,13 @@ unsigned char _BitScanReverse(unsigned long *index, unsigned long mask);
 
 #ifndef WIN32
 
-static PLY_INLINE void* ply_mmap(size_t size) {
+static void* ply_mmap(size_t size) {
   char* ptr;
   return ply::MemPage::alloc(ptr, size) ? ptr : MFAIL;
 }
 
 /* This function supports releasing coalesed segments */
-static PLY_INLINE int ply_munmap(void* ptr, size_t size) {
+static int ply_munmap(void* ptr, size_t size) {
   ply::MemPage::free((char*) ptr, size);
   return 0;
 }
@@ -195,20 +195,20 @@ static PLY_INLINE int ply_munmap(void* ptr, size_t size) {
 #else /* WIN32 */
 
 /* Win32 MMAP via VirtualAlloc */
-static PLY_INLINE void* win32mmap(size_t size) {
+static void* win32mmap(size_t size) {
   void* ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
   return (ptr != 0)? ptr: MFAIL;
 }
 
 /* For direct MMAP, use MEM_TOP_DOWN to minimize interference */
-static PLY_INLINE void* win32direct_mmap(size_t size) {
+static void* win32direct_mmap(size_t size) {
   void* ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT|MEM_TOP_DOWN,
                            PAGE_READWRITE);
   return (ptr != 0)? ptr: MFAIL;
 }
 
 /* This function supports releasing coalesed segments */
-static PLY_INLINE int win32munmap(void* ptr, size_t size) {
+static int win32munmap(void* ptr, size_t size) {
   MEMORY_BASIC_INFORMATION minfo;
   char* cptr = (char*)ptr;
   while (size) {

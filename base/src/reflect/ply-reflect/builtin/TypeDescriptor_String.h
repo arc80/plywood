@@ -10,8 +10,8 @@
 
 namespace ply {
 
-PLY_DLL_ENTRY extern TypeKey TypeKey_String;
+extern TypeKey TypeKey_String;
 
-PLY_DECLARE_TYPE_DESCRIPTOR(String, PLY_DLL_ENTRY)
+PLY_DECLARE_TYPE_DESCRIPTOR(String)
 
 } // namespace ply

@@ -39,21 +39,21 @@ struct CookJobID {
     String desc;
     // ply reflect off
 
-    PLY_INLINE CookJobID() = default;
-    PLY_INLINE CookJobID(CookJobType* type, StringView desc) : type{type}, desc{desc} {
+    CookJobID() = default;
+    CookJobID(CookJobType* type, StringView desc) : type{type}, desc{desc} {
     }
-    PLY_INLINE bool operator==(const CookJobID& other) const {
+    bool operator==(const CookJobID& other) const {
         return (this->type == other.type && this->desc == other.desc);
     }
     // operator< is used by DependencyTracker::all_cook_jobs to keep CookJobs grouped by
     // type.
-    PLY_INLINE bool operator<(const CookJobID& other) const {
+    bool operator<(const CookJobID& other) const {
         if (this->type.get() != other.type.get()) {
             return this->type.get() < other.type.get();
         }
         return this->desc < other.desc;
     }
-    PLY_INLINE String str() const {
+    String str() const {
         return String::format("{}:{}", this->type->name, this->desc);
     }
 };
@@ -78,7 +78,7 @@ struct CookResult {
         double modification_time = 0;
         Dependency_File* dep_file;
 
-        PLY_INLINE bool is_valid() const {
+        bool is_valid() const {
             return this->modification_time != 0;
         }
         void on_successful_file_open();
@@ -109,7 +109,7 @@ struct CookJob : RefCounted<CookJob> {
     // ply reflect off
 
     ~CookJob();
-    PLY_INLINE void on_ref_count_zero() {
+    void on_ref_count_zero() {
         delete this;
     }
     template <typename T>
@@ -149,7 +149,7 @@ struct DependencyTracker {
     Reference<CookJob> get_or_create_cook_job(const CookJobID& id);
 
     static DependencyTracker* current_;
-    static PLY_INLINE DependencyTracker* current() {
+    static DependencyTracker* current() {
         PLY_ASSERT(current_);
         return current_;
     }
@@ -167,10 +167,10 @@ struct CookContext {
         struct Item {
             CookJob* job;
             Status status;
-            PLY_INLINE Item(CookJob* job) : job{job}, status{CookInProgress} {
+            Item(CookJob* job) : job{job}, status{CookInProgress} {
             }
         };
-        static PLY_INLINE bool match(const Item& item, Key key) {
+        static bool match(const Item& item, Key key) {
             return item.job == key;
         }
     };
@@ -178,13 +178,13 @@ struct CookContext {
     struct DeferredTraits {
         using Key = CookJob*;
         using Item = CookJob*;
-        static PLY_INLINE bool match(Item item, Key key) {
+        static bool match(Item item, Key key) {
             return item == key;
         }
     };
 
     static CookContext* current_;
-    static PLY_INLINE CookContext* current() {
+    static CookContext* current() {
         PLY_ASSERT(current_);
         return current_;
     }
@@ -203,7 +203,7 @@ struct CookContext {
     CookResult* get_already_cooked_result(const CookJobID& id);
     bool is_cooked(CookJob* job);
 
-    PLY_INLINE Reference<CookJob> cook(const CookJobID& id, AnyObject job_arg = {}) {
+    Reference<CookJob> cook(const CookJobID& id, AnyObject job_arg = {}) {
         PLY_ASSERT(CookContext::current() == this);
         Reference<CookJob> cook_job = this->dep_tracker->get_or_create_cook_job(id);
         this->ensure_cooked(cook_job, job_arg);

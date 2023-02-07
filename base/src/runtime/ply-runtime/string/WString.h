@@ -17,11 +17,11 @@ struct WStringView {
     const char16_t* units = nullptr;
     u32 num_units = 0;
 
-    PLY_INLINE WStringView() = default;
-    PLY_INLINE WStringView(const char16_t* units, u32 num_units)
+    WStringView() = default;
+    WStringView(const char16_t* units, u32 num_units)
         : units{units}, num_units{num_units} {
     }
-    PLY_INLINE StringView raw_bytes() const {
+    StringView raw_bytes() const {
         return {(const char*) this->units, this->num_units << 1};
     }
 #if PLY_TARGET_WIN32
@@ -44,22 +44,21 @@ struct WString {
     char16_t* units = nullptr;
     u32 num_units = 0;
 
-    PLY_INLINE WString() = default;
-    PLY_INLINE WString(WString&& other)
-        : units{other.units}, num_units{other.num_units} {
+    WString() = default;
+    WString(WString&& other) : units{other.units}, num_units{other.num_units} {
         other.units = nullptr;
         other.num_units = 0;
     }
-    PLY_INLINE ~WString() {
+    ~WString() {
         if (units) {
             Heap.free(units);
         }
     }
-    PLY_INLINE void operator=(WString&& other) {
+    void operator=(WString&& other) {
         this->~WString();
         new (this) WString{std::move(other)};
     }
-    PLY_INLINE static WString move_from_string(String&& other) {
+    static WString move_from_string(String&& other) {
         PLY_ASSERT(is_aligned_power_of2(uptr(other.bytes), 2));
         PLY_ASSERT(is_aligned_power_of2(other.num_bytes, 2));
         WString result;
@@ -70,10 +69,10 @@ struct WString {
         return result;
     }
 
-    PLY_INLINE bool includes_null_terminator() const {
+    bool includes_null_terminator() const {
         return this->num_units > 0 && this->units[this->num_units - 1] == 0;
     }
-    PLY_INLINE static WString allocate(u32 num_units) {
+    static WString allocate(u32 num_units) {
         WString result;
         result.units = (char16_t*) Heap.alloc(num_units << 1);
         result.num_units = num_units;

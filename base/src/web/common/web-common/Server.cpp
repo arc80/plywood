@@ -19,8 +19,7 @@ struct ThreadParams {
     RequestHandler req_handler;
 };
 
-PLY_NO_INLINE Tuple<StringView, StringView>
-get_response_description(ResponseCode response_code) {
+Tuple<StringView, StringView> get_response_description(ResponseCode response_code) {
     switch (response_code) {
         case ResponseCode::OK:
             return {"200", "OK"};
@@ -42,7 +41,7 @@ struct ResponseIface_WebServer : ResponseIface {
     bool is_chunked = false; // implies keep-alive
     Owned<OutStream> outs_chunked;
 
-    PLY_INLINE ResponseIface_WebServer(OutStream* outs) : outs{outs} {
+    ResponseIface_WebServer(OutStream* outs) : outs{outs} {
     }
     virtual OutStream* begin_response_header(ResponseCode response_code) override {
         // FIXME: Handle ResponseCode::InternalError the same way we would handle a
@@ -71,7 +70,7 @@ struct ResponseIface_WebServer : ResponseIface {
     }
     // Returns true if response was well-formed and it's possible to send another
     // response over the same connection:
-    PLY_NO_INLINE bool handle_missing_response() {
+    bool handle_missing_response() {
         if (this->state == NoResponse) {
             this->respond_generic(ResponseCode::InternalError);
             return true; // respond_generic makes it a well-formed response

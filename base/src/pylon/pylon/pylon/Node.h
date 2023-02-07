@@ -32,7 +32,7 @@ struct Node {
             using Key = StringView;
             using Item = u32;
             using Context = Array<Object::Item>;
-            static PLY_INLINE bool match(Item item, Key key, const Context& ctx) {
+            static bool match(Item item, Key key, const Context& ctx) {
                 return ctx[item].key == key;
             }
         };
@@ -48,16 +48,16 @@ struct Node {
     };
 
     Node() = delete; // use create functions
-    PLY_NO_INLINE ~Node();
+    ~Node();
 
     Owned<Node> copy() const;
 
-    static PLY_NO_INLINE Owned<Node> create_invalid();
-    static PLY_NO_INLINE Owned<Node> alloc_text();
-    static PLY_NO_INLINE Owned<Node> create_array(u64 file_ofs = 0);
-    static PLY_NO_INLINE Owned<Node> create_object(u64 file_ofs = 0);
+    static Owned<Node> create_invalid();
+    static Owned<Node> alloc_text();
+    static Owned<Node> create_array(u64 file_ofs = 0);
+    static Owned<Node> create_object(u64 file_ofs = 0);
 
-    static PLY_INLINE Owned<Node> create_text(HybridString&& text, u64 file_ofs = 0) {
+    static Owned<Node> create_text(HybridString&& text, u64 file_ofs = 0) {
         Owned<Node> node = alloc_text();
         node->type = (u64) Type::Text;
         node->file_ofs = file_ofs;
@@ -68,7 +68,7 @@ struct Node {
     static u64 InvalidNodeHeader;
     static Object EmptyObject;
 
-    PLY_INLINE bool is_valid() const {
+    bool is_valid() const {
         return this->type != (u64) Type::Invalid;
     }
 
@@ -76,13 +76,13 @@ struct Node {
     // Text
     //-----------------------------------------------------------
 
-    PLY_INLINE bool is_text() const {
+    bool is_text() const {
         return this->type == (u64) Type::Text;
     }
 
-    PLY_NO_INLINE Tuple<bool, double> numeric() const;
+    Tuple<bool, double> numeric() const;
 
-    PLY_INLINE StringView text() const {
+    StringView text() const {
         if (this->type == (u64) Type::Text) {
             return this->text_;
         } else {
@@ -90,7 +90,7 @@ struct Node {
         }
     }
 
-    PLY_INLINE void set_text(HybridString&& text) {
+    void set_text(HybridString&& text) {
         if (this->type == (u64) Type::Text) {
             this->text_ = std::move(text);
         }
@@ -100,11 +100,11 @@ struct Node {
     // Array
     //-----------------------------------------------------------
 
-    PLY_INLINE bool is_array() const {
+    bool is_array() const {
         return this->type == (u64) Type::Array;
     }
 
-    PLY_INLINE Node* get(u32 i) {
+    Node* get(u32 i) {
         if (this->type != (u64) Type::Array)
             return (Node*) &InvalidNodeHeader;
         if (i >= this->array_.num_items())
@@ -112,11 +112,11 @@ struct Node {
         return this->array_[i];
     }
 
-    PLY_INLINE const Node* get(u32 i) const {
+    const Node* get(u32 i) const {
         return const_cast<Node*>(this)->get(i);
     }
 
-    PLY_INLINE ArrayView<const Node* const> array_view() const {
+    ArrayView<const Node* const> array_view() const {
         if (this->type == (u64) Type::Array) {
             return reinterpret_cast<const Array<const Node*>&>(this->array_);
         } else {
@@ -124,7 +124,7 @@ struct Node {
         }
     }
 
-    PLY_INLINE Array<Owned<Node>>& array() {
+    Array<Owned<Node>>& array() {
         PLY_ASSERT(this->type == (u64) Type::Array);
         return this->array_;
     }
@@ -133,18 +133,18 @@ struct Node {
     // Object
     //-----------------------------------------------------------
 
-    PLY_INLINE bool is_object() const {
+    bool is_object() const {
         return this->type == (u64) Type::Object;
     }
 
     PYLON_ENTRY Node* get(StringView key);
-    PLY_INLINE const Node* get(StringView key) const {
+    const Node* get(StringView key) const {
         return const_cast<Node*>(this)->get(key);
     }
-    PLY_NO_INLINE Node* set(HybridString&& key, Owned<Node>&& value);
-    PLY_NO_INLINE Owned<Node> remove(StringView key);
+    Node* set(HybridString&& key, Owned<Node>&& value);
+    Owned<Node> remove(StringView key);
 
-    PLY_INLINE const Object& object() const {
+    const Object& object() const {
         if (this->type == (u64) Type::Object) {
             return this->object_;
         } else {
@@ -152,7 +152,7 @@ struct Node {
         }
     }
 
-    PLY_INLINE Object& object() {
+    Object& object() {
         PLY_ASSERT(this->type == (u64) Type::Object);
         return this->object_;
     }

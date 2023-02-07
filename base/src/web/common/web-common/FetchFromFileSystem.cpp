@@ -10,7 +10,7 @@
 namespace ply {
 namespace web {
 
-PLY_NO_INLINE FetchFromFileSystem::FetchFromFileSystem() {
+FetchFromFileSystem::FetchFromFileSystem() {
     struct Pair {
         const char* key;
         const char* value;
@@ -28,9 +28,9 @@ PLY_NO_INLINE FetchFromFileSystem::FetchFromFileSystem() {
     }
 }
 
-PLY_NO_INLINE void FetchFromFileSystem::serve(const FetchFromFileSystem* params,
-                                              StringView request_path,
-                                              ResponseIface* response_iface) {
+void FetchFromFileSystem::serve(const FetchFromFileSystem* params,
+                                StringView request_path,
+                                ResponseIface* response_iface) {
     s32 get_pos = request_path.find_byte('?');
     if (get_pos >= 0) {
         request_path = request_path.sub_str(0, get_pos);

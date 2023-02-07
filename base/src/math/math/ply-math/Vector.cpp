@@ -12,19 +12,18 @@ namespace ply {
 //------------------------------------------------
 // Float2
 //------------------------------------------------
-PLY_NO_INLINE Float2 Float2::normalized() const {
+Float2 Float2::normalized() const {
     return *this / length();
 }
 
-PLY_NO_INLINE Float2 Float2::safe_normalized(const Float2& fallback,
-                                             float epsilon) const {
+Float2 Float2::safe_normalized(const Float2& fallback, float epsilon) const {
     float L = length2();
     if (L < epsilon)
         return fallback;
     return *this / sqrtf(L);
 }
 
-PLY_NO_INLINE Rect rect_from_fov(float fov_y, float aspect) {
+Rect rect_from_fov(float fov_y, float aspect) {
     float half_tan_y = tanf(fov_y / 2);
     return expand(Rect{{0, 0}}, {half_tan_y * aspect, half_tan_y});
 }
@@ -32,47 +31,45 @@ PLY_NO_INLINE Rect rect_from_fov(float fov_y, float aspect) {
 //------------------------------------------------
 // Float3
 //------------------------------------------------
-PLY_NO_INLINE Float3 Float3::normalized() const {
+Float3 Float3::normalized() const {
     return *this / length();
 }
 
-PLY_NO_INLINE Float3 Float3::safe_normalized(const Float3& fallback,
-                                             float epsilon) const {
+Float3 Float3::safe_normalized(const Float3& fallback, float epsilon) const {
     float L = length2();
     if (L < epsilon)
         return fallback;
     return *this / sqrtf(L);
 }
 
-PLY_NO_INLINE Float3 clamp(const Float3& v, const Float3& mins, const Float3& maxs) {
+Float3 clamp(const Float3& v, const Float3& mins, const Float3& maxs) {
     return {clamp(v.x, mins.x, maxs.x), clamp(v.y, mins.y, maxs.y),
             clamp(v.z, mins.z, maxs.z)};
 }
 
-PLY_NO_INLINE Float3 cross(const Float3& a, const Float3& b) {
+Float3 cross(const Float3& a, const Float3& b) {
     return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
 }
 
-PLY_NO_INLINE Float3 pow(const Float3& a, const Float3& b) {
+Float3 pow(const Float3& a, const Float3& b) {
     return {powf(a.x, b.x), powf(a.y, b.y), powf(a.z, b.z)};
 }
 
 //------------------------------------------------
 // Float4
 //------------------------------------------------
-PLY_NO_INLINE Float4 Float4::normalized() const {
+Float4 Float4::normalized() const {
     return *this / length();
 }
 
-PLY_NO_INLINE Float4 Float4::safe_normalized(const Float4& fallback,
-                                             float epsilon) const {
+Float4 Float4::safe_normalized(const Float4& fallback, float epsilon) const {
     float L = length2();
     if (L < epsilon)
         return fallback;
     return *this / sqrtf(L);
 }
 
-PLY_NO_INLINE Float4 pow(const Float4& a, const Float4& b) {
+Float4 pow(const Float4& a, const Float4& b) {
     return {powf(a.x, b.x), powf(a.y, b.y), powf(a.z, b.z), powf(a.w, b.w)};
 }
 

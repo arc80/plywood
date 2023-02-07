@@ -32,12 +32,12 @@ const u8 fmt::DigitTable[256] = {
 
 const u32 fmt::WhitespaceMask[8] = {0x2600, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 
-PLY_INLINE bool match(u8 c, const u32* mask) {
+inline bool match(u8 c, const u32* mask) {
     u32 bit_value = mask[c >> 5] & (1 << (c & 31));
     return (bit_value != 0);
 }
 
-PLY_NO_INLINE void fmt::scan_using_mask(InStream& in, const u32* mask, bool invert) {
+void fmt::scan_using_mask(InStream& in, const u32* mask, bool invert) {
     for (;;) {
         if (!in.ensure_readable())
             break;
@@ -47,8 +47,7 @@ PLY_NO_INLINE void fmt::scan_using_mask(InStream& in, const u32* mask, bool inve
     }
 }
 
-PLY_NO_INLINE void fmt::scan_using_callback(InStream& in,
-                                            const Func<bool(char)>& callback) {
+void fmt::scan_using_callback(InStream& in, const Func<bool(char)>& callback) {
     for (;;) {
         if (!in.ensure_readable())
             break;
@@ -58,8 +57,7 @@ PLY_NO_INLINE void fmt::scan_using_callback(InStream& in,
     }
 }
 
-PLY_NO_INLINE bool fmt::scan_up_to_and_including_special(InStream& in,
-                                                         StringView special) {
+bool fmt::scan_up_to_and_including_special(InStream& in, StringView special) {
     PLY_ASSERT(special.num_bytes > 0);
     PLY_ASSERT(special.sub_str(1).find_byte(special[0]) <
                0); // first letter must not reoccur
@@ -85,7 +83,7 @@ PLY_NO_INLINE bool fmt::scan_up_to_and_including_special(InStream& in,
 //----------------------------------------------------------
 // Built-in fmt::TypeParsers
 //----------------------------------------------------------
-PLY_NO_INLINE u64 fmt::TypeParser<u64>::parse(InStream& in, Radix radix) {
+u64 fmt::TypeParser<u64>::parse(InStream& in, Radix radix) {
     // FIXME: 32-bit platforms like WASM would benefit from dedicated u32 parse function
     // instead of parsing a u64 then casting the result to u32.
     PLY_ASSERT(radix.base > 0 && radix.base <= 36);
@@ -119,7 +117,7 @@ PLY_NO_INLINE u64 fmt::TypeParser<u64>::parse(InStream& in, Radix radix) {
     return result;
 }
 
-PLY_NO_INLINE s64 fmt::TypeParser<s64>::parse(InStream& in, Radix radix) {
+s64 fmt::TypeParser<s64>::parse(InStream& in, Radix radix) {
     bool negate = false;
     if (in.ensure_readable() && *in.cur_byte == '-') {
         negate = true;
@@ -147,8 +145,8 @@ struct DoubleComponentOut {
     bool any_digits = false;
 };
 
-PLY_NO_INLINE void read_double_component(DoubleComponentOut* comp_out, InStream& in,
-                                         fmt::Radix radix) {
+void read_double_component(DoubleComponentOut* comp_out, InStream& in,
+                           fmt::Radix radix) {
     double value = 0.0;
     double dr = (double) radix.base;
     for (;;) {
@@ -164,7 +162,7 @@ PLY_NO_INLINE void read_double_component(DoubleComponentOut* comp_out, InStream&
     comp_out->result = value;
 }
 
-PLY_NO_INLINE double fmt::TypeParser<double>::parse(InStream& in, Radix radix) {
+double fmt::TypeParser<double>::parse(InStream& in, Radix radix) {
     PLY_ASSERT(radix.base > 0 && radix.base <= 36);
     DoubleComponentOut comp;
 

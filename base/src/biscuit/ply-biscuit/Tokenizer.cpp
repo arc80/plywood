@@ -9,11 +9,11 @@
 namespace ply {
 namespace biscuit {
 
-PLY_NO_INLINE Tokenizer::Tokenizer()
+Tokenizer::Tokenizer()
     : token_data{1024 * 1024 * 1024}, file_offset_table{4 * 1024 * 1024} {
 }
 
-PLY_NO_INLINE void Tokenizer::set_source_input(StringView path, StringView src) {
+void Tokenizer::set_source_input(StringView path, StringView src) {
     this->file_location_map = FileLocationMap::from_view(path, src);
     this->vin.start = src.bytes;
     this->vin.end = src.end();
@@ -78,14 +78,14 @@ String ExpandedToken::desc() const {
     }
 }
 
-PLY_NO_INLINE void write_compact(Tokenizer* tkr, u32 value) {
+void write_compact(Tokenizer* tkr, u32 value) {
     char* start = tkr->token_data.begin_write(5);
     char* end = start;
     impl::LabelEncoder::encode_value(end, value);
     tkr->token_data.end_write(end - start);
 }
 
-PLY_NO_INLINE void encode_token(Tokenizer* tkr, const ExpandedToken& exp_token) {
+void encode_token(Tokenizer* tkr, const ExpandedToken& exp_token) {
     PLY_ASSERT(tkr->next_token_idx == check_cast<u32>(tkr->token_data.num_items()));
 
     // Write the token's file offset as a compact offset from the current
@@ -113,14 +113,13 @@ PLY_NO_INLINE void encode_token(Tokenizer* tkr, const ExpandedToken& exp_token) 
     tkr->next_token_idx = check_cast<u32>(tkr->token_data.num_items());
 }
 
-PLY_NO_INLINE void make_end_of_file_token(ExpandedToken& exp_token, Tokenizer* tkr) {
+void make_end_of_file_token(ExpandedToken& exp_token, Tokenizer* tkr) {
     exp_token.token_idx = tkr->next_token_idx;
     exp_token.file_offset = check_cast<u32>(tkr->vin.end - tkr->vin.start);
     exp_token.type = TokenType::EndOfFile;
 }
 
-PLY_NO_INLINE u32 expand_token_internal(ExpandedToken& exp_token, Tokenizer* tkr,
-                                        u32 token_idx) {
+u32 expand_token_internal(ExpandedToken& exp_token, Tokenizer* tkr, u32 token_idx) {
     // Expand the compact token located at the specified token_idx and return its
     // compact length.
     PLY_ASSERT(token_idx <= tkr->token_data.num_items());
@@ -159,7 +158,7 @@ ExpandedToken Tokenizer::expand_token(u32 token_idx) {
     return result;
 }
 
-PLY_NO_INLINE void skip_line_comment(Tokenizer* tkr) {
+void skip_line_comment(Tokenizer* tkr) {
     tkr->vin.next();
     while (!tkr->vin.at_eof()) {
         char c = tkr->vin.peek();
@@ -169,7 +168,7 @@ PLY_NO_INLINE void skip_line_comment(Tokenizer* tkr) {
     }
 }
 
-PLY_NO_INLINE void skip_cstyle_comment(Tokenizer* tkr) {
+void skip_cstyle_comment(Tokenizer* tkr) {
     tkr->vin.next();
     while (!tkr->vin.at_eof()) {
         char c = tkr->vin.next();
@@ -184,7 +183,7 @@ PLY_NO_INLINE void skip_cstyle_comment(Tokenizer* tkr) {
     // FIXME: raise an error if comment is unclosed
 }
 
-PLY_NO_INLINE void read_identifier(ExpandedToken& exp_token, Tokenizer* tkr) {
+void read_identifier(ExpandedToken& exp_token, Tokenizer* tkr) {
     // Find end of identifier
     const char* start = tkr->vin.cur;
     tkr->vin.next();
@@ -204,7 +203,7 @@ PLY_NO_INLINE void read_identifier(ExpandedToken& exp_token, Tokenizer* tkr) {
     exp_token.text = text;
 }
 
-PLY_NO_INLINE void read_numeric(ExpandedToken& exp_token, Tokenizer* tkr) {
+void read_numeric(ExpandedToken& exp_token, Tokenizer* tkr) {
     // Find end of identifier
     const char* start = tkr->vin.cur;
     tkr->vin.next();
@@ -222,7 +221,7 @@ PLY_NO_INLINE void read_numeric(ExpandedToken& exp_token, Tokenizer* tkr) {
     exp_token.text = text;
 }
 
-PLY_NO_INLINE void read_string(ExpandedToken& exp_token, Tokenizer* tkr) {
+void read_string(ExpandedToken& exp_token, Tokenizer* tkr) {
     MemOutStream mout;
     for (;;) {
         if (tkr->vin.at_eof())
@@ -285,7 +284,7 @@ got_string_literal:
     exp_token.text = g_labelStorage.view(exp_token.label);
 }
 
-PLY_NO_INLINE ExpandedToken Tokenizer::read_token() {
+ExpandedToken Tokenizer::read_token() {
     ExpandedToken exp_token;
     while (this->next_token_idx < this->token_data.num_items()) {
         u32 offset = expand_token_internal(exp_token, this, this->next_token_idx);

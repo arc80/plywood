@@ -14,13 +14,13 @@
 
 namespace ply {
 
-PLY_DLL_ENTRY extern TypeKey TypeKey_Struct;
+extern TypeKey TypeKey_Struct;
 
-PLY_DLL_ENTRY NativeBindings& get_native_bindings_synthesized_struct();
-PLY_DLL_ENTRY MethodTable get_method_table_struct();
+NativeBindings& get_native_bindings_synthesized_struct();
+MethodTable get_method_table_struct();
 
 struct TypeDescriptor_Struct : TypeDescriptor {
-    PLY_DLL_ENTRY static TypeKey* type_key;
+    static TypeKey* type_key;
     struct TemplateParam {
         String name;
         TypeDescriptor* type;
@@ -38,16 +38,15 @@ struct TypeDescriptor_Struct : TypeDescriptor {
     // Use expression SFINAE to invoke the object's on_post_serialize() function, if
     // present:
     template <class T>
-    static PLY_INLINE auto invoke_post_serialize(T* obj)
-        -> decltype(obj->on_post_serialize()) {
+    static auto invoke_post_serialize(T* obj) -> decltype(obj->on_post_serialize()) {
         return obj->on_post_serialize();
     }
-    static PLY_INLINE void invoke_post_serialize(...) {
+    static void invoke_post_serialize(...) {
     }
     void (*on_post_serialize)(void* data) = [](void*) {};
 
     // Constructor for synthesized TypeDescriptor_Struct:
-    PLY_INLINE TypeDescriptor_Struct(u32 fixed_size, u32 alignment, StringView name)
+    TypeDescriptor_Struct(u32 fixed_size, u32 alignment, StringView name)
         : TypeDescriptor{&TypeKey_Struct, fixed_size, alignment,
                          get_native_bindings_synthesized_struct()
                              PLY_METHOD_TABLES_ONLY(, get_method_table_struct())},
@@ -55,8 +54,8 @@ struct TypeDescriptor_Struct : TypeDescriptor {
     }
     // Constructor for TypeDescriptor_Struct of an existing C++ class:
     template <class T>
-    PLY_INLINE TypeDescriptor_Struct(T* typed_arg, StringView name,
-                                     std::initializer_list<Member> members = {})
+    TypeDescriptor_Struct(T* typed_arg, StringView name,
+                          std::initializer_list<Member> members = {})
         : TypeDescriptor{&TypeKey_Struct, typed_arg,
                          NativeBindings::make<T>()
                              PLY_METHOD_TABLES_ONLY(, get_method_table_struct())},
@@ -64,13 +63,13 @@ struct TypeDescriptor_Struct : TypeDescriptor {
         on_post_serialize = [](void* data) { invoke_post_serialize((T*) data); };
     }
 
-    PLY_INLINE void append_member(StringView name, TypeDescriptor* type) {
+    void append_member(StringView name, TypeDescriptor* type) {
         // FIXME: Handle alignment
         members.append({name, fixed_size, type});
         fixed_size += type->fixed_size;
     }
 
-    PLY_NO_INLINE const Member* find_member(StringView name) const {
+    const Member* find_member(StringView name) const {
         for (const Member& member : members) {
             if (member.name == name)
                 return &member;
@@ -93,7 +92,7 @@ struct Initializer {
     static void init_type_descriptor_members();
 
 #define PLY_STRUCT_BEGIN(type) \
-    PLY_NO_INLINE ply::TypeDescriptor* type::bind_type_descriptor() { \
+    ply::TypeDescriptor* type::bind_type_descriptor() { \
         static ply::TypeDescriptor_Struct type_desc{(type*) nullptr, #type}; \
         return &type_desc; \
     } \

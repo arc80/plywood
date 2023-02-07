@@ -8,7 +8,7 @@
 
 namespace ply {
 
-PLY_NO_INLINE BaseBigPool::BaseBigPool(uptr num_reserved_bytes) {
+BaseBigPool::BaseBigPool(uptr num_reserved_bytes) {
     uptr allocation_granularity = MemPage::get_info().allocation_granularity;
     this->num_reserved_bytes =
         align_power_of2(num_reserved_bytes, allocation_granularity);
@@ -17,11 +17,11 @@ PLY_NO_INLINE BaseBigPool::BaseBigPool(uptr num_reserved_bytes) {
     PLY_UNUSED(rc);
 }
 
-PLY_NO_INLINE BaseBigPool::~BaseBigPool() {
+BaseBigPool::~BaseBigPool() {
     MemPage::free(this->base, this->num_reserved_bytes);
 }
 
-PLY_NO_INLINE void BaseBigPool::commit_pages(uptr new_total_bytes) {
+void BaseBigPool::commit_pages(uptr new_total_bytes) {
     uptr allocation_granularity = MemPage::get_info().allocation_granularity;
     PLY_ASSERT(is_aligned_power_of2(this->num_committed_bytes, allocation_granularity));
     uptr new_page_boundary = align_power_of2(new_total_bytes, allocation_granularity);

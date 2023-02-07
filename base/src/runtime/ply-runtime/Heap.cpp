@@ -9,26 +9,26 @@
 namespace ply {
 namespace memory_dl {
 
-PLY_DLL_ENTRY void* dlmalloc(size_t, mstate);
-PLY_DLL_ENTRY void dlfree(void*, mstate);
-PLY_DLL_ENTRY void* dlcalloc(size_t, size_t, mstate);
-PLY_DLL_ENTRY void* dlrealloc(void*, size_t, mstate);
-PLY_DLL_ENTRY void* dlrealloc_in_place(void*, size_t, mstate);
-PLY_DLL_ENTRY void* dlmemalign(size_t, size_t, mstate);
-PLY_DLL_ENTRY int dlposix_memalign(void**, size_t, size_t, mstate);
-PLY_DLL_ENTRY void* dlvalloc(size_t, mstate);
-PLY_DLL_ENTRY int dlmallopt(int, int, mstate);
-PLY_DLL_ENTRY size_t dlmalloc_footprint(mstate);
-PLY_DLL_ENTRY size_t dlmalloc_max_footprint(mstate);
-PLY_DLL_ENTRY size_t dlmalloc_footprint_limit(mstate);
-PLY_DLL_ENTRY size_t dlmalloc_set_footprint_limit(size_t bytes, mstate);
-PLY_DLL_ENTRY void** dlindependent_calloc(size_t, size_t, void**, mstate);
-PLY_DLL_ENTRY void** dlindependent_comalloc(size_t, size_t*, void**, mstate);
-PLY_DLL_ENTRY size_t dlbulk_free(void**, size_t n_elements, mstate);
-PLY_DLL_ENTRY void* dlpvalloc(size_t, mstate);
-PLY_DLL_ENTRY int dlmalloc_trim(size_t, mstate);
-PLY_DLL_ENTRY void dlmalloc_stats(mstate, HeapStats&);
-PLY_DLL_ENTRY size_t dlmalloc_usable_size(void*);
+void* dlmalloc(size_t, mstate);
+void dlfree(void*, mstate);
+void* dlcalloc(size_t, size_t, mstate);
+void* dlrealloc(void*, size_t, mstate);
+void* dlrealloc_in_place(void*, size_t, mstate);
+void* dlmemalign(size_t, size_t, mstate);
+int dlposix_memalign(void**, size_t, size_t, mstate);
+void* dlvalloc(size_t, mstate);
+int dlmallopt(int, int, mstate);
+size_t dlmalloc_footprint(mstate);
+size_t dlmalloc_max_footprint(mstate);
+size_t dlmalloc_footprint_limit(mstate);
+size_t dlmalloc_set_footprint_limit(size_t bytes, mstate);
+void** dlindependent_calloc(size_t, size_t, void**, mstate);
+void** dlindependent_comalloc(size_t, size_t*, void**, mstate);
+size_t dlbulk_free(void**, size_t n_elements, mstate);
+void* dlpvalloc(size_t, mstate);
+int dlmalloc_trim(size_t, mstate);
+void dlmalloc_stats(mstate, HeapStats&);
+size_t dlmalloc_usable_size(void*);
 
 } // namespace memory_dl
 

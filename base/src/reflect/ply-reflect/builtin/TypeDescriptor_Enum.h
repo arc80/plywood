@@ -10,12 +10,12 @@
 
 namespace ply {
 
-PLY_DLL_ENTRY extern TypeKey TypeKey_Enum;
+extern TypeKey TypeKey_Enum;
 
-PLY_DLL_ENTRY NativeBindings& get_native_bindings_enum();
+NativeBindings& get_native_bindings_enum();
 
 struct TypeDescriptor_Enum : TypeDescriptor {
-    PLY_DLL_ENTRY static TypeKey* type_key;
+    static TypeKey* type_key;
     struct Identifier {
         String name;
         u32 value;
@@ -25,14 +25,14 @@ struct TypeDescriptor_Enum : TypeDescriptor {
     Array<Identifier> identifiers;
 
     template <typename T>
-    PLY_INLINE TypeDescriptor_Enum(T* typed_arg, const char* name,
-                                   std::initializer_list<Identifier> identifiers)
+    TypeDescriptor_Enum(T* typed_arg, const char* name,
+                        std::initializer_list<Identifier> identifiers)
         : TypeDescriptor{&TypeKey_Enum, typed_arg,
                          get_native_bindings_enum() PLY_METHOD_TABLES_ONLY(, {})},
           name{name}, identifiers{identifiers} {
     }
 
-    PLY_NO_INLINE const Identifier* find_identifier(StringView name) const {
+    const Identifier* find_identifier(StringView name) const {
         for (const Identifier& identifier : identifiers) {
             if (identifier.name == name)
                 return &identifier;
@@ -40,7 +40,7 @@ struct TypeDescriptor_Enum : TypeDescriptor {
         return nullptr;
     }
 
-    PLY_NO_INLINE const Identifier* find_value(u32 value) const {
+    const Identifier* find_value(u32 value) const {
         for (const Identifier& identifier : identifiers) {
             if (identifier.value == value)
                 return &identifier;

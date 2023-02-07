@@ -33,11 +33,11 @@ struct BoundNativeMethod {
     }
 };
 
-PLY_DLL_ENTRY extern TypeKey TypeKey_NativeFunction;
-PLY_DLL_ENTRY NativeBindings& get_native_bindings_native_function();
+extern TypeKey TypeKey_NativeFunction;
+NativeBindings& get_native_bindings_native_function();
 template <>
 struct TypeDescriptorSpecializer<NativeFunction> {
-    static PLY_NO_INLINE TypeDescriptor* get() {
+    static TypeDescriptor* get() {
         static TypeDescriptor type_desc{&TypeKey_NativeFunction,
                                         (void**) nullptr,
                                         get_native_bindings_native_function(),
@@ -46,11 +46,11 @@ struct TypeDescriptorSpecializer<NativeFunction> {
     }
 };
 
-PLY_DLL_ENTRY extern TypeKey TypeKey_BoundNativeMethod;
-PLY_DLL_ENTRY NativeBindings& get_native_bindings_bound_native_method();
+extern TypeKey TypeKey_BoundNativeMethod;
+NativeBindings& get_native_bindings_bound_native_method();
 template <>
 struct TypeDescriptorSpecializer<BoundNativeMethod> {
-    static PLY_NO_INLINE TypeDescriptor* get() {
+    static TypeDescriptor* get() {
         static TypeDescriptor type_desc{&TypeKey_BoundNativeMethod,
                                         (void**) nullptr,
                                         get_native_bindings_bound_native_method(),

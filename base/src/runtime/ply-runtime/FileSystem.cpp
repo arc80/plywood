@@ -209,7 +209,7 @@ FSResult FileSystemIface::make_dirs_and_save_text_if_different(
 
 #define PLY_FSWIN32_ALLOW_UKNOWN_ERRORS 0
 
-PLY_INLINE double windows_to_posix_time(const FILETIME& file_time) {
+inline double windows_to_posix_time(const FILETIME& file_time) {
     return (u64(file_time.dwHighDateTime) << 32 | file_time.dwLowDateTime) /
                10000000.0 -
            11644473600.0;
@@ -689,7 +689,7 @@ FSResult FileSystem_t::set_working_directory(StringView path) {
     }
 }
 
-PLY_NO_INLINE String FileSystem_t::get_working_directory() {
+String FileSystem_t::get_working_directory() {
     u32 num_units_with_null_term = PATH_MAX + 1;
     String path = String::allocate(num_units_with_null_term);
     for (;;) {
@@ -717,7 +717,7 @@ PLY_NO_INLINE String FileSystem_t::get_working_directory() {
     }
 }
 
-PLY_NO_INLINE ExistsResult FileSystem_t::exists(StringView path) {
+ExistsResult FileSystem_t::exists(StringView path) {
     struct stat buf;
     int rc = stat(path.with_null_terminator().bytes, &buf);
     if (rc == 0)
@@ -729,7 +729,7 @@ PLY_NO_INLINE ExistsResult FileSystem_t::exists(StringView path) {
     return ExistsResult::NotFound;
 }
 
-PLY_NO_INLINE int FileSystem_t::open_fdfor_read(StringView path) {
+int FileSystem_t::open_fdfor_read(StringView path) {
     int fd = open(path.with_null_terminator().bytes, O_RDONLY | O_CLOEXEC);
     if (fd != -1) {
         FileSystem::set_last_result(FSResult::OK);
@@ -752,14 +752,14 @@ PLY_NO_INLINE int FileSystem_t::open_fdfor_read(StringView path) {
     return fd;
 }
 
-PLY_NO_INLINE Owned<InPipe> FileSystem_t::open_pipe_for_read(StringView path) {
+Owned<InPipe> FileSystem_t::open_pipe_for_read(StringView path) {
     int fd = open_fdfor_read(path);
     if (fd == -1)
         return nullptr;
     return new InPipe_FD{fd};
 }
 
-PLY_NO_INLINE int FileSystem_t::open_fdfor_write(StringView path) {
+int FileSystem_t::open_fdfor_write(StringView path) {
     int fd = open(path.with_null_terminator().bytes,
                   O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, mode_t(0644));
     if (fd != -1) {
@@ -783,15 +783,14 @@ PLY_NO_INLINE int FileSystem_t::open_fdfor_write(StringView path) {
     return fd;
 }
 
-PLY_NO_INLINE Owned<OutPipe> FileSystem_t::open_pipe_for_write(StringView path) {
+Owned<OutPipe> FileSystem_t::open_pipe_for_write(StringView path) {
     int fd = open_fdfor_write(path);
     if (fd == -1)
         return nullptr;
     return new OutPipe_FD{fd};
 }
 
-PLY_NO_INLINE FSResult FileSystem_t::move_file(StringView src_path,
-                                               StringView dst_path) {
+FSResult FileSystem_t::move_file(StringView src_path, StringView dst_path) {
     int rc = rename(src_path.with_null_terminator().bytes,
                     dst_path.with_null_terminator().bytes);
     if (rc != 0) {
@@ -801,7 +800,7 @@ PLY_NO_INLINE FSResult FileSystem_t::move_file(StringView src_path,
     return FileSystem::set_last_result(FSResult::OK);
 }
 
-PLY_NO_INLINE FSResult FileSystem_t::delete_file(StringView path) {
+FSResult FileSystem_t::delete_file(StringView path) {
     int rc = unlink(path.with_null_terminator().bytes);
     if (rc != 0) {
         PLY_ASSERT(PLY_FSPOSIX_ALLOW_UNKNOWN_ERRORS);
@@ -810,8 +809,7 @@ PLY_NO_INLINE FSResult FileSystem_t::delete_file(StringView path) {
     return FileSystem::set_last_result(FSResult::OK);
 }
 
-PLY_NO_INLINE FSResult FileSystem_t::remove_dir_tree(FileSystem* fs,
-                                                     StringView dir_path) {
+FSResult FileSystem_t::remove_dir_tree(FileSystem* fs, StringView dir_path) {
     for (const DirectoryEntry& dir_entry : fs->list_dir(dir_path)) {
         String joined = PosixPath.join(dir_path, dir_entry.name);
         if (dir_entry.is_dir) {
@@ -835,7 +833,7 @@ PLY_NO_INLINE FSResult FileSystem_t::remove_dir_tree(FileSystem* fs,
     return FileSystem::set_last_result(FSResult::OK);
 }
 
-PLY_NO_INLINE FileInfo FileSystem_t::get_file_status(StringView path) {
+FileInfo FileSystem_t::get_file_status(StringView path) {
     FileInfo info;
     struct stat buf;
     int rc = stat(path.with_null_terminator().bytes, &buf);

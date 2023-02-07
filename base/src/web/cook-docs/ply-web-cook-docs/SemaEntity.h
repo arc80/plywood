@@ -58,13 +58,13 @@ struct SemaEntity : RefCounted<SemaEntity> {
         using Item = SemaEntity*;
         using Index = StringView;
         static constexpr u32 NodeCapacity = 8;
-        static PLY_INLINE StringView get_index(SemaEntity* ent) {
+        static StringView get_index(SemaEntity* ent) {
             return ent->name;
         }
-        static PLY_INLINE bool less(const Index& a, const Index& b) {
+        static bool less(const Index& a, const Index& b) {
             return a < b;
         }
-        static PLY_INLINE void on_item_moved(SemaEntity*, void*) {
+        static void on_item_moved(SemaEntity*, void*) {
         }
     };
 
@@ -87,7 +87,7 @@ struct SemaEntity : RefCounted<SemaEntity> {
     // be reused)
     Owned<DocInfo> doc_info;
 
-    PLY_INLINE void set_parent(SemaEntity* p) {
+    void set_parent(SemaEntity* p) {
         PLY_ASSERT(p);
         this->parent = p;
         if (p->type == Namespace) {
@@ -95,16 +95,16 @@ struct SemaEntity : RefCounted<SemaEntity> {
         }
     }
     ~SemaEntity();
-    PLY_INLINE void on_ref_count_zero() {
+    void on_ref_count_zero() {
         delete this;
     }
-    PLY_INLINE bool is_function() const {
+    bool is_function() const {
         PLY_ASSERT(this->type == Type::Member);
         return this->single_decl.dcor.prod && this->single_decl.dcor.prod->function();
     }
     void set_class_hash();
     void append_to_qualified_id(OutStream* outs) const;
-    PLY_INLINE String get_qualified_id() const {
+    String get_qualified_id() const {
         PLY_ASSERT(this->type == SemaEntity::Class);
         MemOutStream mout;
         this->append_to_qualified_id(&mout);

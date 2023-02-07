@@ -142,24 +142,23 @@ struct Socket {
     static bool HasIPv6;
     static ThreadLocal<IPResult> last_result_;
 
-    static PLY_DLL_ENTRY void initialize(IPAddress::Version ip_version);
-    static PLY_DLL_ENTRY void shutdown();
+    static void initialize(IPAddress::Version ip_version);
+    static void shutdown();
 
     // FIXME: Make interface more configurable
-    static PLY_DLL_ENTRY TCPListener bind_tcp(u16 port);
-    static PLY_DLL_ENTRY Owned<TCPConnection> connect_tcp(const IPAddress& address,
-                                                          u16 port);
-    static PLY_DLL_ENTRY IPAddress resolve_host_name(StringView host_name,
-                                                     IPAddress::Version ip_version);
-    static PLY_INLINE IPResult last_result() {
+    static TCPListener bind_tcp(u16 port);
+    static Owned<TCPConnection> connect_tcp(const IPAddress& address, u16 port);
+    static IPAddress resolve_host_name(StringView host_name,
+                                       IPAddress::Version ip_version);
+    static IPResult last_result() {
         return Socket::last_result_.load();
     }
 };
 
 #endif
 
-PLY_INLINE IPAddress IPAddress::resolve_host_name(StringView host_name,
-                                                  IPAddress::Version ip_version) {
+inline IPAddress IPAddress::resolve_host_name(StringView host_name,
+                                              IPAddress::Version ip_version) {
     return Socket::resolve_host_name(host_name, ip_version);
 }
 
@@ -209,22 +208,22 @@ struct TCPConnection {
     InPipe_FD in_pipe;
     OutPipe_FD out_pipe;
 
-    PLY_INLINE TCPConnection() : in_pipe{-1}, out_pipe{-1} {
+    TCPConnection() : in_pipe{-1}, out_pipe{-1} {
     }
-    PLY_DLL_ENTRY ~TCPConnection();
-    PLY_INLINE const IPAddress& remote_address() const {
+    ~TCPConnection();
+    const IPAddress& remote_address() const {
         return this->remote_addr_;
     }
-    PLY_INLINE u16 remote_port() const {
+    u16 remote_port() const {
         return this->remote_port_;
     }
-    PLY_INLINE int get_handle() const {
+    int get_handle() const {
         return in_pipe.fd;
     }
-    PLY_INLINE InStream create_in_stream() {
+    InStream create_in_stream() {
         return InStream{borrow(&this->in_pipe)};
     }
-    PLY_INLINE OutStream create_out_stream() {
+    OutStream create_out_stream() {
         return OutStream{borrow(&this->out_pipe)};
     }
 };
@@ -287,38 +286,38 @@ struct TCPListener {
 public:
     int listen_socket = -1;
 
-    PLY_INLINE TCPListener(int listen_socket = -1) : listen_socket{listen_socket} {
+    TCPListener(int listen_socket = -1) : listen_socket{listen_socket} {
     }
-    PLY_INLINE TCPListener(TCPListener&& other) {
+    TCPListener(TCPListener&& other) {
         this->listen_socket = other.listen_socket;
         other.listen_socket = -1;
     }
-    PLY_INLINE ~TCPListener() {
+    ~TCPListener() {
         if (this->listen_socket >= 0) {
             ::close(this->listen_socket);
         }
     }
-    PLY_INLINE void operator=(TCPListener&& other) {
+    void operator=(TCPListener&& other) {
         if (this->listen_socket >= 0) {
             ::close(this->listen_socket);
         }
         this->listen_socket = other.listen_socket;
         other.listen_socket = -1;
     }
-    PLY_INLINE bool is_valid() {
+    bool is_valid() {
         return this->listen_socket >= 0;
     }
-    PLY_INLINE void end_comm() {
+    void end_comm() {
         shutdown(this->listen_socket, SHUT_RDWR);
     }
-    PLY_INLINE void close() {
+    void close() {
         if (this->listen_socket >= 0) {
             ::close(this->listen_socket);
             this->listen_socket = -1;
         }
     }
 
-    PLY_DLL_ENTRY Owned<TCPConnection_POSIX> accept();
+    Owned<TCPConnection_POSIX> accept();
 };
 
 #endif // TCPListener

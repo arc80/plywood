@@ -12,10 +12,10 @@ namespace fmt {
 
 extern const u8 DigitTable[256];
 extern const u32 WhitespaceMask[8];
-PLY_DLL_ENTRY void scan_using_mask(InStream& in, const u32* mask, bool invert);
+void scan_using_mask(InStream& in, const u32* mask, bool invert);
 typedef Func<bool(char)> Callback;
-PLY_DLL_ENTRY void scan_using_callback(InStream& in, const Callback& callback);
-PLY_DLL_ENTRY bool scan_up_to_and_including_special(InStream& in, StringView special);
+void scan_using_callback(InStream& in, const Callback& callback);
+bool scan_up_to_and_including_special(InStream& in, StringView special);
 
 struct Radix {
     u32 base = 10;
@@ -26,41 +26,41 @@ struct Radix {
 //----------------------------------------------------------
 template <>
 struct TypeParser<u64> {
-    static PLY_INLINE Radix default_format() {
+    static Radix default_format() {
         return {10};
     }
-    static PLY_DLL_ENTRY u64 parse(InStream& in, Radix radix);
+    static u64 parse(InStream& in, Radix radix);
 };
 template <>
 struct TypeParser<s64> {
-    static PLY_INLINE Radix default_format() {
+    static Radix default_format() {
         return {10};
     }
-    static PLY_DLL_ENTRY s64 parse(InStream& in, Radix radix);
+    static s64 parse(InStream& in, Radix radix);
 };
 template <>
 struct TypeParser<double> {
-    static PLY_INLINE Radix default_format() {
+    static Radix default_format() {
         return {10};
     }
-    static PLY_DLL_ENTRY double parse(InStream& in, Radix radix);
+    static double parse(InStream& in, Radix radix);
 };
 template <>
 struct TypeParser<float> {
-    static PLY_INLINE Radix default_format() {
+    static Radix default_format() {
         return {10};
     }
-    static PLY_INLINE float parse(InStream& in, Radix radix) {
+    static float parse(InStream& in, Radix radix) {
         return (float) TypeParser<double>::parse(in, radix);
     }
 };
 
 template <typename DstType, typename FullType>
 struct TypeParser_Integral {
-    static PLY_INLINE Radix default_format() {
+    static Radix default_format() {
         return {10};
     }
-    static PLY_NO_INLINE DstType parse(InStream& in, Radix radix) {
+    static DstType parse(InStream& in, Radix radix) {
         FullType full_value = TypeParser<FullType>::parse(in, radix);
         DstType result = (DstType) full_value;
         if (result != full_value) {
@@ -105,7 +105,7 @@ struct QuotedString {
 };
 template <>
 struct FormatParser<QuotedString> {
-    static PLY_DLL_ENTRY String parse(InStream& in, const QuotedString& format);
+    static String parse(InStream& in, const QuotedString& format);
 };
 
 // Identifier
@@ -113,19 +113,19 @@ static constexpr u32 WithDollarSign = 0x1;
 static constexpr u32 WithDash = 0x2;
 struct Identifier {
     u32 flags = 0;
-    PLY_INLINE Identifier(u32 flags = 0) : flags{flags} {
+    Identifier(u32 flags = 0) : flags{flags} {
     }
 };
 template <>
 struct FormatParser<Identifier> {
-    static PLY_DLL_ENTRY bool parse(InStream& in, const Identifier& format);
+    static bool parse(InStream& in, const Identifier& format);
 };
 
 // Line
 struct Line {};
 template <>
 struct FormatParser<Line> {
-    static PLY_NO_INLINE bool parse(InStream& in, const Line&) {
+    static bool parse(InStream& in, const Line&) {
         return fmt::scan_up_to_and_including_special(in, "\n");
     }
 };
@@ -134,7 +134,7 @@ struct FormatParser<Line> {
 struct Whitespace {};
 template <>
 struct FormatParser<Whitespace> {
-    static PLY_NO_INLINE void parse(InStream& in, const Whitespace&) {
+    static void parse(InStream& in, const Whitespace&) {
         fmt::scan_using_mask(in, fmt::WhitespaceMask, false);
     }
 };
@@ -142,7 +142,7 @@ struct FormatParser<Whitespace> {
 // Callback
 template <>
 struct FormatParser<Callback> {
-    static PLY_NO_INLINE void parse(InStream& in, const Callback& cb) {
+    static void parse(InStream& in, const Callback& cb) {
         fmt::scan_using_callback(in, cb);
     }
 };
@@ -151,7 +151,7 @@ struct FormatParser<Callback> {
 struct NonWhitespace {};
 template <>
 struct FormatParser<NonWhitespace> {
-    static PLY_NO_INLINE void parse(InStream& in, const NonWhitespace&) {
+    static void parse(InStream& in, const NonWhitespace&) {
         fmt::scan_using_mask(in, fmt::WhitespaceMask, true);
     }
 };

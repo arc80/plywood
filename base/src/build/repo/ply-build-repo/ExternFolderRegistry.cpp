@@ -17,7 +17,7 @@ namespace build {
 
 Owned<ExternFolderRegistry> ExternFolderRegistry::instance_;
 
-PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
+Owned<ExternFolder> ExternFolder::load(String&& path) {
     String info_path = Path.join(path, "info.pylon");
     String str_contents = FileSystem.load_text_autodetect(info_path);
     if (FileSystem.last_result() != FSResult::OK)
@@ -33,7 +33,7 @@ PLY_NO_INLINE Owned<ExternFolder> ExternFolder::load(String&& path) {
     return info;
 }
 
-PLY_NO_INLINE bool ExternFolder::save() const {
+bool ExternFolder::save() const {
     auto a_root = pylon::export_obj(AnyObject::bind(this));
     String str_contents = pylon::to_string(a_root);
     String info_path = Path.join(this->path, "info.pylon");
@@ -70,8 +70,7 @@ ExternFolder* ExternFolderRegistry::find(StringView desc) const {
     return nullptr;
 }
 
-PLY_NO_INLINE String make_unique_file_name(StringView parent_folder,
-                                           StringView prefix) {
+String make_unique_file_name(StringView parent_folder, StringView prefix) {
     u32 number = 0;
     String suffix;
     for (;;) {
@@ -85,7 +84,7 @@ PLY_NO_INLINE String make_unique_file_name(StringView parent_folder,
     }
 }
 
-PLY_NO_INLINE ExternFolder* ExternFolderRegistry::create(StringView desc) {
+ExternFolder* ExternFolderRegistry::create(StringView desc) {
     // Make directory
     String folder_path =
         make_unique_file_name(Path.join(Workspace.path, "data/extern"), desc);

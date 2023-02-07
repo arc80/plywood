@@ -848,18 +848,16 @@ private:
 public:
     Func() = default;
 
-    PLY_INLINE Func(const Func& other)
-        : handler{other.handler}, stored_arg{other.stored_arg} {
+    Func(const Func& other) : handler{other.handler}, stored_arg{other.stored_arg} {
     }
 
     template <typename T>
-    PLY_INLINE Func(Return (*handler)(T*, Args...), T* stored_arg)
+    Func(Return (*handler)(T*, Args...), T* stored_arg)
         : handler{(Handler*) handler}, stored_arg{(void*) stored_arg} {
     }
 
     template <typename T>
-    PLY_INLINE Func(Return (T::*handler)(Args...), T* target)
-        : stored_arg{(void*) target} {
+    Func(Return (T::*handler)(Args...), T* target) : stored_arg{(void*) target} {
         this->handler = [this](void* target, Args... args) {
             return ((T*) target)->*(this->hidden_arg)(std::forward<Args>(args)...);
         };
@@ -875,17 +873,17 @@ public:
         };
     }
 
-    PLY_INLINE void operator=(const Func& other) {
+    void operator=(const Func& other) {
         this->handler = other.handler;
         this->stored_arg = other.stored_arg;
     }
 
-    PLY_INLINE explicit operator bool() const {
+    explicit operator bool() const {
         return this->handler != nullptr;
     }
 
     template <typename... CallArgs>
-    PLY_INLINE Return operator()(CallArgs&&... args) const {
+    Return operator()(CallArgs&&... args) const {
         if (!this->handler)
             return subst::create_default<Return>();
         PLY_PUN_SCOPE
@@ -907,60 +905,60 @@ private:
     T* ptr;
 
 public:
-    PLY_INLINE Owned() : ptr{nullptr} {
+    Owned() : ptr{nullptr} {
     }
-    PLY_INLINE Owned(T* ptr) : ptr{ptr} { // FIXME: Replace with Owned<T>::adopt()
+    Owned(T* ptr) : ptr{ptr} { // FIXME: Replace with Owned<T>::adopt()
     }
-    PLY_INLINE Owned(Owned&& other) : ptr{other.release()} {
+    Owned(Owned&& other) : ptr{other.release()} {
     }
     template <typename Derived,
               typename std::enable_if_t<std::is_base_of<T, Derived>::value, int> = 0>
-    PLY_INLINE Owned(Owned<Derived>&& other) : ptr{other.release()} {
+    Owned(Owned<Derived>&& other) : ptr{other.release()} {
     }
-    PLY_INLINE ~Owned() {
+    ~Owned() {
         subst::destroy_by_member(this->ptr);
     }
-    static PLY_INLINE Owned adopt(T* ptr) {
+    static Owned adopt(T* ptr) {
         Owned result;
         result.ptr = ptr;
         return result;
     }
-    PLY_INLINE void operator=(Owned&& other) {
+    void operator=(Owned&& other) {
         PLY_ASSERT(!this->ptr || this->ptr != other.ptr);
         subst::destroy_by_member(this->ptr);
         this->ptr = other.release();
     }
     template <typename Derived,
               typename std::enable_if_t<std::is_base_of<T, Derived>::value, int> = 0>
-    PLY_INLINE void operator=(Owned<Derived>&& other) {
+    void operator=(Owned<Derived>&& other) {
         PLY_ASSERT(!this->ptr || this->ptr != other.ptr);
         subst::destroy_by_member(this->ptr);
         this->ptr = other.release();
     }
-    PLY_INLINE void operator=(T* ptr) {
+    void operator=(T* ptr) {
         PLY_ASSERT(!this->ptr || this->ptr != ptr);
         subst::destroy_by_member(this->ptr);
         this->ptr = ptr;
     }
     template <typename... Args>
-    static PLY_INLINE Owned create(Args&&... args) {
+    static Owned create(Args&&... args) {
         return Owned::adopt(new T{std::forward<Args>(args)...});
     }
-    PLY_INLINE T* operator->() const {
+    T* operator->() const {
         return this->ptr;
     }
-    PLY_INLINE operator T*() const {
+    operator T*() const {
         return this->ptr;
     }
-    PLY_INLINE T* get() const {
+    T* get() const {
         return this->ptr;
     }
-    PLY_INLINE T* release() {
+    T* release() {
         T* ptr = this->ptr;
         this->ptr = nullptr;
         return ptr;
     }
-    PLY_INLINE void clear() {
+    void clear() {
         subst::destroy_by_member(this->ptr);
         this->ptr = nullptr;
     }
@@ -978,28 +976,28 @@ private:
     Atomic<s32> m_refCount = 0;
 
 public:
-    PLY_INLINE void inc_ref() {
+    void inc_ref() {
         s32 old_count = m_refCount.fetch_add(1, Relaxed);
         PLY_ASSERT(old_count >= 0 && old_count < UINT16_MAX);
         PLY_UNUSED(old_count);
     }
-    PLY_INLINE void dec_ref() {
+    void dec_ref() {
         s32 old_count = m_refCount.fetch_sub(1, Relaxed);
         PLY_ASSERT(old_count >= 1 && old_count < UINT16_MAX);
         if (old_count == 1) {
             static_cast<Mixin*>(this)->on_ref_count_zero();
         }
     }
-    PLY_INLINE s32 get_ref_count() const {
+    s32 get_ref_count() const {
         return m_refCount.load(Relaxed);
     }
 
     // Make derived classes assignable without copying the other object's refcount:
-    PLY_INLINE RefCounted() {
+    RefCounted() {
     }
-    PLY_INLINE RefCounted(const RefCounted&) {
+    RefCounted(const RefCounted&) {
     }
-    PLY_INLINE void operator=(const RefCounted&) {
+    void operator=(const RefCounted&) {
     }
 };
 
@@ -1009,33 +1007,33 @@ private:
     T* ptr;
 
 public:
-    PLY_INLINE Reference() : ptr(nullptr) {
+    Reference() : ptr(nullptr) {
     }
-    PLY_INLINE Reference(T* ptr) : ptr(ptr) {
+    Reference(T* ptr) : ptr(ptr) {
         if (this->ptr)
             this->ptr->inc_ref();
     }
-    PLY_INLINE Reference(const Reference& ref) : ptr(ref.ptr) {
+    Reference(const Reference& ref) : ptr(ref.ptr) {
         if (this->ptr)
             this->ptr->inc_ref();
     }
-    PLY_INLINE Reference(Reference&& ref) : ptr(ref.ptr) {
+    Reference(Reference&& ref) : ptr(ref.ptr) {
         ref.ptr = nullptr;
     }
-    PLY_INLINE ~Reference() {
+    ~Reference() {
         if (this->ptr)
             this->ptr->dec_ref();
     }
-    PLY_INLINE T* operator->() const {
+    T* operator->() const {
         return this->ptr;
     }
-    PLY_INLINE operator T*() const {
+    operator T*() const {
         return this->ptr;
     }
-    PLY_INLINE T* get() const {
+    T* get() const {
         return this->ptr;
     }
-    PLY_INLINE void operator=(T* ptr) {
+    void operator=(T* ptr) {
         T* old_ptr = this->ptr;
         this->ptr = ptr;
         if (this->ptr)
@@ -1044,7 +1042,7 @@ public:
             old_ptr->dec_ref();
     }
 
-    PLY_INLINE void operator=(const Reference& ref) {
+    void operator=(const Reference& ref) {
         T* old_ptr = this->ptr;
         this->ptr = ref.ptr;
         if (this->ptr)
@@ -1052,26 +1050,26 @@ public:
         if (old_ptr)
             old_ptr->dec_ref();
     }
-    PLY_INLINE void operator=(Reference&& ref) {
+    void operator=(Reference&& ref) {
         if (this->ptr)
             this->ptr->dec_ref();
         this->ptr = ref.ptr;
         ref.ptr = nullptr;
     }
-    PLY_INLINE explicit operator bool() const {
+    explicit operator bool() const {
         return this->ptr != nullptr;
     }
-    PLY_INLINE T* release() {
+    T* release() {
         T* ptr = this->ptr;
         this->ptr = nullptr;
         return ptr;
     };
-    PLY_INLINE void clear() {
+    void clear() {
         if (this->ptr)
             this->ptr->dec_ref();
         this->ptr = nullptr;
     }
-    PLY_INLINE bool is_empty() const {
+    bool is_empty() const {
         return this->ptr == nullptr;
     }
 };
@@ -1475,12 +1473,12 @@ struct SetInScope {
 template <typename Callback>
 struct OnScopeExit {
     Callback cb;
-    PLY_INLINE ~OnScopeExit() {
+    ~OnScopeExit() {
         cb();
     }
 };
 template <typename Callback>
-PLY_INLINE OnScopeExit<Callback> set_on_scope_exit(Callback&& cb) {
+OnScopeExit<Callback> set_on_scope_exit(Callback&& cb) {
     return {std::forward<Callback>(cb)};
 }
 #define PLY_ON_SCOPE_EXIT(cb) \
@@ -1519,39 +1517,39 @@ template <typename Container, typename State, typename Container::ID RequiredID>
 struct SwitchWrapper {
     Container& ctr;
 
-    PLY_INLINE SwitchWrapper(Container& ctr) : ctr(ctr) {
+    SwitchWrapper(Container& ctr) : ctr(ctr) {
     }
-    PLY_INLINE explicit operator bool() const {
+    explicit operator bool() const {
         return ctr.id == RequiredID;
     }
     template <typename... Args>
-    PLY_INLINE SwitchWrapper& switch_to(Args&&... args) {
+    SwitchWrapper& switch_to(Args&&... args) {
         Container::id_to_type[ureg(ctr.id)].destruct(&ctr.storage);
         ctr.id = RequiredID;
         new (&ctr.storage) State{std::forward<Args>(args)...};
         return *this;
     }
-    PLY_INLINE const State* operator->() const {
+    const State* operator->() const {
         PLY_ASSERT(ctr.id == RequiredID);
         return (State*) &ctr.storage;
     }
-    PLY_INLINE State* operator->() {
+    State* operator->() {
         PLY_ASSERT(ctr.id == RequiredID);
         return (State*) &ctr.storage;
     }
-    PLY_INLINE const State* get() const {
+    const State* get() const {
         PLY_ASSERT(ctr.id == RequiredID);
         return (State*) &ctr.storage;
     }
-    PLY_INLINE State* get() {
+    State* get() {
         PLY_ASSERT(ctr.id == RequiredID);
         return (State*) &ctr.storage;
     }
-    PLY_INLINE void operator=(const State& state) {
+    void operator=(const State& state) {
         PLY_ASSERT(ctr.id == RequiredID);
         *(State*) &ctr.storage = state;
     }
-    PLY_INLINE void operator=(State&& state) {
+    void operator=(State&& state) {
         PLY_ASSERT(ctr.id == RequiredID);
         *(State*) &ctr.storage = std::move(state);
     }
@@ -1566,31 +1564,31 @@ struct SwitchWrapper {
     static SwitchType id_to_type[]; \
     template <typename, typename = void> \
     struct TypeToID; \
-    PLY_INLINE ctr_name() : id{ID::default_state} { new (&storage) default_state{}; } \
-    PLY_INLINE ~ctr_name() { id_to_type[ply::ureg(id)].destruct(&storage); } \
-    PLY_INLINE ctr_name(const ctr_name& other) : id{other.id} { \
+    ctr_name() : id{ID::default_state} { new (&storage) default_state{}; } \
+    ~ctr_name() { id_to_type[ply::ureg(id)].destruct(&storage); } \
+    ctr_name(const ctr_name& other) : id{other.id} { \
         id_to_type[ply::ureg(id)].construct(&storage); \
         id_to_type[ply::ureg(id)].copy(&storage, &other.storage); \
     } \
-    PLY_INLINE ctr_name(ctr_name&& other) : id{other.id} { \
+    ctr_name(ctr_name&& other) : id{other.id} { \
         id_to_type[ply::ureg(id)].construct(&storage); \
         id_to_type[ply::ureg(id)].move(&storage, &other.storage); \
     } \
     template <typename S, typename = ply::void_t<decltype(TypeToID<S>::value)>> \
-    PLY_INLINE ctr_name(S&& other) : id{TypeToID<S>::value} { \
+    ctr_name(S&& other) : id{TypeToID<S>::value} { \
         id_to_type[ply::ureg(id)].construct(&storage); \
         id_to_type[ply::ureg(id)].move(&storage, &other); \
     } \
-    PLY_INLINE void switch_to(ID new_id) { \
+    void switch_to(ID new_id) { \
         id_to_type[ply::ureg(id)].destruct(&storage); \
         id = new_id; \
         id_to_type[ply::ureg(id)].construct(&storage); \
     } \
-    PLY_INLINE void operator=(const ctr_name& other) { \
+    void operator=(const ctr_name& other) { \
         switch_to(other.id); \
         id_to_type[ply::ureg(id)].copy(&storage, &other.storage); \
     } \
-    PLY_INLINE void operator=(ctr_name&& other) { \
+    void operator=(ctr_name&& other) { \
         switch_to(other.id); \
         id_to_type[ply::ureg(id)].move(&storage, &other.storage); \
     }
@@ -1603,8 +1601,8 @@ struct SwitchWrapper {
     struct TypeToID<state, dummy> { \
         static constexpr ID value = ID::state; \
     }; \
-    PLY_INLINE ply::SwitchWrapper<T, state, T::ID::state> func() { return {*this}; } \
-    PLY_INLINE const ply::SwitchWrapper<const T, state, T::ID::state> func() const { \
+    ply::SwitchWrapper<T, state, T::ID::state> func() { return {*this}; } \
+    const ply::SwitchWrapper<const T, state, T::ID::state> func() const { \
         return {*this}; \
     }
 
@@ -1655,7 +1653,7 @@ public:
     void base_reserve(u32 new_size, u32 item_size);
     u32 base_alloc(u32 item_size);
     void base_free(u32 index, u32 item_size);
-    PLY_DLL_ENTRY void base_sort_free_list(u32 stride) const;
+    void base_sort_free_list(u32 stride) const;
     void base_clear();
 };
 
@@ -2214,55 +2212,55 @@ private:
     uptr num_items_ = 0;
 
 public:
-    PLY_INLINE BigPool(uptr num_reserved_bytes = DefaultNumReservedBytes)
+    BigPool(uptr num_reserved_bytes = DefaultNumReservedBytes)
         : BaseBigPool{num_reserved_bytes} {
     }
-    PLY_INLINE uptr num_items() const {
+    uptr num_items() const {
         return this->num_items_;
     }
-    PLY_INLINE const T& operator[](uptr idx) const {
+    const T& operator[](uptr idx) const {
         PLY_ASSERT(idx < this->num_items_);
         return ((const T*) this->base)[idx];
     }
-    PLY_INLINE T& operator[](uptr idx) {
+    T& operator[](uptr idx) {
         PLY_ASSERT(idx < this->num_items_);
         return ((T*) this->base)[idx];
     }
-    PLY_INLINE const T* end() const {
+    const T* end() const {
         return ((const T*) this->base) + this->num_items_;
     }
-    PLY_INLINE T* get(uptr idx) const {
+    T* get(uptr idx) const {
         PLY_ASSERT(idx < this->num_items_);
         return ((T*) this->base) + idx;
     }
-    PLY_INLINE T& back(sptr ofs = -1) const {
+    T& back(sptr ofs = -1) const {
         PLY_ASSERT(ofs < 0 && uptr(-ofs) <= this->num_items_);
         return ((T*) this->base)[this->num_items_ + ofs];
     }
-    PLY_INLINE T* begin_write(uptr max_num_items = 1) {
+    T* begin_write(uptr max_num_items = 1) {
         uptr new_total_bytes = sizeof(T) * (this->num_items_ + max_num_items);
         if (new_total_bytes > this->num_committed_bytes) {
             this->commit_pages(new_total_bytes);
         }
         return ((T*) this->base) + this->num_items_;
     }
-    PLY_INLINE void end_write(uptr num_items = 1) {
+    void end_write(uptr num_items = 1) {
         this->num_items_ += num_items;
         PLY_ASSERT(sizeof(T) * this->num_items_ <= this->num_committed_bytes);
     }
-    PLY_INLINE T* alloc(uptr num_items = 1) {
+    T* alloc(uptr num_items = 1) {
         T* result = begin_write(num_items);
         end_write(num_items);
         return result;
     }
-    PLY_INLINE T& append(T&& item) {
+    T& append(T&& item) {
         return *new (this->alloc()) T{std::move(item)};
     }
-    PLY_INLINE T& append(const T& item) {
+    T& append(const T& item) {
         return *new (this->alloc()) T{item};
     }
     template <typename... Args>
-    PLY_INLINE T& append(Args&&... args) {
+    T& append(Args&&... args) {
         return *new (this->alloc()) T{std::forward<Args>(args)...};
     }
 };
@@ -2294,40 +2292,40 @@ struct BlockList {
         u32 block_size = 0;     // Total number of bytes allocated for this block
         mutable s32 ref_count = 0;
 
-        PLY_DLL_ENTRY void on_ref_count_zero();
-        PLY_INLINE void inc_ref() {
+        void on_ref_count_zero();
+        void inc_ref() {
             this->ref_count++;
         }
-        PLY_INLINE void dec_ref() {
+        void dec_ref() {
             PLY_ASSERT(this->ref_count > 0);
             if (--this->ref_count == 0) {
                 this->on_ref_count_zero();
             }
         }
-        PLY_INLINE char* start() const {
+        char* start() const {
             return this->bytes + this->start_offset;
         }
-        PLY_INLINE char* unused() const {
+        char* unused() const {
             return this->bytes + this->num_bytes_used;
         }
-        PLY_INLINE char* end() const {
+        char* end() const {
             return this->bytes + this->block_size;
         }
-        PLY_INLINE u32 offset_of(char* byte) {
+        u32 offset_of(char* byte) {
             uptr ofs = byte - this->bytes;
             PLY_ASSERT(ofs <= this->num_bytes_used);
             return (u32) ofs;
         }
-        PLY_INLINE StringView view_used_bytes() const {
+        StringView view_used_bytes() const {
             return {this->start(), this->num_bytes_used - this->start_offset};
         }
-        PLY_INLINE MutStringView view_unused_bytes() {
+        MutStringView view_unused_bytes() {
             return {this->unused(), this->block_size - this->num_bytes_used};
         }
         // Returns a WeakRef to next block, and the next byte after the last byte in
         // this block, taking the difference in file_offsets into account since it's
         // possible for adjacent blocks to overlap.
-        PLY_DLL_ENTRY WeakRef weak_ref_to_next() const;
+        WeakRef weak_ref_to_next() const;
     };
 
     //--------------------------------------
@@ -2337,26 +2335,24 @@ struct BlockList {
         Footer* block = nullptr;
         char* byte = nullptr;
 
-        PLY_INLINE WeakRef() {
+        WeakRef() {
         }
-        PLY_INLINE WeakRef(const WeakRef& other)
-            : block{other.block}, byte{other.byte} {
+        WeakRef(const WeakRef& other) : block{other.block}, byte{other.byte} {
         }
-        PLY_INLINE WeakRef(Footer* block, char* byte) : block{block}, byte{byte} {
+        WeakRef(Footer* block, char* byte) : block{block}, byte{byte} {
             PLY_ASSERT(!block || (uptr(byte - block->bytes) <= block->block_size));
         }
-        PLY_INLINE WeakRef(Footer* block, u32 offset)
-            : block{block}, byte{block->bytes + offset} {
+        WeakRef(Footer* block, u32 offset) : block{block}, byte{block->bytes + offset} {
             PLY_ASSERT(offset <= block->block_size);
         }
-        PLY_INLINE void operator=(const WeakRef& other) {
+        void operator=(const WeakRef& other) {
             this->block = other.block;
             this->byte = other.byte;
         }
-        PLY_INLINE bool operator!=(const WeakRef& other) const {
+        bool operator!=(const WeakRef& other) const {
             return this->block != other.block || this->byte != other.byte;
         }
-        PLY_INLINE WeakRef normalized() const {
+        WeakRef normalized() const {
             if (this->block->next_block && (this->byte == this->block->unused())) {
                 return {this->block->next_block, this->block->start()};
             }
@@ -2371,33 +2367,32 @@ struct BlockList {
         Reference<Footer> block;
         char* byte = nullptr;
 
-        PLY_INLINE Ref() {
+        Ref() {
         }
-        PLY_INLINE Ref(const Ref& other) : block{other.block}, byte{other.byte} {
+        Ref(const Ref& other) : block{other.block}, byte{other.byte} {
         }
-        PLY_INLINE Ref(Ref&& other) : block{std::move(other.block)}, byte{other.byte} {
+        Ref(Ref&& other) : block{std::move(other.block)}, byte{other.byte} {
         }
-        PLY_INLINE Ref(Footer* block) : block{block}, byte{block->bytes} {
+        Ref(Footer* block) : block{block}, byte{block->bytes} {
         }
-        PLY_INLINE Ref(Footer* block, char* byte) : block{block}, byte{byte} {
+        Ref(Footer* block, char* byte) : block{block}, byte{byte} {
             PLY_ASSERT(!block || (uptr(byte - block->bytes) <= block->block_size));
         }
-        PLY_INLINE Ref(Reference<Footer>&& block, char* byte)
+        Ref(Reference<Footer>&& block, char* byte)
             : block{std::move(block)}, byte{byte} {
             PLY_ASSERT(!block ||
                        (uptr(byte - this->block->bytes) <= this->block->block_size));
         }
-        PLY_INLINE Ref(const WeakRef& weak_ref)
-            : block{weak_ref.block}, byte{weak_ref.byte} {
+        Ref(const WeakRef& weak_ref) : block{weak_ref.block}, byte{weak_ref.byte} {
         }
-        PLY_INLINE operator WeakRef() const {
+        operator WeakRef() const {
             return {this->block, this->byte};
         }
-        PLY_INLINE void operator=(const WeakRef& weak_ref) {
+        void operator=(const WeakRef& weak_ref) {
             this->block = weak_ref.block;
             this->byte = weak_ref.byte;
         }
-        PLY_INLINE void operator=(Ref&& other) {
+        void operator=(Ref&& other) {
             this->block = std::move(other.block);
             this->byte = other.byte;
         }
@@ -2413,19 +2408,19 @@ struct BlockList {
         RangeForIterator(const WeakRef& start_pos, const WeakRef& end_pos = {})
             : cur_pos{start_pos}, end_pos{end_pos} {
         }
-        PLY_INLINE RangeForIterator& begin() {
+        RangeForIterator& begin() {
             return *this;
         }
-        PLY_INLINE RangeForIterator& end() {
+        RangeForIterator& end() {
             return *this;
         }
-        PLY_INLINE void operator++() {
+        void operator++() {
             this->cur_pos = this->cur_pos.block->weak_ref_to_next();
         }
-        PLY_INLINE bool operator!=(const RangeForIterator&) const {
+        bool operator!=(const RangeForIterator&) const {
             return this->cur_pos != this->end_pos;
         }
-        PLY_INLINE StringView operator*() const {
+        StringView operator*() const {
             return StringView::from_range(this->cur_pos.byte,
                                           (this->cur_pos.block == this->end_pos.block)
                                               ? this->end_pos.byte
@@ -2436,23 +2431,19 @@ struct BlockList {
     //--------------------------------------
     // Static member functions
     //--------------------------------------
-    static PLY_DLL_ENTRY Reference<Footer>
-    create_block(u32 num_bytes = DefaultBlockSize);
-    static PLY_DLL_ENTRY Reference<Footer> create_overlay_block(const WeakRef& pos,
-                                                                u32 num_bytes);
-    static PLY_DLL_ENTRY Footer* append_block(Footer* block,
-                                              u32 num_bytes = DefaultBlockSize);
-    static PLY_DLL_ENTRY void
-    append_block_with_recycle(Reference<Footer>& block,
-                              u32 num_bytes = DefaultBlockSize);
-    static PLY_INLINE RangeForIterator iterate_over_views(const WeakRef& start,
-                                                          const WeakRef& end = {}) {
+    static Reference<Footer> create_block(u32 num_bytes = DefaultBlockSize);
+    static Reference<Footer> create_overlay_block(const WeakRef& pos, u32 num_bytes);
+    static Footer* append_block(Footer* block, u32 num_bytes = DefaultBlockSize);
+    static void append_block_with_recycle(Reference<Footer>& block,
+                                          u32 num_bytes = DefaultBlockSize);
+    static RangeForIterator iterate_over_views(const WeakRef& start,
+                                               const WeakRef& end = {}) {
         return {start, end};
     }
-    static PLY_DLL_ENTRY u32 jump_to_next_block(WeakRef* weak_ref);
-    static PLY_DLL_ENTRY u32 jump_to_prev_block(WeakRef* weak_ref);
+    static u32 jump_to_next_block(WeakRef* weak_ref);
+    static u32 jump_to_prev_block(WeakRef* weak_ref);
 
-    static PLY_DLL_ENTRY String to_string(Ref&& start, const WeakRef& end = {});
+    static String to_string(Ref&& start, const WeakRef& end = {});
 
     //--------------------------------------
     // BlockList object
@@ -2460,11 +2451,11 @@ struct BlockList {
     Reference<Footer> head;
     Footer* tail = nullptr;
 
-    PLY_DLL_ENTRY BlockList();
-    PLY_DLL_ENTRY ~BlockList();
-    PLY_DLL_ENTRY char* append_bytes(u32 num_bytes);
-    PLY_DLL_ENTRY void pop_last_bytes(u32 num_bytes);
-    PLY_INLINE WeakRef end() const {
+    BlockList();
+    ~BlockList();
+    char* append_bytes(u32 num_bytes);
+    void pop_last_bytes(u32 num_bytes);
+    WeakRef end() const {
         return {tail, tail->unused()};
     }
 };
@@ -2476,14 +2467,14 @@ struct BlockList {
 //                    ██
 
 namespace impl {
-PLY_DLL_ENTRY void destruct_sequence(Reference<BlockList::Footer>* head_ref,
-                                     void (*destruct_view_as)(StringView));
-PLY_DLL_ENTRY void begin_write_internal(BlockList::Footer** tail, u32 num_bytes);
-PLY_DLL_ENTRY void pop_tail(BlockList::Footer** tail, u32 num_bytes,
-                            void (*destruct_view_as)(StringView));
-PLY_DLL_ENTRY void truncate(BlockList::Footer** tail, const BlockList::WeakRef& to);
-PLY_DLL_ENTRY u32 get_total_num_bytes(BlockList::Footer* head);
-PLY_DLL_ENTRY char* read(BlockList::WeakRef* weak_ref, u32 item_size);
+void destruct_sequence(Reference<BlockList::Footer>* head_ref,
+                       void (*destruct_view_as)(StringView));
+void begin_write_internal(BlockList::Footer** tail, u32 num_bytes);
+void pop_tail(BlockList::Footer** tail, u32 num_bytes,
+              void (*destruct_view_as)(StringView));
+void truncate(BlockList::Footer** tail, const BlockList::WeakRef& to);
+u32 get_total_num_bytes(BlockList::Footer* head);
+char* read(BlockList::WeakRef* weak_ref, u32 item_size);
 } // namespace impl
 
 template <typename T>
@@ -2499,12 +2490,12 @@ private:
     template <typename>
     friend class Sequence;
 
-    PLY_INLINE WeakSequenceRef(const BlockList::WeakRef& impl) : impl{impl} {
+    WeakSequenceRef(const BlockList::WeakRef& impl) : impl{impl} {
     }
 
 public:
-    PLY_INLINE WeakSequenceRef() = default;
-    PLY_INLINE ArrayView<T> begin_read() {
+    WeakSequenceRef() = default;
+    ArrayView<T> begin_read() {
         sptr num_bytes_available = this->impl.block->unused() - this->impl.byte;
         if (num_bytes_available == 0) {
             num_bytes_available = BlockList::jump_to_next_block(&impl);
@@ -2514,27 +2505,27 @@ public:
         }
         return ArrayView<T>::from(StringView{this->impl.byte, num_bytes_available});
     }
-    PLY_INLINE void end_read(u32 num_items) {
+    void end_read(u32 num_items) {
         PLY_ASSERT(this->impl.block->unused() - this->impl.byte >=
                    sizeof(T) * num_items);
         this->impl.byte += sizeof(T) * num_items;
     }
-    PLY_INLINE WeakSequenceRef normalized() const {
+    WeakSequenceRef normalized() const {
         return this->impl.normalized();
     }
 
     // Range for support.
-    PLY_INLINE T& operator*() const {
+    T& operator*() const {
         // It is illegal to call operator* at the end of the sequence.
         PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T));
         return *(T*) this->impl.byte;
     }
-    PLY_INLINE T* operator->() const {
+    T* operator->() const {
         // It is illegal to call operator-> at the end of the sequence.
         PLY_ASSERT(this->impl.block->unused() - this->impl.byte >= sizeof(T));
         return (T*) this->impl.byte;
     }
-    PLY_INLINE void operator++() {
+    void operator++() {
         sptr num_bytes_available = this->impl.block->unused() - this->impl.byte;
         // It is illegal to call operator++ at the end of the sequence.
         PLY_ASSERT(num_bytes_available >= sizeof(T));
@@ -2548,7 +2539,7 @@ public:
             PLY_ASSERT(num_bytes_available >= sizeof(T));
         }
     }
-    PLY_INLINE void operator--() {
+    void operator--() {
         sptr num_bytes_preceding = this->impl.byte - this->impl.block->start();
         if (num_bytes_preceding == 0) {
             num_bytes_preceding = BlockList::jump_to_prev_block(&impl);
@@ -2557,16 +2548,16 @@ public:
         PLY_ASSERT(num_bytes_preceding >= sizeof(T));
         this->impl.byte -= sizeof(T);
     }
-    PLY_INLINE bool operator!=(const WeakSequenceRef& other) const {
+    bool operator!=(const WeakSequenceRef& other) const {
         return this->impl.byte != other.impl.byte;
     }
 
     // The reference returned here remains valid as long as item continues to exist in
     // the underlying sequence.
-    PLY_INLINE T& read() {
+    T& read() {
         return *(T*) impl::read(&impl, sizeof(T));
     }
-    PLY_INLINE void* byte() const {
+    void* byte() const {
         return this->impl.byte;
     }
 };
@@ -2578,96 +2569,95 @@ private:
     BlockList::Footer* tail_block = nullptr;
 
 public:
-    PLY_INLINE Sequence()
-        : head_block{BlockList::create_block()}, tail_block{head_block} {
+    Sequence() : head_block{BlockList::create_block()}, tail_block{head_block} {
     }
 
-    PLY_INLINE Sequence(Sequence&& other)
+    Sequence(Sequence&& other)
         : head_block{std::move(other.head_block)}, tail_block{other.tail_block} {
     }
 
-    PLY_INLINE ~Sequence() {
+    ~Sequence() {
         impl::destruct_sequence(&head_block, subst::destruct_view_as<T>);
     }
 
-    PLY_INLINE void operator=(Sequence&& other) {
+    void operator=(Sequence&& other) {
         impl::destruct_sequence(&head_block, subst::destruct_view_as<T>);
         new (this) Sequence{std::move(other)};
     }
 
-    PLY_INLINE T& head() {
+    T& head() {
         // It is illegal to call head() on an empty sequence.
         PLY_ASSERT(this->head_block->view_used_bytes().num_bytes >= sizeof(T));
         return *(T*) this->head_block->start();
     }
-    PLY_INLINE T& tail() {
+    T& tail() {
         // It is illegal to call tail() on an empty sequence.
         PLY_ASSERT(this->tail_block->view_used_bytes().num_bytes >= sizeof(T));
         return ((T*) this->tail_block->unused())[-1];
     }
 
-    PLY_INLINE bool is_empty() const {
+    bool is_empty() const {
         // Only an empty sequence can have an empty head block.
         return this->head_block->view_used_bytes().is_empty();
     }
-    PLY_INLINE u32 num_items() const {
+    u32 num_items() const {
         // Fast division by integer constant.
         return impl::get_total_num_bytes(this->head_block) / sizeof(T);
     }
 
-    PLY_INLINE ArrayView<T> begin_write_view_no_construct() {
+    ArrayView<T> begin_write_view_no_construct() {
         if (this->tail_block->view_unused_bytes().num_bytes < sizeof(T)) {
             impl::begin_write_internal(&this->tail_block, sizeof(T));
         }
         return ArrayView<T>::from(this->tail_block->view_unused_bytes());
     }
 
-    PLY_INLINE T* begin_write_no_construct() {
+    T* begin_write_no_construct() {
         if (this->tail_block->view_unused_bytes().num_bytes < sizeof(T)) {
             impl::begin_write_internal(&this->tail_block, sizeof(T));
         }
         return (T*) this->tail_block->unused();
     }
 
-    PLY_INLINE void end_write(u32 num_items = 1) {
+    void end_write(u32 num_items = 1) {
         PLY_ASSERT(sizeof(T) * num_items <=
                    this->tail_block->view_unused_bytes().num_bytes);
         this->tail_block->num_bytes_used += sizeof(T) * num_items;
     }
 
-    PLY_INLINE T& append(const T& item) {
+    T& append(const T& item) {
         T* result = begin_write_no_construct();
         new (result) T{item};
         end_write();
         return *result;
     }
-    PLY_INLINE T& append(T&& item) {
+    T& append(T&& item) {
         T* result = begin_write_no_construct();
         new (result) T{std::move(item)};
         end_write();
         return *result;
     }
     template <typename... Args>
-    PLY_INLINE T& append(Args&&... args) {
+    T& append(Args&&... args) {
         T* result = begin_write_no_construct();
         new (result) T{std::forward<Args>(args)...};
         end_write();
         return *result;
     }
 
-    PLY_INLINE void pop_tail(u32 num_items = 1) {
+    void pop_tail(u32 num_items = 1) {
         impl::pop_tail(&this->tail_block, num_items * (u32) sizeof(T),
                        subst::destruct_view_as<T>);
     }
-    PLY_INLINE void truncate(const WeakSequenceRef<T>& to) {
+    void truncate(const WeakSequenceRef<T>& to) {
         impl::truncate(&this->tail_block, to.impl);
     }
 
-    PLY_INLINE void clear() {
+    void clear() {
         *this = Sequence{};
     }
 
-    PLY_INLINE Array<T> move_to_array() {
+    Array<T> move_to_array() {
         char* start_byte = this->head_block->start();
         String str = BlockList::to_string({std::move(this->head_block), start_byte});
         u32 num_items = str.num_bytes / sizeof(T); // Divide by constant is fast
@@ -2700,7 +2690,7 @@ public:
 struct Hasher {
     u32 accum = 0;
 
-    static PLY_INLINE u32 finalize(u32 h) {
+    static u32 finalize(u32 h) {
         h ^= h >> 16;
         h *= 0x85ebca6bu;
         h ^= h >> 13;
@@ -2709,26 +2699,26 @@ struct Hasher {
         return h;
     }
 
-    PLY_DLL_ENTRY u32 result() const;
+    u32 result() const;
 
     template <typename T>
-    static PLY_INLINE u32 hash(const T& obj) {
+    static u32 hash(const T& obj) {
         Hasher h;
         h << obj;
         return h.result();
     }
 
     // Special case hash functions
-    static PLY_INLINE u32 hash(u64 obj) {
+    static u32 hash(u64 obj) {
         return (u32) avalanche(obj);
     }
-    static PLY_INLINE u32 hash(u32 obj) {
+    static u32 hash(u32 obj) {
         return avalanche(obj);
     }
-    static PLY_INLINE u32 hash(s64 obj) {
+    static u32 hash(s64 obj) {
         return (u32) avalanche((u64) obj);
     }
-    static PLY_INLINE u32 hash(s32 obj) {
+    static u32 hash(s32 obj) {
         return avalanche((u32) obj);
     }
 };
@@ -2736,9 +2726,9 @@ struct Hasher {
 //------------------------------------------
 // Built-in hash support
 //------------------------------------------
-PLY_DLL_ENTRY Hasher& operator<<(Hasher& hasher, u32 value);
+Hasher& operator<<(Hasher& hasher, u32 value);
 
-PLY_INLINE Hasher& operator<<(Hasher& hasher, float value) {
+inline Hasher& operator<<(Hasher& hasher, float value) {
 #if PLY_COMPILER_GCC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
@@ -2750,7 +2740,7 @@ PLY_INLINE Hasher& operator<<(Hasher& hasher, float value) {
     return hasher;
 }
 
-PLY_INLINE Hasher& operator<<(Hasher& hasher, u64 value) {
+inline Hasher& operator<<(Hasher& hasher, u64 value) {
     hasher << u32(value);
     hasher << u32(value >> 32);
     return hasher;
@@ -2761,12 +2751,12 @@ PLY_INLINE Hasher& operator<<(Hasher& hasher, u64 value) {
 template <
     typename T,
     std::enable_if_t<std::is_class<T>::value || std::is_same<T, void>::value, int> = 0>
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const T* value) {
+Hasher& operator<<(Hasher& hasher, const T* value) {
     hasher << uptr(value);
     return hasher;
 };
 
-PLY_DLL_ENTRY Hasher& operator<<(Hasher& hasher, StringView buf);
+Hasher& operator<<(Hasher& hasher, StringView buf);
 
 //  ▄▄           ▄▄            ▄▄▄
 //  ██     ▄▄▄▄  ██▄▄▄   ▄▄▄▄   ██
@@ -2777,22 +2767,22 @@ PLY_DLL_ENTRY Hasher& operator<<(Hasher& hasher, StringView buf);
 struct Label {
     u32 idx = 0;
 
-    PLY_INLINE Label() {
+    Label() {
     }
-    explicit PLY_INLINE Label(u32 idx) : idx{idx} {
+    explicit Label(u32 idx) : idx{idx} {
     }
-    explicit PLY_INLINE operator bool() const {
+    explicit operator bool() const {
         return idx != 0;
     }
-    PLY_INLINE bool operator==(const Label& other) const {
+    bool operator==(const Label& other) const {
         return this->idx == other.idx;
     }
-    PLY_INLINE bool operator!=(const Label& other) const {
+    bool operator!=(const Label& other) const {
         return this->idx != other.idx;
     }
 };
 
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const Label& label) {
+inline Hasher& operator<<(Hasher& hasher, const Label& label) {
     hasher << label.idx;
     return hasher;
 }
@@ -2862,7 +2852,7 @@ struct HashMap {
 
         // construct
         template <typename U = Traits, std::enable_if_t<HasConstruct<U>, int> = 0>
-        static PLY_NO_INLINE void construct(void* item, const void* key) {
+        static void construct(void* item, const void* key) {
             Traits::construct((Item*) item, *(const Key*) key);
         }
         template <typename U = Traits,
@@ -2870,7 +2860,7 @@ struct HashMap {
                                        std::is_constructible<typename U::Item,
                                                              typename U::Key>::value,
                                    int> = 0>
-        static PLY_NO_INLINE void construct(void* item, const void* key) {
+        static void construct(void* item, const void* key) {
             new (item) Item{*(const Key*) key};
         }
         template <typename U = Traits,
@@ -2878,49 +2868,47 @@ struct HashMap {
                                        !std::is_constructible<typename U::Item,
                                                               typename U::Key>::value,
                                    int> = 0>
-        static PLY_NO_INLINE void construct(void* item, const void* key) {
+        static void construct(void* item, const void* key) {
             new (item) Item{};
         }
 
         // destruct
-        static PLY_NO_INLINE void destruct(void* item) {
+        static void destruct(void* item) {
             ((Item*) item)->~Item();
         }
 
         // move_construct
-        static PLY_NO_INLINE void move_construct(void* dst_item, void* src_item) {
+        static void move_construct(void* dst_item, void* src_item) {
             new (dst_item) Item{std::move(*(Item*) src_item)};
         }
 
         // move_assign
-        static PLY_NO_INLINE void move_assign(void* dst_item, void* src_item) {
+        static void move_assign(void* dst_item, void* src_item) {
             *(Item*) dst_item = std::move(*(Item*) src_item);
         }
 
         // hash
         template <typename U = Traits, std::enable_if_t<HasHash<U>, int> = 0>
-        static PLY_NO_INLINE u32 hash(const void* key) {
+        static u32 hash(const void* key) {
             return Traits::hash(*(const Key*) key);
         }
         template <typename U = Traits, std::enable_if_t<!HasHash<U>, int> = 0>
-        static PLY_NO_INLINE u32 hash(const void* key) {
+        static u32 hash(const void* key) {
             return Hasher::hash(*(const Key*) key);
         }
 
         // match (item and key)
         template <typename U = Traits, std::enable_if_t<!HasContext<U>, int> = 0>
-        static PLY_NO_INLINE bool match(const void* item, const void* key,
-                                        const void*) {
+        static bool match(const void* item, const void* key, const void*) {
             return Traits::match(*(const Item*) item, *(const Key*) key);
         }
         template <typename U = Traits, std::enable_if_t<HasContext<U>, int> = 0>
-        static PLY_NO_INLINE bool match(const void* item, const void* key,
-                                        const void* context) {
+        static bool match(const void* item, const void* key, const void* context) {
             return Traits::match(*(const Item*) item, *(const Key*) key,
                                  *(const typename U::Context*) context);
         }
 
-        static PLY_INLINE const Callbacks* instance() {
+        static const Callbacks* instance() {
             static Callbacks ins = {
                 sizeof(Item),
                 std::is_trivially_destructible<Item>::value,
@@ -2948,22 +2936,19 @@ struct HashMap {
     u32 m_sizeMask;
     u32 m_population;
 
-    PLY_DLL_ENTRY HashMap(const Callbacks* cb, u32 initial_size);
-    PLY_DLL_ENTRY HashMap(HashMap&& other);
-    PLY_DLL_ENTRY void move_assign(const Callbacks* cb, HashMap&& other);
-    PLY_DLL_ENTRY void clear(const Callbacks* cb);
-    static PLY_DLL_ENTRY CellGroup* create_table(const Callbacks* cb,
-                                                 u32 size = InitialSize);
-    static PLY_DLL_ENTRY void destroy_table(const Callbacks* cb, CellGroup* cell_groups,
-                                            u32 size);
-    PLY_DLL_ENTRY void migrate_to_new_table(const Callbacks* cb);
-    PLY_DLL_ENTRY FindResult find_next(FindInfo* info, const Callbacks* cb,
-                                       const void* key, const void* context) const;
-    PLY_DLL_ENTRY FindResult insert_or_find(FindInfo* info, const Callbacks* cb,
-                                            const void* key, const void* context,
-                                            u32 flags);
-    PLY_DLL_ENTRY void* insert_for_migration(u32 item_size, u32 hash);
-    PLY_DLL_ENTRY void erase(FindInfo* info, const Callbacks* cb, u8*& link_to_adjust);
+    HashMap(const Callbacks* cb, u32 initial_size);
+    HashMap(HashMap&& other);
+    void move_assign(const Callbacks* cb, HashMap&& other);
+    void clear(const Callbacks* cb);
+    static CellGroup* create_table(const Callbacks* cb, u32 size = InitialSize);
+    static void destroy_table(const Callbacks* cb, CellGroup* cell_groups, u32 size);
+    void migrate_to_new_table(const Callbacks* cb);
+    FindResult find_next(FindInfo* info, const Callbacks* cb, const void* key,
+                         const void* context) const;
+    FindResult insert_or_find(FindInfo* info, const Callbacks* cb, const void* key,
+                              const void* context, u32 flags);
+    void* insert_for_migration(u32 item_size, u32 hash);
+    void erase(FindInfo* info, const Callbacks* cb, u8*& link_to_adjust);
 
     // Must be kept binary compatible with HashMap<>::Cursor:
     struct Cursor {
@@ -2971,9 +2956,9 @@ struct HashMap {
         FindInfo m_findInfo;
         FindResult m_findResult;
 
-        PLY_DLL_ENTRY void construct_find_with_insert(const Callbacks* cb, HashMap* map,
-                                                      const void* key,
-                                                      const void* context, u32 flags);
+        void construct_find_with_insert(const Callbacks* cb, HashMap* map,
+                                        const void* key, const void* context,
+                                        u32 flags);
     };
 };
 } // namespace impl
@@ -2989,13 +2974,13 @@ struct HashMap {
 template <class Cursor, typename Item, bool = std::is_pointer<Item>::value>
 class CursorMixin {
 public:
-    PLY_INLINE Item* operator->() {
+    Item* operator->() {
         Cursor* cursor = static_cast<Cursor*>(this);
         PLY_ASSERT(cursor->m_findInfo.item_slot);
         return cursor->m_findInfo.item_slot;
     }
 
-    PLY_INLINE const Item* operator->() const {
+    const Item* operator->() const {
         const Cursor* cursor = static_cast<const Cursor*>(this);
         PLY_ASSERT(cursor->m_findInfo.item_slot);
         return cursor->m_findInfo.item_slot;
@@ -3005,7 +2990,7 @@ public:
 template <class Cursor, typename Item>
 class CursorMixin<Cursor, Item, true> {
 public:
-    PLY_INLINE Item operator->() const {
+    Item operator->() const {
         const Cursor* cursor = static_cast<const Cursor*>(this);
         PLY_ASSERT(*cursor->m_findInfo.item_slot);
         return *cursor->m_findInfo.item_slot;
@@ -3041,16 +3026,16 @@ private:
     };
 
 public:
-    PLY_INLINE HashMap(u32 initial_size = 8) {
+    HashMap(u32 initial_size = 8) {
         new (this) impl::HashMap(Callbacks::instance(), initial_size);
     }
 
-    PLY_INLINE HashMap(HashMap&& other) {
+    HashMap(HashMap&& other) {
         new (this) impl::HashMap{std::move((impl::HashMap&) other)};
         other.m_cellGroups = nullptr;
     }
 
-    PLY_INLINE ~HashMap() {
+    ~HashMap() {
         if (m_cellGroups) {
             impl::HashMap::destroy_table(Callbacks::instance(),
                                          (impl::HashMap::CellGroup*) m_cellGroups,
@@ -3058,13 +3043,13 @@ public:
         }
     }
 
-    PLY_INLINE void operator=(HashMap&& other) {
+    void operator=(HashMap&& other) {
         reinterpret_cast<impl::HashMap*>(this)->move_assign(
             Callbacks::instance(), std::move(reinterpret_cast<impl::HashMap&>(other)));
         other.m_cellGroups = nullptr;
     }
 
-    PLY_INLINE void clear() {
+    void clear() {
         reinterpret_cast<impl::HashMap*>(this)->clear(Callbacks::instance());
     }
 
@@ -3083,52 +3068,50 @@ public:
         impl::HashMap::FindResult m_findResult;
 
         // Find without insert
-        PLY_INLINE Cursor(HashMap* map, const Key& key, const Context* context)
-            : m_map{map} {
+        Cursor(HashMap* map, const Key& key, const Context* context) : m_map{map} {
             m_findResult = reinterpret_cast<impl::HashMap*>(m_map)->insert_or_find(
                 (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
                 context, impl::HashMap::AllowFind);
         }
         // Find with insert
-        PLY_INLINE Cursor(HashMap* map, const Key& key, const Context* context,
-                          u32 flags) {
+        Cursor(HashMap* map, const Key& key, const Context* context, u32 flags) {
             reinterpret_cast<impl::HashMap::Cursor*>(this)->construct_find_with_insert(
                 Callbacks::instance(), (impl::HashMap*) map, &key, context, flags);
         }
 
     public:
-        PLY_INLINE void operator=(const Cursor& other) {
+        void operator=(const Cursor& other) {
             m_map = other.m_map;
             m_findInfo = other.m_findInfo;
             m_findResult = other.m_findResult;
         }
-        PLY_INLINE bool is_valid() const {
+        bool is_valid() const {
             return m_findResult != impl::HashMap::FindResult::NotFound;
         }
-        PLY_INLINE bool was_found() const {
+        bool was_found() const {
             return m_findResult == impl::HashMap::FindResult::Found;
         }
-        PLY_INLINE void next(const Key& key, const Context& context = {}) {
+        void next(const Key& key, const Context& context = {}) {
             m_findResult = reinterpret_cast<const impl::HashMap*>(m_map)->find_next(
                 (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
                 &context);
         }
-        PLY_INLINE Item& operator*() {
+        Item& operator*() {
             PLY_ASSERT(m_findInfo.item_slot);
             return *m_findInfo.item_slot;
         }
-        PLY_INLINE const Item& operator*() const {
+        const Item& operator*() const {
             PLY_ASSERT(m_findInfo.item_slot);
             return *m_findInfo.item_slot;
         }
-        PLY_INLINE void erase() {
+        void erase() {
             u8* unused_link = nullptr;
             reinterpret_cast<impl::HashMap*>(m_map)->erase(
                 (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(),
                 unused_link);
             m_findResult = impl::HashMap::FindResult::NotFound;
         }
-        PLY_INLINE void erase_and_advance(const Key& key, const Context& context = {}) {
+        void erase_and_advance(const Key& key, const Context& context = {}) {
             FindInfo info_to_erase = m_findInfo;
             m_findResult = reinterpret_cast<const impl::HashMap&>(m_map).find_next(
                 (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
@@ -3153,8 +3136,7 @@ public:
         impl::HashMap::FindResult m_findResult;
 
         // Find without insert
-        PLY_INLINE ConstCursor(const HashMap* map, const Key& key,
-                               const Context* context)
+        ConstCursor(const HashMap* map, const Key& key, const Context* context)
             : m_map{map} {
             m_findResult = ((impl::HashMap*) m_map)
                                ->insert_or_find((impl::HashMap::FindInfo*) &m_findInfo,
@@ -3163,41 +3145,41 @@ public:
         }
 
     public:
-        PLY_INLINE void operator=(const ConstCursor& other) {
+        void operator=(const ConstCursor& other) {
             m_map = other.m_map;
             m_findInfo = other.m_findInfo;
             m_findResult = other.m_findResult;
         }
-        PLY_INLINE bool is_valid() const {
+        bool is_valid() const {
             return m_findResult != impl::HashMap::FindResult::NotFound;
         }
-        PLY_INLINE bool was_found() const {
+        bool was_found() const {
             return m_findResult == impl::HashMap::FindResult::Found;
         }
-        PLY_INLINE void next(const Key& key, const Context& context = {}) {
+        void next(const Key& key, const Context& context = {}) {
             m_findResult = reinterpret_cast<const impl::HashMap&>(m_map).find_next(
                 (impl::HashMap::FindInfo*) &m_findInfo, Callbacks::instance(), &key,
                 &context);
         }
-        PLY_INLINE Item& operator*() {
+        Item& operator*() {
             PLY_ASSERT(m_findInfo.item_slot);
             return *m_findInfo.item_slot;
         }
-        PLY_INLINE const Item& operator*() const {
+        const Item& operator*() const {
             PLY_ASSERT(m_findInfo.item_slot);
             return *m_findInfo.item_slot;
         }
     };
 
-    PLY_INLINE bool is_empty() const {
+    bool is_empty() const {
         return m_population == 0;
     }
 
-    PLY_INLINE u32 num_items() const {
+    u32 num_items() const {
         return m_population;
     }
 
-    PLY_INLINE Cursor insert_or_find(const Key& key, const Context* context = nullptr) {
+    Cursor insert_or_find(const Key& key, const Context* context = nullptr) {
         return {this, key, context,
                 impl::HashMap::AllowFind | impl::HashMap::AllowInsert};
     }
@@ -3205,15 +3187,14 @@ public:
     // insert_multi is experimental and should not be used. Will likely delete.
     // FIXME: Delete this function and its associated support code, including
     // Cursor::next()
-    PLY_INLINE Cursor insert_multi(const Key& key, const Context* context = nullptr) {
+    Cursor insert_multi(const Key& key, const Context* context = nullptr) {
         return {this, key, context, impl::HashMap::AllowInsert};
     }
 
-    PLY_INLINE Cursor find(const Key& key, const Context* context = nullptr) {
+    Cursor find(const Key& key, const Context* context = nullptr) {
         return {this, key, context};
     }
-    PLY_INLINE ConstCursor find(const Key& key,
-                                const Context* context = nullptr) const {
+    ConstCursor find(const Key& key, const Context* context = nullptr) const {
         return {this, key, context};
     }
 
@@ -3478,7 +3459,7 @@ struct Map {
 namespace impl {
 
 struct LabelEncoder {
-    static PLY_INLINE u32 decode_value(const char*& ptr) {
+    static u32 decode_value(const char*& ptr) {
         u32 value = 0;
         for (;;) {
             u8 c = *ptr;
@@ -3491,7 +3472,7 @@ struct LabelEncoder {
         return value;
     }
 
-    static PLY_INLINE u32 get_enc_len(u32 value) {
+    static u32 get_enc_len(u32 value) {
         u32 enc_len = 0;
         do {
             enc_len++;
@@ -3500,7 +3481,7 @@ struct LabelEncoder {
         return enc_len;
     }
 
-    static PLY_NO_INLINE void encode_value(char*& ptr, u32 value) {
+    static void encode_value(char*& ptr, u32 value) {
         u32 shift = (get_enc_len(value) - 1) * 7;
         for (;;) {
             *ptr = u8(((value >> shift) & 127) | ((shift != 0) << 7));

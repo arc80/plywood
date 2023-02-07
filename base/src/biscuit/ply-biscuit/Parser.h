@@ -78,7 +78,6 @@ struct StatementBlockProperties {
     StringView after_item_text;
     bool curly_braces_optional_if_control_flow = false;
 
-    PLY_INLINE
     StatementBlockProperties(StringView block_type, StringView after_item_text = {},
                              bool curly_braces_optional_if_control_flow = false)
         : block_type{block_type}, after_item_text{after_item_text},

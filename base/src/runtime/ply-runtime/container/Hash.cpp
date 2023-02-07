@@ -8,11 +8,11 @@
 
 namespace ply {
 
-PLY_NO_INLINE u32 Hasher::result() const {
+u32 Hasher::result() const {
     return finalize(this->accum);
 }
 
-PLY_NO_INLINE Hasher& operator<<(Hasher& hasher, u32 value) {
+Hasher& operator<<(Hasher& hasher, u32 value) {
     value *= 0xcc9e2d51u;
     value = (value << 15) | (value >> 17);
     value *= 0x1b873593u;
@@ -22,7 +22,7 @@ PLY_NO_INLINE Hasher& operator<<(Hasher& hasher, u32 value) {
     return hasher;
 }
 
-PLY_NO_INLINE Hasher& operator<<(Hasher& hasher, StringView buf) {
+Hasher& operator<<(Hasher& hasher, StringView buf) {
     // FIXME: More work is needed for platforms that don't support unaligned reads
 
     while (buf.num_bytes >= 4) {

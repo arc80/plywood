@@ -27,9 +27,9 @@ ParseParams ParseParams::Template = {
     SpecDcorMode::TemplateParam,
 };
 
-PLY_NO_INLINE void
-parse_parameter_declaration_list(Parser* parser, grammar::ParamDeclarationList& params,
-                                 bool for_template) {
+void parse_parameter_declaration_list(Parser* parser,
+                                      grammar::ParamDeclarationList& params,
+                                      bool for_template) {
     const ParseParams* pp = for_template ? &ParseParams::Template : &ParseParams::Func;
 
     // Get open punctuator
@@ -174,7 +174,7 @@ grammar::FunctionQualifierSeq parse_function_qualifier_seq(Parser* parser) {
     return qualifiers;
 }
 
-PLY_NO_INLINE grammar::DeclaratorProduction*
+grammar::DeclaratorProduction*
 parse_parameter_list(Parser* parser,
                      Owned<grammar::DeclaratorProduction>** prod_to_modify) {
     Token open_paren = read_token(parser);

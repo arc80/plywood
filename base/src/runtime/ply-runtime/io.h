@@ -110,26 +110,25 @@ struct InStream {
     String read_remaining_contents();
 
     template <typename Type>
-    PLY_INLINE Type parse(const decltype(fmt::TypeParser<Type>::default_format())&
-                              format = fmt::TypeParser<Type>::default_format()) {
+    Type parse(const decltype(fmt::TypeParser<Type>::default_format())& format =
+                   fmt::TypeParser<Type>::default_format()) {
         return fmt::TypeParser<Type>::parse(*this, format);
     }
     template <typename Format,
               typename = void_t<decltype(fmt::FormatParser<Format>::parse)>>
-    PLY_INLINE auto parse(const Format& format = {}) {
+    auto parse(const Format& format = {}) {
         return fmt::FormatParser<Format>::parse(*this, format);
     }
     template <typename Type>
-    PLY_INLINE String
-    read_string(const decltype(fmt::TypeParser<Type>::default_format())& format =
-                    fmt::TypeParser<Type>::default_format()) {
+    String read_string(const decltype(fmt::TypeParser<Type>::default_format())& format =
+                           fmt::TypeParser<Type>::default_format()) {
         BlockList::Ref start_pos = this->get_block_ref();
         fmt::TypeParser<Type>::parse(this, format); // ignore return value
         return BlockList::to_string(std::move(start_pos), this->get_block_ref());
     }
     template <typename Format,
               typename = void_t<decltype(fmt::FormatParser<Format>::parse)>>
-    PLY_INLINE String read_string(const Format& format = {}) {
+    String read_string(const Format& format = {}) {
         BlockList::Ref start_pos = this->get_block_ref();
         fmt::FormatParser<Format>::parse(this, format); // ignore return value
         return BlockList::to_string(std::move(start_pos), this->get_block_ref());
@@ -140,14 +139,14 @@ struct ViewInStream : InStream {
     ViewInStream() = default;
     explicit ViewInStream(StringView view);
 
-    PLY_INLINE StringView get_view_from(const BlockList::WeakRef& save_point) const {
+    StringView get_view_from(const BlockList::WeakRef& save_point) const {
         PLY_ASSERT(uptr(this->cur_byte - save_point.byte) <=
                    uptr(this->end_byte - this->start_byte));
         return StringView::from_range(save_point.byte, this->cur_byte);
     }
 
     template <typename Type>
-    PLY_INLINE StringView
+    StringView
     read_view(const decltype(fmt::TypeParser<Type>::default_format())& format =
                   fmt::TypeParser<Type>::default_format()) {
         PLY_ASSERT(!this->block);
@@ -158,7 +157,7 @@ struct ViewInStream : InStream {
 
     template <typename Format,
               typename = void_t<decltype(fmt::FormatParser<Format>::parse)>>
-    PLY_INLINE StringView read_view(const Format& format = {}) {
+    StringView read_view(const Format& format = {}) {
         PLY_ASSERT(!this->block);
         const char* start_byte = (const char*) this->cur_byte;
         fmt::FormatParser<Format>::parse(*this, format); // ignore return value
@@ -173,11 +172,11 @@ class NativeEndianReader {
 public:
     InStream& in;
 
-    PLY_INLINE NativeEndianReader(InStream& in) : in{in} {
+    NativeEndianReader(InStream& in) : in{in} {
     }
 
     template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
-    PLY_INLINE T read() {
+    T read() {
         T value;
         in.read({(char*) &value, sizeof(value)});
         return value;
@@ -185,7 +184,7 @@ public:
 };
 
 template <typename T>
-PLY_NO_INLINE T StringView::to(const T& default_value) const {
+T StringView::to(const T& default_value) const {
     ViewInStream vins{this->trim(is_white)};
     T value = vins.parse<T>();
     if (vins.at_eof() && !vins.any_parse_error()) {
@@ -291,7 +290,7 @@ struct OutStream {
     }
     void format_args(StringView fmt, ArrayView<const FormatArg> args);
     template <typename... Args>
-    PLY_NO_INLINE void format(StringView fmt, const Args&... args) {
+    void format(StringView fmt, const Args&... args) {
         FixedArray<FormatArg, sizeof...(Args)> fa{args...};
         this->format_args(fmt, fa);
     }
@@ -318,11 +317,11 @@ class NativeEndianWriter {
 public:
     OutStream& out;
 
-    PLY_INLINE NativeEndianWriter(OutStream& out) : out(out) {
+    NativeEndianWriter(OutStream& out) : out(out) {
     }
 
     template <typename T>
-    PLY_INLINE void write(const T& value) {
+    void write(const T& value) {
         out.raw_write(value);
     }
 };
@@ -331,7 +330,7 @@ public:
 // ┃  String  ┃
 // ┗━━━━━━━━━━┛
 template <typename... Args>
-PLY_INLINE String String::format(StringView fmt, const Args&... args) {
+String String::format(StringView fmt, const Args&... args) {
     MemOutStream mout;
     mout.format(fmt, args...);
     return mout.move_to_string();
@@ -517,28 +516,28 @@ struct Process {
         OutPipe* std_out_pipe = nullptr;
         OutPipe* std_err_pipe = nullptr;
 
-        static PLY_INLINE Output ignore() {
+        static Output ignore() {
             return {};
         }
-        static PLY_INLINE Output inherit() {
+        static Output inherit() {
             Output h;
             h.std_out_pipe = get_console_out_pipe();
             h.std_err_pipe = get_console_error_pipe();
             return h;
         }
-        static PLY_INLINE Output open_separate() {
+        static Output open_separate() {
             Output h;
             h.std_out = Pipe::Open;
             h.std_err = Pipe::Open;
             return h;
         }
-        static PLY_INLINE Output open_merged() {
+        static Output open_merged() {
             Output h;
             h.std_out = Pipe::Open;
             h.std_err = Pipe::StdOut;
             return h;
         }
-        static PLY_INLINE Output open_std_out_only() {
+        static Output open_std_out_only() {
             Output h;
             h.std_out = Pipe::Open;
             return h;
@@ -549,13 +548,13 @@ struct Process {
         Pipe std_in = Pipe::Redirect;
         InPipe* std_in_pipe = nullptr;
 
-        static PLY_INLINE Input ignore() {
+        static Input ignore() {
             return {};
         }
-        static PLY_INLINE Input inherit() {
+        static Input inherit() {
             return {Pipe::Redirect, get_console_in_pipe()};
         }
-        static PLY_INLINE Input open() {
+        static Input open() {
             return {Pipe::Open, nullptr};
         }
     };
@@ -572,16 +571,16 @@ struct Process {
     int child_pid = -1;
 #endif
 
-    PLY_INLINE Process() = default;
+    Process() = default;
     ~Process();
     s32 join();
 
-    static PLY_DLL_ENTRY Owned<Process>
-    exec_arg_str(StringView exe_path, StringView arg_str, StringView initial_dir,
-                 const Output& output, const Input& input = Input::open());
-    static PLY_DLL_ENTRY Owned<Process>
-    exec(StringView exe_path, ArrayView<const StringView> args, StringView initial_dir,
-         const Output& output, const Input& input = Input::open());
+    static Owned<Process> exec_arg_str(StringView exe_path, StringView arg_str,
+                                       StringView initial_dir, const Output& output,
+                                       const Input& input = Input::open());
+    static Owned<Process> exec(StringView exe_path, ArrayView<const StringView> args,
+                               StringView initial_dir, const Output& output,
+                               const Input& input = Input::open());
 };
 
 //  ▄▄  ▄▄        ▄▄                  ▄▄
@@ -690,7 +689,7 @@ struct TextFormat {
     Owned<InPipe> create_importer(InStream&& in) const;
     Owned<OutPipe> create_exporter(OutStream&& out) const;
 
-    PLY_INLINE bool operator==(const TextFormat& other) const {
+    bool operator==(const TextFormat& other) const {
         return (this->encoding == other.encoding) &&
                (this->new_line == other.new_line) && (this->bom == other.bom);
     }
@@ -717,26 +716,26 @@ struct Path_t {
 
     bool is_windows = false;
 
-    PLY_INLINE bool is_sep_byte(char c) const {
+    bool is_sep_byte(char c) const {
         return c == '/' || (this->is_windows && c == '\\');
     }
 
-    PLY_INLINE char sep_byte() const {
+    char sep_byte() const {
         return this->is_windows ? '\\' : '/';
     }
 
-    PLY_INLINE bool has_drive_letter(StringView path) const {
+    bool has_drive_letter(StringView path) const {
         if (!this->is_windows)
             return false;
         return path.num_bytes >= 2 && is_ascii_letter(path.bytes[0]) &&
                path.bytes[1] == ':';
     }
 
-    PLY_INLINE StringView get_drive_letter(StringView path) const {
+    StringView get_drive_letter(StringView path) const {
         return has_drive_letter(path) ? path.left(2) : StringView{};
     }
 
-    PLY_INLINE bool is_absolute(StringView path) const {
+    bool is_absolute(StringView path) const {
         if (this->is_windows) {
             return path.num_bytes >= 3 && this->has_drive_letter(path) &&
                    this->is_sep_byte(path[2]);
@@ -745,29 +744,27 @@ struct Path_t {
         }
     }
 
-    PLY_INLINE bool is_relative(StringView path) const {
+    bool is_relative(StringView path) const {
         return !this->has_drive_letter(path) && path.num_bytes > 0 &&
                !this->is_sep_byte(path[0]);
     }
 
-    PLY_DLL_ENTRY Tuple<StringView, StringView> split(StringView path) const;
-    PLY_DLL_ENTRY Array<StringView> split_full(StringView path) const;
-    PLY_DLL_ENTRY Tuple<StringView, StringView> split_ext(StringView path) const;
-    PLY_DLL_ENTRY String join_array(ArrayView<const StringView> components) const;
+    Tuple<StringView, StringView> split(StringView path) const;
+    Array<StringView> split_full(StringView path) const;
+    Tuple<StringView, StringView> split_ext(StringView path) const;
+    String join_array(ArrayView<const StringView> components) const;
 
     template <typename... StringViews>
-    PLY_INLINE String join(StringViews&&... path_component_args) const {
+    String join(StringViews&&... path_component_args) const {
         FixedArray<StringView, sizeof...(StringViews)> components{
             std::forward<StringViews>(path_component_args)...};
         return join_array(components);
     }
 
-    PLY_DLL_ENTRY String make_relative(StringView ancestor,
-                                       StringView descendant) const;
-    PLY_DLL_ENTRY HybridString from(const Path_t& src_format,
-                                    StringView src_path) const;
+    String make_relative(StringView ancestor, StringView descendant) const;
+    HybridString from(const Path_t& src_format, StringView src_path) const;
 
-    PLY_INLINE bool ends_with_sep(StringView path) {
+    bool ends_with_sep(StringView path) {
         return path.num_bytes > 0 && this->is_sep_byte(path.back());
     }
 };
@@ -838,24 +835,24 @@ private:
     void visit(StringView dir_path);
 
 public:
-    PLY_INLINE FileSystemWalker() = default;
-    PLY_NO_INLINE FileSystemWalker(FileSystemWalker&&) = default;
+    FileSystemWalker() = default;
+    FileSystemWalker(FileSystemWalker&&) = default;
 
     // Range-for support:
     struct Iterator {
         FileSystemWalker* walker;
-        PLY_INLINE WalkTriple& operator*() {
+        WalkTriple& operator*() {
             return this->walker->triple;
         }
         void operator++();
-        PLY_INLINE bool operator!=(const Iterator&) const {
+        bool operator!=(const Iterator&) const {
             return !this->walker->triple.dir_path.is_empty();
         }
     };
-    PLY_INLINE Iterator begin() {
+    Iterator begin() {
         return {this};
     }
-    PLY_INLINE Iterator end() {
+    Iterator end() {
         return {this};
     }
 };
@@ -867,11 +864,11 @@ struct FileSystemIface {
 
     static ThreadLocal<FSResult> last_result_;
 
-    static PLY_INLINE FSResult set_last_result(FSResult result) {
+    static FSResult set_last_result(FSResult result) {
         FileSystemIface::last_result_.store(result);
         return result;
     }
-    static PLY_INLINE FSResult last_result() {
+    static FSResult last_result() {
         return FileSystemIface::last_result_.load();
     }
 
@@ -891,7 +888,7 @@ struct FileSystemIface {
     virtual Owned<InPipe> open_pipe_for_read(StringView path) = 0;
     virtual Owned<OutPipe> open_pipe_for_write(StringView path) = 0;
 
-    PLY_INLINE bool is_dir(StringView path) {
+    bool is_dir(StringView path) {
         return this->exists(path) == ExistsResult::Directory;
     }
 

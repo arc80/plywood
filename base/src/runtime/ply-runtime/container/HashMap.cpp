@@ -13,7 +13,7 @@ namespace impl {
 //------------------------------------------------------------------
 // HashMap
 //------------------------------------------------------------------
-PLY_NO_INLINE HashMap::HashMap(HashMap&& other) {
+HashMap::HashMap(HashMap&& other) {
     m_cellGroups = other.m_cellGroups;
     m_sizeMask = other.m_sizeMask;
     m_population = other.m_population;
@@ -22,19 +22,19 @@ PLY_NO_INLINE HashMap::HashMap(HashMap&& other) {
     other.m_population = 0;
 }
 
-PLY_NO_INLINE HashMap::HashMap(const Callbacks* cb, u32 initial_size)
+HashMap::HashMap(const Callbacks* cb, u32 initial_size)
     : m_cellGroups(create_table(cb, initial_size)),
       m_sizeMask(check_cast<u32>(initial_size - 1)), m_population{0} {
 }
 
-PLY_NO_INLINE void HashMap::move_assign(const Callbacks* cb, HashMap&& other) {
+void HashMap::move_assign(const Callbacks* cb, HashMap&& other) {
     if (m_cellGroups) {
         destroy_table(cb, m_cellGroups, m_sizeMask + 1);
     }
     new (this) impl::HashMap{std::move((impl::HashMap&) other)};
 }
 
-PLY_NO_INLINE void HashMap::clear(const Callbacks* cb) {
+void HashMap::clear(const Callbacks* cb) {
     if (m_cellGroups) {
         impl::HashMap::destroy_table(cb, m_cellGroups, m_sizeMask + 1);
     }
@@ -43,7 +43,7 @@ PLY_NO_INLINE void HashMap::clear(const Callbacks* cb) {
     m_population = 0;
 }
 
-PLY_NO_INLINE HashMap::CellGroup* HashMap::create_table(const Callbacks* cb, u32 size) {
+HashMap::CellGroup* HashMap::create_table(const Callbacks* cb, u32 size) {
     PLY_ASSERT(size >= 4 && is_power_of2(size));
     u32 cell_group_size = sizeof(CellGroup) + cb->item_size * 4;
     u32 alloc_size = cell_group_size * (size >> 2);
@@ -56,8 +56,7 @@ PLY_NO_INLINE HashMap::CellGroup* HashMap::create_table(const Callbacks* cb, u32
     return cell_groups;
 }
 
-PLY_NO_INLINE void HashMap::destroy_table(const Callbacks* cb, CellGroup* cell_groups,
-                                          u32 size) {
+void HashMap::destroy_table(const Callbacks* cb, CellGroup* cell_groups, u32 size) {
     PLY_ASSERT(cell_groups);
     if (!cb->is_trivially_destructible) {
         u32 cell_group_size = sizeof(CellGroup) + cb->item_size * 4;
@@ -72,7 +71,7 @@ PLY_NO_INLINE void HashMap::destroy_table(const Callbacks* cb, CellGroup* cell_g
     Heap.free(cell_groups);
 }
 
-PLY_NO_INLINE void HashMap::migrate_to_new_table(const Callbacks* cb) {
+void HashMap::migrate_to_new_table(const Callbacks* cb) {
     u32 desired_size = max(InitialSize, round_up_power_of2(u32(m_population * 2)));
     CellGroup* src_cell_groups = m_cellGroups;
     u32 src_size = m_sizeMask + 1;
@@ -96,10 +95,8 @@ PLY_NO_INLINE void HashMap::migrate_to_new_table(const Callbacks* cb) {
     Heap.free(src_cell_groups);
 }
 
-PLY_NO_INLINE HashMap::FindResult HashMap::find_next(FindInfo* info,
-                                                     const Callbacks* cb,
-                                                     const void* key,
-                                                     const void* context) const {
+HashMap::FindResult HashMap::find_next(FindInfo* info, const Callbacks* cb,
+                                       const void* key, const void* context) const {
     PLY_ASSERT(m_cellGroups);
     PLY_ASSERT(info->item_slot);
     u32 cell_group_size = sizeof(CellGroup) + cb->item_size * 4;
@@ -133,9 +130,9 @@ PLY_NO_INLINE HashMap::FindResult HashMap::find_next(FindInfo* info,
     return FindResult::NotFound;
 }
 
-PLY_NO_INLINE HashMap::FindResult
-HashMap::insert_or_find(FindInfo* info, const Callbacks* cb, const void* key,
-                        const void* context, u32 flags) {
+HashMap::FindResult HashMap::insert_or_find(FindInfo* info, const Callbacks* cb,
+                                            const void* key, const void* context,
+                                            u32 flags) {
     PLY_ASSERT((context != nullptr) == cb->requires_context);
     PLY_ASSERT(m_cellGroups);
     u32 hash = cb->hash(key);
@@ -223,7 +220,7 @@ HashMap::insert_or_find(FindInfo* info, const Callbacks* cb, const void* key,
     return FindResult::Overflow;
 }
 
-PLY_NO_INLINE void* HashMap::insert_for_migration(u32 item_size, u32 hash) {
+void* HashMap::insert_for_migration(u32 item_size, u32 hash) {
     PLY_ASSERT(m_cellGroups);
     u32 idx = hash;
 
@@ -282,8 +279,7 @@ PLY_NO_INLINE void* HashMap::insert_for_migration(u32 item_size, u32 hash) {
     return nullptr;
 }
 
-PLY_NO_INLINE void HashMap::erase(FindInfo* info, const Callbacks* cb,
-                                  u8*& link_to_adjust) {
+void HashMap::erase(FindInfo* info, const Callbacks* cb, u8*& link_to_adjust) {
     PLY_ASSERT(info->item_slot);
     u32 idx = info->idx;
     u8* prev_link = info->prev_link;
@@ -343,11 +339,9 @@ PLY_NO_INLINE void HashMap::erase(FindInfo* info, const Callbacks* cb,
 //------------------------------------------------------------------
 // HashMap::Cursor
 //------------------------------------------------------------------
-PLY_NO_INLINE void HashMap::Cursor::construct_find_with_insert(const Callbacks* cb,
-                                                               HashMap* map,
-                                                               const void* key,
-                                                               const void* context,
-                                                               u32 flags) {
+void HashMap::Cursor::construct_find_with_insert(const Callbacks* cb, HashMap* map,
+                                                 const void* key, const void* context,
+                                                 u32 flags) {
     m_map = map;
     for (;;) {
         m_findResult = m_map->insert_or_find(&m_findInfo, cb, key, context, flags);

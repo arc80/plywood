@@ -75,7 +75,7 @@ FnResult eval_string(Interpreter::StackFrame* frame,
     return Fn_OK;
 }
 
-PLY_INLINE bool is_return_value_on_top_of_stack(BaseInterpreter* base) {
+inline bool is_return_value_on_top_of_stack(BaseInterpreter* base) {
     return !base->local_variable_storage.items.is_empty() &&
            (base->local_variable_storage.items.tail() == base->return_value);
 }

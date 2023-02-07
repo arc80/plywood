@@ -10,7 +10,7 @@
 namespace ply {
 namespace cpp {
 
-PLY_NO_INLINE void Parser::error(bool begin_muting, ParseError&& err) {
+void Parser::error(bool begin_muting, ParseError&& err) {
     raw_error_count++;
     if (this->restore_point_enabled)
         return;

@@ -12,7 +12,7 @@
 namespace ply {
 namespace cpp {
 
-PLY_NO_INLINE Token parse_required_semicolon(Parser* parser) {
+Token parse_required_semicolon(Parser* parser) {
     Token semi_token = read_token(parser);
     if (semi_token.type == Token::Semicolon) {
         parser->stop_muting_errors();
@@ -26,7 +26,7 @@ PLY_NO_INLINE Token parse_required_semicolon(Parser* parser) {
     }
 }
 
-PLY_NO_INLINE bool is_type_declaration(const grammar::Declaration::Simple& simple) {
+bool is_type_declaration(const grammar::Declaration::Simple& simple) {
     for (const grammar::DeclSpecifier* decl_spec : simple.decl_specifier_seq) {
         switch (decl_spec->id) {
             case grammar::DeclSpecifier::ID::Record:
@@ -39,7 +39,7 @@ PLY_NO_INLINE bool is_type_declaration(const grammar::Declaration::Simple& simpl
     return false;
 }
 
-PLY_NO_INLINE void parse_enum_body(Parser* parser, grammar::DeclSpecifier::Enum_* en) {
+void parse_enum_body(Parser* parser, grammar::DeclSpecifier::Enum_* en) {
     parser->stop_muting_errors();
     SetAcceptFlagsInScope accept_scope{parser, Token::OpenCurly};
 
@@ -91,8 +91,7 @@ PLY_NO_INLINE void parse_enum_body(Parser* parser, grammar::DeclSpecifier::Enum_
     }
 }
 
-PLY_NO_INLINE void parse_simple_declaration(Parser* parser,
-                                            StringView enclosing_class_name) {
+void parse_simple_declaration(Parser* parser, StringView enclosing_class_name) {
     Token start_loc = read_token(parser);
     push_back_token(parser, start_loc);
     ParseActivity pa{parser};
@@ -125,7 +124,7 @@ PLY_NO_INLINE void parse_simple_declaration(Parser* parser,
 }
 
 // Returns false if no input was read.
-PLY_NO_INLINE bool parse_declaration(Parser* parser, StringView enclosing_class_name) {
+bool parse_declaration(Parser* parser, StringView enclosing_class_name) {
     Token token = read_token(parser);
 
     PLY_SET_IN_SCOPE(parser->at_declaration_scope, false);

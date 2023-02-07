@@ -4,9 +4,9 @@
 };
 union Storage_ {
     Call call;
-    PLY_INLINE Storage_() {
+    Storage_() {
     }
-    PLY_INLINE ~Storage_() {
+    ~Storage_() {
     }
 };
 SWITCH_FOOTER(Expression, Call)

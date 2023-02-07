@@ -78,7 +78,7 @@ String ParseSupervisor::get_namespace_prefix() const {
     return mout.move_to_string();
 }
 
-PLY_NO_INLINE Token read_token_internal(Parser* parser) {
+Token read_token_internal(Parser* parser) {
     if (parser->token_queue_pos < parser->token_queue.num_items()) {
         Token r = parser->token_queue[parser->token_queue_pos];
         if (!parser->restore_point_enabled) {
@@ -119,7 +119,7 @@ Token read_token(Parser* parser) {
     }
 }
 
-PLY_NO_INLINE void push_back_token(Parser* parser, const Token& token) {
+void push_back_token(Parser* parser, const Token& token) {
     if (parser->token_queue_pos > 0) {
         PLY_ASSERT(parser->token_queue[parser->token_queue_pos - 1] == token);
         parser->token_queue_pos--;
@@ -228,8 +228,8 @@ bool skip_any_scope(Parser* parser, Token* out_close_token, const Token& open_to
 // parser->outer_accept_flags. In that case, the closing token is pushed back so that
 // the caller can read it next. In each of those cases, it returns true to indicate to
 // the caller that the given token was consumed and a new token is available to read.
-PLY_NO_INLINE bool handle_unexpected_token(Parser* parser, Token* out_close_token,
-                                           const Token& token) {
+bool handle_unexpected_token(Parser* parser, Token* out_close_token,
+                             const Token& token) {
     // FIXME: Merge this with the second half of skip_any_scope:
     if (!ok_to_stay_in_scope(parser, token))
         return false;
@@ -266,8 +266,8 @@ PLY_NO_INLINE bool handle_unexpected_token(Parser* parser, Token* out_close_toke
     }
 }
 
-PLY_NO_INLINE SetAcceptFlagsInScope::SetAcceptFlagsInScope(Parser* parser,
-                                                           Token::Type open_token_type)
+SetAcceptFlagsInScope::SetAcceptFlagsInScope(Parser* parser,
+                                             Token::Type open_token_type)
     : parser{parser} {
     this->prev_accept_flags = parser->outer_accept_flags;
     this->prev_tokenize_close_angles = parser->pp->tokenize_close_angles_only;
@@ -305,7 +305,7 @@ PLY_NO_INLINE SetAcceptFlagsInScope::SetAcceptFlagsInScope(Parser* parser,
     }
 }
 
-PLY_NO_INLINE SetAcceptFlagsInScope::~SetAcceptFlagsInScope() {
+SetAcceptFlagsInScope::~SetAcceptFlagsInScope() {
     parser->outer_accept_flags = this->prev_accept_flags;
     parser->pp->tokenize_close_angles_only = this->prev_tokenize_close_angles;
 }

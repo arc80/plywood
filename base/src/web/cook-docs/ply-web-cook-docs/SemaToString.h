@@ -48,8 +48,8 @@ struct Stringifier {
     to_string_comps(ArrayView<const DeclSpecifier> decl_specifier_seq,
                     const DeclaratorProduction* prod, const QualifiedID& qid,
                     const Initializer& init, bool for_root_declarator);
-    PLY_INLINE Array<Stringifier::Component>
-    to_string_comps(const SingleDeclaration& single, bool for_root_declarator) {
+    Array<Stringifier::Component> to_string_comps(const SingleDeclaration& single,
+                                                  bool for_root_declarator) {
         return this->to_string_comps(single.decl_specifier_seq, single.dcor.prod,
                                      single.dcor.qid, single.init, for_root_declarator);
     }

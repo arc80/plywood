@@ -27,7 +27,7 @@
 //-------------------------------------
 //  CPU intrinsics
 //-------------------------------------
-PLY_INLINE void ply_yieldHWThread() {
+inline void ply_yieldHWThread() {
 #if PLY_CPU_X86 || PLY_CPU_X64
     // Only implemented on x86/64
     asm volatile("pause");

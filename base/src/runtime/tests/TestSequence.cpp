@@ -15,7 +15,7 @@ namespace tests {
 struct Fibonacci {
     u32 a = 0;
     u32 b = 1;
-    PLY_INLINE u32 next() {
+    u32 next() {
         u32 r = b;
         b += a;
         a = r;

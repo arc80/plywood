@@ -88,17 +88,16 @@ struct QuatPos {
     \category Constructors
     Constructs an uninitialized `QuatPos`.
     */
-    PLY_INLINE QuatPos() = default;
+    QuatPos() = default;
     /*!
     Constructs a `QuatPos` from a quaternion.
     */
-    explicit PLY_INLINE QuatPos(const Quaternion& quat) : quat(quat) {
+    explicit QuatPos(const Quaternion& quat) : quat(quat) {
     }
     /*!
     Constructs a `QuatPos` from a quaternion and a translation.
     */
-    PLY_INLINE QuatPos(const Quaternion& quat, const Float3& pos)
-        : quat(quat), pos(pos) {
+    QuatPos(const Quaternion& quat, const Float3& pos) : quat(quat), pos(pos) {
     }
     /*!
     \category Transformation Functions
@@ -138,7 +137,7 @@ struct QuatPos {
 \category Transformation Functions
 Transforms `v` using `qp`. Equivalent to `qp.quat * v + qp.pos`.
 */
-PLY_INLINE Float3 operator*(const QuatPos& qp, const Float3& v) {
+inline Float3 operator*(const QuatPos& qp, const Float3& v) {
     return (qp.quat * v) + qp.pos;
 }
 /*!
@@ -147,23 +146,23 @@ Composes a `QuatPos` with another `QuatPos` or a `Quaternion`. The resulting `Qu
 performs the transformation performed by `b` followed by the transformation performed by
 `a`.
 */
-PLY_INLINE QuatPos operator*(const QuatPos& a, const QuatPos& b) {
+inline QuatPos operator*(const QuatPos& a, const QuatPos& b) {
     return {a.quat * b.quat, (a.quat * b.pos) + a.pos};
 }
-PLY_INLINE QuatPos operator*(const QuatPos& a, const Quaternion& b) {
+inline QuatPos operator*(const QuatPos& a, const Quaternion& b) {
     return {a.quat * b, a.pos};
 }
-PLY_INLINE QuatPos operator*(const Quaternion& a, const QuatPos& b) {
+inline QuatPos operator*(const Quaternion& a, const QuatPos& b) {
     return {a * b.quat, a * b.pos};
 }
 /*!
 \end_group
 */
 
-PLY_INLINE Float3x4 Float3x4::from_quat_pos(const QuatPos& qp) {
+inline Float3x4 Float3x4::from_quat_pos(const QuatPos& qp) {
     return from_quaternion(qp.quat, qp.pos);
 }
-PLY_INLINE Float4x4 Float4x4::from_quat_pos(const QuatPos& qp) {
+inline Float4x4 Float4x4::from_quat_pos(const QuatPos& qp) {
     return from_quaternion(qp.quat, qp.pos);
 }
 

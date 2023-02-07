@@ -9,8 +9,8 @@
 namespace ply {
 namespace impl {
 
-PLY_NO_INLINE void destruct_sequence(Reference<BlockList::Footer>* head_ref,
-                                     void (*destruct_view_as)(StringView)) {
+void destruct_sequence(Reference<BlockList::Footer>* head_ref,
+                       void (*destruct_view_as)(StringView)) {
     BlockList::Footer* block_to_free = head_ref->release();
     while (block_to_free) {
         // There should be only own reference: the Sequence.
@@ -24,13 +24,13 @@ PLY_NO_INLINE void destruct_sequence(Reference<BlockList::Footer>* head_ref,
     }
 }
 
-PLY_NO_INLINE void begin_write_internal(BlockList::Footer** tail, u32 num_bytes) {
+void begin_write_internal(BlockList::Footer** tail, u32 num_bytes) {
     PLY_ASSERT((*tail)->view_unused_bytes().num_bytes < num_bytes);
     *tail = BlockList::append_block(*tail, max(BlockList::DefaultBlockSize, num_bytes));
 }
 
-PLY_NO_INLINE void pop_tail(BlockList::Footer** tail, u32 num_bytes,
-                            void (*destruct_view_as)(StringView)) {
+void pop_tail(BlockList::Footer** tail, u32 num_bytes,
+              void (*destruct_view_as)(StringView)) {
     BlockList::Footer* block = *tail;
     while (num_bytes > 0) {
         u32 bytes_to_pop = min(num_bytes, block->view_used_bytes().num_bytes);
@@ -51,7 +51,7 @@ PLY_NO_INLINE void pop_tail(BlockList::Footer** tail, u32 num_bytes,
     }
 }
 
-PLY_NO_INLINE void truncate(BlockList::Footer** tail, const BlockList::WeakRef& to) {
+void truncate(BlockList::Footer** tail, const BlockList::WeakRef& to) {
     if (to.byte == to.block->start() && to.block->prev_block) {
         *tail = to.block->prev_block;
     } else {
@@ -61,7 +61,7 @@ PLY_NO_INLINE void truncate(BlockList::Footer** tail, const BlockList::WeakRef& 
     (*tail)->next_block.clear();
 }
 
-PLY_NO_INLINE u32 get_total_num_bytes(BlockList::Footer* head) {
+u32 get_total_num_bytes(BlockList::Footer* head) {
     u32 num_bytes = 0;
     while (head) {
         num_bytes += head->view_used_bytes().num_bytes;
@@ -70,7 +70,7 @@ PLY_NO_INLINE u32 get_total_num_bytes(BlockList::Footer* head) {
     return num_bytes;
 }
 
-PLY_NO_INLINE char* read(BlockList::WeakRef* weak_ref, u32 item_size) {
+char* read(BlockList::WeakRef* weak_ref, u32 item_size) {
     sptr num_bytes_available = weak_ref->block->unused() - weak_ref->byte;
     // It's illegal to call this function at the end of a sequence.
     PLY_ASSERT(num_bytes_available >= item_size);

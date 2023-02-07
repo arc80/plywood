@@ -11,10 +11,10 @@
 namespace ply {
 namespace build {
 
-PLY_INLINE bool has_all_bits(u64 bits_to_check, u64 desired_bits) {
+inline bool has_all_bits(u64 bits_to_check, u64 desired_bits) {
     return (bits_to_check & desired_bits) == desired_bits;
 }
-PLY_INLINE bool has_bit_at_index(u64 bits_to_check, u32 index) {
+inline bool has_bit_at_index(u64 bits_to_check, u32 index) {
     return (bits_to_check & (u64{1} << index)) != 0;
 }
 
@@ -34,10 +34,10 @@ struct Option {
     u64 enabled_bits = 0;   // whether option is enabled for each config
     u64 is_public_bits = 0; // whether option is public/private for each config
 
-    PLY_INLINE Option(Type type, StringView key, StringView value = {})
+    Option(Type type, StringView key, StringView value = {})
         : type{type}, key{key}, value{value} {
     }
-    PLY_INLINE bool operator==(const Option& other) const {
+    bool operator==(const Option& other) const {
         return (this->type == other.type) && (this->key == other.key) &&
                (this->value == other.value);
     }
@@ -77,7 +77,7 @@ struct Target {
     Array<SourceGroup> source_groups;
     bool did_inheritance = false;
 
-    PLY_INLINE void on_ref_count_zero() {
+    void on_ref_count_zero() {
         delete this;
     }
 };

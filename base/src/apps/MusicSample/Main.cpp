@@ -8,7 +8,7 @@
 
 using namespace ply;
 
-PLY_INLINE s16 float_to_s16(float v) {
+inline s16 float_to_s16(float v) {
     if (v >= 1.f)
         return 32767;
     else if (v < -1.f)

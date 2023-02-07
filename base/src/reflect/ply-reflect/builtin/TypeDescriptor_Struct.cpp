@@ -16,7 +16,7 @@ namespace ply {
 
 #if PLY_WITH_METHOD_TABLES
 
-PLY_NO_INLINE MethodTable get_method_table_struct() {
+MethodTable get_method_table_struct() {
     MethodTable methods;
     methods.property_lookup = [](BaseInterpreter* interp, const AnyObject& obj,
                                  StringView property_name) -> FnResult {

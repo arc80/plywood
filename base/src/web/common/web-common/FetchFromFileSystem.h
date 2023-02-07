@@ -17,10 +17,10 @@ struct FetchFromFileSystem {
         struct Item {
             StringView extension;
             StringView mime_type;
-            PLY_INLINE Item(StringView extension) : extension{extension} {
+            Item(StringView extension) : extension{extension} {
             }
         };
-        static PLY_INLINE bool match(const Item& item, Key key) {
+        static bool match(const Item& item, Key key) {
             return item.extension == key;
         }
     };
@@ -28,10 +28,9 @@ struct FetchFromFileSystem {
     String root_dir;
     HashMap<ContentTypeTraits> extension_to_content_type;
 
-    PLY_NO_INLINE FetchFromFileSystem();
-    PLY_NO_INLINE static void serve(const FetchFromFileSystem* params,
-                                    StringView request_path,
-                                    ResponseIface* response_iface);
+    FetchFromFileSystem();
+    static void serve(const FetchFromFileSystem* params, StringView request_path,
+                      ResponseIface* response_iface);
 };
 
 } // namespace web

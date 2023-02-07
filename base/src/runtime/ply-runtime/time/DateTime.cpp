@@ -46,7 +46,7 @@ s64 DateTime::get_current_epoch_microseconds() {
 
 // FIXME: Move this to runtime/Core.h?
 template <typename T>
-PLY_INLINE T floor_div(T dividend, T divisor) {
+T floor_div(T dividend, T divisor) {
     PLY_STATIC_ASSERT(std::is_arithmetic<T>::value);
     PLY_ASSERT(divisor > 0);
     if (dividend < 0) {

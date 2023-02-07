@@ -19,16 +19,16 @@ struct ParseError {
         StringView name;
         u32 index;
 
-        static PLY_INLINE Scope object(u32 file_ofs) {
+        static Scope object(u32 file_ofs) {
             return {file_ofs, Object, {}, 0};
         }
-        static PLY_INLINE Scope property(u32 file_ofs, StringView name) {
+        static Scope property(u32 file_ofs, StringView name) {
             return {file_ofs, Property, name, 0};
         }
-        static PLY_INLINE Scope duplicate(u32 file_ofs) {
+        static Scope duplicate(u32 file_ofs) {
             return {file_ofs, Duplicate, {}, 0};
         }
-        static PLY_INLINE Scope array(u32 file_ofs, u32 index) {
+        static Scope array(u32 file_ofs, u32 index) {
             return {file_ofs, Array, {}, index};
         }
     };
@@ -60,7 +60,7 @@ private:
         u32 file_ofs = 0;
         HybridString text;
 
-        PLY_INLINE bool is_valid() const {
+        bool is_valid() const {
             return type != Type::Invalid;
         }
     };
@@ -75,7 +75,7 @@ private:
     Token push_back_token;
     Array<ParseError::Scope> context;
 
-    PLY_INLINE void push_back(Token&& token) {
+    void push_back(Token&& token) {
         push_back_token = std::move(token);
     }
 
@@ -83,18 +83,18 @@ private:
         Parser& parser;
         u32 index;
 
-        PLY_INLINE ScopeHandler(Parser& parser, ParseError::Scope&& scope)
+        ScopeHandler(Parser& parser, ParseError::Scope&& scope)
             : parser{parser}, index{parser.context.num_items()} {
             parser.context.append(std::move(scope));
         }
-        PLY_INLINE ~ScopeHandler() {
+        ~ScopeHandler() {
             // parser.context can be empty when ParseError is thrown
             if (!parser.context.is_empty()) {
                 PLY_ASSERT(parser.context.num_items() == index + 1);
                 parser.context.pop();
             }
         }
-        PLY_INLINE ParseError::Scope& get() {
+        ParseError::Scope& get() {
             return parser.context[index];
         }
     };
@@ -114,13 +114,13 @@ private:
                                 const Token* after_token = nullptr);
 
 public:
-    PLY_INLINE void set_tab_size(int tab_size_) {
+    void set_tab_size(int tab_size_) {
         tab_size = tab_size_;
     }
-    PLY_INLINE void set_error_callback(Func<void(const ParseError& err)>&& cb) {
+    void set_error_callback(Func<void(const ParseError& err)>&& cb) {
         this->error_callback = std::move(cb);
     }
-    PLY_INLINE bool any_error() const {
+    bool any_error() const {
         return this->any_error_;
     }
 

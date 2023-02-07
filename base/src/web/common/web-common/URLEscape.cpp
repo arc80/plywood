@@ -9,8 +9,8 @@
 
 namespace ply {
 
-PLY_NO_INLINE void
-fmt::TypePrinter<web::URLEscape>::print(OutStream* outs, const web::URLEscape& value) {
+void fmt::TypePrinter<web::URLEscape>::print(OutStream* outs,
+                                             const web::URLEscape& value) {
     for (u32 i = 0; i < value.view.num_bytes; i++) {
         u8 c = value.view[i];
         if (is_ascii_letter(c) || is_decimal_digit(c) || c == '-' || c == '_' ||

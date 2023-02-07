@@ -11,8 +11,8 @@
 namespace ply {
 namespace biscuit {
 
-PLY_NO_INLINE bool error_at_token(Parser* parser, const ExpandedToken& error_token,
-                                  ErrorTokenAction token_action, StringView message) {
+bool error_at_token(Parser* parser, const ExpandedToken& error_token,
+                    ErrorTokenAction token_action, StringView message) {
     if (!parser->recovery.mute_errors) {
         parser->error(
             String::format("{} error: {}\n",

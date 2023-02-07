@@ -18,21 +18,20 @@ u32 StringView::num_codepoints(UnicodeType decoder_type) const {
     return num_codepoints;
 }
 
-PLY_NO_INLINE bool StringView::starts_with(StringView other) const {
+bool StringView::starts_with(StringView other) const {
     if (other.num_bytes > num_bytes)
         return false;
     return memcmp(bytes, other.bytes, other.num_bytes) == 0;
 }
 
-PLY_NO_INLINE bool StringView::ends_with(StringView other) const {
+bool StringView::ends_with(StringView other) const {
     if (other.num_bytes > num_bytes)
         return false;
     return memcmp(bytes + num_bytes - other.num_bytes, other.bytes, other.num_bytes) ==
            0;
 }
 
-PLY_NO_INLINE StringView StringView::trim(bool (*match_func)(char), bool left,
-                                          bool right) const {
+StringView StringView::trim(bool (*match_func)(char), bool left, bool right) const {
     const char* start = this->bytes;
     const char* end = start + this->num_bytes;
     if (left) {
@@ -48,7 +47,7 @@ PLY_NO_INLINE StringView StringView::trim(bool (*match_func)(char), bool left,
     return StringView::from_range(start, end);
 }
 
-PLY_NO_INLINE Array<StringView> StringView::split_byte(char sep) const {
+Array<StringView> StringView::split_byte(char sep) const {
     Array<StringView> result;
     const char* cur = this->bytes;
     const char* end = this->bytes + this->num_bytes;
@@ -75,7 +74,7 @@ PLY_NO_INLINE Array<StringView> StringView::split_byte(char sep) const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::upper_asc() const {
+String StringView::upper_asc() const {
     String result = String::allocate(this->num_bytes);
     for (u32 i = 0; i < this->num_bytes; i++) {
         char c = this->bytes[i];
@@ -87,7 +86,7 @@ PLY_NO_INLINE String StringView::upper_asc() const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::lower_asc() const {
+String StringView::lower_asc() const {
     String result = String::allocate(this->num_bytes);
     for (u32 i = 0; i < this->num_bytes; i++) {
         char c = this->bytes[i];
@@ -99,7 +98,7 @@ PLY_NO_INLINE String StringView::lower_asc() const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::reversed_bytes() const {
+String StringView::reversed_bytes() const {
     String result = String::allocate(this->num_bytes);
     const char* src = this->bytes + this->num_bytes;
     for (u32 i = 0; i < this->num_bytes; i++) {
@@ -109,7 +108,7 @@ PLY_NO_INLINE String StringView::reversed_bytes() const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::filter_bytes(char (*filter_func)(char)) const {
+String StringView::filter_bytes(char (*filter_func)(char)) const {
     String result = String::allocate(this->num_bytes);
     for (u32 i = 0; i < this->num_bytes; i++) {
         result.bytes[i] = filter_func(this->bytes[i]);
@@ -117,7 +116,7 @@ PLY_NO_INLINE String StringView::filter_bytes(char (*filter_func)(char)) const {
     return result;
 }
 
-PLY_NO_INLINE String StringView::join(ArrayView<const StringView> comps) const {
+String StringView::join(ArrayView<const StringView> comps) const {
     MemOutStream mout;
     bool first = true;
     for (StringView comp : comps) {
@@ -130,7 +129,7 @@ PLY_NO_INLINE String StringView::join(ArrayView<const StringView> comps) const {
     return mout.move_to_string();
 }
 
-PLY_NO_INLINE HybridString StringView::with_null_terminator() const {
+HybridString StringView::with_null_terminator() const {
     if (this->includes_null_terminator()) {
         return *this;
     }
@@ -140,14 +139,14 @@ PLY_NO_INLINE HybridString StringView::with_null_terminator() const {
     return result;
 }
 
-PLY_NO_INLINE StringView StringView::without_null_terminator() const {
+StringView StringView::without_null_terminator() const {
     if (!this->includes_null_terminator()) {
         return *this;
     }
     return {this->bytes, this->num_bytes - 1};
 }
 
-PLY_NO_INLINE s32 compare(StringView a, StringView b) {
+s32 compare(StringView a, StringView b) {
     u32 compare_bytes = min(a.num_bytes, b.num_bytes);
     const u8* u0 = (const u8*) a.bytes;
     const u8* u1 = (const u8*) b.bytes;
@@ -162,14 +161,14 @@ PLY_NO_INLINE s32 compare(StringView a, StringView b) {
     return a.num_bytes - b.num_bytes;
 }
 
-PLY_NO_INLINE String operator+(StringView a, StringView b) {
+String operator+(StringView a, StringView b) {
     String result = String::allocate(a.num_bytes + b.num_bytes);
     memcpy(result.bytes, a.bytes, a.num_bytes);
     memcpy(result.bytes + a.num_bytes, b.bytes, b.num_bytes);
     return result;
 }
 
-PLY_NO_INLINE String operator*(StringView str, u32 count) {
+String operator*(StringView str, u32 count) {
     String result = String::allocate(str.num_bytes * count);
     char* dst = result.bytes;
     for (u32 i = 0; i < count; i++) {

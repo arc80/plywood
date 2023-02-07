@@ -12,23 +12,23 @@ namespace ply {
 //--------------------------------------------
 //  Float2x2
 //--------------------------------------------
-PLY_NO_INLINE Float2x2 Float2x2::identity() {
+Float2x2 Float2x2::identity() {
     return {{1, 0}, {0, 1}};
 }
 
-PLY_NO_INLINE Float2x2 Float2x2::make_scale(const Float2& scale) {
+Float2x2 Float2x2::make_scale(const Float2& scale) {
     return {{scale.x, 0}, {0, scale.y}};
 }
 
-PLY_NO_INLINE Float2x2 Float2x2::make_rotation(float radians) {
+Float2x2 Float2x2::make_rotation(float radians) {
     return from_complex(Complex::from_angle(radians));
 }
 
-PLY_NO_INLINE Float2x2 Float2x2::from_complex(const Float2& c) {
+Float2x2 Float2x2::from_complex(const Float2& c) {
     return {{c.x, c.y}, {-c.y, c.x}};
 }
 
-PLY_NO_INLINE Float2x2 Float2x2::transposed() const {
+Float2x2 Float2x2::transposed() const {
     PLY_PUN_SCOPE
     auto* m = reinterpret_cast<const float(*)[2]>(this);
     return {
@@ -37,11 +37,11 @@ PLY_NO_INLINE Float2x2 Float2x2::transposed() const {
     };
 }
 
-PLY_NO_INLINE bool operator==(const Float2x2& a, const Float2x2& b) {
+bool operator==(const Float2x2& a, const Float2x2& b) {
     return (a.col[0] == b.col[0]) && (a.col[1] == b.col[1]);
 }
 
-PLY_NO_INLINE Float2 operator*(const Float2x2& m_, const Float2& v_) {
+Float2 operator*(const Float2x2& m_, const Float2& v_) {
     Float2 result;
     {
         PLY_PUN_SCOPE
@@ -55,7 +55,7 @@ PLY_NO_INLINE Float2 operator*(const Float2x2& m_, const Float2& v_) {
     return result;
 }
 
-PLY_NO_INLINE Float2x2 operator*(const Float2x2& a, const Float2x2& b) {
+Float2x2 operator*(const Float2x2& a, const Float2x2& b) {
     Float2x2 result;
     for (ureg c = 0; c < 2; c++) {
         result[c] = a * b.col[c];
@@ -66,19 +66,19 @@ PLY_NO_INLINE Float2x2 operator*(const Float2x2& a, const Float2x2& b) {
 //--------------------------------------------
 //  Float3x3
 //--------------------------------------------
-PLY_NO_INLINE Float3x3 Float3x3::identity() {
+Float3x3 Float3x3::identity() {
     return {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 }
 
-PLY_NO_INLINE Float3x3 Float3x3::make_scale(const Float3& arg) {
+Float3x3 Float3x3::make_scale(const Float3& arg) {
     return {{arg.x, 0, 0}, {0, arg.y, 0}, {0, 0, arg.z}};
 }
 
-PLY_NO_INLINE Float3x3 Float3x3::make_rotation(const Float3& unit_axis, float radians) {
+Float3x3 Float3x3::make_rotation(const Float3& unit_axis, float radians) {
     return Float3x3::from_quaternion(Quaternion::from_axis_angle(unit_axis, radians));
 }
 
-PLY_NO_INLINE Float3x3 Float3x3::from_quaternion(const Quaternion& q) {
+Float3x3 Float3x3::from_quaternion(const Quaternion& q) {
     return {{1 - 2 * q.y * q.y - 2 * q.z * q.z, 2 * q.x * q.y + 2 * q.z * q.w,
              2 * q.x * q.z - 2 * q.y * q.w},
             {2 * q.x * q.y - 2 * q.z * q.w, 1 - 2 * q.x * q.x - 2 * q.z * q.z,
@@ -87,12 +87,12 @@ PLY_NO_INLINE Float3x3 Float3x3::from_quaternion(const Quaternion& q) {
              1 - 2 * q.x * q.x - 2 * q.y * q.y}};
 }
 
-PLY_NO_INLINE bool Float3x3::has_scale(float thresh) const {
+bool Float3x3::has_scale(float thresh) const {
     return !col[0].is_unit(thresh) || !col[1].is_unit(thresh) ||
            !col[2].is_unit(thresh);
 }
 
-PLY_NO_INLINE Float3x3 Float3x3::transposed() const {
+Float3x3 Float3x3::transposed() const {
     PLY_PUN_SCOPE
     auto* m = reinterpret_cast<const float(*)[3]>(this);
     return {
@@ -102,7 +102,7 @@ PLY_NO_INLINE Float3x3 Float3x3::transposed() const {
     };
 }
 
-PLY_NO_INLINE bool operator==(const Float3x3& a_, const Float3x3& b_) {
+bool operator==(const Float3x3& a_, const Float3x3& b_) {
     PLY_PUN_SCOPE
     auto* a = reinterpret_cast<const float*>(&a_);
     auto* b = reinterpret_cast<const float*>(&b_);
@@ -113,7 +113,7 @@ PLY_NO_INLINE bool operator==(const Float3x3& a_, const Float3x3& b_) {
     return true;
 }
 
-PLY_NO_INLINE Float3 operator*(const Float3x3& m_, const Float3& v_) {
+Float3 operator*(const Float3x3& m_, const Float3& v_) {
     Float3 result;
     {
         PLY_PUN_SCOPE
@@ -127,7 +127,7 @@ PLY_NO_INLINE Float3 operator*(const Float3x3& m_, const Float3& v_) {
     return result;
 }
 
-PLY_NO_INLINE Float3x3 operator*(const Float3x3& a, const Float3x3& b) {
+Float3x3 operator*(const Float3x3& a, const Float3x3& b) {
     Float3x3 result;
     for (ureg c = 0; c < 3; c++) {
         result.col[c] = a * b.col[c];
@@ -138,35 +138,34 @@ PLY_NO_INLINE Float3x3 operator*(const Float3x3& a, const Float3x3& b) {
 //--------------------------------------------
 //  Float3x4
 //--------------------------------------------
-PLY_NO_INLINE Float3x4::Float3x4(const Float3x3& m3x3, const Float3& pos) {
+Float3x4::Float3x4(const Float3x3& m3x3, const Float3& pos) {
     for (u32 i = 0; i < 3; i++) {
         col[i] = m3x3.col[i];
     }
     col[3] = pos;
 }
 
-PLY_NO_INLINE Float4x4 Float3x4::to_float4x4() const {
+Float4x4 Float3x4::to_float4x4() const {
     return Float4x4{{col[0], 0}, {col[1], 0}, {col[2], 0}, {col[3], 1}};
 }
 
-PLY_NO_INLINE Float3x4 Float3x4::identity() {
+Float3x4 Float3x4::identity() {
     return {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}};
 }
 
-PLY_NO_INLINE Float3x4 Float3x4::make_scale(const Float3& arg) {
+Float3x4 Float3x4::make_scale(const Float3& arg) {
     return {{arg.x, 0, 0}, {0, arg.y, 0}, {0, 0, arg.z}, {0, 0, 0}};
 }
 
-PLY_NO_INLINE Float3x4 Float3x4::make_rotation(const Float3& unit_axis, float radians) {
+Float3x4 Float3x4::make_rotation(const Float3& unit_axis, float radians) {
     return Float3x4::from_quaternion(Quaternion::from_axis_angle(unit_axis, radians));
 }
 
-PLY_NO_INLINE Float3x4 Float3x4::make_translation(const Float3& pos) {
+Float3x4 Float3x4::make_translation(const Float3& pos) {
     return {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, pos};
 }
 
-PLY_NO_INLINE Float3x4 Float3x4::from_quaternion(const Quaternion& q,
-                                                 const Float3& pos) {
+Float3x4 Float3x4::from_quaternion(const Quaternion& q, const Float3& pos) {
     return {{1 - 2 * q.y * q.y - 2 * q.z * q.z, 2 * q.x * q.y + 2 * q.z * q.w,
              2 * q.x * q.z - 2 * q.y * q.w},
             {2 * q.x * q.y - 2 * q.z * q.w, 1 - 2 * q.x * q.x - 2 * q.z * q.z,
@@ -176,11 +175,11 @@ PLY_NO_INLINE Float3x4 Float3x4::from_quaternion(const Quaternion& q,
             pos};
 }
 
-PLY_NO_INLINE bool Float3x4::has_scale(float thresh) const {
+bool Float3x4::has_scale(float thresh) const {
     return as_float3x3().has_scale(thresh);
 }
 
-PLY_NO_INLINE Float3x4 Float3x4::inverted_ortho() const {
+Float3x4 Float3x4::inverted_ortho() const {
     Float3x4 result;
     reinterpret_cast<Float3x3&>(result) =
         reinterpret_cast<const Float3x3&>(*this).transposed();
@@ -188,7 +187,7 @@ PLY_NO_INLINE Float3x4 Float3x4::inverted_ortho() const {
     return result;
 }
 
-PLY_NO_INLINE bool operator==(const Float3x4& a_, const Float3x4& b_) {
+bool operator==(const Float3x4& a_, const Float3x4& b_) {
     PLY_PUN_SCOPE
     auto* a = reinterpret_cast<const float*>(&a_);
     auto* b = reinterpret_cast<const float*>(&b_);
@@ -199,7 +198,7 @@ PLY_NO_INLINE bool operator==(const Float3x4& a_, const Float3x4& b_) {
     return true;
 }
 
-PLY_NO_INLINE Float3 operator*(const Float3x4& m_, const Float3& v_) {
+Float3 operator*(const Float3x4& m_, const Float3& v_) {
     Float3 result;
     {
         PLY_PUN_SCOPE
@@ -213,7 +212,7 @@ PLY_NO_INLINE Float3 operator*(const Float3x4& m_, const Float3& v_) {
     return result;
 }
 
-PLY_NO_INLINE Float4 operator*(const Float3x4& m_, const Float4& v_) {
+Float4 operator*(const Float3x4& m_, const Float4& v_) {
     Float4 result;
     {
         PLY_PUN_SCOPE
@@ -228,7 +227,7 @@ PLY_NO_INLINE Float4 operator*(const Float3x4& m_, const Float4& v_) {
     return result;
 }
 
-PLY_NO_INLINE Float3x4 operator*(const Float3x4& a, const Float3x4& b) {
+Float3x4 operator*(const Float3x4& a, const Float3x4& b) {
     Float3x4 result;
     for (ureg c = 0; c < 3; c++) {
         result.col[c] = a.as_float3x3() * b.col[c];
@@ -240,40 +239,39 @@ PLY_NO_INLINE Float3x4 operator*(const Float3x4& a, const Float3x4& b) {
 //--------------------------------------------
 //  Float4x4
 //--------------------------------------------
-PLY_NO_INLINE Float4x4::Float4x4(const Float3x3& m3x3, const Float3& pos) {
+Float4x4::Float4x4(const Float3x3& m3x3, const Float3& pos) {
     for (u32 i = 0; i < 3; i++) {
         col[i] = {m3x3.col[i], 0};
     }
     col[3] = {pos, 1};
 }
 
-PLY_NO_INLINE Float3x3 Float4x4::to_float3x3() const {
+Float3x3 Float4x4::to_float3x3() const {
     return Float3x3{col[0].as_float3(), col[1].as_float3(), col[2].as_float3()};
 }
 
-PLY_NO_INLINE Float3x4 Float4x4::to_float3x4() const {
+Float3x4 Float4x4::to_float3x4() const {
     return Float3x4{col[0].as_float3(), col[1].as_float3(), col[2].as_float3(),
                     col[3].as_float3()};
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::identity() {
+Float4x4 Float4x4::identity() {
     return {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::make_scale(const Float3& arg) {
+Float4x4 Float4x4::make_scale(const Float3& arg) {
     return {{arg.x, 0, 0, 0}, {0, arg.y, 0, 0}, {0, 0, arg.z, 0}, {0, 0, 0, 1}};
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::make_rotation(const Float3& unit_axis, float radians) {
+Float4x4 Float4x4::make_rotation(const Float3& unit_axis, float radians) {
     return Float4x4::from_quaternion(Quaternion::from_axis_angle(unit_axis, radians));
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::make_translation(const Float3& pos) {
+Float4x4 Float4x4::make_translation(const Float3& pos) {
     return {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {pos, 1}};
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::from_quaternion(const Quaternion& q,
-                                                 const Float3& pos) {
+Float4x4 Float4x4::from_quaternion(const Quaternion& q, const Float3& pos) {
     return {{1 - 2 * q.y * q.y - 2 * q.z * q.z, 2 * q.x * q.y + 2 * q.z * q.w,
              2 * q.x * q.z - 2 * q.y * q.w, 0},
             {2 * q.x * q.y - 2 * q.z * q.w, 1 - 2 * q.x * q.x - 2 * q.z * q.z,
@@ -283,8 +281,7 @@ PLY_NO_INLINE Float4x4 Float4x4::from_quaternion(const Quaternion& q,
             {pos, 1}};
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::make_projection(const Rect& frustum, float z_near,
-                                                 float z_far) {
+Float4x4 Float4x4::make_projection(const Rect& frustum, float z_near, float z_far) {
     PLY_ASSERT(z_near > 0 && z_far > 0);
     Float4x4 result = {0, 0, 0, 0};
     float oo_xdenom = 1.f / (frustum.maxs.x - frustum.mins.x);
@@ -300,8 +297,7 @@ PLY_NO_INLINE Float4x4 Float4x4::make_projection(const Rect& frustum, float z_ne
     return result;
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::make_ortho(const Rect& rect, float z_near,
-                                            float z_far) {
+Float4x4 Float4x4::make_ortho(const Rect& rect, float z_near, float z_far) {
     Float4x4 result = {0, 0, 0, 0};
     float tow = 2 / rect.width();
     float toh = 2 / rect.height();
@@ -316,7 +312,7 @@ PLY_NO_INLINE Float4x4 Float4x4::make_ortho(const Rect& rect, float z_near,
     return result;
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::transposed() const {
+Float4x4 Float4x4::transposed() const {
     PLY_PUN_SCOPE
     auto* m = reinterpret_cast<const float(*)[4]>(this);
     return {
@@ -327,7 +323,7 @@ PLY_NO_INLINE Float4x4 Float4x4::transposed() const {
     };
 }
 
-PLY_NO_INLINE Float4x4 Float4x4::inverted_ortho() const {
+Float4x4 Float4x4::inverted_ortho() const {
     Float4x4 result = transposed();
     result.col[0].w = 0;
     result.col[1].w = 0;
@@ -337,7 +333,7 @@ PLY_NO_INLINE Float4x4 Float4x4::inverted_ortho() const {
     return result;
 }
 
-PLY_NO_INLINE bool operator==(const Float4x4& a_, const Float4x4& b_) {
+bool operator==(const Float4x4& a_, const Float4x4& b_) {
     PLY_PUN_SCOPE
     auto* a = reinterpret_cast<const float*>(&a_);
     auto* b = reinterpret_cast<const float*>(&b_);
@@ -348,7 +344,7 @@ PLY_NO_INLINE bool operator==(const Float4x4& a_, const Float4x4& b_) {
     return true;
 }
 
-PLY_NO_INLINE Float4 operator*(const Float4x4& m_, const Float4& v_) {
+Float4 operator*(const Float4x4& m_, const Float4& v_) {
     Float4 result;
     {
         PLY_PUN_SCOPE
@@ -362,7 +358,7 @@ PLY_NO_INLINE Float4 operator*(const Float4x4& m_, const Float4& v_) {
     return result;
 }
 
-PLY_NO_INLINE Float4x4 operator*(const Float4x4& a, const Float4x4& b) {
+Float4x4 operator*(const Float4x4& a, const Float4x4& b) {
     Float4x4 result;
     for (ureg c = 0; c < 4; c++) {
         result.col[c] = a * b.col[c];
@@ -370,7 +366,7 @@ PLY_NO_INLINE Float4x4 operator*(const Float4x4& a, const Float4x4& b) {
     return result;
 }
 
-PLY_NO_INLINE Float4x4 operator*(const Float3x4& a, const Float4x4& b) {
+Float4x4 operator*(const Float3x4& a, const Float4x4& b) {
     Float4x4 result;
     for (ureg c = 0; c < 4; c++) {
         result[c] = a * b.col[c];
@@ -378,7 +374,7 @@ PLY_NO_INLINE Float4x4 operator*(const Float3x4& a, const Float4x4& b) {
     return result;
 }
 
-PLY_NO_INLINE Float4x4 operator*(const Float4x4& a, const Float3x4& b) {
+Float4x4 operator*(const Float4x4& a, const Float3x4& b) {
     Float4x4 result;
     for (ureg c = 0; c < 3; c++) {
         result.col[c] = a * Float4{b.col[c], 0};

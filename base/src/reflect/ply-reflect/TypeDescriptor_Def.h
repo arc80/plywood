@@ -25,13 +25,13 @@ struct TypeDescriptor;
 //--------------------------------------------------------
 template <typename T>
 struct TypeDescriptorSpecializer {
-    static PLY_INLINE TypeDescriptor* get() {
+    static TypeDescriptor* get() {
         return T::bind_type_descriptor();
     }
 };
 
 template <typename T>
-PLY_INLINE TypeDescriptor* get_type_descriptor(T* = nullptr) {
+TypeDescriptor* get_type_descriptor(T* = nullptr) {
     return TypeDescriptorSpecializer<T>::get();
 }
 
@@ -42,7 +42,7 @@ PLY_INLINE TypeDescriptor* get_type_descriptor(T* = nullptr) {
     };
 
 #define PLY_DEFINE_TYPE_DESCRIPTOR(type_name) \
-    PLY_NO_INLINE ply::TypeDescriptor* ply::TypeDescriptorSpecializer<type_name>::get()
+    ply::TypeDescriptor* ply::TypeDescriptorSpecializer<type_name>::get()
 
 //-----------------------------------------------------------------------
 // NativeBindings
@@ -137,12 +137,12 @@ struct TypeDescriptor {
         return static_cast<const T*>(this);
     }
 
-    PLY_INLINE HybridString get_name() const {
+    HybridString get_name() const {
         return this->type_key->get_name(this);
     }
 };
 
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const TypeDescriptor* type_desc) {
+inline Hasher& operator<<(Hasher& hasher, const TypeDescriptor* type_desc) {
     hasher << type_desc->type_key;
     type_desc->type_key->hash_descriptor(hasher, type_desc);
     return hasher;
@@ -153,7 +153,7 @@ PLY_INLINE Hasher& operator<<(Hasher& hasher, const TypeDescriptor* type_desc) {
 //-----------------------------------------------------------------------
 template <typename T>
 struct TypeDescriptorSpecializer<const T> {
-    static PLY_INLINE auto* get() {
+    static auto* get() {
         return TypeDescriptorSpecializer<T>::get();
     }
 };

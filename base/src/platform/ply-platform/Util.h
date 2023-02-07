@@ -23,29 +23,26 @@ struct SizedInt<8> {
 };
 
 template <typename I>
-constexpr PLY_INLINE std::enable_if_t<std::is_integral<I>::value, bool>
-is_power_of2(I v) {
+constexpr std::enable_if_t<std::is_integral<I>::value, bool> is_power_of2(I v) {
     return (v & (v - 1)) == 0;
 }
 
 template <typename I0, typename I1>
-PLY_INLINE
-    std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, I0>
-    align_power_of2(I0 v, I1 a) {
+std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, I0>
+align_power_of2(I0 v, I1 a) {
     PLY_ASSERT(is_power_of2(a));
     return (v + a - 1) & ~I0(a - 1);
 }
 
 template <typename I0, typename I1>
-PLY_INLINE
-    std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, bool>
-    is_aligned_power_of2(I0 v, I1 a) {
+std::enable_if_t<std::is_integral<I0>::value && std::is_integral<I1>::value, bool>
+is_aligned_power_of2(I0 v, I1 a) {
     PLY_ASSERT(is_power_of2(a));
     return (v & (a - 1)) == 0;
 }
 
 template <typename I>
-PLY_INLINE std::enable_if_t<std::is_integral<I>::value && sizeof(I) == 8, I>
+std::enable_if_t<std::is_integral<I>::value && sizeof(I) == 8, I>
 round_up_power_of2(I v) {
     v--;
     v |= v >> 1;
@@ -59,7 +56,7 @@ round_up_power_of2(I v) {
 }
 
 template <typename I>
-PLY_INLINE std::enable_if_t<std::is_integral<I>::value && sizeof(I) <= 4, I>
+std::enable_if_t<std::is_integral<I>::value && sizeof(I) <= 4, I>
 round_up_power_of2(I v_) {
     u32 v = (u32) v_ - 1;
     v |= v >> 1;
@@ -72,7 +69,7 @@ round_up_power_of2(I v_) {
 }
 
 template <typename I>
-PLY_INLINE std::enable_if_t<std::is_integral<I>::value, u32> count_set_bits(I mask) {
+std::enable_if_t<std::is_integral<I>::value, u32> count_set_bits(I mask) {
     u32 count = 0;
     while (mask) {
         count += (mask & 1);
@@ -82,16 +79,15 @@ PLY_INLINE std::enable_if_t<std::is_integral<I>::value, u32> count_set_bits(I ma
 }
 
 template <typename Dst, typename Src>
-PLY_INLINE constexpr std::enable_if_t<std::is_unsigned<Src>::value, Dst>
-check_cast(Src src) {
+constexpr std::enable_if_t<std::is_unsigned<Src>::value, Dst> check_cast(Src src) {
     // src is unsigned
     PLY_ASSERT(src <= (typename std::make_unsigned_t<Dst>) Limits<Dst>::Max);
     return (Dst) src;
 }
 
 template <typename Dst, typename Src>
-PLY_INLINE constexpr std::enable_if_t<
-    std::is_signed<Src>::value && std::is_signed<Dst>::value, Dst>
+constexpr std::enable_if_t<std::is_signed<Src>::value && std::is_signed<Dst>::value,
+                           Dst>
 check_cast(Src src) {
     // src and dst are both signed
     PLY_ASSERT(src >= Limits<Dst>::Min);
@@ -100,8 +96,8 @@ check_cast(Src src) {
 }
 
 template <typename Dst, typename Src>
-PLY_INLINE constexpr std::enable_if_t<
-    std::is_signed<Src>::value && std::is_unsigned<Dst>::value, Dst>
+constexpr std::enable_if_t<std::is_signed<Src>::value && std::is_unsigned<Dst>::value,
+                           Dst>
 check_cast(Src src) {
     // src is signed, dst is unsigned
     PLY_ASSERT(src >= 0);
@@ -149,7 +145,7 @@ inline u64 deavalanche(u64 h) {
 }
 
 template <typename T>
-PLY_INLINE void destruct(T& obj) {
+void destruct(T& obj) {
     obj.~T();
 }
 

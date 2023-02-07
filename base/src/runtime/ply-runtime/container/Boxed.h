@@ -22,7 +22,7 @@ struct Boxed<String> {
         wr.out << view;
     }
 
-    static PLY_NO_INLINE String read(NativeEndianReader& rd);
+    static String read(NativeEndianReader& rd);
 };
 
 } // namespace ply

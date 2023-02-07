@@ -6,9 +6,9 @@
 union Storage_ {
     Unknown unknown;
     TypeID type_id;
-    PLY_INLINE Storage_() {
+    Storage_() {
     }
-    PLY_INLINE ~Storage_() {
+    ~Storage_() {
     }
 };
 SWITCH_FOOTER(Type, Unknown)

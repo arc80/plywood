@@ -99,7 +99,7 @@ public:
     //
     // left rotate a 64-bit value by k bytes
     //
-    static PLY_INLINE u64 Rot64(u64 x, int k) {
+    static u64 Rot64(u64 x, int k) {
         return (x << k) | (x >> (64 - k));
     }
 
@@ -116,9 +116,8 @@ public:
     //   When run forward or backwards one Mix
     // I tried 3 pairs of each; they all differed by at least 212 bits.
     //
-    static PLY_INLINE void Mix(const u64* data, u64& s0, u64& s1, u64& s2, u64& s3,
-                               u64& s4, u64& s5, u64& s6, u64& s7, u64& s8, u64& s9,
-                               u64& s10, u64& s11) {
+    static void Mix(const u64* data, u64& s0, u64& s1, u64& s2, u64& s3, u64& s4,
+                    u64& s5, u64& s6, u64& s7, u64& s8, u64& s9, u64& s10, u64& s11) {
         // clang-format off
         s0 += data[0];      s2 ^= s10;   s11 ^= s0;   s0 = Rot64(s0,11);    s11 += s1;
         s1 += data[1];      s3 ^= s11;   s0 ^= s1;    s1 = Rot64(s1,32);    s0 += s2;
@@ -151,9 +150,8 @@ public:
     // Two iterations was almost good enough for a 64-bit result, but a
     // 128-bit result is reported, so End() does three iterations.
     //
-    static PLY_INLINE void EndPartial(u64& h0, u64& h1, u64& h2, u64& h3, u64& h4,
-                                      u64& h5, u64& h6, u64& h7, u64& h8, u64& h9,
-                                      u64& h10, u64& h11) {
+    static void EndPartial(u64& h0, u64& h1, u64& h2, u64& h3, u64& h4, u64& h5,
+                           u64& h6, u64& h7, u64& h8, u64& h9, u64& h10, u64& h11) {
         // clang-format off
         h11+= h1;    h2 ^= h11;   h1 = Rot64(h1,44);
         h0 += h2;    h3 ^= h0;    h2 = Rot64(h2,15);
@@ -170,9 +168,8 @@ public:
         // clang-format on
     }
 
-    static PLY_INLINE void End(const u64* data, u64& h0, u64& h1, u64& h2, u64& h3,
-                               u64& h4, u64& h5, u64& h6, u64& h7, u64& h8, u64& h9,
-                               u64& h10, u64& h11) {
+    static void End(const u64* data, u64& h0, u64& h1, u64& h2, u64& h3, u64& h4,
+                    u64& h5, u64& h6, u64& h7, u64& h8, u64& h9, u64& h10, u64& h11) {
         // clang-format off
         h0 += data[0];   h1 += data[1];   h2 += data[2];   h3 += data[3];
         h4 += data[4];   h5 += data[5];   h6 += data[6];   h7 += data[7];
@@ -198,7 +195,7 @@ public:
     // with diffs defined by either xor or subtraction
     // with a base of all zeros plus a counter, or plus another bit, or random
     //
-    static PLY_INLINE void ShortMix(u64& h0, u64& h1, u64& h2, u64& h3) {
+    static void ShortMix(u64& h0, u64& h1, u64& h2, u64& h3) {
         // clang-format off
         h2 = Rot64(h2,50);  h2 += h3;  h0 ^= h2;
         h3 = Rot64(h3,52);  h3 += h0;  h1 ^= h3;
@@ -227,7 +224,7 @@ public:
     // For every pair of input bits,
     // with probability 50 +- .75% (the worst case is approximately that)
     //
-    static PLY_INLINE void ShortEnd(u64& h0, u64& h1, u64& h2, u64& h3) {
+    static void ShortEnd(u64& h0, u64& h1, u64& h2, u64& h3) {
         // clang-format off
         h3 ^= h2;  h2 = Rot64(h2,15);  h3 += h2;
         h0 ^= h3;  h3 = Rot64(h3,52);  h0 += h3;

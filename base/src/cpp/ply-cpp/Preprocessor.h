@@ -37,8 +37,7 @@ struct Preprocessor {
         LinearLocation other_loc = -1;
         // ply reflect off
 
-        PLY_INLINE Error(Type type, LinearLocation linear_loc,
-                         LinearLocation other_loc = -1)
+        Error(Type type, LinearLocation linear_loc, LinearLocation other_loc = -1)
             : type{type}, linear_loc{linear_loc}, other_loc{other_loc} {
         }
         virtual void write_message(OutStream& out,
@@ -65,7 +64,7 @@ struct Preprocessor {
 
     Func<void(StringView directive)> include_callback;
 
-    PLY_INLINE void error(Error&& err) {
+    void error(Error&& err) {
         this->error_handler(new Error{std::move(err)});
     }
 };

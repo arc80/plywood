@@ -12,12 +12,12 @@ namespace ply {
 //---------------------------------------------------------------
 // Primitives for printing numeric types
 //----------------------------------------------------------------
-PLY_INLINE char to_digit(u32 d) {
+inline char to_digit(u32 d) {
     const char* digit_table = "0123456789abcdefghijklmnopqrstuvwxyz";
     return (d <= 35) ? digit_table[d] : '?';
 }
 
-PLY_NO_INLINE void print_string(OutStream& out, u64 value, u32 radix) {
+void print_string(OutStream& out, u64 value, u32 radix) {
     PLY_ASSERT(radix >= 2);
     char digit_buffer[64];
     s32 digit_index = PLY_STATIC_ARRAY_SIZE(digit_buffer);
@@ -38,7 +38,7 @@ PLY_NO_INLINE void print_string(OutStream& out, u64 value, u32 radix) {
                       (u32) PLY_STATIC_ARRAY_SIZE(digit_buffer) - digit_index};
 }
 
-PLY_NO_INLINE void print_string(OutStream& out, s64 value, u32 radix) {
+void print_string(OutStream& out, s64 value, u32 radix) {
     if (value >= 0) {
         print_string(out, (u64) value, radix);
     } else {
@@ -47,7 +47,7 @@ PLY_NO_INLINE void print_string(OutStream& out, s64 value, u32 radix) {
     }
 }
 
-PLY_NO_INLINE void print_string(OutStream& out, double value, u32 radix) {
+void print_string(OutStream& out, double value, u32 radix) {
     PLY_ASSERT(radix >= 2);
 
 #if PLY_COMPILER_GCC

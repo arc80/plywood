@@ -59,7 +59,7 @@ struct AnyOwnedObject : AnyObject {
         return result;
     }
     template <typename T>
-    PLY_INLINE T* release() {
+    T* release() {
         PLY_ASSERT(type == TypeDescriptorSpecializer<T>::get());
         T* r = (T*) data;
         data = nullptr;
@@ -70,7 +70,7 @@ struct AnyOwnedObject : AnyObject {
 
 template <>
 struct TypeDescriptorSpecializer<AnyOwnedObject> {
-    static PLY_DLL_ENTRY ply::TypeDescriptor* get();
+    static ply::TypeDescriptor* get();
 };
 
 } // namespace ply

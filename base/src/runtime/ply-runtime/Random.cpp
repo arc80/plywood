@@ -9,7 +9,7 @@
 
 namespace ply {
 
-PLY_NO_INLINE Random::Random() {
+Random::Random() {
     // Seed using misc. information from the environment
     u64 t = DateTime::get_current_epoch_microseconds();
     t = avalanche(t);
@@ -23,7 +23,7 @@ PLY_NO_INLINE Random::Random() {
         next64();
 }
 
-PLY_NO_INLINE Random::Random(u64 seed) {
+Random::Random(u64 seed) {
     s[0] = avalanche(seed + 1);
     s[1] = avalanche(s[0] + 1);
     next64();
@@ -34,7 +34,7 @@ static inline u64 rotl(const u64 x, int k) {
     return (x << k) | (x >> (64 - k));
 }
 
-PLY_NO_INLINE u64 Random::next64() {
+u64 Random::next64() {
     const u64 s0 = s[0];
     u64 s1 = s[1];
     const u64 result = rotl(s0 * 5, 7) * 9;

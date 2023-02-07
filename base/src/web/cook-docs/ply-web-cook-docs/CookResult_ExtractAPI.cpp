@@ -76,7 +76,7 @@ struct APIExtractor : cpp::ParseSupervisor {
         cpp::LinearLocation linear_loc = -1;
         // ply reflect off
 
-        PLY_INLINE Error(Type type, String arg, cpp::LinearLocation linear_loc)
+        Error(Type type, String arg, cpp::LinearLocation linear_loc)
             : type{type}, arg{arg}, linear_loc{linear_loc} {
         }
         virtual void
@@ -98,8 +98,7 @@ struct APIExtractor : cpp::ParseSupervisor {
     Array<Owned<cpp::BaseError>>* errors = nullptr;
     DocState doc_state;
 
-    PLY_NO_INLINE void error(Error::Type type, StringView arg,
-                             cpp::LinearLocation linear_loc) {
+    void error(Error::Type type, StringView arg, cpp::LinearLocation linear_loc) {
         this->parser->pp->error_handler(new Error{type, arg, linear_loc});
     }
 

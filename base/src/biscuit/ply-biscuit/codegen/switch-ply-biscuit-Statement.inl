@@ -16,9 +16,9 @@ union Storage_ {
     Return_ return_;
     FunctionDefinition function_definition;
     CustomBlock custom_block;
-    PLY_INLINE Storage_() {
+    Storage_() {
     }
-    PLY_INLINE ~Storage_() {
+    ~Storage_() {
     }
 };
 SWITCH_FOOTER(Statement, If_)

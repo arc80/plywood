@@ -20,9 +20,9 @@ union Storage_ {
     Alias alias;
     Linkage linkage;
     Empty empty;
-    PLY_INLINE Storage_() {
+    Storage_() {
     }
-    PLY_INLINE ~Storage_() {
+    ~Storage_() {
     }
 };
 SWITCH_FOOTER(Declaration, Namespace_)

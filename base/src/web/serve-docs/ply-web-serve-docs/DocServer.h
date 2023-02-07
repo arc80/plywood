@@ -18,10 +18,10 @@ struct DocServer {
         struct Item {
             StringView link_path;
             Contents* node = nullptr;
-            PLY_INLINE Item(StringView link_path) : link_path{link_path} {
+            Item(StringView link_path) : link_path{link_path} {
             }
         };
-        static PLY_INLINE bool match(const Item& item, Key key) {
+        static bool match(const Item& item, Key key) {
             return item.link_path == key;
         }
     };

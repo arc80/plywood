@@ -32,14 +32,14 @@ inline double square(double v) {
     return v * v;
 }
 template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
-inline T approach(T from, T to, T step) {
+T approach(T from, T to, T step) {
     return (from <= to) ? min(from + step, to) : max(from - step, to);
 }
 inline u32 reverse(u32 v) {
     return (v << 24) | ((v << 8) & 0xff0000) | ((v >> 8) & 0xff00) | (v >> 24);
 }
 template <typename T>
-inline bool bitwise_equal(const T& a, const T& b) {
+bool bitwise_equal(const T& a, const T& b) {
     return memcmp(&a, &b, sizeof(T)) == 0;
 }
 inline float fast_round(float x) {
@@ -90,12 +90,12 @@ inline float round_nearest(float value, float spacing = 1) {
     return fast_round(value / spacing) * spacing;
 }
 
-PLY_INLINE float round_down(float value, float spacing = 1) {
+inline float round_down(float value, float spacing = 1) {
     // FIXME: Optimize this
     return floorf(value / spacing) * spacing;
 }
 
-PLY_INLINE float round_up(float value, float spacing = 1) {
+inline float round_up(float value, float spacing = 1) {
     // FIXME: Optimize this
     return ceilf(value / spacing) * spacing;
 }
@@ -111,12 +111,12 @@ inline float wrap_one(float value) {
 }
 
 template <typename V, typename S>
-inline V mix(const V& from, const V& to, const S& f) {
+V mix(const V& from, const V& to, const S& f) {
     return from * (S(1) - f) + to * f;
 }
 
 template <typename V, typename S>
-inline V unmix(const V& from, const V& to, const S& x) {
+V unmix(const V& from, const V& to, const S& x) {
     return (x - from) / (to - from);
 }
 

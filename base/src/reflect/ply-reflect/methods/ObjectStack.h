@@ -20,7 +20,7 @@ struct ObjectStack {
         BlockList::WeakRef storage;
         WeakSequenceRef<AnyObject> item;
 
-        PLY_INLINE bool operator!=(const Boundary& other) const {
+        bool operator!=(const Boundary& other) const {
             return this->item != other.item;
         }
     };
@@ -31,7 +31,7 @@ struct ObjectStack {
     AnyObject* append_object(TypeDescriptor* type);
     void pop_last_object();
     void delete_range(const Boundary& from, const WeakSequenceRef<AnyObject>& to);
-    PLY_INLINE Boundary end() {
+    Boundary end() {
         return {this->storage.end(), this->items.end()};
     }
 };

@@ -74,7 +74,7 @@ struct Token {
     Type type = Invalid;
     // ply reflect off
 
-    PLY_INLINE bool is_valid() const {
+    bool is_valid() const {
         return this->type != Invalid;
     }
     Token() = default;

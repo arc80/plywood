@@ -17,7 +17,7 @@ struct LineConsumer {
     u32 outer_indent = 0;
     u32 indent = 0;
 
-    PLY_NO_INLINE bool consume_space_or_tab() {
+    bool consume_space_or_tab() {
         if (this->vins.num_bytes_available() == 0)
             return false;
         char c = *this->vins.cur_byte;
@@ -33,15 +33,15 @@ struct LineConsumer {
         return true;
     }
 
-    PLY_INLINE u32 inner_indent() const {
+    u32 inner_indent() const {
         return this->indent - this->outer_indent;
     }
 
-    PLY_INLINE StringView trimmed_remainder() const {
+    StringView trimmed_remainder() const {
         return this->vins.view_available().trim(is_white);
     }
 
-    PLY_INLINE LineConsumer(StringView line) : vins{line} {
+    LineConsumer(StringView line) : vins{line} {
     }
 };
 
@@ -97,7 +97,7 @@ struct Parser {
     // nodes from the stack. (Unmatched ListItem nodes are not truncated here because
     // list items are allowed to contain blank lines.) Returns true if there is more
     // text on the current line.
-    PLY_NO_INLINE bool match_existing_indentation(StringView line, LineConsumer& lc) {
+    bool match_existing_indentation(StringView line, LineConsumer& lc) {
         u32 keep_stack_depth = 1;
         for (;;) {
             while (lc.consume_space_or_tab()) {
@@ -320,7 +320,7 @@ struct Parser {
         }
     }
 
-    PLY_NO_INLINE void parse_paragraph_text(StringView line, LineConsumer& lc) {
+    void parse_paragraph_text(StringView line, LineConsumer& lc) {
         StringView remaining_text = lc.trimmed_remainder();
         bool has_para = this->leaf_node && this->leaf_node->type == Node::Paragraph;
         if (!has_para && lc.inner_indent() >= 4) {
@@ -393,7 +393,7 @@ struct Parser {
         }
     }
 
-    PLY_NO_INLINE Owned<Node> parse(StringView src) {
+    Owned<Node> parse(StringView src) {
         ViewInStream vins{src};
         Owned<Node> document = new Node{nullptr, Node::Document};
 
@@ -484,7 +484,7 @@ String get_code_span(InlineConsumer& ic, u32 end_tick_count) {
 }
 
 // FIXME: Recognize all Unicode punctuation
-PLY_INLINE bool is_asc_punc(char c) {
+inline bool is_asc_punc(char c) {
     return (c >= 0x21 && c <= 0x2f) || (c >= 0x3a && c <= 0x40) ||
            (c >= 0x5b && c <= 0x60) || (c >= 0x7b && c <= 0x7e);
 }
@@ -505,15 +505,13 @@ struct Delimiter {
     HybridString text;
     Owned<Node> element; // InlineElem only, and it'll be an inline node type
 
-    PLY_INLINE Delimiter() = default;
-    PLY_INLINE Delimiter(Type type, HybridString&& text)
-        : type{type}, text{std::move(text)} {
+    Delimiter() = default;
+    Delimiter(Type type, HybridString&& text) : type{type}, text{std::move(text)} {
     }
-    PLY_INLINE Delimiter(Owned<Node>&& elem)
-        : type{InlineElem}, element{std::move(elem)} {
+    Delimiter(Owned<Node>&& elem) : type{InlineElem}, element{std::move(elem)} {
     }
-    static PLY_NO_INLINE Delimiter make_run(Type type, StringView raw_line, u32 start,
-                                            u32 num_bytes) {
+    static Delimiter make_run(Type type, StringView raw_line, u32 start,
+                              u32 num_bytes) {
         bool preceded_by_white = (start == 0) || is_white(raw_line[start - 1]);
         bool followed_by_white = (start + num_bytes >= raw_line.num_bytes) ||
                                  is_white(raw_line[start + num_bytes]);
@@ -786,7 +784,7 @@ Array<Owned<Node>> expand_inline_elements(ArrayView<const String> raw_lines) {
     return process_emphasis(delimiters, 0);
 }
 
-static PLY_NO_INLINE void do_inlines(Node* node) {
+static void do_inlines(Node* node) {
     if (node->is_container_block()) {
         PLY_ASSERT(node->raw_lines.is_empty());
         for (Node* child : node->children) {

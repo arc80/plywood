@@ -147,18 +147,17 @@ void tidy_source() {
 
     for (WalkTriple& triple : FileSystem.walk(root)) {
         for (const FileInfo& file : triple.files) {
-            if (file.name.ends_with(".cpp") || file.name.ends_with(".inl") ||
-                file.name.ends_with(".h")) {
+            if (file.name.ends_with(".cpp") || file.name.ends_with(".h")) {
                 String path = Path.join(triple.dir_path, file.name);
 
                 // Run clang-format
-                // if (Owned<Process> sub = Process::exec(
-                //        "C:/Program Files/Microsoft Visual "
-                //        "Studio/2022/Community/VC/Tools/Llvm/x64/bin/clang-format",
-                //        {"-i", file.name}, triple.dir_path,
-                //        Process::Output::inherit())) {
-                //    sub->join();
-                // }
+                if (Owned<Process> sub = Process::exec(
+                        "C:/Program Files/Microsoft Visual "
+                        "Studio/2022/Community/VC/Tools/Llvm/x64/bin/clang-format",
+                        {"-i", file.name}, triple.dir_path,
+                        Process::Output::inherit())) {
+                    sub->join();
+                }
 
                 // Update file header
                 // update_file_header(path);

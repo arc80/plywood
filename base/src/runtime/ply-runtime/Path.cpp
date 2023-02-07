@@ -20,7 +20,7 @@ Path_t Path{false};
 Path_t WindowsPath{true};
 Path_t PosixPath{false};
 
-PLY_NO_INLINE Tuple<StringView, StringView> Path_t::split(StringView path) const {
+Tuple<StringView, StringView> Path_t::split(StringView path) const {
     s32 last_sep_index = path.rfind_byte([&](char c) { return this->is_sep_byte(c); });
     if (last_sep_index >= 0) {
         s32 prefix_len = path.rfind_byte([&](char c) { return !this->is_sep_byte(c); },
@@ -35,7 +35,7 @@ PLY_NO_INLINE Tuple<StringView, StringView> Path_t::split(StringView path) const
     }
 }
 
-PLY_NO_INLINE Array<StringView> Path_t::split_full(StringView path) const {
+Array<StringView> Path_t::split_full(StringView path) const {
     Array<StringView> result;
     if (this->has_drive_letter(path)) {
         if (this->is_absolute(path)) {
@@ -82,7 +82,7 @@ PLY_NO_INLINE Array<StringView> Path_t::split_full(StringView path) const {
     return result;
 }
 
-PLY_DLL_ENTRY Tuple<StringView, StringView> Path_t::split_ext(StringView path) const {
+Tuple<StringView, StringView> Path_t::split_ext(StringView path) const {
     StringView last_comp = path;
     s32 slash_pos = last_comp.rfind_byte([&](char c) { return this->is_sep_byte(c); });
     if (slash_pos >= 0) {
@@ -99,9 +99,8 @@ PLY_DLL_ENTRY Tuple<StringView, StringView> Path_t::split_ext(StringView path) c
 struct PathCompIterator {
     char first_comp[3] = {0};
 
-    PLY_NO_INLINE void iterate_over(const Path_t* path_fmt,
-                                    ArrayView<const StringView> components,
-                                    const Func<void(StringView)>& callback) {
+    void iterate_over(const Path_t* path_fmt, ArrayView<const StringView> components,
+                      const Func<void(StringView)>& callback) {
         s32 absolute_index = -1;
         s32 drive_letter_index = -1;
         for (s32 i = components.num_items - 1; i >= 0; i--) {
@@ -165,9 +164,8 @@ struct PathCompIterator {
     }
 
     // Note: Keep the PathCompIterator alive while using the return value
-    PLY_NO_INLINE Array<StringView>
-    get_normalized_comps(const Path_t* path_fmt,
-                         ArrayView<const StringView> components) {
+    Array<StringView> get_normalized_comps(const Path_t* path_fmt,
+                                           ArrayView<const StringView> components) {
         Array<StringView> norm_comps;
         u32 up_count = 0;
         this->iterate_over(path_fmt, components, [&](StringView comp) { //
@@ -186,7 +184,7 @@ struct PathCompIterator {
     }
 };
 
-PLY_NO_INLINE String Path_t::join_array(ArrayView<const StringView> components) const {
+String Path_t::join_array(ArrayView<const StringView> components) const {
     PathCompIterator comp_iter;
     Array<StringView> norm_comps = comp_iter.get_normalized_comps(this, components);
     if (norm_comps.is_empty()) {
@@ -217,8 +215,7 @@ PLY_NO_INLINE String Path_t::join_array(ArrayView<const StringView> components) 
     }
 }
 
-PLY_NO_INLINE String Path_t::make_relative(StringView ancestor,
-                                           StringView descendant) const {
+String Path_t::make_relative(StringView ancestor, StringView descendant) const {
     // This function requires either both absolute paths or both relative paths:
     PLY_ASSERT(this->is_absolute(ancestor) == this->is_absolute(descendant));
 
@@ -278,8 +275,7 @@ PLY_NO_INLINE String Path_t::make_relative(StringView ancestor,
     return out.move_to_string();
 }
 
-PLY_NO_INLINE HybridString Path_t::from(const Path_t& src_format,
-                                        StringView src_path) const {
+HybridString Path_t::from(const Path_t& src_format, StringView src_path) const {
     if (this->is_windows == src_format.is_windows)
         return src_path;
     String result = src_path;
@@ -292,7 +288,7 @@ PLY_NO_INLINE HybridString Path_t::from(const Path_t& src_format,
     return result;
 }
 
-PLY_NO_INLINE WString win32_path_arg(StringView path, bool allow_extended) {
+WString win32_path_arg(StringView path, bool allow_extended) {
     ViewInStream path_in{path};
     MemOutStream out;
     if (allow_extended && WindowsPath.is_absolute(path)) {

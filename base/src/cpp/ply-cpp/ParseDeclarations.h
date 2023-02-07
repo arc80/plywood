@@ -22,13 +22,13 @@ struct SpecDcorMode {
     Mode mode = GlobalOrMember;
     StringView enclosing_class_name;
 
-    PLY_INLINE SpecDcorMode(Mode mode, StringView enclosing_class_name = {})
+    SpecDcorMode(Mode mode, StringView enclosing_class_name = {})
         : mode{mode}, enclosing_class_name{enclosing_class_name} {
     }
-    PLY_INLINE bool is_any_param() const {
+    bool is_any_param() const {
         return mode == Param || mode == TemplateParam;
     }
-    PLY_INLINE bool is_any_type_id() const {
+    bool is_any_type_id() const {
         return mode == TypeID || mode == ConversionTypeID;
     }
 };

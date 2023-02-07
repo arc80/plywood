@@ -11,11 +11,11 @@ namespace ply {
 
 LabelStorage g_labelStorage;
 
-PLY_NO_INLINE LabelStorage::LabelStorage() {
+LabelStorage::LabelStorage() {
     this->big_pool.append('\0');
 }
 
-PLY_NO_INLINE Label LabelStorage::insert(StringView view) {
+Label LabelStorage::insert(StringView view) {
     PLY_RACE_DETECT_GUARD(this->race_detector);
 
     auto cursor = this->str_to_index.insert_or_find(view, &this->big_pool);
@@ -34,7 +34,7 @@ PLY_NO_INLINE Label LabelStorage::insert(StringView view) {
     return Label{result_id};
 }
 
-PLY_NO_INLINE Label LabelStorage::find(StringView view) const {
+Label LabelStorage::find(StringView view) const {
     PLY_RACE_DETECT_GUARD(this->race_detector);
 
     auto cursor = this->str_to_index.find(view, &this->big_pool);
@@ -43,7 +43,7 @@ PLY_NO_INLINE Label LabelStorage::find(StringView view) const {
     return {};
 }
 
-PLY_NO_INLINE StringView LabelStorage::view(Label label) const {
+StringView LabelStorage::view(Label label) const {
     PLY_RACE_DETECT_GUARD(this->race_detector);
 
     const char* ptr = this->big_pool.get(label.idx);

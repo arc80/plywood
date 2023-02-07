@@ -11,8 +11,8 @@
 namespace ply {
 namespace cpp {
 
-PLY_NO_INLINE void add_ppdef(Preprocessor* pp, StringView identifier,
-                             StringView expansion, bool takes_args) {
+void add_ppdef(Preprocessor* pp, StringView identifier, StringView expansion,
+               bool takes_args) {
     PPVisitedFiles* vf = pp->visited_files;
 
     u32 exp_idx = vf->macro_expansions.num_items();
@@ -23,8 +23,8 @@ PLY_NO_INLINE void add_ppdef(Preprocessor* pp, StringView identifier,
     pp->macros.assign(identifier, exp_idx);
 }
 
-PLY_INLINE LinearLocation get_linear_location(const Preprocessor* pp,
-                                              const char* cur_byte) {
+inline LinearLocation get_linear_location(const Preprocessor* pp,
+                                          const char* cur_byte) {
     const Preprocessor::StackItem& item = pp->stack.back();
     PLY_ASSERT(cur_byte >= item.in.start_byte);
     PLY_ASSERT(cur_byte <= item.in.end_byte);
@@ -94,7 +94,7 @@ void Preprocessor::Error::write_message(OutStream& out,
     }
 }
 
-PLY_NO_INLINE void PPVisitedFiles::MacroExpansion::destruct() {
+void PPVisitedFiles::MacroExpansion::destruct() {
     if (this->from_file) {
         subst::destruct_by_member(&this->range);
     } else {
@@ -102,7 +102,7 @@ PLY_NO_INLINE void PPVisitedFiles::MacroExpansion::destruct() {
     }
 }
 
-PLY_NO_INLINE StringView PPVisitedFiles::get_contents(u32 include_chain_index) const {
+StringView PPVisitedFiles::get_contents(u32 include_chain_index) const {
     const IncludeChain& chain = this->include_chains[include_chain_index];
     if (chain.is_macro_expansion) {
         const MacroExpansion& exp = this->macro_expansions[chain.file_or_exp_idx];
@@ -393,7 +393,7 @@ bool read_delimiter_and_raw_string_literal(ViewInStream& in, Preprocessor* pp,
 }
 
 // Copied from TypeParser.cpp:
-PLY_INLINE bool match(u8 c, const u32* mask) {
+inline bool match(u8 c, const u32* mask) {
     u32 bit_value = mask[c >> 5] & (1 << (c & 31));
     return (bit_value != 0);
 }
@@ -453,7 +453,7 @@ Token::Type read_identifier_or_literal(ViewInStream& in, Preprocessor* pp,
     }
 }
 
-PLY_NO_INLINE Token read_token(Preprocessor* pp) {
+Token read_token(Preprocessor* pp) {
     Preprocessor::StackItem* item = nullptr;
     Token token;
     while (pp->stack.num_items() > 0) {
@@ -826,7 +826,7 @@ PLY_NO_INLINE Token read_token(Preprocessor* pp) {
                     LinearLocation linear_loc_at_macro =
                         pp->linear_loc_at_end_of_stack_top -
                         check_cast<LinearLocation>(item->in.end_byte -
-                                                    token.identifier.bytes);
+                                                   token.identifier.bytes);
                     PPVisitedFiles* vf = pp->visited_files;
 
                     const PPVisitedFiles::MacroExpansion& exp =

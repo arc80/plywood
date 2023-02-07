@@ -10,7 +10,7 @@
 namespace ply {
 namespace cpp {
 
-PLY_NO_INLINE StringView get_punctuation_string(Token::Type tok) {
+StringView get_punctuation_string(Token::Type tok) {
     switch (tok) {
         case Token::OpenCurly:
             return "{";

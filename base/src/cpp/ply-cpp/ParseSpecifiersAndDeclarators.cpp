@@ -19,8 +19,8 @@ struct DeclaratorFlags {
 
 // Consumes as much as it can; unrecognized tokens are returned to caller without
 // logging an error:
-PLY_NO_INLINE void parse_conversion_type_id2(Parser* parser, grammar::Declarator& dcor,
-                                             grammar::DeclaratorProduction* nested) {
+void parse_conversion_type_id2(Parser* parser, grammar::Declarator& dcor,
+                               grammar::DeclaratorProduction* nested) {
     dcor.prod = nested;
     bool allow_qualifier = false;
 
@@ -64,8 +64,8 @@ PLY_NO_INLINE void parse_conversion_type_id2(Parser* parser, grammar::Declarator
 
 // Consumes as much as it can; unrecognized tokens are returned to caller without
 // logging an error:
-PLY_NO_INLINE void
-parse_conversion_type_id(Parser* parser, grammar::UnqualifiedID::ConversionFunc* conv) {
+void parse_conversion_type_id(Parser* parser,
+                              grammar::UnqualifiedID::ConversionFunc* conv) {
     // Note: This has some similarities to parse_specifiers_and_declarators (with an
     // optional abstract declarator using & * &&), but for now, merging them appears too
     // complex, especially since this function does not accept () or []. (OR...? We
@@ -107,8 +107,7 @@ parse_conversion_type_id(Parser* parser, grammar::UnqualifiedID::ConversionFunc*
     }
 }
 
-PLY_NO_INLINE bool close_scope(Parser* parser, Token* out_close_token,
-                               const Token& open_token) {
+bool close_scope(Parser* parser, Token* out_close_token, const Token& open_token) {
     Token close_token = read_token(parser);
     if (close_token.type == open_token.type + 1) {
         *out_close_token = close_token;
@@ -471,9 +470,8 @@ void skip_member_initializer_list(Parser* parser) {
     }
 }
 
-PLY_NO_INLINE void
-parse_optional_function_body(Parser* parser, grammar::Initializer& result,
-                             const grammar::Declaration::Simple& simple) {
+void parse_optional_function_body(Parser* parser, grammar::Initializer& result,
+                                  const grammar::Declaration::Simple& simple) {
     result.none().switch_to();
     Token token = read_token(parser);
     if (token.type == Token::SingleEqual) {
@@ -532,9 +530,8 @@ void parse_optional_type_idinitializer(Parser* parser, grammar::Initializer& res
     }
 }
 
-PLY_NO_INLINE void parse_optional_variable_initializer(Parser* parser,
-                                                       grammar::Initializer& result,
-                                                       bool allow_braced_init) {
+void parse_optional_variable_initializer(Parser* parser, grammar::Initializer& result,
+                                         bool allow_braced_init) {
     result.none().switch_to();
     Token token = read_token(parser);
     if (token.type == Token::OpenCurly) {

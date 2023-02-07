@@ -13,16 +13,16 @@ struct WriteContext {
     OutStream& out;
     int depth = 0;
 
-    PLY_INLINE WriteContext(OutStream& out) : out{out} {
+    WriteContext(OutStream& out) : out{out} {
     }
 
-    PLY_NO_INLINE void indent() {
+    void indent() {
         for (int i = 0; i < depth; i++) {
             this->out << "  ";
         }
     }
 
-    PLY_NO_INLINE void write(const Node* a_node) {
+    void write(const Node* a_node) {
         if (a_node->is_object()) {
             this->out << "{\n";
             this->depth++;
@@ -65,12 +65,12 @@ struct WriteContext {
     }
 };
 
-PLY_NO_INLINE void write(OutStream& out, const Node* a_node) {
+void write(OutStream& out, const Node* a_node) {
     WriteContext ctx{out};
     ctx.write(a_node);
 }
 
-PLY_NO_INLINE String to_string(const Node* a_node) {
+String to_string(const Node* a_node) {
     MemOutStream out;
     write(out, a_node);
     return out.move_to_string();

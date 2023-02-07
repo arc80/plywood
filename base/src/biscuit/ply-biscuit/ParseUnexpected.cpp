@@ -44,7 +44,7 @@ bool ok_to_stay_in_scope(Parser* parser, const ExpandedToken& token) {
     return true;
 }
 
-PLY_NO_INLINE u32 token_type_to_accept_close_flag(TokenType token_type) {
+u32 token_type_to_accept_close_flag(TokenType token_type) {
     switch (token_type) {
         case TokenType::OpenCurly:
             return Parser::RecoveryState::AcceptCloseCurly;
@@ -98,9 +98,8 @@ bool skip_any_scope(Parser* parser, ExpandedToken* out_close_token,
 // unexpected token ends an outer scope, or if a token that ends an outer scope is
 // encountered while trying to skip a nested scope, it pushes the token back and returns
 // false. That way, the outer scope can be terminated by the caller.
-PLY_NO_INLINE bool handle_unexpected_token(Parser* parser,
-                                           ExpandedToken* out_close_token,
-                                           const ExpandedToken& unexpected) {
+bool handle_unexpected_token(Parser* parser, ExpandedToken* out_close_token,
+                             const ExpandedToken& unexpected) {
     if (!ok_to_stay_in_scope(parser, unexpected))
         return false;
 

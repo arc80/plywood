@@ -48,7 +48,7 @@ inline s32 dot(Axis3 va, Axis3 vb) {
     return sgn & mask;
 }
 
-PLY_INLINE float dot(Axis3 va, const Float3& vb) {
+inline float dot(Axis3 va, const Float3& vb) {
     PLY_PUN_SCOPE
     auto* vb_ = reinterpret_cast<const float*>(&vb);
     s32 a = s32(va);

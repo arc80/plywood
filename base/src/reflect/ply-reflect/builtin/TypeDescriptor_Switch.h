@@ -12,10 +12,10 @@
 
 namespace ply {
 
-PLY_DLL_ENTRY extern TypeKey TypeKey_Switch;
+extern TypeKey TypeKey_Switch;
 
 struct TypeDescriptor_Switch : TypeDescriptor {
-    PLY_DLL_ENTRY static TypeKey* type_key;
+    static TypeKey* type_key;
     struct State {
         String name;
 #if PLY_WITH_ASSERTS
@@ -57,7 +57,7 @@ struct TypeDescriptor_Switch : TypeDescriptor {
     static void init_type_descriptor_states();
 
 #define PLY_SWITCH_BEGIN(type) \
-    PLY_NO_INLINE ply::TypeDescriptor* type::bind_type_descriptor() { \
+    ply::TypeDescriptor* type::bind_type_descriptor() { \
         static ply::TypeDescriptor_Switch type_desc{(type*) nullptr, #type}; \
         return &type_desc; \
     } \

@@ -14,24 +14,24 @@ namespace ply {
 // feature that implies a dependency on ply-runtime. However, that'll require changes to
 // the build system first.
 
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const Float2& v) {
+inline Hasher& operator<<(Hasher& hasher, const Float2& v) {
     return hasher << v.x << v.y;
 }
 
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const Float3& v) {
+inline Hasher& operator<<(Hasher& hasher, const Float3& v) {
     return hasher << v.x << v.y << v.z;
 }
 
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const Float4& v) {
+inline Hasher& operator<<(Hasher& hasher, const Float4& v) {
     return hasher << v.x << v.y << v.z << v.w;
 }
 
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const AxisRot& rot) {
+inline Hasher& operator<<(Hasher& hasher, const AxisRot& rot) {
     u32 value = u32(rot.cols[0]) | (u32(rot.cols[1]) << 8) | (u32(rot.cols[2]) << 16);
     return hasher << value;
 }
 
-PLY_INLINE Hasher& operator<<(Hasher& hasher, const AxisRotPos& rot_pos) {
+inline Hasher& operator<<(Hasher& hasher, const AxisRotPos& rot_pos) {
     return hasher << rot_pos.rot << rot_pos.pos;
 }
 

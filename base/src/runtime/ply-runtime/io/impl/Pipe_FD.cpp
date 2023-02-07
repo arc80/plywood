@@ -10,7 +10,7 @@
 
 namespace ply {
 
-PLY_NO_INLINE void InPipe_FD_destroy(InPipe* in_pipe_) {
+void InPipe_FD_destroy(InPipe* in_pipe_) {
     InPipe_FD* in_pipe = static_cast<InPipe_FD*>(in_pipe_);
     if (in_pipe->fd >= 0) {
         int rc = ::close(in_pipe->fd);
@@ -19,7 +19,7 @@ PLY_NO_INLINE void InPipe_FD_destroy(InPipe* in_pipe_) {
     }
 }
 
-PLY_NO_INLINE u32 InPipe_FD_readSome(InPipe* in_pipe_, MutStringView buf) {
+u32 InPipe_FD_readSome(InPipe* in_pipe_, MutStringView buf) {
     InPipe_FD* in_pipe = static_cast<InPipe_FD*>(in_pipe_);
     PLY_ASSERT(in_pipe->fd >= 0);
     // Retry as long as read() keeps failing due to EINTR caused by the debugger:
@@ -33,7 +33,7 @@ PLY_NO_INLINE u32 InPipe_FD_readSome(InPipe* in_pipe_, MutStringView buf) {
     return rc;
 }
 
-PLY_NO_INLINE u64 InPipe_FD_getFileSize(const InPipe* in_pipe_) {
+u64 InPipe_FD_getFileSize(const InPipe* in_pipe_) {
     const InPipe_FD* in_pipe = static_cast<const InPipe_FD*>(in_pipe_);
     PLY_ASSERT(in_pipe->fd >= 0);
     struct stat buf;
@@ -49,10 +49,10 @@ InPipe::Funcs InPipe_FD::Funcs_ = {
     InPipe_FD_getFileSize,
 };
 
-PLY_NO_INLINE InPipe_FD::InPipe_FD(int fd) : InPipe{&Funcs_}, fd{fd} {
+InPipe_FD::InPipe_FD(int fd) : InPipe{&Funcs_}, fd{fd} {
 }
 
-PLY_NO_INLINE void OutPipe_FD_destroy(OutPipe* out_pipe_) {
+void OutPipe_FD_destroy(OutPipe* out_pipe_) {
     OutPipe_FD* out_pipe = static_cast<OutPipe_FD*>(out_pipe_);
     if (out_pipe->fd >= 0) {
         int rc = ::close(out_pipe->fd);
@@ -61,7 +61,7 @@ PLY_NO_INLINE void OutPipe_FD_destroy(OutPipe* out_pipe_) {
     }
 }
 
-PLY_NO_INLINE bool OutPipe_FD_write(OutPipe* out_pipe_, StringView buf) {
+bool OutPipe_FD_write(OutPipe* out_pipe_, StringView buf) {
     OutPipe_FD* out_pipe = static_cast<OutPipe_FD*>(out_pipe_);
     PLY_ASSERT(out_pipe->fd >= 0);
     while (buf.num_bytes > 0) {
@@ -75,13 +75,13 @@ PLY_NO_INLINE bool OutPipe_FD_write(OutPipe* out_pipe_, StringView buf) {
     return true;
 }
 
-PLY_NO_INLINE bool OutPipe_FD_flush(OutPipe* out_pipe_, bool to_device) {
+bool OutPipe_FD_flush(OutPipe* out_pipe_, bool to_device) {
     // FIXME: Implement as per
     // https://github.com/libuv/libuv/issues/1579#issue-262113760
     return true;
 }
 
-PLY_NO_INLINE u64 OutPipe_FD_seek(OutPipe* out_pipe_, s64 pos, SeekDir seek_dir) {
+u64 OutPipe_FD_seek(OutPipe* out_pipe_, s64 pos, SeekDir seek_dir) {
     OutPipe_FD* out_pipe = static_cast<OutPipe_FD*>(out_pipe_);
     PLY_ASSERT(out_pipe->fd >= 0);
     int whence;
@@ -112,7 +112,7 @@ OutPipe::Funcs OutPipe_FD::Funcs_ = {
     OutPipe_FD_seek,
 };
 
-PLY_NO_INLINE OutPipe_FD::OutPipe_FD(int fd) : OutPipe{&Funcs_}, fd{fd} {
+OutPipe_FD::OutPipe_FD(int fd) : OutPipe{&Funcs_}, fd{fd} {
 }
 
 } // namespace ply

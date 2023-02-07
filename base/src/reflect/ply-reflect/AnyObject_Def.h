@@ -40,10 +40,10 @@ struct AnyObject {
     void move(AnyObject other);
     void copy(const AnyObject other);
 
-    PLY_INLINE operator bool() const {
+    operator bool() const {
         return this->data != nullptr;
     }
-    PLY_INLINE bool operator==(const AnyObject& other) const {
+    bool operator==(const AnyObject& other) const {
         return this->data == other.data && this->type == other.type;
     }
 };

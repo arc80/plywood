@@ -17,7 +17,7 @@ namespace build {
 
 BuildFolder_t* BuildFolder = nullptr;
 
-PLY_NO_INLINE bool BuildFolder_t::load(StringView abs_path) {
+bool BuildFolder_t::load(StringView abs_path) {
     ArrayView<float> xx{(float*) nullptr, (u32) 0};
     String info_path = Path.join(abs_path, "info.pylon");
     String str_contents = FileSystem.load_text_autodetect(info_path);
@@ -37,7 +37,7 @@ PLY_NO_INLINE bool BuildFolder_t::load(StringView abs_path) {
     return true;
 }
 
-PLY_NO_INLINE bool BuildFolder_t::save() const {
+bool BuildFolder_t::save() const {
     Owned<pylon::Node> a_root = pylon::export_obj(AnyObject::bind(this));
     String str_contents = pylon::to_string(a_root);
     String info_path = Path.join(this->abs_path, "info.pylon");
@@ -65,9 +65,9 @@ bool is_multi_config_cmake_generator(StringView generator) {
     }
 }
 
-PLY_NO_INLINE s32 build_cmake_project(StringView cmake_lists_folder,
-                                      const CMakeGeneratorOptions& generator_opts,
-                                      StringView config, StringView target_name) {
+s32 build_cmake_project(StringView cmake_lists_folder,
+                        const CMakeGeneratorOptions& generator_opts, StringView config,
+                        StringView target_name) {
     PLY_ASSERT(generator_opts.generator);
     PLY_ASSERT(config);
     String build_folder = Path.join(cmake_lists_folder, "build");
@@ -147,8 +147,7 @@ general, how to
 }
 */
 
-PLY_NO_INLINE bool BuildFolder_t::build(StringView config,
-                                        StringView target_name) const {
+bool BuildFolder_t::build(StringView config, StringView target_name) const {
     // Note: Should we check that target_name actually exists in the build folder before
     // invoking CMake? If target_name isn't a root target, this would require us to
     // instaniate all dependencies first.

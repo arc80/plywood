@@ -14,17 +14,17 @@ namespace fmt {
 
 template <>
 struct TypePrinter<Float2> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, const Float2& v);
+    static void print(OutStream* outs, const Float2& v);
 };
 
 template <>
 struct TypePrinter<Float3> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, const Float3& v);
+    static void print(OutStream* outs, const Float3& v);
 };
 
 template <>
 struct TypePrinter<Float4> {
-    static PLY_DLL_ENTRY void print(OutStream* outs, const Float4& v);
+    static void print(OutStream* outs, const Float4& v);
 };
 
 } // namespace fmt

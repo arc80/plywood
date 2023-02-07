@@ -16,9 +16,9 @@ union Storage_ {
     TypeID type_id;
     TypeParam type_param;
     Ellipsis ellipsis;
-    PLY_INLINE Storage_() {
+    Storage_() {
     }
-    PLY_INLINE ~Storage_() {
+    ~Storage_() {
     }
 };
 SWITCH_FOOTER(DeclSpecifier, Keyword)

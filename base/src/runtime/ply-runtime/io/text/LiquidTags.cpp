@@ -9,8 +9,8 @@
 
 namespace ply {
 
-PLY_NO_INLINE void extract_liquid_tags(OutStream& out, ViewInStream& vin,
-                                       Func<void(StringView, StringView)> tag_handler) {
+void extract_liquid_tags(OutStream& out, ViewInStream& vin,
+                         Func<void(StringView, StringView)> tag_handler) {
     // advance_byte consumes the current byte from the InStream and returns true if
     // there is another byte available. Note that the return value is the same as
     // vin.is_valid(), so you can ignore it and just test vin.is_valid() later.

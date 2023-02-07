@@ -32,14 +32,14 @@ struct PPVisitedFiles {
         };
         bool takes_args = false;
 
-        PLY_INLINE MacroExpansion() : from_file{1}, file_idx{0} {
+        MacroExpansion() : from_file{1}, file_idx{0} {
             new (&this->range) decltype(this->range);
         }
         void destruct();
-        PLY_INLINE ~MacroExpansion() {
+        ~MacroExpansion() {
             this->destruct();
         }
-        PLY_INLINE void set_string(StringView value) {
+        void set_string(StringView value) {
             destruct();
             this->from_file = 0;
             this->file_idx = 0;
@@ -53,7 +53,7 @@ struct PPVisitedFiles {
         u32 file_or_exp_idx : 31;
         s32 parent_idx = -1;
 
-        PLY_INLINE IncludeChain() : is_macro_expansion{0}, file_or_exp_idx{0} {
+        IncludeChain() : is_macro_expansion{0}, file_or_exp_idx{0} {
         }
     };
     Array<IncludeChain> include_chains;
@@ -66,15 +66,15 @@ struct PPVisitedFiles {
         };
         using Index = LinearLocation;
         static constexpr u32 NodeCapacity = 8;
-        static PLY_INLINE Index get_index(const Item& item) {
+        static Index get_index(const Item& item) {
             return item.linear_loc;
         }
-        static PLY_INLINE bool less(Index a, Index b) {
+        static bool less(Index a, Index b) {
             return a < b;
         }
-        static PLY_INLINE void on_item_moved(const Item, void*) {
+        static void on_item_moved(const Item, void*) {
         }
-        static PLY_INLINE bool match(const Item& a, const Item& b) {
+        static bool match(const Item& a, const Item& b) {
             return a.linear_loc == b.linear_loc;
         }
     };

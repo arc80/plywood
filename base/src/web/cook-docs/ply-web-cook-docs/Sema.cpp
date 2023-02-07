@@ -34,9 +34,9 @@ String temp_extract_initializer(const PPVisitedFiles* visited_files,
     PLY_ASSERT(start_loc >= start_iter.get_item().linear_loc);
     PLY_ASSERT(end_loc >= end_iter.get_item().linear_loc);
     u32 start_pos = check_cast<u32>(start_iter.get_item().offset +
-                                     (start_loc - start_iter.get_item().linear_loc));
+                                    (start_loc - start_iter.get_item().linear_loc));
     u32 end_pos = check_cast<u32>(end_iter.get_item().offset +
-                                   (end_loc - end_iter.get_item().linear_loc));
+                                  (end_loc - end_iter.get_item().linear_loc));
     return src_file->contents.sub_str(start_pos, end_pos - start_pos);
 }
 
@@ -44,8 +44,7 @@ struct SemaConverter {
     const PPVisitedFiles* visited_files = nullptr;
     bool any_error = false;
 
-    PLY_NO_INLINE sema::TemplateArg
-    to_sema(const grammar::TemplateArgumentWithComma& g_arg) {
+    sema::TemplateArg to_sema(const grammar::TemplateArgumentWithComma& g_arg) {
         sema::TemplateArg s_arg;
         if (auto g_type_id = g_arg.type.type_id()) {
             auto s_type_id = s_arg.type.type_id().switch_to();
@@ -64,7 +63,7 @@ struct SemaConverter {
         return s_arg;
     }
 
-    PLY_NO_INLINE sema::QualifiedID to_sema(const grammar::QualifiedID& g_qid) {
+    sema::QualifiedID to_sema(const grammar::QualifiedID& g_qid) {
         sema::QualifiedID s_qid;
         for (const grammar::NestedNameComponent& g_nested_comp : g_qid.nested_name) {
             if (auto g_ident_or_templ = g_nested_comp.type.identifier_or_templated()) {
@@ -126,7 +125,7 @@ struct SemaConverter {
         return s_qid;
     }
 
-    PLY_NO_INLINE Array<sema::DeclSpecifier>
+    Array<sema::DeclSpecifier>
     to_sema(ArrayView<const Owned<grammar::DeclSpecifier>> g_decl_specifier_seq) {
         Array<sema::DeclSpecifier> s_decl_specs;
         for (const grammar::DeclSpecifier* g_decl_spec : g_decl_specifier_seq) {
@@ -148,8 +147,7 @@ struct SemaConverter {
         return s_decl_specs;
     }
 
-    PLY_NO_INLINE sema::SingleDeclaration
-    to_sema(const grammar::ParamDeclarationWithComma& g_param) {
+    sema::SingleDeclaration to_sema(const grammar::ParamDeclarationWithComma& g_param) {
         sema::SingleDeclaration s_single;
         s_single.decl_specifier_seq = this->to_sema(g_param.decl_specifier_seq);
         s_single.dcor = this->to_sema(g_param.dcor);
@@ -173,7 +171,7 @@ struct SemaConverter {
         return s_single;
     }
 
-    PLY_NO_INLINE Owned<sema::DeclaratorProduction>
+    Owned<sema::DeclaratorProduction>
     to_sema(const grammar::DeclaratorProduction* g_dcor) {
         if (!g_dcor)
             return nullptr;
@@ -207,11 +205,11 @@ struct SemaConverter {
         return s_prod;
     }
 
-    PLY_NO_INLINE sema::Declarator to_sema(const grammar::Declarator& g_dcor) {
+    sema::Declarator to_sema(const grammar::Declarator& g_dcor) {
         return {this->to_sema(g_dcor.prod), this->to_sema(g_dcor.qid)};
     }
 
-    PLY_NO_INLINE Array<sema::SingleDeclaration>
+    Array<sema::SingleDeclaration>
     to_sema(const grammar::Declaration::Simple& g_simple) {
         Array<sema::SingleDeclaration> s_singles;
         for (const grammar::InitDeclaratorWithComma& g_init_dcor :

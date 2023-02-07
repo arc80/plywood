@@ -6,9 +6,9 @@
 union Storage_ {
     IdentifierOrTemplated identifier_or_templated;
     DeclType decl_type;
-    PLY_INLINE Storage_() {
+    Storage_() {
     }
-    PLY_INLINE ~Storage_() {
+    ~Storage_() {
     }
 };
 SWITCH_FOOTER(Type, IdentifierOrTemplated)

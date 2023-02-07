@@ -23,9 +23,9 @@ private:
     void run_watcher();
 
 public:
-    PLY_DLL_ENTRY DirectoryWatcher_Mac();
-    PLY_DLL_ENTRY void start(StringView root, Func<Callback>&& callback);
-    PLY_INLINE DirectoryWatcher_Mac(StringView root, Func<Callback>&& callback)
+    DirectoryWatcher_Mac();
+    void start(StringView root, Func<Callback>&& callback);
+    DirectoryWatcher_Mac(StringView root, Func<Callback>&& callback)
         : DirectoryWatcher_Mac{} {
         start(root, std::move(callback));
     }

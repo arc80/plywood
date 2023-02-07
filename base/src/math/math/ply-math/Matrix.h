@@ -37,13 +37,13 @@ struct Float2x2 {
     \category Constructors
     Constructs an uninitialized `Float2x2`.
     */
-    PLY_INLINE Float2x2() = default;
+    Float2x2() = default;
     /*!
     Constructs a 2x2 matrix from the given column vectors.
 
         Float2x2 m = {{1, 0}, {0, 1}};
     */
-    PLY_INLINE Float2x2(const Float2& col0, const Float2& col1) : col{col0, col1} {
+    Float2x2(const Float2& col0, const Float2& col1) : col{col0, col1} {
     }
     /*!
     \category Element Access
@@ -54,11 +54,11 @@ struct Float2x2 {
         m[0].x = -1;
         Console::out() << m[1];  // "{0, 1}"
     */
-    PLY_INLINE Float2& operator[](ureg i) {
+    Float2& operator[](ureg i) {
         PLY_ASSERT(i < 2);
         return col[i];
     }
-    PLY_INLINE const Float2& operator[](ureg i) const {
+    const Float2& operator[](ureg i) const {
         PLY_ASSERT(i < 2);
         return col[i];
     }
@@ -106,7 +106,7 @@ In particular, a component with a value of `0.f` is equal to a component with a 
 `-0.f`.
 */
 bool operator==(const Float2x2& a, const Float2x2& b);
-PLY_INLINE bool operator!=(const Float2x2& a, const Float2x2& b) {
+inline bool operator!=(const Float2x2& a, const Float2x2& b) {
     return !(a == b);
 }
 /*!
@@ -142,13 +142,13 @@ struct Float3x3 {
     \category Constructors
     Constructs an uninitialized `Float3x3`.
     */
-    PLY_INLINE Float3x3() = default;
+    Float3x3() = default;
     /*!
     Constructs a 3x3 matrix from the given column vectors.
 
         Float3x3 m = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
     */
-    PLY_INLINE Float3x3(const Float3& col0, const Float3& col1, const Float3& col2)
+    Float3x3(const Float3& col0, const Float3& col1, const Float3& col2)
         : col{col0, col1, col2} {
     }
     /*!
@@ -160,11 +160,11 @@ struct Float3x3 {
         m[0].x = -1;
         Console::out() << m[2];  // "{0, 0, 1}"
     */
-    PLY_INLINE Float3& operator[](ureg i) {
+    Float3& operator[](ureg i) {
         PLY_ASSERT(i < 3);
         return col[i];
     }
-    PLY_INLINE const Float3& operator[](ureg i) const {
+    const Float3& operator[](ureg i) const {
         PLY_ASSERT(i < 3);
         return col[i];
     }
@@ -213,7 +213,7 @@ In particular, a component with a value of `0.f` is equal to a component with a 
 `-0.f`.
 */
 bool operator==(const Float3x3& a, const Float3x3& b);
-PLY_INLINE bool operator!=(const Float3x3& a, const Float3x3& b) {
+inline bool operator!=(const Float3x3& a, const Float3x3& b) {
     return !(a == b);
 }
 /*!
@@ -252,14 +252,14 @@ struct Float3x4 {
     \category Constructors
     Constructs an uninitialized `Float3x4`.
     */
-    PLY_INLINE Float3x4() = default;
+    Float3x4() = default;
     /*!
     Constructs a 3x4 matrix from the given column vectors.
 
         Float3x3 m = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}};
     */
-    PLY_INLINE Float3x4(const Float3& col0, const Float3& col1, const Float3& col2,
-                        const Float3& col3)
+    Float3x4(const Float3& col0, const Float3& col1, const Float3& col2,
+             const Float3& col3)
         : col{col0, col1, col2, col3} {
     }
     /*!
@@ -355,7 +355,7 @@ In particular, a component with a value of `0.f` is equal to a component with a 
 `-0.f`.
 */
 bool operator==(const Float3x4& a, const Float3x4& b);
-PLY_INLINE bool operator!=(const Float3x4& a, const Float3x4& b) {
+inline bool operator!=(const Float3x4& a, const Float3x4& b) {
     return !(a == b);
 }
 /*!
@@ -384,7 +384,7 @@ as the implicit fourth row.
 */
 Float3x4 operator*(const Float3x4& a, const Float3x4& b);
 
-PLY_INLINE static Quaternion from_ortho(const Float3x4& m) {
+inline static Quaternion from_ortho(const Float3x4& m) {
     return Quaternion::from_ortho(m.as_float3x3());
 }
 
@@ -486,7 +486,7 @@ struct Float4x4 {
     /*!
     Returns a matrix that performs the same transformation as `qp`.
     */
-    static PLY_INLINE Float4x4 from_quat_pos(const QuatPos& qp);
+    static Float4x4 from_quat_pos(const QuatPos& qp);
     /*!
     \begin_group
     Returns a perspective projection matrix that maps a 3D frustum to OpenGL clip space
@@ -547,7 +547,7 @@ In particular, a component with a value of `0.f` is equal to a component with a 
 `-0.f`.
 */
 bool operator==(const Float4x4& a, const Float4x4& b);
-PLY_INLINE bool operator!=(const Float4x4& a, const Float4x4& b) {
+inline bool operator!=(const Float4x4& a, const Float4x4& b) {
     return !(a == b);
 }
 /*!

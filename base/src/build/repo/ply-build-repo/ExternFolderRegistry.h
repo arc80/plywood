@@ -26,7 +26,7 @@ struct ExternFolderRegistry {
 
     static Owned<ExternFolderRegistry> instance_;
     static Owned<ExternFolderRegistry> create();
-    static PLY_INLINE ExternFolderRegistry* get() {
+    static ExternFolderRegistry* get() {
         PLY_ASSERT(instance_);
         return instance_;
     }

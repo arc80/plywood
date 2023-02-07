@@ -48,7 +48,7 @@ struct ParseSupervisor {
         return false;
     }
 
-    PLY_INLINE void do_enter(AnyObject node) {
+    void do_enter(AnyObject node) {
         this->scope_stack.append(node);
         this->enter(node);
     }
@@ -120,10 +120,9 @@ struct ParseError : BaseError {
     Token preceding_token;                        // Only used by some error types
     // ply reflect off
 
-    PLY_INLINE ParseError() = default;
-    PLY_INLINE ParseError(Type type, Token error_token,
-                          ExpectedToken expected = ExpectedToken::None,
-                          Token preceding_token = {})
+    ParseError() = default;
+    ParseError(Type type, Token error_token,
+               ExpectedToken expected = ExpectedToken::None, Token preceding_token = {})
         : type{type}, error_token{error_token}, expected{expected},
           preceding_token{preceding_token} {
     }
@@ -157,7 +156,7 @@ struct Parser {
     bool mute_errors = false;
     u32 outer_accept_flags = 0;
 
-    PLY_INLINE void stop_muting_errors() {
+    void stop_muting_errors() {
         this->mute_errors = false;
     }
 

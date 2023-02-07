@@ -153,16 +153,16 @@ struct QualifiedID {
     UnqualifiedID unqual;
     // ply reflect off
 
-    PLY_INLINE bool is_empty() const {
+    bool is_empty() const {
         return this->nested_name.is_empty() && this->unqual.empty();
     }
-    PLY_INLINE bool is_nested_name_only() const {
+    bool is_nested_name_only() const {
         return !this->nested_name.is_empty() && this->unqual.empty();
     }
-    PLY_INLINE bool is_complete() const {
+    bool is_complete() const {
         return !this->unqual.empty();
     }
-    PLY_INLINE StringView get_class_name() const {
+    StringView get_class_name() const {
         if (auto ident = this->unqual.identifier()) {
             return ident->name.identifier;
         } else if (auto template_id = this->unqual.template_id()) {
@@ -406,7 +406,7 @@ struct Declarator {
     QualifiedID qid;
     // ply reflect off
 
-    PLY_INLINE bool is_function() const {
+    bool is_function() const {
         return (this->prod && this->prod->type.function());
     };
 };

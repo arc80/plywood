@@ -477,7 +477,7 @@ FnResult custom_block_inside_config_list(ConfigListInterpreter* cli,
     return Fn_OK;
 }
 
-PLY_NO_INLINE void instantiate_all_configs(BuildFolder_t* build_folder) {
+void instantiate_all_configs(BuildFolder_t* build_folder) {
     TargetInstantiator mi{};
     Project.name = build_folder->solution_name;
     init_toolchain_msvc();

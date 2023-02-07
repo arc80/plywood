@@ -14,8 +14,8 @@ namespace web {
 struct SourceCode {
     String root_dir;
 
-    PLY_NO_INLINE static void serve(const SourceCode* params, StringView request_path,
-                                    ResponseIface* response_iface);
+    static void serve(const SourceCode* params, StringView request_path,
+                      ResponseIface* response_iface);
 };
 
 } // namespace web

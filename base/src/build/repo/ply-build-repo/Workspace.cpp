@@ -15,7 +15,7 @@ namespace ply {
 
 Workspace_t Workspace;
 
-PLY_NO_INLINE void Workspace_t::load() {
+void Workspace_t::load() {
     this->path = FileSystem.get_working_directory();
     static const StringView file_name = "workspace-settings.pylon";
     String settings_path;
@@ -53,7 +53,7 @@ PLY_NO_INLINE void Workspace_t::load() {
     }
 }
 
-PLY_NO_INLINE bool Workspace_t::save() const {
+bool Workspace_t::save() const {
     static const StringView file_name = "workspace-settings.pylon";
     auto a_root = pylon::export_obj(AnyObject::bind(this));
     String contents = pylon::to_string(a_root);
@@ -66,7 +66,7 @@ PLY_NO_INLINE bool Workspace_t::save() const {
     return true;
 }
 
-PLY_NO_INLINE TextFormat Workspace_t::get_source_text_format() const {
+TextFormat Workspace_t::get_source_text_format() const {
     TextFormat tff = TextFormat::default_utf8();
     if (this->source_new_lines == "crlf") {
         tff.new_line = TextFormat::NewLine::CRLF;

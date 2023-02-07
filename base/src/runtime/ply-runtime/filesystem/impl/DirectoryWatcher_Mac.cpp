@@ -13,11 +13,10 @@
 
 namespace ply {
 
-PLY_NO_INLINE void my_callback(ConstFSEventStreamRef stream_ref,
-                               void* client_call_back_info, size_t num_events,
-                               void* event_paths,
-                               const FSEventStreamEventFlags event_flags[],
-                               const FSEventStreamEventId event_ids[]) {
+void my_callback(ConstFSEventStreamRef stream_ref, void* client_call_back_info,
+                 size_t num_events, void* event_paths,
+                 const FSEventStreamEventFlags event_flags[],
+                 const FSEventStreamEventId event_ids[]) {
     DirectoryWatcher_Mac* watcher = (DirectoryWatcher_Mac*) client_call_back_info;
     char** paths = (char**) event_paths;
     for (int i = 0; i < num_events; i++) {
@@ -41,7 +40,7 @@ PLY_NO_INLINE void my_callback(ConstFSEventStreamRef stream_ref,
     }
 }
 
-PLY_NO_INLINE void DirectoryWatcher_Mac::run_watcher() {
+void DirectoryWatcher_Mac::run_watcher() {
     CFStringRef root_path =
         CFStringCreateWithCString(NULL, m_root.bytes, kCFStringEncodingASCII);
     CFArrayRef paths_to_watch = CFArrayCreate(NULL, (const void**) &root_path, 1, NULL);
@@ -74,11 +73,10 @@ PLY_NO_INLINE void DirectoryWatcher_Mac::run_watcher() {
     FSEventStreamRelease(stream);
 }
 
-PLY_NO_INLINE DirectoryWatcher_Mac::DirectoryWatcher_Mac() {
+DirectoryWatcher_Mac::DirectoryWatcher_Mac() {
 }
 
-PLY_NO_INLINE void DirectoryWatcher_Mac::start(StringView root,
-                                               Func<Callback>&& callback) {
+void DirectoryWatcher_Mac::start(StringView root, Func<Callback>&& callback) {
     PLY_ASSERT(m_root.is_empty());
     PLY_ASSERT(!m_callback);
     PLY_ASSERT(!m_watcherThread.is_valid());

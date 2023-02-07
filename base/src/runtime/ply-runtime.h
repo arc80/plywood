@@ -34,19 +34,19 @@ private:
     u64 s[2];
 
 public:
-    PLY_DLL_ENTRY Random();
-    PLY_DLL_ENTRY Random(u64 seed); // Explicit seed
-    PLY_DLL_ENTRY u64 next64();
-    PLY_INLINE u32 next32() {
+    Random();
+    Random(u64 seed); // Explicit seed
+    u64 next64();
+    u32 next32() {
         return (u32) next64();
     }
-    PLY_INLINE u16 next16() {
+    u16 next16() {
         return (u16) next64();
     }
-    PLY_INLINE u8 next8() {
+    u8 next8() {
         return (u8) next64();
     }
-    PLY_INLINE float next_float() {
+    float next_float() {
         return next32() / 4294967295.f;
     }
 };
@@ -61,7 +61,7 @@ struct CPUTimer {
     struct Duration {
         using Ticks = std::chrono::high_resolution_clock::duration;
         Ticks ticks;
-        PLY_INLINE operator s64() const {
+        operator s64() const {
             return s64(ticks.count());
         }
     };
@@ -69,41 +69,41 @@ struct CPUTimer {
     struct Point {
         using Tick = std::chrono::high_resolution_clock::time_point;
         Tick tick;
-        PLY_INLINE Point(s64 v = 0) : tick{Duration::Ticks{v}} {
+        Point(s64 v = 0) : tick{Duration::Ticks{v}} {
         }
-        PLY_INLINE Point(const Tick& tick) : tick{tick} {
+        Point(const Tick& tick) : tick{tick} {
         }
-        PLY_INLINE Point operator+(Duration d) const {
+        Point operator+(Duration d) const {
             return {tick + d.ticks};
         }
-        PLY_INLINE Duration operator-(Point b) const {
+        Duration operator-(Point b) const {
             return {tick - b.tick};
         }
-        PLY_INLINE bool operator<(Point b) const {
+        bool operator<(Point b) const {
             return tick < b.tick;
         }
-        PLY_INLINE bool operator<=(Point b) const {
+        bool operator<=(Point b) const {
             return tick <= b.tick;
         }
-        PLY_INLINE bool operator>(Point b) const {
+        bool operator>(Point b) const {
             return tick > b.tick;
         }
-        PLY_INLINE bool operator>=(Point b) const {
+        bool operator>=(Point b) const {
             return tick >= b.tick;
         }
-        PLY_INLINE bool operator==(Point b) const {
+        bool operator==(Point b) const {
             return tick == b.tick;
         }
     };
 
-    PLY_INLINE static Point get() {
+    static Point get() {
         return {std::chrono::high_resolution_clock::now()};
     }
 
     struct Converter {
-        PLY_INLINE Converter() {
+        Converter() {
         }
-        static PLY_INLINE float to_seconds(Duration duration) {
+        static float to_seconds(Duration duration) {
             return std::chrono::duration_cast<std::chrono::duration<float>>(
                        duration.ticks)
                 .count();
@@ -134,11 +134,11 @@ struct DateTime {
     u32 microseconds = 0;
 
     // Number of microseconds since January 1, 1970 at 00:00:00 UTC.
-    static PLY_DLL_ENTRY s64 get_current_epoch_microseconds();
+    static s64 get_current_epoch_microseconds();
 
     // Conversion
-    static PLY_DLL_ENTRY DateTime from_epoch_microseconds(s64 us);
-    PLY_DLL_ENTRY s64 to_epoch_microseconds() const;
+    static DateTime from_epoch_microseconds(s64 us);
+    s64 to_epoch_microseconds() const;
 };
 
 //  ▄▄▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄
@@ -249,7 +249,7 @@ private:
     AffinityMask m_physicalCoreMasks[MaxHWThreads];
 
 public:
-    PLY_DLL_ENTRY Affinity();
+    Affinity();
 
     bool is_accurate() const {
         return m_isAccurate;
@@ -268,7 +268,7 @@ public:
         return static_cast<u32>(count_set_bits(m_physicalCoreMasks[core]));
     }
 
-    PLY_DLL_ENTRY bool set_affinity(ureg core, ureg hw_thread);
+    bool set_affinity(ureg core, ureg hw_thread);
 };
 
 #elif PLY_KERNEL_LINUX
@@ -1217,33 +1217,33 @@ public:
     typedef void* ReturnType;
     typedef void* (*StartRoutine)(void*);
 
-    PLY_INLINE Thread() = default;
+    Thread() = default;
 
     template <typename Callable>
-    PLY_INLINE Thread(Callable&& callable) : thread{std::forward<Callable>(callable)} {
+    Thread(Callable&& callable) : thread{std::forward<Callable>(callable)} {
     }
 
-    PLY_INLINE ~Thread() {
+    ~Thread() {
         if (this->thread.joinable())
             this->thread.detach();
     }
 
-    PLY_INLINE bool is_valid() const {
+    bool is_valid() const {
         return this->thread.joinable();
     }
 
-    PLY_INLINE void join() {
+    void join() {
         this->thread.join();
     }
 
     template <typename Callable>
-    PLY_INLINE void run(Callable&& callable) {
+    void run(Callable&& callable) {
         if (this->thread.joinable())
             this->thread.detach();
         this->thread = std::thread(std::forward<Callable>(callable));
     }
 
-    static PLY_INLINE void sleep_millis(ureg millis) {
+    static void sleep_millis(ureg millis) {
         std::this_thread::sleep_for(std::chrono::milliseconds(millis));
     }
 };
@@ -1262,13 +1262,13 @@ private:
     T old_value;
 
 public:
-    PLY_INLINE ThreadLocalScope(TL<T>* var, T new_value) : var{var} {
+    ThreadLocalScope(TL<T>* var, T new_value) : var{var} {
         this->old_value = var->load();
         var->store(new_value);
     }
 
     ThreadLocalScope(const ThreadLocalScope&) = delete;
-    PLY_INLINE ThreadLocalScope(ThreadLocalScope&& other) {
+    ThreadLocalScope(ThreadLocalScope&& other) {
         this->var = other->var;
         this->old_value = std::move(other.old_value);
         other->var = nullptr;
@@ -1292,21 +1292,21 @@ private:
     DWORD m_tlsIndex;
 
 public:
-    PLY_INLINE ThreadLocal() {
+    ThreadLocal() {
         m_tlsIndex = TlsAlloc();
         PLY_ASSERT(m_tlsIndex != TLS_OUT_OF_INDEXES);
     }
 
     ThreadLocal(const ThreadLocal&) = delete;
 
-    PLY_INLINE ~ThreadLocal() {
+    ~ThreadLocal() {
         BOOL rc = TlsFree(m_tlsIndex);
         PLY_ASSERT(rc != 0);
         PLY_UNUSED(rc);
     }
 
     template <typename U = T, std::enable_if_t<std::is_pointer<U>::value, int> = 0>
-    PLY_INLINE U load() const {
+    U load() const {
         LPVOID value = TlsGetValue(m_tlsIndex);
         PLY_ASSERT(value != 0 || GetLastError() == ERROR_SUCCESS);
         return (T) value;
@@ -1315,13 +1315,13 @@ public:
     template <
         typename U = T,
         std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
-    PLY_INLINE U load() const {
+    U load() const {
         LPVOID value = TlsGetValue(m_tlsIndex);
         PLY_ASSERT(value != 0 || GetLastError() == ERROR_SUCCESS);
         return (T) (uptr) value;
     }
 
-    PLY_INLINE void store(T value) {
+    void store(T value) {
         BOOL rc = TlsSetValue(m_tlsIndex, (LPVOID) value);
         PLY_ASSERT(rc != 0);
         PLY_UNUSED(rc);
@@ -1329,7 +1329,7 @@ public:
 
     // In C++11, you can write auto scope = my_tlvar.set_in_scope(value);
     using Scope = ThreadLocalScope<ThreadLocal, T>;
-    PLY_INLINE Scope set_in_scope(T value) {
+    Scope set_in_scope(T value) {
         return {this, value};
     }
 };
@@ -1345,7 +1345,7 @@ private:
     pthread_key_t m_tlsKey;
 
 public:
-    PLY_INLINE ThreadLocal() {
+    ThreadLocal() {
         int rc = pthread_key_create(&m_tlsKey, NULL);
         PLY_ASSERT(rc == 0);
         PLY_UNUSED(rc);
@@ -1353,14 +1353,14 @@ public:
 
     ThreadLocal(const ThreadLocal&) = delete;
 
-    PLY_INLINE ~ThreadLocal() {
+    ~ThreadLocal() {
         int rc = pthread_key_delete(m_tlsKey);
         PLY_ASSERT(rc == 0);
         PLY_UNUSED(rc);
     }
 
     template <typename U = T, std::enable_if_t<std::is_pointer<U>::value, int> = 0>
-    PLY_INLINE U load() const {
+    U load() const {
         void* value = pthread_getspecific(m_tlsKey);
         return (T) value;
     }
@@ -1368,7 +1368,7 @@ public:
     template <
         typename U = T,
         std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
-    PLY_INLINE U load() const {
+    U load() const {
         void* value = pthread_getspecific(m_tlsKey);
         return (T) (uptr) value;
     }
@@ -1376,7 +1376,7 @@ public:
     template <
         typename U = T,
         std::enable_if_t<std::is_enum<U>::value || std::is_integral<U>::value, int> = 0>
-    PLY_INLINE void store(U value) {
+    void store(U value) {
         int rc = pthread_setspecific(m_tlsKey, (void*) (uptr) value);
         PLY_ASSERT(rc == 0);
         PLY_UNUSED(rc);
@@ -1384,7 +1384,7 @@ public:
 
     // In C++11, you can write auto scope = my_tlvar.set_in_scope(value);
     using Scope = ThreadLocalScope<ThreadLocal, T>;
-    PLY_INLINE Scope set_in_scope(T value) {
+    Scope set_in_scope(T value) {
         return {this, value};
     }
 };
@@ -2131,7 +2131,7 @@ PLY_MAKE_WELL_FORMEDNESS_CHECK_2(IsComparable,
 PLY_MAKE_WELL_FORMEDNESS_CHECK_2(IsCallable, std::declval<T0>()(std::declval<T1>()));
 
 template <typename T, typename U, std::enable_if_t<IsComparable<T, U>, int> = 0>
-PLY_INLINE s32 find(ArrayView<const T> arr, const U& item) {
+s32 find(ArrayView<const T> arr, const U& item) {
     for (u32 i = 0; i < arr.num_items; i++) {
         if (arr[i] == item)
             return i;
@@ -2141,7 +2141,7 @@ PLY_INLINE s32 find(ArrayView<const T> arr, const U& item) {
 
 template <typename T, typename Callback,
           std::enable_if_t<IsCallable<Callback, T>, int> = 0>
-PLY_INLINE s32 find(ArrayView<const T> arr, const Callback& callback) {
+s32 find(ArrayView<const T> arr, const Callback& callback) {
     for (u32 i = 0; i < arr.num_items; i++) {
         if (callback(arr[i]))
             return i;
@@ -2150,12 +2150,12 @@ PLY_INLINE s32 find(ArrayView<const T> arr, const Callback& callback) {
 }
 
 template <typename Arr, typename Arg, typename T = impl::ArrayViewType<Arr>>
-PLY_INLINE s32 find(const Arr& arr, const Arg& arg) {
+s32 find(const Arr& arr, const Arg& arg) {
     return find(ArrayView<const T>{arr}, arg);
 }
 
 template <typename T, typename U, std::enable_if_t<IsComparable<T, U>, int> = 0>
-PLY_INLINE s32 rfind(ArrayView<const T> arr, const U& item) {
+s32 rfind(ArrayView<const T> arr, const U& item) {
     for (s32 i = check_cast<s32>(arr.num_items - 1); i >= 0; i--) {
         if (arr[i] == item)
             return i;
@@ -2165,7 +2165,7 @@ PLY_INLINE s32 rfind(ArrayView<const T> arr, const U& item) {
 
 template <typename T, typename Callback,
           std::enable_if_t<IsCallable<Callback, T>, int> = 0>
-PLY_INLINE s32 rfind(ArrayView<const T> arr, const Callback& callback) {
+s32 rfind(ArrayView<const T> arr, const Callback& callback) {
     for (s32 i = check_cast<s32>(arr.num_items - 1); i >= 0; i--) {
         if (callback(arr[i]))
             return i;
@@ -2174,7 +2174,7 @@ PLY_INLINE s32 rfind(ArrayView<const T> arr, const Callback& callback) {
 }
 
 template <typename Arr, typename Arg, typename T = impl::ArrayViewType<Arr>>
-PLY_INLINE s32 rfind(const Arr& arr, const Arg& arg) {
+s32 rfind(const Arr& arr, const Arg& arg) {
     return rfind(ArrayView<const T>{arr}, arg);
 }
 
@@ -2199,14 +2199,13 @@ Array<MappedItemType> map(Iterable&& iterable, MapFunc&& map_func) {
 // ┗━━━━━━━━┛
 namespace impl {
 template <typename T>
-PLY_INLINE bool default_less(const T& a, const T& b) {
+bool default_less(const T& a, const T& b) {
     return a < b;
 }
 } // namespace impl
 
 template <typename T, typename IsLess = decltype(impl::default_less<T>)>
-PLY_NO_INLINE void sort(ArrayView<T> view,
-                        const IsLess& is_less = impl::default_less<T>) {
+void sort(ArrayView<T> view, const IsLess& is_less = impl::default_less<T>) {
     if (view.num_items <= 1)
         return;
     u32 lo = 0;
@@ -2260,8 +2259,8 @@ PLY_NO_INLINE void sort(ArrayView<T> view,
 
 template <typename Arr,
           typename IsLess = decltype(impl::default_less<impl::ArrayViewType<Arr>>)>
-PLY_INLINE void
-sort(Arr& arr, const IsLess& is_less = impl::default_less<impl::ArrayViewType<Arr>>) {
+void sort(Arr& arr,
+          const IsLess& is_less = impl::default_less<impl::ArrayViewType<Arr>>) {
     using T = impl::ArrayViewType<Arr>;
     sort(ArrayView<T>{arr}, is_less);
 }

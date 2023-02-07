@@ -34,21 +34,21 @@ struct Float2 {
     \category Constructors
     Constructs an uninitialized `Float2`.
     */
-    PLY_INLINE Float2() = default;
+    Float2() = default;
     /*!
     Constructs a `Float2` with both components set to `t`.
 
         Float2 v = {1};
         Console::out() << v;  // "{1, 1}"
     */
-    PLY_INLINE Float2(float t) : x{t}, y{t} {
+    Float2(float t) : x{t}, y{t} {
     }
     /*!
     Constructs a `Float2` from the given components.
 
         Float2 v = {1, 0};
     */
-    PLY_INLINE Float2(float x, float y) : x{x}, y{y} {
+    Float2(float x, float y) : x{x}, y{y} {
     }
     /*!
     \category Assignment
@@ -58,7 +58,7 @@ struct Float2 {
 
         a.normalized() = b;  // error
     */
-    PLY_INLINE void operator=(const Float2& arg) & {
+    void operator=(const Float2& arg) & {
         x = arg.x;
         y = arg.y;
     }
@@ -69,20 +69,20 @@ struct Float2 {
     \category Length Functions
     Returns the square of the length of the vector.
     */
-    PLY_INLINE float length2() const {
+    float length2() const {
         return x * x + y * y;
     }
     /*!
     Returns the length of the vector. Equivalent to `sqrtf(this->length2())`.
     */
-    PLY_INLINE float length() const {
+    float length() const {
         return sqrtf(length2());
     }
     /*!
     Returns `true` if the squared length of the vector is sufficiently close to 1.0. The
     threshold is given by `thresh`.
     */
-    PLY_INLINE bool is_unit(float thresh = 0.001f) const {
+    bool is_unit(float thresh = 0.001f) const {
         return fabsf(1.f - length2()) < thresh;
     }
     /*!
@@ -103,7 +103,7 @@ struct Float2 {
         IntVec2 b = a.to<IntVec2>();
     */
     template <typename OtherVec2>
-    PLY_INLINE OtherVec2 to() const {
+    OtherVec2 to() const {
         using T = decltype(OtherVec2::x);
         PLY_STATIC_ASSERT(sizeof(OtherVec2) == sizeof(T) * 2);
         return {(T) x, (T) y};
@@ -117,16 +117,16 @@ struct Float2 {
         Float4 c = {1.0f, 0.8f};
         Console.out().format("{}, {}", c.r(), c.g());  // "1.0, 0.8"
     */
-    PLY_INLINE float& r() {
+    float& r() {
         return x;
     }
-    PLY_INLINE float r() const {
+    float r() const {
         return x;
     }
-    PLY_INLINE float& g() {
+    float& g() {
         return y;
     }
-    PLY_INLINE float g() const {
+    float g() const {
         return y;
     }
     /*!
@@ -148,9 +148,9 @@ struct Float2 {
     These functions work correctly in the current version of all major compilers even
     though they use type punning, which is undefined behavior in standard C++.
     */
-    PLY_INLINE PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
-    PLY_INLINE PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
-    PLY_INLINE PLY_NO_DISCARD Float4 swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const;
+    PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
+    PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
+    PLY_NO_DISCARD Float4 swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const;
     /*!
     \end_group
     */
@@ -161,7 +161,7 @@ struct Float2 {
 \category Arithmetic Operators
 Unary negation.
 */
-PLY_INLINE Float2 operator-(const Float2& a) {
+inline Float2 operator-(const Float2& a) {
     return {-a.x, -a.y};
 }
 /*!
@@ -177,22 +177,22 @@ by replicating the value to each component.
     Console::out() << Float2{2, 3} * 2;  // "{4, 6}"
     Console::out() << 8 / Float2{2, 4};  // "{4, 2}"
 */
-PLY_INLINE Float2 operator+(const Float2& a, const Float2& b) {
+inline Float2 operator+(const Float2& a, const Float2& b) {
     return {a.x + b.x, a.y + b.y};
 }
-PLY_INLINE Float2 operator-(const Float2& a, const Float2& b) {
+inline Float2 operator-(const Float2& a, const Float2& b) {
     return {a.x - b.x, a.y - b.y};
 }
-PLY_INLINE Float2 operator*(const Float2& a, const Float2& b) {
+inline Float2 operator*(const Float2& a, const Float2& b) {
     return {a.x * b.x, a.y * b.y};
 }
-PLY_INLINE Float2 operator/(const Float2& a, const Float2& b) {
+inline Float2 operator/(const Float2& a, const Float2& b) {
     return {a.x / b.x, a.y / b.y};
 }
 /*!
 \end_group
 */
-PLY_INLINE Float2 operator/(const Float2& a, float b) {
+inline Float2 operator/(const Float2& a, float b) {
     float oob = 1.f / b;
     return {a.x * oob, a.y * oob};
 }
@@ -204,26 +204,26 @@ In-place versions of the above operators.
     v *= {4, 1};
     Console::out() << v;  // "{8, 3}"
 */
-PLY_INLINE void operator+=(Float2& a, const Float2& b) {
+inline void operator+=(Float2& a, const Float2& b) {
     a.x += b.x;
     a.y += b.y;
 }
-PLY_INLINE void operator-=(Float2& a, const Float2& b) {
+inline void operator-=(Float2& a, const Float2& b) {
     a.x -= b.x;
     a.y -= b.y;
 }
-PLY_INLINE void operator*=(Float2& a, const Float2& b) {
+inline void operator*=(Float2& a, const Float2& b) {
     a.x *= b.x;
     a.y *= b.y;
 }
-PLY_INLINE void operator/=(Float2& a, const Float2& b) {
+inline void operator/=(Float2& a, const Float2& b) {
     a.x /= b.x;
     a.y /= b.y;
 }
 /*!
 \end_group
 */
-PLY_INLINE void operator/=(Float2& a, float b) {
+inline void operator/=(Float2& a, float b) {
     float oob = 1.f / b;
     a.x *= oob;
     a.y *= oob;
@@ -234,7 +234,7 @@ Returns the dot product of two vectors.
 
     Console::out() << dot(Float2{1, 0}, Float2{3, 4});  // "2"
 */
-PLY_INLINE float dot(const Float2& a, const Float2& b) {
+inline float dot(const Float2& a, const Float2& b) {
     return a.x * b.x + a.y * b.y;
 }
 /*!
@@ -242,7 +242,7 @@ Returns the cross product of two vectors.
 
     Console::out() << cross(Float2{1, 0}, Float2{3, 4});  // "4"
 */
-PLY_INLINE float cross(const Float2& a, const Float2& b) {
+inline float cross(const Float2& a, const Float2& b) {
     return a.x * b.y - a.y * b.x;
 }
 /*!
@@ -254,7 +254,7 @@ by the corresponding components of `mins` and `maxs`.
     Console::out() << clamp(v, Float2{0, 1}, Float2{1, 2});  // "{1, 1.5}"
     Console::out() << clamp(v, 0, 1);                        // "{1, 1}"
 */
-PLY_INLINE Float2 clamp(const Float2& v, const Float2& mins, const Float2& maxs) {
+inline Float2 clamp(const Float2& v, const Float2& mins, const Float2& maxs) {
     return {clamp(v.x, mins.x, maxs.x), clamp(v.y, mins.y, maxs.y)};
 }
 /*!
@@ -263,7 +263,7 @@ component of `a`.
 
     Console::out() << abs(Float2{-2, 3});  // "{2, 3}"
 */
-PLY_INLINE Float2 abs(const Float2& a) {
+inline Float2 abs(const Float2& a) {
     return {fabsf(a.x), fabsf(a.y)};
 }
 /*!
@@ -273,7 +273,7 @@ the power of the corresponding component of `b`.
     Console::out() << pow(Float2{1, 2}, Float2{2, 3});  // "{1, 8}"
     Console::out() << pow(Float2{1, 2}, 2);             // "{1, 4}"
 */
-PLY_INLINE Float2 pow(const Float2& a, const Float2& b) {
+inline Float2 pow(const Float2& a, const Float2& b) {
     return {powf(a.x, b.x), powf(a.y, b.y)};
 }
 /*!
@@ -282,7 +282,7 @@ Returns a vector with each component set to minimum of the corresponding compone
 
     Console::out() << min(Float2{0, 1}, Float2{1, 0});  // "{0, 0}"
 */
-PLY_INLINE Float2 min(const Float2& a, const Float2& b) {
+inline Float2 min(const Float2& a, const Float2& b) {
     return {min(a.x, b.x), min(a.y, b.y)};
 }
 /*!
@@ -291,7 +291,7 @@ Returns a vector with each component set to maximum of the corresponding compone
 
     Console::out() << max(Float2{0, 1}, Float2{1, 0});  // "{1, 1}"
 */
-PLY_INLINE Float2 max(const Float2& a, const Float2& b) {
+inline Float2 max(const Float2& a, const Float2& b) {
     return {max(a.x, b.x), max(a.y, b.y)};
 }
 /*!
@@ -300,10 +300,10 @@ PLY_INLINE Float2 max(const Float2& a, const Float2& b) {
 Returns `true` if the vectors are equal (or not equal) using floating-point comparison.
 In particular, `Float2{0.f} == Float2{-0.f}` is `true`.
 */
-PLY_INLINE bool operator==(const Float2& a, const Float2& b) {
+inline bool operator==(const Float2& a, const Float2& b) {
     return a.x == b.x && a.y == b.y;
 }
-PLY_INLINE bool operator!=(const Float2& a, const Float2& b) {
+inline bool operator!=(const Float2& a, const Float2& b) {
     return !(a == b);
 }
 /*!
@@ -316,7 +316,7 @@ Returns `true` if `a` is approximately equal to `b`. The tolerance is given by
     Float2 v = {0.9999f, 0.0001f};
     Console::out() << is_near(v, Float2{1, 0}, 1e-3f);  // "true"
 */
-PLY_INLINE bool is_near(const Float2& a, const Float2& b, float epsilon) {
+inline bool is_near(const Float2& a, const Float2& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
 }
 /*!
@@ -330,16 +330,16 @@ components, or call `any()` to check if the result was `true` for any component.
 These functions are useful for testing whether a point is inside a box. See the
 implementation of `Box<>::contains` for an example.
 */
-PLY_INLINE Bool2 operator<(const Float2& a, const Float2& b) {
+inline Bool2 operator<(const Float2& a, const Float2& b) {
     return {a.x < b.x, a.y < b.y};
 }
-PLY_INLINE Bool2 operator<=(const Float2& a, const Float2& b) {
+inline Bool2 operator<=(const Float2& a, const Float2& b) {
     return {a.x <= b.x, a.y <= b.y};
 }
-PLY_INLINE Bool2 operator>(const Float2& a, const Float2& b) {
+inline Bool2 operator>(const Float2& a, const Float2& b) {
     return {a.x > b.x, a.y > b.y};
 }
-PLY_INLINE Bool2 operator>=(const Float2& a, const Float2& b) {
+inline Bool2 operator>=(const Float2& a, const Float2& b) {
     return {a.x >= b.x, a.y >= b.y};
 }
 /*!
@@ -355,13 +355,13 @@ spacings. Most precise when `spacing` is a power of 2.
     Console::out() << round_up(Float2{-0.3f, 1.4f});   // "{0, 2}"
     Console::out() << round_down(Float2{1.8f}, 0.5f);  // "{1.5, 1.5}"
 */
-PLY_INLINE Float2 round_up(const Float2& value, float spacing = 1) {
+inline Float2 round_up(const Float2& value, float spacing = 1) {
     return {round_up(value.x, spacing), round_up(value.y, spacing)};
 }
-PLY_INLINE Float2 round_down(const Float2& value, float spacing = 1) {
+inline Float2 round_down(const Float2& value, float spacing = 1) {
     return {round_down(value.x, spacing), round_down(value.y, spacing)};
 }
-PLY_INLINE Float2 round_nearest(const Float2& value, float spacing = 1) {
+inline Float2 round_nearest(const Float2& value, float spacing = 1) {
     // Good to let the compiler see the spacing so it can optimize the divide by
     // constant
     return {round_nearest(value.x, spacing), round_nearest(value.y, spacing)};
@@ -376,7 +376,7 @@ power of 2.
 
     Console::out() << is_rounded(Float2{1.5f, 2.5f}, 0.5f);  // "true"
 */
-PLY_INLINE bool is_rounded(const Float2& value, float spacing = 1) {
+inline bool is_rounded(const Float2& value, float spacing = 1) {
     return round_nearest(value, spacing) == value;
 }
 
@@ -399,14 +399,14 @@ struct Float3 {
     \category Constructors
     Constructs an uninitialized `Float3`.
     */
-    PLY_INLINE Float3() = default;
+    Float3() = default;
     /*!
     Constructs a `Float3` with all components set to `t`.
 
         Float3 v = {1};
         Console::out() << v;  // "{1, 1, 1}"
     */
-    PLY_INLINE Float3(float t) : x{t}, y{t}, z{t} {
+    Float3(float t) : x{t}, y{t}, z{t} {
     }
     // Catch the case where 2 scalars are passed to constructor.
     // This would otherwise promote the first scalar to Float2:
@@ -416,7 +416,7 @@ struct Float3 {
 
         Float3 v = {1, 0, 0};
     */
-    PLY_INLINE Float3(float x, float y, float z) : x{x}, y{y}, z{z} {
+    Float3(float x, float y, float z) : x{x}, y{y}, z{z} {
     }
     /*!
     Constructs a `Float3` from a `Float2` and a third component.
@@ -424,7 +424,7 @@ struct Float3 {
         Float2 a = {1, 2};
         Console::out() << Float3{a, 0};  // "{1, 2, 0}"
     */
-    PLY_INLINE Float3(const Float2& v, float z) : x{v.x}, y{v.y}, z{z} {
+    Float3(const Float2& v, float z) : x{v.x}, y{v.y}, z{z} {
     }
     /*!
     \category Assignment
@@ -434,7 +434,7 @@ struct Float3 {
 
         a.normalized() = b;  // error
     */
-    PLY_INLINE void operator=(const Float3& arg) & {
+    void operator=(const Float3& arg) & {
         x = arg.x;
         y = arg.y;
         z = arg.z;
@@ -446,20 +446,20 @@ struct Float3 {
     \category Length Functions
     Returns the square of the length of the vector.
     */
-    PLY_INLINE float length2() const {
+    float length2() const {
         return x * x + y * y + z * z;
     }
     /*!
     Returns the length of the vector. Equivalent to `sqrtf(this->length2())`.
     */
-    PLY_INLINE float length() const {
+    float length() const {
         return sqrtf(length2());
     }
     /*!
     Returns `true` if the squared length of the vector is sufficiently close to 1.0. The
     threshold is given by `thresh`.
     */
-    PLY_INLINE bool is_unit(float thresh = 0.001f) const {
+    bool is_unit(float thresh = 0.001f) const {
         return fabsf(1.f - length2()) < thresh;
     }
     /*!
@@ -480,7 +480,7 @@ struct Float3 {
         Float3 v = {4, 5, 6};
         Console::out() << v.as_float2();  // "{4, 5}"
     */
-    PLY_INLINE const Float2& as_float2() const {
+    const Float2& as_float2() const {
         PLY_PUN_SCOPE
         return reinterpret_cast<const Float2&>(*this);
     }
@@ -491,7 +491,7 @@ struct Float3 {
         IntVec3 b = a.to<IntVec3>();
     */
     template <typename OtherVec3>
-    PLY_INLINE OtherVec3 to() const {
+    OtherVec3 to() const {
         using T = decltype(OtherVec3::x);
         PLY_STATIC_ASSERT(sizeof(OtherVec3) == sizeof(T) * 3);
         return {(T) x, (T) y, (T) z};
@@ -505,22 +505,22 @@ struct Float3 {
         Float3 c = {1.0f, 0.8f, 0.7f};
         Console.out().format("{}, {}, {}", c.r(), c.g(), c.b());  // "1.0, 0.8, 0.7"
     */
-    PLY_INLINE float& r() {
+    float& r() {
         return x;
     }
-    PLY_INLINE float r() const {
+    float r() const {
         return x;
     }
-    PLY_INLINE float& g() {
+    float& g() {
         return y;
     }
-    PLY_INLINE float g() const {
+    float g() const {
         return y;
     }
-    PLY_INLINE float& b() {
+    float& b() {
         return z;
     }
-    PLY_INLINE float b() const {
+    float b() const {
         return z;
     }
     /*!
@@ -542,9 +542,9 @@ struct Float3 {
     These functions work correctly in the current version of all major compilers even
     though they use type punning, which is undefined behavior in standard C++.
     */
-    PLY_INLINE PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
-    PLY_INLINE PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
-    PLY_INLINE PLY_NO_DISCARD Float4 swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const;
+    PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
+    PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
+    PLY_NO_DISCARD Float4 swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const;
     /*!
     \end_group
     */
@@ -555,7 +555,7 @@ struct Float3 {
 \category Arithmetic Operators
 Unary negation.
 */
-PLY_INLINE Float3 operator-(const Float3& a) {
+inline Float3 operator-(const Float3& a) {
     return {-a.x, -a.y, -a.z};
 }
 /*!
@@ -571,22 +571,22 @@ by replicating the value to each component.
     Console::out() << Float3{2, 3, 2} * 2;  // "{4, 6, 4}"
     Console::out() << 8 / Float3{2, 4, 1};  // "{4, 2, 8}"
 */
-PLY_INLINE Float3 operator+(const Float3& a, const Float3& b) {
+inline Float3 operator+(const Float3& a, const Float3& b) {
     return {a.x + b.x, a.y + b.y, a.z + b.z};
 }
-PLY_INLINE Float3 operator-(const Float3& a, const Float3& b) {
+inline Float3 operator-(const Float3& a, const Float3& b) {
     return {a.x - b.x, a.y - b.y, a.z - b.z};
 }
-PLY_INLINE Float3 operator*(const Float3& a, const Float3& b) {
+inline Float3 operator*(const Float3& a, const Float3& b) {
     return {a.x * b.x, a.y * b.y, a.z * b.z};
 }
-PLY_INLINE Float3 operator/(const Float3& a, const Float3& b) {
+inline Float3 operator/(const Float3& a, const Float3& b) {
     return {a.x / b.x, a.y / b.y, a.z / b.z};
 }
 /*!
 \end_group
 */
-PLY_INLINE Float3 operator/(const Float3& a, float b) {
+inline Float3 operator/(const Float3& a, float b) {
     float oob = 1.f / b;
     return {a.x * oob, a.y * oob, a.z * oob};
 }
@@ -598,22 +598,22 @@ In-place versions of the above operators.
     v *= {4, 1, 2};
     Console::out() << v;  // "{8, 3, 4}"
 */
-PLY_INLINE void operator+=(Float3& a, const Float3& b) {
+inline void operator+=(Float3& a, const Float3& b) {
     a.x += b.x;
     a.y += b.y;
     a.z += b.z;
 }
-PLY_INLINE void operator-=(Float3& a, const Float3& b) {
+inline void operator-=(Float3& a, const Float3& b) {
     a.x -= b.x;
     a.y -= b.y;
     a.z -= b.z;
 }
-PLY_INLINE void operator*=(Float3& a, const Float3& b) {
+inline void operator*=(Float3& a, const Float3& b) {
     a.x *= b.x;
     a.y *= b.y;
     a.z *= b.z;
 }
-PLY_INLINE void operator/=(Float3& a, const Float3& b) {
+inline void operator/=(Float3& a, const Float3& b) {
     a.x /= b.x;
     a.y /= b.y;
     a.z /= b.z;
@@ -621,7 +621,7 @@ PLY_INLINE void operator/=(Float3& a, const Float3& b) {
 /*!
 \end_group
 */
-PLY_INLINE void operator/=(Float3& a, float b) {
+inline void operator/=(Float3& a, float b) {
     float oob = 1.f / b;
     a.x *= oob;
     a.y *= oob;
@@ -633,7 +633,7 @@ Returns the dot product of two vectors.
 
     Console::out() << dot(Float3{2, 3, 1}, Float3{4, 5, 1});  // "24"
 */
-PLY_INLINE float dot(const Float3& a, const Float3& b) {
+inline float dot(const Float3& a, const Float3& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 /*!
@@ -658,7 +658,7 @@ component of `a`.
 
     Console::out() << abs(Float3{-2, 3, 0});  // "{2, 3, 0}"
 */
-PLY_INLINE Float3 abs(const Float3& a) {
+inline Float3 abs(const Float3& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z)};
 }
 /*!
@@ -675,7 +675,7 @@ Returns a vector with each component set to minimum of the corresponding compone
 
     Console::out() << min(Float3{0, 1, 0}, Float3{1, 0, 1});  // "{0, 0, 0}"
 */
-PLY_INLINE Float3 min(const Float3& a, const Float3& b) {
+inline Float3 min(const Float3& a, const Float3& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)};
 }
 /*!
@@ -684,7 +684,7 @@ Returns a vector with each component set to maximum of the corresponding compone
 
     Console::out() << max(Float3{0, 1, 0}, Float3{1, 0, 1});  // "{1, 1, 1}"
 */
-PLY_INLINE Float3 max(const Float3& a, const Float3& b) {
+inline Float3 max(const Float3& a, const Float3& b) {
     return {max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)};
 }
 /*!
@@ -693,10 +693,10 @@ PLY_INLINE Float3 max(const Float3& a, const Float3& b) {
 Returns `true` if the vectors are equal (or not equal) using floating-point comparison.
 In particular, `Float3{0.f} == Float3{-0.f}` is `true`.
 */
-PLY_INLINE bool operator==(const Float3& a, const Float3& b) {
+inline bool operator==(const Float3& a, const Float3& b) {
     return a.x == b.x && a.y == b.y && a.z == b.z;
 }
-PLY_INLINE bool operator!=(const Float3& a, const Float3& b) {
+inline bool operator!=(const Float3& a, const Float3& b) {
     return !(a == b);
 }
 /*!
@@ -709,7 +709,7 @@ Returns `true` if `a` is approximately equal to `b`. The tolerance is given by
     Float3 v = {0.9999f, 0.0001f, 1.9999f};
     Console::out() << is_near(v, Float3{1, 0, 2}, 1e-3f);  // "true"
 */
-PLY_INLINE bool is_near(const Float3& a, const Float3& b, float epsilon) {
+inline bool is_near(const Float3& a, const Float3& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
 }
 /*!
@@ -723,16 +723,16 @@ components, or call `any()` to check if the result was `true` for any component.
 These functions are useful for testing whether a point is inside a box. See the
 implementation of `Box<>::contains` for an example.
 */
-PLY_INLINE Bool3 operator<(const Float3& a, const Float3& b) {
+inline Bool3 operator<(const Float3& a, const Float3& b) {
     return {a.x < b.x, a.y < b.y, a.z < b.z};
 }
-PLY_INLINE Bool3 operator<=(const Float3& a, const Float3& b) {
+inline Bool3 operator<=(const Float3& a, const Float3& b) {
     return {a.x <= b.x, a.y <= b.y, a.z <= b.z};
 }
-PLY_INLINE Bool3 operator>(const Float3& a, const Float3& b) {
+inline Bool3 operator>(const Float3& a, const Float3& b) {
     return {a.x > b.x, a.y > b.y, a.z > b.z};
 }
-PLY_INLINE Bool3 operator>=(const Float3& a, const Float3& b) {
+inline Bool3 operator>=(const Float3& a, const Float3& b) {
     return {a.x >= b.x, a.y >= b.y, a.z >= b.z};
 }
 /*!
@@ -748,15 +748,15 @@ spacings. Most precise when `spacing` is a power of 2.
     Console::out() << round_up(Float3{-0.3f, 1.4f, 0.8f});  // "{0, 2, 1}"
     Console::out() << round_down(Float3{1.8f}, 0.5f);       // "{1.5, 1.5, 1.5}"
 */
-PLY_INLINE Float3 round_up(const Float3& value, float spacing = 1) {
+inline Float3 round_up(const Float3& value, float spacing = 1) {
     return {round_up(value.x, spacing), round_up(value.y, spacing),
             round_up(value.z, spacing)};
 }
-PLY_INLINE Float3 round_down(const Float3& value, float spacing = 1) {
+inline Float3 round_down(const Float3& value, float spacing = 1) {
     return {round_down(value.x, spacing), round_down(value.y, spacing),
             round_down(value.z, spacing)};
 }
-PLY_INLINE Float3 round_nearest(const Float3& value, float spacing = 1) {
+inline Float3 round_nearest(const Float3& value, float spacing = 1) {
     return {round_nearest(value.x, spacing), round_nearest(value.y, spacing),
             round_nearest(value.z, spacing)};
 }
@@ -770,7 +770,7 @@ power of 2.
 
     Console::out() << is_rounded(Float3{1.5f, 0.5f, 0}, 0.5f);  // "true"
 */
-PLY_INLINE bool is_rounded(const Float3& value, float spacing = 1) {
+inline bool is_rounded(const Float3& value, float spacing = 1) {
     return round_nearest(value, spacing) == value;
 }
 
@@ -795,14 +795,14 @@ struct Float4 {
     \category Constructors
     Constructs an uninitialized `Float4`.
     */
-    PLY_INLINE Float4() = default;
+    Float4() = default;
     /*!
     Constructs a `Float4` with all components set to `t`.
 
         Float4 v = {1};
         Console::out() << v;  // "{1, 1, 1, 1}"
     */
-    PLY_INLINE Float4(float t) : x{t}, y{t}, z{t}, w{t} {
+    Float4(float t) : x{t}, y{t}, z{t}, w{t} {
     }
     // Catch wrong number of scalars passed to constructor.
     // This would otherwise promote the first argument to Float2 or Float3:
@@ -813,7 +813,7 @@ struct Float4 {
 
         Float4 v = {1, 0, 0, 0};
     */
-    PLY_INLINE Float4(float x, float y, float z, float w) : x{x}, y{y}, z{z}, w{w} {
+    Float4(float x, float y, float z, float w) : x{x}, y{y}, z{z}, w{w} {
     }
     /*!
     Constructs a `Float4` from a `Float3` and a fourth component.
@@ -821,7 +821,7 @@ struct Float4 {
         Float3 a = {1, 2, 3};
         Console::out() << Float4{a, 0};  // "{1, 2, 3, 0}"
     */
-    PLY_INLINE Float4(const Float3& v, float w) : x{v.x}, y{v.y}, z{v.z}, w{w} {
+    Float4(const Float3& v, float w) : x{v.x}, y{v.y}, z{v.z}, w{w} {
     }
     /*!
     Constructs a `Float4` from a `Float2` and two additional components.
@@ -829,7 +829,7 @@ struct Float4 {
         Float2 a = {1, 2};
         Console::out() << Float4{a, 0, 0};  // "{1, 2, 0, 0}"
     */
-    PLY_INLINE Float4(const Float2& v, float z, float w) : x{v.x}, y{v.y}, z{z}, w{w} {
+    Float4(const Float2& v, float z, float w) : x{v.x}, y{v.y}, z{z}, w{w} {
     }
     /*!
     \category Assignment
@@ -839,7 +839,7 @@ struct Float4 {
 
         a.normalized() = b;  // error
     */
-    PLY_INLINE void operator=(const Float4& arg) & {
+    void operator=(const Float4& arg) & {
         x = arg.x;
         y = arg.y;
         z = arg.z;
@@ -865,7 +865,7 @@ struct Float4 {
     Returns `true` if the squared length of the vector is sufficiently close to 1.0. The
     threshold is given by `thresh`.
     */
-    PLY_INLINE bool is_unit(float thresh = 0.001f) const {
+    bool is_unit(float thresh = 0.001f) const {
         return fabsf(1.f - length2()) < thresh;
     }
     /*!
@@ -886,7 +886,7 @@ struct Float4 {
         Float4 v = {4, 5, 6, 7};
         Console::out() << v.as_float2();  // "{4, 5}"
     */
-    PLY_INLINE const Float2& as_float2() const {
+    const Float2& as_float2() const {
         PLY_PUN_SCOPE
         return reinterpret_cast<const Float2&>(*this);
     }
@@ -897,7 +897,7 @@ struct Float4 {
         Float4 v = {4, 5, 6, 7};
         Console::out() << v.as_float3();  // "{4, 5, 6}"
     */
-    PLY_INLINE const Float3& as_float3() const {
+    const Float3& as_float3() const {
         PLY_PUN_SCOPE
         return reinterpret_cast<const Float3&>(*this);
     }
@@ -905,7 +905,7 @@ struct Float4 {
     Casts to `Quaternion` using type punning. This should only be used as a temporary
     expression.
     */
-    PLY_INLINE const Quaternion& as_quaternion() const;
+    const Quaternion& as_quaternion() const;
     /*!
     Converts to another 4D vector type such as `IntVec4` or `Int4<s16>`.
 
@@ -929,28 +929,28 @@ struct Float4 {
         Console.out().format("{}, {}, {}, {}", c.r(), c.g(), c.b(), c.a());
         // prints "1.0, 0.8, 0.7, 0.5"
     */
-    PLY_INLINE float& r() {
+    float& r() {
         return x;
     }
-    PLY_INLINE float r() const {
+    float r() const {
         return x;
     }
-    PLY_INLINE float& g() {
+    float& g() {
         return y;
     }
-    PLY_INLINE float g() const {
+    float g() const {
         return y;
     }
-    PLY_INLINE float& b() {
+    float& b() {
         return z;
     }
-    PLY_INLINE float b() const {
+    float b() const {
         return z;
     }
-    PLY_INLINE float& a() {
+    float& a() {
         return w;
     }
-    PLY_INLINE float a() const {
+    float a() const {
         return w;
     }
     /*!
@@ -972,9 +972,9 @@ struct Float4 {
     These functions work correctly in the current version of all major compilers even
     though they use type punning, which is undefined behavior in standard C++.
     */
-    PLY_INLINE PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
-    PLY_INLINE PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
-    PLY_INLINE PLY_NO_DISCARD Float4 swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const;
+    PLY_NO_DISCARD Float2 swizzle(u32 i0, u32 i1) const;
+    PLY_NO_DISCARD Float3 swizzle(u32 i0, u32 i1, u32 i2) const;
+    PLY_NO_DISCARD Float4 swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const;
     /*!
     \end_group
     */
@@ -985,7 +985,7 @@ struct Float4 {
 \category Arithmetic Operators
 Unary negation.
 */
-PLY_INLINE Float4 operator-(const Float4& a) {
+inline Float4 operator-(const Float4& a) {
     return {-a.x, -a.y, -a.z, -a.w};
 }
 /*!
@@ -1001,22 +1001,22 @@ by replicating the value to each component.
     Console::out() << Float4{2, 3, 2, 0} * 2;  // "{4, 6, 4, 0}"
     Console::out() << 8 / Float4{2, 4, 1, 8};  // "{4, 2, 8, 1}"
 */
-PLY_INLINE Float4 operator+(const Float4& a, const Float4& b) {
+inline Float4 operator+(const Float4& a, const Float4& b) {
     return {a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w};
 }
-PLY_INLINE Float4 operator-(const Float4& a, const Float4& b) {
+inline Float4 operator-(const Float4& a, const Float4& b) {
     return {a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w};
 }
-PLY_INLINE Float4 operator*(const Float4& a, const Float4& b) {
+inline Float4 operator*(const Float4& a, const Float4& b) {
     return {a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w};
 }
-PLY_INLINE Float4 operator/(const Float4& a, const Float4& b) {
+inline Float4 operator/(const Float4& a, const Float4& b) {
     return {a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w};
 }
 /*!
 \end_group
 */
-PLY_INLINE Float4 operator/(const Float4& a, float b) {
+inline Float4 operator/(const Float4& a, float b) {
     float oob = 1.f / b;
     return {a.x * oob, a.y * oob, a.z * oob, a.w * oob};
 }
@@ -1028,25 +1028,25 @@ In-place versions of the above operators.
     v *= {4, 1, 2, 5};
     Console::out() << v;  // "{8, 3, 4, 0}"
 */
-PLY_INLINE void operator+=(Float4& a, const Float4& b) {
+inline void operator+=(Float4& a, const Float4& b) {
     a.x += b.x;
     a.y += b.y;
     a.z += b.z;
     a.w += b.w;
 }
-PLY_INLINE void operator-=(Float4& a, const Float4& b) {
+inline void operator-=(Float4& a, const Float4& b) {
     a.x -= b.x;
     a.y -= b.y;
     a.z -= b.z;
     a.w -= b.w;
 }
-PLY_INLINE void operator*=(Float4& a, const Float4& b) {
+inline void operator*=(Float4& a, const Float4& b) {
     a.x *= b.x;
     a.y *= b.y;
     a.z *= b.z;
     a.w *= b.w;
 }
-PLY_INLINE void operator/=(Float4& a, const Float4& b) {
+inline void operator/=(Float4& a, const Float4& b) {
     a.x /= b.x;
     a.y /= b.y;
     a.z /= b.z;
@@ -1055,7 +1055,7 @@ PLY_INLINE void operator/=(Float4& a, const Float4& b) {
 /*!
 \end_group
 */
-PLY_INLINE void operator/=(Float4& a, float b) {
+inline void operator/=(Float4& a, float b) {
     float oob = 1.f / b;
     a.x *= oob;
     a.y *= oob;
@@ -1068,7 +1068,7 @@ Returns the dot product of two vectors.
 
     Console::out() << dot(Float4{2, 3, 1, 3}, Float4{4, 5, 1, 0});  // "24"
 */
-PLY_INLINE float dot(const Float4& a, const Float4& b) {
+inline float dot(const Float4& a, const Float4& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 /*!
@@ -1081,7 +1081,7 @@ by the corresponding components of `mins` and `maxs`.
 3}" Console::out() << clamp(v, 0, 1);                                    // "{1, 1, 0,
 0.5f}"
 */
-PLY_INLINE Float4 clamp(const Float4& v, const Float4& mins, const Float4& maxs) {
+inline Float4 clamp(const Float4& v, const Float4& mins, const Float4& maxs) {
     return {clamp(v.x, mins.x, maxs.x), clamp(v.y, mins.y, maxs.y),
             clamp(v.z, mins.z, maxs.z), clamp(v.w, mins.w, maxs.w)};
 }
@@ -1091,7 +1091,7 @@ component of `a`.
 
     Console::out() << abs(Float4{-2, 3, 0, -1});  // "{2, 3, 0, 1}"
 */
-PLY_INLINE Float4 abs(const Float4& a) {
+inline Float4 abs(const Float4& a) {
     return {fabsf(a.x), fabsf(a.y), fabsf(a.z), fabsf(a.w)};
 }
 /*!
@@ -1108,7 +1108,7 @@ Returns a vector with each component set to minimum of the corresponding compone
 
     Console::out() << min(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // "{0, 0, 0, 0}"
 */
-PLY_INLINE Float4 min(const Float4& a, const Float4& b) {
+inline Float4 min(const Float4& a, const Float4& b) {
     return {min(a.x, b.x), min(a.y, b.y), min(a.z, b.z), min(a.w, b.w)};
 }
 /*!
@@ -1117,7 +1117,7 @@ Returns a vector with each component set to maximum of the corresponding compone
 
     Console::out() << max(Float4{0, 1, 0, 1}, Float4{1, 0, 1, 0});  // "{1, 1, 1, 1}"
 */
-PLY_INLINE Float4 max(const Float4& a, const Float4& b) {
+inline Float4 max(const Float4& a, const Float4& b) {
     return {max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w)};
 }
 /*!
@@ -1126,10 +1126,10 @@ PLY_INLINE Float4 max(const Float4& a, const Float4& b) {
 Returns `true` if the vectors are equal (or not equal) using floating-point comparison.
 In particular, `Float4{0.f} == Float4{-0.f}` is `true`.
 */
-PLY_INLINE bool operator==(const Float4& a, const Float4& b) {
+inline bool operator==(const Float4& a, const Float4& b) {
     return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
 }
-PLY_INLINE bool operator!=(const Float4& a, const Float4& b) {
+inline bool operator!=(const Float4& a, const Float4& b) {
     return !(a == b);
 }
 /*!
@@ -1142,7 +1142,7 @@ Returns `true` if `a` is approximately equal to `b`. The tolerance is given by
     Float4 v = {0.9999f, 0.0001f, 1.9999f, 3.0001f};
     Console::out() << is_near(v, Float4{1, 0, 2, 3}, 1e-3f);  // "true"
 */
-PLY_INLINE bool is_near(const Float4& a, const Float4& b, float epsilon) {
+inline bool is_near(const Float4& a, const Float4& b, float epsilon) {
     return (b - a).length2() <= square(epsilon);
 }
 /*!
@@ -1156,16 +1156,16 @@ components, or call `any()` to check if the result was `true` for any component.
 These functions are useful for testing whether a point is inside a box. See the
 implementation of `Box<>::contains` for an example.
 */
-PLY_INLINE Bool4 operator<(const Float4& a, const Float4& b) {
+inline Bool4 operator<(const Float4& a, const Float4& b) {
     return {a.x < b.x, a.y < b.y, a.z < b.z, a.w < b.w};
 }
-PLY_INLINE Bool4 operator<=(const Float4& a, const Float4& b) {
+inline Bool4 operator<=(const Float4& a, const Float4& b) {
     return {a.x <= b.x, a.y <= b.y, a.z <= b.z, a.w <= b.w};
 }
-PLY_INLINE Bool4 operator>(const Float4& a, const Float4& b) {
+inline Bool4 operator>(const Float4& a, const Float4& b) {
     return {a.x > b.x, a.y > b.y, a.z > b.z, a.w > b.w};
 }
-PLY_INLINE Bool4 operator>=(const Float4& a, const Float4& b) {
+inline Bool4 operator>=(const Float4& a, const Float4& b) {
     return {a.x >= b.x, a.y >= b.y, a.z >= b.z, a.w >= b.w};
 }
 /*!
@@ -1182,15 +1182,15 @@ spacings. Most precise when `spacing` is a power of 2.
     Console::out() << round_down(Float4{1.8f}, 0.5f);              //
 "{1.5, 1.5, 1.5, 1.5}"
 */
-PLY_INLINE Float4 round_up(const Float4& vec, float spacing = 1) {
+inline Float4 round_up(const Float4& vec, float spacing = 1) {
     return {round_up(vec.x, spacing), round_up(vec.y, spacing),
             round_up(vec.z, spacing), round_up(vec.w, spacing)};
 }
-PLY_INLINE Float4 round_down(const Float4& vec, float spacing = 1) {
+inline Float4 round_down(const Float4& vec, float spacing = 1) {
     return {round_down(vec.x, spacing), round_down(vec.y, spacing),
             round_down(vec.z, spacing), round_down(vec.w, spacing)};
 }
-PLY_INLINE Float4 round_nearest(const Float4& vec, float spacing = 1) {
+inline Float4 round_nearest(const Float4& vec, float spacing = 1) {
     return {round_nearest(vec.x, spacing), round_nearest(vec.y, spacing),
             round_nearest(vec.z, spacing), round_nearest(vec.w, spacing)};
 }
@@ -1204,7 +1204,7 @@ power of 2.
 
     Console::out() << is_rounded(Float4{1.5f, 0.5f, 0, 2}, 0.5f);  // true
 */
-PLY_INLINE bool is_rounded(const Float4& vec, float spacing = 1) {
+inline bool is_rounded(const Float4& vec, float spacing = 1) {
     return round_nearest(vec, spacing) == vec;
 }
 
@@ -1217,63 +1217,63 @@ Rect rect_from_fov(float fov_y, float aspect);
 
 //---------------------------------
 
-PLY_INLINE PLY_NO_DISCARD Float2 Float2::swizzle(u32 i0, u32 i1) const {
+inline PLY_NO_DISCARD Float2 Float2::swizzle(u32 i0, u32 i1) const {
     PLY_PUN_SCOPE
     auto* v = (const float*) this;
     PLY_ASSERT(i0 < 2 && i1 < 2);
     return {v[i0], v[i1]};
 }
 
-PLY_INLINE PLY_NO_DISCARD Float3 Float2::swizzle(u32 i0, u32 i1, u32 i2) const {
+inline PLY_NO_DISCARD Float3 Float2::swizzle(u32 i0, u32 i1, u32 i2) const {
     PLY_PUN_SCOPE
     auto* v = (const float*) this;
     PLY_ASSERT(i0 < 2 && i1 < 2 && i2 < 2);
     return {v[i0], v[i1], v[i2]};
 }
 
-PLY_INLINE PLY_NO_DISCARD Float4 Float2::swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const {
+inline PLY_NO_DISCARD Float4 Float2::swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const {
     PLY_PUN_SCOPE
     auto* v = (const float*) this;
     PLY_ASSERT(i0 < 2 && i1 < 2 && i2 < 2 && i3 < 2);
     return {v[i0], v[i1], v[i2], v[i3]};
 }
 
-PLY_INLINE PLY_NO_DISCARD Float2 Float3::swizzle(u32 i0, u32 i1) const {
+inline PLY_NO_DISCARD Float2 Float3::swizzle(u32 i0, u32 i1) const {
     PLY_PUN_SCOPE
     auto* v = (const float*) this;
     PLY_ASSERT(i0 < 3 && i1 < 3);
     return {v[i0], v[i1]};
 }
 
-PLY_INLINE PLY_NO_DISCARD Float3 Float3::swizzle(u32 i0, u32 i1, u32 i2) const {
+inline PLY_NO_DISCARD Float3 Float3::swizzle(u32 i0, u32 i1, u32 i2) const {
     PLY_PUN_SCOPE
     auto* v = (const float*) this;
     PLY_ASSERT(i0 < 3 && i1 < 3 && i2 < 3);
     return {v[i0], v[i1], v[i2]};
 }
 
-PLY_INLINE PLY_NO_DISCARD Float4 Float3::swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const {
+inline PLY_NO_DISCARD Float4 Float3::swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const {
     PLY_PUN_SCOPE
     auto* v = (const float*) this;
     PLY_ASSERT(i0 < 3 && i1 < 3 && i2 < 3 && i2 < 3);
     return {v[i0], v[i1], v[i2], v[i3]};
 }
 
-PLY_INLINE PLY_NO_DISCARD Float2 Float4::swizzle(u32 i0, u32 i1) const {
+inline PLY_NO_DISCARD Float2 Float4::swizzle(u32 i0, u32 i1) const {
     PLY_PUN_SCOPE
     auto* v = (const float*) this;
     PLY_ASSERT(i0 < 4 && i1 < 4);
     return {v[i0], v[i1]};
 }
 
-PLY_INLINE PLY_NO_DISCARD Float3 Float4::swizzle(u32 i0, u32 i1, u32 i2) const {
+inline PLY_NO_DISCARD Float3 Float4::swizzle(u32 i0, u32 i1, u32 i2) const {
     PLY_PUN_SCOPE
     auto* v = (const float*) this;
     PLY_ASSERT(i0 < 4 && i1 < 4 && i2 < 4);
     return {v[i0], v[i1], v[i2]};
 }
 
-PLY_INLINE PLY_NO_DISCARD Float4 Float4::swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const {
+inline PLY_NO_DISCARD Float4 Float4::swizzle(u32 i0, u32 i1, u32 i2, u32 i3) const {
     PLY_PUN_SCOPE
     auto* v = (const float*) this;
     PLY_ASSERT(i0 < 4 && i1 < 4 && i2 < 4 && i2 < 4);

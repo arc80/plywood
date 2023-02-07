@@ -50,25 +50,25 @@ struct Quaternion {
     \category Constructors
     Constructs an uninitialized `Quaternion`.
     */
-    PLY_INLINE Quaternion() = default;
+    Quaternion() = default;
     /*!
     Constructs a `Quaternion` from the given components.
 
         Quaternion q = {0, 0, 0, 1};
     */
-    PLY_INLINE Quaternion(float x, float y, float z, float w) : x{x}, y{y}, z{z}, w{w} {
+    Quaternion(float x, float y, float z, float w) : x{x}, y{y}, z{z}, w{w} {
     }
     /*!
     Constructs a `Quaternion` from a `Float3` and a fourth component.
     */
-    PLY_INLINE Quaternion(const Float3& v, float w) : x{v.x}, y{v.y}, z{v.z}, w{w} {
+    Quaternion(const Float3& v, float w) : x{v.x}, y{v.y}, z{v.z}, w{w} {
     }
     /*!
     \category Conversion Functions
     Returns a const reference to the first three components as a `Float3` using type
     punning. This should only be used as a temporary expression.
     */
-    PLY_INLINE const Float3& as_float3() const {
+    const Float3& as_float3() const {
         PLY_PUN_SCOPE
         return reinterpret_cast<const Float3&>(*this);
     }
@@ -76,7 +76,7 @@ struct Quaternion {
     Casts to `Float4` using type punning. This should only be used as a temporary
     expression.
     */
-    PLY_INLINE const Float4& as_float4() const {
+    const Float4& as_float4() const {
         PLY_PUN_SCOPE
         return reinterpret_cast<const Float4&>(*this);
     }
@@ -84,7 +84,7 @@ struct Quaternion {
     \category Creation Functions
     Returns the identity quaternion `{0, 0, 0, 1}`.
     */
-    static PLY_INLINE Quaternion identity() {
+    static Quaternion identity() {
         return {0, 0, 0, 1};
     }
     /*!
@@ -119,7 +119,7 @@ struct Quaternion {
     of the given quaternion by negating its `x`, `y` and `z` components, with the
     understanding that the conjugate of a unit quaternion is also its inverse.
     */
-    PLY_INLINE Quaternion inverted() const {
+    Quaternion inverted() const {
         // Small rotations have large w component, so prefer to keep the same sign of w.
         // Better for interpolation.
         return {-x, -y, -z, w};
@@ -149,7 +149,7 @@ struct Quaternion {
     to occasionally re-normalize the result to compensate for any drift caused by
     floating-point imprecision.
     */
-    PLY_INLINE Quaternion normalized() const {
+    Quaternion normalized() const {
         return as_float4().normalized().as_quaternion();
     }
     /*!
@@ -171,7 +171,7 @@ Unary negation. All components of the original quaternion are negated. If the qu
 has unit length, the resulting quaternion represents the same 3D rotation as the
 original quaternion.
 */
-PLY_INLINE Quaternion operator-(const Quaternion& q) {
+inline Quaternion operator-(const Quaternion& q) {
     return {-q.x, -q.y, -q.z, -q.w};
 }
 /*!
@@ -193,7 +193,7 @@ of `a.negated_if_closer_to(b)` and `b`, then normalizes the result.
 */
 Quaternion mix(const Quaternion& a, const Quaternion& b, float f);
 
-PLY_INLINE const Quaternion& Float4::as_quaternion() const {
+inline const Quaternion& Float4::as_quaternion() const {
     PLY_COMPILER_BARRIER();
     return reinterpret_cast<const Quaternion&>(*this);
 }

@@ -12,7 +12,7 @@ namespace pylon {
 u64 Node::InvalidNodeHeader = 0;
 Node::Object Node::EmptyObject;
 
-PLY_NO_INLINE Node::~Node() {
+Node::~Node() {
     switch ((Type) this->type) {
         case Type::Text: {
             destruct(this->text_);
@@ -67,18 +67,18 @@ Owned<Node> Node::copy() const {
     }
 }
 
-PLY_NO_INLINE Owned<Node> Node::create_invalid() {
+Owned<Node> Node::create_invalid() {
     Owned<Node> node = (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, text_));
     node->type = (u64) Type::Invalid;
     node->file_ofs = 0;
     return node;
 }
 
-PLY_NO_INLINE Owned<Node> Node::alloc_text() {
+Owned<Node> Node::alloc_text() {
     return (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, text_) + sizeof(Node::text_));
 }
 
-PLY_NO_INLINE Owned<Node> Node::create_array(u64 file_ofs) {
+Owned<Node> Node::create_array(u64 file_ofs) {
     Owned<Node> node =
         (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, array_) + sizeof(Node::array_));
     node->type = (u64) Type::Array;
@@ -87,7 +87,7 @@ PLY_NO_INLINE Owned<Node> Node::create_array(u64 file_ofs) {
     return node;
 }
 
-PLY_NO_INLINE Owned<Node> Node::create_object(u64 file_ofs) {
+Owned<Node> Node::create_object(u64 file_ofs) {
     Owned<Node> node =
         (Node*) Heap.alloc(PLY_MEMBER_OFFSET(Node, object_) + sizeof(Node::object_));
     node->type = (u64) Type::Object;
@@ -96,7 +96,7 @@ PLY_NO_INLINE Owned<Node> Node::create_object(u64 file_ofs) {
     return node;
 }
 
-PLY_NO_INLINE Tuple<bool, double> Node::numeric() const {
+Tuple<bool, double> Node::numeric() const {
     if (this->type != (u64) Type::Text)
         return {false, 0.0};
 
@@ -105,7 +105,7 @@ PLY_NO_INLINE Tuple<bool, double> Node::numeric() const {
     return {!vins.any_parse_error(), value};
 }
 
-PLY_NO_INLINE Node* Node::get(StringView key) {
+Node* Node::get(StringView key) {
     if (this->type != (u64) Type::Object)
         return (Node*) &InvalidNodeHeader;
 
@@ -116,7 +116,7 @@ PLY_NO_INLINE Node* Node::get(StringView key) {
     return this->object_.items[*cursor].value;
 }
 
-PLY_NO_INLINE Node* Node::set(HybridString&& key, Owned<Node>&& value) {
+Node* Node::set(HybridString&& key, Owned<Node>&& value) {
     Node* result = value;
     if (this->type != (u64) Type::Object)
         return result;
@@ -131,7 +131,7 @@ PLY_NO_INLINE Node* Node::set(HybridString&& key, Owned<Node>&& value) {
     return result;
 }
 
-PLY_NO_INLINE Owned<Node> Node::remove(StringView key) {
+Owned<Node> Node::remove(StringView key) {
     if (this->type != (u64) Type::Object)
         return nullptr;
 

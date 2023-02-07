@@ -384,8 +384,7 @@ struct Dependency_ExtractedClassAPI : cook::Dependency {
     String class_fqid;
     u128 class_hash;
 
-    PLY_INLINE Dependency_ExtractedClassAPI(StringView class_fqid)
-        : class_fqid{class_fqid} {
+    Dependency_ExtractedClassAPI(StringView class_fqid) : class_fqid{class_fqid} {
         this->class_hash = get_class_hash(class_fqid);
     }
 };

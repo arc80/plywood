@@ -10,8 +10,8 @@
 namespace ply {
 namespace web {
 
-PLY_NO_INLINE void SourceCode::serve(const SourceCode* params, StringView request_path,
-                                     ResponseIface* response_iface) {
+void SourceCode::serve(const SourceCode* params, StringView request_path,
+                       ResponseIface* response_iface) {
     // FIXME: Use FileSystem_Virtual and make really, really sure an adversary can't
     // read files outside the root_dir
     String norm_request_path = Path.normalize(request_path.ltrim(Path.is_sep_byte));

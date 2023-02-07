@@ -10,9 +10,9 @@ union Storage_ {
     Assignment assignment;
     FunctionBody function_body;
     BitField bit_field;
-    PLY_INLINE Storage_() {
+    Storage_() {
     }
-    PLY_INLINE ~Storage_() {
+    ~Storage_() {
     }
 };
 SWITCH_FOOTER(Initializer, None)

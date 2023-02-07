@@ -44,35 +44,35 @@ struct Node {
     String text;             // only for Text, CodeSpan or Link (for the destination)
     String id;               // sets the id attribute for Headings
 
-    PLY_INLINE Node(Node* parent, Type type) : type{type}, parent{parent} {
+    Node(Node* parent, Type type) : type{type}, parent{parent} {
         if (parent) {
             parent->children.append(this);
         }
     }
-    PLY_INLINE void add_children(ArrayView<Owned<Node>> new_children) {
+    void add_children(ArrayView<Owned<Node>> new_children) {
         for (Node* new_child : new_children) {
             PLY_ASSERT(!new_child->parent);
             new_child->parent = this;
         }
         this->children.move_extend(new_children);
     }
-    PLY_INLINE Array<Owned<Node>> remove_children() {
+    Array<Owned<Node>> remove_children() {
         for (Node* child : this->children) {
             PLY_ASSERT(child->parent == this);
             child->parent = nullptr;
         }
         return std::move(this->children);
     }
-    PLY_INLINE bool is_container_block() const {
+    bool is_container_block() const {
         return this->type < StartLeafNodeType;
     }
-    PLY_INLINE bool is_leaf_block() const {
+    bool is_leaf_block() const {
         return this->type >= StartLeafNodeType && this->type < StartInlineNodeType;
     }
-    PLY_INLINE bool is_inline_element() const {
+    bool is_inline_element() const {
         return this->type >= StartInlineNodeType;
     }
-    PLY_INLINE bool is_ordered_list() const {
+    bool is_ordered_list() const {
         return this->type == List && this->list_start_number >= 0;
     }
 };

@@ -82,14 +82,14 @@ struct Tokenizer {
         const char* end = nullptr;
         const char* cur = nullptr;
 
-        PLY_INLINE bool at_eof() const {
+        bool at_eof() const {
             return this->cur >= this->end;
         }
-        PLY_INLINE char peek() const {
+        char peek() const {
             PLY_ASSERT(this->cur < this->end);
             return *this->cur;
         }
-        PLY_INLINE char next() {
+        char next() {
             PLY_ASSERT(this->cur < this->end);
             return *this->cur++;
         }
@@ -118,7 +118,7 @@ struct Tokenizer {
     void set_source_input(StringView path, StringView src);
     ExpandedToken read_token();
     ExpandedToken expand_token(u32 token_idx);
-    PLY_INLINE void rewind_to(u32 token_idx) {
+    void rewind_to(u32 token_idx) {
         PLY_ASSERT(token_idx <= this->next_token_idx);
         this->next_token_idx = token_idx;
     }

@@ -40,7 +40,7 @@ struct RestorePoint {
             this->cancel();
         }
     }
-    PLY_INLINE bool error_occurred() const {
+    bool error_occurred() const {
         return this->parser->raw_error_count != this->saved_error_count;
     }
     void backtrack() {

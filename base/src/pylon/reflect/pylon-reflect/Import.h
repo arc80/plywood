@@ -20,8 +20,8 @@ void import_into(AnyObject obj, const pylon::Node* a_root,
                  const Func<TypeFromName>& type_from_name = {});
 
 template <typename T>
-PLY_INLINE Owned<T> import(const pylon::Node* a_root,
-                           const Func<TypeFromName>& type_from_name = {}) {
+Owned<T> import(const pylon::Node* a_root,
+                const Func<TypeFromName>& type_from_name = {}) {
     AnyOwnedObject result = import(get_type_descriptor<T>(), a_root, type_from_name);
     return result.release<T>();
 }

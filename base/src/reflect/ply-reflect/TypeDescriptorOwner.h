@@ -46,7 +46,7 @@ public:
 };
 
 struct EmptyType {
-    PLY_REFLECT(PLY_DLL_ENTRY)
+    PLY_REFLECT()
     // ply reflect off
 };
 

@@ -22,7 +22,7 @@ struct Subst {
     u32 num_bytes = 0;
     String replacement;
 
-    PLY_INLINE bool operator<(const Subst& other) const {
+    bool operator<(const Subst& other) const {
         return (this->start < other.start) ||
                (this->start == other.start && this->num_bytes < other.num_bytes);
     }
@@ -138,8 +138,8 @@ struct ReflectionHookError : cpp::BaseError {
     cpp::LinearLocation other_loc = -1;
     // ply reflect off
 
-    PLY_INLINE ReflectionHookError(Type type, cpp::LinearLocation linear_loc,
-                                   cpp::LinearLocation other_loc = -1)
+    ReflectionHookError(Type type, cpp::LinearLocation linear_loc,
+                        cpp::LinearLocation other_loc = -1)
         : type{type}, linear_loc{linear_loc}, other_loc{other_loc} {
     }
     virtual void write_message(OutStream& out,
@@ -528,8 +528,8 @@ String get_switch_inl(SwitchInfo* switch_) {
         mout.format("    {} {}{};\n", state, state.left(1).lower_asc(),
                     state.sub_str(1));
     }
-    mout << "    PLY_INLINE Storage_() {}\n";
-    mout << "    PLY_INLINE ~Storage_() {}\n";
+    mout << "    Storage_() {}\n";
+    mout << "    ~Storage_() {}\n";
     mout << "};\n";
     StringView class_name = switch_->name.split_byte(':').back(); // FIXME: more elegant
     // FIXME: Log an error if there are no states

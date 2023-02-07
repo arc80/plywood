@@ -114,7 +114,7 @@ struct QualifiedID {
     UnqualifiedID unqual;
     // ply reflect off
 
-    PLY_INLINE bool is_empty() const {
+    bool is_empty() const {
         return this->nested_name.is_empty() && this->unqual.empty();
     }
     Array<StringView> get_simplified_components() const;

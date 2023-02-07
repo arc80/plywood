@@ -19,7 +19,7 @@ namespace ply {
 #if PLY_WITH_METHOD_TABLES
 
 struct StringMethodTable {
-    static PLY_INLINE MethodTable make() {
+    static MethodTable make() {
         MethodTable methods;
         methods.binary_op = [](BaseInterpreter* interp, MethodTable::BinaryOp op,
                                const AnyObject& first, const AnyObject& second) {

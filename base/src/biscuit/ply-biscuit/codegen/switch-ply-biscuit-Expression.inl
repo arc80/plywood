@@ -16,9 +16,9 @@ union Storage_ {
     BinaryOp binary_op;
     UnaryOp unary_op;
     Call call;
-    PLY_INLINE Storage_() {
+    Storage_() {
     }
-    PLY_INLINE ~Storage_() {
+    ~Storage_() {
     }
 };
 SWITCH_FOOTER(Expression, NameLookup)

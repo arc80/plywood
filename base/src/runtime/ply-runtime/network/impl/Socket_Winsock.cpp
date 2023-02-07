@@ -24,7 +24,7 @@ bool Socket::IsInit = false;
 bool Socket::HasIPv6 = false;
 ThreadLocal<IPResult> Socket::last_result_;
 
-PLY_NO_INLINE void Socket::initialize(IPAddress::Version ip_version) {
+void Socket::initialize(IPAddress::Version ip_version) {
     PLY_ASSERT(!IsInit);
     // Initialize Winsock
     WSADATA wsa_data;
@@ -35,7 +35,7 @@ PLY_NO_INLINE void Socket::initialize(IPAddress::Version ip_version) {
     IsInit = true;
 }
 
-PLY_NO_INLINE void Socket::shutdown() {
+void Socket::shutdown() {
     PLY_ASSERT(IsInit);
     int rc = WSACleanup();
     PLY_ASSERT(rc == 0);
@@ -43,12 +43,12 @@ PLY_NO_INLINE void Socket::shutdown() {
     IsInit = false;
 }
 
-PLY_NO_INLINE TCPConnection::~TCPConnection() {
+TCPConnection::~TCPConnection() {
     // Prevent double-deletion of file descriptor
     this->out_pipe.socket = INVALID_SOCKET;
 }
 
-PLY_NO_INLINE Owned<TCPConnection> TCPListener::accept() {
+Owned<TCPConnection> TCPListener::accept() {
     if (this->listen_socket == INVALID_SOCKET) {
         Socket::last_result_.store(IPResult::NoSocket);
         return nullptr;
@@ -90,7 +90,7 @@ PLY_NO_INLINE Owned<TCPConnection> TCPListener::accept() {
     return tcp_conn;
 }
 
-PLY_NO_INLINE SOCKET create_socket(int type) {
+SOCKET create_socket(int type) {
     int family = AF_INET;
     if (PLY_IF_IPV6(Socket::HasIPv6, false)) {
         family = AF_INET6;
@@ -111,7 +111,7 @@ PLY_NO_INLINE SOCKET create_socket(int type) {
     return s;
 }
 
-PLY_NO_INLINE TCPListener Socket::bind_tcp(u16 port) {
+TCPListener Socket::bind_tcp(u16 port) {
     SOCKET listen_socket = create_socket(SOCK_STREAM);
     if (listen_socket == INVALID_SOCKET) { // last_result_ is already set
         return {};
@@ -185,8 +185,7 @@ PLY_NO_INLINE TCPListener Socket::bind_tcp(u16 port) {
     return {};
 }
 
-PLY_NO_INLINE Owned<TCPConnection> Socket::connect_tcp(const IPAddress& address,
-                                                       u16 port) {
+Owned<TCPConnection> Socket::connect_tcp(const IPAddress& address, u16 port) {
     SOCKET connect_socket = create_socket(SOCK_STREAM);
     if (connect_socket == INVALID_SOCKET) { // last_result_ is already set
         return {};
@@ -248,8 +247,8 @@ PLY_NO_INLINE Owned<TCPConnection> Socket::connect_tcp(const IPAddress& address,
     return nullptr;
 }
 
-PLY_NO_INLINE IPAddress Socket::resolve_host_name(StringView host_name,
-                                                  IPAddress::Version ip_version) {
+IPAddress Socket::resolve_host_name(StringView host_name,
+                                    IPAddress::Version ip_version) {
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;

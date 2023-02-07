@@ -99,7 +99,7 @@ void Repository::create() {
     }
 }
 
-PLY_NO_INLINE MethodTable get_method_table_repository_config_options() {
+MethodTable get_method_table_repository_config_options() {
     MethodTable methods;
     methods.property_lookup = [](BaseInterpreter* interp, const AnyObject& obj,
                                  StringView property_name) -> FnResult {

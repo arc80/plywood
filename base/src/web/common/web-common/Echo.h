@@ -11,8 +11,7 @@
 namespace ply {
 namespace web {
 
-PLY_NO_INLINE void echo_serve(const void*, StringView request_path,
-                              ResponseIface* response_iface);
+void echo_serve(const void*, StringView request_path, ResponseIface* response_iface);
 
 } // namespace web
 } // namespace ply
