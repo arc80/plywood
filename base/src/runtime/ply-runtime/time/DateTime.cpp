@@ -67,10 +67,10 @@ void set_date_from_epoch_days(DateTime* date_time, s32 days) {
     u32 d = doy - (153 * mp + 2) / 5 + 1;              // [1, 31]
     u32 m = mp + (mp < 10 ? 3 : -9);                   // [1, 12]
     date_time->year = y + (m <= 2);
-    date_time->month = safe_demote<u8>(m);
-    date_time->day = safe_demote<u8>(d);
+    date_time->month = check_cast<u8>(m);
+    date_time->day = check_cast<u8>(d);
     date_time->weekday =
-        safe_demote<u8>(days >= -4 ? (days + 4) % 7 : (days + 5) % 7 + 6);
+        check_cast<u8>(days >= -4 ? (days + 4) % 7 : (days + 5) % 7 + 6);
 }
 
 // Based on http://howardhinnant.github.io/date_algorithms.html
@@ -86,18 +86,18 @@ s32 get_epoch_days_from_date(const DateTime& date_time) {
 
 DateTime DateTime::from_epoch_microseconds(s64 us) {
     static constexpr s64 us_per_day = 86400000000ll;
-    s32 days = safe_demote<s32>(floor_div(us, us_per_day));
-    u64 us_in_day = safe_demote<u64>(us - (days * us_per_day));
+    s32 days = check_cast<s32>(floor_div(us, us_per_day));
+    u64 us_in_day = check_cast<u64>(us - (days * us_per_day));
 
     DateTime date_time;
     set_date_from_epoch_days(&date_time, days);
-    u32 secs = safe_demote<u32>(us_in_day / 1000000);
+    u32 secs = check_cast<u32>(us_in_day / 1000000);
     u32 minutes = secs / 60;
     u32 hours = minutes / 60;
-    date_time.hour = safe_demote<u8>(hours);
-    date_time.minute = safe_demote<u8>(minutes - hours * 60);
-    date_time.second = safe_demote<u8>(secs - minutes * 60);
-    date_time.microseconds = safe_demote<u32>(us_in_day - u64(secs) * 1000000);
+    date_time.hour = check_cast<u8>(hours);
+    date_time.minute = check_cast<u8>(minutes - hours * 60);
+    date_time.second = check_cast<u8>(secs - minutes * 60);
+    date_time.microseconds = check_cast<u32>(us_in_day - u64(secs) * 1000000);
     return date_time;
 }
 

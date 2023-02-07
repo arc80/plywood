@@ -265,13 +265,13 @@ u32 InPipe_ConvertUnicode::read(MutStringView dst_buf) {
             ViewOutStream s{this->shim_storage.mutable_string_view()};
             Unicode{UTF8}.encode_point(s, codepoint);
             this->shim_used = {s.start_byte,
-                               safe_demote<u32>(s.cur_byte - s.start_byte)};
+                               check_cast<u32>(s.cur_byte - s.start_byte)};
             if (copy_from_shim(dst_out, this->shim_used))
                 break; // Destination buffer is full.
         }
     }
 
-    return safe_demote<u32>(dst_out.get_seek_pos());
+    return check_cast<u32>(dst_out.get_seek_pos());
 }
 
 // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓

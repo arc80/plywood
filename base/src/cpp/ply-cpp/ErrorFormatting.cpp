@@ -20,7 +20,7 @@ ExpandedFileLocation expand_file_location(const PPVisitedFiles* visited_files,
     const cpp::PPVisitedFiles::SourceFile* src_file =
         &visited_files->source_files[chain.file_or_exp_idx];
     FileLocation file_loc =
-        src_file->file_location_map.get_file_location(safe_demote<u32>(
+        src_file->file_location_map.get_file_location(check_cast<u32>(
             linear_loc - iter.get_item().linear_loc + iter.get_item().offset));
     return {src_file, file_loc};
 }

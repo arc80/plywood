@@ -70,7 +70,7 @@ u32 InPipe_NewLineFilter::read(MutStringView buf) {
         this->filter.process(&params);
 
         this->in.cur_byte = params.src_byte;
-        u32 num_bytes_written = safe_demote<u32>(params.dst_byte - buf.bytes);
+        u32 num_bytes_written = check_cast<u32>(params.dst_byte - buf.bytes);
         if (num_bytes_written > 0)
             return num_bytes_written;
 
@@ -112,7 +112,7 @@ bool OutPipe_NewLineFilter::write(StringView buf) {
         params.dst_end_byte = this->child_stream.end_byte;
         this->filter.process(&params);
         this->child_stream.cur_byte = params.dst_byte;
-        u32 num_bytes_read = safe_demote<u32>(params.src_byte - buf.bytes);
+        u32 num_bytes_read = check_cast<u32>(params.src_byte - buf.bytes);
         if (num_bytes_read == 0) {
             PLY_ASSERT(total_bytes_read <= desired_total_bytes_read);
             return total_bytes_read >= desired_total_bytes_read;

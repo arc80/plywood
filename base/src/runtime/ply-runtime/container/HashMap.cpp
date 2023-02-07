@@ -24,7 +24,7 @@ PLY_NO_INLINE HashMap::HashMap(HashMap&& other) {
 
 PLY_NO_INLINE HashMap::HashMap(const Callbacks* cb, u32 initial_size)
     : m_cellGroups(create_table(cb, initial_size)),
-      m_sizeMask(safe_demote<u32>(initial_size - 1)), m_population{0} {
+      m_sizeMask(check_cast<u32>(initial_size - 1)), m_population{0} {
 }
 
 PLY_NO_INLINE void HashMap::move_assign(const Callbacks* cb, HashMap&& other) {

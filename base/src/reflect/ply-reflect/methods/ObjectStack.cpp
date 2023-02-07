@@ -39,7 +39,7 @@ void ObjectStack::delete_range(const ObjectStack::Boundary& from,
     WeakSequenceRef<AnyObject> end = this->items.end();
     for (; cur != end; ++cur) {
         u32 num_bytes = cur->type->fixed_size;
-        if (safe_demote<u32>(dst.block->end() - dst.byte) < num_bytes) {
+        if (check_cast<u32>(dst.block->end() - dst.byte) < num_bytes) {
             // FIXME: Handle objects larger than the block size
             PLY_ASSERT(dst.block->next_block->block_size >= num_bytes);
             dst = {dst.block->next_block, dst.block->bytes};

@@ -496,7 +496,7 @@ public:
 
         // Note: Only the last frame is allowed to have num_samples <
         // tmp_frame->nb_samples.
-        PLY_ASSERT(num_samples <= safe_demote<u32>(tmp_frame->nb_samples));
+        PLY_ASSERT(num_samples <= check_cast<u32>(tmp_frame->nb_samples));
 
         // Convert samples from native format to destination codec format, using the
         // resampler
@@ -618,7 +618,7 @@ public:
         }
         auto write_packet = [](void* opaque, uint8_t* buf, int len) -> int {
             return reinterpret_cast<OutPipe*>(opaque)->write(
-                {(char*) buf, safe_demote<u32>(len)});
+                {(char*) buf, check_cast<u32>(len)});
         };
         auto seek = [](void* opaque, int64_t offset, int whence) -> int64_t {
             SeekDir seek_dir = SeekDir::Cur;

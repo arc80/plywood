@@ -33,9 +33,9 @@ String temp_extract_initializer(const PPVisitedFiles* visited_files,
         &visited_files->source_files[chain.file_or_exp_idx];
     PLY_ASSERT(start_loc >= start_iter.get_item().linear_loc);
     PLY_ASSERT(end_loc >= end_iter.get_item().linear_loc);
-    u32 start_pos = safe_demote<u32>(start_iter.get_item().offset +
+    u32 start_pos = check_cast<u32>(start_iter.get_item().offset +
                                      (start_loc - start_iter.get_item().linear_loc));
-    u32 end_pos = safe_demote<u32>(end_iter.get_item().offset +
+    u32 end_pos = check_cast<u32>(end_iter.get_item().offset +
                                    (end_loc - end_iter.get_item().linear_loc));
     return src_file->contents.sub_str(start_pos, end_pos - start_pos);
 }

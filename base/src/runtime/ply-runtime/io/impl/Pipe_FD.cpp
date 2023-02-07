@@ -97,7 +97,7 @@ PLY_NO_INLINE u64 OutPipe_FD_seek(OutPipe* out_pipe_, s64 pos, SeekDir seek_dir)
             whence = SEEK_END;
             break;
     }
-    off_t rc = lseek(out_pipe->fd, safe_demote<off_t>(pos), whence);
+    off_t rc = lseek(out_pipe->fd, check_cast<off_t>(pos), whence);
     if (rc < 0) {
         PLY_ASSERT(0); // Need to recognize error codes here
         return 0;

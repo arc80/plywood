@@ -31,8 +31,8 @@ void write_type_signature(BinaryBuffer& sig, const TypeDescriptor* type_desc) {
     } else if (type_desc->type_key == &TypeKey_FixedArray) {
         const TypeDescriptor_FixedArray* fixed_arr_type = type_desc->cast<TypeDescriptor_FixedArray>();
         sig.append(Token::FixedArray);
-        sig.append(safe_demote<u16>(fixed_arr_type->num_items));
-        sig.append(safe_demote<u16>(fixed_arr_type->stride));
+        sig.append(check_cast<u16>(fixed_arr_type->num_items));
+        sig.append(check_cast<u16>(fixed_arr_type->stride));
         write_type_signature(sig, fixed_arr_type->item_type);
     } else if (type_desc->type_key == &TypeKey_Array) {
         const TypeDescriptor_Array* arr_type = type_desc->cast<TypeDescriptor_Array>();
@@ -41,12 +41,12 @@ void write_type_signature(BinaryBuffer& sig, const TypeDescriptor* type_desc) {
     } else if (type_desc->type_key == &TypeKey_Struct) {
         const TypeDescriptor_Struct* struct_type = type_desc->cast<TypeDescriptor_Struct>();
         sig.append(Token::Struct);
-        sig.append(safe_demote<u8>(struct_type->members.num_items()));
+        sig.append(check_cast<u8>(struct_type->members.num_items()));
         for (const auto& member : struct_type->members) {
-            sig.append(safe_demote<u8>(member.name.num_bytes()));
+            sig.append(check_cast<u8>(member.name.num_bytes()));
             void* dst = sig.begin_enqueue(member.name.num_bytes());
             memcpy(dst, member.name.bytes(), member.name.num_bytes());
-            sig.append(safe_demote<u16>(member.offset));
+            sig.append(check_cast<u16>(member.offset));
             write_type_signature(sig, member.type);
         }
     } else if (type_desc->type_key == &TypeKey_RawPtr || type_desc->type_key == &asset_bank::TypeKey_AssetRef) {
@@ -110,8 +110,8 @@ void make_conversion_recipe(OutStream& out,
     if (type_desc->type_key == &TypeKey_Float) {
         PLY_ASSERT(src_type_desc->type_key == &TypeKey_Float);
         NativeEndianWriter{out}.write(TypeConverter::BaseCmd{
-            TypeConverter::Cmd::Copy32, safe_demote<u16>(write_ctx.dst_offset),
-            safe_demote<u16>(write_ctx.src_offset)});
+            TypeConverter::Cmd::Copy32, check_cast<u16>(write_ctx.dst_offset),
+            check_cast<u16>(write_ctx.src_offset)});
     } else if (type_desc->type_key == &TypeKey_FixedArray) {
         const TypeDescriptor_FixedArray* dst_fixed_array_type =
             type_desc->cast<TypeDescriptor_FixedArray>();
@@ -128,9 +128,9 @@ void make_conversion_recipe(OutStream& out,
                 // Fast path: FixedArray of float with default stride
                 NativeEndianWriter{out}.write(
                     TypeConverter::Copy32Range{TypeConverter::Cmd::Copy32Range,
-                                               safe_demote<u16>(write_ctx.dst_offset),
-                                               safe_demote<u16>(write_ctx.src_offset),
-                                               safe_demote<u16>(items_to_copy)});
+                                               check_cast<u16>(write_ctx.dst_offset),
+                                               check_cast<u16>(write_ctx.src_offset),
+                                               check_cast<u16>(items_to_copy)});
             } else {
                 // Slow path
                 TypeConverter::WriteContext child_write_ctx = write_ctx;
@@ -147,11 +147,11 @@ void make_conversion_recipe(OutStream& out,
                 src_type_desc->cast<TypeDescriptor_Array>();
             NativeEndianWriter{out}.write(TypeConverter::IterateArrayToFixedArray{
                 TypeConverter::Cmd::IterateArrayToFixedArray,
-                safe_demote<u16>(write_ctx.dst_offset),
-                safe_demote<u16>(write_ctx.src_offset),
-                safe_demote<u16>(dst_fixed_array_type->stride),
-                safe_demote<u16>(src_arr_type->item_type->fixed_size),
-                safe_demote<u16>(dst_fixed_array_type->num_items),
+                check_cast<u16>(write_ctx.dst_offset),
+                check_cast<u16>(write_ctx.src_offset),
+                check_cast<u16>(dst_fixed_array_type->stride),
+                check_cast<u16>(src_arr_type->item_type->fixed_size),
+                check_cast<u16>(dst_fixed_array_type->num_items),
             });
             make_conversion_recipe(out, {0, 0}, dst_fixed_array_type->item_type,
                                    src_arr_type->item_type);
@@ -172,7 +172,7 @@ void create_conversion_recipe(OutStream& out, const TypeDescriptor_Struct* dst_s
             for (const auto& src_member : src_struct->members) {
                 if (dst_member.name == src_member.name) {
                     NativeEndianWriter{out}.write(TypeConverter::SetRootSourceIndex{
-                        TypeConverter::Cmd::SetRootSourceIndex, safe_demote<u16>(s)});
+                        TypeConverter::Cmd::SetRootSourceIndex, check_cast<u16>(s)});
                     TypeConverter::WriteContext write_ctx = {dst_member.offset,
                                                              src_member.offset};
                     make_conversion_recipe(out, write_ctx, dst_member.type,
@@ -205,7 +205,7 @@ void convert(BlockList::WeakRef cursor, void* dst_ptr, ArrayView<void*> src_ptrs
             if (!view_block)
                 break;
             PLY_ASSERT(view_block->view_used_bytes().contains(cursor.byte));
-            view = {cursor.byte, safe_demote<u32>(view_block->end() - cursor.byte)};
+            view = {cursor.byte, check_cast<u32>(view_block->end() - cursor.byte)};
             PLY_ASSERT(!view.is_empty());
             cursor = cursor.block->weak_ref_to_next();
         }

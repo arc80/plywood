@@ -485,7 +485,7 @@ void Page_cook(cook::CookResult* cook_result_, AnyObject) {
             class_scope = resolve_class_scope(class_scope_text);
             if (!class_scope) {
                 FileLocation src_file_loc = src_file_loc_map.get_file_location(
-                    safe_demote<u32>(tag.bytes - src.bytes));
+                    check_cast<u32>(tag.bytes - src.bytes));
                 page_result->add_error(
                     String::format("{}({}, {}): error: class '{}' not found\n",
                                    page_src_path, src_file_loc.line_number,
@@ -501,7 +501,7 @@ void Page_cook(cook::CookResult* cook_result_, AnyObject) {
             String class_fqid = vins.view_available().trim(is_white);
             if (class_fqid != class_scope_text) {
                 FileLocation src_file_loc = src_file_loc_map.get_file_location(
-                    safe_demote<u32>(tag.bytes - src.bytes));
+                    check_cast<u32>(tag.bytes - src.bytes));
                 page_result->add_error(String::format(
                     "{}({}, {}): error: dumpExtractedMembers tag '{}' does not "
                     "match earlier setClassScope tag '{}'\n",
@@ -520,7 +520,7 @@ void Page_cook(cook::CookResult* cook_result_, AnyObject) {
                 // escape chracters in liquid tags yet...) For now, we'll just use the
                 // location of the tag itself.
                 FileLocation src_file_loc = src_file_loc_map.get_file_location(
-                    safe_demote<u32>(tag.bytes - src.bytes));
+                    check_cast<u32>(tag.bytes - src.bytes));
                 page_result->add_error(String::format(
                     "{}({}, {}): error: class '{}' not found\n", page_src_path,
                     src_file_loc.line_number, src_file_loc.column_number, class_fqid));
@@ -535,7 +535,7 @@ void Page_cook(cook::CookResult* cook_result_, AnyObject) {
             html_writer << vins.view_available();
         } else {
             FileLocation src_file_loc = src_file_loc_map.get_file_location(
-                safe_demote<u32>(tag.bytes - src.bytes));
+                check_cast<u32>(tag.bytes - src.bytes));
             page_result->add_error(String::format(
                 "{}({}, {}): error: unrecognized tag '{}'\n", page_src_path,
                 src_file_loc.line_number, src_file_loc.column_number, command));

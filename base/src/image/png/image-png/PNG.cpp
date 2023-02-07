@@ -48,7 +48,7 @@ void write_png(const Image& im, ply::OutStream* out) {
         png_ptr, out,
         [](png_structp png_ptr, png_bytep buf, png_size_t size) {
             ply::OutStream* out = (ply::OutStream*) png_get_io_ptr(png_ptr);
-            out->write({(const char*) buf, safe_demote<u32>(size)});
+            out->write({(const char*) buf, check_cast<u32>(size)});
         },
         [](png_structp png_ptr) {
             ply::OutStream* out = (ply::OutStream*) png_get_io_ptr(png_ptr);

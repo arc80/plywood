@@ -96,7 +96,7 @@ void* map_operate(BaseMap* map, MapOperation op, View<Key> key, const MapTypeInf
                 return nullptr;
             } else {
                 // Store item index.
-                item_idx = safe_demote<s32>(map->items.num_items);
+                item_idx = check_cast<s32>(map->items.num_items);
                 map->indices[idx & mask] = item_idx;
 
                 // Construct new item.

@@ -440,7 +440,7 @@ public:
         other.allocated = 0;
     }
     Array(InitList<T> init) {
-        u32 init_size = safe_demote<u32>(init.size());
+        u32 init_size = check_cast<u32>(init.size());
         ((BaseArray*) this)->alloc(init_size, (u32) sizeof(T));
         subst::construct_array_from(this->items, init.begin(), init_size);
     }
@@ -470,7 +470,7 @@ public:
     }
     void operator=(std::initializer_list<T> init) {
         subst::destruct_array(this->items, this->num_items_);
-        u32 init_size = safe_demote<u32>(init.size());
+        u32 init_size = check_cast<u32>(init.size());
         ((BaseArray*) this)->realloc(init_size, (u32) sizeof(T));
         subst::unsafe_construct_array_from(this->items, init.begin(), init_size);
     }
@@ -587,7 +587,7 @@ public:
     }
 
     void extend(InitList<T> init) {
-        u32 init_size = safe_demote<u32>(init.size());
+        u32 init_size = check_cast<u32>(init.size());
         ((BaseArray*) this)->reserve(this->num_items_ + init_size, (u32) sizeof(T));
         subst::construct_array_from(this->items + this->num_items_, init.begin(),
                                     init_size);
@@ -682,10 +682,10 @@ public:
 
     StringView string_view() const {
         return {(const char*) this->items,
-                safe_demote<u32>(this->num_items_ * sizeof(T))};
+                check_cast<u32>(this->num_items_ * sizeof(T))};
     }
     MutStringView mutable_string_view() const {
-        return {(char*) this->items, safe_demote<u32>(this->num_items_ * sizeof(T))};
+        return {(char*) this->items, check_cast<u32>(this->num_items_ * sizeof(T))};
     }
 
     ArrayView<T> sub_view(u32 start) {
@@ -790,12 +790,12 @@ struct FixedArray {
     }
 
     MutStringView mutable_string_view() {
-        return {reinterpret_cast<char*>(items), safe_demote<u32>(Size * sizeof(T))};
+        return {reinterpret_cast<char*>(items), check_cast<u32>(Size * sizeof(T))};
     }
 
     StringView string_view() const {
         return {reinterpret_cast<const char*>(items),
-                safe_demote<u32>(Size * sizeof(T))};
+                check_cast<u32>(Size * sizeof(T))};
     }
 
     T* begin() {
@@ -1781,7 +1781,7 @@ public:
 // PoolIndex<T, Index> inline functions
 //------------------------------------------------------------------------------------
 template <typename T, typename Index>
-PoolIndex<T, Index>::PoolIndex(u32 idx) : idx{safe_demote<Index>(idx)} {
+PoolIndex<T, Index>::PoolIndex(u32 idx) : idx{check_cast<Index>(idx)} {
 }
 
 template <typename T, typename Index>
@@ -2034,7 +2034,7 @@ PoolPtr<const T> Pool<T>::get(PoolIndex<T, Index> index) const {
 
 template <typename T>
 u32 Pool<T>::index_of(const T* item) const {
-    u32 index = safe_demote<u32>(item - static_cast<const T*>(m_items));
+    u32 index = check_cast<u32>(item - static_cast<const T*>(m_items));
     PLY_ASSERT(index < m_size);
     return index;
 }

@@ -62,7 +62,7 @@ void OutStream::flush(bool hard) {
 
         // Update the block's write position.
         this->block->num_bytes_used =
-            safe_demote<u32>(this->cur_byte - this->start_byte);
+            check_cast<u32>(this->cur_byte - this->start_byte);
     }
 }
 
@@ -84,7 +84,7 @@ bool OutStream::make_writable() {
             StringView::from_range(this->block->unused(), this->cur_byte));
     }
     // Update the block's write position.
-    this->block->num_bytes_used = safe_demote<u32>(this->cur_byte - this->start_byte);
+    this->block->num_bytes_used = check_cast<u32>(this->cur_byte - this->start_byte);
     if (!rc) {
         this->status.eof = 1;
         return false;
@@ -119,7 +119,7 @@ String OutStream::move_to_string() {
     PLY_ASSERT(this->head_block);
 
     // Update the current block's write position.
-    this->block->num_bytes_used = safe_demote<u32>(this->cur_byte - this->start_byte);
+    this->block->num_bytes_used = check_cast<u32>(this->cur_byte - this->start_byte);
 
     // Release block references and create the String. Releasing the references
     // allows BlockList::to_string() to optimize the case where there's only one

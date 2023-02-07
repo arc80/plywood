@@ -138,7 +138,7 @@ struct Context {
     }
     PLY_INLINE void set_dash(std::initializer_list<double> dashes,
                              double offset = 0.0) {
-        cairo_set_dash((cairo_t*) this, dashes.begin(), safe_demote<int>(dashes.size()),
+        cairo_set_dash((cairo_t*) this, dashes.begin(), check_cast<int>(dashes.size()),
                        offset);
     }
     PLY_INLINE void set_line_join(cairo_line_join_t join) {

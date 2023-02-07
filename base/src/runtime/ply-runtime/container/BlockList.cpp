@@ -33,7 +33,7 @@ PLY_NO_INLINE BlockList::WeakRef BlockList::Footer::weak_ref_to_next() const {
     result.block = this->next_block;
     if (result.block) {
         u32 file_delta =
-            safe_demote<u32>((s64) result.block->file_offset - this->file_offset);
+            check_cast<u32>((s64) result.block->file_offset - this->file_offset);
         PLY_ASSERT(file_delta <= this->num_bytes_used);
         result.byte = result.block->bytes + (this->num_bytes_used - file_delta);
         PLY_ASSERT(result.block->view_used_bytes().contains(result.byte));

@@ -24,7 +24,7 @@ PLY_NO_INLINE Label LabelStorage::insert(StringView view) {
 
     u32 num_entry_bytes =
         impl::LabelEncoder::get_enc_len(view.num_bytes) + view.num_bytes;
-    u32 result_id = safe_demote<u32>(this->big_pool.num_items());
+    u32 result_id = check_cast<u32>(this->big_pool.num_items());
     *cursor = result_id;
 
     char* ptr = this->big_pool.alloc(num_entry_bytes);

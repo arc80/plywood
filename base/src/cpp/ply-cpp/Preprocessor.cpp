@@ -470,7 +470,7 @@ PLY_NO_INLINE Token read_token(Preprocessor* pp) {
                 loc_map_item.linear_loc = pp->linear_loc_at_end_of_stack_top;
                 loc_map_item.include_chain_idx = item->include_chain_idx;
                 loc_map_item.offset =
-                    safe_demote<u32>(item->in.cur_byte - item->in.start_byte);
+                    check_cast<u32>(item->in.cur_byte - item->in.start_byte);
                 vf->location_map.insert(std::move(loc_map_item));
 
                 pp->linear_loc_at_end_of_stack_top += item->in.num_bytes_readable();
@@ -825,7 +825,7 @@ PLY_NO_INLINE Token read_token(Preprocessor* pp) {
                     // This is a macro expansion
                     LinearLocation linear_loc_at_macro =
                         pp->linear_loc_at_end_of_stack_top -
-                        safe_demote<LinearLocation>(item->in.end_byte -
+                        check_cast<LinearLocation>(item->in.end_byte -
                                                     token.identifier.bytes);
                     PPVisitedFiles* vf = pp->visited_files;
 

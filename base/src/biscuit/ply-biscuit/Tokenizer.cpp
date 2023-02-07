@@ -86,12 +86,12 @@ PLY_NO_INLINE void write_compact(Tokenizer* tkr, u32 value) {
 }
 
 PLY_NO_INLINE void encode_token(Tokenizer* tkr, const ExpandedToken& exp_token) {
-    PLY_ASSERT(tkr->next_token_idx == safe_demote<u32>(tkr->token_data.num_items()));
+    PLY_ASSERT(tkr->next_token_idx == check_cast<u32>(tkr->token_data.num_items()));
 
     // Write the token's file offset as a compact offset from the current
     // file_offset_table entry.
     u32 fot_idx = exp_token.token_idx >> 8;
-    while (safe_demote<u32>(tkr->file_offset_table.num_items()) <= fot_idx) {
+    while (check_cast<u32>(tkr->file_offset_table.num_items()) <= fot_idx) {
         // Write a new entry to the file_offset_table.
         tkr->file_offset_table.append(exp_token.file_offset);
     }
@@ -110,12 +110,12 @@ PLY_NO_INLINE void encode_token(Tokenizer* tkr, const ExpandedToken& exp_token) 
         // Write the string key
         write_compact(tkr, exp_token.label.idx);
     }
-    tkr->next_token_idx = safe_demote<u32>(tkr->token_data.num_items());
+    tkr->next_token_idx = check_cast<u32>(tkr->token_data.num_items());
 }
 
 PLY_NO_INLINE void make_end_of_file_token(ExpandedToken& exp_token, Tokenizer* tkr) {
     exp_token.token_idx = tkr->next_token_idx;
-    exp_token.file_offset = safe_demote<u32>(tkr->vin.end - tkr->vin.start);
+    exp_token.file_offset = check_cast<u32>(tkr->vin.end - tkr->vin.start);
     exp_token.type = TokenType::EndOfFile;
 }
 
@@ -140,8 +140,8 @@ PLY_NO_INLINE u32 expand_token_internal(ExpandedToken& exp_token, Tokenizer* tkr
             exp_token.label.idx = impl::LabelEncoder::decode_value(data);
         }
         PLY_ASSERT(data <= tkr->token_data.end());
-        u32 compact_length = safe_demote<u32>(data - start);
-        u32 end_offset = safe_demote<u32>(tkr->vin.cur - tkr->vin.start);
+        u32 compact_length = check_cast<u32>(data - start);
+        u32 end_offset = check_cast<u32>(tkr->vin.cur - tkr->vin.start);
         if (data < tkr->token_data.end()) {
             end_offset = tkr->file_offset_table[(token_idx + 1) >> 8] +
                          impl::LabelEncoder::decode_value(data);
@@ -298,13 +298,13 @@ PLY_NO_INLINE ExpandedToken Tokenizer::read_token() {
     for (;;) {
         if (this->vin.at_eof()) {
             exp_token.token_idx = this->next_token_idx;
-            exp_token.file_offset = safe_demote<u32>(this->vin.end - this->vin.start);
+            exp_token.file_offset = check_cast<u32>(this->vin.end - this->vin.start);
             exp_token.type = TokenType::EndOfFile;
             return exp_token;
         }
 
-        exp_token.file_offset = safe_demote<u32>(this->vin.cur - this->vin.start);
-        exp_token.token_idx = safe_demote<u32>(this->token_data.num_items());
+        exp_token.file_offset = check_cast<u32>(this->vin.cur - this->vin.start);
+        exp_token.token_idx = check_cast<u32>(this->token_data.num_items());
         if (this->behavior.inside_string) {
             read_string(exp_token, this);
             return exp_token;

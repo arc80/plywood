@@ -1595,7 +1595,7 @@ struct ArrayView {
     }
     template <typename U = T, std::enable_if_t<std::is_const<U>::value, int> = 0>
     ArrayView(std::initializer_list<T> init)
-        : items{init.begin()}, num_items{safe_demote<u32>(init.size())} {
+        : items{init.begin()}, num_items{check_cast<u32>(init.size())} {
         PLY_ASSERT((uptr) init.end() - (uptr) init.begin() == sizeof(T) * init.size());
     }
     template <u32 N>
@@ -1791,7 +1791,7 @@ struct StringView {
     }
 
     static StringView from_range(const char* start_byte, const char* end_byte) {
-        return {start_byte, safe_demote<u32>(end_byte - start_byte)};
+        return {start_byte, check_cast<u32>(end_byte - start_byte)};
     }
     const char& operator[](u32 index) const {
         PLY_ASSERT(index < this->num_bytes);
@@ -1948,7 +1948,7 @@ struct MutStringView {
         return this->bytes + this->num_bytes;
     }
     static MutStringView from_range(char* start_byte, char* end_byte) {
-        return {start_byte, safe_demote<u32>(end_byte - start_byte)};
+        return {start_byte, check_cast<u32>(end_byte - start_byte)};
     }
     operator const StringView&() const {
         return reinterpret_cast<const StringView&>(*this);
@@ -1978,12 +1978,12 @@ ArrayView<T> ArrayView<T>::from(MutStringView view) {
 
 template <typename T>
 StringView ArrayView<T>::string_view() const {
-    return {(const char*) items, safe_demote<u32>(num_items * sizeof(T))};
+    return {(const char*) items, check_cast<u32>(num_items * sizeof(T))};
 }
 
 template <typename T>
 MutStringView ArrayView<T>::mutable_string_view() {
-    return {(char*) items, safe_demote<u32>(num_items * sizeof(T))};
+    return {(char*) items, check_cast<u32>(num_items * sizeof(T))};
 }
 
 namespace subst {
@@ -2156,7 +2156,7 @@ PLY_INLINE s32 find(const Arr& arr, const Arg& arg) {
 
 template <typename T, typename U, std::enable_if_t<IsComparable<T, U>, int> = 0>
 PLY_INLINE s32 rfind(ArrayView<const T> arr, const U& item) {
-    for (s32 i = safe_demote<s32>(arr.num_items - 1); i >= 0; i--) {
+    for (s32 i = check_cast<s32>(arr.num_items - 1); i >= 0; i--) {
         if (arr[i] == item)
             return i;
     }
@@ -2166,7 +2166,7 @@ PLY_INLINE s32 rfind(ArrayView<const T> arr, const U& item) {
 template <typename T, typename Callback,
           std::enable_if_t<IsCallable<Callback, T>, int> = 0>
 PLY_INLINE s32 rfind(ArrayView<const T> arr, const Callback& callback) {
-    for (s32 i = safe_demote<s32>(arr.num_items - 1); i >= 0; i--) {
+    for (s32 i = check_cast<s32>(arr.num_items - 1); i >= 0; i--) {
         if (callback(arr[i]))
             return i;
     }

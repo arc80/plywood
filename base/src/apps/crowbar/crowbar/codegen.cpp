@@ -107,12 +107,12 @@ Subst insert_directive_subst(StringView view, const char* marker,
             }
             subst.replacement = String::format(
                 "\n{}{}", subst.replacement,
-                StringView{line_start, safe_demote<u32>(first_non_white - line_start)});
+                StringView{line_start, check_cast<u32>(first_non_white - line_start)});
             break;
         }
         insert_pos--;
     }
-    subst.start = safe_demote<u32>(insert_pos - view.bytes);
+    subst.start = check_cast<u32>(insert_pos - view.bytes);
     subst.num_bytes = 0;
     return subst;
 }
@@ -340,9 +340,9 @@ struct ReflectionHooks : cpp::ParseSupervisor {
             start_of_line--;
         }
         Subst& subst = this->sfri->substs_in_parsed_file.append();
-        subst.start = safe_demote<u32>(start_of_line - pp_item_start_unit);
+        subst.start = check_cast<u32>(start_of_line - pp_item_start_unit);
         subst.num_bytes =
-            safe_demote<u32>((directive.bytes + directive.num_bytes) - start_of_line);
+            check_cast<u32>((directive.bytes + directive.num_bytes) - start_of_line);
     }
 
     void begin_capture(const cpp::Token& token) {

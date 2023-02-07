@@ -132,7 +132,7 @@ String FileSystemIface::load_binary(StringView path) {
     if (in_pipe) {
         u64 file_size = in_pipe->get_file_size();
         // Files >= 4GB cannot be loaded this way:
-        result.resize(safe_demote<u32>(file_size));
+        result.resize(check_cast<u32>(file_size));
         in_pipe->read({result.bytes, result.num_bytes});
     }
     return result;

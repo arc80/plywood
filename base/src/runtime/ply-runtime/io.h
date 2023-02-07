@@ -75,10 +75,10 @@ struct InStream {
         return this->status.parse_error != 0;
     }
     u32 num_bytes_readable() const {
-        return safe_demote<u32>(this->end_byte - this->cur_byte);
+        return check_cast<u32>(this->end_byte - this->cur_byte);
     }
     StringView view_readable() const {
-        return {this->cur_byte, safe_demote<u32>(this->end_byte - this->cur_byte)};
+        return {this->cur_byte, check_cast<u32>(this->end_byte - this->cur_byte)};
     }
     bool load_more_data();
     bool ensure_readable() {
@@ -88,7 +88,7 @@ struct InStream {
     }
     bool read_internal(MutStringView dst);
     bool read(MutStringView dst) {
-        if (dst.num_bytes > safe_demote<u32>(this->end_byte - this->cur_byte))
+        if (dst.num_bytes > check_cast<u32>(this->end_byte - this->cur_byte))
             return this->read_internal(dst);
         memcpy(dst.bytes, this->cur_byte, dst.num_bytes);
         this->cur_byte += dst.num_bytes;
@@ -256,10 +256,10 @@ struct OutStream {
         return this->status.eof != 0;
     }
     u32 num_writable_bytes() const {
-        return safe_demote<u32>(this->end_byte - this->cur_byte);
+        return check_cast<u32>(this->end_byte - this->cur_byte);
     }
     MutStringView view_writable() {
-        return {cur_byte, safe_demote<u32>(end_byte - cur_byte)};
+        return {cur_byte, check_cast<u32>(end_byte - cur_byte)};
     }
     bool make_writable();
     bool ensure_writable() {

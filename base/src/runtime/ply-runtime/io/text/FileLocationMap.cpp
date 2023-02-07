@@ -26,7 +26,7 @@ FileLocationMap FileLocationMap::from_view(StringView path, StringView src) {
         s32 codepoint = Unicode{UTF8}.decode_point(src_in);
         if (codepoint < 0)
             break;
-        u32 next_ofs = safe_demote<u32>(src_in.cur_byte - src_in.start_byte);
+        u32 next_ofs = check_cast<u32>(src_in.cur_byte - src_in.start_byte);
         if (next_ofs > next_chunk_ofs) {
             result.table.append({line_number, next_chunk_ofs - line_start_ofs,
                                  column_number, ofs - 256});
@@ -64,8 +64,8 @@ FileLocation FileLocationMap::get_file_location(u32 offset) const {
 
     for (;;) {
         if (src_in.cur_byte >= target) {
-            u32 nb = safe_demote<u32>(target - src.bytes);
-            return {line_number, safe_demote<u32>(target - line_start), column_number,
+            u32 nb = check_cast<u32>(target - src.bytes);
+            return {line_number, check_cast<u32>(target - line_start), column_number,
                     nb};
         }
 

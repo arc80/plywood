@@ -280,7 +280,7 @@ struct Parser {
                 uptr marker_length = (lc.vins.cur_byte - save_point.start_byte);
                 if (marker_length > 9)
                     goto not_marker; // marker too long
-                lc.indent += safe_demote<u32>(marker_length);
+                lc.indent += check_cast<u32>(marker_length);
                 if (lc.vins.num_bytes_available() < 2)
                     goto not_marker;
                 char punc = *lc.vins.cur_byte;
@@ -303,7 +303,7 @@ struct Parser {
                 // 32-bit demotion is safe because we know the marker is 9 digits or
                 // less:
                 lc.outer_indent = indent_after_marker + 1;
-                got_list_marker(safe_demote<s32>(num), punc);
+                got_list_marker(check_cast<s32>(num), punc);
             } else {
                 goto not_marker;
             }

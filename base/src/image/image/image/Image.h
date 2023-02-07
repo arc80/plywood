@@ -74,7 +74,7 @@ struct Image {
 
     u32 size() const {
         PLY_ASSERT(stride > 0);
-        return safe_demote<u32>(stride * height);
+        return check_cast<u32>(stride * height);
     }
     bool is_char() const {
         return format == Format::Char && bytespp == 1;
