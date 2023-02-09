@@ -24,9 +24,9 @@ enum class Format : u8 {
     U16,
     S16_2,
     Half,
-    Float2,
+    vec2,
     Half2,
-    Float4,
+    vec4,
     Half4,
     D24S8,
     // Note: make sure to update OfflineTexture.cpp (for now) if more formats are added
@@ -34,17 +34,17 @@ enum class Format : u8 {
 };
 
 #if PLY_IS_BIG_ENDIAN
-inline u32 to_rgba(const Int4<u8>& color) {
+inline u32 to_rgba(const byte4& color) {
     return (color.w) | (color.z << 8) | (color.y << 16) | (color.x << 16);
 }
-inline u32 to_abgr(const Int4<u8>& color) {
+inline u32 to_abgr(const byte4& color) {
     return (const u32&) color;
 }
 #else
-inline u32 to_rgba(const Int4<u8>& color) {
+inline u32 to_rgba(const byte4& color) {
     return (const u32&) color;
 }
-inline u32 to_abgr(const Int4<u8>& color) {
+inline u32 to_abgr(const byte4& color) {
     return (color.w) | (color.z << 8) | (color.y << 16) | (color.x << 16);
 }
 #endif
@@ -92,13 +92,13 @@ struct Image {
         return format == Format::Half && bytespp == 2;
     }
     bool is_float2() const {
-        return format == Format::Float2 && bytespp == 8;
+        return format == Format::vec2 && bytespp == 8;
     }
     bool is_half2() const {
         return format == Format::Half2 && bytespp == 4;
     }
     bool is_float4() const {
-        return format == Format::Float4 && bytespp == 16;
+        return format == Format::vec4 && bytespp == 16;
     }
     bool is_half4() const {
         return format == Format::Half4 && bytespp == 8;
@@ -115,7 +115,7 @@ struct Image {
         return width == height;
     }
 
-    IntVec2 dims() const {
+    ivec2 dims() const {
         return {width, height};
     }
 
@@ -124,12 +124,12 @@ struct Image {
     }
 
     char* get_pixel(s32 x, s32 y) {
-        PLY_ASSERT(get_rect().contains(IntVec2{x, y}));
+        PLY_ASSERT(get_rect().contains(ivec2{x, y}));
         return data + y * stride + x * bytespp;
     }
 
     const char* get_pixel(s32 x, s32 y) const {
-        PLY_ASSERT(get_rect().contains(IntVec2{x, y}));
+        PLY_ASSERT(get_rect().contains(ivec2{x, y}));
         return data + y * stride + x * bytespp;
     }
 
@@ -222,7 +222,7 @@ inline Image crop(const Image& im, const IntRect& r) {
 OwnImage copy(const Image& im);
 void clear(Image& image, u32 value);
 void clear(Image& image, float value);
-void clear(Image& image, const Float4& value);
+void clear(Image& image, const vec4& value);
 void vertical_flip(Image& dst, const Image& src);
 void copy32_bit(Image& dst, const Image& src);
 void linear_to_srgb(Image& dst, const Image& src);

@@ -6,4 +6,4 @@
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 #pragma once
 #include <ply-runtime/Base.h>
-#include <ply-math/Base.h>
+#include <ply-math.h>

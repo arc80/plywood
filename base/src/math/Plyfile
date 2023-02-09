@@ -1,6 +1,6 @@
 library math {
     source_files {
-        "math/ply-math"
+        "math"
     }
     include_directories {
         public "math"

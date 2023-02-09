@@ -24,9 +24,9 @@ u8 Image::FormatToBPP[] = {
     2,  // U16
     4,  // S16_2
     2,  // Half
-    8,  // Float2
+    8,  // vec2
     4,  // Half2
-    16, // Float4
+    16, // vec4
     8,  // Half4
     4,  // D24S8
 };
@@ -100,14 +100,14 @@ void clear(Image& image, float value) {
     }
 }
 
-void clear(Image& image, const Float4& value) {
+void clear(Image& image, const vec4& value) {
     PLY_ASSERT(image.is_float4());
 
     char* dst_row = image.data;
     char* dst_row_end = dst_row + image.height * image.stride;
     while (dst_row < dst_row_end) {
-        Float4* dst = (Float4*) dst_row;
-        Float4* dst_end = dst + image.width;
+        vec4* dst = (vec4*) dst_row;
+        vec4* dst_end = dst + image.width;
         while (dst < dst_end) {
             *dst = value;
             dst++;

@@ -5,26 +5,25 @@
 ┃    └──┴┴┴┘                                         ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 #pragma once
-#include <ply-math/Core.h>
-#include <ply-math/Vector.h>
+#include <ply-math.h>
 #include <ply-runtime/io/OutStream.h>
 
 namespace ply {
 namespace fmt {
 
 template <>
-struct TypePrinter<Float2> {
-    static void print(OutStream* outs, const Float2& v);
+struct TypePrinter<vec2> {
+    static void print(OutStream* outs, const vec2& v);
 };
 
 template <>
-struct TypePrinter<Float3> {
-    static void print(OutStream* outs, const Float3& v);
+struct TypePrinter<vec3> {
+    static void print(OutStream* outs, const vec3& v);
 };
 
 template <>
-struct TypePrinter<Float4> {
-    static void print(OutStream* outs, const Float4& v);
+struct TypePrinter<vec4> {
+    static void print(OutStream* outs, const vec4& v);
 };
 
 } // namespace fmt

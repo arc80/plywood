@@ -5,7 +5,7 @@
 ┃    └──┴┴┴┘                                         ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
 #pragma once
-#include <ply-math/Core.h>
+#include <ply-math.h>
 #include <ply-runtime/container/Hash.h>
 
 namespace ply {
@@ -14,15 +14,15 @@ namespace ply {
 // feature that implies a dependency on ply-runtime. However, that'll require changes to
 // the build system first.
 
-inline Hasher& operator<<(Hasher& hasher, const Float2& v) {
+inline Hasher& operator<<(Hasher& hasher, const vec2& v) {
     return hasher << v.x << v.y;
 }
 
-inline Hasher& operator<<(Hasher& hasher, const Float3& v) {
+inline Hasher& operator<<(Hasher& hasher, const vec3& v) {
     return hasher << v.x << v.y << v.z;
 }
 
-inline Hasher& operator<<(Hasher& hasher, const Float4& v) {
+inline Hasher& operator<<(Hasher& hasher, const vec4& v) {
     return hasher << v.x << v.y << v.z << v.w;
 }
 

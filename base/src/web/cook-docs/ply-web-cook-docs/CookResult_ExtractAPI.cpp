@@ -499,7 +499,7 @@ struct APIExtractor : cpp::ParseSupervisor {
             this->doc_state.markdown = mout.move_to_string();
         }
         if (!got_any_markdown && !got_non_group_directive) {
-            // Allow empty markdown in member documentation (eg. Float2::x and y).
+            // Allow empty markdown in member documentation (eg. vec2::x and y).
             // FIXME: Would be better to store the LinearLocation of the start of the
             // last line of the documentation string.
             this->doc_state.markdown_loc = token.linear_loc;

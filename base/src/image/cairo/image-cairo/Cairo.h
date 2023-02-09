@@ -73,48 +73,48 @@ struct Context {
     void destroy() {
         cairo_destroy((cairo_t*) this);
     }
-    void set_source_rgb(const Float3& c) {
+    void set_source_rgb(const vec3& c) {
         cairo_set_source_rgb((cairo_t*) this, c.r(), c.g(), c.b());
     }
-    void set_source_rgba(const Float4& c) {
+    void set_source_rgba(const vec4& c) {
         cairo_set_source_rgba((cairo_t*) this, c.r(), c.g(), c.b(), c.a());
     }
     void set_line_width(float w) {
         cairo_set_line_width((cairo_t*) this, w);
     }
-    void scale(const Float2& s) {
+    void scale(const vec2& s) {
         cairo_scale((cairo_t*) this, s.x, s.y);
     }
     void new_sub_path() {
         cairo_new_sub_path((cairo_t*) this);
     }
-    Float2 get_current_point() const {
+    vec2 get_current_point() const {
         double x, y;
         cairo_get_current_point((cairo_t*) this, &x, &y);
         return {(float) x, (float) y};
     }
-    void move_to(const Float2& p) {
+    void move_to(const vec2& p) {
         cairo_move_to((cairo_t*) this, p.x, p.y);
     }
-    void line_to(const Float2& p) {
+    void line_to(const vec2& p) {
         cairo_line_to((cairo_t*) this, p.x, p.y);
     }
-    void rel_line_to(const Float2& p) {
+    void rel_line_to(const vec2& p) {
         cairo_rel_line_to((cairo_t*) this, p.x, p.y);
     }
-    void curve_to(const Float2& p1, const Float2& p2, const Float2& p3) {
+    void curve_to(const vec2& p1, const vec2& p2, const vec2& p3) {
         cairo_curve_to((cairo_t*) this, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
     }
     void close_path() {
         cairo_close_path((cairo_t*) this);
     }
-    void arc(const Float2& p, float radius, float start_rad, float end_rad) {
+    void arc(const vec2& p, float radius, float start_rad, float end_rad) {
         cairo_arc((cairo_t*) this, p.x, p.y, radius, start_rad, end_rad);
     }
-    void arc_negative(const Float2& p, float radius, float start_rad, float end_rad) {
+    void arc_negative(const vec2& p, float radius, float start_rad, float end_rad) {
         cairo_arc_negative((cairo_t*) this, p.x, p.y, radius, start_rad, end_rad);
     }
-    void circle(const Float2& p, float radius) {
+    void circle(const vec2& p, float radius) {
         cairo_arc((cairo_t*) this, p.x, p.y, radius, 0, 2 * Pi);
     }
     void rectangle(const Rect& r) {
@@ -164,7 +164,7 @@ struct Context {
         cairo_font_extents((cairo_t*) this, &extents);
         return extents;
     }
-    void translate(const Float2& t) {
+    void translate(const vec2& t) {
         cairo_translate((cairo_t*) this, t.x, t.y);
     }
     void rotate(float angle) {

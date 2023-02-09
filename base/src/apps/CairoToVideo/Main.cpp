@@ -24,9 +24,9 @@ int main() {
             cr->paint();
             const float num_loops = mix(4.f, 22.f, j / 120.f);
             for (u32 i = 0; i <= NumPoints; i++) {
-                Float2 c1 = Complex::from_angle(2 * Pi * i * num_loops / NumPoints);
-                Float2 c2 = Complex::from_angle(2 * Pi * i / NumPoints);
-                cr->line_to(Float2{120, 120} + c1 * 68 + c2 * 48);
+                vec2 c1 = Complex::from_angle(2 * Pi * i * num_loops / NumPoints);
+                vec2 c2 = Complex::from_angle(2 * Pi * i / NumPoints);
+                cr->line_to(vec2{120, 120} + c1 * 68 + c2 * 48);
             }
             cr->set_line_width(1.5f);
             cr->set_source_rgb({0.2f, 0.5f, 0.5f});
