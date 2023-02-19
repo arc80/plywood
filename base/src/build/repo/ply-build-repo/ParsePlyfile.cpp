@@ -129,9 +129,16 @@ handle_keyword_inside_target_or_function(ExtendedParser* ep,
         (kp.kw_token.label == g_common->preprocessor_definitions_key) ||
         (kp.kw_token.label == g_common->dependencies_key) ||
         (kp.kw_token.label == g_common->link_libraries_key) ||
+        (kp.kw_token.label == g_common->prebuild_step_key) ||
         (kp.kw_token.label == g_common->compile_options_key)) {
         biscuit::Parser::Filter filter;
-        filter.keyword_handler = {handle_keyword_public_private, ep};
+        if (kp.kw_token.label == g_common->prebuild_step_key) {
+            filter.keyword_handler = [](const biscuit::KeywordParams&) {
+                return biscuit::KeywordResult::Illegal;
+            };
+        } else {
+            filter.keyword_handler = {handle_keyword_public_private, ep};
+        }
         filter.allow_instructions = true;
         kp.stmt_block->statements.append(
             parse_custom_block(ep, filter, kp.kw_token.label));
@@ -274,6 +281,7 @@ bool parse_plyfile(StringView path) {
     parser.keywords.assign(g_common->preprocessor_definitions_key, true);
     parser.keywords.assign(g_common->dependencies_key, true);
     parser.keywords.assign(g_common->link_libraries_key, true);
+    parser.keywords.assign(g_common->prebuild_step_key, true);
     parser.keywords.assign(g_common->config_options_key, true);
     parser.keywords.assign(g_common->config_list_key, true);
     parser.keywords.assign(g_common->config_key, true);

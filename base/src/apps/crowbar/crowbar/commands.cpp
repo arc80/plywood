@@ -100,6 +100,17 @@ void generate(BuildFolder_t* build_folder) {
     }
 }
 
+//                       ▄▄            ▄▄ ▄▄▄      ▄▄
+//  ▄▄▄▄▄  ▄▄▄▄▄   ▄▄▄▄  ██▄▄▄  ▄▄  ▄▄ ▄▄  ██   ▄▄▄██
+//  ██  ██ ██  ▀▀ ██▄▄██ ██  ██ ██  ██ ██  ██  ██  ██
+//  ██▄▄█▀ ██     ▀█▄▄▄  ██▄▄█▀ ▀█▄▄██ ██ ▄██▄ ▀█▄▄██
+//  ██
+
+void do_prebuild_steps(BuildFolder_t* build_folder, StringView config_name) {
+    init_built_ins(build_folder);
+    instantiate_all_configs(build_folder, config_name);
+}
+
 //  ▄▄                    ▄▄           ▄▄
 //  ██▄▄▄   ▄▄▄▄   ▄▄▄▄  ▄██▄▄  ▄▄▄▄  ▄██▄▄ ▄▄▄▄▄   ▄▄▄▄  ▄▄▄▄▄
 //  ██  ██ ██  ██ ██  ██  ██   ▀█▄▄▄   ██   ██  ▀▀  ▄▄▄██ ██  ██

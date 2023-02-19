@@ -18,6 +18,7 @@ generate_cmake_project(StringView cmake_lists_folder,
                        const build::CMakeGeneratorOptions& generator_opts,
                        StringView config);
 void generate(build::BuildFolder_t* build_folder);
+void do_prebuild_steps(build::BuildFolder_t* build_folder, StringView config_name);
 void write_bootstrap(build::BuildFolder_t* build_folder, u32 config_index);
 bool create_build_folder(StringView name);
 Array<String> get_build_folders();

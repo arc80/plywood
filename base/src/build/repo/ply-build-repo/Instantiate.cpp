@@ -24,7 +24,7 @@ T& append_or_find(Array<T>& arr, U&& item, const Callable& callable) {
 
 struct InstantiatingInterpreter {
     biscuit::Interpreter interp;
-    TargetInstantiator* mi = nullptr;
+    TargetInstantiator* ti = nullptr;
     Repository::Function* target_func = nullptr;
     Target* target = nullptr;
 
@@ -105,12 +105,12 @@ bool on_evaluate_source_file(InstantiatingInterpreter* ii,
                 SourceFile& src_file = append_or_find(
                     src_group.files, std::move(rel_path),
                     [&](const SourceFile& a) { return a.rel_path == rel_path; });
-                src_file.enabled_bits |= ii->mi->config_bit;
+                src_file.enabled_bits |= ii->ti->config_bit;
             }
         }
     }
     if (needs_compilation) {
-        ii->target->has_build_step_bits |= ii->mi->config_bit;
+        ii->target->has_build_step_bits |= ii->ti->config_bit;
     }
     return true;
 }
@@ -169,14 +169,14 @@ bool on_evaluate_dependency(InstantiatingInterpreter* ii, const AnyObject& attri
         ii->interp.base.return_value.cast<Repository::Function>();
     Target* dep_target = nullptr;
     if (instantiate_target_for_current_config(
-            &dep_target, ii->mi, target->stmt->custom_block()->name) != Fn_OK)
+            &dep_target, ii->ti, target->stmt->custom_block()->name) != Fn_OK)
         return false;
     Dependency& found_dep =
         append_or_find(ii->target->dependencies, dep_target,
                        [&](const Dependency& d) { return d.target == dep_target; });
-    found_dep.enabled_bits |= ii->mi->config_bit;
+    found_dep.enabled_bits |= ii->ti->config_bit;
     if (vis == Visibility::Public) {
-        found_dep.is_public_bits |= ii->mi->config_bit;
+        found_dep.is_public_bits |= ii->ti->config_bit;
     }
     return true;
 }
@@ -207,19 +207,67 @@ FnResult custom_block_inside_config(PropertyCollector* pc,
         // block can call a function that contains, for example, a dependencies {} block
         PLY_ASSERT(0); // Shouldn't get here
     }
-    PLY_SET_IN_SCOPE(pc->interp->current_frame->hooks, hooks);
+    PLY_SET_IN_SCOPE(pc->interp->current_frame->hooks, std::move(hooks));
     return exec_block(pc->interp->current_frame, cb->body);
+}
+
+// ┏━━━━━━━━━━━━━━━━━━┓
+// ┃  Prebuild steps  ┃
+// ┗━━━━━━━━━━━━━━━━━━┛
+struct PrebuildStepInterpreter {
+    biscuit::Interpreter interp;
+};
+
+FnResult do_prebuild_steps(const biscuit::Statement::CustomBlock* cb,
+                           biscuit::Tokenizer* tkr, Target* target) {
+    // Create new interpreter.
+    PrebuildStepInterpreter psi;
+    psi.interp.base.error = [&psi](StringView message) {
+        OutStream out = Console.error();
+        log_error_with_stack(out, &psi.interp, message);
+    };
+
+    // Populate global & library namespaces.
+    psi.interp.resolve_name = [&psi](Label identifier) -> AnyObject {
+        if (AnyObject* built_in = BuiltInMap.find(identifier))
+            return *built_in;
+        return {};
+    };
+
+    // Invoke library function.
+    biscuit::Interpreter::StackFrame frame;
+    // frame.hooks.do_custom_block = {custom_block_inside_target_function, &ii};
+    frame.interp = &psi.interp;
+    frame.desc = [target]() -> HybridString {
+        return String::format("prebuild step for '{}'",
+                              g_labelStorage.view(target->name));
+    };
+    frame.tkr = tkr;
+    FnResult result = exec_function(&frame, cb->body);
+    return result;
 }
 
 FnResult
 custom_block_inside_target_function(InstantiatingInterpreter* ii,
                                     const biscuit::Statement::CustomBlock* cb) {
+    if (cb->type == g_common->prebuild_step_key) {
+        // When a 'crowbar prebuild' command is issued, we add each prebuild_step block
+        // to an array that gets executed after the build system is fully instantiated.
+        if (ii->ti->prebuild_steps) {
+            ii->ti->prebuild_steps->append(
+                [cb, tkr = ii->interp.current_frame->tkr, targ = ii->target]() {
+                    return do_prebuild_steps(cb, tkr, targ);
+                });
+        }
+        return Fn_OK;
+    }
+
     PropertyCollector pc;
     pc.interp = &ii->interp;
     pc.base_path =
         Path.split(ii->target_func->plyfile->tkr.file_location_map.path).first;
     pc.options = &ii->target->options;
-    pc.config_bit = ii->mi->config_bit;
+    pc.config_bit = ii->ti->config_bit;
     pc.is_target = true;
 
     biscuit::Interpreter::Hooks hooks;
@@ -239,7 +287,7 @@ custom_block_inside_target_function(InstantiatingInterpreter* ii,
         PLY_ASSERT(0); // Shouldn't get here
     }
     PLY_SET_IN_SCOPE(ii->interp.current_frame->custom_block, cb);
-    PLY_SET_IN_SCOPE(ii->interp.current_frame->hooks, hooks);
+    PLY_SET_IN_SCOPE(ii->interp.current_frame->hooks, std::move(hooks));
     return exec_block(ii->interp.current_frame, cb->body);
 }
 
@@ -291,12 +339,12 @@ FnResult fn_link_objects_directly(InstantiatingInterpreter* ii,
 }
 
 FnResult instantiate_target_for_current_config(Target** out_target,
-                                               TargetInstantiator* mi, Label name) {
+                                               TargetInstantiator* ti, Label name) {
     // Check for an existing target; otherwise create one.
     Target* target = nullptr;
     {
         bool was_found = false;
-        TargetWithStatus* tws = mi->target_map.insert_or_find(name, &was_found);
+        TargetWithStatus* tws = ti->target_map.insert_or_find(name, &was_found);
         if (!was_found) {
             // No existing target found. Create a new one.
             tws->target = new Target;
@@ -323,8 +371,8 @@ FnResult instantiate_target_for_current_config(Target** out_target,
     }
 
     // Set node as active in this config.
-    PLY_ASSERT(mi->config_bit);
-    target->enabled_bits |= mi->config_bit;
+    PLY_ASSERT(ti->config_bit);
+    target->enabled_bits |= ti->config_bit;
 
     // Find library function by name.
     Repository::Function** func_ = g_repository->global_scope.find(name);
@@ -359,7 +407,7 @@ FnResult instantiate_target_for_current_config(Target** out_target,
         OutStream out = Console.error();
         log_error_with_stack(out, &ii.interp, message);
     };
-    ii.mi = mi;
+    ii.ti = ti;
     ii.target_func = target_func;
     ii.target = target;
 
@@ -394,14 +442,15 @@ FnResult instantiate_target_for_current_config(Target** out_target,
     };
     frame.tkr = &target_func->plyfile->tkr;
     FnResult result = exec_function(&frame, target_def->body);
-    mi->target_map.find(name)->status_in_current_config = Instantiated;
+    ti->target_map.find(name)->status_in_current_config = Instantiated;
     return result;
 }
 
 struct ConfigListInterpreter {
     biscuit::Interpreter interp;
     BuildFolder_t* build_folder = nullptr;
-    TargetInstantiator* mi = nullptr;
+    TargetInstantiator* ti = nullptr;
+    String run_prebuild_step_for_config;
 };
 
 FnResult custom_block_inside_config_list(ConfigListInterpreter* cli,
@@ -446,7 +495,7 @@ FnResult custom_block_inside_config_list(ConfigListInterpreter* cli,
     pc.config_bit = u64{1} << config_index;
     biscuit::Interpreter::Hooks hooks;
     hooks.do_custom_block = {custom_block_inside_config, &pc};
-    PLY_SET_IN_SCOPE(cli->interp.current_frame->hooks, hooks);
+    PLY_SET_IN_SCOPE(cli->interp.current_frame->hooks, std::move(hooks));
     result = exec_block(cli->interp.current_frame, cb->body);
     if (result != Fn_OK)
         return result;
@@ -454,31 +503,55 @@ FnResult custom_block_inside_config_list(ConfigListInterpreter* cli,
     // Add config to project
     Project.config_names.append(current_config_name);
 
-    // Instantiate all root targets in this config
-    PLY_SET_IN_SCOPE(cli->mi->config_bit, pc.config_bit);
-    for (StringView target_name : cli->build_folder->root_targets) {
-        Target* root_target = nullptr;
-        FnResult result = instantiate_target_for_current_config(
-            &root_target, cli->mi, g_labelStorage.insert(target_name));
-        if (result != Fn_OK)
-            return result;
+    // If we're generating a build system, instantiate targets in every config. If we're
+    // executing a prebuild step, only instantiate targets in the desired config.
+    if (cli->run_prebuild_step_for_config.is_empty()) {
+        // We're generating a build system. Instantiate all root targets in this config.
+        PLY_SET_IN_SCOPE(cli->ti->config_bit, pc.config_bit);
+        for (StringView target_name : cli->build_folder->root_targets) {
+            Target* root_target = nullptr;
+            FnResult result = instantiate_target_for_current_config(
+                &root_target, cli->ti, g_labelStorage.insert(target_name));
+            if (result != Fn_OK)
+                return result;
+        }
+    } else if (cli->run_prebuild_step_for_config == current_config_name) {
+        // We're executing a prebuild step and this is the desired config. Instantiate
+        // all root targets and gather their prebuild steps.
+        PLY_SET_IN_SCOPE(cli->ti->config_bit, pc.config_bit);
+        Array<Func<FnResult()>> prebuild_steps;
+        PLY_SET_IN_SCOPE(cli->ti->prebuild_steps, &prebuild_steps);
+        for (StringView target_name : cli->build_folder->root_targets) {
+            Target* root_target = nullptr;
+            FnResult result = instantiate_target_for_current_config(
+                &root_target, cli->ti, g_labelStorage.insert(target_name));
+            if (result != Fn_OK)
+                return result;
+        }
+
+        // Execute all prebuild steps for this config.
+        for (const Func<FnResult()>& step : prebuild_steps) {
+            if (step() != Fn_OK) {
+                exit(1);
+            }
+        }
     }
 
-    // Reset state between configs.
-    // Clear current_config_name, Target::current_options, and set TargetInstantiator
-    // status to NotInstantiated.
+    // Nothing left to do for this config. Reset all configuration options and
+    // instantiation statuses.
     for (Repository::Function* target : g_repository->targets) {
         target->current_options.clear();
     }
-    for (auto& item : cli->mi->target_map) {
+    for (auto& item : cli->ti->target_map) {
         item.value.status_in_current_config = NotInstantiated;
     }
 
     return Fn_OK;
 }
 
-void instantiate_all_configs(BuildFolder_t* build_folder) {
-    TargetInstantiator mi{};
+void instantiate_all_configs(BuildFolder_t* build_folder,
+                             StringView run_prebuild_step_for_config) {
+    TargetInstantiator ti{};
     Project.name = build_folder->solution_name;
     init_toolchain_msvc();
 
@@ -495,7 +568,8 @@ void instantiate_all_configs(BuildFolder_t* build_folder) {
             OutStream out = Console.error();
             log_error_with_stack(out, &cli.interp, message);
         };
-        cli.mi = &mi;
+        cli.ti = &ti;
+        cli.run_prebuild_step_for_config = run_prebuild_step_for_config;
 
         // Add builtin namespace.
         Map<Label, AnyObject> built_ins;

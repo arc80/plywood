@@ -21,6 +21,7 @@ struct Common {
     Label preprocessor_definitions_key;
     Label compile_options_key;
     Label link_libraries_key;
+    Label prebuild_step_key;
     Label dependencies_key;
     Label public_key;
     Label private_key;

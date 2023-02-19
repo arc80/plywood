@@ -835,59 +835,123 @@ struct ArrayTraits<FixedArray<T, Size>> {
 //
 
 template <typename>
-class Func;
+struct Func;
 
 template <typename Return, typename... Args>
-class Func<Return(Args...)> {
-private:
-    typedef Return Handler(void*, Args...);
+struct Func<Return(Args...)> {
+    struct DynamicOps {
+        void (*copy_construct)(Func*, const Func*) = nullptr;
+        void (*destruct)(Func*) = nullptr;
+    };
 
-    Handler* handler = nullptr;
-    void* stored_arg = nullptr;
+    Return (*thunk)(const Func*, Args...) = nullptr;
+    void* arg0 = nullptr;
+    void* arg1 = nullptr;
+    DynamicOps* dyn_ops = nullptr;
 
-public:
     Func() = default;
-
-    Func(const Func& other) : handler{other.handler}, stored_arg{other.stored_arg} {
+    Func(Func&& o) {
+        memcpy(this, &o, sizeof(Func));
+        new (&o) Func;
+    }
+    Func(const Func& o) {
+        if (o.dyn_ops) {
+            o.dyn_ops->copy_construct(this, &o);
+        } else {
+            memcpy(this, &o, sizeof(Func));
+        }
+    }
+    ~Func() {
+        if (this->dyn_ops) {
+            this->dyn_ops->destruct(this);
+        }
+    }
+    void operator=(Func&& o) {
+        this->~Func();
+        new (this) Func{std::move(o)};
+    }
+    void operator=(const Func& o) {
+        this->~Func();
+        new (this) Func{o};
     }
 
+    // Construct from function with hidden argument at namespace scope.
     template <typename T>
-    Func(Return (*handler)(T*, Args...), T* stored_arg)
-        : handler{(Handler*) handler}, stored_arg{(void*) stored_arg} {
-    }
-
-    template <typename T>
-    Func(Return (T::*handler)(Args...), T* target) : stored_arg{(void*) target} {
-        this->handler = [this](void* target, Args... args) {
-            return ((T*) target)->*(this->hidden_arg)(std::forward<Args>(args)...);
+    Func(Return (*handler)(T*, Args...), T* stored_arg) {
+        this->thunk = [](const Func* f, Args... args) {
+            auto handler = (Return(*)(T*, Args...)) f->arg0;
+            return handler((T*) f->arg1, std::forward<Args>(args)...);
         };
+        this->arg0 = handler;
+        this->arg1 = stored_arg;
     }
 
-    // Support lambda expressions
+    // Construct from class member function bound to an object pointer.
+    template <typename T>
+    Func(T* stored_ptr, Return (T::*member_func)(Args...)) {
+        this->thunk = [](const Func* f, Args... args) {
+            auto member_func = (Return(T::*)(Args...)) f->arg1;
+            return ((T*) f->arg0)->*member_func(std::forward<Args>(args)...);
+        };
+        this->arg0 = stored_ptr;
+        this->arg1 = member_func;
+    }
+
+    // Construct from any callable object such as a lambda expression.
     template <
         typename Callable,
         typename = void_t<decltype(std::declval<Callable>()(std::declval<Args>()...))>>
-    Func(const Callable& callable) : stored_arg{(void*) &callable} {
-        this->handler = [](void* callable, Args... args) -> Return {
-            return (*(const Callable*) callable)(std::forward<Args>(args)...);
-        };
+    Func(Callable&& callable) {
+        if (sizeof(Callable) > PLY_PTR_SIZE) {
+            this->thunk = [](const Func* f, Args... args) -> Return {
+                return (*(const Callable*) f->arg0)(std::forward<Args>(args)...);
+            };
+            this->arg0 = new Callable{std::forward<Callable>(callable)};
+            static DynamicOps dyn_ops_for_callable = {
+                [](Func* dst, const Func* src) { // copy_construct
+                    dst->thunk = src->thunk;
+                    dst->arg0 = new Callable{*(const Callable*) src->arg0};
+                    dst->arg1 = src->arg1;
+                    dst->dyn_ops = src->dyn_ops;
+                },
+                [](Func* f) { // destruct
+                    ((Callable*) f->arg0)->~Callable();
+                },
+            };
+            this->dyn_ops = &dyn_ops_for_callable;
+        } else {
+            // Avoid heap allocation.
+            this->thunk = [](const Func* f, Args... args) -> Return {
+                return (*(const Callable*) &f->arg0)(std::forward<Args>(args)...);
+            };
+            new (&this->arg0) Callable{std::forward<Callable>(callable)};
+            static DynamicOps dyn_ops_for_callable = {
+                [](Func* dst, const Func* src) { // copy_construct
+                    dst->thunk = src->thunk;
+                    new (&dst->arg0) Callable{(const Callable&) src->arg0};
+                    dst->arg1 = src->arg1;
+                    dst->dyn_ops = src->dyn_ops;
+                },
+                [](Func* f) { // destruct
+                    ((Callable*) f->arg0)->~Callable();
+                },
+            };
+            this->dyn_ops = &dyn_ops_for_callable;
+        }
     }
 
-    void operator=(const Func& other) {
-        this->handler = other.handler;
-        this->stored_arg = other.stored_arg;
-    }
-
+    // Cast to bool.
     explicit operator bool() const {
-        return this->handler != nullptr;
+        return this->thunk != nullptr;
     }
 
+    // Call operator.
     template <typename... CallArgs>
     Return operator()(CallArgs&&... args) const {
-        if (!this->handler)
+        if (this->thunk)
+            return this->thunk(this, std::forward<CallArgs>(args)...);
+        else
             return subst::create_default<Return>();
-        PLY_PUN_SCOPE
-        return this->handler(this->stored_arg, std::forward<CallArgs>(args)...);
     }
 };
 

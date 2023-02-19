@@ -22,6 +22,7 @@ void Common::initialize() {
     g_common->source_files_key = g_labelStorage.insert("source_files");
     g_common->dependencies_key = g_labelStorage.insert("dependencies");
     g_common->link_libraries_key = g_labelStorage.insert("link_libraries");
+    g_common->prebuild_step_key = g_labelStorage.insert("prebuild_step");
     g_common->public_key = g_labelStorage.insert("public");
     g_common->private_key = g_labelStorage.insert("private");
     g_common->config_options_key = g_labelStorage.insert("config_options");

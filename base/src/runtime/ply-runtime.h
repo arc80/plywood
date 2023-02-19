@@ -479,9 +479,9 @@ using View = typename traits::View<T>::Type;
 
 namespace subst {
 
-// ┏━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━┓
 // ┃  create_default  ┃
-// ┗━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━┛
 template <typename T, std::enable_if_t<std::is_arithmetic<T>::value, int> = 0>
 T create_default() {
     return 0;
@@ -498,9 +498,9 @@ template <typename T, std::enable_if_t<std::is_same<T, void>::value, int> = 0>
 T create_default() {
 }
 
-// ┏━━━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━━━┓
 // ┃  unsafe_construct  ┃
-// ┗━━━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_default_constructible<T>::value, int> = 0>
 void unsafe_construct(T* obj) {
@@ -514,9 +514,9 @@ void unsafe_construct(T* obj) {
     PLY_FORCE_CRASH();
 }
 
-// ┏━━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━━━┓
 // ┃  create_by_member  ┃
-// ┗━━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━━━┛
 PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasCreate, T0::create())
 
 template <typename T, std::enable_if_t<HasCreate<T>, int> = 0>
@@ -540,9 +540,9 @@ T* create_by_member() {
     return nullptr;
 }
 
-// ┏━━━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━━━━┓
 // ┃  destroy_by_member  ┃
-// ┗━━━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━━━━┛
 PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasDestroyMember, std::declval<T0>().destroy())
 PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasNamespaceDestroy, destroy((T0*) nullptr))
 
@@ -567,9 +567,9 @@ void destroy_by_member(T* obj) {
     delete obj; // Passing nullptr to delete is allowed
 }
 
-// ┏━━━━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━━━━━┓
 // ┃  destruct_by_member  ┃
-// ┗━━━━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━━━━━┛
 PLY_MAKE_WELL_FORMEDNESS_CHECK_1(HasDestruct, std::declval<T0>().destruct())
 
 template <typename T, std::enable_if_t<HasDestruct<T>, int> = 0>
@@ -582,9 +582,23 @@ void destruct_by_member(T* obj) {
     obj->~T();
 }
 
-// ┏━━━━━━━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+// ┃  unsafe_copy_construct  ┃
+// ┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
+template <typename T, std::enable_if_t<std::is_copy_constructible<T>::value, int> = 0>
+void unsafe_copy_construct(T* dst, const T* src) {
+    new (dst) T{*src};
+}
+
+template <typename T, std::enable_if_t<!std::is_copy_constructible<T>::value, int> = 0>
+void unsafe_copy_construct(T* dst, const T* src) {
+    // Not copy constructible
+    PLY_FORCE_CRASH();
+}
+
+// ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
 // ┃  unsafe_move_construct  ┃
-// ┗━━━━━━━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
 template <typename T, std::enable_if_t<std::is_move_constructible<T>::value, int> = 0>
 void unsafe_move_construct(T* dst, T* src) {
     new (dst) T{std::move(*src)};
@@ -596,9 +610,9 @@ void unsafe_move_construct(T* dst, T* src) {
     PLY_FORCE_CRASH();
 }
 
-// ┏━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━┓
 // ┃  unsafe_copy  ┃
-// ┗━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━┛
 template <typename T, std::enable_if_t<std::is_copy_assignable<T>::value, int> = 0>
 void unsafe_copy(T* dst, const T* src) {
     *dst = *src;
@@ -610,9 +624,9 @@ void unsafe_copy(T* dst, const T* src) {
     PLY_FORCE_CRASH();
 }
 
-// ┏━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━┓
 // ┃  unsafe_move  ┃
-// ┗━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━┛
 template <typename T, std::enable_if_t<std::is_move_assignable<T>::value, int> = 0>
 void unsafe_move(T* dst, T* src) {
     *dst = std::move(*src);
@@ -624,9 +638,9 @@ void unsafe_move(T* dst, T* src) {
     PLY_FORCE_CRASH();
 }
 
-// ┏━━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━━┓
 // ┃  construct_array  ┃
-// ┗━━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_default_constructible<T>::value, int> = 0>
 void construct_array(T* items, s32 size) {
@@ -642,9 +656,9 @@ void construct_array(T* items, s32 size) {
     }
 }
 
-// ┏━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━┓
 // ┃  destruct_array  ┃
-// ┗━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_destructible<T>::value, int> = 0>
 void destruct_array(T* items, s32 size) {
@@ -660,9 +674,9 @@ void destruct_array(T* items, s32 size) {
     }
 }
 
-// ┏━━━━━━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━━━━━━━┓
 // ┃  construct_array_from  ┃
-// ┗━━━━━━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_copy_constructible<T>::value, int> = 0>
 void construct_array_from(T* dst, const T* src, s32 size) {
@@ -680,9 +694,9 @@ void construct_array_from(T* dst, const U* src, s32 size) {
     }
 }
 
-// ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 // ┃  unsafe_construct_array_from  ┃
-// ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 template <typename T, typename U,
           std::enable_if_t<std::is_constructible<T, const U&>::value, int> = 0>
 void unsafe_construct_array_from(T* dst, const U* src, s32 size) {
@@ -695,9 +709,9 @@ void unsafe_construct_array_from(T* dst, const U* src, s32 size) {
     PLY_FORCE_CRASH();
 }
 
-// ┏━━━━━━━━━━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━━━━━━━━━━━┓
 // ┃  move_construct_array  ┃
-// ┗━━━━━━━━━━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_move_constructible<T>::value, int> = 0>
 void move_construct_array(T* dst, const T* src, s32 size) {
@@ -714,9 +728,9 @@ void move_construct_array(T* dst, U* src, s32 size) {
     }
 }
 
-// ┏━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━┓
 // ┃  copy_array  ┃
-// ┗━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_copy_assignable<T>::value, int> = 0>
 void copy_array(T* dst, const T* src, s32 size) {
@@ -733,9 +747,9 @@ void copy_array(T* dst, const T* src, s32 size) {
     }
 }
 
-// ┏━━━━━━━━━━━━━┓
+// ┏━━━━━━━━━━━━━━┓
 // ┃  move_array  ┃
-// ┗━━━━━━━━━━━━━┛
+// ┗━━━━━━━━━━━━━━┛
 template <typename T,
           std::enable_if_t<std::is_trivially_move_assignable<T>::value, int> = 0>
 void move_array(T* dst, const T* src, s32 size) {

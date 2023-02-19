@@ -18,6 +18,9 @@ library runtime {
             "-ldl"
         }
     }
+    prebuild_step {
+        preprocess_labels()
+    }
 }
 
 library runtime_tests {

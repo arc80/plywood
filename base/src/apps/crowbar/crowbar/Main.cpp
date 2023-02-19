@@ -71,6 +71,35 @@ void cmd_generate(CommandLine& cl) {
     generate(&bf);
 }
 
+//                       ▄▄            ▄▄ ▄▄▄      ▄▄
+//  ▄▄▄▄▄  ▄▄▄▄▄   ▄▄▄▄  ██▄▄▄  ▄▄  ▄▄ ▄▄  ██   ▄▄▄██
+//  ██  ██ ██  ▀▀ ██▄▄██ ██  ██ ██  ██ ██  ██  ██  ██
+//  ██▄▄█▀ ██     ▀█▄▄▄  ██▄▄█▀ ▀█▄▄██ ██ ▄██▄ ▀█▄▄██
+//  ██
+
+void cmd_prebuild(CommandLine& cl) {
+    StringView build_folder_name = cl.next_arg();
+    if (build_folder_name.is_empty()) {
+        Error.log("Expected build folder name");
+        exit(1);
+    }
+    StringView config_name = cl.next_arg();
+    if (config_name.is_empty()) {
+        Error.log("Expected configuration name");
+        exit(1);
+    }
+    cl.check_for_unused_args();
+
+    Common::initialize();
+    Repository::create();
+
+    BuildFolder_t bf;
+    String path =
+        Path.join(Workspace.path, "data/build", build_folder_name);
+    bf.load(path);
+    do_prebuild_steps(&bf, config_name);
+}
+
 //  ▄▄                    ▄▄           ▄▄
 //  ██▄▄▄   ▄▄▄▄   ▄▄▄▄  ▄██▄▄  ▄▄▄▄  ▄██▄▄ ▄▄▄▄▄   ▄▄▄▄  ▄▄▄▄▄
 //  ██  ██ ██  ██ ██  ██  ██   ▀█▄▄▄   ██   ██  ▀▀  ▄▄▄██ ██  ██
@@ -252,6 +281,8 @@ int main(int argc, char* argv[]) {
         cmd_smallbox(cl);
     } else if (prefix_match(category, "folder")) {
         cmd_folder(cl);
+    } else if (prefix_match(category, "prebuild")) {
+        cmd_prebuild(cl);
     } else {
         Error.log("Unrecognized command \"{}\"", category);
     }

@@ -31,6 +31,7 @@ struct TargetInstantiator {
     // These members are modified during instantiation.
     Map<Label, TargetWithStatus> target_map;
     u64 config_bit = 0;
+    Array<Func<FnResult()>>* prebuild_steps = nullptr;
 };
 
 FnResult instantiate_target_for_current_config(Target** target, TargetInstantiator* mi,
@@ -46,7 +47,8 @@ struct PropertyCollector {
 
 FnResult do_custom_block_inside_config(PropertyCollector* pc,
                                        const biscuit::Statement::CustomBlock* cb);
-void instantiate_all_configs(BuildFolder_t* build_folder);
+void instantiate_all_configs(BuildFolder_t* build_folder,
+                             StringView run_prebuild_step_for_config = {});
 
 } // namespace build
 } // namespace ply
