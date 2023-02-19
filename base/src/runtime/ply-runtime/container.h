@@ -3421,8 +3421,8 @@ const MapTypeInfo map_type_info = {
 // map_operate() is defined out-of-line and explicitly instantiated for u32, u64,
 // String and StringView.
 template <typename Prim>
-void* map_operate(BaseMap* map, MapOperation op, View<Prim> key, const MapTypeInfo* ti,
-                  bool* was_found = nullptr);
+void* map_operate(BaseMap* map, MapOperation op, View<Prim> key,
+                  const MapTypeInfo* ti, bool* was_found = nullptr);
 
 // MapHelper<> helps adapt Map<> to different key types.
 template <typename K>
@@ -3467,32 +3467,28 @@ struct Map {
     Array<s32> indices;
     Array<Item> items;
 
-    using Prim = typename MapHelper<Key>::Prim;
+    using MH = MapHelper<Key>;
 
     Value* find(View<Key> key) {
         PLY_PUN_SCOPE
-        return (Value*) map_operate<Prim>((BaseMap*) this, M_Find,
-                                          MapHelper<Key>::prim(key),
-                                          &map_type_info<Key, Value>);
+        return (Value*) map_operate<MH::Prim>((BaseMap*) this, M_Find, MH::prim(key),
+                                              &map_type_info<Key, Value>);
     }
     const Value* find(View<Key> key) const {
         PLY_PUN_SCOPE
-        return (Value*) map_operate<Prim>((BaseMap*) this, M_Find,
-                                          MapHelper<Key>::prim(key),
-                                          &map_type_info<Key, Value>);
+        return (Value*) map_operate<MH::Prim>((BaseMap*) this, M_Find, MH::prim(key),
+                                              &map_type_info<Key, Value>);
     }
     Value* insert_or_find(View<Key> key, bool* was_found = nullptr) {
         PLY_PUN_SCOPE
-        return (Value*) map_operate<Prim>((BaseMap*) this, M_Insert,
-                                          MapHelper<Key>::prim(key),
-                                          &map_type_info<Key, Value>, was_found);
+        return (Value*) map_operate<MH::Prim>((BaseMap*) this, M_Insert, MH::prim(key),
+                                              &map_type_info<Key, Value>, was_found);
     }
     template <typename T>
     void assign(View<Key> key, T&& arg) {
         PLY_PUN_SCOPE
-        void* value =
-            map_operate<Prim>((BaseMap*) this, M_Insert, MapHelper<Key>::prim(key),
-                              &map_type_info<Key, Value>);
+        void* value = map_operate<MH::Prim>((BaseMap*) this, M_Insert, MH::prim(key),
+                                            &map_type_info<Key, Value>);
         *((Value*) value) = std::forward<T>(arg);
     }
     u32 num_items() const {

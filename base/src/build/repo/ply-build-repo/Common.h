@@ -31,6 +31,7 @@ struct Common {
     Label optimization_key;
     Label generate_key;
     Label link_objects_directly_key;
+    Label preprocess_labels_key;
 
     static void initialize();
 };

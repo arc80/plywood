@@ -218,6 +218,8 @@ struct PrebuildStepInterpreter {
     biscuit::Interpreter interp;
 };
 
+FnResult preprocess_labels(const FnParams& params);
+
 FnResult do_prebuild_steps(const biscuit::Statement::CustomBlock* cb,
                            biscuit::Tokenizer* tkr, Target* target) {
     // Create new interpreter.
@@ -231,6 +233,8 @@ FnResult do_prebuild_steps(const biscuit::Statement::CustomBlock* cb,
     psi.interp.resolve_name = [&psi](Label identifier) -> AnyObject {
         if (AnyObject* built_in = BuiltInMap.find(identifier))
             return *built_in;
+        if (identifier == g_common->preprocess_labels_key)
+            return AnyObject::bind(&preprocess_labels);
         return {};
     };
 

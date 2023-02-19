@@ -33,6 +33,7 @@ void Common::initialize() {
     g_common->generate_key = g_labelStorage.insert("generate");
     g_common->link_objects_directly_key =
         g_labelStorage.insert("link_objects_directly");
+    g_common->preprocess_labels_key = g_labelStorage.insert("preprocess_labels");
 }
 
 } // namespace build
