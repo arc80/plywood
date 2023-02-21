@@ -2833,7 +2833,7 @@ struct Label {
 
     Label() {
     }
-    explicit Label(u32 idx) : idx{idx} {
+    constexpr explicit Label(u32 idx) : idx{idx} {
     }
     explicit operator bool() const {
         return idx != 0;
@@ -3581,5 +3581,7 @@ public:
 };
 
 extern LabelStorage g_labelStorage;
+
+void init_predefined_labels();
 
 } // namespace ply
