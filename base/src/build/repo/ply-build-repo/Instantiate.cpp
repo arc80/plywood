@@ -194,13 +194,13 @@ bool on_evaluate_link_library(PropertyCollector* pc, const AnyObject& attributes
 FnResult custom_block_inside_config(PropertyCollector* pc,
                                     const biscuit::Statement::CustomBlock* cb) {
     biscuit::Interpreter::Hooks hooks;
-    if (cb->type == g_common->include_directories_key) {
+    if (cb->type == LABEL_include_directories) {
         hooks.on_evaluate = {on_evaluate_include_directory, pc};
-    } else if (cb->type == g_common->preprocessor_definitions_key) {
+    } else if (cb->type == LABEL_preprocessor_definitions) {
         hooks.on_evaluate = {on_evaluate_preprocessor_definition, pc};
-    } else if (cb->type == g_common->compile_options_key) {
+    } else if (cb->type == LABEL_compile_options) {
         hooks.assign_to_local = {assign_to_compile_options, pc};
-    } else if (cb->type == g_common->link_libraries_key) {
+    } else if (cb->type == LABEL_link_libraries) {
         hooks.on_evaluate = {on_evaluate_link_library, pc};
     } else {
         // FIXME: Make this a runtime error instead of an assert because the config
@@ -233,7 +233,7 @@ FnResult do_prebuild_steps(const biscuit::Statement::CustomBlock* cb,
     psi.interp.resolve_name = [&psi](Label identifier) -> AnyObject {
         if (AnyObject* built_in = BuiltInMap.find(identifier))
             return *built_in;
-        if (identifier == g_common->preprocess_labels_key)
+        if (identifier == LABEL_preprocess_labels)
             return AnyObject::bind(&preprocess_labels);
         return {};
     };
@@ -254,7 +254,7 @@ FnResult do_prebuild_steps(const biscuit::Statement::CustomBlock* cb,
 FnResult
 custom_block_inside_target_function(InstantiatingInterpreter* ii,
                                     const biscuit::Statement::CustomBlock* cb) {
-    if (cb->type == g_common->prebuild_step_key) {
+    if (cb->type == LABEL_prebuild_step) {
         // When a 'crowbar prebuild' command is issued, we add each prebuild_step block
         // to an array that gets executed after the build system is fully instantiated.
         if (ii->ti->prebuild_steps) {
@@ -275,17 +275,17 @@ custom_block_inside_target_function(InstantiatingInterpreter* ii,
     pc.is_target = true;
 
     biscuit::Interpreter::Hooks hooks;
-    if (cb->type == g_common->source_files_key) {
+    if (cb->type == LABEL_source_files) {
         hooks.on_evaluate = {on_evaluate_source_file, ii};
-    } else if (cb->type == g_common->include_directories_key) {
+    } else if (cb->type == LABEL_include_directories) {
         hooks.on_evaluate = {on_evaluate_include_directory, &pc};
-    } else if (cb->type == g_common->preprocessor_definitions_key) {
+    } else if (cb->type == LABEL_preprocessor_definitions) {
         hooks.on_evaluate = {on_evaluate_preprocessor_definition, &pc};
-    } else if (cb->type == g_common->compile_options_key) {
+    } else if (cb->type == LABEL_compile_options) {
         hooks.assign_to_local = {assign_to_compile_options, &pc};
-    } else if (cb->type == g_common->link_libraries_key) {
+    } else if (cb->type == LABEL_link_libraries) {
         hooks.on_evaluate = {on_evaluate_link_library, &pc};
-    } else if (cb->type == g_common->dependencies_key) {
+    } else if (cb->type == LABEL_dependencies) {
         hooks.on_evaluate = {on_evaluate_dependency, ii};
     } else {
         PLY_ASSERT(0); // Shouldn't get here
@@ -397,10 +397,10 @@ FnResult instantiate_target_for_current_config(Target** out_target,
 
     const biscuit::Statement::CustomBlock* target_def =
         target_func->stmt->custom_block().get();
-    if (target_def->type == g_common->executable_key) {
+    if (target_def->type == LABEL_executable) {
         target->type = Target::Executable;
     } else {
-        PLY_ASSERT(target_def->type == g_common->library_key);
+        PLY_ASSERT(target_def->type == LABEL_library);
         PLY_ASSERT(target->type == Target::Library ||
                    target->type == Target::ObjectLibrary);
     }
@@ -421,7 +421,7 @@ FnResult instantiate_target_for_current_config(Target** out_target,
             return *built_in;
         if (AnyObject* obj = ii.target_func->current_options->map.find(identifier))
             return *obj;
-        if (identifier == g_common->link_objects_directly_key) {
+        if (identifier == LABEL_link_objects_directly) {
             AnyObject* obj = ii.interp.base.local_variable_storage.append_object(
                 get_type_descriptor<BoundNativeMethod>());
             *obj->cast<BoundNativeMethod>() = {&ii, fn_link_objects_directly};
@@ -459,7 +459,7 @@ struct ConfigListInterpreter {
 
 FnResult custom_block_inside_config_list(ConfigListInterpreter* cli,
                                          const biscuit::Statement::CustomBlock* cb) {
-    PLY_ASSERT(cb->type == g_common->config_key);
+    PLY_ASSERT(cb->type == LABEL_config);
 
     // Evaluate config name
     FnResult result = eval(cli->interp.current_frame, cb->expr);

@@ -61,7 +61,6 @@ print_usage:;
 void cmd_generate(CommandLine& cl) {
     cl.check_for_unused_args();
 
-    Common::initialize();
     Repository::create();
 
     BuildFolder_t bf;
@@ -90,7 +89,6 @@ void cmd_prebuild(CommandLine& cl) {
     }
     cl.check_for_unused_args();
 
-    Common::initialize();
     Repository::create();
 
     BuildFolder_t bf;
@@ -111,7 +109,6 @@ void cmd_bootstrap(CommandLine& cl) {
     cl.find_option("config", &config_name);
     cl.check_for_unused_args();
 
-    Common::initialize();
     Repository::create();
 
     BuildFolder_t bf;
@@ -256,6 +253,7 @@ print_usage:;
 //
 
 int main(int argc, char* argv[]) {
+    init_predefined_labels();
 #if PLY_TARGET_WIN32
     SetConsoleOutputCP(CP_UTF8);
 #endif

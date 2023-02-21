@@ -2,10 +2,27 @@
 
 namespace ply {
 
-constexpr Label LABEL_enum{2};
-constexpr Label LABEL_enum_{8};
-constexpr Label LABEL_pointer{16};
-constexpr Label LABEL_struct{26};
-constexpr Label LABEL_struct_{34};
+constexpr Label LABEL_compile_options{2};
+constexpr Label LABEL_config{20};
+constexpr Label LABEL_config_list{30};
+constexpr Label LABEL_config_options{44};
+constexpr Label LABEL_dependencies{62};
+constexpr Label LABEL_enum{78};
+constexpr Label LABEL_enum_{86};
+constexpr Label LABEL_executable{94};
+constexpr Label LABEL_generate{108};
+constexpr Label LABEL_include_directories{120};
+constexpr Label LABEL_library{142};
+constexpr Label LABEL_link_libraries{152};
+constexpr Label LABEL_link_objects_directly{170};
+constexpr Label LABEL_pointer{194};
+constexpr Label LABEL_prebuild_step{204};
+constexpr Label LABEL_preprocess_labels{220};
+constexpr Label LABEL_preprocessor_definitions{240};
+constexpr Label LABEL_private{268};
+constexpr Label LABEL_public{278};
+constexpr Label LABEL_source_files{288};
+constexpr Label LABEL_struct{304};
+constexpr Label LABEL_struct_{314};
 
 } // namespace ply

@@ -40,8 +40,8 @@ biscuit::KeywordResult handle_keyword_public_private(ExtendedParser* ep,
 
 biscuit::KeywordResult handle_keyword_at_file_scope(ExtendedParser* ep,
                                                     const biscuit::KeywordParams& kp) {
-    if ((kp.kw_token.label == g_common->library_key) ||
-        (kp.kw_token.label == g_common->executable_key)) {
+    if ((kp.kw_token.label == LABEL_library) ||
+        (kp.kw_token.label == LABEL_executable)) {
         // Create new Repository::Target
         auto target = Owned<Repository::Function>::create();
         target->plyfile = ep->current_plyfile;
@@ -93,7 +93,7 @@ biscuit::KeywordResult handle_keyword_at_file_scope(ExtendedParser* ep,
                           ->body);
         g_repository->targets.append(std::move(target));
         return biscuit::KeywordResult::Block;
-    } else if (kp.kw_token.label == g_common->config_list_key) {
+    } else if (kp.kw_token.label == LABEL_config_list) {
         Repository::ConfigList* config_list = g_repository->config_list;
         if (config_list) {
             error_at_token(ep->parser, kp.kw_token,
@@ -124,15 +124,15 @@ biscuit::KeywordResult handle_keyword_at_file_scope(ExtendedParser* ep,
 biscuit::KeywordResult
 handle_keyword_inside_target_or_function(ExtendedParser* ep,
                                          const biscuit::KeywordParams& kp) {
-    if ((kp.kw_token.label == g_common->source_files_key) ||
-        (kp.kw_token.label == g_common->include_directories_key) ||
-        (kp.kw_token.label == g_common->preprocessor_definitions_key) ||
-        (kp.kw_token.label == g_common->dependencies_key) ||
-        (kp.kw_token.label == g_common->link_libraries_key) ||
-        (kp.kw_token.label == g_common->prebuild_step_key) ||
-        (kp.kw_token.label == g_common->compile_options_key)) {
+    if ((kp.kw_token.label == LABEL_source_files) ||
+        (kp.kw_token.label == LABEL_include_directories) ||
+        (kp.kw_token.label == LABEL_preprocessor_definitions) ||
+        (kp.kw_token.label == LABEL_dependencies) ||
+        (kp.kw_token.label == LABEL_link_libraries) ||
+        (kp.kw_token.label == LABEL_prebuild_step) ||
+        (kp.kw_token.label == LABEL_compile_options)) {
         biscuit::Parser::Filter filter;
-        if (kp.kw_token.label == g_common->prebuild_step_key) {
+        if (kp.kw_token.label == LABEL_prebuild_step) {
             filter.keyword_handler = [](const biscuit::KeywordParams&) {
                 return biscuit::KeywordResult::Illegal;
             };
@@ -143,7 +143,7 @@ handle_keyword_inside_target_or_function(ExtendedParser* ep,
         kp.stmt_block->statements.append(
             parse_custom_block(ep, filter, kp.kw_token.label));
         return biscuit::KeywordResult::Block;
-    } else if (kp.kw_token.label == g_common->config_options_key) {
+    } else if (kp.kw_token.label == LABEL_config_options) {
         if (ep->target_func) {
             biscuit::Parser::Filter filter;
             filter.keyword_handler = [](const biscuit::KeywordParams&) {
@@ -156,7 +156,7 @@ handle_keyword_inside_target_or_function(ExtendedParser* ep,
                 {ep->target_func, std::move(custom_block)});
             return biscuit::KeywordResult::Block;
         }
-    } else if (kp.kw_token.label == g_common->generate_key) {
+    } else if (kp.kw_token.label == LABEL_generate) {
         if (ep->target_func) {
             biscuit::Parser::Filter filter;
             filter.keyword_handler = [](const biscuit::KeywordParams&) {
@@ -175,9 +175,9 @@ handle_keyword_inside_target_or_function(ExtendedParser* ep,
 biscuit::KeywordResult
 handle_keyword_inside_config_list(ExtendedParser* ep,
                                   const biscuit::KeywordParams& kp) {
-    if (kp.kw_token.label == g_common->config_key) {
+    if (kp.kw_token.label == LABEL_config) {
         PLY_ASSERT(ep->parser->outer_scope->custom_block()->type ==
-                   g_common->config_list_key);
+                   LABEL_config_list);
 
         Owned<biscuit::Expression> expr = ep->parser->parse_expression();
 
@@ -198,19 +198,19 @@ biscuit::KeywordResult handle_keyword_public_private(ExtendedParser* ep,
                                                      const biscuit::KeywordParams& kp) {
     auto cb = ep->parser->outer_scope->custom_block();
 
-    bool is_legal = (cb->type == g_common->include_directories_key) ||
-                    (cb->type == g_common->preprocessor_definitions_key) ||
-                    (cb->type == g_common->dependencies_key) ||
-                    (cb->type == g_common->compile_options_key);
-    is_legal = is_legal && ((kp.kw_token.label == g_common->public_key) ||
-                            (kp.kw_token.label == g_common->private_key));
+    bool is_legal = (cb->type == LABEL_include_directories) ||
+                    (cb->type == LABEL_preprocessor_definitions) ||
+                    (cb->type == LABEL_dependencies) ||
+                    (cb->type == LABEL_compile_options);
+    is_legal = is_legal && ((kp.kw_token.label == LABEL_public) ||
+                            (kp.kw_token.label == LABEL_private));
     if (is_legal) {
         if (!kp.attributes->data) {
             *kp.attributes = AnyOwnedObject::create<StatementAttributes>();
         }
         auto traits = kp.attributes->cast<StatementAttributes>();
         traits->visibility_token_idx = kp.kw_token.token_idx;
-        traits->is_public = (kp.kw_token.label == g_common->public_key);
+        traits->is_public = (kp.kw_token.label == LABEL_public);
         return biscuit::KeywordResult::Attribute;
     }
 
@@ -274,21 +274,21 @@ bool parse_plyfile(StringView path) {
     biscuit::Parser parser;
 
     // Add parser keywords.
-    parser.keywords.assign(g_common->library_key, true);
-    parser.keywords.assign(g_common->executable_key, true);
-    parser.keywords.assign(g_common->source_files_key, true);
-    parser.keywords.assign(g_common->include_directories_key, true);
-    parser.keywords.assign(g_common->preprocessor_definitions_key, true);
-    parser.keywords.assign(g_common->dependencies_key, true);
-    parser.keywords.assign(g_common->link_libraries_key, true);
-    parser.keywords.assign(g_common->prebuild_step_key, true);
-    parser.keywords.assign(g_common->config_options_key, true);
-    parser.keywords.assign(g_common->config_list_key, true);
-    parser.keywords.assign(g_common->config_key, true);
-    parser.keywords.assign(g_common->compile_options_key, true);
-    parser.keywords.assign(g_common->public_key, true);
-    parser.keywords.assign(g_common->private_key, true);
-    parser.keywords.assign(g_common->generate_key, true);
+    parser.keywords.assign(LABEL_library, true);
+    parser.keywords.assign(LABEL_executable, true);
+    parser.keywords.assign(LABEL_source_files, true);
+    parser.keywords.assign(LABEL_include_directories, true);
+    parser.keywords.assign(LABEL_preprocessor_definitions, true);
+    parser.keywords.assign(LABEL_dependencies, true);
+    parser.keywords.assign(LABEL_link_libraries, true);
+    parser.keywords.assign(LABEL_prebuild_step, true);
+    parser.keywords.assign(LABEL_config_options, true);
+    parser.keywords.assign(LABEL_config_list, true);
+    parser.keywords.assign(LABEL_config, true);
+    parser.keywords.assign(LABEL_compile_options, true);
+    parser.keywords.assign(LABEL_public, true);
+    parser.keywords.assign(LABEL_private, true);
+    parser.keywords.assign(LABEL_generate, true);
 
     // Extend the parser
     ExtendedParser ep;

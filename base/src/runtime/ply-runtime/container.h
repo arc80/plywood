@@ -3557,20 +3557,9 @@ struct LabelEncoder {
 
 struct LabelStorage {
 private:
-    struct Traits {
-        using Key = StringView;
-        using Item = u32;
-        using Context = BigPool<>;
-        static bool match(u32 id, const StringView& key, const BigPool<>& big_pool) {
-            const char* ptr = big_pool.get(id);
-            u32 num_bytes = impl::LabelEncoder::decode_value(ptr);
-            return StringView{ptr, num_bytes} == key;
-        }
-    };
-
     PLY_DEFINE_RACE_DETECTOR(race_detector)
     BigPool<> big_pool;
-    HashMap<Traits> str_to_index;
+    Map<StringView, u32> str_to_index;
 
 public:
     LabelStorage();
@@ -3585,3 +3574,5 @@ extern LabelStorage g_labelStorage;
 void init_predefined_labels();
 
 } // namespace ply
+
+#include <ply-runtime/predefined_labels.h>
