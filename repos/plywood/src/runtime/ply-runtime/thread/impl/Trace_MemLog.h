@@ -24,7 +24,7 @@ public:
         uptr param1;
         uptr param2;
 
-        Event() : msg(NULL), param1(0), param2(0) {
+        Event() : tid(0), msg(NULL), param1(0), param2(0) {
         }
     };
 
