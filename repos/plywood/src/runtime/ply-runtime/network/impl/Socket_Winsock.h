@@ -90,25 +90,25 @@ public:
         other.listenSocket = INVALID_SOCKET;
     }
     PLY_INLINE ~TCPListener_Winsock() {
-        if (this->listenSocket >= 0) {
+        if (this->listenSocket != INVALID_SOCKET) {
             closesocket(this->listenSocket);
         }
     }
     PLY_INLINE void operator=(TCPListener_Winsock&& other) {
-        if (this->listenSocket >= 0) {
+        if (this->listenSocket != INVALID_SOCKET) {
             closesocket(this->listenSocket);
         }
         this->listenSocket = other.listenSocket;
         other.listenSocket = INVALID_SOCKET;
     }
     PLY_INLINE bool isValid() {
-        return this->listenSocket >= 0;
+        return this->listenSocket != INVALID_SOCKET;
     }
     PLY_INLINE void endComm() {
         shutdown(this->listenSocket, SD_BOTH);
     }
     PLY_INLINE void close() {
-        if (this->listenSocket >= 0) {
+        if (this->listenSocket != INVALID_SOCKET) {
             closesocket(this->listenSocket);
             this->listenSocket = INVALID_SOCKET;
         }

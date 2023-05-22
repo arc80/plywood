@@ -81,7 +81,7 @@ PLY_NO_INLINE DirectoryWatcher_Win32::DirectoryWatcher_Win32() {
 PLY_NO_INLINE void DirectoryWatcher_Win32::start(StringView root, Functor<Callback>&& callback) {
     PLY_ASSERT(m_root.isEmpty());
     PLY_ASSERT(!m_callback.isValid());
-    PLY_ASSERT(m_endEvent = INVALID_HANDLE_VALUE);
+    PLY_ASSERT(m_endEvent == INVALID_HANDLE_VALUE);
     PLY_ASSERT(!m_watcherThread.isValid());
     m_root = root;
     m_callback = std::move(callback);

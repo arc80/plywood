@@ -51,7 +51,7 @@ private:
     friend class Array;
 
     PLY_INLINE Array(T* items, u32 numItems, u32 allocator)
-        : items{items}, numItems_{numItems}, allocated{allocated} {
+        : items{items}, numItems_{numItems}, allocated{0} {
     }
 
 public:
